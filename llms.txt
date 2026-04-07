@@ -3,7 +3,7 @@
 > English language schools in San Diego, Los Angeles and Vancouver.
 
 ## Sitemaps
-- https://cagdasunal.github.io/englishcollege/sitemap.xml
+- https://sitemap.englishcollege.com/sitemap.xml
 
 ---
 
@@ -295,7 +295,6 @@
 - [Piso Compartido Superior en San Diego | CEL](https://www.englishcollege.com/es/pb/cel-apartamento-compartido-superior-pb): Apartamentos compartidos de calidad superior en San Diego con habitaciones luminosas, Wi-Fi, cocina, piscina y zonas de estudio. Alojamiento para estudiantes cerca del CEL.
 - [Casa de familia en San Diego para estudiantes | CEL](https://www.englishcollege.com/es/pb/familia-anfitriona): Vive con familias locales en San Diego. Habitaciones, Wi-Fi, comidas y un entorno hogareño de apoyo para estudiantes internacionales.
 - [Familia Anfitriona Premium – Alojamiento en San Diego | CEL](https://www.englishcollege.com/es/pb/familia-anfitriona-premium): Alojamiento en familia de primera calidad en San Diego con habitaciones individuales, comidas, Wi-Fi y apoyo diario, a un corto trayecto del CEL San Diego.
-- [Las mejores escuelas de inglés en Vancouver en 2026 (comparativa) | CEL](https://www.englishcollege.com/es/post/best-english-language-schools-vancouver): Compara las mejores escuelas de inglés de Vancouver en 2026. Echa un vistazo al tamaño de las clases, las diferencias clave y elige la escuela que más te convenga
 - [Planifica tu curso de inglés en Canadá | Guía de costes y visados | CEL](https://www.englishcollege.com/es/post/plan-english-course-canada): ¿Estás planeando hacer un curso de inglés en Canadá? Infórmate sobre las tasas académicas, los requisitos para obtener el visado, el coste de la vida, el tamaño de las clases y la duración de los estudios en Vancouver.
 - [Tendencias en estancias lingüísticas 2026: lo que cambia | CEL](https://www.englishcollege.com/es/post/tendances-sejours-linguistiques-2026): Descubre las tendencias en estancias lingüísticas para 2026: inmersión, English Plus, comunidades internacionales y calidad de vida.
 - [Apartamento compartido premium en Los Ángeles | CEL](https://www.englishcollege.com/es/sm/cel-apartamento-comp-premium-beach): Apartamentos modernos en Los Ángeles con habitaciones individuales o dobles, Wi-Fi, salas comunes y fácil acceso a CEL.
@@ -355,7 +354,6 @@
 - [Gastfamilie - Studentenwohnungen bei Familien in San Diego | CEL](https://www.englishcollege.com/de/pb/gastfamilie): Wohnen Sie bei einheimischen Familien in San Diego. Zimmer, Wi-Fi, Mahlzeiten und ein unterstützendes häusliches Umfeld für internationale Studenten.
 - [Premium Gastfamilie – Studentenunterkünfte San Diego | CEL](https://www.englishcollege.com/de/pb/gastfamilie-premium): Erstklassige Gastfamilie in San Diego mit Einzelzimmern, Mahlzeiten, Wi-Fi und täglicher Unterstützung, nur eine kurze Fahrt vom CEL San Diego entfernt.
 - [21 Business-Englisch-Ausdrücke für deine internationale Karriere | CEL](https://www.englishcollege.com/de/post/21-business-englisch-ausdruecke-karriere): Lerne 21 wichtige Business-Englisch-Ausdrücke und schau mal, wie CEL dich fit für Englisch im Job und eine internationale Karriere macht.
-- [Die besten Englisch-Sprachschulen in Vancouver 2026 (im Vergleich) | CEL](https://www.englishcollege.com/de/post/best-english-language-schools-vancouver): Vergleiche die besten Englisch-Sprachschulen in Vancouver im Jahr 2026. Informiere dich über die Klassengrößen und die wichtigsten Unterschiede und wähle die richtige Schule aus
 - [Sprachaufenthalt Kalifornien: Dein Karriere-Boost | CEL](https://www.englishcollege.com/de/post/boost-your-career-wie-ein-sprachaufenthalt-in-kalifornien-dein-profil-aufwertet): Boost your Career - entdecke, wie ein Sprachaufenthalt Kalifornien deinen Lebenslauf aufwertet und neue Jobchancen eröffnet.
 - [Sprachaufenthalte: Warum Erfahrung zählt | CEL](https://www.englishcollege.com/de/post/des-competences-en-anglais-a-une-carriere-internationale-pourquoi-un-sejour-linguistique-reste-un-choix-decisif): Ein Sprachaufenthalt verbessert dein Englisch, dein Selbstvertrauen und deine Chancen auf dem Arbeitsmarkt. Finde heraus, was sich in den USA wirklich verändert.
 - [USA Sprachaufenthalt: 7 kulturelle Überraschungen | CEL](https://www.englishcollege.com/de/post/die-kultur-der-usa-erklart-7-dinge-die-dich-wahrend-deines-sprachaufenthalts-uberraschen-werden): Entdecke 7 Dinge, die dich bei einem Sprachaufenthalt USA überraschen - von Small Talk bis California Lifestyle.
@@ -478,7 +476,6 @@
 - [Homestay - Logement étudiant dans des familles à San Diego | CEL](https://www.englishcollege.com/fr/pb/homestay): Vivez avec des familles locales à San Diego. Chambres, Wi-Fi, repas et un environnement familial favorable pour les étudiants internationaux.
 - [Famille d’accueil Premium – Logement étudiant à San Diego | CEL](https://www.englishcollege.com/fr/pb/premium-homestay): Hébergement en famille d'accueil de première qualité à San Diego avec chambres individuelles, repas, Wi-Fi et assistance quotidienne, à quelques minutes de route du CEL San Diego.
 - [Anglais pour une carrière internationale | CEL](https://www.englishcollege.com/fr/post/anglais-pour-une-carriere-internationale-21-expressions): Découvre 21 expressions en anglais des affaires pour bosser ton anglais pro et booster ta carrière.
-- [Les meilleures écoles d'anglais à Vancouver en 2026 (comparatif) | CEL](https://www.englishcollege.com/fr/post/best-english-language-schools-vancouver): Compare les meilleures écoles d'anglais à Vancouver en 2026. Découvre la taille des classes, les principales différences et choisis l'école qui te convient
 - [Quand est le bon moment pour un séjour linguistique aux États-Unis ? | CEL](https://www.englishcollege.com/fr/post/bon-moment-sejour-linguistique-usa): Quand partir en séjour linguistique aux États-Unis ? Un guide simple sur le timing, les étapes de la vie et les progrès réels
 - [Séjour linguistique Californie : boostez votre carrière | CEL](https://www.englishcollege.com/fr/post/boostez-votre-carriere-comment-un-sejour-linguistique-en-californie-transforme-votre-profil): Découvrez comment un séjour linguistique USA en Californie valorise votre profil et ouvre de nouvelles opportunités.
 - [Choc culturel ou révélation ? Séjour linguistique | CEL](https://www.englishcollege.com/fr/post/choc-culturel-ou-revelation-comment-reussir-votre-sejour-linguistique-a-letranger): Découvrez comment transformer le choc culturel en révélation pendant votre séjour linguistique. CEL vous accompagne depuis 40 ans.
@@ -594,7 +591,6 @@
 - [샌디에이고의 공유 아파트 슈페리어 | CEL](https://www.englishcollege.com/ko/pb/cel-shared-apartment-superior-pacific-beach): 밝은 객실, Wi-Fi, 주방, 수영장, 학습 공간을 갖춘 샌디에이고의 우수한 공유 아파트. CEL 근처의 학생 숙소.
 - [홈스테이 - 샌디에이고의 가족과 함께하는 학생 숙소 | CEL](https://www.englishcollege.com/ko/pb/homestay): 샌디에이고에서 현지 가족과 함께 생활해 보세요. 객실, Wi-Fi, 식사, 유학생을 위한 지원적인 가정 환경이 제공됩니다.
 - [프리미엄 홈스테이 – 유학생 숙소 샌디에이고 | CEL](https://www.englishcollege.com/ko/pb/premium-homestay): 샌디에이고의 프리미엄 홈스테이로 싱글룸, 식사, 와이파이, 일일 지원을 제공하며 CEL 샌디에이고에서 차로 가까운 거리에 있습니다.
-- [2026년 밴쿠버 최고의 영어 학원 (비교) | CEL](https://www.englishcollege.com/ko/post/best-english-language-schools-vancouver): 2026년 밴쿠버 최고의 영어 학원을 비교해 보세요. 학급 규모와 주요 차이점을 확인하고 자신에게 맞는 학원을 선택하세요
 - [샌디에이고 CEL 인턴십, 국제 환경에서 영어로 일하는 실무 경험 | CEL](https://www.englishcollege.com/ko/post/gugjejeogin-hwangyeongeseo-yeongeoro-ilhagi-saendieigo-cel-inteonsib-gyeongheom): CEL 샌디에이고 인턴십은 영어·스페인어를 일상과 업무에서 동시에 사용하는 국제 환경 속에서 언어 실력과 커리어 역량을 함께 성장시킵니다.
 - [미국 어학연수 문화 가이드, 어학연수 중 꼭 알게 될 7가지 이야기 | CEL](https://www.englishcollege.com/ko/post/migug-munhwa-igeon-molrassji-7gaji-nolraun-sasil): 미국 어학연수 중 경험하게 될 7가지 문화 충격! 소소한 대화부터 캘리포니아 라이프스타일까지, 미국 문화를 제대로 이해하고 준비하세요.
 - [프랑스 학생의 미국 어학연수 경험기 | CEL 샌디에이고 리얼 스토리 | CEL](https://www.englishcollege.com/ko/post/peurangseueseo-kaelriponiaro-celeseo-gyeongheomhan-ddo-dareun-salm): 프랑스에서 샌디에이고로 떠난 어학연수 여정. CEL 샌디에이고에서 영어 실력은 물론 자신감과 글로벌 감각까지 성장한 실제 경험담을 확인해보세요.
@@ -656,7 +652,6 @@
 - [Apartamento partilhado Superior em San Diego | CEL](https://www.englishcollege.com/pt/pb/cel-shared-apartment-superior-pacific-beach): Apartamentos superiores partilhados em San Diego com quartos luminosos, Wi-Fi, cozinha, piscina e áreas de estudo. Alojamento para estudantes perto do CEL.
 - [Homestay - Alojamento para estudantes com famílias em San Diego | CEL](https://www.englishcollege.com/pt/pb/homestay): Viva com famílias locais em San Diego. Quartos, Wi-Fi, refeições e um ambiente familiar de apoio para estudantes internacionais.
 - [Homestay Premium – Acomodação em San Diego | CEL](https://www.englishcollege.com/pt/pb/premium-homestay): Casa de família premium em San Diego com quartos individuais, refeições, Wi-Fi e apoio diário, a uma curta distância do CEL San Diego.
-- [As melhores escolas de inglês em Vancouver em 2026 (comparativa) | CEL](https://www.englishcollege.com/pt/post/best-english-language-schools-vancouver): Compara as melhores escolas de inglês em Vancouver em 2026. Vê o número de alunos por turma, as principais diferenças e escolhe a escola certa
 - [Planeje o seu curso de inglês no Canadá | Guia de custos e vistos | CEL](https://www.englishcollege.com/pt/post/plan-english-course-canada): A pensar em fazer um curso de inglês no Canadá? Fica a saber mais sobre mensalidades, regras de visto, custo de vida, tamanho das turmas e duração dos estudos em Vancouver.
 - [Apartamento compartilhado premium em Los Angeles | CEL](https://www.englishcollege.com/pt/sm/cel-shared-apartment-premium-beach): Apartamentos modernos em Los Angeles com quartos individuais ou duplos, Wi-Fi, lounges e fácil acesso à CEL.
 - [Homestay – Fique com famílias locais em Los Angeles | CEL](https://www.englishcollege.com/pt/sm/homestay): Hospede-se com famílias locais em Los Angeles. Quartos individuais ou compartilhados, refeições, Wi-Fi e lar acolhedor.
@@ -713,7 +708,6 @@
 - [Appartamento condiviso Superior a San Diego | CEL](https://www.englishcollege.com/it/pb/cel-shared-apartment-superior-pacific-beach): Appartamenti condivisi di categoria superiore a San Diego con camere luminose, Wi-Fi, cucina, piscina e aree studio. Alloggi per studenti vicino al CEL.
 - [Alloggio in famiglia - Alloggi per studenti in famiglia a San Diego | CEL](https://www.englishcollege.com/it/pb/homestay): Vivere con famiglie locali a San Diego. Camere, Wi-Fi, pasti e un ambiente familiare di supporto per gli studenti internazionali.
 - [Famiglia ospitante Premium – Alloggi a San Diego | CEL](https://www.englishcollege.com/it/pb/premium-homestay): Famiglia premium a San Diego con camere singole, pasti, Wi-Fi e assistenza giornaliera, a breve distanza dal CEL di San Diego.
-- [Le migliori scuole di inglese a Vancouver nel 2026 (a confronto) | CEL](https://www.englishcollege.com/it/post/best-english-language-schools-vancouver): Confronta le migliori scuole di inglese a Vancouver nel 2026. Scopri il numero di studenti per classe, le differenze principali e scegli la scuola giusta
 - [Organizza il tuo corso di inglese in Canada | Guida ai costi e ai visti | CEL](https://www.englishcollege.com/it/post/plan-english-course-canada): Stai pensando di fare un corso di inglese in Canada? Scopri tutto quello che c'è da sapere su tasse scolastiche, regole per il visto, costo della vita, numero di studenti per classe e quanto dura lo studio a Vancouver.
 - [Appartamento condiviso premium a Los Angeles | CEL](https://www.englishcollege.com/it/sm/cel-shared-apartment-premium-beach): Appartamenti moderni a Los Angeles con camere singole o doppie, Wi-Fi, aree comuni e facile accesso a CEL.
 - [Homestay – Vivi con famiglie locali a Los Angeles | CEL](https://www.englishcollege.com/it/sm/homestay): Alloggia con famiglie locali a Los Angeles. Camere singole o condivise, pasti, Wi-Fi e ambiente familiare.
@@ -770,7 +764,6 @@
 - [サンディエゴのシェアアパートメント スーペリア｜CEL](https://www.englishcollege.com/ja/pb/cel-shared-apartment-superior-pacific-beach): 明るい部屋、Wi-Fi、キッチン、プール、自習室完備のサンディエゴの高級シェアアパートメント。CEL近くの学生寮。
 - [ホームステイ - サンディエゴのホームステイ｜CEL](https://www.englishcollege.com/ja/pb/homestay): サンディエゴで地元の家族と一緒に暮らしましょう。部屋、Wi-Fi、食事、留学生をサポートする家庭環境。
 - [プレミアムホームステイ – 学生向け住まい サンディエゴ | CEL](https://www.englishcollege.com/ja/pb/premium-homestay): 一人部屋、食事、Wi-Fi、毎日のサポートが付いたサンディエゴのプレミアムホームステイ。
-- [2026年バンクーバーのおすすめ英語学校（比較） | CEL](https://www.englishcollege.com/ja/post/best-english-language-schools-vancouver): 2026年のバンクーバーにある最高の英語学校を比較する。クラス規模や主な違いを確認し、自分に合った学校を選ぼう
 - [カナダでの英語コース計画 | 費用とビザガイド | CEL](https://www.englishcollege.com/ja/post/plan-english-course-canada): カナダで英語コースを計画しているか？バンクーバーでの授業料、ビザの規則、生活費、クラス規模、学習期間について学ぼう。
 - [プレミアムシェアアパート – ロサンゼルス | CEL](https://www.englishcollege.com/ja/sm/cel-shared-apartment-premium-beach): ロサンゼルスのモダンなシェアアパート。シングルまたはツインルーム、Wi-Fi、ラウンジ、CELへの便利なアクセス。
 - [ホームステイ – ロサンゼルスで現地家庭に滞在 | CEL](https://www.englishcollege.com/ja/sm/homestay): ロサンゼルスの現地家庭に滞在。個室またはシェアルーム、食事、Wi-Fi、温かい家庭生活。
@@ -828,7 +821,6 @@
 - [شقة سوبيريور مشتركة في سان دييغو | CEL](https://www.englishcollege.com/ar/pb/cel-shared-apartment-superior-pacific-beach): شقق مشتركة ممتازة في سان دييغو مع غرف مشرقة وخدمة الواي فاي ومطبخ ومسبح ومناطق للدراسة. سكن طلابي بالقرب من CEL.
 - [الإقامة مع عائلة - سكن الطلاب مع العائلات في سان دييغو | CEL](https://www.englishcollege.com/ar/pb/homestay): عِش مع عائلات محلية في سان دييغو. غرف، وخدمة واي فاي، ووجبات طعام، وبيئة منزلية داعمة للطلاب الدوليين.
 - [سكن عائلي مميز – سكن الطلاب في سان دييغو | CEL](https://www.englishcollege.com/ar/pb/premium-homestay): إقامة منزلية ممتازة في سان دييغو مع غرف فردية ووجبات وخدمة الواي فاي ودعم يومي، على بُعد مسافة قصيرة من مركز سيل سان دييغو.
-- [أفضل مدارس تعليم اللغة الإنجليزية في فانكوفر لعام 2026 (مقارنة) | CEL](https://www.englishcollege.com/ar/post/best-english-language-schools-vancouver): قارن بين أفضل مدارس تعليم اللغة الإنجليزية في فانكوفر لعام 2026. اطلع على أحجام الفصول الدراسية والاختلافات الرئيسية واختر المدرسة المناسبة
 - [خطط لدورة اللغة الإنجليزية في كندا | دليل التكاليف والتأشيرات | CEL](https://www.englishcollege.com/ar/post/plan-english-course-canada): هل تخطط لدراسة اللغة الإنجليزية في كندا؟ تعرف على الرسوم الدراسية وقواعد التأشيرة وتكاليف المعيشة وحجم الفصول الدراسية ومدة الدراسة في فانكوفر.
 - [شقة مشتركة بريميوم في لوس أنجلوس | CEL](https://www.englishcollege.com/ar/sm/cel-shared-apartment-premium-beach): شقق حديثة مشتركة في لوس أنجلوس بغرف فردية أو مزدوجة، واي فاي، صالات، وسهولة الوصول إلى CEL.
 - [الإقامة مع عائلات محلية في لوس أنجلوس | CEL](https://www.englishcollege.com/ar/sm/homestay): أقم مع عائلات محلية في لوس أنجلوس. غرف فردية أو مشتركة، وجبات، واي فاي، وأجواء منزلية مريحة.
