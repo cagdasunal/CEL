@@ -2,7 +2,14 @@
 
 > English language schools in San Diego, Los Angeles and Vancouver.
 
+## Sitemaps
+- https://cagdasunal.github.io/englishcollege/sitemap.xml
 
+---
+
+# Learn English in San Diego, Los Angeles & Vancouver
+
+> English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.
 
 ## Blog
 
@@ -842,6 +849,3 @@
 
 
 
-## Optional
-
-- [College of English Language Sitemap](https://raw.githubusercontent.com/cagdasunal/englishcollege/main/sitemap.xml): XML sitemap with all indexed pages
