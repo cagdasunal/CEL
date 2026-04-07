@@ -4,7 +4,7 @@
       "id": "englishcollege",
       "name": "College of English Language",
       "description": "English language schools in San Diego, Los Angeles and Vancouver.",
-      "sitemap_url": "https://cagdasunal.github.io/englishcollege/sitemap.xml",
+      "sitemap_url": "https://sitemap.englishcollege.com/sitemap.xml",
       "output": "llms.txt"
     }
   ]
