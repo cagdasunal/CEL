@@ -18,6 +18,10 @@ REGIONAL_SITEMAPS = [
     "https://www.englishcollege.com/ar/sitemap.xml"
 ]
 
+# Category path segments across all languages — these pages are noindex
+# and must be excluded from the sitemap to avoid conflicting SEO signals.
+CATEGORY_SEGMENTS = ["/category/", "/kategorie/", "/categorie/", "/categoria/"]
+
 # Configure logging for GitHub Actions visibility and persistent 'run_log.txt'
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 root_logger = logging.getLogger()
@@ -94,6 +98,11 @@ def fetch_sitemap_urls(session, url):
         logging.error(f"  -> Unexpected error fetching {url}: {e}")
         return []
 
+def is_category_url(url):
+    """Check if a URL is a noindex category page (any language variant)."""
+    path = urlparse(url).path
+    return any(seg in path for seg in CATEGORY_SEGMENTS)
+
 def get_slug_from_post_url(url):
     """
     Extracts the slug from a URL containing '/post/'.
@@ -112,15 +121,20 @@ def main():
     regional_slugs = set()
     session = create_robust_session()
     
+    regional_category_count = 0
     for sitemap_url in REGIONAL_SITEMAPS:
         data = fetch_sitemap_urls(session, sitemap_url)
-        regional_urls.extend(data)
-        
         for item in data:
+            if is_category_url(item["url"]):
+                regional_category_count += 1
+                continue  # Skip noindex category pages
+            regional_urls.append(item)
             slug = get_slug_from_post_url(item["url"])
             if slug:
                 regional_slugs.add(slug)
-                
+
+    if regional_category_count:
+        logging.info(f"\nRemoved {regional_category_count} noindex category URLs from regional sitemaps.")
     logging.info(f"\nTotal Regional URLs: {len(regional_urls)}")
     logging.info(f"Total Unique Regional Slugs from '/post/': {len(regional_slugs)}")
     
@@ -145,8 +159,12 @@ def main():
 
     cleaned_primary_urls = []
     removed_urls = []
+    primary_category_count = 0
     for item in primary_urls:
         u = item["url"]
+        if is_category_url(u):
+            primary_category_count += 1
+            continue  # Skip noindex category pages
         if '/post/' in u:
             slug = get_slug_from_post_url(u)
             if slug and slug in regional_slugs:
@@ -154,6 +172,8 @@ def main():
                 continue # Skip this URL (remove it)
         cleaned_primary_urls.append(item)
 
+    if primary_category_count:
+        logging.info(f"\nRemoved {primary_category_count} noindex category URLs from primary sitemap.")
     logging.info(f"\nRemoved {len(removed_urls)} duplicate English '/post/' URLs.")
     if removed_urls:
         logging.info("Removed English phantom URLs (slug → regional version exists):")
