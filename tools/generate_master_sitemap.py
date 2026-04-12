@@ -122,19 +122,27 @@ def main():
     session = create_robust_session()
     
     regional_category_count = 0
+    seen_post_slugs = set()  # Global dedup: one URL per /post/ slug across all languages
+    regional_post_dupes = 0
     for sitemap_url in REGIONAL_SITEMAPS:
         data = fetch_sitemap_urls(session, sitemap_url)
         for item in data:
             if is_category_url(item["url"]):
                 regional_category_count += 1
                 continue  # Skip noindex category pages
-            regional_urls.append(item)
             slug = get_slug_from_post_url(item["url"])
             if slug:
+                if slug in seen_post_slugs:
+                    regional_post_dupes += 1
+                    continue  # Skip — this slug already exists in another language
+                seen_post_slugs.add(slug)
                 regional_slugs.add(slug)
+            regional_urls.append(item)
 
     if regional_category_count:
         logging.info(f"\nRemoved {regional_category_count} noindex category URLs from regional sitemaps.")
+    if regional_post_dupes:
+        logging.info(f"Removed {regional_post_dupes} cross-language duplicate /post/ URLs from regional sitemaps.")
     logging.info(f"\nTotal Regional URLs: {len(regional_urls)}")
     logging.info(f"Total Unique Regional Slugs from '/post/': {len(regional_slugs)}")
     
