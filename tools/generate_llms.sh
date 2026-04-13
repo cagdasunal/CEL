@@ -101,15 +101,43 @@ process_site() {
 
   log_info "  Running llmstxt gen (this may take several minutes)..."
 
+  # Back up existing file in case generation fails
+  local backup=""
+  if [[ -f "$full_output" ]]; then
+    backup="${full_output}.bak"
+    cp "$full_output" "$backup"
+  fi
+
   # Run generator — append output to file
-  if ! npx -y llmstxt gen "$resolved_sitemap" >> "$full_output" 2>/dev/null; then
-    rm -f "$full_output"
-    log_error "  Failed to extract content from sitemap: $resolved_sitemap"
+  if ! npx -y llmstxt gen "$sitemap_url" >> "$full_output" 2>/dev/null; then
+    # Restore backup if generation failed
+    if [[ -n "$backup" && -f "$backup" ]]; then
+      mv "$backup" "$full_output"
+      log_warn "  Generation failed — kept existing llms.txt"
+    else
+      rm -f "$full_output"
+      log_error "  Failed to extract content from sitemap: $sitemap_url"
+    fi
     return 1
   fi
 
+  # Safety check: if output is suspiciously small (< 100 lines), the tool failed silently
+  local line_count
+  line_count=$(wc -l < "$full_output")
+  if [[ "$line_count" -lt 100 ]]; then
+    log_warn "  llmstxt produced only $line_count lines — likely failed silently"
+    if [[ -n "$backup" && -f "$backup" ]]; then
+      mv "$backup" "$full_output"
+      log_warn "  Restored previous llms.txt ($(wc -l < "$full_output") lines)"
+    fi
+    return 1
+  fi
+
+  # Clean up backup
+  rm -f "$backup"
+
   echo "" >> "$full_output"
-  log_success "  Created: $full_output"
+  log_success "  Created: $full_output ($line_count lines)"
   return 0
 }
 
