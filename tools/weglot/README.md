@@ -1,6 +1,6 @@
 # Weglot Exclusion Sync
 
-Automated system that detects new blog posts on englishcollege.com and manages Weglot translation exclusions.
+Automated system that detects new blog posts on englishcollege.com and pushes translation exclusions directly to Weglot via API.
 
 ## Problem
 
@@ -10,13 +10,10 @@ When a blog post is published in a specific language (e.g., Italian), Weglot aut
 
 1. **GitHub Actions** runs every 15 minutes (`.github/workflows/weglot-sync.yml`)
 2. **Fetches all published blog posts** from Webflow CMS API (collection `667453c576e8d35c454ccaae`)
-3. **Reads current Weglot exclusions** via `GET /projects/settings?api_key=...`
+3. **Reads current Weglot exclusions** via `GET /projects/settings`
 4. **Computes the delta** — posts that are published but not yet excluded
-5. **Generates outputs**:
-   - `data/weglot.csv` — CSV for manual Weglot dashboard import
-   - `data/weglot-exclusions.json` — local state tracking
-   - `data/weglot-sitemap-exclusions.json` — consumed by the sitemap generator
-6. **Regenerates** `sitemap.xml` and `llms.txt` (independent of CSV import)
+5. **Pushes new exclusions** directly to Weglot via `POST /projects/settings` (private key)
+6. **Regenerates** `sitemap.xml` with language-aware filtering
 7. **Commits and pushes** changes to the repo
 
 ## Exclusion Logic
@@ -34,30 +31,31 @@ English is Weglot's base language and can never be excluded.
 
 ## Key Behaviors
 
+- **Fully automated** — pushes exclusions directly to Weglot API (private key)
 - **Only processes published posts** — scheduled posts (`lastPublished=null`) are skipped
-- **No duplicates** — checks Weglot's live exclusion list on every run
-- **Sitemap is fixed immediately** — doesn't wait for CSV import into Weglot
-- **Attempts Weglot API write** — if Weglot grants write access later, it works automatically
+- **Handles draft edits** — `isDraft=True` + `lastPublished` set = published with unsaved edits (still live)
+- **No duplicates** — checks Weglot's live exclusion list on every run via GET before POST
+- **Safe writes** — GET current state → append new → POST full array (never overwrites other settings)
+- **Sitemap filtering** — removes ghost translated URLs from regional sitemaps independently
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | `tools/weglot/sync_exclusions.py` | Core sync script |
-| `tools/weglot/test_sync_exclusions.py` | Tests (28 tests) |
+| `tools/weglot/test_sync_exclusions.py` | Tests (29 tests) |
 | `data/weglot-exclusions.json` | Tracked exclusion state |
-| `data/weglot.csv` | CSV for Weglot dashboard import |
 | `data/weglot-sitemap-exclusions.json` | Sitemap filter data |
-| `.github/workflows/weglot-sync.yml` | GitHub Actions workflow |
+| `.github/workflows/weglot-sync.yml` | GitHub Actions workflow (every 15 min) |
 
 ## Usage
 
 ```bash
 # Dry run — show what would change
-WEBFLOW_API_TOKEN=... WEGLOT_API_KEY=... python3 tools/weglot/sync_exclusions.py --dry-run
+WEBFLOW_API_TOKEN=... WEGLOT_API_KEY=... WEGLOT_PRIVATE_KEY=... python3 tools/weglot/sync_exclusions.py --dry-run
 
 # Full sync
-WEBFLOW_API_TOKEN=... WEGLOT_API_KEY=... python3 tools/weglot/sync_exclusions.py
+WEBFLOW_API_TOKEN=... WEGLOT_API_KEY=... WEGLOT_PRIVATE_KEY=... python3 tools/weglot/sync_exclusions.py
 
 # Check status
 python3 tools/weglot/sync_exclusions.py --status
@@ -68,10 +66,11 @@ python3 tools/weglot/sync_exclusions.py --status
 | Secret | Purpose |
 |---|---|
 | `WEBFLOW_API_TOKEN` | Read-only CMS access to fetch blog posts |
-| `WEGLOT_API_KEY` | Read Weglot settings (write if granted later) |
+| `WEGLOT_API_KEY` | Public key — read Weglot settings |
+| `WEGLOT_PRIVATE_KEY` | Private key — write exclusions to Weglot |
 
-## Weglot API Status
+## Weglot API
 
-- `GET /projects/settings` — works (reads all exclusions)
-- `POST /projects/settings` — returns 401 "insufficient rights" with `wg_` key
-- Weglot has been contacted about write API access (April 2026)
+- `GET /projects/settings` — reads all exclusions (public key)
+- `POST /projects/settings` — writes exclusions (private key, safe GET→append→POST pattern)
+- Private key provided by Weglot support (April 2026)
