@@ -228,6 +228,53 @@ def generate_sitemap_exclusion_data(state: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
+
+def validate_exclusions(weglot_exclusions: list[dict], posts: list[dict]) -> int:
+    """Validate Weglot exclusions match expected patterns. Returns count of issues."""
+    post_lang_map = {post["url_path"]: post["language"] for post in posts}
+    issues = 0
+
+    for ex in weglot_exclusions:
+        value = ex.get("value", "")
+        if not value.startswith("/post/"):
+            continue
+
+        excluded = ex.get("excluded_languages", [])
+        if not excluded:
+            continue  # empty = exclude ALL, acceptable for English posts
+
+        post_lang = post_lang_map.get(value)
+        if not post_lang:
+            continue  # post not in CMS (orphan or draft) — skip
+
+        # Check: post's own language should NOT be in excluded list
+        if post_lang != "en" and post_lang in excluded:
+            log.warning(
+                f"SELF-EXCLUSION: {value} is {post_lang.upper()} but excludes {post_lang}! "
+                f"This post is invisible to {post_lang} visitors. Fix in Weglot dashboard."
+            )
+            issues += 1
+
+        # Check: expected excluded languages
+        expected = compute_excluded_languages(post_lang)
+        if sorted(excluded) != expected:
+            log.warning(
+                f"MISMATCH: {value} ({post_lang}) excludes {','.join(sorted(excluded))} "
+                f"but expected {','.join(expected)}"
+            )
+            issues += 1
+
+    if issues:
+        log.warning(f"Validation found {issues} exclusion issues — check Weglot dashboard")
+    else:
+        log.info("Validation: all exclusions match expected patterns")
+
+    return issues
+
+
+# ---------------------------------------------------------------------------
 # Main Sync Logic
 # ---------------------------------------------------------------------------
 
@@ -246,6 +293,9 @@ def sync(dry_run: bool = False) -> bool:
     weglot_exclusions = fetch_weglot_exclusions(weglot_key)
     weglot_paths = {ex["value"] for ex in weglot_exclusions}
     log.info(f"Weglot has {len(weglot_exclusions)} exclusion rules")
+
+    # 2.5 Validate existing exclusions
+    validate_exclusions(weglot_exclusions, posts)
 
     # 3. Load local state
     state = load_state()
