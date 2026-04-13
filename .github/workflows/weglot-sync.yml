@@ -1,0 +1,50 @@
+name: Weglot Exclusion Sync
+
+on:
+  schedule:
+    # Every 15 minutes, offset to avoid :00/:30
+    - cron: '3,18,33,48 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-exclusions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Sync Weglot Exclusions
+        id: sync
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          WEGLOT_API_KEY: ${{ secrets.WEGLOT_API_KEY }}
+        run: python3 tools/weglot/sync_exclusions.py
+
+      - name: Regenerate Sitemap
+        if: steps.sync.outputs.changes_made == 'true'
+        run: python3 tools/generate_master_sitemap.py
+
+      - name: Commit & Push
+        if: steps.sync.outputs.changes_made == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json sitemap.xml
+          git add data/weglot-import.csv 2>/dev/null || true
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git commit -m "chore: sync weglot exclusions + regenerate sitemap ($TIMESTAMP)
+
+          New exclusions: ${{ steps.sync.outputs.new_exclusions || 0 }}
+          Weglot push: ${{ steps.sync.outputs.weglot_push || 'n/a' }}"
+          git push

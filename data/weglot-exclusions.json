@@ -1,0 +1,3809 @@
+{
+  "last_sync": "2026-04-13T11:21:07.337385+00:00",
+  "exclusions": {
+    "where-do-students-live-vancouver": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.222991+00:00",
+      "source": "weglot_existing"
+    },
+    "san-diego-vs-hawaii-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223009+00:00",
+      "source": "weglot_existing"
+    },
+    "small-talk-inglese-quotidiano-carriera": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223017+00:00",
+      "source": "weglot_existing"
+    },
+    "corsi-brevi-vs-lunghi-quale-programma-di-inglese-fa-per-te": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223023+00:00",
+      "source": "weglot_existing"
+    },
+    "california-budget-studentesco-imparare-inglese": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223027+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-englisch-lernen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223205+00:00",
+      "source": "weglot_existing"
+    },
+    "speaking-time-english-class-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223212+00:00",
+      "source": "weglot_existing"
+    },
+    "is-san-diego-good-place-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223217+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-canada-cout-duree": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223221+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-vancouver-apprendre-anglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223225+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-californie-san-diego-vs-los-angeles": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223230+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kalifornien-san-diego-vs-los-angeles": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223234+00:00",
+      "source": "weglot_existing"
+    },
+    "outdoor-aktivitaeten-vancouver-sprachaufenthalt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223239+00:00",
+      "source": "weglot_existing"
+    },
+    "outdoor-activities-vancouver-after-english-class": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223242+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachreise-englisch-sprechen-lernen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223246+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-speaking-practice": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223250+00:00",
+      "source": "weglot_existing"
+    },
+    "petites-classes-anglais-sejours-linguistiques": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223330+00:00",
+      "source": "weglot_existing"
+    },
+    "kleine-englischklassen-sprachaufenthalt-ausland": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223337+00:00",
+      "source": "weglot_existing"
+    },
+    "san-diego-vs-los-angeles-learn-english-california": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223378+00:00",
+      "source": "weglot_existing"
+    },
+    "small-english-classes-help-you-learn-faster": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223383+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-san-diego-experience": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223424+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachschule-vancouver-englisch-lernen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223430+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kanada-planen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223436+00:00",
+      "source": "weglot_existing"
+    },
+    "best-english-language-schools-vancouver": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223440+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-erfahrung": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223481+00:00",
+      "source": "weglot_existing"
+    },
+    "is-vancouver-good-city-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223486+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-californie-weekend": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223491+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kalifornien-wochenendtipps": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223495+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kanada-lohnt-es-sich": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223500+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-canada-impact": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223504+00:00",
+      "source": "weglot_existing"
+    },
+    "bon-moment-sejour-linguistique-usa": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223508+00:00",
+      "source": "weglot_existing"
+    },
+    "le-moment-ou-les-etudiants-en-sejour-linguistique-realisent-quils-progressent-vraiment": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223512+00:00",
+      "source": "weglot_existing"
+    },
+    "moment-sprachaufenthalt-kanada-fortschritt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223516+00:00",
+      "source": "weglot_existing"
+    },
+    "richtiger-zeitpunkt-sprachreise-usa": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223520+00:00",
+      "source": "weglot_existing"
+    },
+    "pourquoi-jai-choisi-vancouver": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223525+00:00",
+      "source": "weglot_existing"
+    },
+    "warum-ich-mich-fuer-vancouver-entschieden-habe": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223529+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-canada-worth-it": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223533+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-canada-vancouver-progres": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223537+00:00",
+      "source": "weglot_existing"
+    },
+    "semaine-type-sejour-linguistique-san-diego": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223541+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-carriere-internationale-2026": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223545+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-san-diego-au-dela-de-la-plage": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223549+00:00",
+      "source": "weglot_existing"
+    },
+    "de-simple-etudiante-a-pleinement-integree-a-la-vie-du-campus": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223553+00:00",
+      "source": "weglot_existing"
+    },
+    "pourquoi-votre-logement-influence-votre-anglais-plus-que-vous-ne-le-pensez": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223557+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kanada-vancouver-wachstum": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223563+00:00",
+      "source": "weglot_existing"
+    },
+    "typische-woche-sprachaufenthalt-san-diego": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223567+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalte-internationale-karriere-2026": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223571+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-jenseits-des-strands": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223575+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-canada-vancouver-growth": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223579+00:00",
+      "source": "weglot_existing"
+    },
+    "typical-week-learning-english-san-diego": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223582+00:00",
+      "source": "weglot_existing"
+    },
+    "english-for-global-careers-2026": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223586+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-san-diego-beyond-the-beach": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223590+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-usa-ou-canada": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223594+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-mehr-als-nur-unterricht": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223598+00:00",
+      "source": "weglot_existing"
+    },
+    "language-school-san-diego-student-experience": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223602+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-vancouver-san-diego-rythme": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223606+00:00",
+      "source": "weglot_existing"
+    },
+    "la-raison-souvent-sous-estimee-de-choisir-un-sejour-linguistique-a-letranger": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223614+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-vancouver-pas-classique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223619+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-vancouver-famille-colocation-kysvj": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223623+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-san-diego-apres-les-cours": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223627+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-progres-anglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223631+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-usa-unterkunft-englisch-lernen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223635+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-usa-oder-kanada": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223639+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-2026-was-sich-wirklich-verandert-hat---und-was-geblieben-ist": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223643+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-vancouver-san-diego-tagesrhythmus": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223647+00:00",
+      "source": "weglot_existing"
+    },
+    "unterschatzter-grund-sprachaufenthalt-im-ausland": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223651+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-vancouver-kein-typischer": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223655+00:00",
+      "source": "weglot_existing"
+    },
+    "why-flatmates-shape-your-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223659+00:00",
+      "source": "weglot_existing"
+    },
+    "bughaneseo-kaelriponiaggaji-jayuwa-baeum-geurigo-cel-saendieigoeseo-dasi-sijagdoen-nayi-salm": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223664+00:00",
+      "source": "weglot_existing"
+    },
+    "peurangseueseo-kaelriponiaro-celeseo-gyeongheomhan-ddo-dareun-salm": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223668+00:00",
+      "source": "weglot_existing"
+    },
+    "wae-geulrobeol-daegieobdeuleun-haeoe-gyeongheomi-issneun-jiweonjareul-seonhohalgga": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223672+00:00",
+      "source": "weglot_existing"
+    },
+    "saendieigoeseoyi-haru-rutin-eohagyeonsusaengi-siljero-gyeongheomhaneun-ilsang": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223676+00:00",
+      "source": "weglot_existing"
+    },
+    "migug-munhwa-igeon-molrassji-7gaji-nolraun-sasil": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223680+00:00",
+      "source": "weglot_existing"
+    },
+    "gugjejeogin-hwangyeongeseo-yeongeoro-ilhagi-saendieigo-cel-inteonsib-gyeongheom": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223684+00:00",
+      "source": "weglot_existing"
+    },
+    "usa-or-canada-learning-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223688+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-californie-cote-ouest": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223692+00:00",
+      "source": "weglot_existing"
+    },
+    "de-sao-paulo-a-vancouver-une-annee-qui-a-change-nos-vies": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223696+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-canada-vancouver-annee": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223700+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-vancouver-gastfamilie-gemeinschaftswohnung": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223704+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-nach-dem-unterricht": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223708+00:00",
+      "source": "weglot_existing"
+    },
+    "tendances-sejours-linguistiques-2026": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223713+00:00",
+      "source": "weglot_existing"
+    },
+    "des-competences-en-anglais-a-une-carriere-internationale-pourquoi-un-sejour-linguistique-reste-un-choix-decisif": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223717+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-san-diego-vivre-la-californie-sans-exploser-son-budget": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223721+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-vancouver-san-diego": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223725+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kalifornien-warum-die-westkuste-uberzeugt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223729+00:00",
+      "source": "weglot_existing"
+    },
+    "vancouver-vs-san-diego-daily-rhythm-language-stay": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223733+00:00",
+      "source": "weglot_existing"
+    },
+    "why-vancouver-attracts-students-who-dont-want-a-typical-study-abroad-experience": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223737+00:00",
+      "source": "weglot_existing"
+    },
+    "how-long-to-improve-english-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223742+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-california-west-coast": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223746+00:00",
+      "source": "weglot_existing"
+    },
+    "von-sao-paulo-nach-vancouver-ein-jahr-das-unser-leben-verandert-hat": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223751+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kanada-vancouver-jahreszeiten": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223755+00:00",
+      "source": "weglot_existing"
+    },
+    "englisch-sprachaufenthalt-trends-2026": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223759+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-san-diego-kalifornien-erleben---ohne-dein-budget-zu-sprengen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223763+00:00",
+      "source": "weglot_existing"
+    },
+    "von-englischkenntnissen-zu-globalen-karrieren-warum-ein-sprachaufenthalt-heute-wichtiger-ist-denn-je": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223766+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-in-san-diego-oder-vancouver---welche-stadt-passt-zu-dir": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223770+00:00",
+      "source": "weglot_existing"
+    },
+    "student-story-study-english-vancouver-cel": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223773+00:00",
+      "source": "weglot_existing"
+    },
+    "study-english-canada-year-round-vancouver": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223776+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-abroad-trends-2026": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223779+00:00",
+      "source": "weglot_existing"
+    },
+    "california-student-budget-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223785+00:00",
+      "source": "weglot_existing"
+    },
+    "cours-courts-ou-longs-sejour-linguistique-usa": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223788+00:00",
+      "source": "weglot_existing"
+    },
+    "choc-culturel-ou-revelation-comment-reussir-votre-sejour-linguistique-a-letranger": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223792+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-vancouver-energie-urbaine-montagnes": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223796+00:00",
+      "source": "weglot_existing"
+    },
+    "une-journee-dans-la-vie-de-laura---center-director-a-cel-vancouver": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223799+00:00",
+      "source": "weglot_existing"
+    },
+    "ein-tag-im-leben-von-laura---center-director-bei-cel-vancouver": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223803+00:00",
+      "source": "weglot_existing"
+    },
+    "from-english-skills-to-global-careers-why-studying-abroad-is-still-the-smartest-move": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223806+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-in-san-diego-or-vancouver-the-city-that-matches-your-personality": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223810+00:00",
+      "source": "weglot_existing"
+    },
+    "a-day-in-the-life-of-laura---center-director-at-cel-vancouver": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223813+00:00",
+      "source": "weglot_existing"
+    },
+    "kurz-oder-lang-so-findest-du-den-passenden-englischkurs-fur-deinen-sprachaufenthalt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223816+00:00",
+      "source": "weglot_existing"
+    },
+    "short-term-vs-long-term-courses-which-english-program-fits-you-best": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223819+00:00",
+      "source": "weglot_existing"
+    },
+    "anglais-pour-une-carriere-internationale-21-expressions": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223822+00:00",
+      "source": "weglot_existing"
+    },
+    "le-guide-complet-pour-vivre-dans-une-famille-daccueil-aux-usa-ou-au-canada": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223826+00:00",
+      "source": "weglot_existing"
+    },
+    "une-journee-parfaite-a-san-diego-soleil-surf-et-anglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223829+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-usa-developpez-vos-competences-de-leadership-en-anglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223833+00:00",
+      "source": "weglot_existing"
+    },
+    "lart-du-small-talk-pourquoi-maitriser-langlais-du-quotidien-booste-votre-carriere": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223836+00:00",
+      "source": "weglot_existing"
+    },
+    "small-talk-grosse-wirkung-englisch-lernen-usa": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223839+00:00",
+      "source": "weglot_existing"
+    },
+    "the-power-of-small-talk-why-mastering-everyday-english-boosts-your-career": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223842+00:00",
+      "source": "weglot_existing"
+    },
+    "combien-coute-vraiment-un-sejour-linguistique-aux-usa-la-reponse-va-vous-surprendre": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223846+00:00",
+      "source": "weglot_existing"
+    },
+    "vancouver-am-wochenende---zwischen-city-vibes-und-bergblick": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223849+00:00",
+      "source": "weglot_existing"
+    },
+    "von-deutschland-nach-kalifornien---lisa-lebt-ihren-traum-in-santa-monica": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223854+00:00",
+      "source": "weglot_existing"
+    },
+    "de-lallemagne-a-la-californie---le-sejour-linguistique-de-lisa-a-santa-monica": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223857+00:00",
+      "source": "weglot_existing"
+    },
+    "santa-monica-dream---englisch-lernen-mit-meerblick": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223860+00:00",
+      "source": "weglot_existing"
+    },
+    "living-the-santa-monica-dream-where-study-breaks-mean-ocean-views": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223863+00:00",
+      "source": "weglot_existing"
+    },
+    "decouvrir-le-canada-cote-ouest-ou-cote-est-pour-votre-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223867+00:00",
+      "source": "weglot_existing"
+    },
+    "kulturschock-oder-kultursprung-so-wachst-du-bei-deinem-sprachaufenthalt-im-ausland": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223870+00:00",
+      "source": "weglot_existing"
+    },
+    "culture-shock-or-culture-upgrade-how-to-thrive-as-a-language-student-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223873+00:00",
+      "source": "weglot_existing"
+    },
+    "vancouver-weekends-hidden-local-secrets": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223876+00:00",
+      "source": "weglot_existing"
+    },
+    "gastfamilie-usa-kanada-guide": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223880+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-usa-wie-du-beim-englischlernen-echte-fuhrungskompetenzen-entwickelst": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223883+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-san-diego-feu-de-camp-mission-beach": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223886+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-usa-apprendre-anglais-autrement": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223890+00:00",
+      "source": "weglot_existing"
+    },
+    "pourquoi-le-canada-est-la-meilleure-destination-pour-votre-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223893+00:00",
+      "source": "weglot_existing"
+    },
+    "mein-sprachaufenthalt-in-san-diego": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223897+00:00",
+      "source": "weglot_existing"
+    },
+    "kanada-entdecken-west-oder-ostkueste": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223900+00:00",
+      "source": "weglot_existing"
+    },
+    "21-business-englisch-ausdruecke-karriere": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223903+00:00",
+      "source": "weglot_existing"
+    },
+    "ein-perfekter-tag-in-san-diego": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223907+00:00",
+      "source": "weglot_existing"
+    },
+    "the-complete-guide-to-living-with-a-host-family-in-the-usa-or-canada": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223910+00:00",
+      "source": "weglot_existing"
+    },
+    "boostez-votre-carriere-comment-un-sejour-linguistique-en-californie-transforme-votre-profil": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223913+00:00",
+      "source": "weglot_existing"
+    },
+    "pacific-beach-mornings-sunset-evenings-a-perfect-day-in-san-diego": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223917+00:00",
+      "source": "weglot_existing"
+    },
+    "how-learning-english-abroad-builds-leadership-skills-not-just-vocabulary": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223923+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-a-vancouver-les-plus-beaux-endroits-autour-de-la-ville": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223927+00:00",
+      "source": "weglot_existing"
+    },
+    "local-life-in-san-diego---leben-wie-ein-local": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223930+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-in-the-usa-why-californias-west-coast-is-the-ultimate-place-to-study": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223933+00:00",
+      "source": "weglot_existing"
+    },
+    "unlocking-culture-and-opportunity-why-language-schools-go-beyond-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223936+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-usa-smart-way": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223940+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-au-canada---tous-nos-conseils-pour-bien-choisir-ton-logement": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223943+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-in-kanada---die-besten-tipps-fur-deine-unterkunft": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223947+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-in-vancouver-top-places": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223950+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-usa-career-benefits": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223953+00:00",
+      "source": "weglot_existing"
+    },
+    "la-culture-des-usa-expliquee-7-choses-qui-vont-te-surprendre-pendant-ton-sejour-linguistique-usa": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223957+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-vancouver-die-schoensten-orte-rund-um-vancouver---perfekt-fuer-sprachschueler": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223960+00:00",
+      "source": "weglot_existing"
+    },
+    "sejours-linguistique-san-diego---la-reponse-a-toutes-tes-questions": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223963+00:00",
+      "source": "weglot_existing"
+    },
+    "boost-your-career-wie-ein-sprachaufenthalt-in-kalifornien-dein-profil-aufwertet": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223967+00:00",
+      "source": "weglot_existing"
+    },
+    "leben-wie-ein-local-so-erlebst-du-san-diego-abseits-der-touristenpfade": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223970+00:00",
+      "source": "weglot_existing"
+    },
+    "san-diego-als-sprachaufenthaltsziel-die-antwort-auf-alle-deine-fragen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223974+00:00",
+      "source": "weglot_existing"
+    },
+    "travailler-en-anglais-dans-un-environnement-international-mon-stage-chez-cel-a-san-diego": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223977+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-san-diego-conseils": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223980+00:00",
+      "source": "weglot_existing"
+    },
+    "vivre-comme-une-locale-a-san-diego-grace-a-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223984+00:00",
+      "source": "weglot_existing"
+    },
+    "de-strasbourg-a-san-diego-ce-que-jai-decouvert-en-etudiant-a-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223987+00:00",
+      "source": "weglot_existing"
+    },
+    "comment-jai-trouve-un-logement-pendant-mon-sejour-linguistique-a-san-diego-avec-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223991+00:00",
+      "source": "weglot_existing"
+    },
+    "partir-en-sejour-linguistique-usa-guide-complet-san-diego-los-angeles": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223994+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-usa-cel-simplifie-votre-aventure-americaine": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.223997+00:00",
+      "source": "weglot_existing"
+    },
+    "sorties-plages-rencontres-la-vie-etudiante-a-cel-san-diego": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224001+00:00",
+      "source": "weglot_existing"
+    },
+    "etudier-langlais-en-immersion-cel-une-ecole-internationale-en-californie": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224004+00:00",
+      "source": "weglot_existing"
+    },
+    "sejour-linguistique-usa-bien-plus-quun-cours-danglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224007+00:00",
+      "source": "weglot_existing"
+    },
+    "ou-apprendre-langlais-aux-etats-unis-decouvrez-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224010+00:00",
+      "source": "weglot_existing"
+    },
+    "mon-sejour-linguistique-a-cel-san-diego-entre-cours-rencontres-et-vie-californienne": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224014+00:00",
+      "source": "weglot_existing"
+    },
+    "englischlernen-sprachaufenthalt-usa-statt-onlinekurs": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224017+00:00",
+      "source": "weglot_existing"
+    },
+    "ein-tag-in-san-diego-was-dich-wahrend-deines-sprachaufenthalts-erwartet": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224020+00:00",
+      "source": "weglot_existing"
+    },
+    "was-kostet-ein-sprachaufenthalt-usa": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224024+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-kanada-oder-usa-was-wirklich-besser-ist": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224027+00:00",
+      "source": "weglot_existing"
+    },
+    "warum-kanada-das-beste-land-fur-deinen-sprachaufenthalt-ist---die-fakten": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224033+00:00",
+      "source": "weglot_existing"
+    },
+    "die-wahrheit-uber-sprachaufenthalte-was-niemand-dir-erzahlt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224036+00:00",
+      "source": "weglot_existing"
+    },
+    "willst-du-dein-englisch-perfektionieren-diese-sprachaufenthalte-verandern-alles": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224042+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-usa-warum-kalifornien-fur-sprachschuler-so-unwiderstehlich-ist---erfahre-es-jetzt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224046+00:00",
+      "source": "weglot_existing"
+    },
+    "sprachaufenthalt-usa-warum-die-westkuste---insbesondere-san-diego-los-angeles---deine-beste-wahl-ist": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224049+00:00",
+      "source": "weglot_existing"
+    },
+    "why-san-diego-is-californias-ultimate-melting-pot-a-students-guide-to-culture-and-learning": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224053+00:00",
+      "source": "weglot_existing"
+    },
+    "study-abroad-guide-how-to-study-in-the-usa-after-graduating-from-a-korean-university": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224056+00:00",
+      "source": "weglot_existing"
+    },
+    "taking-a-gap-year-to-study-in-the-u-s---my-dream-came-true": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224059+00:00",
+      "source": "weglot_existing"
+    },
+    "mastering-english-in-the-ai-era-the-ultimate-learning-guide": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224062+00:00",
+      "source": "weglot_existing"
+    },
+    "why-you-should-choose-san-diego-over-la-and-san-francisco": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224065+00:00",
+      "source": "weglot_existing"
+    },
+    "bonfire-night-san-diego-activity-in-mission-beach": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224068+00:00",
+      "source": "weglot_existing"
+    },
+    "california-packing-list-comic-con-international-2017": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224072+00:00",
+      "source": "weglot_existing"
+    },
+    "california-packing-list-california-is-a-great-idea": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224075+00:00",
+      "source": "weglot_existing"
+    },
+    "halloween-is-just-around-the-corner": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224078+00:00",
+      "source": "weglot_existing"
+    },
+    "cel-san-diego-downtown-new-location": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224081+00:00",
+      "source": "weglot_existing"
+    },
+    "how-choose-english-language-school": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224084+00:00",
+      "source": "weglot_existing"
+    },
+    "english-language-school-near-me": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224088+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-san-diego": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224091+00:00",
+      "source": "weglot_existing"
+    },
+    "how-improve-english-speaking-written": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224094+00:00",
+      "source": "weglot_existing"
+    },
+    "whats-your-purpose-in-studying-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224097+00:00",
+      "source": "weglot_existing"
+    },
+    "tourist-or-student-visa": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224100+00:00",
+      "source": "weglot_existing"
+    },
+    "practice-skills-presentation-better": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224103+00:00",
+      "source": "weglot_existing"
+    },
+    "speak-effectively-improve-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224106+00:00",
+      "source": "weglot_existing"
+    },
+    "types-speaking-skills-important": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224110+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-english-improve-speaking-fluency": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224113+00:00",
+      "source": "weglot_existing"
+    },
+    "learn-basic-english-myself": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224116+00:00",
+      "source": "weglot_existing"
+    },
+    "improve-english-communication-skills": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224119+00:00",
+      "source": "weglot_existing"
+    },
+    "5-language-skills-4-types-reading-become-fluent": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224122+00:00",
+      "source": "weglot_existing"
+    },
+    "form-questions-types-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224125+00:00",
+      "source": "weglot_existing"
+    },
+    "how-ask-questions-right-way": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224128+00:00",
+      "source": "weglot_existing"
+    },
+    "when-use-present-simple-continuous": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224131+00:00",
+      "source": "weglot_existing"
+    },
+    "present-perfect-past-simple-difference": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224137+00:00",
+      "source": "weglot_existing"
+    },
+    "why-go-english-language-school-benefits": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224140+00:00",
+      "source": "weglot_existing"
+    },
+    "what-consider-choosing-good-language-school": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224143+00:00",
+      "source": "weglot_existing"
+    },
+    "english-language-activities-different-learning-styles": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224146+00:00",
+      "source": "weglot_existing"
+    },
+    "how-speak-english-fluently": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224149+00:00",
+      "source": "weglot_existing"
+    },
+    "how-speak-public-well-why-good-skill-develop": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224152+00:00",
+      "source": "weglot_existing"
+    },
+    "how-improve-english-vocabulary-memorize-words": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224155+00:00",
+      "source": "weglot_existing"
+    },
+    "3-common-mistakes-english-language": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224159+00:00",
+      "source": "weglot_existing"
+    },
+    "what-ell-students-struggle-with-challenges-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224162+00:00",
+      "source": "weglot_existing"
+    },
+    "what-examples-language-barriers-affect-overcome": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224165+00:00",
+      "source": "weglot_existing"
+    },
+    "3-ways-overcome-difficulties-learning-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224168+00:00",
+      "source": "weglot_existing"
+    },
+    "why-stutter-speak-fluent-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224171+00:00",
+      "source": "weglot_existing"
+    },
+    "3-ways-build-confidence-speaking-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224173+00:00",
+      "source": "weglot_existing"
+    },
+    "what-best-time-learn-new-langage-hours-day-long": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224176+00:00",
+      "source": "weglot_existing"
+    },
+    "what-difficulties-learning-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224179+00:00",
+      "source": "weglot_existing"
+    },
+    "what-5-elements-grammar": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224182+00:00",
+      "source": "weglot_existing"
+    },
+    "what-11-rules-grammar-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224185+00:00",
+      "source": "weglot_existing"
+    },
+    "what-difference-modals-auxiliary-5-types-use-correctly": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224189+00:00",
+      "source": "weglot_existing"
+    },
+    "how-recognize-linking-verb-what-examples": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224191+00:00",
+      "source": "weglot_existing"
+    },
+    "how-many-action-verbs-english-examples": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224194+00:00",
+      "source": "weglot_existing"
+    },
+    "what-are-4-types-sentences": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224197+00:00",
+      "source": "weglot_existing"
+    },
+    "how-speak-english-fast-fluent-clearly": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224200+00:00",
+      "source": "weglot_existing"
+    },
+    "what-is-storytelling-promote-language-learning-development": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224203+00:00",
+      "source": "weglot_existing"
+    },
+    "what-good-improve-writing-style": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224206+00:00",
+      "source": "weglot_existing"
+    },
+    "what-causes-poor-spelling-help-students-struggle": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224210+00:00",
+      "source": "weglot_existing"
+    },
+    "how-express-future-tense-4-types": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224213+00:00",
+      "source": "weglot_existing"
+    },
+    "what-rules-simple-future-tense-use-sentence": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224215+00:00",
+      "source": "weglot_existing"
+    },
+    "what-uses-example-of-future-continuous-tense": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224218+00:00",
+      "source": "weglot_existing"
+    },
+    "what-difference-between-simple-future-continuous-tense": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224221+00:00",
+      "source": "weglot_existing"
+    },
+    "common-mistakes-learners-make-forming-conditionals": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224225+00:00",
+      "source": "weglot_existing"
+    },
+    "13-fun-surprising-facts-english-language": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224228+00:00",
+      "source": "weglot_existing"
+    },
+    "why-english-hard-for-foreigners-difficult-teach": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224231+00:00",
+      "source": "weglot_existing"
+    },
+    "5-tips-how-avoid-grammar-mistakes": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224234+00:00",
+      "source": "weglot_existing"
+    },
+    "how-stay-motivated-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224311+00:00",
+      "source": "weglot_existing"
+    },
+    "what-5-benefits-english-language-course": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224314+00:00",
+      "source": "weglot_existing"
+    },
+    "how-find-best-language-course": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224317+00:00",
+      "source": "weglot_existing"
+    },
+    "what-makes-good-language-teacher": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224320+00:00",
+      "source": "weglot_existing"
+    },
+    "what-should-look-for-english-language-teacher": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224324+00:00",
+      "source": "weglot_existing"
+    },
+    "why-english-become-universal-language": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224330+00:00",
+      "source": "weglot_existing"
+    },
+    "how-master-english-language-as-senior": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224333+00:00",
+      "source": "weglot_existing"
+    },
+    "4-essential-supplies-english-language-students": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224336+00:00",
+      "source": "weglot_existing"
+    },
+    "6-tips-how-pronounce-english-words-correctly": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224339+00:00",
+      "source": "weglot_existing"
+    },
+    "what-4-english-learn-tips": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224343+00:00",
+      "source": "weglot_existing"
+    },
+    "top-7-types-english-dialects": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224346+00:00",
+      "source": "weglot_existing"
+    },
+    "what-future-english-language-how-change": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224349+00:00",
+      "source": "weglot_existing"
+    },
+    "5-reasons-why-love-english-language": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224352+00:00",
+      "source": "weglot_existing"
+    },
+    "from-brazil-to-california-learning-english-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224355+00:00",
+      "source": "weglot_existing"
+    },
+    "why-use-technology-learning-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224358+00:00",
+      "source": "weglot_existing"
+    },
+    "from-south-korea-to-california-learning-english-and-interning-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224361+00:00",
+      "source": "weglot_existing"
+    },
+    "my-fourth-experience-abroad-by-edna-santiago": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224364+00:00",
+      "source": "weglot_existing"
+    },
+    "how-use-technology-when-learning-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224367+00:00",
+      "source": "weglot_existing"
+    },
+    "from-germany-to-california-meet-lisa-our-santa-monica-intern": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224370+00:00",
+      "source": "weglot_existing"
+    },
+    "how-language-spread-evolve-over-time": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.224373+00:00",
+      "source": "weglot_existing"
+    },
+    "how-long-does-it-really-take-to-learn-english": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337252+00:00",
+      "source": "pending_csv"
+    },
+    "studiare-inglese-canada-tutto-anno-vancouver": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337268+00:00",
+      "source": "pending_csv"
+    },
+    "sao-paulo-vancouver-anno-cambiato-nostre-vite": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337272+00:00",
+      "source": "pending_csv"
+    },
+    "imparare-inglese-a-san-diego-dopo-il-corso": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337276+00:00",
+      "source": "pending_csv"
+    },
+    "englisch-sprechen-sprachaufenthalt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337279+00:00",
+      "source": "pending_csv"
+    },
+    "impara-inglese-usa-modi-intelligenti": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337282+00:00",
+      "source": "pending_csv"
+    },
+    "21-business-english-frasi-carriera-globale": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337285+00:00",
+      "source": "pending_csv"
+    },
+    "vancouver-vs-san-diego-ritmo-quotidiano-soggiorno-lingua": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337287+00:00",
+      "source": "pending_csv"
+    },
+    "inglese-per-carriere-globali": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337289+00:00",
+      "source": "pending_csv"
+    },
+    "studentessa-campus-scuola-lingue-san-diego": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-13T11:21:07.337292+00:00",
+      "source": "pending_csv"
+    }
+  }
+}
