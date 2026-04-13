@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-13T17:15:44.124712+00:00",
+  "last_sync": "2026-04-13T18:27:33.064045+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -3677,7 +3677,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124653+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "studiare-inglese-canada-tutto-anno-vancouver": {
       "language": "it",
@@ -3691,7 +3691,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124671+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "sao-paulo-vancouver-anno-cambiato-nostre-vite": {
       "language": "it",
@@ -3705,7 +3705,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124675+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "imparare-inglese-a-san-diego-dopo-il-corso": {
       "language": "it",
@@ -3719,7 +3719,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124677+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "englisch-sprechen-sprachaufenthalt": {
       "language": "de",
@@ -3733,7 +3733,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124680+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "impara-inglese-usa-modi-intelligenti": {
       "language": "it",
@@ -3747,7 +3747,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124682+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "21-business-english-frasi-carriera-globale": {
       "language": "it",
@@ -3761,7 +3761,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124684+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "vancouver-vs-san-diego-ritmo-quotidiano-soggiorno-lingua": {
       "language": "it",
@@ -3775,7 +3775,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124686+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "inglese-per-carriere-globali": {
       "language": "it",
@@ -3789,7 +3789,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124688+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "studentessa-campus-scuola-lingue-san-diego": {
       "language": "it",
@@ -3803,7 +3803,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124690+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "plan-english-course-canada": {
       "language": "en",
@@ -3818,7 +3818,7 @@
         "pt"
       ],
       "added_at": "2026-04-13T17:15:44.124692+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     },
     "english-journey-san-diego": {
       "language": "en",
