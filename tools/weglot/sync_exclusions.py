@@ -363,9 +363,13 @@ def sync(dry_run: bool = False) -> bool:
                 }
             continue
 
-        # Already in local state (added in previous run, pending Weglot import)
+        # In local state but NOT in Weglot — retry push
         if post["slug"] in state["exclusions"]:
-            continue
+            if state["exclusions"][post["slug"]].get("source") == "pending_csv":
+                # Was CSV-only last time, retry with API
+                pass  # fall through to add to new_exclusions
+            else:
+                continue
 
         # New post — needs exclusion
         excluded_langs = compute_excluded_languages(post["language"])
