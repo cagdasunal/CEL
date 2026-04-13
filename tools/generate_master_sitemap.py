@@ -215,8 +215,16 @@ def main():
         if '/post/' in u:
             slug = get_slug_from_post_url(u)
             if slug and slug in regional_slugs:
-                removed_urls.append((slug, u))
-                continue # Skip this URL (remove it)
+                # Only remove if this is an English post (all 8 languages excluded).
+                # Non-English posts (e.g., Italian) live at /post/slug as the ORIGINAL
+                # content — removing them would drop the post from the sitemap entirely.
+                post_path = f"/post/{slug}"
+                excluded_langs = exclusion_map.get(post_path, [])
+                is_english_post = len(excluded_langs) == 8  # excludes all translated languages
+                if is_english_post or not excluded_langs:
+                    removed_urls.append((slug, u))
+                    continue  # English post — regional version is the canonical
+                # Non-English post — keep in primary (this IS the original content)
         cleaned_primary_urls.append(item)
 
     if removed_category_count:
