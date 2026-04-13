@@ -31,6 +31,8 @@ jobs:
 
       - name: Regenerate Sitemap
         if: steps.sync.outputs.changes_made == 'true'
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
         run: python3 tools/generate_master_sitemap.py
 
       - name: Commit & Push

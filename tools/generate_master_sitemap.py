@@ -235,7 +235,67 @@ def main():
         for slug, url in sorted(removed_urls):
             logging.info(f"  - /post/{slug}  ({url})")
     logging.info(f"Total Primary URLs After Filtering: {len(cleaned_primary_urls)}")
-    
+
+    logging.info("\n========== STEP 2.5: Inject Missing Published Posts from CMS ==========")
+    webflow_token = os.environ.get("WEBFLOW_API_TOKEN", "").strip()
+    injected_count = 0
+    if webflow_token:
+        existing_post_slugs = set()
+        for item in cleaned_primary_urls + regional_urls:
+            slug = get_slug_from_post_url(item["url"])
+            if slug:
+                existing_post_slugs.add(slug)
+
+        # Fetch all published posts from Webflow CMS
+        cms_headers = {"Authorization": f"Bearer {webflow_token}", "accept": "application/json"}
+        cms_offset = 0
+        cms_posts = []
+        while True:
+            resp = session.get(
+                "https://api.webflow.com/v2/collections/667453c576e8d35c454ccaae/items",
+                headers=cms_headers,
+                params={"limit": 100, "offset": cms_offset},
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                logging.warning(f"CMS API returned {resp.status_code}, skipping injection")
+                break
+            data = resp.json()
+            cms_posts.extend(data.get("items", []))
+            total = data.get("pagination", {}).get("total", len(cms_posts))
+            if len(cms_posts) >= total:
+                break
+            cms_offset += 100
+
+        logging.info(f"CMS returned {len(cms_posts)} total items")
+
+        ns_sitemap = "http://www.sitemaps.org/schemas/sitemap/0.9"
+        for item in cms_posts:
+            if item.get("isArchived", False):
+                continue
+            if not item.get("lastPublished"):
+                continue
+            fd = item.get("fieldData", {})
+            slug = fd.get("slug", "")
+            if not slug or slug in existing_post_slugs:
+                continue
+
+            # This post is published but missing from sitemap — inject it
+            loc_url = f"https://www.englishcollege.com/post/{slug}"
+            url_el = etree.Element("url")
+            loc_el = etree.SubElement(url_el, "loc")
+            loc_el.text = loc_url
+            lastmod_el = etree.SubElement(url_el, "lastmod")
+            lastmod_el.text = item["lastPublished"][:10]  # YYYY-MM-DD
+            cleaned_primary_urls.append({"url": loc_url, "element": url_el})
+            existing_post_slugs.add(slug)
+            injected_count += 1
+            logging.info(f"  Injected: /post/{slug}")
+
+        logging.info(f"Injected {injected_count} missing published posts from CMS")
+    else:
+        logging.info("WEBFLOW_API_TOKEN not set — skipping CMS injection")
+
     logging.info("\n========== STEP 3: Combine and Generate Master Sitemap ==========")
     all_final_urls = cleaned_primary_urls + regional_urls
     logging.info(f"Total Combined URLs for Master Sitemap: {len(all_final_urls)}")
