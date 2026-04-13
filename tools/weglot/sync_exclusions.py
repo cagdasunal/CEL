@@ -341,6 +341,10 @@ def sync(dry_run: bool = False) -> bool:
         if not dry_run:
             save_state(state)
             generate_sitemap_exclusion_data(state)
+            # Clear CSV if all pending entries are now confirmed in Weglot
+            if imported_count > 0:
+                generate_csv([])  # clears the file
+                return True  # signal changes so workflow commits the cleared CSV
         return False
 
     log.info(f"Found {len(new_exclusions)} posts needing exclusion rules")
