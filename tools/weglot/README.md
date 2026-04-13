@@ -13,7 +13,7 @@ When a blog post is published in a specific language (e.g., Italian), Weglot aut
 3. **Reads current Weglot exclusions** via `GET /projects/settings?api_key=...`
 4. **Computes the delta** — posts that are published but not yet excluded
 5. **Generates outputs**:
-   - `data/weglot-import.csv` — CSV for manual Weglot dashboard import
+   - `data/weglot.csv` — CSV for manual Weglot dashboard import
    - `data/weglot-exclusions.json` — local state tracking
    - `data/weglot-sitemap-exclusions.json` — consumed by the sitemap generator
 6. **Regenerates** `sitemap.xml` and `llms.txt` (independent of CSV import)
@@ -46,7 +46,7 @@ English is Weglot's base language and can never be excluded.
 | `tools/weglot/sync_exclusions.py` | Core sync script |
 | `tools/weglot/test_sync_exclusions.py` | Tests (28 tests) |
 | `data/weglot-exclusions.json` | Tracked exclusion state |
-| `data/weglot-import.csv` | CSV for Weglot dashboard import |
+| `data/weglot.csv` | CSV for Weglot dashboard import |
 | `data/weglot-sitemap-exclusions.json` | Sitemap filter data |
 | `.github/workflows/weglot-sync.yml` | GitHub Actions workflow |
 

@@ -44,7 +44,7 @@ SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 STATE_FILE = DATA_DIR / "weglot-exclusions.json"
-CSV_OUTPUT = DATA_DIR / "weglot-import.csv"
+CSV_OUTPUT = DATA_DIR / "weglot.csv"
 
 WEBFLOW_API_BASE = "https://api.webflow.com/v2"
 BLOG_COLLECTION_ID = "667453c576e8d35c454ccaae"
