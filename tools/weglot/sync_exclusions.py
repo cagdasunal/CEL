@@ -34,9 +34,52 @@ from pathlib import Path
 
 try:
     import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
 except ImportError:
     print("ERROR: 'requests' package required. Install: pip install requests", file=sys.stderr)
     sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# HTTP Session with retries
+# ---------------------------------------------------------------------------
+
+HTTP_TIMEOUT = 60  # seconds — bumped from 30 after Apr 14 flake where
+                   # Webflow CMS API took >30s on a cold connection
+
+
+def create_robust_session() -> "requests.Session":
+    """
+    HTTP session with automatic retries for transient failures.
+
+    Retries up to 4 times with exponential backoff (0s, 2s, 4s, 8s) on:
+      - Connection errors (DNS, refused, reset)
+      - Read timeouts
+      - 429 Too Many Requests
+      - 5xx server errors (500, 502, 503, 504)
+
+    Without this, a single slow response from api.webflow.com kills the
+    scheduled run (see run 24404045978 on 2026-04-14 14:15 UTC — Webflow
+    took >30s on offset=0 and the whole sync exited with ReadTimeout).
+    """
+    session = requests.Session()
+    retry = Retry(
+        total=4,
+        connect=4,
+        read=4,
+        backoff_factor=2,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+HTTP = create_robust_session()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -107,7 +150,7 @@ def fetch_all_blog_posts(token: str) -> list[dict]:
 
     while True:
         url = f"{WEBFLOW_API_BASE}/collections/{BLOG_COLLECTION_ID}/items"
-        resp = requests.get(url, headers=headers, params={"limit": limit, "offset": offset}, timeout=30)
+        resp = HTTP.get(url, headers=headers, params={"limit": limit, "offset": offset}, timeout=HTTP_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
         items = data.get("items", [])
@@ -161,7 +204,7 @@ def extract_post_data(items: list[dict]) -> list[dict]:
 
 def fetch_weglot_exclusions(api_key: str) -> list[dict]:
     url = f"{WEGLOT_API_BASE}/projects/settings"
-    resp = requests.get(url, params={"api_key": api_key}, timeout=30)
+    resp = HTTP.get(url, params={"api_key": api_key}, timeout=HTTP_TIMEOUT)
     resp.raise_for_status()
     return resp.json().get("excluded_paths", [])
 
