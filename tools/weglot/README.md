@@ -29,7 +29,19 @@ When a blog post is published in a specific language (e.g., Italian), Weglot aut
 
 The Weglot `POST /projects/settings` API silently strips the `excluded_languages` field. Per-language exclusions can ONLY be set via the dashboard (manual or CSV import). The API is used read-only for checking current exclusions.
 
-**Status (2026-04-14):** Reported to Weglot support (Fanny). Weglot devs reproduced the bug on a test project, identified the root cause, and **filed an internal issue to fix it in a future release**. No ETA yet. Once the fix ships, `sync_exclusions.py` can switch from CSV export to direct `POST /projects/settings` with minimal changes — the per-language computation in `compute_excluded_languages()` is already correct, only the output step needs to change.
+**Status (2026-04-14):** Reported to Weglot support (Fanny). Weglot devs reproduced the bug on a test project, identified the root cause, and filed an internal issue to fix in a future release. No ETA yet. Once shipped, `sync_exclusions.py` can switch from CSV export to direct `POST /projects/settings` with minimal changes (the per-language computation in `compute_excluded_languages()` is already correct, only the output step needs to change).
+
+### What we know about the bug (shared with Weglot support, Apr 14)
+
+1. **Blast radius:** POST does not just drop `excluded_languages` on the new entry. It wipes the field on **every entry in the array**, including the 290+ existing ones that already had correct per-language values. A single API call destroyed our per-language setup and had to be restored from a CSV export.
+2. **Not a permissions issue:** both the public `wg_` key and the private API key produce identical behaviour, so the bug is not in the auth/ACL layer.
+3. **Other fields are fine:** `type`, `value`, `language_button_displayed`, and `exclusion_behavior` all round-trip through POST correctly. Only `excluded_languages` gets dropped.
+4. **CSV import works:** the same entries with the same language codes persist correctly when imported via the dashboard, so the storage layer is fine. The bug is isolated to the API write path.
+5. **Our guess:** a DTO/struct on the write path that does not declare `excluded_languages`, so the deserializer drops it silently and the re-serialized array loses the field on every entry.
+
+### Destructive-write warning
+
+Until the bug is fixed, **do not attempt `POST /projects/settings` with an `excluded_paths` array** even as a test. A single call will wipe `excluded_languages` on every existing entry. If you must experiment, do it against a fresh test project with nothing valuable in it.
 
 ## Key Behaviors
 
