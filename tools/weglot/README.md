@@ -29,6 +29,8 @@ When a blog post is published in a specific language (e.g., Italian), Weglot aut
 
 The Weglot `POST /projects/settings` API silently strips the `excluded_languages` field. Per-language exclusions can ONLY be set via the dashboard (manual or CSV import). The API is used read-only for checking current exclusions.
 
+**Status (2026-04-14):** Reported to Weglot support (Fanny). Weglot devs reproduced the bug on a test project, identified the root cause, and **filed an internal issue to fix it in a future release**. No ETA yet. Once the fix ships, `sync_exclusions.py` can switch from CSV export to direct `POST /projects/settings` with minimal changes — the per-language computation in `compute_excluded_languages()` is already correct, only the output step needs to change.
+
 ## Key Behaviors
 
 - **Only processes published posts** — scheduled posts (`lastPublished=null`) are skipped
