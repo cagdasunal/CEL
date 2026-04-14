@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-13T18:27:33.064045+00:00",
+  "last_sync": "2026-04-14T12:04:51.572396+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4055,6 +4055,34 @@
       ],
       "added_at": "2026-04-13T17:12:21.304088+00:00",
       "source": "weglot_existing"
+    },
+    "impara-inglese-san-diego-vancouver-personalita": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-14T12:04:51.572353+00:00",
+      "source": "csv"
+    },
+    "sejour-linguistique-progresser-anglais-oral": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-14T12:04:51.572370+00:00",
+      "source": "csv"
     }
   }
 }
