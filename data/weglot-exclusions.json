@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-15T08:01:23.316457+00:00",
+  "last_sync": "2026-04-15T09:46:12.230048+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4067,7 +4067,7 @@
         "ko",
         "pt"
       ],
-      "added_at": "2026-04-15T08:01:23.316413+00:00",
+      "added_at": "2026-04-15T09:46:12.230016+00:00",
       "source": "csv"
     },
     "sejour-linguistique-progresser-anglais-oral": {
@@ -4081,7 +4081,22 @@
         "ko",
         "pt"
       ],
-      "added_at": "2026-04-15T08:01:23.316431+00:00",
+      "added_at": "2026-04-15T09:46:12.230022+00:00",
+      "source": "csv"
+    },
+    "weekend-trips-from-san-diego-student-guide": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-15T09:46:12.230000+00:00",
       "source": "csv"
     }
   }
