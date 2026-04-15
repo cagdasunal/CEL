@@ -7,6 +7,10 @@ on:
   workflow_dispatch:
     # Manual trigger via GitHub UI
 
+concurrency:
+  group: push-to-main
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
