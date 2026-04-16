@@ -7,14 +7,13 @@ Run:
 
 import sys
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
 # Make update_log importable regardless of working directory
 sys.path.insert(0, str(Path(__file__).parent))
 import update_log
-from update_log import count_pending_weglot_entries, build_entries, render
+from update_log import count_pending_weglot_entries, render
 
 # The real Weglot CSV header produced by sync_exclusions.py
 WEGLOT_HEADER = "id;type;value;languages;language_button_displayed;exclusion_behavior"
