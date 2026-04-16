@@ -50,6 +50,9 @@ jobs:
           # reads from the exact file just produced, not a stale CDN copy.
           python3 -m http.server 8081 --bind 127.0.0.1 &
           HTTP_PID=$!
+          # Ensure the server is killed even if generate_llms.sh exits non-zero
+          # (bash -e would abort the step before the explicit kill below).
+          trap 'kill "$HTTP_PID" 2>/dev/null || true' EXIT
           sleep 2
           LLMS_SITEMAP_URL=http://localhost:8081/sitemap.xml bash tools/generate_llms.sh
           kill "$HTTP_PID" 2>/dev/null || true

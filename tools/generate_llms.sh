@@ -195,6 +195,12 @@ for i in $(seq 0 $((SITE_COUNT - 1))); do
   SITE_NAME=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].name)")
   SITE_DESC=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].description)")
   SITEMAP_URL=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].sitemap_url)")
+  # LLMS_SITEMAP_URL is a CI-only override (e.g. http://localhost:8081/sitemap.xml)
+  # that replaces the CDN URL so llms.txt is generated from the freshly built
+  # sitemap.xml rather than a stale CDN copy.
+  # WARNING: this override applies to ALL sites in the loop with the same URL.
+  # If a second site is added to sites.json, use per-site env vars instead
+  # (e.g. LLMS_SITEMAP_URL_<SITE_ID_UPPERCASE>) to avoid cross-site contamination.
   SITEMAP_URL="${LLMS_SITEMAP_URL:-$SITEMAP_URL}"
   OUTPUT=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].output)")
 
