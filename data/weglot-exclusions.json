@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-19T17:46:45.512296+00:00",
+  "last_sync": "2026-04-19T18:28:08.882764+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4181,7 +4181,7 @@
         "pt"
       ],
       "added_at": "2026-04-19T17:46:45.512256+00:00",
-      "source": "csv"
+      "source": "weglot_existing"
     }
   }
 }
