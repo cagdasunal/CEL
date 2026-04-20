@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-19T18:28:08.882764+00:00",
+  "last_sync": "2026-04-20T08:30:17.475675+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4182,6 +4182,20 @@
       ],
       "added_at": "2026-04-19T17:46:45.512256+00:00",
       "source": "weglot_existing"
+    },
+    "wo-wohnen-sprachschueler-vancouver": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "added_at": "2026-04-20T08:30:17.475632+00:00",
+      "source": "csv"
     }
   }
 }
