@@ -48,8 +48,21 @@ def now_san_diego() -> datetime:
     return datetime.now(tz=SAN_DIEGO_TZ)
 
 
+def _tz_abbr(dt: datetime) -> str:
+    # On Ubuntu without tzdata, zoneinfo returns "UTC-07:00" instead of "PDT".
+    # Resolve manually from UTC offset so the output is consistent across platforms.
+    offset = dt.utcoffset()
+    if offset is not None:
+        secs = int(offset.total_seconds())
+        if secs == -7 * 3600:
+            return "PDT"
+        if secs == -8 * 3600:
+            return "PST"
+    return dt.strftime("%Z")  # fallback for unexpected offsets
+
+
 def fmt_sd(dt: datetime) -> str:
-    return dt.strftime("%Y-%m-%d %I:%M %p %Z")
+    return dt.strftime("%Y-%m-%d %I:%M %p ") + _tz_abbr(dt)
 
 
 # ---------------------------------------------------------------------------
