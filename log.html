@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blog Sync Status — English College</title>
+  <meta name="description" content="Live status of blog post syncing, sitemap, and AI reference file for englishcollege.com">
+  <meta name="robots" content="noindex">
+  <style>
+
+  * { box-sizing: border-box; }
+  body {
+    background: #F9F1DF;
+    color: #37332c;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 20px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; font-weight: 600; }
+  h2 {
+    font-size: 18px;
+    margin: 40px 0 12px;
+    border-bottom: 1px solid rgba(55,51,44,0.15);
+    padding-bottom: 6px;
+    font-weight: 600;
+  }
+  p.lede { margin: 0 0 24px; color: rgba(55,51,44,0.8); }
+  .status {
+    background: rgba(55,51,44,0.04);
+    border: 1px solid rgba(55,51,44,0.12);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 24px 0;
+  }
+  .status.error { background: rgba(192,57,43,0.08); border-color: rgba(192,57,43,0.3); }
+  .status-label { font-size: 20px; font-weight: 600; margin: 0 0 6px; }
+  .status-ok .status-label { color: #1d6b3a; }
+  .status-error .status-label { color: #a02624; }
+  .subtle { color: rgba(55,51,44,0.7); font-size: 14px; margin: 6px 0 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+  th, td {
+    text-align: left;
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(55,51,44,0.12);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(55,51,44,0.6);
+  }
+  td.slug {
+    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 13px;
+    word-break: break-word;
+  }
+  td.lang {
+    font-variant: all-small-caps;
+    letter-spacing: 0.05em;
+    color: rgba(55,51,44,0.8);
+    white-space: nowrap;
+  }
+  td.when { color: rgba(55,51,44,0.7); white-space: nowrap; font-size: 13px; }
+  ul.files, ul.activity { list-style: none; padding: 0; margin: 8px 0; }
+  ul.files li, ul.activity li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(55,51,44,0.1);
+  }
+  ul.files li:last-child, ul.activity li:last-child { border-bottom: 0; }
+  ul.files .file-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  ul.files .file-name { font-weight: 600; }
+  ul.activity .when { color: rgba(55,51,44,0.6); font-size: 13px; margin-right: 10px; }
+  .empty { color: rgba(55,51,44,0.6); font-style: italic; padding: 16px 0; }
+  a { color: #37332c; text-decoration: underline; }
+  a:hover { color: #5f5950; }
+  footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(55,51,44,0.15);
+    font-size: 13px;
+    color: rgba(55,51,44,0.7);
+  }
+  @media (max-width: 500px) {
+    body { padding: 24px 16px; }
+    h1 { font-size: 22px; }
+    table { font-size: 13px; }
+    td.slug { font-size: 12px; }
+  }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>English College — Blog Sync Status</h1>
+    <p class="lede">This page shows whether new blog posts are being published, translated correctly, and indexed. It updates automatically every 15 minutes.</p>
+  </header>
+  <section class="status status-ok">
+    <p class="status-label">All content in sync.</p>
+    <p>Last checked on <strong>2026-04-21 08:10 AM PDT</strong> (San Diego time).</p>
+    <p class="subtle">Our system checks for new blog posts every 15 minutes. If there's a new post, it is added to the translation exclusion list, and the sitemap and AI reference file are refreshed.</p>
+  </section>
+  <h2>Published files</h2>
+  <ul class="files">
+    <li>
+      <div class="file-row">
+        <span><span class="file-name">Sitemap</span> <span class="subtle">— used by search engines</span></span>
+        <a href="https://sitemap.englishcollege.com/sitemap.xml">View</a>
+      </div>
+      <p class="subtle">Refreshed whenever a new post is added</p>
+    </li>
+    <li>
+      <div class="file-row">
+        <span><span class="file-name">AI reference (llms.txt)</span> <span class="subtle">— used by AI assistants</span></span>
+        <a href="https://sitemap.englishcollege.com/llms.txt">View</a>
+      </div>
+      <p class="subtle">Refreshed whenever a new post is added</p>
+    </li>
+    <li>
+      <div class="file-row">
+        <span><span class="file-name">Plain-text log</span> <span class="subtle">— machine-readable version of this page</span></span>
+        <a href="https://sitemap.englishcollege.com/log.txt">View</a>
+      </div>
+    </li>
+  </ul>
+  <h2>Recent blog posts synced</h2>
+  <p class="subtle">The 10 most recently synced posts. Each entry is the blog post slug, its original language, and when it was added to the translation exclusion list.</p>
+  <table>
+    <thead>
+      <tr><th>Slug</th><th>Language</th><th>Synced on</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="slug">sejour-linguistique-san-diego-apprendre-anglais</td><td class="lang">FR</td><td class="when">2026-04-21 05:43 AM PDT</td></tr>
+      <tr><td class="slug">settimana-tipo-imparare-inglese-san-diego</td><td class="lang">IT</td><td class="when">2026-04-21 05:43 AM PDT</td></tr>
+      <tr><td class="slug">wo-wohnen-sprachschueler-vancouver</td><td class="lang">DE</td><td class="when">2026-04-20 02:28 PM PDT</td></tr>
+      <tr><td class="slug">studiando-inglese-allestero-2026</td><td class="lang">IT</td><td class="when">2026-04-19 10:46 AM PDT</td></tr>
+      <tr><td class="slug">sejour-linguistique-vancouver-activites-apres-cours</td><td class="lang">FR</td><td class="when">2026-04-17 04:58 PM PDT</td></tr>
+      <tr><td class="slug">sejours-linguistique-vancouver-famille-colocation</td><td class="lang">FR</td><td class="when">2026-04-16 05:11 AM PDT</td></tr>
+      <tr><td class="slug">san-diego-vs-hawaii-englisch-lernen</td><td class="lang">DE</td><td class="when">2026-04-16 05:11 AM PDT</td></tr>
+      <tr><td class="slug">englisch-lernen-san-diego-gabriel-erfahrung</td><td class="lang">DE</td><td class="when">2026-04-16 05:11 AM PDT</td></tr>
+      <tr><td class="slug">apprendre-anglais-san-diego-experience-gabriel</td><td class="lang">FR</td><td class="when">2026-04-16 05:11 AM PDT</td></tr>
+      <tr><td class="slug">sejour-linguistique-progresser-anglais-oral</td><td class="lang">FR</td><td class="when">2026-04-15 03:49 AM PDT</td></tr>
+    </tbody>
+  </table>
+  <h2>Recent activity</h2>
+  <ul class="activity">
+    <li><span class="when">2026-04-21 08:10 AM PDT</span><span>Checked for new blog posts — nothing to sync.</span></li>
+  </ul>
+  <footer>
+    Total blog posts being tracked: <strong>292</strong>. This page was generated on 2026-04-21 08:10 AM PDT. Next check within 15 minutes.
+  </footer>
+</body>
+</html>
