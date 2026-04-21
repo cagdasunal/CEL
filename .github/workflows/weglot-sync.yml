@@ -1,8 +1,9 @@
+# DISABLED 2026-04-22 — superseded by content-pipeline.yml. Re-enable by uncommenting the schedule block.
 name: Weglot Exclusion Sync
 
 on:
-  schedule:
-    - cron: '3,18,33,48 * * * *'
+  # schedule:
+  #   - cron: '3,18,33,48 * * * *'
   workflow_dispatch:
 
 concurrency:

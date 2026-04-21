@@ -1,0 +1,70 @@
+name: Content Pipeline
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'   # every 15 min, offset from old weglot-sync cadence
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: content-pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Python deps
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Step 1 — Sync Weglot via API
+        id: weglot
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          WEGLOT_PUBLIC_KEY: ${{ secrets.WEGLOT_API_KEY }}
+          WEGLOT_PRIVATE_KEY: ${{ secrets.WEGLOT_PRIVATE_KEY }}
+        run: python tools/weglot/api_sync.py
+
+      - name: Step 2 — Regenerate sitemap
+        if: steps.weglot.outputs.updated == 'true'
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: python tools/generate_master_sitemap.py
+
+      - name: Step 3 — Regenerate llms.txt
+        if: steps.weglot.outputs.updated == 'true'
+        run: bash tools/generate_llms.sh
+
+      - name: Step 4a — Log (Weglot updated)
+        if: steps.weglot.outputs.updated == 'true'
+        run: python tools/weglot/update_log.py --event weglot_update --slugs "${{ steps.weglot.outputs.slugs }}"
+
+      - name: Step 4b — Log (no change)
+        if: steps.weglot.outputs.updated != 'true' && steps.weglot.outputs.error == ''
+        run: python tools/weglot/update_log.py --event no_change
+
+      - name: Step 4c — Log (error)
+        if: steps.weglot.outputs.error != ''
+        run: python tools/weglot/update_log.py --event error --error "${{ steps.weglot.outputs.error }}"
+
+      - name: Commit & push
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json sitemap.xml llms.txt log.txt 2>/dev/null || true
+          git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push || echo "push failed (will retry next run)"
