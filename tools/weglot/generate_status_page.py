@@ -44,7 +44,6 @@ MAX_RECENT_EVENTS = 10
 
 PUBLIC_SITEMAP_URL = "https://sitemap.englishcollege.com/sitemap.xml"
 PUBLIC_LLMS_URL = "https://sitemap.englishcollege.com/llms.txt"
-PUBLIC_LOG_TXT_URL = "https://sitemap.englishcollege.com/log.txt"
 
 
 # ---------------------------------------------------------------------------
@@ -125,13 +124,13 @@ def last_weglot_update_ts(events: list):
 
 def status_banner(events: list):
     if not events:
-        return ("All content in sync.", True)
+        return ("All blog posts in sync.", True)
     kind = events[0].get("kind", "")
     if kind == "error":
         return ("Attention required — see recent activity.", False)
     if kind == "weglot_update":
         return ("New posts synced successfully.", True)
-    return ("All content in sync.", True)
+    return ("All blog posts in sync.", True)
 
 
 def describe_event(event: dict):
@@ -292,16 +291,11 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
-    parts.append("  <header>")
-    parts.append("    <h1>English College — Blog Sync Status</h1>")
-    parts.append('    <p class="lede">This page shows whether new blog posts are being published, translated correctly, and indexed. It updates automatically every 15 minutes.</p>')
-    parts.append("  </header>")
 
     # Status card
     parts.append(f'  <section class="status {status_class}{status_modifier}">')
     parts.append(f'    <p class="status-label">{escape(banner_label)}</p>')
     parts.append(f'    <p>Last checked on <strong>{escape(last_check)}</strong> (San Diego time).</p>')
-    parts.append('    <p class="subtle">Our system checks for new blog posts every 15 minutes. If there\'s a new post, it is added to the translation exclusion list, and the sitemap and AI reference file are refreshed.</p>')
     parts.append("  </section>")
 
     # Published files
@@ -315,7 +309,7 @@ def render_html(events=None, exclusions=None) -> str:
 
     parts.append("    <li>")
     parts.append('      <div class="file-row">')
-    parts.append('        <span><span class="file-name">Sitemap</span> <span class="subtle">— used by search engines</span></span>')
+    parts.append('        <span class="file-name">sitemap.xml</span>')
     parts.append(f'        <a href="{escape(PUBLIC_SITEMAP_URL)}">View</a>')
     parts.append("      </div>")
     parts.append(f'      <p class="subtle">{refresh_note}</p>')
@@ -323,24 +317,16 @@ def render_html(events=None, exclusions=None) -> str:
 
     parts.append("    <li>")
     parts.append('      <div class="file-row">')
-    parts.append('        <span><span class="file-name">AI reference (llms.txt)</span> <span class="subtle">— used by AI assistants</span></span>')
+    parts.append('        <span class="file-name">llms.txt</span>')
     parts.append(f'        <a href="{escape(PUBLIC_LLMS_URL)}">View</a>')
     parts.append("      </div>")
     parts.append(f'      <p class="subtle">{refresh_note}</p>')
-    parts.append("    </li>")
-
-    parts.append("    <li>")
-    parts.append('      <div class="file-row">')
-    parts.append('        <span><span class="file-name">Plain-text log</span> <span class="subtle">— machine-readable version of this page</span></span>')
-    parts.append(f'        <a href="{escape(PUBLIC_LOG_TXT_URL)}">View</a>')
-    parts.append("      </div>")
     parts.append("    </li>")
     parts.append("  </ul>")
 
     # Recent posts
     parts.append("  <h2>Recent blog posts synced</h2>")
     if posts:
-        parts.append('  <p class="subtle">The 10 most recently synced posts. Each entry is the blog post slug, its original language, and when it was added to the translation exclusion list.</p>')
         parts.append("  <table>")
         parts.append("    <thead>")
         parts.append("      <tr><th>Slug</th><th>Language</th><th>Synced on</th></tr>")
