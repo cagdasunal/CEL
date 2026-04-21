@@ -123,7 +123,7 @@ class TestRender:
             "llms.txt": "2026-04-16 17:00 GMT+3",
             "weglot.csv": "2026-04-16 17:00 GMT+3  [4 pending entries — UPLOAD NEEDED]",
         }
-        output = render(entries, pending=4)
+        output = render(entries, pending=4, weglot_last_check="2026-04-16 09:07 GMT+3")
         assert "Upload to Weglot: REQUIRED" in output
         assert "sitemap.englishcollege.com/weglot.csv" in output
 
@@ -133,7 +133,7 @@ class TestRender:
             "llms.txt": "2026-04-16 17:00 GMT+3",
             "weglot.csv": "2026-04-16 17:00 GMT+3  [cleared — no upload needed]",
         }
-        output = render(entries, pending=0)
+        output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
         assert "Upload to Weglot: NOT REQUIRED" in output
         # When cleared, no download/dashboard block should appear
         assert "Download:" not in output
@@ -141,11 +141,72 @@ class TestRender:
 
     def test_output_starts_with_last_updated(self):
         entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
-        output = render(entries, pending=0)
+        output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
         assert output.startswith("Last updated (GMT+3")
 
     def test_all_three_tracked_files_present(self):
         entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
-        output = render(entries, pending=0)
+        output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
         for name in ("sitemap.xml", "llms.txt", "weglot.csv"):
             assert name in output
+
+    def test_each_tracked_file_has_url_line(self):
+        entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
+        output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
+        assert "URL: https://sitemap.englishcollege.com/sitemap.xml" in output
+        assert "URL: https://sitemap.englishcollege.com/llms.txt" in output
+        assert "URL: https://sitemap.englishcollege.com/weglot.csv" in output
+
+    def test_last_weglot_check_line_present(self):
+        entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
+        output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
+        assert "Last Weglot check: 2026-04-16 09:07 GMT+3" in output
+
+    def test_last_weglot_check_never_when_missing(self):
+        entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
+        output = render(entries, pending=0, weglot_last_check="never")
+        assert "Last Weglot check: never" in output
+
+
+# ---------------------------------------------------------------------------
+# read_weglot_last_check
+# ---------------------------------------------------------------------------
+
+class TestReadWeglotLastCheck:
+    """Unit tests for read_weglot_last_check()."""
+
+    def test_missing_file_returns_never(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert update_log.read_weglot_last_check() == "never"
+
+    def test_empty_file_returns_never(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".weglot-last-check").write_text("", encoding="utf-8")
+        assert update_log.read_weglot_last_check() == "never"
+
+    def test_malformed_file_returns_never(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".weglot-last-check").write_text("not-a-timestamp", encoding="utf-8")
+        assert update_log.read_weglot_last_check() == "never"
+
+    def test_valid_utc_z_timestamp_converts_to_gmt3(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".weglot-last-check").write_text(
+            "2026-04-21T06:07:00Z", encoding="utf-8"
+        )
+        # 06:07 UTC → 09:07 GMT+3
+        assert update_log.read_weglot_last_check() == "2026-04-21 09:07 GMT+3"
+
+    def test_valid_offset_timestamp_converts_to_gmt3(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".weglot-last-check").write_text(
+            "2026-04-21T06:07:00+00:00", encoding="utf-8"
+        )
+        assert update_log.read_weglot_last_check() == "2026-04-21 09:07 GMT+3"
+
+    def test_whitespace_around_timestamp_trimmed(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / ".weglot-last-check").write_text(
+            "  2026-04-21T06:07:00Z\n", encoding="utf-8"
+        )
+        assert update_log.read_weglot_last_check() == "2026-04-21 09:07 GMT+3"
