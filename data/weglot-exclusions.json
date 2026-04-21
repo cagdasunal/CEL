@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-21T11:18:45.154899+00:00",
+  "last_sync": "2026-04-21T12:43:19.678903+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4208,7 +4208,7 @@
         "ko",
         "pt"
       ],
-      "added_at": "2026-04-21T11:18:45.154872+00:00",
+      "added_at": "2026-04-21T12:43:19.678874+00:00",
       "source": "csv"
     },
     "settimana-tipo-imparare-inglese-san-diego": {
@@ -4222,7 +4222,7 @@
         "ko",
         "pt"
       ],
-      "added_at": "2026-04-21T11:18:45.154853+00:00",
+      "added_at": "2026-04-21T12:43:19.678858+00:00",
       "source": "csv"
     }
   }
