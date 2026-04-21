@@ -5,8 +5,12 @@ on:
     - cron: '7 6 * * *'  # 6:07 AM UTC daily (9:07 AM Turkey)
   workflow_dispatch:
 
+concurrency:
+  group: push-to-main
+  cancel-in-progress: false
+
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -76,3 +80,14 @@ jobs:
       - name: All clear
         if: steps.check.outputs.has_csv == 'false'
         run: echo "No pending exclusions. All synced with Weglot."
+
+      - name: Stamp Weglot daily check
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .weglot-last-check
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .weglot-last-check
+          git diff --cached --quiet && echo "No stamp change" && exit 0
+          git commit -m "chore: stamp weglot daily check ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+          git pull --rebase --autostash origin main
+          git push
