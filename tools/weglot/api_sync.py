@@ -146,31 +146,15 @@ def fetch_all_blog_posts(token: str) -> list[dict]:
             f"{WEBFLOW_API_BASE}/collections/{BLOG_COLLECTION_ID}/items"
             f"?limit={limit}&offset={offset}"
         )
-        last_exc: Exception = RuntimeError("no attempts")
-        data: dict = {}
-        for attempt in range(5):
-            try:
-                req = Request(
-                    url,
-                    headers={
-                        "User-Agent": USER_AGENT,
-                        "Authorization": f"Bearer {token}",
-                        "accept": "application/json",
-                    },
-                )
-                with urlopen(req, timeout=HTTP_TIMEOUT) as resp:
-                    data = json.loads(resp.read().decode("utf-8"))
-                    break
-            except HTTPError as e:
-                if e.code < 500:
-                    raise
-                last_exc = e
-            except URLError as e:
-                last_exc = e
-            if attempt < 4:
-                time.sleep(2 ** attempt)
-        else:
-            raise RuntimeError(f"Webflow CMS fetch failed: {last_exc}")
+        status, data = _http_request(
+            url,
+            extra_headers={
+                "Authorization": f"Bearer {token}",
+                "accept": "application/json",
+            },
+        )
+        if status != 200:
+            raise RuntimeError(f"Webflow CMS fetch failed: HTTP {status}: {data}")
 
         items = data.get("items", [])
         all_items.extend(items)
@@ -276,9 +260,9 @@ def load_state() -> dict:
 
 def save_state(state: dict) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    state["last_sync"] = datetime.now(timezone.utc).isoformat()
+    to_write = {**state, "last_sync": datetime.now(timezone.utc).isoformat()}
     with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2, sort_keys=False)
+        json.dump(to_write, f, indent=2, sort_keys=False)
 
 
 def generate_sitemap_exclusion_data(state: dict) -> None:
@@ -286,6 +270,7 @@ def generate_sitemap_exclusion_data(state: dict) -> None:
     for slug, info in state.get("exclusions", {}).items():
         exclusion_map[f"/post/{slug}"] = info.get("excluded_from", [])
     out_path = DATA_DIR / "weglot-sitemap-exclusions.json"
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(exclusion_map, f, indent=2, sort_keys=True)
 
@@ -322,6 +307,11 @@ def main() -> int:
     parser.add_argument("--status", action="store_true", help="Print current state and exit.")
     args = parser.parse_args()
 
+    if args.status:
+        state = load_state()
+        print(json.dumps(state, indent=2))
+        return 0
+
     webflow_token = os.environ.get("WEBFLOW_API_TOKEN", "").strip()
     public_key = os.environ.get("WEGLOT_PUBLIC_KEY", "").strip()
     private_key = os.environ.get("WEGLOT_PRIVATE_KEY", "").strip()
@@ -334,11 +324,6 @@ def main() -> int:
         if not val:
             print(f"ERROR: missing env var {name}", file=sys.stderr)
             return 1
-
-    if args.status:
-        state = load_state()
-        print(json.dumps(state, indent=2))
-        return 0
 
     # Fetch CMS posts
     print("[api_sync] Fetching Webflow CMS blog posts...", flush=True)

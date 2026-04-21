@@ -15,6 +15,8 @@ concurrency:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -46,14 +48,19 @@ jobs:
 
       - name: Step 3 — Regenerate llms.txt
         if: steps.weglot.outputs.updated == 'true'
-        run: bash tools/generate_llms.sh
+        run: |
+          python3 -m http.server 8081 --directory . &
+          SERVER_PID=$!
+          sleep 2
+          LLMS_SITEMAP_URL=http://localhost:8081/sitemap.xml bash tools/generate_llms.sh
+          kill $SERVER_PID 2>/dev/null || true
 
       - name: Step 4a — Log (Weglot updated)
         if: steps.weglot.outputs.updated == 'true'
         run: python tools/weglot/update_log.py --event weglot_update --slugs "${{ steps.weglot.outputs.slugs }}"
 
       - name: Step 4b — Log (no change)
-        if: steps.weglot.outputs.updated != 'true' && steps.weglot.outputs.error == ''
+        if: steps.weglot.outcome == 'success' && steps.weglot.outputs.updated != 'true' && steps.weglot.outputs.error == ''
         run: python tools/weglot/update_log.py --event no_change
 
       - name: Step 4c — Log (error)
