@@ -17,6 +17,7 @@ No external dependencies. Stdlib only.
 """
 
 import json
+import subprocess
 import sys
 from datetime import datetime
 from html import escape
@@ -95,6 +96,31 @@ def load_exclusions() -> dict:
             data = json.load(f)
         return data.get("exclusions", {})
     return {}
+
+
+def last_commit_ts_for_file(filename: str) -> str | None:
+    """Return ISO-8601 timestamp of the most recent commit that touched
+    `filename` (relative to PROJECT_ROOT), or None if git is unavailable,
+    the file is untracked, or the lookup fails.
+
+    Used to populate the per-file "Last updated on …" line in log.html so
+    sitemap.xml and llms.txt show their own distinct refresh times rather
+    than a shared weglot-event timestamp.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%cI", "--", filename],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (FileNotFoundError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    stamp = result.stdout.strip()
+    return stamp or None
 
 
 # ---------------------------------------------------------------------------
@@ -264,12 +290,6 @@ def render_html(events=None, exclusions=None) -> str:
     else:
         last_check = fmt_sd(now)
 
-    last_artifact = last_weglot_update_ts(events)
-    if last_artifact:
-        last_artifact_sd = iso_to_sd(last_artifact)
-    else:
-        last_artifact_sd = None
-
     posts = recent_posts(exclusions, MAX_RECENT_POSTS)
     recent_events = events[:MAX_RECENT_EVENTS]
     total_posts = len(exclusions)
@@ -302,17 +322,18 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append("  <h2>Published files</h2>")
     parts.append('  <ul class="files">')
 
-    if last_artifact_sd:
-        refresh_note = f"Last refreshed on {escape(last_artifact_sd)}"
-    else:
-        refresh_note = "Refreshed whenever a new post is added"
+    def _file_note(filename: str) -> str:
+        ts = last_commit_ts_for_file(filename)
+        if ts:
+            return f"Last updated on {escape(iso_to_sd(ts))}"
+        return "Not yet updated"
 
     parts.append("    <li>")
     parts.append('      <div class="file-row">')
     parts.append('        <span class="file-name">sitemap.xml</span>')
     parts.append(f'        <a href="{escape(PUBLIC_SITEMAP_URL)}">View</a>')
     parts.append("      </div>")
-    parts.append(f'      <p class="subtle">{refresh_note}</p>')
+    parts.append(f'      <p class="subtle">{_file_note("sitemap.xml")}</p>')
     parts.append("    </li>")
 
     parts.append("    <li>")
@@ -320,7 +341,7 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append('        <span class="file-name">llms.txt</span>')
     parts.append(f'        <a href="{escape(PUBLIC_LLMS_URL)}">View</a>')
     parts.append("      </div>")
-    parts.append(f'      <p class="subtle">{refresh_note}</p>')
+    parts.append(f'      <p class="subtle">{_file_note("llms.txt")}</p>')
     parts.append("    </li>")
     parts.append("  </ul>")
 
