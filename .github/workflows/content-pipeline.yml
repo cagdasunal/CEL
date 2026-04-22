@@ -71,7 +71,7 @@ jobs:
 
       - name: Step 4d — Generate HTML status page
         if: always()
-        run: python tools/weglot/generate_status_page.py
+        run: python -m tools.weglot.generate_status_page
 
       - name: Commit & push
         if: always()
