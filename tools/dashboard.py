@@ -802,6 +802,7 @@ AUTH_SCRIPT_TAG = '<script src="/assets/js/auth.js"></script>'
 FAVICON_HREF = "/assets/img/favicon.png"
 
 TABS = (
+    {"key": "log",     "label": "SEO",     "href": "/admin/log/"},
     {"key": "housing", "label": "Housing", "href": "/admin/housing/"},
     {"key": "courses", "label": "Courses", "href": "/admin/courses/"},
 )
@@ -884,6 +885,7 @@ _SHELL_HTML = """\
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
           <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">\u25be</span></summary>
           <ul class="shell-tab-submenu">
@@ -895,16 +897,18 @@ _SHELL_HTML = """\
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
     <main class="shell-content">
-      <iframe id="shell-frame" title="Dashboard content" src="/admin/housing/"></iframe>
+      <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
     </main>
   </div>
   <script>
   (function () {
     var TARGETS = {
+      log:     '/admin/log/',
       housing: '/admin/housing/',
       courses: '/admin/courses/'
     };
     var TOPBAR_FOR = {
+      log:     'seo',
       housing: 'fidelo',
       courses: 'fidelo'
     };
@@ -912,8 +916,8 @@ _SHELL_HTML = """\
     var topbarEls = document.querySelectorAll('[data-topbar]');
     var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
-      var key = (location.hash || '#housing').slice(1);
-      if (!TARGETS[key]) key = 'housing';
+      var key = (location.hash || '#log').slice(1);
+      if (!TARGETS[key]) key = 'log';
       return key;
     }
     function apply() {
@@ -922,7 +926,7 @@ _SHELL_HTML = """\
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      var topKey = TOPBAR_FOR[key] || 'fidelo';
+      var topKey = TOPBAR_FOR[key] || 'seo';
       topbarEls.forEach(function (el) {
         el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
       });
