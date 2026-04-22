@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Client-friendly HTML status page — private/log/index.html.
+Client-friendly HTML status page — admin/log/index.html.
 
 Reads:
   data/log-state.json      — recent sync events (kind, ts, detail)
   data/weglot-exclusions.json  — roster of synced blog posts
 
 Writes (into external repo):
-  <EXTERNAL_REPO_ROOT>/private/log/index.html
-      — served at https://cel.englishcollege.com/private/log/
+  <EXTERNAL_REPO_ROOT>/admin/log/index.html
+      — served at https://cel.englishcollege.com/admin/log/
   <EXTERNAL_REPO_ROOT>/assets/css/dashboard.css (via write_external_css)
 
 Design constants locked by user:
@@ -31,7 +31,6 @@ from tools.dashboard import (
     EXTERNAL_REPO_ROOT,
     SHARED_CSS,
     render_favicon_tag,
-    render_page_chrome,
     write_external_css,
     write_shell_html,
 )
@@ -47,7 +46,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 LOG_STATE_FILE = DATA_DIR / "log-state.json"
 EXCLUSIONS_FILE = DATA_DIR / "weglot-exclusions.json"
-OUTPUT_FILE = EXTERNAL_REPO_ROOT / "private" / "log" / "index.html"
+OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "log" / "index.html"
 
 BG_COLOR = "#F1EAD8"
 TEXT_COLOR = "#37332c"
@@ -242,9 +241,6 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append("</head>")
     parts.append("<body>")
     parts.append('  <div class="dashboard-shell">')
-
-    # Brand header (no <h1>, no logo — test_does_not_contain_visible_h1 locks this)
-    parts.append(f'    {render_page_chrome("English College", "Blog Sync Status \u2014 sitemap + llms.txt")}')
 
     # Status card
     parts.append(f'    <section class="status {status_class}{status_modifier}">')

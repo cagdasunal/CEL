@@ -1,19 +1,19 @@
 User-agent: *
-Disallow: /private/
+Disallow: /admin/
 Allow: /sitemap.xml
 Allow: /llms.txt
 
 User-agent: GPTBot
-Disallow: /private/
+Disallow: /admin/
 User-agent: ClaudeBot
-Disallow: /private/
+Disallow: /admin/
 User-agent: PerplexityBot
-Disallow: /private/
+Disallow: /admin/
 User-agent: Google-Extended
-Disallow: /private/
+Disallow: /admin/
 User-agent: CCBot
-Disallow: /private/
+Disallow: /admin/
 User-agent: anthropic-ai
-Disallow: /private/
+Disallow: /admin/
 
 Sitemap: https://cel.englishcollege.com/sitemap.xml

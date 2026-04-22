@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/assets/js/auth.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>English College — Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+</head>
+<body>
+  <div class="shell-root">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <div class="shell-brand-text">
+        <p class="shell-eyebrow">English College</p>
+        <p class="shell-subtitle" id="shell-subtitle">Blog Sync</p>
+      </div>
+      <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
+    </header>
+    <nav class="shell-tabs" aria-label="Dashboard sections">
+      <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
+      <details class="shell-tab-dropdown" data-topbar="fidelo">
+        <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">▾</span></summary>
+        <ul class="shell-tab-submenu">
+          <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
+          <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
+        </ul>
+      </details>
+    </nav>
+    <main class="shell-content">
+      <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
+    </main>
+  </div>
+  <script>
+  (function () {
+    var TARGETS = {
+      log:     '/admin/log/',
+      housing: '/admin/housing/',
+      courses: '/admin/courses/'
+    };
+    var SUBTITLES = {
+      log:     'Blog Sync',
+      housing: 'Housing',
+      courses: 'Courses'
+    };
+    var TOPBAR_FOR = {
+      log:     'seo',
+      housing: 'fidelo',
+      courses: 'fidelo'
+    };
+    var frame = document.getElementById('shell-frame');
+    var subtitleEl = document.getElementById('shell-subtitle');
+    var topbarEls = document.querySelectorAll('[data-topbar]');
+    var subitemEls = document.querySelectorAll('.shell-tab-subitem');
+    function pick() {
+      var key = (location.hash || '#log').slice(1);
+      if (!TARGETS[key]) key = 'log';
+      return key;
+    }
+    function apply() {
+      var key = pick();
+      if (frame.dataset.key !== key) {
+        frame.dataset.key = key;
+        frame.src = TARGETS[key];
+      }
+      subtitleEl.textContent = SUBTITLES[key] || SUBTITLES.log;
+      var topKey = TOPBAR_FOR[key] || 'seo';
+      topbarEls.forEach(function (el) {
+        el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
+      });
+      subitemEls.forEach(function (a) {
+        a.classList.toggle('is-active', a.getAttribute('data-target') === key);
+      });
+      document.querySelectorAll('details.shell-tab-dropdown[open]').forEach(function (d) {
+        d.removeAttribute('open');
+      });
+    }
+    window.addEventListener('hashchange', apply);
+    apply();
+    document.getElementById('shell-logout').addEventListener('click', function () {
+      try { sessionStorage.removeItem('cel_unlocked'); } catch (_) {}
+      location.replace('/');
+    });
+  })();
+  </script>
+</body>
+</html>

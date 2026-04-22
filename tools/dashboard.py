@@ -90,9 +90,9 @@ SHARED_CSS = """
 
   /* === Dashboard shell === */
   .dashboard-shell {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 28px;
+    width: 100%;
+    margin: 0;
+    padding: 20px 28px 0;
   }
 
   /* === Header === */
@@ -415,9 +415,9 @@ SHARED_CSS = """
 
 # ---------------------------------------------------------------------------
 # Dashboard shell (sidebar + iframe) + public gate + listing images
-# Consumers: cel.englishcollege.com/private/index.html (shell),
+# Consumers: cel.englishcollege.com/admin/index.html (shell),
 #            cel.englishcollege.com/index.html (password gate),
-#            cel.englishcollege.com/private/housing/index.html (listing imgs).
+#            cel.englishcollege.com/admin/housing/index.html (listing imgs).
 # ---------------------------------------------------------------------------
 
 SHELL_CSS = """
@@ -430,49 +430,43 @@ SHELL_CSS = """
   }
   .shell-sidebar { display: none; }
 
-  /* === Top-bar shell (2026-04-22) === */
-  .shell-topbar {
+  /* === Top-bar shell v2 (brand row + tab row) === */
+  .shell-header {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding: 12px 28px;
+    gap: 16px;
+    padding: 14px 28px 12px;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 20;
   }
-  .shell-topbar .shell-brand {
+  .shell-header .shell-brand {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
     text-decoration: none;
   }
-  .shell-topbar .shell-brand .brand-logo-img { height: 32px; }
-  .shell-tabs {
+  .shell-header .shell-brand .brand-logo-img { height: 36px; }
+  .shell-brand-text {
     flex: 1 1 auto;
     display: flex;
-    gap: 4px;
+    flex-direction: column;
+    gap: 2px;
     min-width: 0;
-    overflow-x: auto;
   }
-  .shell-tab {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 14px;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-    white-space: nowrap;
-    transition: background 120ms ease, color 120ms ease;
-  }
-  .shell-tab:hover { color: var(--fg); background: var(--stripe); }
-  .shell-tab.is-active {
-    color: var(--accent);
-    background: var(--stripe);
+  .shell-eyebrow {
+    margin: 0;
+    font-size: 11px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .shell-subtitle {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fg);
+    letter-spacing: -0.01em;
   }
   .shell-logout {
     flex: 0 0 auto;
@@ -487,11 +481,78 @@ SHELL_CSS = """
   }
   .shell-logout:hover { color: var(--err); border-color: var(--err); }
 
+  .shell-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px 20px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    overflow-x: auto;
+  }
+  .shell-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: background 120ms ease, color 120ms ease;
+    cursor: pointer;
+  }
+  .shell-tab:hover { color: var(--fg); background: var(--stripe); }
+  .shell-tab.is-active,
+  [data-topbar].is-active > .shell-tab {
+    color: var(--accent);
+    background: var(--stripe);
+    font-weight: 600;
+  }
+
+  .shell-tab-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  .shell-tab-dropdown > summary { list-style: none; }
+  .shell-tab-dropdown > summary::-webkit-details-marker { display: none; }
+  .shell-tab-chevron { margin-left: 6px; font-size: 10px; opacity: 0.6; }
+  .shell-tab-submenu {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(55,51,44,0.12);
+    min-width: 160px;
+    z-index: 25;
+  }
+  .shell-tab-submenu li { margin: 0; padding: 0; }
+  .shell-tab-subitem {
+    display: block;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: 14px;
+    color: var(--fg);
+    white-space: nowrap;
+  }
+  .shell-tab-subitem:hover { background: var(--stripe); color: var(--accent); }
+  .shell-tab-subitem.is-active { background: var(--stripe); color: var(--accent); font-weight: 600; }
+
   .shell-content { flex: 1 1 auto; min-height: 0; }
   .shell-content iframe {
     border: 0;
     width: 100%;
-    height: calc(100vh - 57px);
+    height: calc(100vh - 124px);
     background: var(--bg);
   }
 
@@ -528,7 +589,7 @@ SHELL_CSS = """
     padding: 9px 34px 9px 12px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
-    background: transparent;
+    background: #EAE3D1;
     color: var(--fg);
     width: 100%;
     appearance: none;
@@ -668,7 +729,7 @@ SHELL_CSS = """
   .brand-logo-img { height: 36px; width: auto; display: block; }
 
   /* === Housing viewer extras (status badges, label cells, content wrap) === */
-  .housing-content { padding: 16px 0; max-width: 1100px; }
+  .housing-content { padding: 16px 0; max-width: 100%; }
   .housing-content h2 { margin: 24px 0 12px; }
   .housing-content h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }
   .label-cell {
@@ -739,10 +800,20 @@ SHELL_CSS = """
     }
     .filters-col .control-group { flex: 1 1 160px; }
   }
+  /* === Responsive tables (narrow viewports) === */
+  @media (max-width: 820px) {
+    table { display: block; overflow-x: auto; white-space: nowrap; }
+    .kv-table { display: table; white-space: normal; }
+    .kv-table tr, .kv-table tbody, .kv-table tbody tr { display: table-row; }
+    .shell-header { padding: 10px 16px; flex-wrap: wrap; }
+    .shell-tabs { padding: 4px 12px; }
+    .shell-content iframe { height: calc(100vh - 160px); }
+  }
   @media (max-width: 600px) {
-    .shell-topbar { gap: 12px; padding: 10px 16px; }
-    .shell-tabs { order: 3; flex-basis: 100%; }
-    .shell-content iframe { height: calc(100vh - 110px); }
+    .dashboard-shell { padding: 12px 16px 0; }
+    .shell-eyebrow { font-size: 10px; }
+    .shell-subtitle { font-size: 14px; }
+    .shell-content iframe { height: calc(100vh - 180px); }
   }
 """
 
@@ -752,9 +823,9 @@ AUTH_SCRIPT_TAG = '<script src="/assets/js/auth.js"></script>'
 FAVICON_HREF = "/assets/img/favicon.png"
 
 TABS = (
-    {"key": "log",     "label": "Blog",    "href": "/private/log/"},
-    {"key": "housing", "label": "Housing", "href": "/private/housing/"},
-    {"key": "courses", "label": "Courses", "href": "/private/courses/"},
+    {"key": "log",     "label": "SEO",     "href": "/admin/log/"},
+    {"key": "housing", "label": "Housing", "href": "/admin/housing/"},
+    {"key": "courses", "label": "Courses", "href": "/admin/courses/"},
 )
 
 # Web-publishing root inside the CEL external repo.
@@ -809,36 +880,57 @@ _SHELL_HTML = """\
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
-  <title>English College \u2014 Internal Dashboard</title>
+  <title>English College \u2014 Admin Dashboard</title>
   <link rel="icon" type="image/png" href="/assets/img/favicon.png">
   <link rel="stylesheet" href="/assets/css/dashboard.css">
 </head>
 <body>
   <div class="shell-root">
-    <header class="shell-topbar">
-      <a class="shell-brand" href="/private/" aria-label="English College">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/" aria-label="English College">
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
-      <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="#log" data-target="log">Blog</a>
-        <a class="shell-tab" href="#housing" data-target="housing">Housing</a>
-        <a class="shell-tab" href="#courses" data-target="courses">Courses</a>
-      </nav>
+      <div class="shell-brand-text">
+        <p class="shell-eyebrow">English College</p>
+        <p class="shell-subtitle" id="shell-subtitle">Blog Sync</p>
+      </div>
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
+    <nav class="shell-tabs" aria-label="Dashboard sections">
+      <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
+      <details class="shell-tab-dropdown" data-topbar="fidelo">
+        <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">\u25be</span></summary>
+        <ul class="shell-tab-submenu">
+          <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
+          <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
+        </ul>
+      </details>
+    </nav>
     <main class="shell-content">
-      <iframe id="shell-frame" title="Dashboard content" src="/private/log/"></iframe>
+      <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
     </main>
   </div>
   <script>
   (function () {
     var TARGETS = {
-      log:     '/private/log/',
-      housing: '/private/housing/',
-      courses: '/private/courses/'
+      log:     '/admin/log/',
+      housing: '/admin/housing/',
+      courses: '/admin/courses/'
+    };
+    var SUBTITLES = {
+      log:     'Blog Sync',
+      housing: 'Housing',
+      courses: 'Courses'
+    };
+    var TOPBAR_FOR = {
+      log:     'seo',
+      housing: 'fidelo',
+      courses: 'fidelo'
     };
     var frame = document.getElementById('shell-frame');
-    var tabs = document.querySelectorAll('.shell-tab');
+    var subtitleEl = document.getElementById('shell-subtitle');
+    var topbarEls = document.querySelectorAll('[data-topbar]');
+    var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
       var key = (location.hash || '#log').slice(1);
       if (!TARGETS[key]) key = 'log';
@@ -850,8 +942,16 @@ _SHELL_HTML = """\
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      tabs.forEach(function (a) {
+      subtitleEl.textContent = SUBTITLES[key] || SUBTITLES.log;
+      var topKey = TOPBAR_FOR[key] || 'seo';
+      topbarEls.forEach(function (el) {
+        el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
+      });
+      subitemEls.forEach(function (a) {
         a.classList.toggle('is-active', a.getAttribute('data-target') === key);
+      });
+      document.querySelectorAll('details.shell-tab-dropdown[open]').forEach(function (d) {
+        d.removeAttribute('open');
       });
     }
     window.addEventListener('hashchange', apply);
@@ -868,8 +968,8 @@ _SHELL_HTML = """\
 
 
 def write_shell_html(repo_root: Path) -> Path:
-    """Write the dashboard shell HTML to <repo_root>/private/index.html."""
-    target = repo_root / "private" / "index.html"
+    """Write the dashboard shell HTML to <repo_root>/admin/index.html."""
+    target = repo_root / "admin" / "index.html"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(_SHELL_HTML, encoding="utf-8")
     return target
