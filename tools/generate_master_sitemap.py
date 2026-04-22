@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import pathlib
 import requests
 import logging
 from lxml import etree
@@ -313,8 +314,10 @@ def main():
             new_el.append(etree.fromstring(etree.tostring(child)))
         
     tree = etree.ElementTree(urlset)
-    master_file = "sitemap.xml"
-    
+    # Public web files live under docs/ (GH Pages serves main:/docs).
+    master_file = "docs/sitemap.xml"
+    pathlib.Path(master_file).parent.mkdir(parents=True, exist_ok=True)
+
     # Write to file with pretty formatting and xml declaration
     tree.write(master_file, pretty_print=True, xml_declaration=True, encoding="utf-8")
     logging.info(f"\nSuccess! Standard XML Sitemap generated at '{master_file}'.")

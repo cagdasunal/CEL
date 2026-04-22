@@ -25,9 +25,9 @@ from datetime import datetime, timedelta, timezone
 
 TRACKED = ("sitemap.xml", "llms.txt", "weglot.csv")
 DASHBOARD = "https://dashboard.weglot.com/workspaces/w-6bc645f5ad/projects/cel/settings/exclusions"
-CSV_URL = "https://sitemap.englishcollege.com/weglot.csv"
-SITEMAP_URL = "https://sitemap.englishcollege.com/sitemap.xml"
-LLMS_URL = "https://sitemap.englishcollege.com/llms.txt"
+CSV_URL = "https://cel.englishcollege.com/weglot.csv"
+SITEMAP_URL = "https://cel.englishcollege.com/sitemap.xml"
+LLMS_URL = "https://cel.englishcollege.com/llms.txt"
 
 # Display timezone. Turkey is fixed GMT+3 year-round (no DST since 2016),
 # so a plain fixed offset is correct and avoids the tzdata dependency.
@@ -111,11 +111,22 @@ def count_pending_weglot_entries() -> int:
 
 
 def build_entries(now: str, changed: set[str]) -> dict[str, str]:
-    """Build {filename: 'timestamp suffix'} for every TRACKED file."""
+    """Build {filename: 'timestamp suffix'} for every TRACKED file.
+
+    After the docs/ restructure, sitemap.xml + llms.txt live at docs/<name>.
+    weglot.csv still lives at repo root (internal) with a data/weglot.csv pair.
+    CHANGED env var reflects actual paths from `git diff --cached --name-only`.
+    """
     out: dict[str, str] = {}
     for name in TRACKED:
-        is_changing = name in changed or (name == "weglot.csv" and "data/weglot.csv" in changed)
-        ts = now if is_changing else git_last_touched(name)
+        docs_path = f"docs/{name}"
+        git_path = docs_path if name != "weglot.csv" else name
+        is_changing = (
+            name in changed
+            or docs_path in changed
+            or (name == "weglot.csv" and "data/weglot.csv" in changed)
+        )
+        ts = now if is_changing else git_last_touched(git_path)
         out[name] = ts
     pending = count_pending_weglot_entries()
     if pending == 1:
@@ -151,7 +162,8 @@ def main() -> int:
     entries = build_entries(now, changed)
     pending = count_pending_weglot_entries()
     weglot_last_check = read_weglot_last_check()
-    pathlib.Path("log.txt").write_text(
+    pathlib.Path("docs/log.txt").parent.mkdir(parents=True, exist_ok=True)
+    pathlib.Path("docs/log.txt").write_text(
         render(entries, pending, weglot_last_check), encoding="utf-8"
     )
     return 0

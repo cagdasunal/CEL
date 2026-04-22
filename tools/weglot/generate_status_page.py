@@ -35,7 +35,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 LOG_STATE_FILE = DATA_DIR / "log-state.json"
 EXCLUSIONS_FILE = DATA_DIR / "weglot-exclusions.json"
-OUTPUT_FILE = PROJECT_ROOT / "log.html"
+OUTPUT_FILE = PROJECT_ROOT / "docs" / "log.html"
 
 BG_COLOR = "#F9F1DF"
 TEXT_COLOR = "#37332c"
