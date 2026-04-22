@@ -1,4 +1,59 @@
+"""Shared theme for Fidelo viewer.html and Weglot log.html dashboards.
 
+Consumers: tools.fidelo.build_viewer · tools.weglot.generate_status_page
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import sys
+from datetime import datetime
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+LOGO_SVG_PATH = _REPO_ROOT / "sites" / "englishcollege" / "shared" / "cel-logo-multicolor.svg"
+
+# Brand palette — mirrored from sites/englishcollege/site.json css_variables.
+BG_COLOR       = "#F1EAD8"
+FG_COLOR       = "#37332c"
+ACCENT_PRIMARY = "#5d60ee"
+ACCENT_WARM    = "#e78b10"
+SURFACE        = "#F1EAD8"
+BORDER         = "rgba(55,51,44,0.12)"
+BORDER_STRONG  = "rgba(55,51,44,0.18)"
+MUTED          = "rgba(55,51,44,0.65)"
+PANEL          = "rgba(55,51,44,0.04)"
+
+_XML_PROLOG_RE = re.compile(r"^\s*<\?xml[^?]*\?>\s*", re.DOTALL)
+_DOCTYPE_RE    = re.compile(r"^\s*<!DOCTYPE[^>]*>\s*", re.DOTALL | re.IGNORECASE)
+
+
+def load_logo_svg() -> str:
+    if not LOGO_SVG_PATH.exists():
+        print(
+            f"[dashboard] WARNING: logo not found at {LOGO_SVG_PATH}",
+            file=sys.stderr,
+        )
+        return "<svg width='108' height='32' xmlns='http://www.w3.org/2000/svg'></svg>"
+    raw = LOGO_SVG_PATH.read_text(encoding="utf-8")
+    raw = _XML_PROLOG_RE.sub("", raw)
+    raw = _DOCTYPE_RE.sub("", raw)
+    return raw.strip()
+
+
+def render_logo_mark(extra_class: str = "") -> str:
+    inline_svg = load_logo_svg()
+    cls = f"brand-mark {extra_class}".strip()
+    return (
+        f'<div class="{cls}">'
+        f'<span class="brand-logo" aria-label="English College">{inline_svg}</span>'
+        f"</div>"
+    )
+
+
+# Shared dashboard theme — tools/dashboard.py. Consumers: viewer.html (Fidelo) · log.html (Weglot).
+SHARED_CSS = """
   /* === Reset + Root === */
   :root {
     --bg: #F1EAD8;
@@ -355,8 +410,17 @@
     .kv-table .v { display: block; width: 100%; }
     .kv-table .k { padding-bottom: 2px; }
   }
+"""
 
 
+# ---------------------------------------------------------------------------
+# Dashboard shell (sidebar + iframe) + public gate + listing images
+# Consumers: cel.englishcollege.com/private/index.html (shell),
+#            cel.englishcollege.com/index.html (password gate),
+#            cel.englishcollege.com/private/housing/index.html (listing imgs).
+# ---------------------------------------------------------------------------
+
+SHELL_CSS = """
   /* === Dashboard shell (top-bar + iframe) === */
   .shell-root {
     display: flex;
@@ -522,7 +586,7 @@
   }
   details.tech-details > summary::-webkit-details-marker { display: none; }
   details.tech-details > summary::after {
-    content: "\25B8";
+    content: "\\25B8";
     float: right;
     transition: transform 120ms ease;
   }
@@ -680,3 +744,132 @@
     .shell-tabs { order: 3; flex-basis: 100%; }
     .shell-content iframe { height: calc(100vh - 110px); }
   }
+"""
+
+
+AUTH_SCRIPT_TAG = '<script src="/assets/js/auth.js"></script>'
+
+FAVICON_HREF = "/assets/img/favicon.png"
+
+TABS = (
+    {"key": "log",     "label": "Blog",    "href": "/private/log/"},
+    {"key": "housing", "label": "Housing", "href": "/private/housing/"},
+    {"key": "courses", "label": "Courses", "href": "/private/courses/"},
+)
+
+# Web-publishing root inside the CEL external repo.
+# GitHub Pages serves this subdirectory (main:/docs). Override via CEL_EXTERNAL_ROOT env var for CI.
+EXTERNAL_REPO_ROOT = Path(os.environ.get(
+    "CEL_EXTERNAL_ROOT",
+    "/Users/cagdas/Desktop/dev/englishcollege/docs",
+))
+
+
+def write_external_css(repo_root: Path) -> Path:
+    """Write combined dashboard CSS to <repo_root>/assets/css/dashboard.css."""
+    target = repo_root / "assets" / "css" / "dashboard.css"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(SHARED_CSS + "\n" + SHELL_CSS, encoding="utf-8")
+    return target
+
+
+def render_favicon_tag() -> str:
+    return f'<link rel="icon" type="image/png" href="{FAVICON_HREF}">'
+
+
+def render_page_chrome(eyebrow: str, subtitle: str) -> str:
+    """Standard page header — eyebrow + subtitle, no logo, no h1."""
+    return (
+        '<header class="dashboard-header">'
+        '<div class="brand-text">'
+        f'<p class="eyebrow">{eyebrow}</p>'
+        f'<p class="subtitle">{subtitle}</p>'
+        '</div>'
+        '</header>'
+    )
+
+
+def render_sync_status_card(label: str, last_synced: str, is_ok: bool = True) -> str:
+    """Status banner matching the log-page pattern."""
+    status_class = "status-ok" if is_ok else "status-error"
+    status_modifier = "" if is_ok else " error"
+    return (
+        f'<section class="status {status_class}{status_modifier}">'
+        f'<p class="status-label">{label}</p>'
+        f'<p>Last checked on <strong>{last_synced}</strong> (San Diego time).</p>'
+        '</section>'
+    )
+
+
+_SHELL_HTML = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/assets/js/auth.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>English College \u2014 Internal Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+</head>
+<body>
+  <div class="shell-root">
+    <header class="shell-topbar">
+      <a class="shell-brand" href="/private/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#log" data-target="log">Blog</a>
+        <a class="shell-tab" href="#housing" data-target="housing">Housing</a>
+        <a class="shell-tab" href="#courses" data-target="courses">Courses</a>
+      </nav>
+      <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
+    </header>
+    <main class="shell-content">
+      <iframe id="shell-frame" title="Dashboard content" src="/private/log/"></iframe>
+    </main>
+  </div>
+  <script>
+  (function () {
+    var TARGETS = {
+      log:     '/private/log/',
+      housing: '/private/housing/',
+      courses: '/private/courses/'
+    };
+    var frame = document.getElementById('shell-frame');
+    var tabs = document.querySelectorAll('.shell-tab');
+    function pick() {
+      var key = (location.hash || '#log').slice(1);
+      if (!TARGETS[key]) key = 'log';
+      return key;
+    }
+    function apply() {
+      var key = pick();
+      if (frame.dataset.key !== key) {
+        frame.dataset.key = key;
+        frame.src = TARGETS[key];
+      }
+      tabs.forEach(function (a) {
+        a.classList.toggle('is-active', a.getAttribute('data-target') === key);
+      });
+    }
+    window.addEventListener('hashchange', apply);
+    apply();
+    document.getElementById('shell-logout').addEventListener('click', function () {
+      try { sessionStorage.removeItem('cel_unlocked'); } catch (_) {}
+      location.replace('/');
+    });
+  })();
+  </script>
+</body>
+</html>
+"""
+
+
+def write_shell_html(repo_root: Path) -> Path:
+    """Write the dashboard shell HTML to <repo_root>/private/index.html."""
+    target = repo_root / "private" / "index.html"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(_SHELL_HTML, encoding="utf-8")
+    return target

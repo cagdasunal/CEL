@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-Client-friendly HTML status page — log.html.
+Client-friendly HTML status page — private/log/index.html.
 
 Reads:
   data/log-state.json      — recent sync events (kind, ts, detail)
   data/weglot-exclusions.json  — roster of synced blog posts
 
-Writes:
-  log.html  — static HTML page served at https://sitemap.englishcollege.com/log.html
+Writes (into external repo):
+  <EXTERNAL_REPO_ROOT>/private/log/index.html
+      — served at https://cel.englishcollege.com/private/log/
+  <EXTERNAL_REPO_ROOT>/assets/css/dashboard.css (via write_external_css)
 
 Design constants locked by user:
   BG_COLOR   = #F9F1DF  (cream)
@@ -24,6 +26,16 @@ from html import escape
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from tools.dashboard import (
+    AUTH_SCRIPT_TAG,
+    EXTERNAL_REPO_ROOT,
+    SHARED_CSS,
+    render_favicon_tag,
+    render_page_chrome,
+    write_external_css,
+    write_shell_html,
+)
+
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -35,16 +47,16 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 LOG_STATE_FILE = DATA_DIR / "log-state.json"
 EXCLUSIONS_FILE = DATA_DIR / "weglot-exclusions.json"
-OUTPUT_FILE = PROJECT_ROOT / "docs" / "log.html"
+OUTPUT_FILE = EXTERNAL_REPO_ROOT / "private" / "log" / "index.html"
 
-BG_COLOR = "#F9F1DF"
+BG_COLOR = "#F1EAD8"
 TEXT_COLOR = "#37332c"
 
 MAX_RECENT_POSTS = 10
 MAX_RECENT_EVENTS = 10
 
-PUBLIC_SITEMAP_URL = "https://sitemap.englishcollege.com/sitemap.xml"
-PUBLIC_LLMS_URL = "https://sitemap.englishcollege.com/llms.txt"
+PUBLIC_SITEMAP_URL = "https://cel.englishcollege.com/sitemap.xml"
+PUBLIC_LLMS_URL = "https://cel.englishcollege.com/llms.txt"
 
 
 # ---------------------------------------------------------------------------
@@ -184,96 +196,14 @@ def describe_event(event: dict):
 # HTML rendering
 # ---------------------------------------------------------------------------
 
-CSS_TEMPLATE = """
-  * { box-sizing: border-box; }
-  body {
-    background: BG_COLOR_PLACEHOLDER;
-    color: TEXT_COLOR_PLACEHOLDER;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    max-width: 780px;
-    margin: 0 auto;
-    padding: 48px 20px;
-    line-height: 1.5;
-  }
-  h1 { font-size: 28px; margin: 0 0 8px; font-weight: 600; }
-  h2 {
-    font-size: 18px;
-    margin: 40px 0 12px;
-    border-bottom: 1px solid rgba(55,51,44,0.15);
-    padding-bottom: 6px;
-    font-weight: 600;
-  }
-  p.lede { margin: 0 0 24px; color: rgba(55,51,44,0.8); }
-  .status {
-    background: rgba(55,51,44,0.04);
-    border: 1px solid rgba(55,51,44,0.12);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 24px 0;
-  }
-  .status.error { background: rgba(192,57,43,0.08); border-color: rgba(192,57,43,0.3); }
-  .status-label { font-size: 20px; font-weight: 600; margin: 0 0 6px; }
-  .status-ok .status-label { color: #1d6b3a; }
-  .status-error .status-label { color: #a02624; }
-  .subtle { color: rgba(55,51,44,0.7); font-size: 14px; margin: 6px 0 0; }
-  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
-  th, td {
-    text-align: left;
-    padding: 10px 10px;
-    border-bottom: 1px solid rgba(55,51,44,0.12);
-    vertical-align: top;
-  }
-  th {
-    font-weight: 600;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: rgba(55,51,44,0.6);
-  }
-  td.slug {
-    font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 13px;
-    word-break: break-word;
-  }
-  td.lang {
-    font-variant: all-small-caps;
-    letter-spacing: 0.05em;
-    color: rgba(55,51,44,0.8);
-    white-space: nowrap;
-  }
-  td.when { color: rgba(55,51,44,0.7); white-space: nowrap; font-size: 13px; }
-  ul.files, ul.activity { list-style: none; padding: 0; margin: 8px 0; }
-  ul.files li, ul.activity li {
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(55,51,44,0.1);
-  }
-  ul.files li:last-child, ul.activity li:last-child { border-bottom: 0; }
-  ul.files .file-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-  ul.files .file-name { font-weight: 600; }
-  ul.activity .when { color: rgba(55,51,44,0.6); font-size: 13px; margin-right: 10px; }
-  .empty { color: rgba(55,51,44,0.6); font-style: italic; padding: 16px 0; }
-  a { color: TEXT_COLOR_PLACEHOLDER; text-decoration: underline; }
-  a:hover { color: #5f5950; }
-  footer {
-    margin-top: 48px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(55,51,44,0.15);
-    font-size: 13px;
-    color: rgba(55,51,44,0.7);
-  }
-  @media (max-width: 500px) {
-    body { padding: 24px 16px; }
-    h1 { font-size: 22px; }
-    table { font-size: 13px; }
-    td.slug { font-size: 12px; }
-  }
-"""
-
-
 def _css() -> str:
-    return CSS_TEMPLATE.replace("BG_COLOR_PLACEHOLDER", BG_COLOR).replace(
-        "TEXT_COLOR_PLACEHOLDER", TEXT_COLOR
-    )
+    """Return the shared dashboard CSS.
+
+    Both BG_COLOR (#F9F1DF) and TEXT_COLOR (#37332c) must appear literally in
+    the rendered HTML — enforced by test_generate_status_page.py::test_contains_required_colors.
+    SHARED_CSS satisfies that invariant.
+    """
+    return SHARED_CSS
 
 
 def render_html(events=None, exclusions=None) -> str:
@@ -301,26 +231,30 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append("<!DOCTYPE html>")
     parts.append('<html lang="en">')
     parts.append("<head>")
+    parts.append(f"  {AUTH_SCRIPT_TAG}")
     parts.append('  <meta charset="utf-8">')
     parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
     parts.append("  <title>Blog Sync Status — English College</title>")
     parts.append('  <meta name="description" content="Live status of blog post syncing, sitemap, and AI reference file for englishcollege.com">')
-    parts.append('  <meta name="robots" content="noindex">')
-    parts.append("  <style>")
-    parts.append(_css())
-    parts.append("  </style>")
+    parts.append('  <meta name="robots" content="noindex, nofollow">')
+    parts.append(f'  {render_favicon_tag()}')
+    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append('  <div class="dashboard-shell">')
+
+    # Brand header (no <h1>, no logo — test_does_not_contain_visible_h1 locks this)
+    parts.append(f'    {render_page_chrome("English College", "Blog Sync Status \u2014 sitemap + llms.txt")}')
 
     # Status card
-    parts.append(f'  <section class="status {status_class}{status_modifier}">')
-    parts.append(f'    <p class="status-label">{escape(banner_label)}</p>')
-    parts.append(f'    <p>Last checked on <strong>{escape(last_check)}</strong> (San Diego time).</p>')
-    parts.append("  </section>")
+    parts.append(f'    <section class="status {status_class}{status_modifier}">')
+    parts.append(f'      <p class="status-label">{escape(banner_label)}</p>')
+    parts.append(f'      <p>Last checked on <strong>{escape(last_check)}</strong> (San Diego time).</p>')
+    parts.append("    </section>")
 
     # Published files
-    parts.append("  <h2>Published files</h2>")
-    parts.append('  <ul class="files">')
+    parts.append("    <h2>Published files</h2>")
+    parts.append('    <ul class="files">')
 
     def _file_note(filename: str) -> str:
         ts = last_commit_ts_for_file(filename)
@@ -387,6 +321,7 @@ def render_html(events=None, exclusions=None) -> str:
         f'Next check within 15 minutes.'
     )
     parts.append("  </footer>")
+    parts.append("  </div>")  # close .dashboard-shell
     parts.append("</body>")
     parts.append("</html>")
 
@@ -398,6 +333,8 @@ def render_html(events=None, exclusions=None) -> str:
 # ---------------------------------------------------------------------------
 
 def write_status_page() -> None:
+    write_external_css(EXTERNAL_REPO_ROOT)
+    write_shell_html(EXTERNAL_REPO_ROOT)
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(render_html(), encoding="utf-8")
 

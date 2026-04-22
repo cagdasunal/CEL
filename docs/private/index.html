@@ -6,55 +6,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>English College — Internal Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
   <link rel="stylesheet" href="/assets/css/dashboard.css">
 </head>
 <body>
   <div class="shell-root">
-    <aside class="shell-sidebar">
-      <div class="brand-mark">
-        <div class="brand-logo" aria-label="English College">
-          <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
-        </div>
-      </div>
-      <nav>
-        <a class="shell-nav-link" href="#log" data-target="log">Blog Sync Log</a>
-        <a class="shell-nav-link" href="#housing" data-target="housing">Housing</a>
-        <a class="shell-nav-link" href="#courses" data-target="courses">Courses</a>
+    <header class="shell-topbar">
+      <a class="shell-brand" href="/private/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#log" data-target="log">Blog</a>
+        <a class="shell-tab" href="#housing" data-target="housing">Housing</a>
+        <a class="shell-tab" href="#courses" data-target="courses">Courses</a>
       </nav>
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
-    </aside>
+    </header>
     <main class="shell-content">
       <iframe id="shell-frame" title="Dashboard content" src="/private/log/"></iframe>
     </main>
   </div>
   <script>
   (function () {
-    const TARGETS = {
+    var TARGETS = {
       log:     '/private/log/',
       housing: '/private/housing/',
       courses: '/private/courses/'
     };
-    const frame = document.getElementById('shell-frame');
-    const links = document.querySelectorAll('.shell-nav-link');
-
+    var frame = document.getElementById('shell-frame');
+    var tabs = document.querySelectorAll('.shell-tab');
     function pick() {
-      let key = (location.hash || '#log').slice(1);
+      var key = (location.hash || '#log').slice(1);
       if (!TARGETS[key]) key = 'log';
       return key;
     }
     function apply() {
-      const key = pick();
+      var key = pick();
       if (frame.dataset.key !== key) {
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      links.forEach(function (a) {
+      tabs.forEach(function (a) {
         a.classList.toggle('is-active', a.getAttribute('data-target') === key);
       });
     }
     window.addEventListener('hashchange', apply);
     apply();
-
     document.getElementById('shell-logout').addEventListener('click', function () {
       try { sessionStorage.removeItem('cel_unlocked'); } catch (_) {}
       location.replace('/');
