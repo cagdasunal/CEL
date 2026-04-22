@@ -46,9 +46,9 @@ jobs:
 
       - name: Generate llms.txt from local sitemap
         run: |
-          # Serve the freshly generated sitemap.xml on localhost so npx llmstxt gen
-          # reads from the exact file just produced, not a stale CDN copy.
-          python3 -m http.server 8081 --bind 127.0.0.1 &
+          # Serve docs/ (where sitemap.xml now lives) so npx llmstxt gen reads
+          # the freshly produced file, not a stale CDN copy.
+          python3 -m http.server 8081 --bind 127.0.0.1 --directory docs &
           HTTP_PID=$!
           # Ensure the server is killed even if generate_llms.sh exits non-zero
           # (bash -e would abort the step before the explicit kill below).
@@ -63,13 +63,13 @@ jobs:
 
       - name: Stage data changes
         run: |
-          git add sitemap.xml llms.txt
+          git add docs/sitemap.xml docs/llms.txt
 
       - name: Update log.txt (always)
         run: |
           export CHANGED="$(git diff --cached --name-only 2>/dev/null | tr '\n' ' ')"
           python3 tools/update_log.py
-          git add log.txt
+          git add docs/log.txt
 
       - name: Commit and push if changed
         run: |

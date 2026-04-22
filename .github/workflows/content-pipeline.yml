@@ -49,7 +49,9 @@ jobs:
       - name: Step 3 — Regenerate llms.txt
         if: steps.weglot.outputs.updated == 'true'
         run: |
-          python3 -m http.server 8081 --directory . &
+          # Serve docs/ (where sitemap.xml now lives) so npx llmstxt gen reads
+          # the freshly produced file, not a stale CDN copy.
+          python3 -m http.server 8081 --directory docs &
           SERVER_PID=$!
           sleep 2
           LLMS_SITEMAP_URL=http://localhost:8081/sitemap.xml bash tools/generate_llms.sh
@@ -76,6 +78,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json sitemap.xml llms.txt log.html 2>/dev/null || true
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/log.html 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push || echo "push failed (will retry next run)"

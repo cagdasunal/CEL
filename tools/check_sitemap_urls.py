@@ -30,8 +30,8 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-DEFAULT_SITEMAP = PROJECT_ROOT / "sitemap.xml"
-REMOTE_SITEMAP = "https://raw.githubusercontent.com/cagdasunal/englishcollege/main/sitemap.xml"
+DEFAULT_SITEMAP = PROJECT_ROOT / "docs" / "sitemap.xml"
+REMOTE_SITEMAP = "https://raw.githubusercontent.com/cagdasunal/CEL/main/docs/sitemap.xml"
 
 logging.basicConfig(
     level=logging.INFO,
