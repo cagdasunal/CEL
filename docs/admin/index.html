@@ -15,22 +15,18 @@
       <a class="shell-brand" href="/admin/" aria-label="English College">
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
-      <div class="shell-brand-text">
-        <p class="shell-eyebrow">English College</p>
-        <p class="shell-subtitle" id="shell-subtitle">Blog Sync</p>
-      </div>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
+        <details class="shell-tab-dropdown" data-topbar="fidelo">
+          <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">▾</span></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
-    <nav class="shell-tabs" aria-label="Dashboard sections">
-      <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
-      <details class="shell-tab-dropdown" data-topbar="fidelo">
-        <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">▾</span></summary>
-        <ul class="shell-tab-submenu">
-          <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
-          <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
-        </ul>
-      </details>
-    </nav>
     <main class="shell-content">
       <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
     </main>
@@ -42,18 +38,12 @@
       housing: '/admin/housing/',
       courses: '/admin/courses/'
     };
-    var SUBTITLES = {
-      log:     'Blog Sync',
-      housing: 'Housing',
-      courses: 'Courses'
-    };
     var TOPBAR_FOR = {
       log:     'seo',
       housing: 'fidelo',
       courses: 'fidelo'
     };
     var frame = document.getElementById('shell-frame');
-    var subtitleEl = document.getElementById('shell-subtitle');
     var topbarEls = document.querySelectorAll('[data-topbar]');
     var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
@@ -67,7 +57,6 @@
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      subtitleEl.textContent = SUBTITLES[key] || SUBTITLES.log;
       var topKey = TOPBAR_FOR[key] || 'seo';
       topbarEls.forEach(function (el) {
         el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);

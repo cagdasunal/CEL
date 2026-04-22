@@ -19,7 +19,6 @@ No external dependencies. Stdlib only.
 """
 
 import json
-import subprocess
 import sys
 from datetime import datetime
 from html import escape
@@ -53,6 +52,12 @@ TEXT_COLOR = "#37332c"
 
 MAX_RECENT_POSTS = 10
 MAX_RECENT_EVENTS = 10
+
+LANGUAGE_NAMES = {
+    "ar": "Arabic", "de": "German", "en": "English", "es": "Spanish",
+    "fr": "French", "it": "Italian", "ja": "Japanese", "ko": "Korean",
+    "pt": "Portuguese",
+}
 
 PUBLIC_SITEMAP_URL = "https://cel.englishcollege.com/sitemap.xml"
 PUBLIC_LLMS_URL = "https://cel.englishcollege.com/llms.txt"
@@ -109,29 +114,21 @@ def load_exclusions() -> dict:
     return {}
 
 
-def last_commit_ts_for_file(filename: str) -> str | None:
-    """Return ISO-8601 timestamp of the most recent commit that touched
-    `filename` (relative to PROJECT_ROOT), or None if git is unavailable,
-    the file is untracked, or the lookup fails.
+def file_mtime_iso(path: Path) -> str | None:
+    """Return ISO-8601 timestamp of `path`'s last-modified time in San Diego
+    local time, or None if the file doesn't exist.
 
-    Used to populate the per-file "Last updated on …" line in log.html so
-    sitemap.xml and llms.txt show their own distinct refresh times rather
-    than a shared weglot-event timestamp.
+    Replaces the previous git-log-based lookup — filesystem mtime is simpler,
+    works locally and in CI without git context, and reflects when the file
+    was actually last regenerated (which is what the page states).
     """
     try:
-        result = subprocess.run(
-            ["git", "log", "-1", "--format=%cI", "--", filename],
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except (FileNotFoundError, subprocess.SubprocessError):
+        if not path.exists():
+            return None
+        ts = datetime.fromtimestamp(path.stat().st_mtime, tz=SAN_DIEGO_TZ)
+        return ts.isoformat()
+    except OSError:
         return None
-    if result.returncode != 0:
-        return None
-    stamp = result.stdout.strip()
-    return stamp or None
 
 
 # ---------------------------------------------------------------------------
@@ -142,9 +139,10 @@ def recent_posts(exclusions: dict, limit: int = MAX_RECENT_POSTS) -> list:
     items = []
     for slug, info in exclusions.items():
         added_at = info.get("added_at") or ""
+        code = (info.get("language") or "").lower()
         items.append({
             "slug": slug,
-            "language": (info.get("language") or "").upper(),
+            "language": LANGUAGE_NAMES.get(code, code.upper()),
             "added_at": added_at,
             "source": info.get("source") or "",
         })
@@ -253,7 +251,7 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append('    <ul class="files">')
 
     def _file_note(filename: str) -> str:
-        ts = last_commit_ts_for_file(filename)
+        ts = file_mtime_iso(EXTERNAL_REPO_ROOT / filename)
         if ts:
             return f"Last updated on {escape(iso_to_sd(ts))}"
         return "Not yet updated"

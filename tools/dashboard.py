@@ -73,6 +73,12 @@ SHARED_CSS = """
     --notice-bg: rgba(166,95,31,0.08);
     --notice-border: rgba(166,95,31,0.28);
     --notice-fg: #7a4314;
+    --fs-xs: 11px;
+    --fs-sm: 12px;
+    --fs-md: 13px;
+    --fs-base: 14px;
+    --fs-lg: 18px;
+    --fs-xl: 20px;
     --radius: 10px;
     --radius-sm: 6px;
   }
@@ -81,7 +87,7 @@ SHARED_CSS = """
   body {
     color: var(--fg);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
+    font-size: var(--fs-base);
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -129,18 +135,18 @@ SHARED_CSS = """
   }
   .brand-text h1 {
     margin: 0;
-    font-size: 22px;
+    font-size: var(--fs-xl);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
   .brand-text .subtitle,
   .brand-text p {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--fs-md);
     color: var(--muted);
   }
   .brand-text .eyebrow {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -177,7 +183,7 @@ SHARED_CSS = """
     gap: 6px;
   }
   .controls label {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -185,7 +191,7 @@ SHARED_CSS = """
   }
   .controls select {
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-md);
     padding: 9px 34px 9px 12px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -214,7 +220,7 @@ SHARED_CSS = """
 
   /* === Headings & body blocks === */
   h2 {
-    font-size: 18px;
+    font-size: var(--fs-lg);
     font-weight: 600;
     margin: 40px 0 12px;
     border-bottom: 1px solid var(--border);
@@ -223,7 +229,7 @@ SHARED_CSS = """
   p.lede {
     margin: 0 0 24px;
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--fs-base);
   }
 
   /* === Scroll containers === */
@@ -234,7 +240,7 @@ SHARED_CSS = """
     width: 100%;
     border-collapse: collapse;
     margin: 8px 0;
-    font-size: 14px;
+    font-size: var(--fs-base);
   }
   th, td {
     text-align: left;
@@ -244,7 +250,7 @@ SHARED_CSS = """
   }
   th {
     font-weight: 600;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--muted);
@@ -253,7 +259,7 @@ SHARED_CSS = """
   tbody tr:hover td { background: var(--stripe); }
 
   /* === KV table === */
-  .kv-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; }
+  .kv-table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); margin: 8px 0; }
   .kv-table td {
     padding: 8px 10px;
     border-bottom: 1px solid var(--border);
@@ -264,7 +270,7 @@ SHARED_CSS = """
     font-weight: 600;
     white-space: nowrap;
     color: var(--faint);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     width: 34%;
   }
   .kv-table .v { color: var(--fg); }
@@ -272,7 +278,7 @@ SHARED_CSS = """
   /* === Mono / pre === */
   .mono, pre.mono {
     font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     background: var(--stripe);
     padding: 2px 6px;
     border-radius: 4px;
@@ -305,7 +311,7 @@ SHARED_CSS = """
     color: var(--notice-fg);
     border-radius: var(--radius-sm);
     padding: 3px 10px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     font-weight: 600;
   }
 
@@ -314,7 +320,7 @@ SHARED_CSS = """
   .status-partial { color: var(--warn); }
   .status-failed  { color: var(--err); }
   .dash { color: var(--faint); }
-  .rt { color: var(--muted); font-size: 12px; }
+  .rt { color: var(--muted); font-size: var(--fs-sm); }
 
   /* === log.html: status card === */
   .status {
@@ -328,10 +334,10 @@ SHARED_CSS = """
     background: rgba(192,57,43,0.08);
     border-color: rgba(192,57,43,0.3);
   }
-  .status-label { font-size: 20px; font-weight: 600; margin: 0 0 6px; }
+  .status-label { font-size: var(--fs-xl); font-weight: 600; margin: 0 0 6px; }
   .status-ok .status-label  { color: #1d6b3a; }
   .status-error .status-label { color: #a02624; }
-  .subtle { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  .subtle { color: var(--muted); font-size: var(--fs-md); margin: 6px 0 0; }
 
   /* === log.html: file list === */
   ul.files, ul.activity { list-style: none; padding: 0; margin: 8px 0; }
@@ -350,7 +356,7 @@ SHARED_CSS = """
   ul.files .file-name { font-weight: 600; }
   ul.activity .when {
     color: var(--muted);
-    font-size: 13px;
+    font-size: var(--fs-md);
     margin-right: 10px;
   }
   .empty { color: var(--muted); font-style: italic; padding: 16px 0; }
@@ -358,16 +364,15 @@ SHARED_CSS = """
   /* === Slug / lang / when cell types (log.html table) === */
   td.slug {
     font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    font-size: 13px;
+    font-size: var(--fs-md);
     word-break: break-word;
   }
   td.lang {
-    font-variant: all-small-caps;
-    letter-spacing: 0.05em;
     color: var(--muted);
     white-space: nowrap;
+    font-size: var(--fs-md);
   }
-  td.when { color: var(--muted); white-space: nowrap; font-size: 13px; }
+  td.when { color: var(--muted); white-space: nowrap; font-size: var(--fs-md); }
 
   /* === Links === */
   a { color: var(--fg); text-decoration: underline; }
@@ -378,7 +383,7 @@ SHARED_CSS = """
     margin-top: 48px;
     padding-top: 16px;
     border-top: 1px solid var(--border);
-    font-size: 13px;
+    font-size: var(--fs-md);
     color: var(--muted);
   }
 
@@ -390,7 +395,7 @@ SHARED_CSS = """
   }
   @media (max-width: 640px) {
     .dashboard-header { padding: 20px 0 14px; }
-    .brand-text h1 { font-size: 20px; }
+    .brand-text h1 { font-size: var(--fs-xl); }
     .controls-inner {
       flex-direction: column;
       align-items: stretch;
@@ -400,9 +405,9 @@ SHARED_CSS = """
     .controls select { width: 100%; min-width: 0; }
   }
   @media (max-width: 500px) {
-    table { font-size: 13px; }
-    td.slug { font-size: 12px; }
-    h2 { font-size: 17px; }
+    table { font-size: var(--fs-md); }
+    td.slug { font-size: var(--fs-sm); }
+    h2 { font-size: var(--fs-lg); }
   }
   @media (max-width: 420px) {
     .dashboard-shell { padding: 0 16px; }
@@ -430,14 +435,17 @@ SHELL_CSS = """
   }
   .shell-sidebar { display: none; }
 
-  /* === Top-bar shell v2 (brand row + tab row) === */
+  /* === Top-bar shell v3 (single row: logo | tabs | logout) === */
   .shell-header {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 28px 12px;
+    padding: 10px 20px;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 20;
   }
   .shell-header .shell-brand {
     display: inline-flex;
@@ -445,53 +453,26 @@ SHELL_CSS = """
     flex: 0 0 auto;
     text-decoration: none;
   }
-  .shell-header .shell-brand .brand-logo-img { height: 36px; }
-  .shell-brand-text {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .shell-eyebrow {
-    margin: 0;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-  }
-  .shell-subtitle {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--fg);
-    letter-spacing: -0.01em;
-  }
+  .shell-header .shell-brand .brand-logo-img { height: 32px; }
   .shell-logout {
     flex: 0 0 auto;
+    margin-left: auto;
     padding: 8px 14px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-md);
     cursor: pointer;
   }
   .shell-logout:hover { color: var(--err); border-color: var(--err); }
 
   .shell-tabs {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 4px;
-    padding: 6px 20px;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    overflow-x: auto;
+    min-width: 0;
   }
   .shell-tab {
     display: inline-flex;
@@ -499,7 +480,7 @@ SHELL_CSS = """
     padding: 8px 14px;
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: 14px;
+    font-size: var(--fs-base);
     font-weight: 500;
     color: var(--muted);
     white-space: nowrap;
@@ -520,7 +501,7 @@ SHELL_CSS = """
   }
   .shell-tab-dropdown > summary { list-style: none; }
   .shell-tab-dropdown > summary::-webkit-details-marker { display: none; }
-  .shell-tab-chevron { margin-left: 6px; font-size: 10px; opacity: 0.6; }
+  .shell-tab-chevron { margin-left: 6px; font-size: var(--fs-xs); opacity: 0.6; }
   .shell-tab-submenu {
     position: absolute;
     left: 0;
@@ -533,7 +514,7 @@ SHELL_CSS = """
     border-radius: var(--radius);
     box-shadow: 0 8px 24px rgba(55,51,44,0.12);
     min-width: 160px;
-    z-index: 25;
+    z-index: 30;
   }
   .shell-tab-submenu li { margin: 0; padding: 0; }
   .shell-tab-subitem {
@@ -541,7 +522,7 @@ SHELL_CSS = """
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: 14px;
+    font-size: var(--fs-base);
     color: var(--fg);
     white-space: nowrap;
   }
@@ -552,7 +533,7 @@ SHELL_CSS = """
   .shell-content iframe {
     border: 0;
     width: 100%;
-    height: calc(100vh - 124px);
+    height: calc(100vh - 58px);
     background: var(--bg);
   }
 
@@ -577,7 +558,7 @@ SHELL_CSS = """
     gap: 6px;
   }
   .filters-col label {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--muted);
     text-transform: uppercase;
@@ -585,7 +566,7 @@ SHELL_CSS = """
   }
   .filters-col select {
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-md);
     padding: 9px 34px 9px 12px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -639,7 +620,7 @@ SHELL_CSS = """
   details.tech-details > summary {
     cursor: pointer;
     padding: 12px 16px;
-    font-size: 13px;
+    font-size: var(--fs-md);
     font-weight: 600;
     color: var(--muted);
     list-style: none;
@@ -680,7 +661,7 @@ SHELL_CSS = """
   }
   .gate-card .brand-mark { justify-content: center; margin-bottom: 4px; }
   .gate-card h1 {
-    font-size: 18px;
+    font-size: var(--fs-lg);
     font-weight: 600;
     margin: 0;
     text-align: center;
@@ -688,13 +669,13 @@ SHELL_CSS = """
   }
   .gate-card p.gate-hint {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--fs-md);
     color: var(--muted);
     text-align: center;
   }
   .gate-card input[type="password"] {
     font: inherit;
-    font-size: 14px;
+    font-size: var(--fs-base);
     padding: 10px 12px;
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-sm);
@@ -708,7 +689,7 @@ SHELL_CSS = """
   }
   .gate-card button {
     font: inherit;
-    font-size: 14px;
+    font-size: var(--fs-base);
     font-weight: 600;
     padding: 10px 12px;
     border: 0;
@@ -720,7 +701,7 @@ SHELL_CSS = """
   .gate-card button:hover { background: #4e51be; }
   .gate-error {
     min-height: 18px;
-    font-size: 13px;
+    font-size: var(--fs-md);
     color: var(--err);
     text-align: center;
   }
@@ -731,23 +712,23 @@ SHELL_CSS = """
   /* === Housing viewer extras (status badges, label cells, content wrap) === */
   .housing-content { padding: 16px 0; max-width: 100%; }
   .housing-content h2 { margin: 24px 0 12px; }
-  .housing-content h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--muted); }
+  .housing-content h3 { font-size: var(--fs-base); font-weight: 600; margin: 16px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .label-cell {
     font-weight: 600;
     width: 30%;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-sm);
   }
   .missing {
     color: var(--faint);
     font-style: italic;
-    font-size: 12px;
+    font-size: var(--fs-sm);
   }
   .badge-ok, .badge-partial, .badge-failed {
     display: inline-block;
     border-radius: 3px;
     padding: 1px 6px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
   }
   .badge-ok      { background: rgba(29,107,58,0.12);  color: var(--ok); }
@@ -764,7 +745,7 @@ SHELL_CSS = """
     gap: 8px;
     border-bottom: 1px solid var(--border);
     padding: 6px 0;
-    font-size: 13px;
+    font-size: var(--fs-base);
   }
   .prop-list li .pos { font-weight: 600; min-width: 24px; color: var(--muted); }
   .hidden { display: none; }
@@ -805,15 +786,13 @@ SHELL_CSS = """
     table { display: block; overflow-x: auto; white-space: nowrap; }
     .kv-table { display: table; white-space: normal; }
     .kv-table tr, .kv-table tbody, .kv-table tbody tr { display: table-row; }
-    .shell-header { padding: 10px 16px; flex-wrap: wrap; }
-    .shell-tabs { padding: 4px 12px; }
-    .shell-content iframe { height: calc(100vh - 160px); }
+    .shell-header { padding: 8px 12px; gap: 8px; flex-wrap: wrap; }
+    .shell-content iframe { height: calc(100vh - 110px); }
   }
   @media (max-width: 600px) {
     .dashboard-shell { padding: 12px 16px 0; }
-    .shell-eyebrow { font-size: 10px; }
-    .shell-subtitle { font-size: 14px; }
-    .shell-content iframe { height: calc(100vh - 180px); }
+    .shell-tab { padding: 6px 10px; font-size: var(--fs-md); }
+    .shell-content iframe { height: calc(100vh - 140px); }
   }
 """
 
@@ -828,12 +807,27 @@ TABS = (
     {"key": "courses", "label": "Courses", "href": "/admin/courses/"},
 )
 
-# Web-publishing root inside the CEL external repo.
-# GitHub Pages serves this subdirectory (main:/docs). Override via CEL_EXTERNAL_ROOT env var for CI.
-EXTERNAL_REPO_ROOT = Path(os.environ.get(
-    "CEL_EXTERNAL_ROOT",
-    "/Users/cagdas/Desktop/dev/englishcollege/docs",
-))
+def _default_external_root() -> Path:
+    """Resolve the CEL external-repo docs root.
+
+    Priority:
+      1. CEL_EXTERNAL_ROOT env var (set by fidelo-sync.yml CI).
+      2. Auto-detect — if <repo-root>/docs/index.html exists, we're inside the
+         external repo itself (content-pipeline.yml CI runs from cagdasunal/cel).
+         Monorepo's docs/ dir has no index.html, so the marker is unambiguous.
+      3. Fallback — local Mac dev path (monorepo convention).
+    """
+    env = os.environ.get("CEL_EXTERNAL_ROOT")
+    if env:
+        return Path(env)
+    repo_root = Path(__file__).resolve().parents[1]
+    candidate = repo_root / "docs"
+    if (candidate / "index.html").exists():
+        return candidate
+    return Path("/Users/cagdas/Desktop/dev/englishcollege/docs")
+
+
+EXTERNAL_REPO_ROOT = _default_external_root()
 
 
 def write_external_css(repo_root: Path) -> Path:
@@ -890,22 +884,18 @@ _SHELL_HTML = """\
       <a class="shell-brand" href="/admin/" aria-label="English College">
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
-      <div class="shell-brand-text">
-        <p class="shell-eyebrow">English College</p>
-        <p class="shell-subtitle" id="shell-subtitle">Blog Sync</p>
-      </div>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
+        <details class="shell-tab-dropdown" data-topbar="fidelo">
+          <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">\u25be</span></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
-    <nav class="shell-tabs" aria-label="Dashboard sections">
-      <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
-      <details class="shell-tab-dropdown" data-topbar="fidelo">
-        <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">\u25be</span></summary>
-        <ul class="shell-tab-submenu">
-          <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
-          <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
-        </ul>
-      </details>
-    </nav>
     <main class="shell-content">
       <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
     </main>
@@ -917,18 +907,12 @@ _SHELL_HTML = """\
       housing: '/admin/housing/',
       courses: '/admin/courses/'
     };
-    var SUBTITLES = {
-      log:     'Blog Sync',
-      housing: 'Housing',
-      courses: 'Courses'
-    };
     var TOPBAR_FOR = {
       log:     'seo',
       housing: 'fidelo',
       courses: 'fidelo'
     };
     var frame = document.getElementById('shell-frame');
-    var subtitleEl = document.getElementById('shell-subtitle');
     var topbarEls = document.querySelectorAll('[data-topbar]');
     var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
@@ -942,7 +926,6 @@ _SHELL_HTML = """\
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      subtitleEl.textContent = SUBTITLES[key] || SUBTITLES.log;
       var topKey = TOPBAR_FOR[key] || 'seo';
       topbarEls.forEach(function (el) {
         el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
