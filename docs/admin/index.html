@@ -16,7 +16,6 @@
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
           <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">▾</span></summary>
           <ul class="shell-tab-submenu">
@@ -28,18 +27,16 @@
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
     <main class="shell-content">
-      <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
+      <iframe id="shell-frame" title="Dashboard content" src="/admin/housing/"></iframe>
     </main>
   </div>
   <script>
   (function () {
     var TARGETS = {
-      log:     '/admin/log/',
       housing: '/admin/housing/',
       courses: '/admin/courses/'
     };
     var TOPBAR_FOR = {
-      log:     'seo',
       housing: 'fidelo',
       courses: 'fidelo'
     };
@@ -47,8 +44,8 @@
     var topbarEls = document.querySelectorAll('[data-topbar]');
     var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
-      var key = (location.hash || '#log').slice(1);
-      if (!TARGETS[key]) key = 'log';
+      var key = (location.hash || '#housing').slice(1);
+      if (!TARGETS[key]) key = 'housing';
       return key;
     }
     function apply() {
@@ -57,7 +54,7 @@
         frame.dataset.key = key;
         frame.src = TARGETS[key];
       }
-      var topKey = TOPBAR_FOR[key] || 'seo';
+      var topKey = TOPBAR_FOR[key] || 'fidelo';
       topbarEls.forEach(function (el) {
         el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
       });
