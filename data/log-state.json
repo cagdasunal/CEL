@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-22T16:29:10.968477-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-22T15:42:58.472018-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "5-surprises-living-vancouver-student"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-22T05:48:07.588522-07:00",
-      "detail": {}
     }
   ]
 }
