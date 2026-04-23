@@ -12,9 +12,9 @@ from datetime import datetime
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-LOGO_SVG_PATH = _REPO_ROOT / "sites" / "englishcollege" / "shared" / "cel-logo-multicolor.svg"
+LOGO_SVG_PATH = _REPO_ROOT / "sites" / "cel" / "shared" / "cel-logo-multicolor.svg"
 
-# Brand palette — mirrored from sites/englishcollege/site.json css_variables.
+# Brand palette — mirrored from sites/cel/site.json css_variables.
 BG_COLOR       = "#F1EAD8"
 FG_COLOR       = "#37332c"
 ACCENT_PRIMARY = "#5d60ee"
@@ -247,6 +247,9 @@ SHARED_CSS = """
     padding: 10px;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
+  }
+  td.is-vmid {
+    vertical-align: middle;
   }
   th {
     font-weight: 600;
@@ -501,7 +504,16 @@ SHELL_CSS = """
   }
   .shell-tab-dropdown > summary { list-style: none; }
   .shell-tab-dropdown > summary::-webkit-details-marker { display: none; }
-  .shell-tab-chevron { margin-left: 6px; font-size: var(--fs-xs); opacity: 0.6; }
+  .shell-tab-chevron {
+    margin-left: 6px;
+    width: 12px;
+    height: 12px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  .shell-tab-dropdown[open] > summary .shell-tab-chevron { transform: rotate(180deg); opacity: 1; }
+  [data-topbar].is-active > .shell-tab .shell-tab-chevron { opacity: 1; }
   .shell-tab-submenu {
     position: absolute;
     left: 0;
@@ -802,7 +814,7 @@ AUTH_SCRIPT_TAG = '<script src="/assets/js/auth.js"></script>'
 FAVICON_HREF = "/assets/img/favicon.png"
 
 TABS = (
-    {"key": "log",     "label": "SEO",     "href": "/admin/log/"},
+    {"key": "log",     "label": "WEGLOT",  "href": "/admin/log/"},
     {"key": "housing", "label": "Housing", "href": "/admin/housing/"},
     {"key": "courses", "label": "Courses", "href": "/admin/courses/"},
 )
@@ -885,9 +897,9 @@ _SHELL_HTML = """\
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">SEO</a>
+        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">WEGLOT</a>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
-          <summary class="shell-tab">FIDELO <span class="shell-tab-chevron" aria-hidden="true">\u25be</span></summary>
+          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
             <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
             <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>

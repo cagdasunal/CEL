@@ -193,6 +193,9 @@
     border-bottom: 1px solid var(--border);
     vertical-align: top;
   }
+  td.is-vmid {
+    vertical-align: middle;
+  }
   th {
     font-weight: 600;
     font-size: var(--fs-sm);
@@ -437,7 +440,16 @@
   }
   .shell-tab-dropdown > summary { list-style: none; }
   .shell-tab-dropdown > summary::-webkit-details-marker { display: none; }
-  .shell-tab-chevron { margin-left: 6px; font-size: var(--fs-xs); opacity: 0.6; }
+  .shell-tab-chevron {
+    margin-left: 6px;
+    width: 12px;
+    height: 12px;
+    opacity: 0.65;
+    flex-shrink: 0;
+    transition: transform 150ms ease, opacity 150ms ease;
+  }
+  .shell-tab-dropdown[open] > summary .shell-tab-chevron { transform: rotate(180deg); opacity: 1; }
+  [data-topbar].is-active > .shell-tab .shell-tab-chevron { opacity: 1; }
   .shell-tab-submenu {
     position: absolute;
     left: 0;
