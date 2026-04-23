@@ -1,6 +1,16 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-23T03:11:37.712041-07:00",
+      "detail": {
+        "slugs": [
+          "what-english-level-to-study-abroad",
+          "wie-lange-dauert-es-englisch-zu-lernen"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-23T01:22:20.096962-07:00",
       "detail": {}
@@ -43,11 +53,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-22T13:38:02.027211-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-22T12:41:34.164232-07:00",
       "detail": {}
     }
   ]

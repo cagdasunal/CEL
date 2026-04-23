@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-23T08:22:19.874040+00:00",
+  "last_sync": "2026-04-23T10:08:01.654447+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4240,6 +4240,37 @@
       "source": "api",
       "url_path": "/post/5-surprises-living-vancouver-student",
       "added_at": "2026-04-22T14:25:21.030853+00:00"
+    },
+    "what-english-level-to-study-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/what-english-level-to-study-abroad",
+      "added_at": "2026-04-23T10:08:01.654337+00:00"
+    },
+    "wie-lange-dauert-es-englisch-zu-lernen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/wie-lange-dauert-es-englisch-zu-lernen",
+      "added_at": "2026-04-23T10:08:01.654364+00:00"
     }
   }
 }
