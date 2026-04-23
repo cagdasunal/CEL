@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-23T15:11:20.180496-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-23T14:26:20.876648-07:00",
       "detail": {}
     },
@@ -49,11 +54,6 @@
           "wie-lange-dauert-es-englisch-zu-lernen"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-23T01:22:20.096962-07:00",
-      "detail": {}
     }
   ]
 }
