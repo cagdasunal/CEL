@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-22T18:10:11.384802-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-22T16:29:10.968477-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-04-22T08:53:12.330936-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-04-22T07:27:14.434464-07:00",
-      "detail": {
-        "slugs": [
-          "5-surprises-living-vancouver-student"
-        ]
-      }
     }
   ]
 }
