@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-24T14:08:45.682848-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-24T13:10:54.339259-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "parler-anglais-sejour-linguistique"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-24T02:56:25.269707-07:00",
-      "detail": {}
     }
   ]
 }
