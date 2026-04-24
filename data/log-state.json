@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-24T04:21:03.120107-07:00",
+      "detail": {
+        "slugs": [
+          "parler-anglais-sejour-linguistique"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-24T02:56:25.269707-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-23T13:33:55.678944-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-23T12:26:11.938727-07:00",
       "detail": {}
     }
   ]
