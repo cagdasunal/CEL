@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-24T09:56:25.155143+00:00",
+  "last_sync": "2026-04-24T11:16:16.045197+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4271,6 +4271,21 @@
       "source": "api",
       "url_path": "/post/wie-lange-dauert-es-englisch-zu-lernen",
       "added_at": "2026-04-23T10:08:01.654364+00:00"
+    },
+    "parler-anglais-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/parler-anglais-sejour-linguistique",
+      "added_at": "2026-04-24T11:16:16.045087+00:00"
     }
   }
 }
