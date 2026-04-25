@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-25T16:49:59.098309-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-25T15:59:10.588779-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-04-25T10:03:25.735036-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-04-25T09:11:41.610689-07:00",
-      "detail": {
-        "slugs": [
-          "usa-o-canada-imparando-inglese"
-        ]
-      }
     }
   ]
 }
