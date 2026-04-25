@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-25T15:22:29.842351+00:00",
+  "last_sync": "2026-04-25T16:07:25.686556+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4286,6 +4286,21 @@
       "source": "api",
       "url_path": "/post/parler-anglais-sejour-linguistique",
       "added_at": "2026-04-24T11:16:16.045087+00:00"
+    },
+    "usa-o-canada-imparando-inglese": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/usa-o-canada-imparando-inglese",
+      "added_at": "2026-04-25T16:07:25.686466+00:00"
     }
   }
 }
