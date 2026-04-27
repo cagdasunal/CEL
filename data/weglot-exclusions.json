@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-27T09:10:52.691275+00:00",
+  "last_sync": "2026-04-27T11:20:10.277905+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4301,6 +4301,37 @@
       "source": "api",
       "url_path": "/post/usa-o-canada-imparando-inglese",
       "added_at": "2026-04-25T16:07:25.686466+00:00"
+    },
+    "stay-connected-while-studying-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/stay-connected-while-studying-abroad",
+      "added_at": "2026-04-27T11:20:10.277788+00:00"
+    },
+    "sprachreise-san-diego-edna-erfahrung": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/sprachreise-san-diego-edna-erfahrung",
+      "added_at": "2026-04-27T11:20:10.277818+00:00"
     }
   }
 }
