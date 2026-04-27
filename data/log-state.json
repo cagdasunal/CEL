@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-27T16:32:53.988993-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-27T15:36:23.793269-07:00",
       "detail": {}
     },
@@ -49,11 +54,6 @@
           "sprachreise-san-diego-edna-erfahrung"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-27T02:10:52.764782-07:00",
-      "detail": {}
     }
   ]
 }
