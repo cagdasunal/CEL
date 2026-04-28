@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-28T12:15:39.668538-07:00",
+      "detail": {
+        "slugs": [
+          "quanto-tempo-per-migliorare-l-inglese-all-estero"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-28T10:25:25.602089-07:00",
       "detail": {}
@@ -47,11 +56,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-27T16:32:53.988993-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-27T15:36:23.793269-07:00",
       "detail": {}
     }
   ]

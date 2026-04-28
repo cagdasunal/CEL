@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-28T17:25:25.509354+00:00",
+  "last_sync": "2026-04-28T19:10:27.249530+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4347,6 +4347,21 @@
       "source": "api",
       "url_path": "/post/san-diego-vs-hawaii-apprendre-anglais",
       "added_at": "2026-04-28T09:36:20.101700+00:00"
+    },
+    "quanto-tempo-per-migliorare-l-inglese-all-estero": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/quanto-tempo-per-migliorare-l-inglese-all-estero",
+      "added_at": "2026-04-28T19:10:27.249434+00:00"
     }
   }
 }
