@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-27T18:16:51.275451-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-27T16:32:53.988993-07:00",
       "detail": {}
     },
@@ -44,16 +49,6 @@
       "kind": "no_change",
       "ts": "2026-04-27T05:54:56.102795-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-04-27T04:24:41.024935-07:00",
-      "detail": {
-        "slugs": [
-          "stay-connected-while-studying-abroad",
-          "sprachreise-san-diego-edna-erfahrung"
-        ]
-      }
     }
   ]
 }
