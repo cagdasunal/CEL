@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-28T07:18:54.096978+00:00",
+  "last_sync": "2026-04-28T09:36:20.101810+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4332,6 +4332,21 @@
       "source": "api",
       "url_path": "/post/sprachreise-san-diego-edna-erfahrung",
       "added_at": "2026-04-27T11:20:10.277818+00:00"
+    },
+    "san-diego-vs-hawaii-apprendre-anglais": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/san-diego-vs-hawaii-apprendre-anglais",
+      "added_at": "2026-04-28T09:36:20.101700+00:00"
     }
   }
 }
