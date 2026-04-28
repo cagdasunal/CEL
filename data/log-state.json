@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-28T16:40:52.324879-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-28T15:41:06.498632-07:00",
       "detail": {}
     },
@@ -52,11 +57,6 @@
           "san-diego-vs-hawaii-apprendre-anglais"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-28T00:18:54.308717-07:00",
-      "detail": {}
     }
   ]
 }
