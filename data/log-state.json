@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-28T02:40:24.603272-07:00",
+      "detail": {
+        "slugs": [
+          "san-diego-vs-hawaii-apprendre-anglais"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-28T00:18:54.308717-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-27T11:14:01.305043-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-27T09:58:16.954863-07:00",
       "detail": {}
     }
   ]
