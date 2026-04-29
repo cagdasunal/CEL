@@ -49,33 +49,15 @@ CAMPUS_NAMES: dict[str, str] = {
     "69284a28e38a8c5f736359cb": "Los Angeles",
 }
 
-# ISO 3166-1 alpha-2 → English country name. Covers every code used in
-# tools/offers/regions.py REGIONS (offers/sandiego/losangeles/vancouver/usa/canada).
-COUNTRY_NAMES: dict[str, str] = {
-    "AD": "Andorra", "AE": "UAE", "AL": "Albania", "AM": "Armenia",
-    "AR": "Argentina", "AT": "Austria", "AZ": "Azerbaijan", "BA": "Bosnia & Herzegovina",
-    "BD": "Bangladesh", "BE": "Belgium", "BG": "Bulgaria", "BH": "Bahrain",
-    "BO": "Bolivia", "BR": "Brazil", "BY": "Belarus", "BZ": "Belize",
-    "CL": "Chile", "CN": "China", "CO": "Colombia", "CR": "Costa Rica",
-    "CU": "Cuba", "CY": "Cyprus", "CZ": "Czech Republic", "DE": "Germany",
-    "DK": "Denmark", "DO": "Dominican Republic", "DZ": "Algeria", "EC": "Ecuador",
-    "EE": "Estonia", "EG": "Egypt", "ES": "Spain", "FI": "Finland",
-    "FR": "France", "GE": "Georgia", "GR": "Greece", "GT": "Guatemala",
-    "HN": "Honduras", "HR": "Croatia", "HT": "Haiti", "ID": "Indonesia",
-    "IQ": "Iraq", "IR": "Iran", "IS": "Iceland", "IT": "Italy",
-    "JM": "Jamaica", "JO": "Jordan", "JP": "Japan", "KG": "Kyrgyzstan",
-    "KH": "Cambodia", "KR": "South Korea", "KW": "Kuwait", "KZ": "Kazakhstan",
-    "LB": "Lebanon", "LI": "Liechtenstein", "LT": "Lithuania", "LU": "Luxembourg",
-    "LV": "Latvia", "MD": "Moldova", "ME": "Montenegro", "MK": "North Macedonia",
-    "MN": "Mongolia", "MX": "Mexico", "MY": "Malaysia", "NI": "Nicaragua",
-    "NL": "Netherlands", "NO": "Norway", "OM": "Oman", "PA": "Panama",
-    "PE": "Peru", "PL": "Poland", "PT": "Portugal", "PY": "Paraguay",
-    "QA": "Qatar", "RO": "Romania", "RS": "Serbia", "RU": "Russia",
-    "SA": "Saudi Arabia", "SE": "Sweden", "SI": "Slovenia", "SK": "Slovakia",
-    "SM": "San Marino", "SV": "El Salvador", "TH": "Thailand", "TJ": "Tajikistan",
-    "TR": "Turkey", "TW": "Taiwan", "UA": "Ukraine", "UY": "Uruguay",
-    "VE": "Venezuela", "VN": "Vietnam", "YE": "Yemen",
-}
+def _load_country_names() -> dict[str, str]:
+    """Load ISO 3166-1 alpha-2 → English name mapping from the JSON file."""
+    f = Path(__file__).parent / "iso-3166-1.json"
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+COUNTRY_NAMES: dict[str, str] = _load_country_names()
 
 
 # ---------------------------------------------------------------------------
@@ -150,9 +132,28 @@ def _load_last_extend_ts() -> str | None:
     return None
 
 
+def _load_current_regions() -> dict[str, dict[str, str]]:
+    """Return the current region→{countries,action} map.
+
+    Priority: data/cel-offers-regions.json (live, written by edit_regions.py)
+    > REGIONS (FALLBACK_CONFIG mirror in regions.py).
+    """
+    json_file = PROJECT_ROOT / "data" / "cel-offers-regions.json"
+    if json_file.exists():
+        try:
+            data = json.loads(json_file.read_text(encoding="utf-8"))
+            regions = data.get("regions") if isinstance(data, dict) else None
+            if isinstance(regions, dict) and regions:
+                return regions
+        except (json.JSONDecodeError, OSError):
+            pass
+    return dict(REGIONS)
+
+
 def _render_item_row(item: dict, now: datetime) -> str:
     fd = item.get("fieldData") or {}
-    title = escape(fd.get("internal-title") or fd.get("name") or item.get("id", ""))
+    item_id = item.get("id", "")
+    title = escape(fd.get("internal-title") or fd.get("name") or item_id)
     end_date = fd.get("end-date", "")
     end_display = escape(_iso_to_display(end_date))
     rel = escape(_relative_phrase(end_date, now))
@@ -166,7 +167,7 @@ def _render_item_row(item: dict, now: datetime) -> str:
         days_is_default = False
     default_marker = ' <span class="subtle">(default)</span>' if days_is_default else ''
     days_cell = (
-        f'<div class="extend-edit" data-item-id="{escape(item.get("id", ""))}">'
+        f'<div class="extend-edit" data-item-id="{escape(item_id)}">'
         f'<input type="number" min="0" max="365" step="1" '
         f'class="extend-input" value="{days_value}" '
         f'data-original="{days_value}" '
@@ -177,8 +178,7 @@ def _render_item_row(item: dict, now: datetime) -> str:
         f'</div>'
     )
 
-    # Build details panel — client-friendly: full country names, campus name,
-    # readable dates, no slug, no raw IDs.
+    # Detail panel: only fields NOT already in the data row.
     detail_rows: list[str] = []
 
     def _row(label: str, value: str) -> None:
@@ -188,10 +188,6 @@ def _render_item_row(item: dict, now: datetime) -> str:
 
     if (v := fd.get("internal-title")) is not None:
         _row("Internal Title", str(v))
-    if (v := fd.get("end-date")) is not None:
-        _row("End Date", _iso_to_display(str(v)))
-    if (v := fd.get("auto-extend-days")) is not None:
-        _row("Auto-extend days", str(v))
     if (v := fd.get("targeted-countriess")) is not None:
         _row("Targeted Countries", _format_countries(str(v)))
     if (v := fd.get("campus-3")) is not None:
@@ -200,42 +196,66 @@ def _render_item_row(item: dict, now: datetime) -> str:
         _row("Most Popular This Month", _format_bool(v))
     if item.get("lastPublished"):
         _row("Last Published", _iso_to_display(str(item["lastPublished"])))
-    if item.get("isDraft"):
-        detail_rows.append('        <dt>Status</dt><dd>Draft</dd>')
 
     details_html = "\n".join(detail_rows)
+    safe_id = escape(item_id)
 
     return (
-        f'      <tr>'
+        f'      <tbody class="item-tbody" data-item-id="{safe_id}">'
+        f'<tr class="item-row">'
         f'<td>{title}</td>'
         f'<td><span class="date-primary">{end_display}</span>'
         f' <span class="subtle">({rel})</span></td>'
         f'<td>{days_cell}</td>'
-        f'<td><details class="item-details"><summary>View</summary>'
-        f'<dl>\n{details_html}\n        </dl>'
-        f'</details></td>'
+        f'<td><button type="button" class="view-toggle" '
+        f'aria-expanded="false" aria-controls="detail-{safe_id}">View</button></td>'
         f'</tr>'
+        f'<tr class="item-detail-row" id="detail-{safe_id}" hidden>'
+        f'<td colspan="4"><dl class="item-details">\n{details_html}\n        </dl></td>'
+        f'</tr>'
+        f'</tbody>'
     )
 
 
 def _render_region_block(key: str, val: dict) -> str:
     countries_csv = val.get("countries", "")
-    country_list = [c for c in countries_csv.split(",") if c]
-    n = len(country_list)
+    iso_list = [c.strip().upper() for c in countries_csv.split(",") if c.strip()]
+    n = len(iso_list)
+
+    chips = []
+    for code in iso_list:
+        name = COUNTRY_NAMES.get(code, code)
+        chips.append(
+            f'<span class="country-chip" data-iso="{escape(code)}">'
+            f'<span class="chip-flag">{escape(code)}</span>'
+            f'<span class="chip-name">{escape(name)}</span>'
+            f'<button type="button" class="chip-remove" '
+            f'aria-label="Remove {escape(name)}">×</button>'
+            f'</span>'
+        )
+    chips_html = "".join(chips)
+
     return (
-        f'    <div class="region-block" data-region="{escape(key)}">'
+        f'    <div class="region-block" data-region="{escape(key)}" '
+        f'data-original="{escape(",".join(iso_list))}">'
         f'<h3>{escape(key)} '
-        f'<span class="subtle region-count" data-count>({n} countr{"y" if n == 1 else "ies"})</span>'
+        f'<span class="subtle region-count" data-count>'
+        f'({n} countr{"y" if n == 1 else "ies"})</span>'
         f'</h3>'
         f'<p class="subtle">action: {escape(val.get("action", "show"))}</p>'
-        f'<label class="region-label">'
-        f'ISO country codes (comma-separated, no spaces):'
-        f'<textarea class="region-input" rows="3" '
-        f'data-original="{escape(countries_csv)}" '
-        f'aria-label="Country codes for {escape(key)}">{escape(countries_csv)}</textarea>'
-        f'</label>'
+        f'<div class="country-chips" role="list" '
+        f'aria-label="{escape(key)} countries">{chips_html}</div>'
+        f'<div class="country-add">'
+        f'<input type="text" class="country-input" '
+        f'list="country-options" '
+        f'placeholder="Type a country name to add…" '
+        f'autocomplete="off" '
+        f'aria-label="Add country to {escape(key)}">'
+        f'<button type="button" class="country-add-btn">Add</button>'
+        f'</div>'
         f'<div class="region-actions">'
-        f'<button class="region-save" type="button" disabled>Save</button>'
+        f'<button class="region-save" type="button" disabled>Save changes</button>'
+        f'<button class="region-revert" type="button" disabled>Revert</button>'
         f'<span class="region-status" role="status"></span>'
         f'</div>'
         f'</div>'
@@ -272,23 +292,9 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     var GH_OWNER = 'cagdasunal';
     var GH_REPO  = 'CEL';
     var PAT_KEY  = 'cel_admin_gh_pat';
-    var ADMIN_KEY = 'cel_admin_mode';
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
-
-    // ── Admin mode detection ─────────────────────────────────────────
-    // Admin mode unlocks: PAT banner, editor inputs (writeable), Save buttons.
-    // Activate by visiting the page with ?admin=1 — then it's persisted in
-    // localStorage (top-window only; iframe inherits via the same origin).
-    // Clear with ?admin=0.
-    try {
-      var qs = new URLSearchParams(location.search);
-      if (qs.get('admin') === '1') localStorage.setItem(ADMIN_KEY, '1');
-      if (qs.get('admin') === '0') localStorage.removeItem(ADMIN_KEY);
-    } catch (_) {}
-    var isAdmin = false;
-    try { isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (_) {}
-    if (isAdmin) document.body.classList.add('is-admin');
+    var COUNTRY_NAME_MAP = __COUNTRY_NAME_MAP_JSON__;
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -402,6 +408,20 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
       }
     });
 
+    // ── View toggle (per-row details) ─────────────────────────────────
+    document.addEventListener('click', function(ev) {
+      var btn = ev.target.closest && ev.target.closest('.view-toggle');
+      if (!btn) return;
+      var tbody = btn.closest('.item-tbody');
+      if (!tbody) return;
+      var detailRow = tbody.querySelector('.item-detail-row');
+      if (!detailRow) return;
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      if (open) detailRow.setAttribute('hidden', '');
+      else detailRow.removeAttribute('hidden');
+    });
+
     // ── Auto-extend-days inline edit ───────────────────────────────────
     document.addEventListener('input', function(ev) {
       if (!ev.target.classList || !ev.target.classList.contains('extend-input')) return;
@@ -444,30 +464,158 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         });
     });
 
-    // ── Regions Settings inline edit ───────────────────────────────────
-    document.addEventListener('input', function(ev) {
-      if (!ev.target.classList || !ev.target.classList.contains('region-input')) return;
-      var block = ev.target.closest('.region-block');
-      var btn = block.querySelector('.region-save');
-      var v = (ev.target.value || '').trim().toUpperCase().replace(/\\s+/g, '');
-      var validCsv = /^[A-Z]{2}(,[A-Z]{2})*$/.test(v);
-      btn.disabled = !validCsv || (v === ev.target.dataset.original);
-      // Update count display
-      var n = v ? v.split(',').length : 0;
+    // ── Regions Settings: chip editor ─────────────────────────────────
+    function getRegionState(block) {
+      var chips = block.querySelectorAll('.country-chip');
+      var out = [];
+      for (var i = 0; i < chips.length; i++) {
+        out.push(chips[i].getAttribute('data-iso'));
+      }
+      return out;
+    }
+
+    function syncRegionUI(block) {
+      var current = getRegionState(block).join(',');
+      var original = block.getAttribute('data-original') || '';
+      var saveBtn = block.querySelector('.region-save');
+      var revertBtn = block.querySelector('.region-revert');
+      var status = block.querySelector('.region-status');
+      var dirty = current !== original;
+      var empty = getRegionState(block).length === 0;
+      if (revertBtn) revertBtn.disabled = !dirty;
+      if (saveBtn) saveBtn.disabled = !dirty || empty;
+      if (status) {
+        if (empty) {
+          status.textContent = 'Region cannot be empty — add at least one country or click Revert';
+          status.className = 'region-status is-error';
+        } else if (dirty) {
+          status.textContent = 'Unsaved changes';
+          status.className = 'region-status';
+        } else {
+          if (!status.classList.contains('is-ok')) {
+            status.textContent = '';
+            status.className = 'region-status';
+          }
+        }
+      }
       var counter = block.querySelector('[data-count]');
-      if (counter) counter.textContent = '(' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ')';
+      if (counter) {
+        var n = current ? current.split(',').length : 0;
+        counter.textContent = '(' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ')';
+      }
+    }
+
+    function resolveCountryInput(text) {
+      if (!text) return null;
+      var t = text.trim();
+      if (!t) return null;
+      var asIso = t.toUpperCase();
+      if (/^[A-Z]{2}$/.test(asIso) && COUNTRY_NAME_MAP[asIso]) return asIso;
+      var m = t.match(/^(.+?)\\s*\\(([A-Z]{2})\\)\\s*$/i);
+      if (m && COUNTRY_NAME_MAP[m[2].toUpperCase()]) return m[2].toUpperCase();
+      var lc = t.toLowerCase();
+      for (var code in COUNTRY_NAME_MAP) {
+        if (COUNTRY_NAME_MAP[code].toLowerCase() === lc) return code;
+      }
+      return null;
+    }
+
+    document.addEventListener('click', function(ev) {
+      var btn = ev.target.closest && ev.target.closest('.chip-remove');
+      if (!btn) return;
+      var chip = btn.closest('.country-chip');
+      var block = btn.closest('.region-block');
+      if (!chip || !block) return;
+      chip.parentNode.removeChild(chip);
+      syncRegionUI(block);
+    });
+
+    function tryAddCountry(block) {
+      var input = block.querySelector('.country-input');
+      var status = block.querySelector('.region-status');
+      if (!input) return;
+      var code = resolveCountryInput(input.value);
+      if (!code) {
+        status.textContent = 'Unknown country — pick from the autocomplete list';
+        status.className = 'region-status is-error';
+        return;
+      }
+      if (block.querySelector('.country-chip[data-iso="' + code + '"]')) {
+        status.textContent = COUNTRY_NAME_MAP[code] + ' is already in this region';
+        status.className = 'region-status is-error';
+        input.value = '';
+        return;
+      }
+      var name = COUNTRY_NAME_MAP[code] || code;
+      var chips = block.querySelector('.country-chips');
+      var span = document.createElement('span');
+      span.className = 'country-chip';
+      span.setAttribute('data-iso', code);
+      span.innerHTML =
+        '<span class="chip-flag">' + code + '</span>' +
+        '<span class="chip-name">' + name + '</span>' +
+        '<button type="button" class="chip-remove" aria-label="Remove ' + name + '">×</button>';
+      chips.appendChild(span);
+      input.value = '';
+      input.focus();
+      syncRegionUI(block);
+    }
+
+    document.addEventListener('click', function(ev) {
+      var btn = ev.target;
+      if (!btn.classList || !btn.classList.contains('country-add-btn')) return;
+      var block = btn.closest('.region-block');
+      if (block) tryAddCountry(block);
+    });
+
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key !== 'Enter') return;
+      var input = ev.target;
+      if (!input.classList || !input.classList.contains('country-input')) return;
+      ev.preventDefault();
+      var block = input.closest('.region-block');
+      if (block) tryAddCountry(block);
     });
 
     document.addEventListener('click', function(ev) {
-      if (!ev.target.classList || !ev.target.classList.contains('region-save')) return;
-      var block = ev.target.closest('.region-block');
-      var input = block.querySelector('.region-input');
+      var btn = ev.target;
+      if (!btn.classList || !btn.classList.contains('region-revert')) return;
+      var block = btn.closest('.region-block');
+      if (!block) return;
+      var original = (block.getAttribute('data-original') || '').split(',').filter(Boolean);
+      var chips = block.querySelector('.country-chips');
+      chips.innerHTML = '';
+      for (var i = 0; i < original.length; i++) {
+        var code = original[i];
+        var name = COUNTRY_NAME_MAP[code] || code;
+        var span = document.createElement('span');
+        span.className = 'country-chip';
+        span.setAttribute('data-iso', code);
+        span.innerHTML =
+          '<span class="chip-flag">' + code + '</span>' +
+          '<span class="chip-name">' + name + '</span>' +
+          '<button type="button" class="chip-remove" aria-label="Remove ' + name + '">×</button>';
+        chips.appendChild(span);
+      }
+      syncRegionUI(block);
+    });
+
+    document.addEventListener('click', function(ev) {
+      var btn = ev.target;
+      if (!btn.classList || !btn.classList.contains('region-save')) return;
+      var block = btn.closest('.region-block');
+      if (!block) return;
       var status = block.querySelector('.region-status');
-      var region = block.dataset.region;
-      var v = (input.value || '').trim().toUpperCase().replace(/\\s+/g, '');
-      if (!/^[A-Z]{2}(,[A-Z]{2})*$/.test(v)) { status.textContent = 'invalid CSV'; status.className = 'region-status is-error'; return; }
-      ev.target.disabled = true;
-      input.disabled = true;
+      var revertBtn = block.querySelector('.region-revert');
+      var region = block.getAttribute('data-region');
+      var v = getRegionState(block).join(',');
+      if (!/^[A-Z]{2}(,[A-Z]{2})*$/.test(v) && v !== '') {
+        status.textContent = 'invalid';
+        status.className = 'region-status is-error';
+        return;
+      }
+      btn.disabled = true;
+      if (revertBtn) revertBtn.disabled = true;
       status.textContent = 'dispatching…';
       status.className = 'region-status';
       dispatchWorkflow(REGIONS_WORKFLOW, { region: region, countries: v })
@@ -475,23 +623,25 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         .then(function() { return awaitRun(REGIONS_WORKFLOW, status); })
         .then(function(run) {
           if (run && run.conclusion === 'success') {
-            input.dataset.original = v;
-            input.value = v;
+            block.setAttribute('data-original', v);
           }
         })
         .catch(function(err) {
           status.textContent = '✗ ' + err.message;
           status.className = 'region-status is-error';
         })
-        .finally(function() {
-          input.disabled = false;
-          ev.target.disabled = (input.value === input.dataset.original);
-        });
+        .finally(function() { syncRegionUI(block); });
     });
+
+    document.querySelectorAll('.region-block').forEach(function(b) { syncRegionUI(b); });
 
     refreshBanner();
   })();
   </script>"""
+    tab_script = tab_script.replace(
+        "__COUNTRY_NAME_MAP_JSON__",
+        json.dumps(COUNTRY_NAMES, ensure_ascii=False),
+    )
 
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
@@ -509,18 +659,23 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    [data-tab].is-active{display:block}")
     parts.append("    .offers-tab-link{display:inline-block;padding:6px 14px;margin-right:8px;border-radius:4px;text-decoration:none;color:inherit;border:1px solid #ccc}")
     parts.append("    .offers-tab-link.is-active{background:#f0e8d4;border-color:#9b8c7d;font-weight:600}")
-    parts.append("    .item-details summary{cursor:pointer;color:#6b5f52}")
-    parts.append("    .item-details dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px}")
+    parts.append("    .item-row td{vertical-align:middle}")
+    parts.append("    .item-detail-row td{padding:12px 16px;background:#fbf6e9;border-top:none}")
+    parts.append("    .item-details{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0}")
     parts.append("    .item-details dt{font-weight:600;white-space:nowrap}")
+    parts.append("    .view-toggle{padding:4px 12px;border:1px solid #6b5f52;border-radius:4px;background:#f0e8d4;color:#3a342b;cursor:pointer;font-weight:500}")
+    parts.append("    .view-toggle:hover{background:#e7daa8}")
+    parts.append("    .view-toggle[aria-expanded='true']::after{content:' ▾'}")
+    parts.append("    .view-toggle[aria-expanded='false']::after{content:' ▸'}")
     parts.append("    .country-list{display:block;word-break:break-all;font-size:0.85em}")
     parts.append("    .region-block{margin-bottom:32px;padding:16px;border:1px solid #d9cfb9;border-radius:8px;background:#fbf6e9}")
     parts.append("    .region-block h3{margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.04em}")
-    parts.append("    .region-label{display:block;margin:8px 0;font-weight:500}")
-    parts.append("    .region-input{display:block;width:100%;margin-top:6px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;background:#fff;resize:vertical}")
     parts.append("    .region-actions{margin-top:8px;display:flex;align-items:center;gap:12px}")
     parts.append("    .region-save,.extend-save{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#f0e8d4;color:#3a342b;cursor:pointer;font-weight:600}")
     parts.append("    .region-save:disabled,.extend-save:disabled{opacity:0.4;cursor:not-allowed}")
     parts.append("    .region-save:hover:not(:disabled),.extend-save:hover:not(:disabled){background:#e7daa8}")
+    parts.append("    .region-revert{padding:6px 14px;border:1px solid #b8a98c;border-radius:4px;background:#fff;color:#6b5f52;cursor:pointer}")
+    parts.append("    .region-revert:disabled{opacity:0.4;cursor:not-allowed}")
     parts.append("    .region-status,.extend-status{font-size:0.85em;color:#6b5f52}")
     parts.append("    .region-status.is-ok,.extend-status.is-ok{color:#3a7a3a}")
     parts.append("    .region-status.is-error,.extend-status.is-error{color:#a54040}")
@@ -531,17 +686,27 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .pat-banner.hidden{display:none}")
     parts.append("    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px;background:#fff}")
     parts.append("    .pat-actions{margin-top:8px;display:flex;gap:8px}")
-    parts.append("    /* Admin-only: hidden by default; shown when ?admin=1 or localStorage cel_admin=1 */")
-    parts.append("    .admin-only{display:none}")
-    parts.append("    body.is-admin .admin-only{display:initial}")
-    parts.append("    body.is-admin .admin-only.pat-banner{display:block}")
-    parts.append("    /* Inputs: read-only by default; become editable when admin */")
-    parts.append("    body:not(.is-admin) .extend-input,body:not(.is-admin) .region-input{pointer-events:none;background:transparent;border-color:transparent;color:#3a342b;font-weight:500}")
-    parts.append("    body:not(.is-admin) .extend-save,body:not(.is-admin) .region-save{display:none}")
-    parts.append("    body:not(.is-admin) .region-input{resize:none}")
+    parts.append("    .pat-toggle{margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer}")
+    parts.append("    .country-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;min-height:32px}")
+    parts.append("    .country-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 10px;background:#fff;border:1px solid #b8a98c;border-radius:16px;font-size:0.9em}")
+    parts.append("    .chip-flag{font-family:ui-monospace,monospace;font-size:0.78em;color:#6b5f52;font-weight:600}")
+    parts.append("    .chip-remove{width:20px;height:20px;border:none;border-radius:50%;background:#e7daa8;color:#3a342b;cursor:pointer;font-size:0.9em;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}")
+    parts.append("    .chip-remove:hover{background:#a54040;color:#fff}")
+    parts.append("    .country-add{display:flex;gap:8px;align-items:center;margin:8px 0}")
+    parts.append("    .country-input{padding:6px 10px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff;min-width:280px}")
+    parts.append("    .country-add-btn{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#fff;color:#3a342b;cursor:pointer;font-weight:500}")
+    parts.append("    .country-add-btn:hover{background:#f0e8d4}")
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
+    datalist_options = "\n".join(
+        f'    <option value="{escape(name)}" data-iso="{escape(code)}">'
+        f'{escape(name)} ({escape(code)})</option>'
+        for code, name in sorted(COUNTRY_NAMES.items(), key=lambda x: x[1])
+    )
+    parts.append('  <datalist id="country-options">')
+    parts.append(datalist_options)
+    parts.append('  </datalist>')
     parts.append('  <div class="dashboard-shell">')
 
     # Page chrome
@@ -551,9 +716,9 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     last_sync_display = _iso_to_display(last_ts) if last_ts else "Never"
     parts.append(f'    {render_sync_status_card(status_label, last_sync_display, is_ok=is_ok)}')
 
-    # GitHub PAT banner — admin-only (hidden unless body.is-admin)
-    parts.append('    <button id="pat-toggle" type="button" class="admin-only" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>')
-    parts.append('    <section id="pat-banner" class="pat-banner admin-only">')
+    # GitHub PAT banner — collapsible toggle (no admin gating)
+    parts.append('    <button id="pat-toggle" type="button" class="pat-toggle">⚙ GitHub credentials</button>')
+    parts.append('    <section id="pat-banner" class="pat-banner">')
     parts.append('      <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>')
     parts.append('      <p class="subtle" style="margin:0">')
     parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
@@ -586,10 +751,8 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         parts.append("            <th>Details</th>")
         parts.append("          </tr>")
         parts.append("        </thead>")
-        parts.append("        <tbody>")
         for item in items:
             parts.append(_render_item_row(item, now))
-        parts.append("        </tbody>")
         parts.append("      </table>")
     else:
         parts.append('      <p class="empty">No offers yet.</p>')
@@ -598,11 +761,15 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     # ── Tab: Settings ──────────────────────────────────────────────────────
     parts.append('    <section data-tab="settings">')
     parts.append(
-        '      <p>Geotargetly region → ISO country mappings. Read-only. '
-        'To change, edit <code>tools/cel-offers-js/cel-offers.js</code> '
-        "in the monorepo and rebuild the bundle.</p>"
+        '      <p>Geotargetly region → country mappings. '
+        'Click <strong>×</strong> on any chip to remove a country. '
+        'Use the dropdown to add countries. '
+        'Save changes to dispatch a workflow that updates '
+        '<code>cel-offers-regions.json</code> (consumed by '
+        '<code>cel-offers.js</code>).</p>'
     )
-    for key, val in REGIONS.items():
+    current_regions = _load_current_regions()
+    for key, val in current_regions.items():
         parts.append(_render_region_block(key, val))
     parts.append("    </section>")
 
