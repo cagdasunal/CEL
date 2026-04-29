@@ -45,8 +45,11 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.1.0
+ * Version: 1.1.1
  * Last update: 2026-04-29
+ *
+ * v1.1.1 (2026-04-29): Minification workflow added (cel-offers.min.js).
+ *                      Removed dead visibleCount variable from Section 2.
  *
  * Maintenance rules: rules/cel-offers-deploy.md
  */
@@ -211,7 +214,6 @@
     if (!userGeo) return;
 
     const items = document.querySelectorAll(CONF.item);
-    let visibleCount = 0;
 
     items.forEach(item => {
       const rawAttr = item.getAttribute(CONF.attrName);
@@ -225,7 +227,6 @@
 
       if (allowedList.includes(userGeo) || allowedList.includes('ALL')) {
         item.style.display = '';
-        visibleCount++;
       } else {
         item.remove();
       }
