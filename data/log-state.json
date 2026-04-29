@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-29T16:54:04.608048-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-29T16:42:51.092129-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-04-29T05:57:08.232542-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-04-29T04:21:53.925774-07:00",
-      "detail": {
-        "slugs": [
-          "is-san-diego-safe-for-international-students"
-        ]
-      }
     }
   ]
 }
