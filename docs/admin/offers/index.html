@@ -31,18 +31,26 @@
     .extend-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .extend-input{width:80px;padding:6px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff}
     .date-primary{font-variant-numeric:tabular-nums}
-    .pat-banner{margin:16px 0;padding:12px 16px;background:#fff8e1;border:1px solid #d9b557;border-radius:6px}
+    .pat-banner{margin:16px 0;padding:12px 16px;background:#F9F1DF;border:1px solid #d9cfb9;border-radius:6px}
     .pat-banner.hidden{display:none}
-    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px}
+    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px;background:#fff}
     .pat-actions{margin-top:8px;display:flex;gap:8px}
+    /* Admin-only: hidden by default; shown when ?admin=1 or localStorage cel_admin=1 */
+    .admin-only{display:none}
+    body.is-admin .admin-only{display:initial}
+    body.is-admin .admin-only.pat-banner{display:block}
+    /* Inputs: read-only by default; become editable when admin */
+    body:not(.is-admin) .extend-input,body:not(.is-admin) .region-input{pointer-events:none;background:transparent;border-color:transparent;color:#3a342b;font-weight:500}
+    body:not(.is-admin) .extend-save,body:not(.is-admin) .region-save{display:none}
+    body:not(.is-admin) .region-input{resize:none}
   </style>
 </head>
 <body>
   <div class="dashboard-shell">
     <header class="dashboard-header"><div class="brand-text"><p class="eyebrow">OFFERS</p><p class="subtitle">34 active offers · auto-extend cron daily 02:17 UTC</p></div></header>
     <section class="status status-ok"><p class="status-label">Auto-extend has not yet run.</p><p>Last checked on <strong>Never</strong> (San Diego time).</p></section>
-    <button id="pat-toggle" type="button" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>
-    <section id="pat-banner" class="pat-banner">
+    <button id="pat-toggle" type="button" class="admin-only" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>
+    <section id="pat-banner" class="pat-banner admin-only">
       <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>
       <p class="subtle" style="margin:0">
         Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at 
@@ -390,7 +398,7 @@
     <div class="region-block" data-region="canada"><h3>canada <span class="subtle region-count" data-count>(88 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for canada">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
     </section>
     <footer>
-      Total offers tracked: <strong>34</strong>. This page was generated on 2026-04-29 21:38 UTC. Auto-extend runs daily at 02:17 UTC.
+      Total offers tracked: <strong>34</strong>. This page was generated on 2026-04-29 21:48 UTC. Auto-extend runs daily at 02:17 UTC.
     </footer>
   </div>
   <script>
@@ -398,8 +406,23 @@
     var GH_OWNER = 'cagdasunal';
     var GH_REPO  = 'CEL';
     var PAT_KEY  = 'cel_admin_gh_pat';
+    var ADMIN_KEY = 'cel_admin_mode';
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
+
+    // ── Admin mode detection ─────────────────────────────────────────
+    // Admin mode unlocks: PAT banner, editor inputs (writeable), Save buttons.
+    // Activate by visiting the page with ?admin=1 — then it's persisted in
+    // localStorage (top-window only; iframe inherits via the same origin).
+    // Clear with ?admin=0.
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('admin') === '1') localStorage.setItem(ADMIN_KEY, '1');
+      if (qs.get('admin') === '0') localStorage.removeItem(ADMIN_KEY);
+    } catch (_) {}
+    var isAdmin = false;
+    try { isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (_) {}
+    if (isAdmin) document.body.classList.add('is-admin');
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
