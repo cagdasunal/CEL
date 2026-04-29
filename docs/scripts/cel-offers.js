@@ -8,6 +8,7 @@
  * Sections currently bundled:
  *   1. Section-level data-geo handler          (was inline_7606ee7d, since v1.0.0)
  *   2. Per-item .offer_item data-country filter (was inline_9d54ce87, since v1.1.0)
+ *   3. Per-card .offer_date countdown          (was inline_6c6f5f54, since v1.2.0)
  *
  * Each section is wrapped in its own IIFE — they run independently and only
  * cooperate via DOM mutation. Section 1 toggles wrapping [data-geo] blocks by
@@ -45,9 +46,14 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.1.1
+ * Version: 1.2.0
  * Last update: 2026-04-29
  *
+ * v1.2.0 (2026-04-29): Section 3 added (per-card countdown, was inline_6c6f5f54).
+ *                      Verbose duplicate (was inline_0bd2cf04) dropped — cleaner
+ *                      version now covers all 6 pages. F4 fix: per-tick
+ *                      isConnected check clears orphan intervals when Section 2
+ *                      removes country-mismatched items.
  * v1.1.1 (2026-04-29): Minification workflow added (cel-offers.min.js).
  *                      Removed dead visibleCount variable from Section 2.
  *
@@ -288,5 +294,75 @@
   // exists) catches any .offer_item elements added after this point.
   initObserver();
   initGeo();
+
+})();
+
+/* ============================================================
+ * Section 3 — per-card .offer_date countdown (was inline_6c6f5f54)
+ * Surgical fixes since v1.2.0:
+ *   F4: per-tick isConnected check clears the interval when Section 2
+ *       removes country-mismatched items (no more orphan setIntervals).
+ *   Init runs immediately inside the IIFE (CDN-safe), same pattern as
+ *       Sections 1 and 2.
+ * ============================================================ */
+
+(function() {
+  dayjs.extend(dayjs_plugin_duration);
+  dayjs.extend(dayjs_plugin_utc);
+
+  function pad(num) {
+    return num.toString().padStart(2, "0");
+  }
+
+  const items = document.querySelectorAll(".offer_item");
+  const now = dayjs.utc();
+
+  items.forEach(function (item) {
+    const dateEl = item.querySelector(".offer_date");
+    if (!dateEl) return;
+
+    const dateStr = dateEl.textContent.trim();
+    if (!dateStr) return;
+
+    const expiryDate = dayjs.utc(dateStr).endOf('day');
+
+    if (now.isAfter(expiryDate)) {
+      item.remove();
+      return;
+    }
+
+    const dEl = item.querySelector(".count_days");
+    const hEl = item.querySelector(".count_hours");
+    const mEl = item.querySelector(".count_minutes");
+    const sEl = item.querySelector(".count_seconds");
+
+    if (!dEl || !hEl || !mEl || !sEl) return;
+
+    function tick() {
+      // F4 fix: if Section 2's filter removed this item, stop ticking.
+      if (!item.isConnected) {
+        clearInterval(loop);
+        return;
+      }
+
+      const currentTime = dayjs.utc();
+      const diff = expiryDate.diff(currentTime);
+
+      if (diff <= 0) {
+        item.remove();
+        clearInterval(loop);
+        return;
+      }
+
+      const dur = dayjs.duration(diff);
+      dEl.textContent = pad(Math.floor(dur.asDays()));
+      hEl.textContent = pad(dur.hours());
+      mEl.textContent = pad(dur.minutes());
+      sEl.textContent = pad(dur.seconds());
+    }
+
+    tick();
+    const loop = setInterval(tick, 1000);
+  });
 
 })();
