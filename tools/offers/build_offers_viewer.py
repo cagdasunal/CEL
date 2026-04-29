@@ -212,8 +212,23 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     var GH_OWNER = 'cagdasunal';
     var GH_REPO  = 'CEL';
     var PAT_KEY  = 'cel_admin_gh_pat';
+    var ADMIN_KEY = 'cel_admin_mode';
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
+
+    // ── Admin mode detection ─────────────────────────────────────────
+    // Admin mode unlocks: PAT banner, editor inputs (writeable), Save buttons.
+    // Activate by visiting the page with ?admin=1 — then it's persisted in
+    // localStorage (top-window only; iframe inherits via the same origin).
+    // Clear with ?admin=0.
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('admin') === '1') localStorage.setItem(ADMIN_KEY, '1');
+      if (qs.get('admin') === '0') localStorage.removeItem(ADMIN_KEY);
+    } catch (_) {}
+    var isAdmin = false;
+    try { isAdmin = localStorage.getItem(ADMIN_KEY) === '1'; } catch (_) {}
+    if (isAdmin) document.body.classList.add('is-admin');
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -452,10 +467,18 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .extend-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}")
     parts.append("    .extend-input{width:80px;padding:6px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff}")
     parts.append("    .date-primary{font-variant-numeric:tabular-nums}")
-    parts.append("    .pat-banner{margin:16px 0;padding:12px 16px;background:#fff8e1;border:1px solid #d9b557;border-radius:6px}")
+    parts.append("    .pat-banner{margin:16px 0;padding:12px 16px;background:#F9F1DF;border:1px solid #d9cfb9;border-radius:6px}")
     parts.append("    .pat-banner.hidden{display:none}")
-    parts.append("    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px}")
+    parts.append("    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px;background:#fff}")
     parts.append("    .pat-actions{margin-top:8px;display:flex;gap:8px}")
+    parts.append("    /* Admin-only: hidden by default; shown when ?admin=1 or localStorage cel_admin=1 */")
+    parts.append("    .admin-only{display:none}")
+    parts.append("    body.is-admin .admin-only{display:initial}")
+    parts.append("    body.is-admin .admin-only.pat-banner{display:block}")
+    parts.append("    /* Inputs: read-only by default; become editable when admin */")
+    parts.append("    body:not(.is-admin) .extend-input,body:not(.is-admin) .region-input{pointer-events:none;background:transparent;border-color:transparent;color:#3a342b;font-weight:500}")
+    parts.append("    body:not(.is-admin) .extend-save,body:not(.is-admin) .region-save{display:none}")
+    parts.append("    body:not(.is-admin) .region-input{resize:none}")
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
@@ -468,9 +491,9 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     last_sync_display = _iso_to_display(last_ts) if last_ts else "Never"
     parts.append(f'    {render_sync_status_card(status_label, last_sync_display, is_ok=is_ok)}')
 
-    # GitHub PAT banner — toggle visible when PAT missing (controller hides if set)
-    parts.append('    <button id="pat-toggle" type="button" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>')
-    parts.append('    <section id="pat-banner" class="pat-banner">')
+    # GitHub PAT banner — admin-only (hidden unless body.is-admin)
+    parts.append('    <button id="pat-toggle" type="button" class="admin-only" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>')
+    parts.append('    <section id="pat-banner" class="pat-banner admin-only">')
     parts.append('      <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>')
     parts.append('      <p class="subtle" style="margin:0">')
     parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
