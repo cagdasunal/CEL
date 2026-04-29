@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-29T09:35:59.173629+00:00",
+  "last_sync": "2026-04-29T11:17:25.102371+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4362,6 +4362,22 @@
       "source": "api",
       "url_path": "/post/quanto-tempo-per-migliorare-l-inglese-all-estero",
       "added_at": "2026-04-28T19:10:27.249434+00:00"
+    },
+    "is-san-diego-safe-for-international-students": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/is-san-diego-safe-for-international-students",
+      "added_at": "2026-04-29T11:17:25.102251+00:00"
     }
   }
 }
