@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-04-29T16:42:51.092129-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-29T16:13:04.482949-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "is-san-diego-safe-for-international-students"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-29T02:35:59.252736-07:00",
-      "detail": {}
     }
   ]
 }
