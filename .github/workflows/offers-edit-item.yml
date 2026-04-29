@@ -1,0 +1,54 @@
+name: Offers Edit Item
+
+# Triggered from the dashboard's auto-extend-days inline editor.
+# The dashboard issues a workflow_dispatch with item_id + days inputs.
+on:
+  workflow_dispatch:
+    inputs:
+      item_id:
+        description: 'Webflow CMS item ID'
+        required: true
+        type: string
+      days:
+        description: 'auto-extend-days value (integer >= 0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offers-edit-item-${{ inputs.item_id }}
+  cancel-in-progress: false
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply auto-extend-days edit
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          INPUT_ITEM_ID: ${{ inputs.item_id }}
+          INPUT_DAYS: ${{ inputs.days }}
+        run: python3 -m tools.offers.edit_item
+
+      - name: Commit log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git status --porcelain data/offers-edit-log.json | grep -q .; then
+            git add data/offers-edit-log.json
+            git commit -m "chore(offers): edit item ${{ inputs.item_id }} auto-extend-days=${{ inputs.days }}"
+            git push
+          fi
