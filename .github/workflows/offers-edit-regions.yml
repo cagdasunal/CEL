@@ -1,0 +1,57 @@
+name: Offers Edit Regions
+
+# Triggered from the dashboard's Settings tab.
+# Updates docs/scripts/cel-offers-regions.json (served at /scripts/cel-offers-regions.json).
+# cel-offers.js fetches this JSON at boot and uses it (with the hardcoded
+# CONFIG as fallback if the fetch fails).
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: 'Region key (offers, sandiego, losangeles, vancouver, usa, canada)'
+        required: true
+        type: string
+      countries:
+        description: 'ISO country CSV (e.g. "ES,IT,NL,FR")'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offers-edit-regions
+  cancel-in-progress: false
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply region edit
+        env:
+          INPUT_REGION: ${{ inputs.region }}
+          INPUT_COUNTRIES: ${{ inputs.countries }}
+        run: python3 -m tools.offers.edit_regions
+
+      - name: Commit changes
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cel-offers-regions.json docs/scripts/cel-offers-regions.json data/offers-edit-log.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "chore(offers): edit region ${{ inputs.region }}"
+            git push
+          fi

@@ -99,9 +99,23 @@ def _render_item_row(item: dict, now: datetime) -> str:
 
     raw_days = fd.get("auto-extend-days")
     if raw_days is None:
-        days_display = f"{DEFAULT_EXTEND_DAYS} (default)"
+        days_value = DEFAULT_EXTEND_DAYS
+        days_is_default = True
     else:
-        days_display = str(int(raw_days))
+        days_value = int(raw_days)
+        days_is_default = False
+    default_marker = ' <span class="subtle">(default)</span>' if days_is_default else ''
+    days_cell = (
+        f'<div class="extend-edit" data-item-id="{escape(item.get("id", ""))}">'
+        f'<input type="number" min="0" max="365" step="1" '
+        f'class="extend-input" value="{days_value}" '
+        f'data-original="{days_value}" '
+        f'aria-label="Auto-extend days">'
+        f'<button class="extend-save" type="button" disabled>Save</button>'
+        f'<span class="extend-status" role="status"></span>'
+        f'{default_marker}'
+        f'</div>'
+    )
 
     # Build details panel
     detail_rows: list[str] = []
@@ -136,7 +150,7 @@ def _render_item_row(item: dict, now: datetime) -> str:
         f'<td>{title}</td>'
         f'<td><span class="date-primary">{end_display}</span>'
         f' <span class="subtle">({rel})</span></td>'
-        f'<td>{escape(days_display)}</td>'
+        f'<td>{days_cell}</td>'
         f'<td><details class="item-details"><summary>View</summary>'
         f'<dl>\n{details_html}\n        </dl>'
         f'</details></td>'
@@ -149,12 +163,21 @@ def _render_region_block(key: str, val: dict) -> str:
     country_list = [c for c in countries_csv.split(",") if c]
     n = len(country_list)
     return (
-        f'    <div class="region-block">'
-        f'<h3>{escape(key)}</h3>'
+        f'    <div class="region-block" data-region="{escape(key)}">'
+        f'<h3>{escape(key)} '
+        f'<span class="subtle region-count" data-count>({n} countr{"y" if n == 1 else "ies"})</span>'
+        f'</h3>'
         f'<p class="subtle">action: {escape(val.get("action", "show"))}</p>'
-        f'<details><summary>{n} countr{"y" if n == 1 else "ies"}</summary>'
-        f'<code class="country-list">{escape(countries_csv)}</code>'
-        f'</details>'
+        f'<label class="region-label">'
+        f'ISO country codes (comma-separated, no spaces):'
+        f'<textarea class="region-input" rows="3" '
+        f'data-original="{escape(countries_csv)}" '
+        f'aria-label="Country codes for {escape(key)}">{escape(countries_csv)}</textarea>'
+        f'</label>'
+        f'<div class="region-actions">'
+        f'<button class="region-save" type="button" disabled>Save</button>'
+        f'<span class="region-status" role="status"></span>'
+        f'</div>'
         f'</div>'
     )
 
@@ -182,10 +205,16 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
 
     subtitle = f"{len(items)} active offer{'s' if len(items) != 1 else ''} · auto-extend cron daily 02:17 UTC"
 
-    # Tab-toggle JS + CSS
+    # Tab-toggle + GitHub dispatch controller
     tab_script = """\
   <script>
   (function () {
+    var GH_OWNER = 'cagdasunal';
+    var GH_REPO  = 'CEL';
+    var PAT_KEY  = 'cel_admin_gh_pat';
+    var ITEM_WORKFLOW    = 'offers-edit-item.yml';
+    var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
+
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
       if (hash !== 'list' && hash !== 'settings') hash = 'list';
@@ -198,6 +227,194 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     }
     window.addEventListener('hashchange', applyTab);
     applyTab();
+
+    // ── GitHub PAT helpers ────────────────────────────────────────────
+    function getPat() { try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; } }
+    function setPat(v) { try { localStorage.setItem(PAT_KEY, v); } catch (_) {} }
+    function clearPat() { try { localStorage.removeItem(PAT_KEY); } catch (_) {} }
+
+    function refreshBanner() {
+      var banner = document.getElementById('pat-banner');
+      if (!banner) return;
+      banner.classList.toggle('hidden', !!getPat());
+    }
+
+    function dispatchWorkflow(workflow, inputs) {
+      var pat = getPat();
+      if (!pat) return Promise.reject(new Error('GitHub PAT not set. Open the banner above to add it.'));
+      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+                '/actions/workflows/' + workflow + '/dispatches';
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': 'Bearer ' + pat,
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ref: 'main', inputs: inputs })
+      }).then(function(resp) {
+        if (resp.status === 204) return { ok: true };
+        return resp.text().then(function(txt) {
+          var msg = 'HTTP ' + resp.status;
+          try { var j = JSON.parse(txt); if (j.message) msg += ': ' + j.message; }
+          catch (_) { msg += ': ' + txt.slice(0, 120); }
+          throw new Error(msg);
+        });
+      });
+    }
+
+    function pollLatestRun(workflow) {
+      var pat = getPat();
+      if (!pat) return Promise.reject(new Error('PAT missing'));
+      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+                '/actions/workflows/' + workflow + '/runs?per_page=1';
+      return fetch(url, {
+        headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + pat }
+      }).then(function(r) { return r.json(); })
+        .then(function(j) {
+          var run = (j.workflow_runs || [])[0];
+          if (!run) return null;
+          return { status: run.status, conclusion: run.conclusion, html_url: run.html_url };
+        });
+    }
+
+    // Wait until a run finishes (max 90 s, 3 s polling)
+    function awaitRun(workflow, statusEl) {
+      var start = Date.now();
+      function tick() {
+        return pollLatestRun(workflow).then(function(run) {
+          if (!run) {
+            statusEl.textContent = 'queueing…';
+            statusEl.className = statusEl.className.replace(/\\bis-(ok|error)\\b/g, '').trim();
+          } else if (run.status !== 'completed') {
+            statusEl.textContent = run.status + '…';
+            statusEl.className = statusEl.className.replace(/\\bis-(ok|error)\\b/g, '').trim();
+          } else {
+            if (run.conclusion === 'success') {
+              statusEl.textContent = '✓ saved';
+              statusEl.className += ' is-ok';
+            } else {
+              statusEl.textContent = '✗ ' + (run.conclusion || 'failed');
+              statusEl.className += ' is-error';
+            }
+            return run;
+          }
+          if (Date.now() - start > 90000) {
+            statusEl.textContent = 'timeout (check Actions tab)';
+            statusEl.className += ' is-error';
+            return null;
+          }
+          return new Promise(function(resolve) {
+            setTimeout(function() { resolve(tick()); }, 3000);
+          });
+        });
+      }
+      return tick();
+    }
+
+    // ── PAT banner controller ─────────────────────────────────────────
+    document.addEventListener('click', function(ev) {
+      if (ev.target.id === 'pat-save') {
+        var input = document.getElementById('pat-input');
+        var v = (input.value || '').trim();
+        if (v) { setPat(v); refreshBanner(); input.value = ''; }
+      } else if (ev.target.id === 'pat-clear') {
+        clearPat(); refreshBanner();
+      } else if (ev.target.id === 'pat-toggle') {
+        var b = document.getElementById('pat-banner');
+        if (b) b.classList.toggle('hidden');
+      }
+    });
+
+    // ── Auto-extend-days inline edit ───────────────────────────────────
+    document.addEventListener('input', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('extend-input')) return;
+      var wrap = ev.target.closest('.extend-edit');
+      var btn = wrap.querySelector('.extend-save');
+      btn.disabled = (ev.target.value === ev.target.dataset.original) ||
+                     (ev.target.value === '' || isNaN(parseInt(ev.target.value, 10)));
+    });
+
+    document.addEventListener('click', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('extend-save')) return;
+      var wrap = ev.target.closest('.extend-edit');
+      var input = wrap.querySelector('.extend-input');
+      var status = wrap.querySelector('.extend-status');
+      var itemId = wrap.dataset.itemId;
+      var days = parseInt(input.value, 10);
+      if (isNaN(days) || days < 0) { status.textContent = 'invalid'; status.className = 'extend-status is-error'; return; }
+      ev.target.disabled = true;
+      input.disabled = true;
+      status.textContent = 'dispatching…';
+      status.className = 'extend-status';
+      dispatchWorkflow(ITEM_WORKFLOW, { item_id: itemId, days: String(days) })
+        .then(function() {
+          // Give GitHub ~2s to register the run
+          return new Promise(function(r) { setTimeout(r, 2000); });
+        })
+        .then(function() { return awaitRun(ITEM_WORKFLOW, status); })
+        .then(function(run) {
+          if (run && run.conclusion === 'success') {
+            input.dataset.original = String(days);
+          }
+        })
+        .catch(function(err) {
+          status.textContent = '✗ ' + err.message;
+          status.className = 'extend-status is-error';
+        })
+        .finally(function() {
+          input.disabled = false;
+          ev.target.disabled = (input.value === input.dataset.original);
+        });
+    });
+
+    // ── Regions Settings inline edit ───────────────────────────────────
+    document.addEventListener('input', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('region-input')) return;
+      var block = ev.target.closest('.region-block');
+      var btn = block.querySelector('.region-save');
+      var v = (ev.target.value || '').trim().toUpperCase().replace(/\\s+/g, '');
+      var validCsv = /^[A-Z]{2}(,[A-Z]{2})*$/.test(v);
+      btn.disabled = !validCsv || (v === ev.target.dataset.original);
+      // Update count display
+      var n = v ? v.split(',').length : 0;
+      var counter = block.querySelector('[data-count]');
+      if (counter) counter.textContent = '(' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ')';
+    });
+
+    document.addEventListener('click', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('region-save')) return;
+      var block = ev.target.closest('.region-block');
+      var input = block.querySelector('.region-input');
+      var status = block.querySelector('.region-status');
+      var region = block.dataset.region;
+      var v = (input.value || '').trim().toUpperCase().replace(/\\s+/g, '');
+      if (!/^[A-Z]{2}(,[A-Z]{2})*$/.test(v)) { status.textContent = 'invalid CSV'; status.className = 'region-status is-error'; return; }
+      ev.target.disabled = true;
+      input.disabled = true;
+      status.textContent = 'dispatching…';
+      status.className = 'region-status';
+      dispatchWorkflow(REGIONS_WORKFLOW, { region: region, countries: v })
+        .then(function() { return new Promise(function(r) { setTimeout(r, 2000); }); })
+        .then(function() { return awaitRun(REGIONS_WORKFLOW, status); })
+        .then(function(run) {
+          if (run && run.conclusion === 'success') {
+            input.dataset.original = v;
+            input.value = v;
+          }
+        })
+        .catch(function(err) {
+          status.textContent = '✗ ' + err.message;
+          status.className = 'region-status is-error';
+        })
+        .finally(function() {
+          input.disabled = false;
+          ev.target.disabled = (input.value === input.dataset.original);
+        });
+    });
+
+    refreshBanner();
   })();
   </script>"""
 
@@ -221,8 +438,24 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .item-details dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px}")
     parts.append("    .item-details dt{font-weight:600;white-space:nowrap}")
     parts.append("    .country-list{display:block;word-break:break-all;font-size:0.85em}")
-    parts.append("    .region-block{margin-bottom:24px}")
+    parts.append("    .region-block{margin-bottom:32px;padding:16px;border:1px solid #d9cfb9;border-radius:8px;background:#fbf6e9}")
+    parts.append("    .region-block h3{margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.04em}")
+    parts.append("    .region-label{display:block;margin:8px 0;font-weight:500}")
+    parts.append("    .region-input{display:block;width:100%;margin-top:6px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;background:#fff;resize:vertical}")
+    parts.append("    .region-actions{margin-top:8px;display:flex;align-items:center;gap:12px}")
+    parts.append("    .region-save,.extend-save{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#f0e8d4;color:#3a342b;cursor:pointer;font-weight:600}")
+    parts.append("    .region-save:disabled,.extend-save:disabled{opacity:0.4;cursor:not-allowed}")
+    parts.append("    .region-save:hover:not(:disabled),.extend-save:hover:not(:disabled){background:#e7daa8}")
+    parts.append("    .region-status,.extend-status{font-size:0.85em;color:#6b5f52}")
+    parts.append("    .region-status.is-ok,.extend-status.is-ok{color:#3a7a3a}")
+    parts.append("    .region-status.is-error,.extend-status.is-error{color:#a54040}")
+    parts.append("    .extend-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}")
+    parts.append("    .extend-input{width:80px;padding:6px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff}")
     parts.append("    .date-primary{font-variant-numeric:tabular-nums}")
+    parts.append("    .pat-banner{margin:16px 0;padding:12px 16px;background:#fff8e1;border:1px solid #d9b557;border-radius:6px}")
+    parts.append("    .pat-banner.hidden{display:none}")
+    parts.append("    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px}")
+    parts.append("    .pat-actions{margin-top:8px;display:flex;gap:8px}")
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
@@ -235,6 +468,23 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     last_sync_display = _iso_to_display(last_ts) if last_ts else "Never"
     parts.append(f'    {render_sync_status_card(status_label, last_sync_display, is_ok=is_ok)}')
 
+    # GitHub PAT banner — toggle visible when PAT missing (controller hides if set)
+    parts.append('    <button id="pat-toggle" type="button" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>')
+    parts.append('    <section id="pat-banner" class="pat-banner">')
+    parts.append('      <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>')
+    parts.append('      <p class="subtle" style="margin:0">')
+    parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
+    parts.append('        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>')
+    parts.append('        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.')
+    parts.append('        Stored locally in your browser only.')
+    parts.append('      </p>')
+    parts.append('      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">')
+    parts.append('      <div class="pat-actions">')
+    parts.append('        <button id="pat-save" type="button" class="region-save">Save token</button>')
+    parts.append('        <button id="pat-clear" type="button" class="region-save" style="background:#f0d4d4;border-color:#a54040">Forget token</button>')
+    parts.append('      </div>')
+    parts.append('    </section>')
+
     # In-page tab nav
     parts.append('    <nav class="offers-tabs" style="margin-bottom:16px">')
     parts.append('      <a class="offers-tab-link" href="#list">Offers List</a>')
@@ -244,7 +494,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     # ── Tab: List ──────────────────────────────────────────────────────────
     parts.append('    <section data-tab="list">')
     if items:
-        parts.append('      <div class="page-grid">')
         parts.append("      <table>")
         parts.append("        <thead>")
         parts.append("          <tr>")
@@ -259,7 +508,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
             parts.append(_render_item_row(item, now))
         parts.append("        </tbody>")
         parts.append("      </table>")
-        parts.append("      </div>")
     else:
         parts.append('      <p class="empty">No offers yet.</p>')
     parts.append("    </section>")

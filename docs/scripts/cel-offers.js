@@ -65,7 +65,17 @@
  * ============================================================ */
 
 (function() {
-  const CONFIG = {
+  /* CONFIG is the active region → countries map. Initial value is the
+   * hardcoded fallback (preserves v1.2.0 behavior if the runtime JSON
+   * fetch fails or hasn't resolved yet). At boot we attempt to fetch
+   * /scripts/cel-offers-regions.json — if it returns a valid shape,
+   * CONFIG is overwritten and runFilter() runs again so the fresh
+   * values take effect on the next paint.
+   *
+   * The JSON file is written by the admin dashboard's Settings tab via
+   * .github/workflows/offers-edit-regions.yml — see rules/cel-offers-deploy.md.
+   */
+  const FALLBACK_CONFIG = {
     'offers': {
       countries: "ES,IT,NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,TR,AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA,AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI,TW,CN,KR,VN,TH,BD,KH,ID,MY,MN,BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ,AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR,JP",
       action: 'show'
@@ -91,6 +101,40 @@
       action: 'show'
     }
   };
+
+  // Mutable active config — starts as fallback, may be replaced by fetched JSON.
+  let CONFIG = FALLBACK_CONFIG;
+
+  function applyFetchedRegions(json) {
+    if (!json || !json.regions || typeof json.regions !== 'object') return false;
+    const next = {};
+    let any = false;
+    Object.keys(FALLBACK_CONFIG).forEach(function(k) {
+      const fetched = json.regions[k];
+      if (fetched && typeof fetched.countries === 'string' && /^[A-Z]{2}(,[A-Z]{2})*$/.test(fetched.countries)) {
+        next[k] = { countries: fetched.countries, action: fetched.action || 'show' };
+        any = true;
+      } else {
+        next[k] = FALLBACK_CONFIG[k];
+      }
+    });
+    if (!any) return false;
+    CONFIG = next;
+    return true;
+  }
+
+  // Try to load latest regions JSON. Failure is silent — fallback is already in place.
+  try {
+    fetch('/scripts/cel-offers-regions.json', { cache: 'no-cache' })
+      .then(function(r) { return r && r.ok ? r.json() : null; })
+      .then(function(json) {
+        if (applyFetchedRegions(json)) {
+          // Re-run the filter so saved Settings take effect immediately
+          if (typeof runFilter === 'function') runFilter();
+        }
+      })
+      .catch(function() { /* fallback in place; nothing to do */ });
+  } catch (e) { /* very old browsers without fetch — silent fallback */ }
 
   // ---- Cache (prevents nav "popping" after refresh) ----
   const GEO_CACHE_KEY = "cel_geo_cc";

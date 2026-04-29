@@ -897,8 +897,8 @@ _SHELL_HTML = """\
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">WEGLOT</a>
-        <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">Offers</a>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
           <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -910,7 +910,7 @@ _SHELL_HTML = """\
       <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
     </header>
     <main class="shell-content">
-      <iframe id="shell-frame" title="Dashboard content" src="/admin/log/"></iframe>
+      <iframe id="shell-frame" title="Dashboard content" src="/admin/offers/"></iframe>
     </main>
   </div>
   <script>
@@ -931,8 +931,8 @@ _SHELL_HTML = """\
     var topbarEls = document.querySelectorAll('[data-topbar]');
     var subitemEls = document.querySelectorAll('.shell-tab-subitem');
     function pick() {
-      var key = (location.hash || '#log').slice(1);
-      if (!TARGETS[key]) key = 'log';
+      var key = (location.hash || '#offers').slice(1);
+      if (!TARGETS[key]) key = 'offers';
       return key;
     }
     function apply() {

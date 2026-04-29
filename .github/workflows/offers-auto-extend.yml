@@ -37,7 +37,8 @@ jobs:
         run: python3 -m tools.offers.auto_extend --dry-run --threshold-hours 23 | tee /tmp/post-verify.log
 
       - name: Gate
-        run: grep -q "PLAN: 0 items" /tmp/post-verify.log
+        run: |
+          grep -q "PLAN: 0 items" /tmp/post-verify.log
 
       - name: Commit log
         if: always()

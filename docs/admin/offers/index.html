@@ -17,20 +17,50 @@
     .item-details dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:8px}
     .item-details dt{font-weight:600;white-space:nowrap}
     .country-list{display:block;word-break:break-all;font-size:0.85em}
-    .region-block{margin-bottom:24px}
+    .region-block{margin-bottom:32px;padding:16px;border:1px solid #d9cfb9;border-radius:8px;background:#fbf6e9}
+    .region-block h3{margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.04em}
+    .region-label{display:block;margin:8px 0;font-weight:500}
+    .region-input{display:block;width:100%;margin-top:6px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;background:#fff;resize:vertical}
+    .region-actions{margin-top:8px;display:flex;align-items:center;gap:12px}
+    .region-save,.extend-save{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#f0e8d4;color:#3a342b;cursor:pointer;font-weight:600}
+    .region-save:disabled,.extend-save:disabled{opacity:0.4;cursor:not-allowed}
+    .region-save:hover:not(:disabled),.extend-save:hover:not(:disabled){background:#e7daa8}
+    .region-status,.extend-status{font-size:0.85em;color:#6b5f52}
+    .region-status.is-ok,.extend-status.is-ok{color:#3a7a3a}
+    .region-status.is-error,.extend-status.is-error{color:#a54040}
+    .extend-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .extend-input{width:80px;padding:6px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff}
     .date-primary{font-variant-numeric:tabular-nums}
+    .pat-banner{margin:16px 0;padding:12px 16px;background:#fff8e1;border:1px solid #d9b557;border-radius:6px}
+    .pat-banner.hidden{display:none}
+    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px}
+    .pat-actions{margin-top:8px;display:flex;gap:8px}
   </style>
 </head>
 <body>
   <div class="dashboard-shell">
     <header class="dashboard-header"><div class="brand-text"><p class="eyebrow">OFFERS</p><p class="subtitle">34 active offers · auto-extend cron daily 02:17 UTC</p></div></header>
     <section class="status status-ok"><p class="status-label">Auto-extend has not yet run.</p><p>Last checked on <strong>Never</strong> (San Diego time).</p></section>
+    <button id="pat-toggle" type="button" style="margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer">⚙ GitHub credentials</button>
+    <section id="pat-banner" class="pat-banner">
+      <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>
+      <p class="subtle" style="margin:0">
+        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at 
+        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>
+        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.
+        Stored locally in your browser only.
+      </p>
+      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">
+      <div class="pat-actions">
+        <button id="pat-save" type="button" class="region-save">Save token</button>
+        <button id="pat-clear" type="button" class="region-save" style="background:#f0d4d4;border-color:#a54040">Forget token</button>
+      </div>
+    </section>
     <nav class="offers-tabs" style="margin-bottom:16px">
       <a class="offers-tab-link" href="#list">Offers List</a>
       <a class="offers-tab-link" href="#settings">Settings</a>
     </nav>
     <section data-tab="list">
-      <div class="page-grid">
       <table>
         <thead>
           <tr>
@@ -41,7 +71,7 @@
           </tr>
         </thead>
         <tbody>
-      <tr><td>LA CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c502d8f9078e98d31a6545"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA CIS 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA</dd>
@@ -50,7 +80,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-54</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.049Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA China 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA China 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c502a8c943664f5075c7d8"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA China 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>CN</dd>
@@ -59,7 +89,7 @@
         <dt>Slug</dt><dd>10-discount-on-our-tuition-fees-6</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.778Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c5025737fe50b885550295"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Eastern Europe 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI</dd>
@@ -68,7 +98,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-53</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.651Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Jap 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Jap 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c501e9abf4c3af87fbbaf9"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Jap 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>JP</dd>
@@ -77,7 +107,7 @@
         <dt>Slug</dt><dd>12-discount-on-our-tuition-fees-4</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.388Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Kor 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Kor 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c501c53c06033214051139"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Kor 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>KR</dd>
@@ -86,7 +116,7 @@
         <dt>Slug</dt><dd>13-discount-on-our-tuition-fees-8</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.700Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Latin America &amp; Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Latin America &amp; Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c501959d124f9c06b17ef5"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Latin America &amp; Brazil 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR</dd>
@@ -95,7 +125,7 @@
         <dt>Slug</dt><dd>40-discount-on-our-tuition-fees-6</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.618Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Middle East except SA 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Middle East except SA 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c5016ca10bdb4a65bffbd9"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Middle East except SA 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ</dd>
@@ -104,7 +134,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-59</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.387Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Rest of Asia 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Rest of Asia 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c5013f0190b7f24fc82009"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Rest of Asia 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>VN,BD,KH,ID,MY,MN</dd>
@@ -113,7 +143,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-52</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.327Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Saudi Arabia 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Saudi Arabia 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c5010a7c65efaa402c3487"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Saudi Arabia 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>SA</dd>
@@ -122,7 +152,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-51</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:03.205Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Tai 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Tai 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c500d79d124f9c06b13893"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Tai 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TW</dd>
@@ -131,7 +161,7 @@
         <dt>Slug</dt><dd>13-discount-on-our-tuition-fees-7</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.648Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Thailand 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Thailand 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c500a10d6fed2a533008ec"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Thailand 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TH</dd>
@@ -140,7 +170,7 @@
         <dt>Slug</dt><dd>25-discount-on-our-tuition-fees-36</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.659Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c50064c816f3c91dc0f23e"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Turkey 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TR</dd>
@@ -149,7 +179,7 @@
         <dt>Slug</dt><dd>22-discount-on-our-tuition-fees-4</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.084Z</dd>
         </dl></details></td></tr>
-      <tr><td>LA Western Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>LA Western Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c5001437fe50b88553d29a"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>LA Western Europe 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,ES,IT</dd>
@@ -158,7 +188,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-50</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.693Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Asia (except JP, KR, TW) 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Asia (except JP, KR, TW) 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4ff80c4cd900022871c0c"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Asia (except JP, KR, TW) 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>CN,VN,TH,BD,KH,ID,MY,MN</dd>
@@ -167,7 +197,7 @@
         <dt>Slug</dt><dd>25-discount-on-our-tuition-fees-33</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.756Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4ff1853733c7f23addbe9"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Brazil 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>BR</dd>
@@ -176,7 +206,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-56</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:03.001Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fea18c893b91af05fa59"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD CIS 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA</dd>
@@ -185,7 +215,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-53</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.679Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fe2c3ef1da78cfab6aef"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Eastern Europe 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI</dd>
@@ -194,7 +224,7 @@
         <dt>Slug</dt><dd>25-discount-on-our-tuition-fees-30</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.666Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD France &amp; Belgium 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD France &amp; Belgium 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fdaacd113bf487eb0b1c"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD France &amp; Belgium 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>FR,BE</dd>
@@ -203,7 +233,7 @@
         <dt>Slug</dt><dd>15-discount-on-our-tuition-fees-6</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.762Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Japan 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Japan 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fd3b18767c32d417facb"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Japan 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>JP</dd>
@@ -212,7 +242,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-free-registration-fee-4</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:03.011Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD KR, TW 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD KR, TW 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fcc332c2a680a5f59017"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD KR, TW 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>KR,TW</dd>
@@ -221,7 +251,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-47</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.665Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Latin America 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Latin America 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fc4f9727e28359c99a07"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Latin America 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE</dd>
@@ -230,7 +260,7 @@
         <dt>Slug</dt><dd>35-discount-on-our-tuition-fees-17</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.727Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Middle East 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Middle East 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fbd00ed2df860856c136"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Middle East 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ</dd>
@@ -239,7 +269,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-44</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.671Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Spain &amp; Italy 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Spain &amp; Italy 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fb693ec8251f45718b9d"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Spain &amp; Italy 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>ES,IT</dd>
@@ -248,7 +278,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-41</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.242Z</dd>
         </dl></details></td></tr>
-      <tr><td>SD Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>SD Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4faf3a10bdb4a65bd2166"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>SD Turkey 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TR</dd>
@@ -257,7 +287,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-50</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:03.050Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Asia (except Jap, Kor, Tai) 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Asia (except Jap, Kor, Tai) 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4fa7653733c7f23abd5ff"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Asia (except Jap, Kor, Tai) 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>CN,VN,TH,BD,KH,ID,MY,MN</dd>
@@ -266,7 +296,7 @@
         <dt>Slug</dt><dd>25-discount-on-our-tuition-fees-27</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.235Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Brazil 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f9fff45c2b588633d108"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Brazil 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>BR</dd>
@@ -275,7 +305,7 @@
         <dt>Slug</dt><dd>35-discount-on-our-tuition-fees-14</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.755Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC CIS 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f9a335a9cdd840477c04"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC CIS 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA</dd>
@@ -284,7 +314,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-47</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.639Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Eastern Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f934468c9181a40661df"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Eastern Europe 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI</dd>
@@ -293,7 +323,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-44</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:01.779Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Japan 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Japan 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f8c97608d62b9a6e102b"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Japan 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>JP</dd>
@@ -302,7 +332,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-38</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:03.230Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Latin America 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Latin America 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f805ac8138b8bace42b7"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Latin America 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE</dd>
@@ -311,7 +341,7 @@
         <dt>Slug</dt><dd>35-discount-on-our-tuition-fees-12</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.199Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Middle East 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Middle East 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f3893ef1da78cfa69f1f"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Middle East 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ</dd>
@@ -320,7 +350,7 @@
         <dt>Slug</dt><dd>25-discount-on-our-tuition-fees-24</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.237Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC TW/KR 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC TW/KR 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f2e55ec2299d062fb403"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC TW/KR 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TW,KR</dd>
@@ -329,7 +359,7 @@
         <dt>Slug</dt><dd>20-discount-on-our-tuition-fees-35</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.619Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Turkey 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f26532c2a680a5f17a76"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Turkey 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>TR</dd>
@@ -338,7 +368,7 @@
         <dt>Slug</dt><dd>30-discount-on-our-tuition-fees-41</dd>
         <dt>Last Published</dt><dd>2026-04-01T07:00:02.012Z</dd>
         </dl></details></td></tr>
-      <tr><td>VC Western Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td>14 (default)</td><td><details class="item-details"><summary>View</summary><dl>
+      <tr><td>VC Western Europe 04/26</td><td><span class="date-primary">2026-04-30</span> <span class="subtle">(expires in 1 day)</span></td><td><div class="extend-edit" data-item-id="69c4f12b9f969031895af3f6"><input type="number" min="0" max="365" step="1" class="extend-input" value="14" data-original="14" aria-label="Auto-extend days"><button class="extend-save" type="button" disabled>Save</button><span class="extend-status" role="status"></span> <span class="subtle">(default)</span></div></td><td><details class="item-details"><summary>View</summary><dl>
         <dt>Internal Title</dt><dd>VC Western Europe 04/26</dd>
         <dt>End Date</dt><dd>2026-04-30T00:00:00.000Z</dd>
         <dt>Targeted Countries (ISO)</dt><dd>NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,ES,IT</dd>
@@ -349,23 +379,28 @@
         </dl></details></td></tr>
         </tbody>
       </table>
-      </div>
     </section>
     <section data-tab="settings">
       <p>Geotargetly region → ISO country mappings. Read-only. To change, edit <code>tools/cel-offers-js/cel-offers.js</code> in the monorepo and rebuild the bundle.</p>
-    <div class="region-block"><h3>offers</h3><p class="subtle">action: show</p><details><summary>90 countries</summary><code class="country-list">ES,IT,NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,TR,AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA,AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI,TW,CN,KR,VN,TH,BD,KH,ID,MY,MN,BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ,AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR,JP</code></details></div>
-    <div class="region-block"><h3>sandiego</h3><p class="subtle">action: show</p><details><summary>76 countries</summary><code class="country-list">AE,AL,AM,AR,AZ,BA,BD,BE,BG,BH,BO,BR,BZ,CL,CN,CO,CR,CU,CY,CZ,DO,DZ,EC,EE,EG,ES,FR,GE,GT,HN,HR,HT,ID,IQ,IR,IT,JM,JO,JP,KG,KH,KR,KW,KZ,LB,LT,LV,MD,ME,MK,MN,MX,MY,NI,OM,PA,PE,PL,PY,QA,RO,RS,RU,SA,SI,SK,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</code></details></div>
-    <div class="region-block"><h3>losangeles</h3><p class="subtle">action: show</p><details><summary>89 countries</summary><code class="country-list">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</code></details></div>
-    <div class="region-block"><h3>vancouver</h3><p class="subtle">action: show</p><details><summary>88 countries</summary><code class="country-list">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</code></details></div>
-    <div class="region-block"><h3>usa</h3><p class="subtle">action: show</p><details><summary>92 countries</summary><code class="country-list">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CL,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,FR,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KW,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</code></details></div>
-    <div class="region-block"><h3>canada</h3><p class="subtle">action: show</p><details><summary>88 countries</summary><code class="country-list">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</code></details></div>
+    <div class="region-block" data-region="offers"><h3>offers <span class="subtle region-count" data-count>(90 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="ES,IT,NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,TR,AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA,AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI,TW,CN,KR,VN,TH,BD,KH,ID,MY,MN,BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ,AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR,JP" aria-label="Country codes for offers">ES,IT,NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,TR,AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA,AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI,TW,CN,KR,VN,TH,BD,KH,ID,MY,MN,BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ,AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR,JP</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
+    <div class="region-block" data-region="sandiego"><h3>sandiego <span class="subtle region-count" data-count>(76 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AE,AL,AM,AR,AZ,BA,BD,BE,BG,BH,BO,BR,BZ,CL,CN,CO,CR,CU,CY,CZ,DO,DZ,EC,EE,EG,ES,FR,GE,GT,HN,HR,HT,ID,IQ,IR,IT,JM,JO,JP,KG,KH,KR,KW,KZ,LB,LT,LV,MD,ME,MK,MN,MX,MY,NI,OM,PA,PE,PL,PY,QA,RO,RS,RU,SA,SI,SK,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for sandiego">AE,AL,AM,AR,AZ,BA,BD,BE,BG,BH,BO,BR,BZ,CL,CN,CO,CR,CU,CY,CZ,DO,DZ,EC,EE,EG,ES,FR,GE,GT,HN,HR,HT,ID,IQ,IR,IT,JM,JO,JP,KG,KH,KR,KW,KZ,LB,LT,LV,MD,ME,MK,MN,MX,MY,NI,OM,PA,PE,PL,PY,QA,RO,RS,RU,SA,SI,SK,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
+    <div class="region-block" data-region="losangeles"><h3>losangeles <span class="subtle region-count" data-count>(89 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for losangeles">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
+    <div class="region-block" data-region="vancouver"><h3>vancouver <span class="subtle region-count" data-count>(88 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for vancouver">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
+    <div class="region-block" data-region="usa"><h3>usa <span class="subtle region-count" data-count>(92 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CL,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,FR,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KW,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for usa">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CL,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,FR,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KW,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
+    <div class="region-block" data-region="canada"><h3>canada <span class="subtle region-count" data-count>(88 countries)</span></h3><p class="subtle">action: show</p><label class="region-label">ISO country codes (comma-separated, no spaces):<textarea class="region-input" rows="3" data-original="AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE" aria-label="Country codes for canada">AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE</textarea></label><div class="region-actions"><button class="region-save" type="button" disabled>Save</button><span class="region-status" role="status"></span></div></div>
     </section>
     <footer>
-      Total offers tracked: <strong>34</strong>. This page was generated on 2026-04-29 21:10 UTC. Auto-extend runs daily at 02:17 UTC.
+      Total offers tracked: <strong>34</strong>. This page was generated on 2026-04-29 21:38 UTC. Auto-extend runs daily at 02:17 UTC.
     </footer>
   </div>
   <script>
   (function () {
+    var GH_OWNER = 'cagdasunal';
+    var GH_REPO  = 'CEL';
+    var PAT_KEY  = 'cel_admin_gh_pat';
+    var ITEM_WORKFLOW    = 'offers-edit-item.yml';
+    var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
+
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
       if (hash !== 'list' && hash !== 'settings') hash = 'list';
@@ -378,6 +413,194 @@
     }
     window.addEventListener('hashchange', applyTab);
     applyTab();
+
+    // ── GitHub PAT helpers ────────────────────────────────────────────
+    function getPat() { try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; } }
+    function setPat(v) { try { localStorage.setItem(PAT_KEY, v); } catch (_) {} }
+    function clearPat() { try { localStorage.removeItem(PAT_KEY); } catch (_) {} }
+
+    function refreshBanner() {
+      var banner = document.getElementById('pat-banner');
+      if (!banner) return;
+      banner.classList.toggle('hidden', !!getPat());
+    }
+
+    function dispatchWorkflow(workflow, inputs) {
+      var pat = getPat();
+      if (!pat) return Promise.reject(new Error('GitHub PAT not set. Open the banner above to add it.'));
+      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+                '/actions/workflows/' + workflow + '/dispatches';
+      return fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': 'Bearer ' + pat,
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ref: 'main', inputs: inputs })
+      }).then(function(resp) {
+        if (resp.status === 204) return { ok: true };
+        return resp.text().then(function(txt) {
+          var msg = 'HTTP ' + resp.status;
+          try { var j = JSON.parse(txt); if (j.message) msg += ': ' + j.message; }
+          catch (_) { msg += ': ' + txt.slice(0, 120); }
+          throw new Error(msg);
+        });
+      });
+    }
+
+    function pollLatestRun(workflow) {
+      var pat = getPat();
+      if (!pat) return Promise.reject(new Error('PAT missing'));
+      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+                '/actions/workflows/' + workflow + '/runs?per_page=1';
+      return fetch(url, {
+        headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + pat }
+      }).then(function(r) { return r.json(); })
+        .then(function(j) {
+          var run = (j.workflow_runs || [])[0];
+          if (!run) return null;
+          return { status: run.status, conclusion: run.conclusion, html_url: run.html_url };
+        });
+    }
+
+    // Wait until a run finishes (max 90 s, 3 s polling)
+    function awaitRun(workflow, statusEl) {
+      var start = Date.now();
+      function tick() {
+        return pollLatestRun(workflow).then(function(run) {
+          if (!run) {
+            statusEl.textContent = 'queueing…';
+            statusEl.className = statusEl.className.replace(/\bis-(ok|error)\b/g, '').trim();
+          } else if (run.status !== 'completed') {
+            statusEl.textContent = run.status + '…';
+            statusEl.className = statusEl.className.replace(/\bis-(ok|error)\b/g, '').trim();
+          } else {
+            if (run.conclusion === 'success') {
+              statusEl.textContent = '✓ saved';
+              statusEl.className += ' is-ok';
+            } else {
+              statusEl.textContent = '✗ ' + (run.conclusion || 'failed');
+              statusEl.className += ' is-error';
+            }
+            return run;
+          }
+          if (Date.now() - start > 90000) {
+            statusEl.textContent = 'timeout (check Actions tab)';
+            statusEl.className += ' is-error';
+            return null;
+          }
+          return new Promise(function(resolve) {
+            setTimeout(function() { resolve(tick()); }, 3000);
+          });
+        });
+      }
+      return tick();
+    }
+
+    // ── PAT banner controller ─────────────────────────────────────────
+    document.addEventListener('click', function(ev) {
+      if (ev.target.id === 'pat-save') {
+        var input = document.getElementById('pat-input');
+        var v = (input.value || '').trim();
+        if (v) { setPat(v); refreshBanner(); input.value = ''; }
+      } else if (ev.target.id === 'pat-clear') {
+        clearPat(); refreshBanner();
+      } else if (ev.target.id === 'pat-toggle') {
+        var b = document.getElementById('pat-banner');
+        if (b) b.classList.toggle('hidden');
+      }
+    });
+
+    // ── Auto-extend-days inline edit ───────────────────────────────────
+    document.addEventListener('input', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('extend-input')) return;
+      var wrap = ev.target.closest('.extend-edit');
+      var btn = wrap.querySelector('.extend-save');
+      btn.disabled = (ev.target.value === ev.target.dataset.original) ||
+                     (ev.target.value === '' || isNaN(parseInt(ev.target.value, 10)));
+    });
+
+    document.addEventListener('click', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('extend-save')) return;
+      var wrap = ev.target.closest('.extend-edit');
+      var input = wrap.querySelector('.extend-input');
+      var status = wrap.querySelector('.extend-status');
+      var itemId = wrap.dataset.itemId;
+      var days = parseInt(input.value, 10);
+      if (isNaN(days) || days < 0) { status.textContent = 'invalid'; status.className = 'extend-status is-error'; return; }
+      ev.target.disabled = true;
+      input.disabled = true;
+      status.textContent = 'dispatching…';
+      status.className = 'extend-status';
+      dispatchWorkflow(ITEM_WORKFLOW, { item_id: itemId, days: String(days) })
+        .then(function() {
+          // Give GitHub ~2s to register the run
+          return new Promise(function(r) { setTimeout(r, 2000); });
+        })
+        .then(function() { return awaitRun(ITEM_WORKFLOW, status); })
+        .then(function(run) {
+          if (run && run.conclusion === 'success') {
+            input.dataset.original = String(days);
+          }
+        })
+        .catch(function(err) {
+          status.textContent = '✗ ' + err.message;
+          status.className = 'extend-status is-error';
+        })
+        .finally(function() {
+          input.disabled = false;
+          ev.target.disabled = (input.value === input.dataset.original);
+        });
+    });
+
+    // ── Regions Settings inline edit ───────────────────────────────────
+    document.addEventListener('input', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('region-input')) return;
+      var block = ev.target.closest('.region-block');
+      var btn = block.querySelector('.region-save');
+      var v = (ev.target.value || '').trim().toUpperCase().replace(/\s+/g, '');
+      var validCsv = /^[A-Z]{2}(,[A-Z]{2})*$/.test(v);
+      btn.disabled = !validCsv || (v === ev.target.dataset.original);
+      // Update count display
+      var n = v ? v.split(',').length : 0;
+      var counter = block.querySelector('[data-count]');
+      if (counter) counter.textContent = '(' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ')';
+    });
+
+    document.addEventListener('click', function(ev) {
+      if (!ev.target.classList || !ev.target.classList.contains('region-save')) return;
+      var block = ev.target.closest('.region-block');
+      var input = block.querySelector('.region-input');
+      var status = block.querySelector('.region-status');
+      var region = block.dataset.region;
+      var v = (input.value || '').trim().toUpperCase().replace(/\s+/g, '');
+      if (!/^[A-Z]{2}(,[A-Z]{2})*$/.test(v)) { status.textContent = 'invalid CSV'; status.className = 'region-status is-error'; return; }
+      ev.target.disabled = true;
+      input.disabled = true;
+      status.textContent = 'dispatching…';
+      status.className = 'region-status';
+      dispatchWorkflow(REGIONS_WORKFLOW, { region: region, countries: v })
+        .then(function() { return new Promise(function(r) { setTimeout(r, 2000); }); })
+        .then(function() { return awaitRun(REGIONS_WORKFLOW, status); })
+        .then(function(run) {
+          if (run && run.conclusion === 'success') {
+            input.dataset.original = v;
+            input.value = v;
+          }
+        })
+        .catch(function(err) {
+          status.textContent = '✗ ' + err.message;
+          status.className = 'region-status is-error';
+        })
+        .finally(function() {
+          input.disabled = false;
+          ev.target.disabled = (input.value === input.dataset.original);
+        });
+    });
+
+    refreshBanner();
   })();
   </script>
 </body>
