@@ -1,0 +1,51 @@
+name: Offers Auto-Extend
+
+on:
+  schedule:
+    - cron: '17 2 * * *'   # daily 02:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offers-auto-extend
+  cancel-in-progress: false
+
+jobs:
+  extend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run auto-extend (live)
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: python3 -m tools.offers.auto_extend
+
+      - name: Verify post-state (no item ends in <23h)
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: python3 -m tools.offers.auto_extend --dry-run --threshold-hours 23 | tee /tmp/post-verify.log
+
+      - name: Gate
+        run: grep -q "PLAN: 0 items" /tmp/post-verify.log
+
+      - name: Commit log
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git status --porcelain data/offers-extend-log.json | grep -q .; then
+            git add data/offers-extend-log.json
+            git commit -m "chore(offers): auto-extend $(date -u +%Y-%m-%d)"
+            git push
+          fi

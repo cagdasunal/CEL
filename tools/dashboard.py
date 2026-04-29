@@ -898,6 +898,7 @@ _SHELL_HTML = """\
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">WEGLOT</a>
+        <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">Offers</a>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
           <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -916,11 +917,13 @@ _SHELL_HTML = """\
   (function () {
     var TARGETS = {
       log:     '/admin/log/',
+      offers:  '/admin/offers/',
       housing: '/admin/housing/',
       courses: '/admin/courses/'
     };
     var TOPBAR_FOR = {
       log:     'seo',
+      offers:  'offers',
       housing: 'fidelo',
       courses: 'fidelo'
     };
