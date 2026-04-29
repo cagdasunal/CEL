@@ -1,7 +1,7 @@
 
   /* === Reset + Root === */
   :root {
-    --bg: #F1EAD8;
+    --bg: #FBF6E9;
     --fg: #37332c;
     --muted: rgba(55,51,44,0.65);
     --faint: rgba(55,51,44,0.45);
@@ -11,7 +11,7 @@
     --panel: rgba(55,51,44,0.03);
     --accent: #5d60ee;
     --accent-warm: #e78b10;
-    --surface: #F1EAD8;
+    --surface: #FBF6E9;
     --ok: #1d6b3a;
     --warn: #a65f1f;
     --err: #a02624;
