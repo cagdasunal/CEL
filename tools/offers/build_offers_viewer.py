@@ -42,19 +42,79 @@ OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "offers" / "index.html"
 
 DEFAULT_EXTEND_DAYS = 14
 
+# Campus collection ID → display name (sites/cel/docs/offers/cms.md)
+CAMPUS_NAMES: dict[str, str] = {
+    "69284a1fdd88ce50865499ee": "San Diego",
+    "69284a3658a8a030e4124ff6": "Vancouver",
+    "69284a28e38a8c5f736359cb": "Los Angeles",
+}
+
+# ISO 3166-1 alpha-2 → English country name. Covers every code used in
+# tools/offers/regions.py REGIONS (offers/sandiego/losangeles/vancouver/usa/canada).
+COUNTRY_NAMES: dict[str, str] = {
+    "AD": "Andorra", "AE": "UAE", "AL": "Albania", "AM": "Armenia",
+    "AR": "Argentina", "AT": "Austria", "AZ": "Azerbaijan", "BA": "Bosnia & Herzegovina",
+    "BD": "Bangladesh", "BE": "Belgium", "BG": "Bulgaria", "BH": "Bahrain",
+    "BO": "Bolivia", "BR": "Brazil", "BY": "Belarus", "BZ": "Belize",
+    "CL": "Chile", "CN": "China", "CO": "Colombia", "CR": "Costa Rica",
+    "CU": "Cuba", "CY": "Cyprus", "CZ": "Czech Republic", "DE": "Germany",
+    "DK": "Denmark", "DO": "Dominican Republic", "DZ": "Algeria", "EC": "Ecuador",
+    "EE": "Estonia", "EG": "Egypt", "ES": "Spain", "FI": "Finland",
+    "FR": "France", "GE": "Georgia", "GR": "Greece", "GT": "Guatemala",
+    "HN": "Honduras", "HR": "Croatia", "HT": "Haiti", "ID": "Indonesia",
+    "IQ": "Iraq", "IR": "Iran", "IS": "Iceland", "IT": "Italy",
+    "JM": "Jamaica", "JO": "Jordan", "JP": "Japan", "KG": "Kyrgyzstan",
+    "KH": "Cambodia", "KR": "South Korea", "KW": "Kuwait", "KZ": "Kazakhstan",
+    "LB": "Lebanon", "LI": "Liechtenstein", "LT": "Lithuania", "LU": "Luxembourg",
+    "LV": "Latvia", "MD": "Moldova", "ME": "Montenegro", "MK": "North Macedonia",
+    "MN": "Mongolia", "MX": "Mexico", "MY": "Malaysia", "NI": "Nicaragua",
+    "NL": "Netherlands", "NO": "Norway", "OM": "Oman", "PA": "Panama",
+    "PE": "Peru", "PL": "Poland", "PT": "Portugal", "PY": "Paraguay",
+    "QA": "Qatar", "RO": "Romania", "RS": "Serbia", "RU": "Russia",
+    "SA": "Saudi Arabia", "SE": "Sweden", "SI": "Slovenia", "SK": "Slovakia",
+    "SM": "San Marino", "SV": "El Salvador", "TH": "Thailand", "TJ": "Tajikistan",
+    "TR": "Turkey", "TW": "Taiwan", "UA": "Ukraine", "UY": "Uruguay",
+    "VE": "Venezuela", "VN": "Vietnam", "YE": "Yemen",
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _iso_to_display(ts_iso: str | None) -> str:
+    """Format an ISO timestamp as a friendly date (e.g. 'Apr 30, 2026')."""
     if not ts_iso:
         return "—"
     try:
         dt = datetime.fromisoformat(ts_iso.replace("Z", "+00:00"))
-        return dt.strftime("%Y-%m-%d")
+        return dt.strftime("%b %-d, %Y")
     except (ValueError, TypeError):
         return ts_iso or "—"
+
+
+def _format_countries(csv: str | None) -> str:
+    """Convert 'AZ,BY,GE' → 'Azerbaijan, Belarus, Georgia'. Unknown codes pass through."""
+    if not csv:
+        return "—"
+    codes = [c.strip().upper() for c in csv.split(",") if c.strip()]
+    return ", ".join(COUNTRY_NAMES.get(code, code) for code in codes)
+
+
+def _format_campus(value: str | dict | None) -> str:
+    """Resolve a campus reference (ID string or dict) to a display name."""
+    if not value:
+        return "—"
+    cid = value if isinstance(value, str) else (value.get("id") or "")
+    return CAMPUS_NAMES.get(cid, cid or "—")
+
+
+def _format_bool(value) -> str:
+    if value is True:
+        return "Yes"
+    if value is False:
+        return "No"
+    return str(value)
 
 
 def _relative_phrase(end_iso: str | None, now: datetime) -> str:
@@ -117,29 +177,29 @@ def _render_item_row(item: dict, now: datetime) -> str:
         f'</div>'
     )
 
-    # Build details panel
+    # Build details panel — client-friendly: full country names, campus name,
+    # readable dates, no slug, no raw IDs.
     detail_rows: list[str] = []
-    for field_key, label in [
-        ("internal-title", "Internal Title"),
-        ("end-date", "End Date"),
-        ("auto-extend-days", "Auto-extend days"),
-        ("targeted-countriess", "Targeted Countries (ISO)"),
-        ("campus-3", "Campus"),
-        ("most-popular-this-month", "Most Popular This Month"),
-        ("slug", "Slug"),
-    ]:
-        val = fd.get(field_key)
-        if val is None:
-            continue
+
+    def _row(label: str, value: str) -> None:
         detail_rows.append(
-            f'        <dt>{escape(label)}</dt>'
-            f'<dd>{escape(str(val))}</dd>'
+            f'        <dt>{escape(label)}</dt><dd>{escape(value)}</dd>'
         )
+
+    if (v := fd.get("internal-title")) is not None:
+        _row("Internal Title", str(v))
+    if (v := fd.get("end-date")) is not None:
+        _row("End Date", _iso_to_display(str(v)))
+    if (v := fd.get("auto-extend-days")) is not None:
+        _row("Auto-extend days", str(v))
+    if (v := fd.get("targeted-countriess")) is not None:
+        _row("Targeted Countries", _format_countries(str(v)))
+    if (v := fd.get("campus-3")) is not None:
+        _row("Campus", _format_campus(v))
+    if (v := fd.get("most-popular-this-month")) is not None:
+        _row("Most Popular This Month", _format_bool(v))
     if item.get("lastPublished"):
-        detail_rows.append(
-            f'        <dt>Last Published</dt>'
-            f'<dd>{escape(str(item["lastPublished"]))}</dd>'
-        )
+        _row("Last Published", _iso_to_display(str(item["lastPublished"])))
     if item.get("isDraft"):
         detail_rows.append('        <dt>Status</dt><dd>Draft</dd>')
 
