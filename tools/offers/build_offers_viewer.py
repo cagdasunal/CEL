@@ -500,7 +500,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
       }
       var counter = block.querySelector('[data-count]');
       if (counter) {
-        var n = current ? current.split(',').length : 0;
+        var n = getRegionState(block).length;
         counter.textContent = '(' + n + ' countr' + (n === 1 ? 'y' : 'ies') + ')';
       }
     }
@@ -609,6 +609,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
       var revertBtn = block.querySelector('.region-revert');
       var region = block.getAttribute('data-region');
       var v = getRegionState(block).join(',');
+      if (v === '') { return; }
       if (!/^[A-Z]{2}(,[A-Z]{2})*$/.test(v) && v !== '') {
         status.textContent = 'invalid';
         status.className = 'region-status is-error';
@@ -640,7 +641,10 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
   </script>"""
     tab_script = tab_script.replace(
         "__COUNTRY_NAME_MAP_JSON__",
-        json.dumps(COUNTRY_NAMES, ensure_ascii=False),
+        json.dumps(COUNTRY_NAMES, ensure_ascii=False)
+        .replace("</", "<\\/")
+        .replace(" ", "\\u2028")
+        .replace(" ", "\\u2029"),
     )
 
     parts: list[str] = []
@@ -667,7 +671,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .view-toggle:hover{background:#e7daa8}")
     parts.append("    .view-toggle[aria-expanded='true']::after{content:' ▾'}")
     parts.append("    .view-toggle[aria-expanded='false']::after{content:' ▸'}")
-    parts.append("    .country-list{display:block;word-break:break-all;font-size:0.85em}")
     parts.append("    .region-block{margin-bottom:32px;padding:16px;border:1px solid #d9cfb9;border-radius:8px;background:#fbf6e9}")
     parts.append("    .region-block h3{margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.04em}")
     parts.append("    .region-actions{margin-top:8px;display:flex;align-items:center;gap:12px}")
@@ -696,6 +699,10 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .country-input{padding:6px 10px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff;min-width:280px}")
     parts.append("    .country-add-btn{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#fff;color:#3a342b;cursor:pointer;font-weight:500}")
     parts.append("    .country-add-btn:hover{background:#f0e8d4}")
+    parts.append("    .offers-tabs{margin-bottom:16px}")
+    parts.append("    .pat-banner-heading{margin:0 0 4px 0;font-weight:600}")
+    parts.append("    .pat-banner-body{margin:0}")
+    parts.append("    .pat-clear-btn{background:#f0d4d4;border-color:#a54040}")
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
@@ -718,9 +725,9 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
 
     # GitHub PAT banner — collapsible toggle (no admin gating)
     parts.append('    <button id="pat-toggle" type="button" class="pat-toggle">⚙ GitHub credentials</button>')
-    parts.append('    <section id="pat-banner" class="pat-banner">')
-    parts.append('      <p style="margin:0 0 4px 0;font-weight:600">GitHub PAT required for editing</p>')
-    parts.append('      <p class="subtle" style="margin:0">')
+    parts.append('    <section id="pat-banner" class="pat-banner hidden">')
+    parts.append('      <p class="pat-banner-heading">GitHub PAT required for editing</p>')
+    parts.append('      <p class="subtle pat-banner-body">')
     parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
     parts.append('        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>')
     parts.append('        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.')
@@ -729,12 +736,12 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append('      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">')
     parts.append('      <div class="pat-actions">')
     parts.append('        <button id="pat-save" type="button" class="region-save">Save token</button>')
-    parts.append('        <button id="pat-clear" type="button" class="region-save" style="background:#f0d4d4;border-color:#a54040">Forget token</button>')
+    parts.append('        <button id="pat-clear" type="button" class="region-save pat-clear-btn">Forget token</button>')
     parts.append('      </div>')
     parts.append('    </section>')
 
     # In-page tab nav
-    parts.append('    <nav class="offers-tabs" style="margin-bottom:16px">')
+    parts.append('    <nav class="offers-tabs">')
     parts.append('      <a class="offers-tab-link" href="#list">Offers List</a>')
     parts.append('      <a class="offers-tab-link" href="#settings">Settings</a>')
     parts.append("    </nav>")
