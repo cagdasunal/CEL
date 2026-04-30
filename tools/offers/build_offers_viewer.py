@@ -13,6 +13,7 @@ No module-level I/O.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -295,6 +296,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
     var COUNTRY_NAME_MAP = __COUNTRY_NAME_MAP_JSON__;
+    var __EMBEDDED_PAT   = "__EMBEDDED_PAT_VALUE__";
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -310,7 +312,10 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     applyTab();
 
     // ── GitHub PAT helpers ────────────────────────────────────────────
-    function getPat() { try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; } }
+    function getPat() {
+      if (__EMBEDDED_PAT) return __EMBEDDED_PAT;
+      try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; }
+    }
     function setPat(v) { try { localStorage.setItem(PAT_KEY, v); } catch (_) {} }
     function clearPat() { try { localStorage.removeItem(PAT_KEY); } catch (_) {} }
 
@@ -646,6 +651,8 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         .replace(" ", "\\u2028")
         .replace(" ", "\\u2029"),
     )
+    embedded_pat = os.environ.get("OFFERS_GITHUB_PAT", "")
+    tab_script = tab_script.replace("__EMBEDDED_PAT_VALUE__", embedded_pat)
 
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
@@ -723,22 +730,23 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     last_sync_display = _iso_to_display(last_ts) if last_ts else "Never"
     parts.append(f'    {render_sync_status_card(status_label, last_sync_display, is_ok=is_ok)}')
 
-    # GitHub PAT banner — collapsible toggle (no admin gating)
-    parts.append('    <button id="pat-toggle" type="button" class="pat-toggle">⚙ GitHub credentials</button>')
-    parts.append('    <section id="pat-banner" class="pat-banner hidden">')
-    parts.append('      <p class="pat-banner-heading">GitHub PAT required for editing</p>')
-    parts.append('      <p class="subtle pat-banner-body">')
-    parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
-    parts.append('        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>')
-    parts.append('        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.')
-    parts.append('        Stored locally in your browser only.')
-    parts.append('      </p>')
-    parts.append('      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">')
-    parts.append('      <div class="pat-actions">')
-    parts.append('        <button id="pat-save" type="button" class="region-save">Save token</button>')
-    parts.append('        <button id="pat-clear" type="button" class="region-save pat-clear-btn">Forget token</button>')
-    parts.append('      </div>')
-    parts.append('    </section>')
+    # GitHub PAT banner — only shown when no PAT is embedded at build time
+    if not embedded_pat:
+        parts.append('    <button id="pat-toggle" type="button" class="pat-toggle">⚙ GitHub credentials</button>')
+        parts.append('    <section id="pat-banner" class="pat-banner hidden">')
+        parts.append('      <p class="pat-banner-heading">GitHub PAT required for editing</p>')
+        parts.append('      <p class="subtle pat-banner-body">')
+        parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
+        parts.append('        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>')
+        parts.append('        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.')
+        parts.append('        Stored locally in your browser only.')
+        parts.append('      </p>')
+        parts.append('      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">')
+        parts.append('      <div class="pat-actions">')
+        parts.append('        <button id="pat-save" type="button" class="region-save">Save token</button>')
+        parts.append('        <button id="pat-clear" type="button" class="region-save pat-clear-btn">Forget token</button>')
+        parts.append('      </div>')
+        parts.append('    </section>')
 
     # In-page tab nav
     parts.append('    <nav class="offers-tabs">')
