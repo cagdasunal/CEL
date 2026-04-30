@@ -46,8 +46,17 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.4.0
+ * Version: 1.4.1
  * Last update: 2026-05-01
+ *
+ * v1.4.1 (2026-05-01): Section 1 — `action: 'show'` matched branch now
+ *                      sets `el.style.display = ''` (revert to CSS) instead
+ *                      of `'block'`. Forcing 'block' broke flex/grid
+ *                      children (e.g. `.stoc_link` TOC sidebar item) whose
+ *                      computed display comes from CSS, not the default
+ *                      `<a>` user-agent rule. Mismatch branch still sets
+ *                      'none' (unchanged). The 'hide' and 'remove' branches
+ *                      already used '' for matches — now consistent.
  *
  * v1.4.0 (2026-05-01): Sections 2, 3, 4 now also recognize the new
  *                      offer-bento card markup used on /vancouver/adults-16
@@ -246,7 +255,11 @@
       const isMatch = allowedList.includes(userGeo) || allowedList.includes('ALL');
 
       if (settings.action === 'show') {
-        el.style.display = isMatch ? 'block' : 'none';
+        // v1.4.1: empty string (revert to CSS-defined display) instead of
+        // 'block' — forcing 'block' breaks flex/grid children like
+        // .stoc_link (TOC sidebar) whose layout depends on inherited
+        // display. Empty string lets the stylesheet decide.
+        el.style.display = isMatch ? '' : 'none';
       }
       else if (settings.action === 'remove') {
         if (!isMatch) el.remove();
