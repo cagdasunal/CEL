@@ -13,6 +13,7 @@ No module-level I/O.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -289,12 +290,10 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     tab_script = """\
   <script>
   (function () {
-    var GH_OWNER = 'cagdasunal';
-    var GH_REPO  = 'CEL';
-    var PAT_KEY  = 'cel_admin_gh_pat';
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
     var COUNTRY_NAME_MAP = __COUNTRY_NAME_MAP_JSON__;
+    var DISPATCH_URL     = '__DISPATCH_PROXY_URL__';
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -309,48 +308,39 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     window.addEventListener('hashchange', applyTab);
     applyTab();
 
-    // ── GitHub PAT helpers ────────────────────────────────────────────
-    function getPat() {
-      try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; }
-    }
-
-    function dispatchWorkflow(workflow, inputs) {
-      var pat = getPat();
-      if (!pat) return Promise.reject(new Error('Editor not configured — contact the site administrator.'));
-      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
-                '/actions/workflows/' + workflow + '/dispatches';
-      return fetch(url, {
+    // ── Dispatch proxy helpers ────────────────────────────────────────
+    // The Cloudflare Worker holds the GitHub PAT; the browser never has one.
+    function callProxy(payload) {
+      if (!DISPATCH_URL) {
+        return Promise.reject(new Error('Editor not configured — contact the site administrator.'));
+      }
+      return fetch(DISPATCH_URL, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'Authorization': 'Bearer ' + pat,
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ref: 'main', inputs: inputs })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       }).then(function(resp) {
-        if (resp.status === 204) return { ok: true };
-        return resp.text().then(function(txt) {
-          var msg = 'HTTP ' + resp.status;
-          try { var j = JSON.parse(txt); if (j.message) msg += ': ' + j.message; }
-          catch (_) { msg += ': ' + txt.slice(0, 120); }
-          throw new Error(msg);
+        return resp.json().catch(function() { return {}; }).then(function(j) {
+          return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
         });
       });
     }
 
+    function dispatchWorkflow(workflow, inputs) {
+      return callProxy({ action: 'dispatch', workflow: workflow, inputs: inputs })
+        .then(function(r) {
+          if (r.ok) return { ok: true };
+          var msg = 'HTTP ' + r.status;
+          if (r.body && r.body.error) msg += ': ' + r.body.error;
+          else if (r.body && r.body.body) msg += ': ' + String(r.body.body).slice(0, 120);
+          throw new Error(msg);
+        });
+    }
+
     function pollLatestRun(workflow) {
-      var pat = getPat();
-      if (!pat) return Promise.reject(new Error('PAT missing'));
-      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
-                '/actions/workflows/' + workflow + '/runs?per_page=1';
-      return fetch(url, {
-        headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + pat }
-      }).then(function(r) { return r.json(); })
-        .then(function(j) {
-          var run = (j.workflow_runs || [])[0];
-          if (!run) return null;
-          return { status: run.status, conclusion: run.conclusion, html_url: run.html_url };
+      return callProxy({ action: 'poll', workflow: workflow })
+        .then(function(r) {
+          if (!r.ok) return null;
+          return r.body && r.body.run ? r.body.run : null;
         });
     }
 
@@ -625,6 +615,10 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         .replace("\u2028", "\\u2028")
         .replace("\u2029", "\\u2029"),
     )
+    # Cloudflare Worker URL (PAT-holding proxy). Read at build time from env.
+    # Empty when unset \u2192 Save buttons fail with a clear "not configured" message.
+    dispatch_proxy_url = os.environ.get("OFFERS_DISPATCH_PROXY_URL", "").strip()
+    tab_script = tab_script.replace("__DISPATCH_PROXY_URL__", escape(dispatch_proxy_url, quote=True))
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
     parts.append('<html lang="en">')
