@@ -46,8 +46,28 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.3.2
- * Last update: 2026-04-30
+ * Version: 1.4.0
+ * Last update: 2026-05-01
+ *
+ * v1.4.0 (2026-05-01): Sections 2, 3, 4 now also recognize the new
+ *                      offer-bento card markup used on /vancouver/adults-16
+ *                      and /vancouver/costs:
+ *                        - Item selector widened to `.offer_item, .offer-item`
+ *                          (legacy CMS cards on /offers etc. unchanged; new
+ *                          offer-bento cards now filtered + ticked).
+ *                        - Date element detection falls back to any
+ *                          `[data-wg-notranslate]` descendant whose trimmed
+ *                          text matches `YYYY-MM-DD` when no `.offer_date`
+ *                          element is present (offer-bento cards omit the
+ *                          legacy `.offer_date` class).
+ *                        - Section 3 rewritten to use vanilla `Date` instead
+ *                          of dayjs. Behavior identical (UTC end-of-day
+ *                          expiry, per-second tick, isConnected guard) but
+ *                          the dayjs guard early-return is gone — Section 3
+ *                          now also runs on the previously nav-only pages
+ *                          (adults-16, duration-guide, costs, vs-toronto)
+ *                          which don't ship dayjs. Pages without offer cards
+ *                          remain a no-op (querySelectorAll returns empty).
  *
  * v1.3.2 (2026-04-30): Section 1 — fix relative regions-fetch URL that
  *                      404'd on www.englishcollege.com. The script is
@@ -289,7 +309,10 @@
 (function() {
   const CONF = {
     listWrapper: '.offers_list',
-    item: '.offer_item',
+    // Legacy CMS cards use `.offer_item` (underscore); new offer-bento
+    // cards on /vancouver/adults-16 + /vancouver/costs use `.offer-item`
+    // (hyphen). Match both.
+    item: '.offer_item, .offer-item',
     attrName: 'data-country'
   };
 
@@ -363,75 +386,95 @@
 })();
 
 /* ============================================================
- * Section 3 — per-card .offer_date countdown (was inline_6c6f5f54)
+ * Section 3 — per-card countdown (was inline_6c6f5f54)
  * Surgical fixes since v1.2.0:
  *   F4: per-tick isConnected check clears the interval when Section 2
  *       removes country-mismatched items (no more orphan setIntervals).
  *   Init runs immediately inside the IIFE (CDN-safe), same pattern as
  *       Sections 1 and 2.
+ *   v1.4.0: vanilla Date instead of dayjs (no dayjs guard needed → runs
+ *       on adults-16/duration-guide/costs/vs-toronto), and dual
+ *       item/date selectors covering legacy `.offer_item`+`.offer_date`
+ *       and new offer-bento `.offer-item` + `[data-wg-notranslate]`
+ *       date markup. UTC end-of-day expiry semantics preserved.
  * ============================================================ */
 
 (function() {
-  // v1.3.0: guard against pages where dayjs/dayjs_plugin_* aren't loaded
-  // (e.g. /vancouver/adults-16, /duration-guide, /costs, /vs-toronto — they
-  // ship cel-offers.min.js for Sections 1+2 but don't load dayjs).
-  if (typeof dayjs === 'undefined' || typeof dayjs_plugin_duration === 'undefined' || typeof dayjs_plugin_utc === 'undefined') return;
-  dayjs.extend(dayjs_plugin_duration);
-  dayjs.extend(dayjs_plugin_utc);
-
   function pad(num) {
-    return num.toString().padStart(2, "0");
+    return String(num).padStart(2, '0');
   }
 
-  const items = document.querySelectorAll(".offer_item");
-  const now = dayjs.utc();
+  // Find the date element inside an offer card. Legacy: explicit
+  // `.offer_date` class. New offer-bento: any `[data-wg-notranslate]`
+  // descendant whose trimmed text matches `YYYY-MM-DD`.
+  function findDateEl(item) {
+    const explicit = item.querySelector('.offer_date');
+    if (explicit) return explicit;
+    const candidates = item.querySelectorAll('[data-wg-notranslate]');
+    for (let i = 0; i < candidates.length; i++) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test((candidates[i].textContent || '').trim())) {
+        return candidates[i];
+      }
+    }
+    return null;
+  }
+
+  // YYYY-MM-DD → UTC end-of-day epoch ms (matches the previous
+  // dayjs.utc(dateStr).endOf('day') semantics exactly).
+  function parseExpiry(dateStr) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return NaN;
+    return new Date(dateStr + 'T23:59:59.999Z').getTime();
+  }
+
+  const items = document.querySelectorAll('.offer_item, .offer-item');
+  const now = Date.now();
 
   items.forEach(function (item) {
-    const dateEl = item.querySelector(".offer_date");
+    const dateEl = findDateEl(item);
     if (!dateEl) return;
 
-    const dateStr = dateEl.textContent.trim();
-    if (!dateStr) return;
+    const dateStr = (dateEl.textContent || '').trim();
+    const expiry = parseExpiry(dateStr);
+    if (!isFinite(expiry)) return;
 
-    const expiryDate = dayjs.utc(dateStr).endOf('day');
-
-    if (now.isAfter(expiryDate)) {
+    if (now > expiry) {
       item.remove();
       return;
     }
 
-    const dEl = item.querySelector(".count_days");
-    const hEl = item.querySelector(".count_hours");
-    const mEl = item.querySelector(".count_minutes");
-    const sEl = item.querySelector(".count_seconds");
+    const dEl = item.querySelector('.count_days');
+    const hEl = item.querySelector('.count_hours');
+    const mEl = item.querySelector('.count_minutes');
+    const sEl = item.querySelector('.count_seconds');
 
     if (!dEl || !hEl || !mEl || !sEl) return;
+
+    let loop = null;
 
     function tick() {
       // F4 fix: if Section 2's filter removed this item, stop ticking.
       if (!item.isConnected) {
-        clearInterval(loop);
+        if (loop !== null) clearInterval(loop);
         return;
       }
 
-      const currentTime = dayjs.utc();
-      const diff = expiryDate.diff(currentTime);
+      const diff = expiry - Date.now();
 
       if (diff <= 0) {
         item.remove();
-        clearInterval(loop);
+        if (loop !== null) clearInterval(loop);
         return;
       }
 
-      const dur = dayjs.duration(diff);
-      dEl.textContent = pad(Math.floor(dur.asDays()));
-      hEl.textContent = pad(dur.hours());
-      mEl.textContent = pad(dur.minutes());
-      sEl.textContent = pad(dur.seconds());
+      const totalSec = Math.floor(diff / 1000);
+      dEl.textContent = pad(Math.floor(totalSec / 86400));
+      hEl.textContent = pad(Math.floor((totalSec % 86400) / 3600));
+      mEl.textContent = pad(Math.floor((totalSec % 3600) / 60));
+      sEl.textContent = pad(totalSec % 60);
     }
 
     tick();
-    const loop = setInterval(tick, 1000);
+    loop = setInterval(tick, 1000);
   });
 
 })();
@@ -463,16 +506,30 @@
 
     let loop = null;
 
+    // Find date element on legacy `.offer_item` (.offer_date) AND new
+    // offer-bento `.offer-item` ([data-wg-notranslate] with YYYY-MM-DD text).
+    function findDateEl(item) {
+      const explicit = item.querySelector('.offer_date');
+      if (explicit) return explicit;
+      const candidates = item.querySelectorAll('[data-wg-notranslate]');
+      for (let i = 0; i < candidates.length; i++) {
+        if (/^\d{4}-\d{2}-\d{2}$/.test((candidates[i].textContent || '').trim())) {
+          return candidates[i];
+        }
+      }
+      return null;
+    }
+
     function pickSoonest() {
-      const items = document.querySelectorAll('.offer_item');
+      const items = document.querySelectorAll('.offer_item, .offer-item');
       let soonest = null;
       items.forEach(function(item) {
         if (!item.isConnected) return;
-        const dateEl = item.querySelector('.offer_date');
+        const dateEl = findDateEl(item);
         if (!dateEl) return;
         const dateStr = (dateEl.textContent || '').trim();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
-        // End-of-day UTC (matches Section 3's dayjs.utc(dateStr).endOf('day') semantics).
+        // End-of-day UTC (matches Section 3's UTC end-of-day semantics).
         const expiry = new Date(dateStr + 'T23:59:59.999Z').getTime();
         if (!isFinite(expiry)) return;
         if (expiry <= Date.now()) return;
