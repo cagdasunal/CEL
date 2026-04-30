@@ -46,9 +46,18 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.3.0
+ * Version: 1.3.1
  * Last update: 2026-04-30
  *
+ * v1.3.1 (2026-04-30): Section 4 — fix latent Temporal Dead Zone in
+ *                      tick()'s clearInterval(loop) reference. The first
+ *                      synchronous tick() runs before `const loop = setInterval(...)`
+ *                      is evaluated; on nav-only pages (where pickSoonest()
+ *                      returns null on the first call) this threw a
+ *                      ReferenceError that was masked by the IIFE's try/catch.
+ *                      Now `let loop = null` is declared before tick(), and
+ *                      the early-exit branch guards `if (loop !== null)`.
+ *                      Behavior on offer pages is identical.
  * v1.3.0 (2026-04-30): Section 4 added — navbar .offers_counter now ticks
  *                      against soonest-expiring .offer_item .offer_date
  *                      (audit F5). Section 2 dead .offers_list retry replaced
@@ -434,6 +443,8 @@
     const sEl = counter.querySelector('.count_seconds');
     if (!dEl || !hEl || !mEl || !sEl) return;
 
+    let loop = null;
+
     function pickSoonest() {
       const items = document.querySelectorAll('.offer_item');
       let soonest = null;
@@ -457,7 +468,7 @@
       if (target === null) {
         // No live offers on this page → leave counter at its CMS placeholder.
         // Don't write anything; don't keep ticking.
-        clearInterval(loop);
+        if (loop !== null) clearInterval(loop);
         return;
       }
       const diff = target - Date.now();
@@ -477,7 +488,7 @@
     }
 
     tick();
-    const loop = setInterval(tick, 1000);
+    loop = setInterval(tick, 1000);
   } catch (e) {
     /* Any error → navbar counter stays at its CMS placeholder. Current behavior. */
   }
