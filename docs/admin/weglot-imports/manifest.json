@@ -1,0 +1,650 @@
+{
+  "allowed_fields": [
+    {
+      "label": "course title (listing card)",
+      "path": "listing.title"
+    },
+    {
+      "label": "card bullet",
+      "path": "listing.bullets[]"
+    },
+    {
+      "label": "age badge label",
+      "path": "listing.age_badge"
+    },
+    {
+      "label": "course title (detail page)",
+      "path": "detail.fields.fidelo_title"
+    },
+    {
+      "label": "starting-price label",
+      "path": "detail.fields.fidelo_starting_price_display"
+    },
+    {
+      "label": "detail main-fact",
+      "path": "detail.fields.fidelo_main_facts[]"
+    },
+    {
+      "label": "intensity-row name",
+      "path": "detail.fields.fidelo_intensity_rows[].name"
+    },
+    {
+      "label": "intensity-row visa-type",
+      "path": "detail.fields.fidelo_intensity_rows[].visa_type"
+    },
+    {
+      "label": "intensity-row country",
+      "path": "detail.fields.fidelo_intensity_rows[].country"
+    }
+  ],
+  "fidelo_run_summary": {
+    "changed": [],
+    "counts": {
+      "course_changed": 0,
+      "course_fetched": 135,
+      "course_skipped_empty_key": 0,
+      "errors": 0,
+      "list_changed": 0,
+      "list_fetched": 9
+    },
+    "dry_run": false,
+    "errors": [],
+    "finished_at": "2026-04-30T06:42:40Z",
+    "only_locale": null,
+    "only_slug": null,
+    "schema": "fidelo.run-summary.v1",
+    "started_at": "2026-04-30T06:39:48Z"
+  },
+  "generated_at": "2026-04-30T10:37:59.506357+00:00",
+  "languages": [
+    {
+      "csv_file": "ar.csv",
+      "language_name": "Arabic",
+      "language_to": "ar",
+      "row_count": 56,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 13,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 15,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 20,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "الحد الأدنى للعمر هو 16 سنة"
+            },
+            {
+              "count": 8,
+              "word_to": "أكثر من 16 عامًا"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "الحد الأدنى للعمر هو 16 سنة",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "التركيز الكامل على احتياجاتك"
+            },
+            {
+              "count": 1,
+              "word_to": "Full Focus on Your Needs"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "التركيز الكامل على احتياجاتك",
+          "word_from": "Full focus on your needs"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "From $390/week"
+            },
+            {
+              "count": 1,
+              "word_to": "From $999,999/week"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "From $390/week",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "de.csv",
+      "language_name": "German",
+      "language_to": "de",
+      "row_count": 60,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 12,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 18,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 5,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 18,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-surfing",
+        "english-plus-toefl-exam-preparation",
+        "private-lessons"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "Ab 16 Jahren"
+            },
+            {
+              "count": 6,
+              "word_to": "Ab 16 Jahre"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Ab 16 Jahren",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "2 Starttermine pro Jahr"
+            },
+            {
+              "count": 1,
+              "word_to": "Starttermine jeweils Ende Januar und Ende August"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "2 Starttermine pro Jahr",
+          "word_from": "Spring and fall session intakes"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "Ab $390/Woche"
+            },
+            {
+              "count": 1,
+              "word_to": "Ab $999,999/Woche"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Ab $390/Woche",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Vorbereitung"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "es.csv",
+      "language_name": "Spanish",
+      "language_to": "es",
+      "row_count": 59,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 9,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 18,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 4,
+        "listing.age_badge": 2,
+        "listing.bullets[]": 20,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation",
+        "private-lessons"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "De $390/Semana"
+            },
+            {
+              "count": 1,
+              "word_to": "De $999,999/Semana"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "De $390/Semana",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "Preparación TOEFL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "fr.csv",
+      "language_name": "French",
+      "language_to": "fr",
+      "row_count": 58,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 12,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 16,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 22,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "Âge minimum : 16 ans"
+            },
+            {
+              "count": 8,
+              "word_to": "Plus de 16 ans"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Âge minimum : 16 ans",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "À partir de $390/semaine"
+            },
+            {
+              "count": 1,
+              "word_to": "À partir de $999,999/semaine"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "À partir de $390/semaine",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "it.csv",
+      "language_name": "Italian",
+      "language_to": "it",
+      "row_count": 59,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 12,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 17,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 22,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "Età minima: 16 anni"
+            },
+            {
+              "count": 8,
+              "word_to": "Oltre 16 anni"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Età minima: 16 anni",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "A partire da $390/week"
+            },
+            {
+              "count": 1,
+              "word_to": "A partire da $999,999/week"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "A partire da $390/week",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "ja.csv",
+      "language_name": "Japanese",
+      "language_to": "ja",
+      "row_count": 58,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 12,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 16,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 22,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 12,
+              "word_to": "毎週月曜日 新しいコース"
+            },
+            {
+              "count": 1,
+              "word_to": "毎週月曜日に開講"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "毎週月曜日 新しいコース",
+          "word_from": "New courses start every Monday"
+        },
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "最少年齢:16歳"
+            },
+            {
+              "count": 8,
+              "word_to": "16歳以上"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "最少年齢:16歳",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "プロジェクト型学習 (PBL)"
+            },
+            {
+              "count": 1,
+              "word_to": "学ぶことを基にしたプロジェクト"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "プロジェクト型学習 (PBL)",
+          "word_from": "Project based learning"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "From $390/week"
+            },
+            {
+              "count": 1,
+              "word_to": "From $999,999/week"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "From $390/week",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "ko.csv",
+      "language_name": "Korean",
+      "language_to": "ko",
+      "row_count": 57,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 11,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 15,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 2,
+        "listing.bullets[]": 22,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "학생 맞춤화 교육 진행"
+            },
+            {
+              "count": 1,
+              "word_to": "학생의 요구에 완전히 초점을 맞춤"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "학생 맞춤화 교육 진행",
+          "word_from": "Full focus on your needs"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "From $390/week"
+            },
+            {
+              "count": 1,
+              "word_to": "From $999,999/week"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "From $390/week",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    },
+    {
+      "csv_file": "pt.csv",
+      "language_name": "Portuguese",
+      "language_to": "pt",
+      "row_count": 59,
+      "row_count_per_field": {
+        "detail.fields.fidelo_intensity_rows[].country": 0,
+        "detail.fields.fidelo_intensity_rows[].name": 12,
+        "detail.fields.fidelo_intensity_rows[].visa_type": 0,
+        "detail.fields.fidelo_main_facts[]": 17,
+        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_title": 1,
+        "listing.age_badge": 1,
+        "listing.bullets[]": 22,
+        "listing.title": 0
+      },
+      "skipped_slugs": [
+        "english-plus-toefl-exam-preparation"
+      ],
+      "warnings": [
+        {
+          "candidates": [
+            {
+              "count": 13,
+              "word_to": "Idade mínima: 16 anos"
+            },
+            {
+              "count": 8,
+              "word_to": "Mais de 16 anos"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Idade mínima: 16 anos",
+          "word_from": "16+ years"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "A partir de $390/week"
+            },
+            {
+              "count": 1,
+              "word_to": "A partir de $999,999/week"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "A partir de $390/week",
+          "word_from": "From $390/Week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English Plus TOEFL Exam"
+            },
+            {
+              "count": 1,
+              "word_to": "TOEFL Preparation"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English Plus TOEFL Exam",
+          "word_from": "English Plus TOEFL Exam Preparation"
+        }
+      ]
+    }
+  ],
+  "schema": "weglot.csv-export.v1",
+  "totals": {
+    "languages": 8,
+    "rows": 466
+  }
+}

@@ -62,6 +62,12 @@ LANGUAGE_NAMES = {
 PUBLIC_SITEMAP_URL = "https://cel.englishcollege.com/sitemap.xml"
 PUBLIC_LLMS_URL = "https://cel.englishcollege.com/llms.txt"
 
+# Weglot translation CSVs — published to CEL repo and served by GitHub Pages
+PUBLIC_WEGLOT_CSV_URL_TEMPLATE = "https://cel.englishcollege.com/admin/weglot-imports/{lang}.csv"
+PUBLIC_WEGLOT_MANIFEST_URL = "https://cel.englishcollege.com/admin/weglot-imports/manifest.json"
+WEGLOT_CSV_LANGUAGES = ("de", "fr", "es", "it", "ja", "ko", "pt", "ar")
+WEGLOT_CSV_DIR = EXTERNAL_REPO_ROOT / "admin" / "weglot-imports"
+
 
 # ---------------------------------------------------------------------------
 # Time helpers
@@ -271,6 +277,24 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append("      </div>")
     parts.append(f'      <p class="subtle">{_file_note("llms.txt")}</p>')
     parts.append("    </li>")
+
+    # Weglot translation CSVs — one entry per language. Sourced by
+    # tools.weglot.csv_export from Fidelo per-locale data; mirrored into the
+    # CEL repo by the fidelo-sync workflow's "Mirror Weglot CSVs" step.
+    for lang in WEGLOT_CSV_LANGUAGES:
+        lang_name = LANGUAGE_NAMES.get(lang, lang.upper())
+        csv_url = PUBLIC_WEGLOT_CSV_URL_TEMPLATE.format(lang=lang)
+        csv_path = WEGLOT_CSV_DIR / f"{lang}.csv"
+        ts = file_mtime_iso(csv_path)
+        note = f"Last updated on {escape(iso_to_sd(ts))}" if ts else "Not yet generated"
+        parts.append("    <li>")
+        parts.append('      <div class="file-row">')
+        parts.append(f'        <span class="file-name">Weglot translations — {escape(lang_name)} ({lang}.csv)</span>')
+        parts.append(f'        <a href="{escape(csv_url)}" download>Download</a>')
+        parts.append("      </div>")
+        parts.append(f'      <p class="subtle">{note}</p>')
+        parts.append("    </li>")
+
     parts.append("  </ul>")
 
     # Recent posts
