@@ -1,61 +1,61 @@
-"word_from","word_to"
-"1 teacher per student","1 Lehrer pro Schüler"
-"16+ years","Ab 16 Jahren"
-"18 + years","Ab 18 Jahre"
-"4 sessions/year","4 Termine pro Jahr"
-"Academic English for college success","Akademisches Englisch als Vorbereitung"
-"Add a highlight to your CV","Absolutes Highlight im Lebenslauf"
-"Ages 18 and older","Ab 18 Jahren"
-"All levels from Basic to Advanced","Alle Sprachniveaus"
-"All levels from basic to advanced","Alle Sprachniveaus"
-"Available in different fields","Sozialarbeit & Umweltschutz"
-"Build career-ready skills","Gewinne Karrierekompetenzen"
-"Business Certificate 23 - BE20+GE3","Business Certificate 23 - BE20 + GE3"
-"Business Certificate 24 - BE20+GE4","Business Certificate 24 - BE20 + GE4"
-"Business Certificate 28 - BE20+GE8","Business Certificate 28 - BE20 + GE8"
-"Business, AI, Project Management","Business, KI, Projektmanagement"
-"Cambridge Exam","Cambridge Vorbereitung"
-"Cambridge Exam Preparation 23 - GE20+CAE3","Cambridge Exam Preparation GE20+CAE3"
-"Cambridge Exam Preparation 24 - GE20+CAE4","Cambridge Exam Preparation GE20+CAE4"
-"Cambridge Exam Preparation 28 - GE24+CAE4","Cambridge Exam Preparation GE24+CAE4"
-"Designated academic advisor","Unterstützung durch Mentor"
-"Develop career-ready skills in AI, business, and management for today’s global workplace.","Entwickle berufsrelevante Fähigkeiten in KI, Business und Management für die heutige globale Arbeitswelt."
-"Do good, feel good!","Engagiere Dich und bewirke Gutes!"
-"Elective class","Zusatzklasse"
-"English Plus Surfing","English Plus Wellenreiten"
-"English Plus TOEFL Exam Preparation","English Plus TOEFL Exam"
-"Enhance your English while working","Arbeite und verbessere dein English."
-"For all English and for all surf levels","Für alle Englisch- und Surfniveaus"
-"From $350/Week","Ab $350/Woche"
-"From $390/Week","Ab $390/Woche"
-"From $400/Week","Ab $400/Woche"
-"From $460/Week","Ab $460/Woche"
-"From $550/Week","Ab $550/Woche"
-"From $999,999/Week","Ab $999,999/Woche"
-"Full focus on your needs","Voller Fokus auf deine Bedürfnisse"
-"Gain relevant experience","Sammle Berufserfahrung"
-"General English 20 & Surfing","English & Surfen (20 Lektionen Englisch + 4 Lektionen Surfen/Woche)"
-"General English 24 & Surfing","English & Surfen (24 Lektionen Englisch + 4 Lektionen Surfen/Woche)"
-"General English 28 & Surfing","English & Surfen (28 Lektionen Englisch + 4 Lektionen Surfen/Woche)"
-"IELTS Preparation","IELTS Vorbereitung"
-"Improve your overall English fluency while developing strong academic communication and writing skills","Verbessere deine allgemeine Englischflüssigkeit und entwickle starke akademische Kommunikations- und Schreibfähigkeiten."
-"New courses start every Monday","Neue Kurse starten jeden Montag"
-"Preparation for College & University","Vorbereitung für Fachhochschule/Uni"
-"Prepare for Cambridge exam","Cambridge-Examen-Vorbereitung"
-"Private lessons","Einzelunterricht"
-"Project based learning","Projektbezogenes Lernen"
-"Small classes (avg. 7 students per class)","Kleine Klassen (Ø 7 Schüler/Klasse)"
-"Small classes (avg. 7 students/class)","Kleine Klassen (Ø 7 Schüler/Klasse)"
-"Social, Educational or Conversatory Work","Sozialarbeit & Umweltschutz"
-"Social, or conversatory Work","Sozialarbeit & Umweltschutz"
-"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more","Sprechen, Grammatik, Schreiben, Lesen, Aussprache, Hörverständnis und mehr"
-"Specialized preparation for the Cambridge exam","Vorbereitung auf das Cambridge Examen"
-"Specialized preparation for the TOEFL exam","Spezielle Vorbereitung auf das TOEFL Examen"
-"Spring and fall session intakes","2 Starttermine pro Jahr"
-"Start your preparation to enter college or university in the U.S. or abroad.","Beginne deine Vorbereitung, um ein College oder eine Universität in den USA oder im Ausland zu besuchen."
-"Surfing max 5 per instructor, English max 12 per teacher","Surfen: maximal 5 Personen pro Instruktor, Englisch: maximal 12 Personen pro Lehrer"
-"TOEFL Exam Preparation 23 - GE20+TOEFL3","TOEFL Exam Preparation 23 - GE20 + TOE3"
-"TOEFL Exam Preparation 24 - GE20+TOEFL4","Examensvorbereitungskurs TOEFL 24 - GE20 + TOE4"
-"TOEFL Exam Preparation 28 - GE24+TOEFL4","Examensvorbereitungskurs TOEFL 28 - GE24 + TOE4"
-"Upper Intermediate and Higher","ab Sprachniveau B2"
-"Upper intermediate and higher","ab Sprachniveau B2"
+id;language_from;language_to;word_from;word_to;type
+;en;de;"1 teacher per student";"1 Lehrer pro Schüler";Text
+;en;de;"16+ years";"Ab 16 Jahren";Text
+;en;de;"18 + years";"Ab 18 Jahre";Text
+;en;de;"4 sessions/year";"4 Termine pro Jahr";Text
+;en;de;"Academic English for college success";"Akademisches Englisch als Vorbereitung";Text
+;en;de;"Add a highlight to your CV";"Absolutes Highlight im Lebenslauf";Text
+;en;de;"Ages 18 and older";"Ab 18 Jahren";Text
+;en;de;"All levels from Basic to Advanced";"Alle Sprachniveaus";Text
+;en;de;"All levels from basic to advanced";"Alle Sprachniveaus";Text
+;en;de;"Available in different fields";"Sozialarbeit & Umweltschutz";Text
+;en;de;"Build career-ready skills";"Gewinne Karrierekompetenzen";Text
+;en;de;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
+;en;de;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
+;en;de;"Business Certificate 28 - BE20+GE8";"Business Certificate 28 - BE20 + GE8";Text
+;en;de;"Business, AI, Project Management";"Business, KI, Projektmanagement";Text
+;en;de;"Cambridge Exam";"Cambridge Vorbereitung";Text
+;en;de;"Cambridge Exam Preparation 23 - GE20+CAE3";"Cambridge Exam Preparation GE20+CAE3";Text
+;en;de;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
+;en;de;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
+;en;de;"Designated academic advisor";"Unterstützung durch Mentor";Text
+;en;de;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"Entwickle berufsrelevante Fähigkeiten in KI, Business und Management für die heutige globale Arbeitswelt.";Text
+;en;de;"Do good, feel good!";"Engagiere Dich und bewirke Gutes!";Text
+;en;de;"Elective class";"Zusatzklasse";Text
+;en;de;"English Plus Surfing";"English Plus Wellenreiten";Text
+;en;de;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
+;en;de;"Enhance your English while working";"Arbeite und verbessere dein English.";Text
+;en;de;"For all English and for all surf levels";"Für alle Englisch- und Surfniveaus";Text
+;en;de;"From $350/Week";"Ab $350/Woche";Text
+;en;de;"From $390/Week";"Ab $390/Woche";Text
+;en;de;"From $400/Week";"Ab $400/Woche";Text
+;en;de;"From $460/Week";"Ab $460/Woche";Text
+;en;de;"From $550/Week";"Ab $550/Woche";Text
+;en;de;"From $999,999/Week";"Ab $999,999/Woche";Text
+;en;de;"Full focus on your needs";"Voller Fokus auf deine Bedürfnisse";Text
+;en;de;"Gain relevant experience";"Sammle Berufserfahrung";Text
+;en;de;"General English 20 & Surfing";"English & Surfen (20 Lektionen Englisch + 4 Lektionen Surfen/Woche)";Text
+;en;de;"General English 24 & Surfing";"English & Surfen (24 Lektionen Englisch + 4 Lektionen Surfen/Woche)";Text
+;en;de;"General English 28 & Surfing";"English & Surfen (28 Lektionen Englisch + 4 Lektionen Surfen/Woche)";Text
+;en;de;"IELTS Preparation";"IELTS Vorbereitung";Text
+;en;de;"Improve your overall English fluency while developing strong academic communication and writing skills";"Verbessere deine allgemeine Englischflüssigkeit und entwickle starke akademische Kommunikations- und Schreibfähigkeiten.";Text
+;en;de;"New courses start every Monday";"Neue Kurse starten jeden Montag";Text
+;en;de;"Preparation for College & University";"Vorbereitung für Fachhochschule/Uni";Text
+;en;de;"Prepare for Cambridge exam";"Cambridge-Examen-Vorbereitung";Text
+;en;de;"Private lessons";"Einzelunterricht";Text
+;en;de;"Project based learning";"Projektbezogenes Lernen";Text
+;en;de;"Small classes (avg. 7 students per class)";"Kleine Klassen (Ø 7 Schüler/Klasse)";Text
+;en;de;"Small classes (avg. 7 students/class)";"Kleine Klassen (Ø 7 Schüler/Klasse)";Text
+;en;de;"Social, Educational or Conversatory Work";"Sozialarbeit & Umweltschutz";Text
+;en;de;"Social, or conversatory Work";"Sozialarbeit & Umweltschutz";Text
+;en;de;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"Sprechen, Grammatik, Schreiben, Lesen, Aussprache, Hörverständnis und mehr";Text
+;en;de;"Specialized preparation for the Cambridge exam";"Vorbereitung auf das Cambridge Examen";Text
+;en;de;"Specialized preparation for the TOEFL exam";"Spezielle Vorbereitung auf das TOEFL Examen";Text
+;en;de;"Spring and fall session intakes";"2 Starttermine pro Jahr";Text
+;en;de;"Start your preparation to enter college or university in the U.S. or abroad.";"Beginne deine Vorbereitung, um ein College oder eine Universität in den USA oder im Ausland zu besuchen.";Text
+;en;de;"Surfing max 5 per instructor, English max 12 per teacher";"Surfen: maximal 5 Personen pro Instruktor, Englisch: maximal 12 Personen pro Lehrer";Text
+;en;de;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
+;en;de;"TOEFL Exam Preparation 24 - GE20+TOEFL4";"Examensvorbereitungskurs TOEFL 24 - GE20 + TOE4";Text
+;en;de;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"Examensvorbereitungskurs TOEFL 28 - GE24 + TOE4";Text
+;en;de;"Upper Intermediate and Higher";"ab Sprachniveau B2";Text
+;en;de;"Upper intermediate and higher";"ab Sprachniveau B2";Text

@@ -415,7 +415,7 @@ def render_translations_html() -> str:
     parts.append('      <p>One ZIP bundle and one CSV per non-English locale. Import each per-language CSV into the Weglot Dashboard to override machine translations with Fidelo\'s authoritative copy.</p>')
     parts.append("    </section>")
 
-    parts.append("    <h2>Published files</h2>")
+    parts.append("    <h2>Weglot import files</h2>")
     parts.append('    <ul class="files">')
 
     # ZIP bundle

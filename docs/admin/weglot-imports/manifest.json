@@ -37,6 +37,10 @@
       "path": "detail.fields.fidelo_intensity_rows[].country"
     }
   ],
+  "bundle": {
+    "all_languages_csv": "all-languages.csv",
+    "zip_file": "weglot-imports.zip"
+  },
   "fidelo_run_summary": {
     "changed": [],
     "counts": {
@@ -55,7 +59,7 @@
     "schema": "fidelo.run-summary.v1",
     "started_at": "2026-04-30T06:39:48Z"
   },
-  "generated_at": "2026-04-30T10:37:59.506357+00:00",
+  "generated_at": "2026-04-30T15:48:28.794585+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
