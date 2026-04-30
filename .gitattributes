@@ -1,0 +1,8 @@
+# Append-only JSONL logs: parallel workflow runs append distinct lines at
+# EOF. Without merge=union, git's default 3-way merge marks both edits as
+# conflict because they share the same anchor (the previous last line).
+# With merge=union, both halves are preserved (deduplicated identical
+# lines). Tracker 077 — see docs/reviews/077-review-fix-2026-04-30.md
+# in the monorepo for the full incident.
+data/offers-edit-log.json    merge=union
+data/offers-extend-log.json  merge=union
