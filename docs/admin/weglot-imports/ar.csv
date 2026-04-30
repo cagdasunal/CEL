@@ -1,57 +1,57 @@
-"word_from","word_to"
-"1 teacher per student","معلم واحد لكل طالب"
-"16+ years","الحد الأدنى للعمر هو 16 سنة"
-"18 + years","أكثر من 18 عامًا"
-"4 hours of Surfing per Week","4 ساعات لحصص اضافيه في الاسبوع"
-"4 sessions/year","4 فصول بالسنه"
-"Add a highlight to your CV","التركيز والاضافه في السيرة الذاتية"
-"Ages 18 and older","الحد الأدنى للعمر هو 18 سنة"
-"All levels from Basic to Advanced","جميع المستويات من الأساسي الى المتقدم"
-"All levels from basic to advanced","جميع المستويات من الأساسي الى المتقدم"
-"Available in different fields","تطوع متاح في مختلف المجالات"
-"Build career-ready skills","اكتسب مهارات مهنية مهمة"
-"Business Certificate 23 - BE20+GE3","Business Certificate 23 - BE20 + GE3"
-"Business Certificate 24 - BE20+GE4","Business Certificate 24 - BE20 + GE4"
-"Business Certificate 28 - BE20+GE8","Business Certificate 28 - BE20 + GE8"
-"Business, AI, Project Management","ريادة الأعمال، الذكاء الاصطناعي، التواصل،"
-"Cambridge Exam Preparation 23 - GE20+CAE3","Cambridge Exam Preparation GE20+CAE3"
-"Cambridge Exam Preparation 24 - GE20+CAE4","Cambridge Exam Preparation GE20+CAE4"
-"Cambridge Exam Preparation 28 - GE24+CAE4","Cambridge Exam Preparation GE24+CAE4"
-"Can be combined with other courses","حصص شخصية يمكن دمجها مع الفئات الاخرى"
-"Designated academic advisor","دعم اكاديمي اضافي"
-"Develop career-ready skills in AI, business, and management for today’s global workplace.","طوّر مهارات جاهزة للمسار المهني في الذكاء الاصطناعي والأعمال والإدارة لتواكب بيئة العمل العالمية اليوم."
-"Do good, feel good!","عمل جيد , شعور جيد"
-"Elective class","دورة اختياريه"
-"English Plus TOEFL Exam Preparation","English Plus TOEFL Exam"
-"Enhance your English while working","تعزيز لغتك الإنجليزية أثناء العمل"
-"From $350/Week","From $350/week"
-"From $390/Week","From $390/week"
-"From $400/Week","From $400/week"
-"From $460/Week","From $460/week"
-"From $550/Week","From $550/week"
-"From $999,999/Week","From $999,999/week"
-"Full focus on your needs","التركيز الكامل على احتياجاتك"
-"Gain relevant experience","اكتساب الخبرة ذات الصلة"
-"General English 20 & Surfing","الإنكليزية العامة المكثفة وركوب الأمواج (20 + 4)"
-"General English 24 & Surfing","الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (24 + 4)"
-"General English 28 & Surfing","الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (28 + 4)"
-"Improve your overall English fluency while developing strong academic communication and writing skills","حسّن طلاقتك العامة في اللغة الإنجليزية أثناء تطوير مهارات قوية في التواصل والكتابة الأكاديمية."
-"New courses start every Monday","حصص جديدة لكل أيام الأثنين"
-"No surf experience required","لا يشترط وجود خبرة في ركوب الأمواج"
-"Prepare for Cambridge exam","Prepare for Cambridge Exam"
-"Private lessons","دروس خصوصية"
-"Project based learning","التعلم القائم على المشروع"
-"Small classes (avg. 7 students per class)","فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)"
-"Small classes (avg. 7 students/class)","فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)"
-"Social, Educational or Conversatory Work","اجتماعي او علمي او موسيقي"
-"Social, or conversatory Work","اجتماعي او علمي او موسيقي"
-"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more","التحدث، القواعد، الكتابة، القراءة، النطق، الاستماع والمزيد"
-"Specialized preparation for the Cambridge exam","التحضير المتخصص لامتحان كامبريدج"
-"Specialized preparation for the TOEFL exam","التحضير المتخصص لامتحان TOEFL"
-"Start your preparation to enter college or university in the U.S. or abroad.","ابدأ تحضيرك للالتحاق بالجامعة في الولايات المتحدة أو في الخارج."
-"Surf in one of the top surf spots","حصص تزحلق في الامواج"
-"TOEFL Exam Preparation 23 - GE20+TOEFL3","TOEFL Exam Preparation 23 - GE20 + TOE3"
-"TOEFL Exam Preparation 24 - GE20+TOEFL4","TOEFL Exam Preparation 24 - GE20 + TOE"
-"TOEFL Exam Preparation 28 - GE24+TOEFL4","TOEFL Exam Preparation 28 - GE24 + TOE4"
-"Upper Intermediate and Higher","ابتداء من المستوى المتوسط فما فوق"
-"Upper intermediate and higher","ابتداء من المستوى المتوسط فما فوق"
+id;language_from;language_to;word_from;word_to;type
+;en;ar;"1 teacher per student";"معلم واحد لكل طالب";Text
+;en;ar;"16+ years";"الحد الأدنى للعمر هو 16 سنة";Text
+;en;ar;"18 + years";"أكثر من 18 عامًا";Text
+;en;ar;"4 hours of Surfing per Week";"4 ساعات لحصص اضافيه في الاسبوع";Text
+;en;ar;"4 sessions/year";"4 فصول بالسنه";Text
+;en;ar;"Add a highlight to your CV";"التركيز والاضافه في السيرة الذاتية";Text
+;en;ar;"Ages 18 and older";"الحد الأدنى للعمر هو 18 سنة";Text
+;en;ar;"All levels from Basic to Advanced";"جميع المستويات من الأساسي الى المتقدم";Text
+;en;ar;"All levels from basic to advanced";"جميع المستويات من الأساسي الى المتقدم";Text
+;en;ar;"Available in different fields";"تطوع متاح في مختلف المجالات";Text
+;en;ar;"Build career-ready skills";"اكتسب مهارات مهنية مهمة";Text
+;en;ar;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
+;en;ar;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
+;en;ar;"Business Certificate 28 - BE20+GE8";"Business Certificate 28 - BE20 + GE8";Text
+;en;ar;"Business, AI, Project Management";"ريادة الأعمال، الذكاء الاصطناعي، التواصل،";Text
+;en;ar;"Cambridge Exam Preparation 23 - GE20+CAE3";"Cambridge Exam Preparation GE20+CAE3";Text
+;en;ar;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
+;en;ar;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
+;en;ar;"Can be combined with other courses";"حصص شخصية يمكن دمجها مع الفئات الاخرى";Text
+;en;ar;"Designated academic advisor";"دعم اكاديمي اضافي";Text
+;en;ar;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"طوّر مهارات جاهزة للمسار المهني في الذكاء الاصطناعي والأعمال والإدارة لتواكب بيئة العمل العالمية اليوم.";Text
+;en;ar;"Do good, feel good!";"عمل جيد , شعور جيد";Text
+;en;ar;"Elective class";"دورة اختياريه";Text
+;en;ar;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
+;en;ar;"Enhance your English while working";"تعزيز لغتك الإنجليزية أثناء العمل";Text
+;en;ar;"From $350/Week";"From $350/week";Text
+;en;ar;"From $390/Week";"From $390/week";Text
+;en;ar;"From $400/Week";"From $400/week";Text
+;en;ar;"From $460/Week";"From $460/week";Text
+;en;ar;"From $550/Week";"From $550/week";Text
+;en;ar;"From $999,999/Week";"From $999,999/week";Text
+;en;ar;"Full focus on your needs";"التركيز الكامل على احتياجاتك";Text
+;en;ar;"Gain relevant experience";"اكتساب الخبرة ذات الصلة";Text
+;en;ar;"General English 20 & Surfing";"الإنكليزية العامة المكثفة وركوب الأمواج (20 + 4)";Text
+;en;ar;"General English 24 & Surfing";"الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (24 + 4)";Text
+;en;ar;"General English 28 & Surfing";"الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (28 + 4)";Text
+;en;ar;"Improve your overall English fluency while developing strong academic communication and writing skills";"حسّن طلاقتك العامة في اللغة الإنجليزية أثناء تطوير مهارات قوية في التواصل والكتابة الأكاديمية.";Text
+;en;ar;"New courses start every Monday";"حصص جديدة لكل أيام الأثنين";Text
+;en;ar;"No surf experience required";"لا يشترط وجود خبرة في ركوب الأمواج";Text
+;en;ar;"Prepare for Cambridge exam";"Prepare for Cambridge Exam";Text
+;en;ar;"Private lessons";"دروس خصوصية";Text
+;en;ar;"Project based learning";"التعلم القائم على المشروع";Text
+;en;ar;"Small classes (avg. 7 students per class)";"فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)";Text
+;en;ar;"Small classes (avg. 7 students/class)";"فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)";Text
+;en;ar;"Social, Educational or Conversatory Work";"اجتماعي او علمي او موسيقي";Text
+;en;ar;"Social, or conversatory Work";"اجتماعي او علمي او موسيقي";Text
+;en;ar;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"التحدث، القواعد، الكتابة، القراءة، النطق، الاستماع والمزيد";Text
+;en;ar;"Specialized preparation for the Cambridge exam";"التحضير المتخصص لامتحان كامبريدج";Text
+;en;ar;"Specialized preparation for the TOEFL exam";"التحضير المتخصص لامتحان TOEFL";Text
+;en;ar;"Start your preparation to enter college or university in the U.S. or abroad.";"ابدأ تحضيرك للالتحاق بالجامعة في الولايات المتحدة أو في الخارج.";Text
+;en;ar;"Surf in one of the top surf spots";"حصص تزحلق في الامواج";Text
+;en;ar;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
+;en;ar;"TOEFL Exam Preparation 24 - GE20+TOEFL4";"TOEFL Exam Preparation 24 - GE20 + TOE";Text
+;en;ar;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"TOEFL Exam Preparation 28 - GE24 + TOE4";Text
+;en;ar;"Upper Intermediate and Higher";"ابتداء من المستوى المتوسط فما فوق";Text
+;en;ar;"Upper intermediate and higher";"ابتداء من المستوى المتوسط فما فوق";Text
