@@ -47,9 +47,33 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git status --porcelain data/offers-edit-log.json | grep -q .; then
-            git add data/offers-edit-log.json
-            git commit -m "chore(offers): edit item ${{ inputs.item_id }} auto-extend-days=${{ inputs.days }}"
-            git pull --rebase --autostash
-            git push
+          if ! git status --porcelain data/offers-edit-log.json | grep -q .; then
+            echo "no log changes to commit"
+            exit 0
           fi
+          git add data/offers-edit-log.json
+          git commit -m "chore(offers): edit item ${{ inputs.item_id }} auto-extend-days=${{ inputs.days }}"
+          # 5-attempt push retry with exponential backoff.
+          # JSONL log format makes rebase conflicts extremely rare (each run
+          # appends a distinct line at EOF — non-overlapping diffs auto-merge).
+          # The retry handles the residual race between pull --rebase and push,
+          # plus any transient remote-side rejection. Tracker 077 M2.
+          n=0
+          until [ $n -ge 5 ]; do
+            if ! git pull --rebase; then
+              git rebase --abort 2>/dev/null || true
+              echo "rebase failed (attempt $((n+1))) — retrying"
+              n=$((n+1))
+              sleep $((n * n))
+              continue
+            fi
+            if git push; then
+              echo "push succeeded on attempt $((n+1))"
+              exit 0
+            fi
+            n=$((n+1))
+            echo "push failed on attempt $n, sleeping $((n * n))s"
+            sleep $((n * n))
+          done
+          echo "ERROR: push failed after 5 attempts"
+          exit 1
