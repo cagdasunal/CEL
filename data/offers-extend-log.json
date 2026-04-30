@@ -143,6 +143,252 @@
         }
       ],
       "publish_errors": []
+    },
+    {
+      "ts": "2026-04-30T07:41:22.501603+00:00",
+      "kind": "extend_run",
+      "patched": [
+        {
+          "id": "69c502d8f9078e98d31a6545",
+          "internal_title": "LA CIS 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c502a8c943664f5075c7d8",
+          "internal_title": "LA China 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c5025737fe50b885550295",
+          "internal_title": "LA Eastern Europe 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c501e9abf4c3af87fbbaf9",
+          "internal_title": "LA Jap 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c501c53c06033214051139",
+          "internal_title": "LA Kor 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c501959d124f9c06b17ef5",
+          "internal_title": "LA Latin America & Brazil 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c5016ca10bdb4a65bffbd9",
+          "internal_title": "LA Middle East except SA 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c5013f0190b7f24fc82009",
+          "internal_title": "LA Rest of Asia 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c5010a7c65efaa402c3487",
+          "internal_title": "LA Saudi Arabia 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c500d79d124f9c06b13893",
+          "internal_title": "LA Tai 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c500a10d6fed2a533008ec",
+          "internal_title": "LA Thailand 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c50064c816f3c91dc0f23e",
+          "internal_title": "LA Turkey 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c5001437fe50b88553d29a",
+          "internal_title": "LA Western Europe 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4ff80c4cd900022871c0c",
+          "internal_title": "SD Asia (except JP, KR, TW) 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4ff1853733c7f23addbe9",
+          "internal_title": "SD Brazil 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fea18c893b91af05fa59",
+          "internal_title": "SD CIS 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fe2c3ef1da78cfab6aef",
+          "internal_title": "SD Eastern Europe 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fdaacd113bf487eb0b1c",
+          "internal_title": "SD France & Belgium 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fd3b18767c32d417facb",
+          "internal_title": "SD Japan 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fcc332c2a680a5f59017",
+          "internal_title": "SD KR, TW 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fc4f9727e28359c99a07",
+          "internal_title": "SD Latin America 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fbd00ed2df860856c136",
+          "internal_title": "SD Middle East 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fb693ec8251f45718b9d",
+          "internal_title": "SD Spain & Italy 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4faf3a10bdb4a65bd2166",
+          "internal_title": "SD Turkey 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4fa7653733c7f23abd5ff",
+          "internal_title": "VC Asia (except Jap, Kor, Tai) 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f9fff45c2b588633d108",
+          "internal_title": "VC Brazil 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f9a335a9cdd840477c04",
+          "internal_title": "VC CIS 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f934468c9181a40661df",
+          "internal_title": "VC Eastern Europe 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f8c97608d62b9a6e102b",
+          "internal_title": "VC Japan 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f805ac8138b8bace42b7",
+          "internal_title": "VC Latin America 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f3893ef1da78cfa69f1f",
+          "internal_title": "VC Middle East 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f2e55ec2299d062fb403",
+          "internal_title": "VC TW/KR 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f26532c2a680a5f17a76",
+          "internal_title": "VC Turkey 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        },
+        {
+          "id": "69c4f12b9f969031895af3f6",
+          "internal_title": "VC Western Europe 04/26",
+          "old_end": "2026-04-30T00:00:00.000Z",
+          "new_end": "2026-05-14T00:00:00.000Z",
+          "extend_days": 14
+        }
+      ],
+      "errors": [],
+      "publish_errors": []
     }
   ]
 }
