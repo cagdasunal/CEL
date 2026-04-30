@@ -72,6 +72,7 @@ PUBLIC_WEGLOT_ZIP_URL = "https://cel.englishcollege.com/admin/weglot-imports/weg
 PUBLIC_WEGLOT_MATRIX_URL = "https://cel.englishcollege.com/admin/weglot-imports/all-languages.csv"
 WEGLOT_ZIP_FILE = WEGLOT_CSV_DIR / "weglot-imports.zip"
 WEGLOT_MATRIX_FILE = WEGLOT_CSV_DIR / "all-languages.csv"
+TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 
 
 # ---------------------------------------------------------------------------
@@ -333,56 +334,6 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append(f'      <p class="subtle">{_file_note("llms.txt")}</p>')
     parts.append("    </li>")
 
-    # Weglot bulk download — one-click ZIP containing all 8 per-language CSVs.
-    # Reduces the operator round-trip from 8 downloads to 1. Upload step still
-    # requires 8 dashboard imports because Weglot's CSV format is one
-    # word_from/word_to pair per file (no language column).
-    parts.append("    <li>")
-    parts.append('      <div class="file-row">')
-    parts.append('        <span class="file-name">Weglot translations — Download all (ZIP, all 8 languages)</span>')
-    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_ZIP_URL)}" download>Download ZIP</a>')
-    parts.append("      </div>")
-    ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
-    note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
-    parts.append(f'      <p class="subtle">{note_zip} — unzip locally, then import each <code>&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
-    parts.append("    </li>")
-
-    # Operator review matrix — NOT a Weglot import file. Single CSV with columns
-    # word_from, ar, de, es, fr, it, ja, ko, pt for spreadsheet review of all
-    # translations side by side.
-    parts.append("    <li>")
-    parts.append('      <div class="file-row">')
-    parts.append('        <span class="file-name">All-languages review matrix (all-languages.csv)</span>')
-    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_MATRIX_URL)}" download>Download</a>')
-    parts.append("      </div>")
-    ts_matrix = file_mtime_iso(WEGLOT_MATRIX_FILE)
-    note_matrix = f"Last updated on {escape(iso_to_sd(ts_matrix))}" if ts_matrix else "Not yet generated"
-    parts.append(f'      <p class="subtle">{note_matrix} — spreadsheet view (do NOT import into Weglot).</p>')
-    parts.append("    </li>")
-
-    # Weglot translation CSVs — one entry per language. Sourced by
-    # tools.weglot.csv_export from Fidelo per-locale data; mirrored into the
-    # CEL repo by the fidelo-sync workflow's "Mirror Weglot CSVs" step.
-    # Import status badge sourced from tools.weglot.check_import_status.
-    import_status_by_lang = load_import_status()
-    for lang in WEGLOT_CSV_LANGUAGES:
-        lang_name = LANGUAGE_NAMES.get(lang, lang.upper())
-        csv_url = PUBLIC_WEGLOT_CSV_URL_TEMPLATE.format(lang=lang)
-        csv_path = WEGLOT_CSV_DIR / f"{lang}.csv"
-        ts = file_mtime_iso(csv_path)
-        note = f"Last updated on {escape(iso_to_sd(ts))}" if ts else "Not yet generated"
-        badge = render_import_badge(import_status_by_lang.get(lang))
-        parts.append("    <li>")
-        parts.append('      <div class="file-row">')
-        parts.append(f'        <span class="file-name">Weglot translations — {escape(lang_name)} ({lang}.csv)</span>')
-        parts.append(f'        <a href="{escape(csv_url)}" download>Download</a>')
-        parts.append("      </div>")
-        if badge:
-            parts.append(f'      <p class="subtle">{note} {badge}</p>')
-        else:
-            parts.append(f'      <p class="subtle">{note}</p>')
-        parts.append("    </li>")
-
     parts.append("  </ul>")
 
     # Recent posts
@@ -434,6 +385,97 @@ def render_html(events=None, exclusions=None) -> str:
     return "\n".join(parts) + "\n"
 
 
+def render_translations_html() -> str:
+    """Render /admin/translations/ — Fidelo translation downloads only.
+
+    Contains the 10 Weglot CSV download rows (1 ZIP bundle + 1 all-languages
+    matrix + 8 per-language CSVs) extracted from the previous /admin/log/ page.
+    Sitemap, llms.txt, blog post sync, and recent activity remain on /admin/log/.
+    """
+    now = now_san_diego()
+    parts = []
+    parts.append("<!DOCTYPE html>")
+    parts.append('<html lang="en">')
+    parts.append("<head>")
+    parts.append(f"  {AUTH_SCRIPT_TAG}")
+    parts.append('  <meta charset="utf-8">')
+    parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
+    parts.append("  <title>Fidelo Translations — English College</title>")
+    parts.append('  <meta name="description" content="Download Fidelo translation overrides as Weglot CSVs.">')
+    parts.append('  <meta name="robots" content="noindex, nofollow">')
+    parts.append(f'  {render_favicon_tag()}')
+    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
+    parts.append("</head>")
+    parts.append("<body>")
+    parts.append('  <div class="dashboard-shell">')
+
+    # Intro
+    parts.append('    <section class="status status-ok">')
+    parts.append('      <p class="status-label">Fidelo translation downloads.</p>')
+    parts.append('      <p>One ZIP bundle, one all-languages review matrix, and one CSV per non-English locale. Import each per-language CSV into the Weglot Dashboard to override machine translations with Fidelo\'s authoritative copy.</p>')
+    parts.append("    </section>")
+
+    parts.append("    <h2>Published files</h2>")
+    parts.append('    <ul class="files">')
+
+    # ZIP bundle
+    parts.append("    <li>")
+    parts.append('      <div class="file-row">')
+    parts.append('        <span class="file-name">Weglot translations — Download all (ZIP, all 8 languages)</span>')
+    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_ZIP_URL)}" download>Download ZIP</a>')
+    parts.append("      </div>")
+    ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
+    note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
+    parts.append(f'      <p class="subtle">{note_zip} — unzip locally, then import each <code>&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
+    parts.append("    </li>")
+
+    # All-languages matrix
+    parts.append("    <li>")
+    parts.append('      <div class="file-row">')
+    parts.append('        <span class="file-name">All-languages review matrix (all-languages.csv)</span>')
+    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_MATRIX_URL)}" download>Download</a>')
+    parts.append("      </div>")
+    ts_matrix = file_mtime_iso(WEGLOT_MATRIX_FILE)
+    note_matrix = f"Last updated on {escape(iso_to_sd(ts_matrix))}" if ts_matrix else "Not yet generated"
+    parts.append(f'      <p class="subtle">{note_matrix} — spreadsheet view (do NOT import into Weglot).</p>')
+    parts.append("    </li>")
+
+    # Per-language CSVs (with import-status badges)
+    import_status_by_lang = load_import_status()
+    for lang in WEGLOT_CSV_LANGUAGES:
+        lang_name = LANGUAGE_NAMES.get(lang, lang.upper())
+        csv_url = PUBLIC_WEGLOT_CSV_URL_TEMPLATE.format(lang=lang)
+        csv_path = WEGLOT_CSV_DIR / f"{lang}.csv"
+        ts = file_mtime_iso(csv_path)
+        note = f"Last updated on {escape(iso_to_sd(ts))}" if ts else "Not yet generated"
+        badge = render_import_badge(import_status_by_lang.get(lang))
+        parts.append("    <li>")
+        parts.append('      <div class="file-row">')
+        parts.append(f'        <span class="file-name">Weglot translations — {escape(lang_name)} ({lang}.csv)</span>')
+        parts.append(f'        <a href="{escape(csv_url)}" download>Download</a>')
+        parts.append("      </div>")
+        if badge:
+            parts.append(f'      <p class="subtle">{note} {badge}</p>')
+        else:
+            parts.append(f'      <p class="subtle">{note}</p>')
+        parts.append("    </li>")
+
+    parts.append("  </ul>")
+
+    # Footer
+    parts.append("  <footer>")
+    parts.append(
+        f'    This page was generated on {escape(fmt_sd(now))}. '
+        f'Next check within 15 minutes.'
+    )
+    parts.append("  </footer>")
+    parts.append("  </div>")
+    parts.append("</body>")
+    parts.append("</html>")
+
+    return "\n".join(parts) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -443,11 +485,14 @@ def write_status_page() -> None:
     write_shell_html(EXTERNAL_REPO_ROOT)
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(render_html(), encoding="utf-8")
+    TRANSLATIONS_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TRANSLATIONS_OUTPUT_FILE.write_text(render_translations_html(), encoding="utf-8")
 
 
 def main() -> int:
     write_status_page()
     print(f"[status_page] Wrote {OUTPUT_FILE}", flush=True)
+    print(f"[status_page] Wrote {TRANSLATIONS_OUTPUT_FILE}", flush=True)
     return 0
 
 
