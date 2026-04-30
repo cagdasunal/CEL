@@ -46,9 +46,17 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.2.0
- * Last update: 2026-04-29
+ * Version: 1.3.0
+ * Last update: 2026-04-30
  *
+ * v1.3.0 (2026-04-30): Section 4 added — navbar .offers_counter now ticks
+ *                      against soonest-expiring .offer_item .offer_date
+ *                      (audit F5). Section 2 dead .offers_list retry replaced
+ *                      with document.body observer (matches Section 1 pattern).
+ *                      Section 3 guarded against missing dayjs on nav-only
+ *                      pages. build.sh now passes --comments false to terser
+ *                      so cel-offers.min.js no longer carries the source's
+ *                      banner comment.
  * v1.2.0 (2026-04-29): Section 3 added (per-card countdown, was inline_6c6f5f54).
  *                      Verbose duplicate (was inline_0bd2cf04) dropped — cleaner
  *                      version now covers all 6 pages. F4 fix: per-tick
@@ -286,32 +294,18 @@
     if (list) list.style.opacity = '1';
   }
 
-  // F3 fix: bound the missing-wrapper retry loop. Closure-scoped counter.
-  let observerTries = 0;
-  const OBSERVER_MAX_TRIES = 20;  // 20 x 500ms = 10s ceiling
-
+  // v1.3.0: drop the .offers_list wrapper retry (the wrapper has never existed
+  // on any of the 6 offer pages — verified by audit). Watch document.body instead,
+  // matching Section 1's pattern. Same defensive behavior, no dead retry timer.
   function initObserver() {
-    const listWrapper = document.querySelector(CONF.listWrapper);
-
-    if (!listWrapper) {
-        if (++observerTries < OBSERVER_MAX_TRIES) {
-          setTimeout(initObserver, 500);
-        }
-        return;
-    }
-
     const observer = new MutationObserver((mutations) => {
       let shouldRefilter = false;
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length) shouldRefilter = true;
       });
-
-      if (shouldRefilter) {
-        runFilter();
-      }
+      if (shouldRefilter) runFilter();
     });
-
-    observer.observe(listWrapper, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function initGeo() {
@@ -351,6 +345,10 @@
  * ============================================================ */
 
 (function() {
+  // v1.3.0: guard against pages where dayjs/dayjs_plugin_* aren't loaded
+  // (e.g. /vancouver/adults-16, /duration-guide, /costs, /vs-toronto — they
+  // ship cel-offers.min.js for Sections 1+2 but don't load dayjs).
+  if (typeof dayjs === 'undefined' || typeof dayjs_plugin_duration === 'undefined' || typeof dayjs_plugin_utc === 'undefined') return;
   dayjs.extend(dayjs_plugin_duration);
   dayjs.extend(dayjs_plugin_utc);
 
@@ -409,4 +407,78 @@
     const loop = setInterval(tick, 1000);
   });
 
+})();
+
+/* ============================================================
+ * Section 4 — navbar .offers_counter ticker (v1.3.0, audit F5)
+ * Ticks the standalone navbar countdown against the soonest-expiring
+ * .offer_item .offer_date on the page. Vanilla Date — no dayjs needed.
+ * Exits cleanly when there's no .offer_item on the page (the 4 nav-only
+ * pages /adults-16, /duration-guide, /costs, /vs-toronto — navbar counter
+ * stays at its CMS-rendered "00" placeholder, current behavior unchanged).
+ * Whole section is try/catch wrapped — any error → leave navbar alone.
+ * ============================================================ */
+
+(function() {
+  try {
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    // Find the navbar counter (decorative element outside any .offer_item).
+    // The selectors target the navbar instance only — not per-card counters.
+    const counter = document.querySelector('.navbar_buttons .offers_counter, .navbar_button-wrapper .offers_counter');
+    if (!counter) return;
+
+    const dEl = counter.querySelector('.count_days');
+    const hEl = counter.querySelector('.count_hours');
+    const mEl = counter.querySelector('.count_minutes');
+    const sEl = counter.querySelector('.count_seconds');
+    if (!dEl || !hEl || !mEl || !sEl) return;
+
+    function pickSoonest() {
+      const items = document.querySelectorAll('.offer_item');
+      let soonest = null;
+      items.forEach(function(item) {
+        if (!item.isConnected) return;
+        const dateEl = item.querySelector('.offer_date');
+        if (!dateEl) return;
+        const dateStr = (dateEl.textContent || '').trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+        // End-of-day UTC (matches Section 3's dayjs.utc(dateStr).endOf('day') semantics).
+        const expiry = new Date(dateStr + 'T23:59:59.999Z').getTime();
+        if (!isFinite(expiry)) return;
+        if (expiry <= Date.now()) return;
+        if (soonest === null || expiry < soonest) soonest = expiry;
+      });
+      return soonest;
+    }
+
+    function tick() {
+      const target = pickSoonest();
+      if (target === null) {
+        // No live offers on this page → leave counter at its CMS placeholder.
+        // Don't write anything; don't keep ticking.
+        clearInterval(loop);
+        return;
+      }
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        // Soonest just expired — recompute next tick. Fast path.
+        return;
+      }
+      const totalSec = Math.floor(diff / 1000);
+      const days = Math.floor(totalSec / 86400);
+      const hours = Math.floor((totalSec % 86400) / 3600);
+      const mins = Math.floor((totalSec % 3600) / 60);
+      const secs = totalSec % 60;
+      dEl.textContent = pad(days);
+      hEl.textContent = pad(hours);
+      mEl.textContent = pad(mins);
+      sEl.textContent = pad(secs);
+    }
+
+    tick();
+    const loop = setInterval(tick, 1000);
+  } catch (e) {
+    /* Any error → navbar counter stays at its CMS placeholder. Current behavior. */
+  }
 })();
