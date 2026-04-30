@@ -1,0 +1,183 @@
+{
+  "schema": "weglot.import-status.v1",
+  "checked_at": "2026-04-30T05:57:46.797022-07:00",
+  "site_base_url": "https://www.englishcollege.com",
+  "languages": {
+    "de": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/de/courses",
+      "checked_at": "2026-04-30T05:57:48.694026-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "Verbessere deine allgemeine Englischflüssigkeit und entwickle starke akademische Kommunikations- und Schreibfähigkeiten."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "Entwickle berufsrelevante Fähigkeiten in KI, Business und Management für die heutige globale Arbeitswelt."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "Beginne deine Vorbereitung, um ein College oder eine Universität in den USA oder im Ausland zu besuchen."
+        }
+      ],
+      "http_status": 200
+    },
+    "fr": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/fr/courses",
+      "checked_at": "2026-04-30T05:57:50.162061-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "Améliorez votre aisance générale en anglais tout en développant de solides compétences en communication et en rédaction académiques."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "Développez des compétences professionnelles en IA, en affaires et en gestion pour le monde du travail global d’aujourd’hui."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "Commencez votre préparation pour entrer dans une université ou un collège aux États-Unis ou à l’étranger."
+        }
+      ],
+      "http_status": 200
+    },
+    "es": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/es/courses",
+      "checked_at": "2026-04-30T05:57:51.114615-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "Mejora tu fluidez general en inglés mientras desarrollas sólidas habilidades de comunicación y escritura académica."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "Desarrolla habilidades profesionales en inteligencia artificial, negocios y gestión para el entorno laboral global actual."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "Comienza tu preparación para ingresar a una universidad o colegio en los Estados Unidos o en el extranjero."
+        }
+      ],
+      "http_status": 200
+    },
+    "it": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/it/courses",
+      "checked_at": "2026-04-30T05:57:52.578940-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "Migliora la tua fluidità generale in inglese sviluppando solide competenze di comunicazione e scrittura accademica."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "Sviluppa competenze professionali in intelligenza artificiale, business e management per il mondo del lavoro globale di oggi."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "Inizia la tua preparazione per entrare in un college o in un’università negli Stati Uniti o all’estero."
+        }
+      ],
+      "http_status": 200
+    },
+    "ja": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/ja/courses",
+      "checked_at": "2026-04-30T05:57:53.090241-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "英語の総合的な流暢さを高めながら、学術的なコミュニケーション力と文章力を伸ばしましょう。"
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "現代のグローバルな職場で活躍するために、AI、ビジネス、マネジメントのキャリア対応スキルを身につけましょう。"
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "アメリカまたは海外の大学・カレッジへの進学に向けて準備を始めましょう。"
+        }
+      ],
+      "http_status": 200
+    },
+    "ko": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/ko/courses",
+      "checked_at": "2026-04-30T05:57:53.553951-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "영어 전반의 유창성을 향상시키면서 학문적인 의사소통 및 글쓰기 능력을 강화하세요."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "오늘날의 글로벌 직장에서 성공하기 위해 AI, 비즈니스 및 경영 분야의 실무 역량을 개발하세요."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "미국이나 해외의 대학에 진학하기 위한 준비를 시작하세요."
+        }
+      ],
+      "http_status": 200
+    },
+    "pt": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/pt/courses",
+      "checked_at": "2026-04-30T05:57:54.176666-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "Melhore sua fluência geral em inglês enquanto desenvolve fortes habilidades de comunicação e escrita acadêmica."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "Desenvolva habilidades profissionais em IA, negócios e gestão para o ambiente de trabalho global de hoje."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "Comece sua preparação para ingressar em uma faculdade ou universidade nos Estados Unidos ou no exterior."
+        }
+      ],
+      "http_status": 200
+    },
+    "ar": {
+      "verdict": "pending",
+      "url": "https://www.englishcollege.com/ar/courses",
+      "checked_at": "2026-04-30T05:57:54.634483-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 0,
+      "missing": [
+        {
+          "word_from": "Improve your overall English fluency while developing strong academic communication and writing skills",
+          "word_to": "حسّن طلاقتك العامة في اللغة الإنجليزية أثناء تطوير مهارات قوية في التواصل والكتابة الأكاديمية."
+        },
+        {
+          "word_from": "Develop career-ready skills in AI, business, and management for today’s global workplace.",
+          "word_to": "طوّر مهارات جاهزة للمسار المهني في الذكاء الاصطناعي والأعمال والإدارة لتواكب بيئة العمل العالمية اليوم."
+        },
+        {
+          "word_from": "Start your preparation to enter college or university in the U.S. or abroad.",
+          "word_to": "ابدأ تحضيرك للالتحاق بالجامعة في الولايات المتحدة أو في الخارج."
+        }
+      ],
+      "http_status": 200
+    }
+  }
+}
