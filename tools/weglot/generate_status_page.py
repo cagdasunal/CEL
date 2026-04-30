@@ -412,7 +412,7 @@ def render_translations_html() -> str:
     # Intro
     parts.append('    <section class="status status-ok">')
     parts.append('      <p class="status-label">Fidelo translation downloads.</p>')
-    parts.append('      <p>One ZIP bundle, one all-languages review matrix, and one CSV per non-English locale. Import each per-language CSV into the Weglot Dashboard to override machine translations with Fidelo\'s authoritative copy.</p>')
+    parts.append('      <p>One ZIP bundle and one CSV per non-English locale. Import each per-language CSV into the Weglot Dashboard to override machine translations with Fidelo\'s authoritative copy.</p>')
     parts.append("    </section>")
 
     parts.append("    <h2>Published files</h2>")
@@ -427,17 +427,6 @@ def render_translations_html() -> str:
     ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
     note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
     parts.append(f'      <p class="subtle">{note_zip} — unzip locally, then import each <code>&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
-    parts.append("    </li>")
-
-    # All-languages matrix
-    parts.append("    <li>")
-    parts.append('      <div class="file-row">')
-    parts.append('        <span class="file-name">All-languages review matrix (all-languages.csv)</span>')
-    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_MATRIX_URL)}" download>Download</a>')
-    parts.append("      </div>")
-    ts_matrix = file_mtime_iso(WEGLOT_MATRIX_FILE)
-    note_matrix = f"Last updated on {escape(iso_to_sd(ts_matrix))}" if ts_matrix else "Not yet generated"
-    parts.append(f'      <p class="subtle">{note_matrix} — spreadsheet view (do NOT import into Weglot).</p>')
     parts.append("    </li>")
 
     # Per-language CSVs (with import-status badges)
