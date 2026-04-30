@@ -60,6 +60,7 @@ def _append_log(event: dict) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global LOG_FILE
     parser = argparse.ArgumentParser(description="Edit one geotargetly region's countries CSV.")
     parser.add_argument("--region", default=os.environ.get("REGION") or os.environ.get("INPUT_REGION"))
     parser.add_argument("--countries", default=os.environ.get("COUNTRIES") or os.environ.get("INPUT_COUNTRIES"))
@@ -105,7 +106,6 @@ def main(argv: list[str] | None = None) -> int:
         _save(public_file, state)
 
     # Log the change (override LOG_FILE so test can verify)
-    global LOG_FILE
     LOG_FILE = log_file
     _append_log({
         "ts": state["updated_at"],
