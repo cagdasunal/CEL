@@ -77,7 +77,6 @@ jobs:
         if: always()
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
-          OFFERS_GITHUB_PAT: ${{ secrets.OFFERS_GITHUB_PAT }}
         run: python3 -m tools.offers.build_offers_viewer
         continue-on-error: true   # offers viewer regen must NOT block the rest of the 15-min cycle
 
