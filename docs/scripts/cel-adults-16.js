@@ -1,0 +1,105 @@
+/*!
+ * cel-adults-16.js — CEL Vancouver / Adults 16+
+ *
+ * Source-of-truth: tools/cel-page-scripts/src/cel-adults-16.js (cagdasunal/webflow monorepo)
+ * Mirrored to:     docs/scripts/cel-adults-16.{js,min.js} (cagdasunal/CEL repo)
+ * Public URL:      https://cel.englishcollege.com/scripts/cel-adults-16.min.js
+ *
+ * Bundles 13 scripts (was previously 13 inline-registered Webflow scripts):
+   1. a16swipercdn v3.0.0
+   2. a16comparedrag v1.0.0
+   3. celnavtoc3 v1.0.0
+   4. celfaq1 v1.0.0
+   5. celtoc1 v1.0.0
+   6. celtocmob2 v1.0.0
+   7. cefrbarinit v5.0.0
+   8. a16swiperretry v10.0.0
+   9. a16extras v2.0.0
+   10. a16compare v2.0.0
+   11. a16videoutils v5.0.0
+   12. celvideo1 v1.0.0
+   13. celtochov1 v2.0.0
+ *
+ * Each section is the verbatim source captured from the live Webflow CDN
+ * on 2026-04-30 (see tools/cel-page-scripts/sources/manifest.json).
+ *
+ * Migration date: 2026-04-30. See rules/cel-page-scripts-deploy.md.
+ */
+
+/* ============================================================
+   1. a16swipercdn v3.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ba51a3905cc67b376c23af%2Fa16swipercdn-3.0.0.js
+   ============================================================ */
+(function(){if(window.__swR)return;window.__swR=1;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';s.onload=function(){window.__swOK=true;document.dispatchEvent(new Event('swiperReady'))};document.head.appendChild(s);var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css';document.head.appendChild(l)})();
+
+/* ============================================================
+   2. a16comparedrag v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69bbce1512c4dfeb6767abb2%2Fa16comparedrag-1.0.0.js
+   ============================================================ */
+(function(){var el=document.querySelector('.compare_component');if(!el)return;var isDown=false,startX,scrollL;function checkScrollable(){var wasScrollable=el.classList.contains('is-scrollable');var isNow=el.scrollWidth>el.clientWidth;el.classList.toggle('is-scrollable',isNow);if(isNow&&!wasScrollable){el.scrollLeft=0;}}checkScrollable();window.addEventListener('resize',checkScrollable);el.addEventListener('mousedown',function(e){if(el.scrollWidth<=el.clientWidth)return;isDown=true;el.classList.add('is-dragging');startX=e.pageX-el.offsetLeft;scrollL=el.scrollLeft;});el.addEventListener('mouseleave',function(){isDown=false;el.classList.remove('is-dragging');});el.addEventListener('mouseup',function(){isDown=false;el.classList.remove('is-dragging');});el.addEventListener('mousemove',function(e){if(!isDown)return;e.preventDefault();var x=e.pageX-el.offsetLeft;el.scrollLeft=scrollL-(x-startX);});})();
+
+/* ============================================================
+   3. celnavtoc3 v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69c3b65e7f1bbaa658ac1132%2Fcelnavtoc3-1.0.0.js
+   ============================================================ */
+(function(){if(window.__celNt)return;window.__celNt=true;var n=document.querySelector('[data-wf--navbar--variant="transparent"]'),h=document.querySelector('.section_hero');if(n&&h){var mo=new MutationObserver(function(){if(h.getBoundingClientRect().bottom<=80)return;mo.disconnect();n.style.removeProperty('background-color');mo.observe(n,{attributes:true,attributeFilter:['style']});});mo.observe(n,{attributes:true,attributeFilter:['style']});var r=0;window.addEventListener('scroll',function(){if(r)return;r=1;requestAnimationFrame(function(){if(h.getBoundingClientRect().bottom>80){mo.disconnect();n.style.removeProperty('background-color');mo.observe(n,{attributes:true,attributeFilter:['style']});}r=0;});},{passive:true});if(h.getBoundingClientRect().bottom>80)n.style.removeProperty('background-color');}function fb(){document.querySelectorAll('.hero_cta-ghost.w--current,.hero_cta-primary.w--current').forEach(function(b){b.classList.remove('w--current');});}setInterval(fb,300);fb();if(document.querySelector('.stoc_dot')){function ft(){document.querySelectorAll('.stoc_dot').forEach(function(d){var l=d.closest('.stoc_link');var a=l&&l.classList.contains('is-active');d.style.backgroundColor=a?'#e78b10':'';d.style.borderColor=a?'#e78b10':'';});}setInterval(ft,300);ft();}})();
+
+/* ============================================================
+   4. celfaq1 v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69c2c4d097c0c97fc7d27f81%2Fcelfaq1-1.0.0.js
+   ============================================================ */
+(function(){if(window.__celFq)return;window.__celFq=true;if(!document.querySelector('.faq-item'))return;function ca(){['.faq-body','.faq-icon','.faq-q'].forEach(function(s){document.querySelectorAll(s).forEach(function(e){if(e.getAnimations)e.getAnimations().forEach(function(a){a.cancel();});});});}document.addEventListener('click',function(e){var q=e.target.closest('.faq-q');if(!q)return;var it=q.closest('.faq-item');if(!it)return;var wo=it.dataset.faqOpen==='true';ca();document.querySelectorAll('.faq-item').forEach(function(i){var b=i.querySelector('.faq-body'),t=i.querySelector('.faq-q'),c=i.querySelector('.faq-icon');i.dataset.faqOpen='false';i.classList.remove('is-open');if(t){t.classList.remove('is-open');t.setAttribute('aria-expanded','false');}if(c)c.classList.remove('is-open');if(b)b.style.maxHeight='0px';});if(!wo){var b=it.querySelector('.faq-body'),m=it.querySelector('.faq-body-inner'),t=it.querySelector('.faq-q'),c=it.querySelector('.faq-icon');it.dataset.faqOpen='true';it.classList.add('is-open');if(t){t.classList.add('is-open');t.setAttribute('aria-expanded','true');}if(c)c.classList.add('is-open');if(b&&m)b.style.maxHeight=m.scrollHeight+'px';}});})();
+
+/* ============================================================
+   5. celtoc1 v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ce7f61e5dc51c9eebb606a%2Fceltoc1-1.0.0.js
+   ============================================================ */
+(function(){if(window.__celToc)return;window.__celToc=window.__celTocDone=true;var tl=[].slice.call(document.querySelectorAll('.stoc_link[data-target]'));if(!tl.length)return;var si=tl.map(function(l){return l.dataset.target});var ss=si.map(function(id){return document.getElementById(id)}).filter(Boolean);if(!ss.length)return;var nv=document.querySelector('.navbar_component'),sl=document.querySelector('.stoc_label');tl.forEach(function(l){l.removeAttribute('href');l.setAttribute('tabindex','0')});function sa(id){tl.forEach(function(l){var a=l.dataset.target===id,d=l.querySelector('.stoc_dot'),t=l.querySelector('.stoc_text');l.classList.toggle('is-active',a);if(d)d.classList.toggle('is-active',a);if(t)t.classList.toggle('is-active',a)});if(sl){var a=tl.find(function(l){return l.dataset.target===id});if(a){var t=a.querySelector('.stoc_text');sl.textContent=t?t.textContent.trim():a.textContent.trim()}}}function da(){var r=(nv?nv.offsetHeight:90)+40,ai=ss[0].id;ss.forEach(function(s){if(s.getBoundingClientRect().top<=r)ai=s.id});sa(ai)}var rp=0;window.addEventListener('scroll',function(){if(rp)return;rp=1;requestAnimationFrame(function(){da();rp=0})},{passive:true});tl.forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(l.dataset.target);if(!t)return;sa(l.dataset.target);window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-(nv?nv.offsetHeight:90)-24,behavior:'smooth'})});l.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();l.click()}})});var h=location.hash.replace('#','');if(si.indexOf(h)!==-1)sa(h);else da()})();
+
+/* ============================================================
+   6. celtocmob2 v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ce76bdaf1388e4c4f64191%2Fceltocmob2-1.0.0.js
+   ============================================================ */
+(function(){var sc=document.querySelector('.stoc_component'),sl=document.querySelector('.stoc_label');if(!sc||!sl)return;var nv=document.querySelector('.navbar_component'),hs=document.querySelector('.section_hero'),tl=[].slice.call(document.querySelectorAll('.stoc_link[data-target]')),ss=tl.map(function(l){return document.getElementById(l.dataset.target);}).filter(Boolean),ls=ss[ss.length-1],bd=document.createElement('div'),nh=nv?nv.offsetHeight:80;bd.className='stoc_backdrop';document.body.appendChild(bd);function cm(){sc.classList.remove('is-menu-open');bd.classList.remove('is-visible');}function uv(){var hb=hs?hs.getBoundingClientRect().bottom:-1,lb=ls?ls.getBoundingClientRect().bottom:1e9;if(hb<nh+20&&lb>nh+40)sc.classList.add('is-visible');else{sc.classList.remove('is-visible');cm();}}window.addEventListener('scroll',uv,{passive:true});uv();sl.addEventListener('click',function(){var o=sc.classList.toggle('is-menu-open');bd.classList.toggle('is-visible',o);});bd.addEventListener('click',cm);tl.forEach(function(l){l.addEventListener('click',cm);});})();
+
+/* ============================================================
+   7. cefrbarinit v5.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69b0252e7579efc60f4173b8%2Fcefrbarinit-5.0.0.js
+   ============================================================ */
+(function(){var c={a1:'#e6be00',a2:'#ff9800',b1:'#5d60ee',b2:'#5d60ee',c1:'#4caf50'};var w={a1:'33%',a2:'44%',b1:'61%',b2:'67%',c1:'100%'};document.querySelectorAll('.cefr-row[data-level]').forEach(function(r){var b=r.querySelector('.cefr-bar');if(b){b.style.setProperty('--w',w[r.dataset.level]||'0%');b.style.background=c[r.dataset.level]||'#5d60ee';}var lv=r.dataset.level;if(lv==='b1'||lv==='b2'){r.style.background='rgba(93,96,238,0.06)';r.style.borderLeftColor='#5d60ee';}});var s=document.getElementById('cefr');if(s){var ob=new IntersectionObserver(function(e){if(e[0].isIntersecting){document.querySelectorAll('.cefr-row').forEach(function(r,i){setTimeout(function(){r.classList.add('animate-bars');},i*90);});ob.disconnect();}},{threshold:0.25});ob.observe(s);}})();
+
+/* ============================================================
+   8. a16swiperretry v10.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ee7b7769d43f0c838fc056%2Fa16swiperretry-10.0.0.js
+   ============================================================ */
+(function(){if(window.__a16SliderDone)return;window.__a16SliderDone=1;var Q=document.querySelector.bind(document),SD={slidesPerView:'auto',spaceBetween:16},B={0:{slidesPerView:'auto',spaceBetween:12},480:SD,768:SD,992:SD,1400:SD};function I(s,o){if(typeof Swiper=='undefined')return;var x=Q(s);if(!x)return;var w=o.swiper?Q(o.swiper):x.querySelector('.card-slider.swiper')||x.querySelector('.swiper');if(!w)return;var n=(o.nav?Q(o.nav):x.querySelector('.card-slider_nav'))||x;var sw=new Swiper(w,{slidesPerView:'auto',spaceBetween:o.spaceBetween||16,speed:o.speed||600,grabCursor:1,freeMode:{enabled:1,sticky:0},breakpoints:o.breakpoints||{}});var p=n.querySelector('.card-slider_arrow.is-prev'),q=n.querySelector('.card-slider_arrow.is-next'),f=n.querySelector('.card-slider_progress-fill');if(p)p.addEventListener('click',function(){sw.slidePrev()});if(q)q.addEventListener('click',function(){sw.slideNext()});function u(){if(!f||!sw.slides||!sw.slides.length)return;var r=sw.progress;if(isNaN(r))r=0;r=Math.max(0,Math.min(1,r));f.style.width=(r*100)+'%'}sw.on('progress',u);sw.on('slideChange',u);u()}function go(){if(typeof Swiper=='undefined')return;I('#courses',{breakpoints:B});I('#city',{swiper:'#showcaseSlider',nav:'#showcaseSliderNav',speed:800,breakpoints:B});var tc=Q('#testimonials-col'),tw=tc&&tc.querySelector('.swiper-wrapper'),th=Q('#testimonial-hero');if(tc&&!tc.classList.contains('swiper'))tc.classList.add('swiper');if(th&&tw&&th.parentNode!==tw)tw.insertBefore(th,tw.firstChild);I('.section_testimonials',{swiper:'#testimonials-col',nav:'#testimonialsSliderNav',breakpoints:B});I('#activities',{swiper:'#activitiesSlider',nav:'#activitiesSliderNav',breakpoints:B});I('#accommodation',{swiper:'#accomSlider',nav:'#accomSliderNav',breakpoints:{480:{spaceBetween:16},768:{spaceBetween:18},992:{spaceBetween:20},1400:{spaceBetween:22}}})}if(typeof Swiper!='undefined')go();else document.addEventListener('swiperReady',go)})();
+
+/* ============================================================
+   9. a16extras v2.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ba51f1808af33bcc3b2ce1%2Fa16extras-2.0.0.js
+   ============================================================ */
+(function(){var el=document.querySelector('.compare_component');if(el){var obs=new IntersectionObserver(function(e){if(e[0].isIntersecting){el.classList.add('is-visible');obs.disconnect()}},{threshold:0.3});obs.observe(el)}})();(function(){if(window.__a16F)return;window.__a16F=1;var fi=document.querySelectorAll('.faq-item');fi.forEach(function(i){var b=i.querySelector('.faq-q');if(!b)return;b.addEventListener('click',function(){var o=i.classList.contains('is-open');fi.forEach(function(x){x.classList.remove('is-open');var q=x.querySelector('.faq-q');if(q)q.setAttribute('aria-expanded','false')});if(!o){i.classList.add('is-open');b.setAttribute('aria-expanded','true')}})})})();(function(){var p=document.querySelector('.video_player[data-vimeo-id]');if(!p)return;var b=p.querySelector('.video_play-btn');var t=p.querySelector('.video_thumbnail');if(!b&&!t)return;function lV(){var id=p.getAttribute('data-vimeo-id');if(!id||p.classList.contains('is-playing'))return;var f=document.createElement('iframe');f.className='video_embed';f.src='https://player.vimeo.com/video/'+id+'?autoplay=1&color=FAF3E8&title=0&byline=0&portrait=0';f.setAttribute('frameborder','0');f.setAttribute('allow','autoplay;fullscreen;picture-in-picture');f.setAttribute('allowfullscreen','');p.appendChild(f);p.classList.add('is-playing')}if(b)b.addEventListener('click',lV);if(t)t.addEventListener('click',lV)})();
+
+/* ============================================================
+   10. a16compare v2.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69bbbebccf3c62169e4dbf78%2Fa16compare-2.0.0.js
+   ============================================================ */
+(function(){var c=document.querySelector('.compare_component');if(!c)return;var s=document.createElement('style');s.textContent='.cv-alt_svg{display:block;width:100%;overflow:visible}.cv-alt_svg .cv-bar-fill{transform:scaleX(0);transform-origin:left;transition:transform 1.4s cubic-bezier(.25,.46,.45,.94)}.compare_component.is-visible .cv-bar-fill{transform:scaleX(1)}.cv-alt_svg .cv-icon-group{opacity:0;transition:opacity .6s ease 1s}.compare_component.is-visible .cv-icon-group{opacity:1}.compare_col+.compare_col .cv-bar-fill{transition-delay:.3s}';document.head.appendChild(s);function P(n,f){for(var r='',i=0;i<n;i++){var l=f?'#27ae60':i<7?'#27ae60':['#f9ca24','#f5b731','#f0932b','#e67e22','#e55039','#d63031','#c0392b','#c0392b','#c0392b','#c0392b'][i-7]||'#c0392b';r+='<g transform="translate('+i*16+',16) scale(.7)" fill="'+l+'" opacity=".45"><circle cx="10" cy="5" r="3"/><path d="M3 18a7 7 0 0114 0"/></g>';}return r;}var gD='<linearGradient id="gD" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#219a52"/><stop offset="41%" stop-color="#2ecc71"/><stop offset="41%" stop-color="#f9ca24"/><stop offset="53%" stop-color="#f0932b"/><stop offset="65%" stop-color="#e67e22"/><stop offset="77%" stop-color="#e55039"/><stop offset="100%" stop-color="#c0392b"/></linearGradient>',gS='<linearGradient id="gS" x1="0" x2="1" y1="0" y2="0"><stop offset="0%" stop-color="#219a52"/><stop offset="100%" stop-color="#2ecc71"/></linearGradient>';function V(w,g,n,f){return'<svg class="cv-alt_svg" viewBox="0 0 270 30" xmlns="http://www.w3.org/2000/svg"><defs>'+g+'</defs><rect width="270" height="10" rx="5" fill="#F3E7D3"/><rect class="cv-bar-fill" width="'+w+'" height="10" rx="5" fill="url(#g'+(f?'S':'D')+')"/><g class="cv-icon-group">'+P(n,f)+'</g></svg>';}var W=c.querySelectorAll('.cv-alt_wrap');if(W[0])W[0].innerHTML=V(270,gD,17,0);if(W[1])W[1].innerHTML=V(110,gS,7,1);if('IntersectionObserver'in window)new IntersectionObserver(function(e){if(e[0].isIntersecting){c.classList.add('is-visible');this.disconnect();}},{threshold:.3}).observe(c);})();
+
+/* ============================================================
+   11. a16videoutils v5.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69f0e15bd9ca3f42f8e860ce%2Fa16videoutils-5.0.0.js
+   ============================================================ */
+(function(){var D=document,W='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';var I={chevron:'<polyline points="9 18 15 12 9 6"/>',calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',group:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',globe:'<circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'};D.querySelectorAll('[data-svg]').forEach(function(el){var k=el.getAttribute('data-svg');if(I[k]&&!el.querySelector('svg'))el.innerHTML=W+I[k]+'</svg>';});var p=D.querySelector('.video_player[data-vimeo-id]');if(p){var els=p.querySelectorAll('.video_play-btn,.video_thumbnail');function lv(){if(p.classList.contains('is-playing'))return;var id=p.getAttribute('data-vimeo-id');var f=D.createElement('iframe');f.src='https://player.vimeo.com/video/'+id+'?autoplay=1&color=FAF3E8&title=0&byline=0&portrait=0';f.frameBorder='0';f.allow='autoplay; fullscreen; picture-in-picture';f.allowFullscreen=1;f.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;border:none';p.appendChild(f);p.classList.add('is-playing');els.forEach(function(e){e.style.display='none';});}els.forEach(function(e){e.addEventListener('click',lv);});}})();
+
+/* ============================================================
+   12. celvideo1 v1.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69e4e6f0b8de5cf2df0cdee6%2Fcelvideo1-1.0.0.js
+   ============================================================ */
+(function(){if(window.__celVideoPlayer)return;window.__celVideoPlayer=true;function initPlayer(player){if(player.__celVideoInit)return;player.__celVideoInit=true;const btn=player.querySelector('.video_play-btn');const thumb=player.querySelector('.video_thumbnail');if(!btn&&!thumb)return;let loaded=false;function loadVideo(e){if(e&&e.preventDefault)e.preventDefault();if(loaded)return;const id=player.getAttribute('data-vimeo-id');if(!id)return;loaded=true;const iframe=document.createElement('iframe');iframe.className='video_embed';iframe.src='https://player.vimeo.com/video/'+id+'?autoplay=1&color=FAF3E8&title=0&byline=0&portrait=0';iframe.setAttribute('frameborder','0');iframe.setAttribute('allow','autoplay; fullscreen; picture-in-picture');iframe.setAttribute('allowfullscreen','');iframe.title=player.getAttribute('data-video-title')||'CEL Vancouver — English Language School';if(thumb)thumb.remove();if(btn)btn.remove();player.appendChild(iframe);}if(btn)btn.addEventListener('click',loadVideo);if(thumb)thumb.addEventListener('click',loadVideo);}const players=document.querySelectorAll('.video_player[data-vimeo-id]');for(let i=0;i<players.length;i++)initPlayer(players[i]);})();
+
+/* ============================================================
+   13. celtochov1 v2.0.0
+   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ea49589152839d8d25a714%2Fceltochov1-2.0.0.js
+   ============================================================ */
+(function(){if(window.__celToh)return;window.__celToh=true;function init(){var ls=document.querySelectorAll('.stoc_link');if(!ls.length){setTimeout(init,200);return}ls.forEach(function(l){var d=l.querySelector('.stoc_dot');if(!d)return;l.addEventListener('mouseenter',function(){if(!l.classList.contains('is-active'))d.classList.add('is-hover')});l.addEventListener('mouseleave',function(){d.classList.remove('is-hover')})})}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init)})();
