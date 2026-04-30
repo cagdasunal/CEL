@@ -50,5 +50,6 @@ jobs:
           if git status --porcelain data/offers-edit-log.json | grep -q .; then
             git add data/offers-edit-log.json
             git commit -m "chore(offers): edit item ${{ inputs.item_id }} auto-extend-days=${{ inputs.days }}"
+            git pull --rebase --autostash
             git push
           fi
