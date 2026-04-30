@@ -67,6 +67,7 @@ PUBLIC_WEGLOT_CSV_URL_TEMPLATE = "https://cel.englishcollege.com/admin/weglot-im
 PUBLIC_WEGLOT_MANIFEST_URL = "https://cel.englishcollege.com/admin/weglot-imports/manifest.json"
 WEGLOT_CSV_LANGUAGES = ("de", "fr", "es", "it", "ja", "ko", "pt", "ar")
 WEGLOT_CSV_DIR = EXTERNAL_REPO_ROOT / "admin" / "weglot-imports"
+WEGLOT_IMPORT_STATUS_FILE = WEGLOT_CSV_DIR / "import-status.json"
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +136,56 @@ def file_mtime_iso(path: Path) -> str | None:
         return ts.isoformat()
     except OSError:
         return None
+
+
+def load_import_status() -> dict:
+    """Read import-status.json if present.
+
+    Returns: {language_code: status_dict, ...} (the inner "languages" dict),
+    or {} when the file is missing or unparseable. Never raises — the badge
+    is non-essential UI; missing status must not break dashboard regen.
+    """
+    if not WEGLOT_IMPORT_STATUS_FILE.exists():
+        return {}
+    try:
+        data = json.loads(WEGLOT_IMPORT_STATUS_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    langs = data.get("languages")
+    if not isinstance(langs, dict):
+        return {}
+    return langs
+
+
+def render_import_badge(status: dict | None) -> str:
+    """Render an inline HTML badge for one language's import status.
+
+    Returns an empty string (no badge) when status is None or verdict is
+    "no_csv". All other verdicts render a <span class="badge-..."> with a
+    prefixed glyph. Output is HTML-escaped where it interpolates data.
+    """
+    if not status:
+        return ""
+    verdict = status.get("verdict")
+    if verdict == "imported":
+        return '<span class="badge-ok">✓ Imported</span>'
+    if verdict == "partial":
+        found = int(status.get("sentinels_found", 0))
+        total = int(status.get("sentinels_total", 0))
+        return f'<span class="badge-partial">⚠ Partial ({found}/{total})</span>'
+    if verdict == "pending":
+        return '<span class="badge-failed">⚠ Pending import</span>'
+    if verdict == "no_sentinels":
+        return '<span class="badge-partial">⚠ Cannot verify</span>'
+    if verdict == "check_failed":
+        code = status.get("http_status")
+        suffix = f" (HTTP {int(code)})" if isinstance(code, int) else ""
+        return f'<span class="badge-failed">⚠ Check failed{escape(suffix)}</span>'
+    if verdict == "no_csv":
+        return ""
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -281,18 +332,24 @@ def render_html(events=None, exclusions=None) -> str:
     # Weglot translation CSVs — one entry per language. Sourced by
     # tools.weglot.csv_export from Fidelo per-locale data; mirrored into the
     # CEL repo by the fidelo-sync workflow's "Mirror Weglot CSVs" step.
+    # Import status badge sourced from tools.weglot.check_import_status.
+    import_status_by_lang = load_import_status()
     for lang in WEGLOT_CSV_LANGUAGES:
         lang_name = LANGUAGE_NAMES.get(lang, lang.upper())
         csv_url = PUBLIC_WEGLOT_CSV_URL_TEMPLATE.format(lang=lang)
         csv_path = WEGLOT_CSV_DIR / f"{lang}.csv"
         ts = file_mtime_iso(csv_path)
         note = f"Last updated on {escape(iso_to_sd(ts))}" if ts else "Not yet generated"
+        badge = render_import_badge(import_status_by_lang.get(lang))
         parts.append("    <li>")
         parts.append('      <div class="file-row">')
         parts.append(f'        <span class="file-name">Weglot translations — {escape(lang_name)} ({lang}.csv)</span>')
         parts.append(f'        <a href="{escape(csv_url)}" download>Download</a>')
         parts.append("      </div>")
-        parts.append(f'      <p class="subtle">{note}</p>')
+        if badge:
+            parts.append(f'      <p class="subtle">{note} {badge}</p>')
+        else:
+            parts.append(f'      <p class="subtle">{note}</p>')
         parts.append("    </li>")
 
     parts.append("  </ul>")
