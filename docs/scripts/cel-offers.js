@@ -46,9 +46,20 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.3.1
+ * Version: 1.3.2
  * Last update: 2026-04-30
  *
+ * v1.3.2 (2026-04-30): Section 1 — fix relative regions-fetch URL that
+ *                      404'd on www.englishcollege.com. The script is
+ *                      hosted at cel.englishcollege.com but loaded into
+ *                      pages on www.englishcollege.com; the relative
+ *                      path /scripts/cel-offers-regions.json resolved
+ *                      against the page origin (www) and 404'd, so the
+ *                      runtime regions JSON was never applied (silent
+ *                      fallback to the hardcoded baseline). Now
+ *                      hardcoded to the absolute cel.englishcollege.com
+ *                      URL — GitHub Pages already sends ACAO:* so the
+ *                      cross-origin fetch works.
  * v1.3.1 (2026-04-30): Section 4 — fix latent Temporal Dead Zone in
  *                      tick()'s clearInterval(loop) reference. The first
  *                      synchronous tick() runs before `const loop = setInterval(...)`
@@ -85,13 +96,20 @@
   /* CONFIG is the active region → countries map. Initial value is the
    * hardcoded fallback (preserves v1.2.0 behavior if the runtime JSON
    * fetch fails or hasn't resolved yet). At boot we attempt to fetch
-   * /scripts/cel-offers-regions.json — if it returns a valid shape,
-   * CONFIG is overwritten and runFilter() runs again so the fresh
-   * values take effect on the next paint.
+   * https://cel.englishcollege.com/scripts/cel-offers-regions.json — if
+   * it returns a valid shape, CONFIG is overwritten and runFilter() runs
+   * again so the fresh values take effect on the next paint.
+   *
+   * The URL must be ABSOLUTE (cross-origin to cel.englishcollege.com)
+   * because this script is loaded onto www.englishcollege.com pages —
+   * a relative path resolves to www.englishcollege.com and 404s. The
+   * GitHub Pages CDN already sends `Access-Control-Allow-Origin: *`
+   * for all assets under /scripts/, so the cross-origin fetch works.
    *
    * The JSON file is written by the admin dashboard's Settings tab via
    * .github/workflows/offers-edit-regions.yml — see rules/cel-offers-deploy.md.
    */
+  const REGIONS_URL = 'https://cel.englishcollege.com/scripts/cel-offers-regions.json';
   const FALLBACK_CONFIG = {
     'offers': {
       countries: "ES,IT,NL,SE,FI,AT,BE,PT,AD,DK,DE,GR,IS,LI,LU,NO,SM,TR,AZ,BY,GE,KZ,KG,AM,MD,RU,TJ,UA,AL,BA,BG,HR,CY,CZ,EE,LV,LT,ME,MK,PL,RO,RS,SK,SI,TW,CN,KR,VN,TH,BD,KH,ID,MY,MN,BH,EG,IR,IQ,AE,JO,KW,SA,LB,OM,QA,YE,DZ,AR,BZ,BO,CL,CO,CR,CU,DO,EC,SV,GT,HT,HN,JM,MX,NI,PA,PY,PE,UY,VE,BR,JP",
@@ -142,7 +160,7 @@
 
   // Try to load latest regions JSON. Failure is silent — fallback is already in place.
   try {
-    fetch('/scripts/cel-offers-regions.json', { cache: 'no-cache' })
+    fetch(REGIONS_URL, { cache: 'no-cache' })
       .then(function(r) { return r && r.ok ? r.json() : null; })
       .then(function(json) {
         if (applyFetchedRegions(json)) {
