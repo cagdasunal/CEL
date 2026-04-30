@@ -53,5 +53,6 @@ jobs:
             echo "Nothing to commit"
           else
             git commit -m "chore(offers): edit region ${{ inputs.region }}"
+            git pull --rebase --autostash
             git push
           fi
