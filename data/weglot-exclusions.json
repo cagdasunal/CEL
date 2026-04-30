@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-30T11:02:34.741472+00:00",
+  "last_sync": "2026-04-30T12:19:49.831075+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4378,6 +4378,21 @@
       "source": "api",
       "url_path": "/post/is-san-diego-safe-for-international-students",
       "added_at": "2026-04-29T11:17:25.102251+00:00"
+    },
+    "esta-oder-studentenvisum-usa": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/esta-oder-studentenvisum-usa",
+      "added_at": "2026-04-30T12:19:49.830973+00:00"
     }
   }
 }

@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-30T05:24:01.535755-07:00",
+      "detail": {
+        "slugs": [
+          "esta-oder-studentenvisum-usa"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-30T04:02:34.826185-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-29T16:42:51.092129-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-29T16:13:04.482949-07:00",
       "detail": {}
     }
   ]
