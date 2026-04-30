@@ -12,9 +12,7 @@ No module-level I/O.
 """
 from __future__ import annotations
 
-import base64
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -297,7 +295,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
     var COUNTRY_NAME_MAP = __COUNTRY_NAME_MAP_JSON__;
-    var __PAT_B64        = "__EMBEDDED_PAT_VALUE__";
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -314,23 +311,12 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
 
     // ── GitHub PAT helpers ────────────────────────────────────────────
     function getPat() {
-      if (__PAT_B64) {
-        try { return atob(__PAT_B64); } catch (_) { /* fall through */ }
-      }
       try { return localStorage.getItem(PAT_KEY) || ''; } catch (_) { return ''; }
-    }
-    function setPat(v) { try { localStorage.setItem(PAT_KEY, v); } catch (_) {} }
-    function clearPat() { try { localStorage.removeItem(PAT_KEY); } catch (_) {} }
-
-    function refreshBanner() {
-      var banner = document.getElementById('pat-banner');
-      if (!banner) return;
-      banner.classList.toggle('hidden', !!getPat());
     }
 
     function dispatchWorkflow(workflow, inputs) {
       var pat = getPat();
-      if (!pat) return Promise.reject(new Error('GitHub PAT not set. Open the banner above to add it.'));
+      if (!pat) return Promise.reject(new Error('Editor not configured — contact the site administrator.'));
       var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
                 '/actions/workflows/' + workflow + '/dispatches';
       return fetch(url, {
@@ -401,20 +387,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
       }
       return tick();
     }
-
-    // ── PAT banner controller ─────────────────────────────────────────
-    document.addEventListener('click', function(ev) {
-      if (ev.target.id === 'pat-save') {
-        var input = document.getElementById('pat-input');
-        var v = (input.value || '').trim();
-        if (v) { setPat(v); refreshBanner(); input.value = ''; }
-      } else if (ev.target.id === 'pat-clear') {
-        clearPat(); refreshBanner();
-      } else if (ev.target.id === 'pat-toggle') {
-        var b = document.getElementById('pat-banner');
-        if (b) b.classList.toggle('hidden');
-      }
-    });
 
     // ── View toggle (per-row details) ─────────────────────────────────
     document.addEventListener('click', function(ev) {
@@ -644,7 +616,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
 
     document.querySelectorAll('.region-block').forEach(function(b) { syncRegionUI(b); });
 
-    refreshBanner();
   })();
   </script>"""
     tab_script = tab_script.replace(
@@ -654,16 +625,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         .replace(" ", "\\u2028")
         .replace(" ", "\\u2029"),
     )
-    embedded_pat = os.environ.get("OFFERS_GITHUB_PAT", "")
-    # Base64-encode the PAT so GitHub Push Protection's secret scanner
-    # doesn't detect the github_pat_ prefix when the generated HTML is
-    # committed back to the repo. JS decodes via atob() at runtime.
-    embedded_pat_b64 = (
-        base64.b64encode(embedded_pat.encode("utf-8")).decode("ascii")
-        if embedded_pat else ""
-    )
-    tab_script = tab_script.replace("__EMBEDDED_PAT_VALUE__", embedded_pat_b64)
-
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
     parts.append('<html lang="en">')
@@ -702,11 +663,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .extend-edit{display:flex;align-items:center;gap:8px;flex-wrap:wrap}")
     parts.append("    .extend-input{width:80px;padding:6px;font-family:inherit;font-size:0.95em;border:1px solid #b8a98c;border-radius:4px;background:#fff}")
     parts.append("    .date-primary{font-variant-numeric:tabular-nums}")
-    parts.append("    .pat-banner{margin:16px 0;padding:12px 16px;background:#F9F1DF;border:1px solid #d9cfb9;border-radius:6px}")
-    parts.append("    .pat-banner.hidden{display:none}")
-    parts.append("    .pat-input{width:100%;max-width:520px;padding:8px;font-family:ui-monospace,monospace;font-size:0.85em;border:1px solid #b8a98c;border-radius:4px;margin-top:6px;background:#fff}")
-    parts.append("    .pat-actions{margin-top:8px;display:flex;gap:8px}")
-    parts.append("    .pat-toggle{margin:8px 0;font-size:0.85em;background:none;border:1px dashed #b8a98c;border-radius:4px;padding:4px 10px;cursor:pointer}")
+
     parts.append("    .country-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;min-height:32px}")
     parts.append("    .country-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 10px;background:#fff;border:1px solid #b8a98c;border-radius:16px;font-size:0.9em}")
     parts.append("    .chip-flag{font-family:ui-monospace,monospace;font-size:0.78em;color:#6b5f52;font-weight:600}")
@@ -717,9 +674,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    .country-add-btn{padding:6px 14px;border:1px solid #6b5f52;border-radius:4px;background:#fff;color:#3a342b;cursor:pointer;font-weight:500}")
     parts.append("    .country-add-btn:hover{background:#f0e8d4}")
     parts.append("    .offers-tabs{margin-bottom:16px}")
-    parts.append("    .pat-banner-heading{margin:0 0 4px 0;font-weight:600}")
-    parts.append("    .pat-banner-body{margin:0}")
-    parts.append("    .pat-clear-btn{background:#f0d4d4;border-color:#a54040}")
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
@@ -739,24 +693,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     # Status card
     last_sync_display = _iso_to_display(last_ts) if last_ts else "Never"
     parts.append(f'    {render_sync_status_card(status_label, last_sync_display, is_ok=is_ok)}')
-
-    # GitHub PAT banner — only shown when no PAT is embedded at build time
-    if not embedded_pat:
-        parts.append('    <button id="pat-toggle" type="button" class="pat-toggle">⚙ GitHub credentials</button>')
-        parts.append('    <section id="pat-banner" class="pat-banner hidden">')
-        parts.append('      <p class="pat-banner-heading">GitHub PAT required for editing</p>')
-        parts.append('      <p class="subtle pat-banner-body">')
-        parts.append('        Inline edits dispatch to a GitHub Action. Generate a fine-grained PAT at ')
-        parts.append('        <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener">github.com/settings/personal-access-tokens</a>')
-        parts.append('        with <strong>Actions: Read &amp; Write</strong> on the <code>cagdasunal/CEL</code> repo.')
-        parts.append('        Stored locally in your browser only.')
-        parts.append('      </p>')
-        parts.append('      <input id="pat-input" class="pat-input" type="password" placeholder="github_pat_…" autocomplete="off">')
-        parts.append('      <div class="pat-actions">')
-        parts.append('        <button id="pat-save" type="button" class="region-save">Save token</button>')
-        parts.append('        <button id="pat-clear" type="button" class="region-save pat-clear-btn">Forget token</button>')
-        parts.append('      </div>')
-        parts.append('    </section>')
 
     # In-page tab nav
     parts.append('    <nav class="offers-tabs">')
