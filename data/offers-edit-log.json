@@ -7,6 +7,14 @@
       "field": "auto-extend-days",
       "value": 15,
       "publish_errors": []
+    },
+    {
+      "ts": "2026-04-30T09:51:35.929385+00:00",
+      "kind": "edit_ok",
+      "item_id": "69c502d8f9078e98d31a6545",
+      "field": "auto-extend-days",
+      "value": 14,
+      "publish_errors": []
     }
   ]
 }
