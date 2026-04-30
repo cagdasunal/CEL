@@ -68,6 +68,10 @@ PUBLIC_WEGLOT_MANIFEST_URL = "https://cel.englishcollege.com/admin/weglot-import
 WEGLOT_CSV_LANGUAGES = ("de", "fr", "es", "it", "ja", "ko", "pt", "ar")
 WEGLOT_CSV_DIR = EXTERNAL_REPO_ROOT / "admin" / "weglot-imports"
 WEGLOT_IMPORT_STATUS_FILE = WEGLOT_CSV_DIR / "import-status.json"
+PUBLIC_WEGLOT_ZIP_URL = "https://cel.englishcollege.com/admin/weglot-imports/weglot-imports.zip"
+PUBLIC_WEGLOT_MATRIX_URL = "https://cel.englishcollege.com/admin/weglot-imports/all-languages.csv"
+WEGLOT_ZIP_FILE = WEGLOT_CSV_DIR / "weglot-imports.zip"
+WEGLOT_MATRIX_FILE = WEGLOT_CSV_DIR / "all-languages.csv"
 
 
 # ---------------------------------------------------------------------------
@@ -327,6 +331,33 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append(f'        <a href="{escape(PUBLIC_LLMS_URL)}">View</a>')
     parts.append("      </div>")
     parts.append(f'      <p class="subtle">{_file_note("llms.txt")}</p>')
+    parts.append("    </li>")
+
+    # Weglot bulk download — one-click ZIP containing all 8 per-language CSVs.
+    # Reduces the operator round-trip from 8 downloads to 1. Upload step still
+    # requires 8 dashboard imports because Weglot's CSV format is one
+    # word_from/word_to pair per file (no language column).
+    parts.append("    <li>")
+    parts.append('      <div class="file-row">')
+    parts.append('        <span class="file-name">Weglot translations — Download all (ZIP, all 8 languages)</span>')
+    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_ZIP_URL)}" download>Download ZIP</a>')
+    parts.append("      </div>")
+    ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
+    note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
+    parts.append(f'      <p class="subtle">{note_zip} — unzip locally, then import each <code>&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
+    parts.append("    </li>")
+
+    # Operator review matrix — NOT a Weglot import file. Single CSV with columns
+    # word_from, ar, de, es, fr, it, ja, ko, pt for spreadsheet review of all
+    # translations side by side.
+    parts.append("    <li>")
+    parts.append('      <div class="file-row">')
+    parts.append('        <span class="file-name">All-languages review matrix (all-languages.csv)</span>')
+    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_MATRIX_URL)}" download>Download</a>')
+    parts.append("      </div>")
+    ts_matrix = file_mtime_iso(WEGLOT_MATRIX_FILE)
+    note_matrix = f"Last updated on {escape(iso_to_sd(ts_matrix))}" if ts_matrix else "Not yet generated"
+    parts.append(f'      <p class="subtle">{note_matrix} — spreadsheet view (do NOT import into Weglot).</p>')
     parts.append("    </li>")
 
     # Weglot translation CSVs — one entry per language. Sourced by
