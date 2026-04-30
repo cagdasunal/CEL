@@ -202,7 +202,24 @@ def main(argv: list[str] | None = None) -> int:
                 "new_end": new_end,
                 "extend_days": extend_days,
             })
-        except (APIError, NetworkError) as exc:
+        except APIError as exc:
+            print(
+                f"[auto_extend] ERROR patching {item_id}: {exc}",
+                file=sys.stderr,
+            )
+            errors.append({"id": item_id, "message": str(exc)})
+            # Abort immediately on OAuth scope error — retrying remaining items
+            # would produce the same 403 and needlessly inflate the error count.
+            if exc.status_code == 403 and "missing_scopes" in exc.body:
+                print(
+                    "[auto_extend] ABORT: WEBFLOW_API_TOKEN lacks 'cms:write' scope. "
+                    "Regenerate the token in Webflow → Account → API Access with "
+                    "'CMS: Read & Write' enabled, then update the WEBFLOW_API_TOKEN "
+                    "secret in the GitHub repo settings.",
+                    file=sys.stderr,
+                )
+                break
+        except NetworkError as exc:
             print(
                 f"[auto_extend] ERROR patching {item_id}: {exc}",
                 file=sys.stderr,
