@@ -622,8 +622,8 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         "__COUNTRY_NAME_MAP_JSON__",
         json.dumps(COUNTRY_NAMES, ensure_ascii=False)
         .replace("</", "<\\/")
-        .replace(" ", "\\u2028")
-        .replace(" ", "\\u2029"),
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029"),
     )
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
