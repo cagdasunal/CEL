@@ -1,6 +1,16 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-04-30T09:12:14.232496-07:00",
+      "detail": {
+        "slugs": [
+          "welches-englischniveau-sprachreise",
+          "studiare-allestero-benefici-globali-carriere"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-04-30T07:27:00.775117-07:00",
       "detail": {}
@@ -47,11 +57,6 @@
     {
       "kind": "no_change",
       "ts": "2026-04-29T21:07:05.371029-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-29T17:10:07.965006-07:00",
       "detail": {}
     }
   ]

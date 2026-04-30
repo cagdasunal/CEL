@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-04-30T14:27:00.617292+00:00",
+  "last_sync": "2026-04-30T16:06:16.679414+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4393,6 +4393,36 @@
       "source": "api",
       "url_path": "/post/esta-oder-studentenvisum-usa",
       "added_at": "2026-04-30T12:19:49.830973+00:00"
+    },
+    "welches-englischniveau-sprachreise": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/welches-englischniveau-sprachreise",
+      "added_at": "2026-04-30T16:06:16.679311+00:00"
+    },
+    "studiare-allestero-benefici-globali-carriere": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/studiare-allestero-benefici-globali-carriere",
+      "added_at": "2026-04-30T16:06:16.679338+00:00"
     }
   }
 }
