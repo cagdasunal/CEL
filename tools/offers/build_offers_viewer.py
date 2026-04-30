@@ -293,7 +293,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     var ITEM_WORKFLOW    = 'offers-edit-item.yml';
     var REGIONS_WORKFLOW = 'offers-edit-regions.yml';
     var COUNTRY_NAME_MAP = __COUNTRY_NAME_MAP_JSON__;
-    var DISPATCH_URL     = '__DISPATCH_PROXY_URL__';
+    var DISPATCH_URL     = __DISPATCH_PROXY_URL__;
 
     function applyTab() {
       var hash = (location.hash || '#list').slice(1);
@@ -618,7 +618,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     # Cloudflare Worker URL (PAT-holding proxy). Read at build time from env.
     # Empty when unset \u2192 Save buttons fail with a clear "not configured" message.
     dispatch_proxy_url = os.environ.get("OFFERS_DISPATCH_PROXY_URL", "").strip()
-    tab_script = tab_script.replace("__DISPATCH_PROXY_URL__", escape(dispatch_proxy_url, quote=True))
+    tab_script = tab_script.replace("__DISPATCH_PROXY_URL__", json.dumps(dispatch_proxy_url))
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
     parts.append('<html lang="en">')
