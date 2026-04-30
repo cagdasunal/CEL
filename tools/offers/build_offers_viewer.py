@@ -28,6 +28,7 @@ from tools.dashboard import (
     write_external_css,
     write_shell_html,
 )
+from tools.offers._log import read_events
 from tools.offers._token_helper import APIError, NetworkError, get_api_token
 from tools.offers.api import list_all_offers
 from tools.offers.regions import REGIONS
@@ -121,15 +122,14 @@ def _relative_phrase(end_iso: str | None, now: datetime) -> str:
 
 
 def _load_last_extend_ts() -> str | None:
-    if not LOG_FILE.exists():
-        return None
-    try:
-        data = json.loads(LOG_FILE.read_text(encoding="utf-8"))
-        events = data.get("events", [])
-        if events:
-            return events[-1].get("ts")
-    except (json.JSONDecodeError, OSError):
-        pass
+    """Return the most recent event timestamp from the auto-extend log.
+
+    Reader is backward-compatible (handles both JSONL and legacy JSON-object
+    formats). Tracker 077 M1.
+    """
+    events = read_events(LOG_FILE)
+    if events:
+        return events[-1].get("ts")
     return None
 
 
@@ -757,12 +757,7 @@ def write_offers_page(items: list[dict] | None = None) -> None:
             raise RuntimeError("WEBFLOW_API_TOKEN unset")
         items = list_all_offers(token)
 
-    log_events: list = []
-    if LOG_FILE.exists():
-        try:
-            log_events = json.loads(LOG_FILE.read_text(encoding="utf-8")).get("events", [])
-        except (json.JSONDecodeError, OSError):
-            pass
+    log_events: list = read_events(LOG_FILE)
 
     write_external_css(EXTERNAL_REPO_ROOT)
     write_shell_html(EXTERNAL_REPO_ROOT)
@@ -822,12 +817,7 @@ def main() -> int:
         OUTPUT_FILE.write_text(fallback, encoding="utf-8")
         return 1
 
-    log_events: list = []
-    if LOG_FILE.exists():
-        try:
-            log_events = json.loads(LOG_FILE.read_text(encoding="utf-8")).get("events", [])
-        except (json.JSONDecodeError, OSError):
-            pass
+    log_events: list = read_events(LOG_FILE)
 
     write_external_css(EXTERNAL_REPO_ROOT)
     write_shell_html(EXTERNAL_REPO_ROOT)

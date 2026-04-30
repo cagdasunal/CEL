@@ -17,12 +17,12 @@ Behavior:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from tools.offers._log import append_event
 from tools.offers._token_helper import APIError, NetworkError, api_request, get_api_token
 from tools.offers.api import (
     OFFERS_COLLECTION_ID,
@@ -31,7 +31,6 @@ from tools.offers.api import (
 )
 
 LOG_FILE = Path(__file__).resolve().parents[2] / "data" / "offers-edit-log.json"
-MAX_LOG_EVENTS = 500
 
 
 def _patch_auto_extend(token: str, item_id: str, days: int) -> dict:
@@ -45,20 +44,14 @@ def _patch_auto_extend(token: str, item_id: str, days: int) -> dict:
 
 
 def _append_log(event: dict) -> None:
-    if LOG_FILE.exists():
-        try:
-            existing = json.loads(LOG_FILE.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            existing = {"events": []}
-    else:
-        existing = {"events": []}
-    events = existing.get("events", [])
-    events.append(event)
-    if len(events) > MAX_LOG_EVENTS:
-        events = events[-MAX_LOG_EVENTS:]
-    existing["events"] = events
-    LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    LOG_FILE.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    """Append one event to LOG_FILE in JSONL format.
+
+    Truncation (MAX_LOG_EVENTS cap) is no longer done here — workflows
+    truncate via `tail -n 500` after every commit. Pure-append writes are
+    conflict-free during git rebase, which prevents push races. See
+    tracker 077 M1.
+    """
+    append_event(LOG_FILE, event)
 
 
 def main(argv: list[str] | None = None) -> int:

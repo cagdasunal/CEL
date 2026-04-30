@@ -11,11 +11,11 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from tools.offers._log import append_event
 from tools.offers._token_helper import APIError, NetworkError, get_api_token
 from tools.offers.api import list_all_offers, patch_end_date, publish_items
 
@@ -26,7 +26,6 @@ from tools.offers.api import list_all_offers, patch_end_date, publish_items
 DEFAULT_EXTEND_DAYS = 14
 DEFAULT_THRESHOLD_HOURS = 24
 LOG_FILE = Path(__file__).resolve().parents[2] / "data" / "offers-extend-log.json"
-MAX_LOG_EVENTS = 200
 
 
 # ---------------------------------------------------------------------------
@@ -97,24 +96,9 @@ def _should_extend(
 # ---------------------------------------------------------------------------
 
 def _append_log(log_path: Path, event: dict) -> None:
-    """Load existing log, append event, cap at MAX_LOG_EVENTS, write back."""
-    if log_path.exists():
-        try:
-            existing = json.loads(log_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            existing = {"events": []}
-    else:
-        existing = {"events": []}
-
-    events = existing.get("events", [])
-    events.append(event)
-    # Cap oldest first
-    if len(events) > MAX_LOG_EVENTS:
-        events = events[-MAX_LOG_EVENTS:]
-    existing["events"] = events
-
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    """Append one event in JSONL format. Truncation is now done in the
+    workflow via `tail -n N` (see offers-auto-extend.yml). See tracker 077 M1."""
+    append_event(log_path, event)
 
 
 # ---------------------------------------------------------------------------

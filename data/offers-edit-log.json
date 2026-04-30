@@ -1,51 +1,6 @@
-{
-  "events": [
-    {
-      "ts": "2026-04-30T09:51:00.219390+00:00",
-      "kind": "edit_ok",
-      "item_id": "69c502d8f9078e98d31a6545",
-      "field": "auto-extend-days",
-      "value": 15,
-      "publish_errors": []
-    },
-    {
-      "ts": "2026-04-30T09:51:35.929385+00:00",
-      "kind": "edit_ok",
-      "item_id": "69c502d8f9078e98d31a6545",
-      "field": "auto-extend-days",
-      "value": 14,
-      "publish_errors": []
-    },
-    {
-      "ts": "2026-04-30T09:52:47.255573+00:00",
-      "kind": "region_edit",
-      "region": "losangeles",
-      "countries": "AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE",
-      "previous": "AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE"
-    },
-    {
-      "ts": "2026-04-30T09:53:58.167826+00:00",
-      "kind": "edit_error",
-      "item_id": "NONEXISTENT_E2_2026-04-30",
-      "field": "auto-extend-days",
-      "value": 14,
-      "error": "HTTP 400 from https://api.webflow.com/v2/collections/691c26d07c581dbd27e75b64/items/NONEXISTENT_E2_2026-04-30: {\"message\":\"Validation Error: Provided IDs are invalid: Item ID\",\"code\":\"validation_error\",\"externalReference\":null,\"details\":[]}"
-    },
-    {
-      "ts": "2026-04-30T09:55:11.713505+00:00",
-      "kind": "edit_ok",
-      "item_id": "69c502d8f9078e98d31a6545",
-      "field": "auto-extend-days",
-      "value": 14,
-      "publish_errors": []
-    },
-    {
-      "ts": "2026-04-30T10:02:15.639039+00:00",
-      "kind": "edit_ok",
-      "item_id": "69c502d8f9078e98d31a6545",
-      "field": "auto-extend-days",
-      "value": 15,
-      "publish_errors": []
-    }
-  ]
-}
+{"ts":"2026-04-30T09:51:00.219390+00:00","kind":"edit_ok","item_id":"69c502d8f9078e98d31a6545","field":"auto-extend-days","value":15,"publish_errors":[]}
+{"ts":"2026-04-30T09:51:35.929385+00:00","kind":"edit_ok","item_id":"69c502d8f9078e98d31a6545","field":"auto-extend-days","value":14,"publish_errors":[]}
+{"ts":"2026-04-30T09:52:47.255573+00:00","kind":"region_edit","region":"losangeles","countries":"AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE","previous":"AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE"}
+{"ts":"2026-04-30T09:53:58.167826+00:00","kind":"edit_error","item_id":"NONEXISTENT_E2_2026-04-30","field":"auto-extend-days","value":14,"error":"HTTP 400 from https://api.webflow.com/v2/collections/691c26d07c581dbd27e75b64/items/NONEXISTENT_E2_2026-04-30: {\"message\":\"Validation Error: Provided IDs are invalid: Item ID\",\"code\":\"validation_error\",\"externalReference\":null,\"details\":[]}"}
+{"ts":"2026-04-30T09:55:11.713505+00:00","kind":"edit_ok","item_id":"69c502d8f9078e98d31a6545","field":"auto-extend-days","value":14,"publish_errors":[]}
+{"ts":"2026-04-30T10:02:15.639039+00:00","kind":"edit_ok","item_id":"69c502d8f9078e98d31a6545","field":"auto-extend-days","value":15,"publish_errors":[]}

@@ -40,13 +40,53 @@ jobs:
         run: |
           grep -q "PLAN: 0 items" /tmp/post-verify.log
 
+      - name: Truncate logs (race-free — single-instance cron)
+        if: always()
+        run: |
+          # The auto-extend workflow is single-instance (concurrency:
+          # offers-auto-extend, cancel-in-progress: false; cron + manual
+          # dispatch only). It is the ONLY workflow that truncates the
+          # JSONL log files — concurrent dashboard workflows skip
+          # truncation to avoid rebase conflicts on overlapping diffs.
+          # Tracker 077 M1.
+          for f in data/offers-edit-log.json data/offers-extend-log.json; do
+            if [ ! -f "$f" ]; then continue; fi
+            case "$f" in
+              data/offers-edit-log.json)   keep=500 ;;
+              data/offers-extend-log.json) keep=200 ;;
+            esac
+            tail -n "$keep" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+          done
+
       - name: Commit log
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git status --porcelain data/offers-extend-log.json | grep -q .; then
-            git add data/offers-extend-log.json
-            git commit -m "chore(offers): auto-extend $(date -u +%Y-%m-%d)"
-            git push
+          git add data/offers-extend-log.json data/offers-edit-log.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no log changes to commit"
+            exit 0
           fi
+          git commit -m "chore(offers): auto-extend $(date -u +%Y-%m-%d)"
+          # 5-attempt push retry with exponential backoff. See offers-edit-item.yml
+          # for the rationale. Tracker 077 M2.
+          n=0
+          until [ $n -ge 5 ]; do
+            if ! git pull --rebase; then
+              git rebase --abort 2>/dev/null || true
+              echo "rebase failed (attempt $((n+1))) — retrying"
+              n=$((n+1))
+              sleep $((n * n))
+              continue
+            fi
+            if git push; then
+              echo "push succeeded on attempt $((n+1))"
+              exit 0
+            fi
+            n=$((n+1))
+            echo "push failed on attempt $n, sleeping $((n * n))s"
+            sleep $((n * n))
+          done
+          echo "ERROR: push failed after 5 attempts"
+          exit 1

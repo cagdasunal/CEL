@@ -23,6 +23,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from tools.offers._log import append_event
+
 VALID_REGIONS = {"offers", "sandiego", "losangeles", "vancouver", "usa", "canada"}
 VALID_CSV_RE = re.compile(r"^[A-Z]{2}(,[A-Z]{2})*$")
 
@@ -30,7 +32,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_FILE = REPO_ROOT / "data" / "cel-offers-regions.json"
 PUBLIC_FILE = REPO_ROOT / "docs" / "scripts" / "cel-offers-regions.json"
 LOG_FILE = REPO_ROOT / "data" / "offers-edit-log.json"
-MAX_LOG_EVENTS = 500
 
 
 def _load(path: Path) -> dict:
@@ -48,15 +49,8 @@ def _save(path: Path, data: dict) -> None:
 
 
 def _append_log(event: dict) -> None:
-    existing = _load(LOG_FILE)
-    if not isinstance(existing, dict):
-        existing = {}
-    events = existing.get("events", [])
-    events.append(event)
-    if len(events) > MAX_LOG_EVENTS:
-        events = events[-MAX_LOG_EVENTS:]
-    existing["events"] = events
-    _save(LOG_FILE, existing)
+    """Append one event to LOG_FILE in JSONL format. See tracker 077 M1."""
+    append_event(LOG_FILE, event)
 
 
 def main(argv: list[str] | None = None) -> int:

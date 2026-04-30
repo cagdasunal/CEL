@@ -51,8 +51,33 @@ jobs:
           git add data/cel-offers-regions.json docs/scripts/cel-offers-regions.json data/offers-edit-log.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Nothing to commit"
-          else
-            git commit -m "chore(offers): edit region ${{ inputs.region }}"
-            git pull --rebase --autostash
-            git push
+            exit 0
           fi
+          git commit -m "chore(offers): edit region ${{ inputs.region }}"
+          # 5-attempt push retry with exponential backoff. See offers-edit-item.yml
+          # for the rationale (JSONL append-only log + rebase + push).
+          # NOTE: cel-offers-regions.json is JSON-object (not JSONL), so two
+          # parallel region edits to DIFFERENT regions could theoretically
+          # conflict on the surrounding {} — but the workflow concurrency group
+          # `offers-edit-regions` serializes ALL region edits, so this never
+          # actually fires in production. Retry covers cross-workflow races
+          # against offers-edit-item.yml and offers-auto-extend.yml.
+          n=0
+          until [ $n -ge 5 ]; do
+            if ! git pull --rebase; then
+              git rebase --abort 2>/dev/null || true
+              echo "rebase failed (attempt $((n+1))) — retrying"
+              n=$((n+1))
+              sleep $((n * n))
+              continue
+            fi
+            if git push; then
+              echo "push succeeded on attempt $((n+1))"
+              exit 0
+            fi
+            n=$((n+1))
+            echo "push failed on attempt $n, sleeping $((n * n))s"
+            sleep $((n * n))
+          done
+          echo "ERROR: push failed after 5 attempts"
+          exit 1
