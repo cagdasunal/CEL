@@ -26,7 +26,10 @@
   </div>
   <script>
   (function () {
-    const HASH = "e8ff7132aa00ae3886b10e2608498d040462fefe392df4aebfc6ffef024236be";
+    const HASHES = [
+      "e8ff7132aa00ae3886b10e2608498d040462fefe392df4aebfc6ffef024236be",
+      "a737b18142ef83c4d636dd2d4ada318fb378b165adb7a56f5b5c0f2d1363435a"
+    ];
     const form = document.getElementById('gate-form');
     const input = document.getElementById('gate-pw');
     const errEl = document.getElementById('gate-err');
@@ -51,7 +54,7 @@
       const pw = input.value;
       if (!pw) return;
       crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(function (buf) {
-        if (toHex(buf) === HASH) {
+        if (HASHES.includes(toHex(buf))) {
           try { sessionStorage.setItem('cel_unlocked', String(Date.now())); } catch (_) {}
           location.replace(getReturn());
         } else {
