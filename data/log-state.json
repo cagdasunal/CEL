@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-01T00:15:19.484544-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-04-30T21:32:05.454588-07:00",
       "detail": {}
     },
@@ -49,11 +54,6 @@
           "studiare-allestero-benefici-globali-carriere"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-04-30T07:27:00.775117-07:00",
-      "detail": {}
     }
   ]
 }
