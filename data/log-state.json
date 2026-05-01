@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-01T12:42:13.830084-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-01T11:14:02.018024-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "ou-vivent-etudiants-vancouver"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-01T00:15:19.484544-07:00",
-      "detail": {}
     }
   ]
 }
