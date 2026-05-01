@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-01T07:15:19.363049+00:00",
+  "last_sync": "2026-05-01T09:12:53.992514+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4423,6 +4423,21 @@
       "source": "api",
       "url_path": "/post/studiare-allestero-benefici-globali-carriere",
       "added_at": "2026-04-30T16:06:16.679338+00:00"
+    },
+    "ou-vivent-etudiants-vancouver": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/ou-vivent-etudiants-vancouver",
+      "added_at": "2026-05-01T09:12:53.992431+00:00"
     }
   }
 }

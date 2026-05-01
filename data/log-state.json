@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-01T02:17:04.367926-07:00",
+      "detail": {
+        "slugs": [
+          "ou-vivent-etudiants-vancouver"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-01T00:15:19.484544-07:00",
       "detail": {}
@@ -44,16 +53,6 @@
       "kind": "no_change",
       "ts": "2026-04-30T10:40:47.758792-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-04-30T09:12:14.232496-07:00",
-      "detail": {
-        "slugs": [
-          "welches-englischniveau-sprachreise",
-          "studiare-allestero-benefici-globali-carriere"
-        ]
-      }
     }
   ]
 }
