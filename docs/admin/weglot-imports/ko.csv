@@ -1,14 +1,32 @@
 id;language_from;language_to;word_from;word_to;type
 ;en;ko;"1 teacher per student";"학생 1명당 교사 1명";Text
+;en;ko;"10 - 20 min. by bus to CEL";"CEL까지10- 20분";Text
+;en;ko;"10 min. walk to CEL";"CEL까지 도보 10분";Text
+;en;ko;"16 min. walk to CEL";"CEL까지 도보 16분";Text
 ;en;ko;"16+ years";"16세 이상";Text
 ;en;ko;"18 + years";"18세 이상";Text
+;en;ko;"20 min. by bus to CEL";"CEL까지 20분";Text
+;en;ko;"25 min. by bus to CEL";"CEL까지 25분";Text
+;en;ko;"25 min. walk to CEL";"CEL까지 도보 25분";Text
+;en;ko;"30 - 45 min. by bus to CEL";"CEL까지 30-45분";Text
+;en;ko;"30 - 75 min. by bus to CEL";"CEL까지 버스 30-75분";Text
+;en;ko;"30 Min. by Bus to CEL";"CEL까지 30분";Text
+;en;ko;"30 min. by bus to CEL";"CEL까지 30분";Text
+;en;ko;"30 min. walk to CEL";"CEL까지 도보 30분";Text
+;en;ko;"30-75 min. by bus to CEL";"CEL까지 버스로 30-75분";Text
+;en;ko;"30-75 min. by bus to EC";"EC까지 버스 30-75분";Text
+;en;ko;"35 min. by bus to CEL";"CEL까지 버스로 35분";Text
 ;en;ko;"4 hours of Surfing per Week";"서핑수업 4시간/주";Text
 ;en;ko;"4 sessions/year";"연간 4회 세션";Text
 ;en;ko;"Add a highlight to your CV";"이력서에 도움되는 경험 쌓기";Text
 ;en;ko;"Ages 18 and older";"최소 연령: 18세";Text
 ;en;ko;"All levels from Basic to Advanced";"기초부터 고급까지 모든 수준의 강좌";Text
 ;en;ko;"All levels from basic to advanced";"기초부터 고급까지 모든 수준의 강좌";Text
+;en;ko;"Amenities";"편의시설";Text
+;en;ko;"Apartment Amenities";"아파트 내 복합 문화공간";Text
+;en;ko;"Apartment Complex Amenities";"아파트 내 복합 문화공간";Text
 ;en;ko;"Available in different fields";"다양한 분야 체험 가능";Text
+;en;ko;"Breakfast or breakfast & dinner";"아침 또는 아침 & 저녁";Text
 ;en;ko;"Build career-ready skills";"커리어에 필요한 역량 강화";Text
 ;en;ko;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
 ;en;ko;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
@@ -18,30 +36,70 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
 ;en;ko;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
 ;en;ko;"Can be combined with other courses";"다른 수업과 추가하여 학습 가능";Text
+;en;ko;"Check-in";"체크인";Text
+;en;ko;"Cleaning, Bedding, Towels and more";"청소";Text
 ;en;ko;"Designated academic advisor";"추가적인 학업 지원";Text
 ;en;ko;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"오늘날의 글로벌 직장에서 성공하기 위해 AI, 비즈니스 및 경영 분야의 실무 역량을 개발하세요.";Text
+;en;ko;"Distance";"거리";Text
 ;en;ko;"Do good, feel good!";"함께 하면 기쁨이 두 배 !";Text
 ;en;ko;"Elective class";"선택 수업 가능";Text
 ;en;ko;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
 ;en;ko;"Enhance your English while working";"비즈니스 영어 습득하기";Text
+;en;ko;"Free Wi-Fi";"무료 Wi-Fi";Text
+;en;ko;"Free Wi-Fi, Rooftop terrace with BBQ area";"무료 와이파이, 루프탑 테라스와 바비큐 공간";Text
+;en;ko;"Free Wi-Fi, TV per bedroom, full kitchen with dishwasher, no common space";"무료 Wi-Fi, 침실 당 TV, 식기 세척기가 구비된 풀 주방, 공용 공간 없음";Text
+;en;ko;"Free Wi-Fi, full kitchen with dishwasher";"무료 Wi-Fi, 식기 세척기가 구비된 풀 주방";Text
+;en;ko;"From $330 per week";"$330/주 부터";Text
 ;en;ko;"From $350/Week";"From $350/week";Text
 ;en;ko;"From $390/Week";"From $390/week";Text
 ;en;ko;"From $400/Week";"From $400/week";Text
 ;en;ko;"From $460/Week";"From $460/week";Text
 ;en;ko;"From $550/Week";"From $550/week";Text
 ;en;ko;"From $999,999/Week";"From $999,999/week";Text
+;en;ko;"From CA$240 per week";"CA$240 /주 부터";Text
+;en;ko;"From CA$350 per week";"CA$350 /주 부터";Text
+;en;ko;"From CA$430 per week";"CA$430 /주 부터";Text
+;en;ko;"From CA$440 per week";"CA$440 /주 부터";Text
+;en;ko;"From CA$475 per week";"CA$475 /주 부터";Text
+;en;ko;"From CA$580 per week";"CA$580 /주 부터";Text
 ;en;ko;"Full focus on your needs";"학생 맞춤화 교육 진행";Text
+;en;ko;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ko;"Gain relevant experience";"영어 실력 향상과 관련된 경험 쌓기";Text
 ;en;ko;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
 ;en;ko;"General English 24 & Surfing";"General English Intensive Plus & Surfing (24 + 4)";Text
+;en;ko;"General Information";"일반 정보";Text
 ;en;ko;"Improve your overall English fluency while developing strong academic communication and writing skills";"영어 전반의 유창성을 향상시키면서 학문적인 의사소통 및 글쓰기 능력을 강화하세요.";Text
+;en;ko;"Location";"위치";Text
+;en;ko;"Managed by CEL";"CEL에 의해 운영됨";Text
+;en;ko;"Max. 35 min by bus to CEL";"CEL까지 버스로 35분";Text
+;en;ko;"Minimum age is 17 years";"최소 연령: 17세";Text
+;en;ko;"Minimum age is 18 years";"최소 연령: 18세";Text
+;en;ko;"Most families provide Wifi";"대부분의 호스트 가족들은 무료 Wi-Fi를 제공";Text
 ;en;ko;"New courses start every Monday";"매주 월요일마다 새로운 강좌 준비";Text
 ;en;ko;"No surf experience required";"서핑 경험 없이도 참여 가능";Text
+;en;ko;"Pool, BBQ area, fitness center, 5 min walk to Santa Monica Beach";"수영장, 바비큐 공간, 피트니스 센터, 산타모니카 해변까지 도보 5분 거리";Text
+;en;ko;"Pool, BBQ, small fitness room, jacuzzi";"완비된 주방, 수영장, 바비큐 시설, 피트니스룸, 자쿠지";Text
+;en;ko;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"완비된 주방, 수영장, 바비큐 시설, 피트니스룸, 자쿠지";Text
 ;en;ko;"Preparation for College & University";"대학 입학 준비를 위한 최상의 프로그램";Text
 ;en;ko;"Prepare for Cambridge exam";"케임브리지 시험 준비";Text
 ;en;ko;"Project based learning";"다양한 프로젝트 기반으로 학습진행";Text
+;en;ko;"Room type";"객실 유형";Text
+;en;ko;"Shared Apartment GEC Viva";"Residence Standard YWCA";Text
+;en;ko;"Shared bathroom";"공용 욕실";Text
+;en;ko;"Single and double rooms";"싱글 및 더블 객실";Text
+;en;ko;"Single and double rooms with a shared bathroom";"공용 욕실이 있는 싱글룸 및 트윈룸";Text
+;en;ko;"Single and double rooms with shared bathroom";"RT SM";Text
+;en;ko;"Single and twin rooms (shared bathroom), studios (private bathroom)";"싱글룸 및 트윈룸 (공용 욕실), 스튜디오 (개인 욕실)";Text
+;en;ko;"Single and twin rooms with a private bathroom";"각 객실에 전용 욕실이 있는 싱글룸 및 트윈룸";Text
+;en;ko;"Single and twin rooms with a shared bathroom";"공용 욕실이 있는 싱글 및 트윈룸";Text
+;en;ko;"Single room";"싱글 객실";Text
+;en;ko;"Single room with a shared bathroom";"공용 욕실이 있는 싱글룸";Text
+;en;ko;"Single, semi-private, twin rooms";"싱글룸, 세미프라이빗룸, 트윈룸";Text
+;en;ko;"Single, twin and quad rooms with shared bathroom";"공용 욕실을 갖춘 싱글, 트윈 및 쿼드 룸";Text
+;en;ko;"Sleeping pods";"수면 포드가 있는 침실";Text
 ;en;ko;"Small classes (avg. 7 students per class)";"소규모 수업 (평균 7명/반)";Text
 ;en;ko;"Small classes (avg. 7 students/class)";"소규모 수업 (평균 7명/반)";Text
+;en;ko;"Small fitness room, study rooms, lounge and rooftop terrace";"작은 피트니스 룸, 스터디룸, 라운지 및 루프탑 테라스";Text
 ;en;ko;"Social, Educational or Conversatory Work";"다양한 의사소통 기회를 통해 높이는 국제적인 시야와 학습";Text
 ;en;ko;"Social, or conversatory Work";"소통하며 국제적 시야와 학습 늘리기";Text
 ;en;ko;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"말하기, 문법, 쓰기, 읽기, 발음, 듣기 등";Text
@@ -49,6 +107,9 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"Specialized preparation for the TOEFL exam";"TOEFL 시험을 위한 전문적인 준비";Text
 ;en;ko;"Spring and fall session intakes";"연 2회 개강";Text
 ;en;ko;"Start your preparation to enter college or university in the U.S. or abroad.";"미국이나 해외의 대학에 진학하기 위한 준비를 시작하세요.";Text
+;en;ko;"Studio (max. 1)";"스튜디오 (최대 1개)";Text
+;en;ko;"Study rooms, Lounge, Rooftop terrace";"스터디룸, 라운지, 루프탑 테라스";Text
+;en;ko;"Study rooms, TV lounge, fitness room, outdoor pool (summer only), sauna";"스터디 룸, TV 라운지, 피트니스룸, 야외 수영장 (여름 한정), 사우나";Text
 ;en;ko;"Surf in one of the top surf spots";"세계적인 서핑 스팟에서 서핑하기";Text
 ;en;ko;"Surfing max 5 per instructor, English max 12 per teacher";"강사당 서핑 최대 5명, 영어 최대 12명";Text
 ;en;ko;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
@@ -56,3 +117,123 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"TOEFL Exam Preparation 28 - GE24 + TOE4";Text
 ;en;ko;"Upper Intermediate and Higher";"Upper intermediate 이상";Text
 ;en;ko;"Upper intermediate and higher";"Upper intermediate 이상";Text
+;en;ko;"✓ 10 minute walk to CEL";"✓ CEL까지 10분 도보";Text
+;en;ko;"✓ 10-minute walk to Santa Monica Pier";"✓ 산타모니카 부두까지 10분 도보";Text
+;en;ko;"✓ 15 minute walk to the beach";"✓ 해변까지 15분 도보";Text
+;en;ko;"✓ 16 minute walk to CEL";"✓ CEL까지 16분 도보";Text
+;en;ko;"✓ 20 minute walk to Venice Beach";"✓ 베니스 해변까지 20분 도보";Text
+;en;ko;"✓ 25 minute walk to CEL";"✓ CEL까지 25분 도보";Text
+;en;ko;"✓ 25 minutes by public transportation to CEL";"✓ 대중교통으로 CEL까지 25분";Text
+;en;ko;"✓ 25 minutes walk to CEL";"✓ CEL까지 도보 25분";Text
+;en;ko;"✓ 30 - 45 minutes by public transportation to CEL";"✓ 대중교통으로 CEL까지 30~45분 소요";Text
+;en;ko;"✓ 30 minute walk to CEL";"✓ CEL까지 30분 도보";Text
+;en;ko;"✓ 30 minutes by public transportation to CEL";"✓ 대중교통으로 CEL까지 30분";Text
+;en;ko;"✓ 35 minutes by public transportation to CEL";"✓ 대중교통으로 CEL까지 35분";Text
+;en;ko;"✓ 5 minute walk to the beach";"✓ 해변까지 5분 도보";Text
+;en;ko;"✓ Air Conditioned";"✓ 에어컨 설치되어있음";Text
+;en;ko;"✓ Average distance to CEL: 25 minutes by public transportation";"✓ CEL까지 대중교통으로 25분";Text
+;en;ko;"✓ Average distance to CEL: 30 to 45 minutes by public transportation";"✓ CEL까지 대중교통으로 30 - 45분";Text
+;en;ko;"✓ Average distance to CEL: 40 to 50 minutes by public transportation";"✓ CEL까지 평균 거리: 대중교통으로 40~50분 소요";Text
+;en;ko;"✓ BBQ Area";"✓ 바비큐장";Text
+;en;ko;"✓ Bedrooms with Sleeping Pods";"✓ 수면 포드가 있는 침실";Text
+;en;ko;"✓ Breakfast and dinner";"✓ General info 1";Text
+;en;ko;"✓ Breakfast or breakfast and dinner";"✓ 아침식사 또는 아침식사와 저녁식사";Text
+;en;ko;"✓ Check-in before 22:00";"✓ 체크인: 22:00 이전";Text
+;en;ko;"✓ Check-in: Saturday 16:00 - 20:00 (after 20:00 Check-In only upon request, late check-in fee of $50 applicable)";"✓ 체크인: 토요일 16:00 - 20:00 (20:00 이후 체크인은 요청 시에만 가능하며, 50달러의 늦은 체크인 요금이 적용됩니다)";Text
+;en;ko;"✓ Check-in: after 16:00";"✓ 체크인: 16:00 이후";Text
+;en;ko;"✓ Check-in: from 15:00 on Saturdays";"✓ 체크인: 토요일 오후 3시부터";Text
+;en;ko;"✓ Check-out: Saturday before 11:00";"✓ 체크아웃: 토요일 오전 11시 이전";Text
+;en;ko;"✓ Cleaning of common areas provided every second week";"✓ 공용 공간 청소가 2주에 한 번 제공됨";Text
+;en;ko;"✓ Cleaning provided every second week";"✓ 2주에 한 번 청소가 제공됨";Text
+;en;ko;"✓ Cleaning provided once a week";"✓ 주간 한 번 청소가 제공됨";Text
+;en;ko;"✓ Close to supermarkets, restaurants and department stores";"✓ 슈퍼마켓, 레스토랑, 백화점과 가까움";Text
+;en;ko;"✓ Conveniently located in Downtown Vancouver";"✓ 밴쿠버 다운타운에 편리하게 위치";Text
+;en;ko;"✓ Different parts of Los Angeles (e.g. Westwood)";"✓ 로스앤젤레스의 다양한 지역 (예: 웨스트우드)";Text
+;en;ko;"✓ Different parts of San Diego";"✓ 샌디에고의 여러 지역";Text
+;en;ko;"✓ Different parts of Santa Monica & Los Angeles";"✓ 산타모니카 & 로스앤젤레스의 다양한 지역";Text
+;en;ko;"✓ Double rooms have two separate beds and can only be booked by two students traveling together";"✓ 이중 객실은 함께 여행하는 두 학생만 예약 가능";Text
+;en;ko;"✓ Each Apartment has 2 bedrooms and 2 bathrooms";"✓ 각 아파트에는 침실 2개와 욕실 2개가 있음";Text
+;en;ko;"✓ Each apartment has 2 bedrooms and one full bath plus one additional toilet";"✓ 각 아파트에는 침실 2개와 욕실 1개, 화장실 1개가 있습니다.";Text
+;en;ko;"✓ Every bedroom has a TV";"✓ 모든 침실에 TV 있음";Text
+;en;ko;"✓ Fairview district of Vancouver";"✓ 밴쿠버 페어뷰 지구";Text
+;en;ko;"✓ Fitness center";"✓ 피트니스 센터";Text
+;en;ko;"✓ Free Wi-Fi";"✓ 무료 와이파이";Text
+;en;ko;"✓ Free Wifi";"✓ 무료 와이파이";Text
+;en;ko;"✓ Fully Equipped Kitchen";"✓ 완비된 주방";Text
+;en;ko;"✓ Fully Equipped Kitchen with Dishwasher";"✓ 식기세척기가 있는 완비된 주방";Text
+;en;ko;"✓ If you are looking for an affordable housing option";"✓ 저렴한 하우징 옵션을 찾고 있는 사람들";Text
+;en;ko;"✓ If you are under 18 years old";"✓ 18세 미만의 학생들";Text
+;en;ko;"✓ If you don‘t mind taking the bus to school";"✓ 학교까지 버스를 타는 것을 꺼리지 않는 학생들";Text
+;en;ko;"✓ If you want to benefit from amenities such as pooland fitness room";"✓ 수영장과 피트니스 룸과 같은 시설을 활용하고 싶은 학생들";Text
+;en;ko;"✓ If you want to interact with other tenants as much as possible";"✓ 다른 세입자들과 최대한 상호작용하고 싶은 학생들";Text
+;en;ko;"✓ If you want to live centrally";"✓ 중심부에 살고 싶다면";Text
+;en;ko;"✓ If you want to live independently";"✓ 독립적으로 살고 싶다면";Text
+;en;ko;"✓ If you want to live independently and make the most of Downtown Vancouver";"✓ 독립적으로 생활하며 밴쿠버 다운타운을 최대한 즐기고 싶다면";Text
+;en;ko;"✓ If you want to live with an American family";"✓ 미국 가족과 함께 생활하고 싶은 학생들";Text
+;en;ko;"✓ If you want to live with an Canadian family";"✓ 캐나다 가족과 함꼐 생활하고 싶은 학생들";Text
+;en;ko;"✓ If you want to practice English every day with other students and with native speakers";"✓ 다른 학생들과 원어민과 함께 매일 영어를 연습하고 싶다면";Text
+;en;ko;"✓ If you want to practice English every daywith native speakers";"✓ 네이티브 스피커와 매일 영어를 연습하고 싶은 학생들";Text
+;en;ko;"✓ If you want to practice your English daily with native speakers";"✓ 네이티브 스피커와 매일 영어를 연습하고 싶은 학생들";Text
+;en;ko;"✓ Laundry can be done at most homestays";"✓ 대부분의 홈스테이에서 세탁이 가능";Text
+;en;ko;"✓ Linen are provided";"✓ 린넨이 제공됩니다";Text
+;en;ko;"✓ Living Room";"✓ 거실";Text
+;en;ko;"✓ Living room, Balcony, TV";"✓ 거실, 발코니, TV";Text
+;en;ko;"✓ Located in Venice";"✓ 베니스에 위치";Text
+;en;ko;"✓ Luxury Hostel Style Accommodation";"✓ 고급 호스텔 스타일 숙소";Text
+;en;ko;"✓ Maximum distance to CEL: 35 minutes by public transportation";"✓ CEL까지의 최대 거리: 대중교통으로 35분";Text
+;en;ko;"✓ Maximum distance to CEL: 75 minutes by public transportation";"✓ CEL까지 최대 거리: 대중교통 이용 시 75분";Text
+;en;ko;"✓ Minimum age is 16 years";"✓ 최소 연령: 16세";Text
+;en;ko;"✓ Minimum age is 17 years";"✓ 최소 연령: 17세";Text
+;en;ko;"✓ Minimum age is 18 years";"✓ 최소 연령: 18세";Text
+;en;ko;"✓ Minimum age is 19 years";"✓ 최소 연령: 19세";Text
+;en;ko;"✓ Minimum duration is 1 week";"✓ 최소 기간: 1주";Text
+;en;ko;"✓ Minimum duration is 1 week (2 weeks during high season)";"✓ 최소 기간: 1주";Text
+;en;ko;"✓ Minimum duration is 13 weeks";"✓ 최소 기간: 13주";Text
+;en;ko;"✓ Minimum duration is 2 weeks";"✓ 최소 기간: 2주";Text
+;en;ko;"✓ Minimum duration is 3 weeks";"✓ 최소 기간: 3주";Text
+;en;ko;"✓ Minimum duration is 4 weeks";"✓ 최소 기간: 4주";Text
+;en;ko;"✓ Mixed Gender Apartments";"✓ 혼성 성별 아파트";Text
+;en;ko;"✓ Most Families offer free Wi-Fi";"✓ 대부분의 호스트 가족들은 무료 Wi-Fi를 제공";Text
+;en;ko;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 체류 중 청소 서비스는 제공되지 않습니다 (청소 도구는 제공됩니다)";Text
+;en;ko;"✓ No common space besides kitchen";"✓ 주방 외 공용 공간 없음";Text
+;en;ko;"✓ No security deposit required";"✓ 보증금 없음";Text
+;en;ko;"✓ Outdoor Area with BBQ";"✓ 바비큐장이 있는 야외 영역";Text
+;en;ko;"✓ Outdoor pool (Summer only)";"✓ 야외 수영장 (여름 한정)";Text
+;en;ko;"✓ Parking ($)";"✓ 주차(유료)";Text
+;en;ko;"✓ Parking (currently at $150 per month)";"✓ 주차장 (현재 월 $150)";Text
+;en;ko;"✓ Private balcony";"✓ 전용 발코니";Text
+;en;ko;"✓ Private bathroom";"✓ 침실당 개인 욕실";Text
+;en;ko;"✓ Private bathroom (Studio)";"✓ 개인 욕실 (스튜디오)";Text
+;en;ko;"✓ Private bathroom (for single room only) available at a surcharge";"✓ 개인 욕실(싱글룸 전용) 추가 요금으로 이용 가능";Text
+;en;ko;"✓ Private bathroom available at a surcharge ($100/week) - limited availability";"✓ 개인 욕실은 추가 요금이 발생 ($100/주) - 예약 제한 있음";Text
+;en;ko;"✓ Refundable security deposit: $300 (credit card recommended)";"✓ 보증금: $300 (환불 가능, 신용카드 권장)";Text
+;en;ko;"✓ Refundable security deposit: $500 (credit card recommended)";"✓ 보증금: $500 (환불 가능, 신용카드 권장)";Text
+;en;ko;"✓ Refundable security deposit: $600 (credit card recommended)";"✓ 보증금: $600 (환불 가능, 신용카드 권장)";Text
+;en;ko;"✓ Rooftop terrace with BBQ area";"✓ 루프탑 테라스와 바비큐 공간";Text
+;en;ko;"✓ Self-catering";"✓ 셀프 케이터링";Text
+;en;ko;"✓ Shared Laundry Facilities ($)";"✓ 공용 세탁 시설 ($)";Text
+;en;ko;"✓ Shared bathroom";"✓ 공용 욕실";Text
+;en;ko;"✓ Shared bathroom (single and twin rooms)";"✓ 공용 욕실 (싱글룸 및 트윈룸)";Text
+;en;ko;"✓ Si quieres practicar inglés cada dia con un hablante nativo";"✓ 네이티브 스피커와 매일 영어를 연습하고 싶은 학생들";Text
+;en;ko;"✓ Single and double rooms";"✓ 싱글 및 더블 객실";Text
+;en;ko;"✓ Single and twin rooms";"✓ 싱글 및 트윈 객실";Text
+;en;ko;"✓ Single rooms";"✓ 싱글 객실";Text
+;en;ko;"✓ Single, semi-private, twin rooms";"✓ 싱글룸, 세미프라이빗룸, 트윈룸";Text
+;en;ko;"✓ Single, semi-private, twin rooms and studios";"✓ 싱글룸, 세미프라이빗룸, 트윈룸, 스튜디오";Text
+;en;ko;"✓ Single, twin and quad rooms";"✓ 싱글 및 트윈 객실";Text
+;en;ko;"✓ Small Roof Top Terrace";"✓ 작은 옥상 테라스";Text
+;en;ko;"✓ Small fitness room";"✓ 소형 피트니스 룸";Text
+;en;ko;"✓ Small kitchen with stove and microwave";"✓ 작은 주방 (스토브와 전자레인지 포함)";Text
+;en;ko;"✓ Small studio (16 square meters)";"✓ 작은 스튜디오 (16 제곱미터)";Text
+;en;ko;"✓ Students aged 17+";"✓ 17세 이상의 학생";Text
+;en;ko;"✓ Students aged 18+";"✓ 18세 이상의 학생";Text
+;en;ko;"✓ Students aged 19+";"✓ 19세 이상의 학생";Text
+;en;ko;"✓ Study rooms, Lounge, Rooftop terrace";"✓ 스터디룸, 라운지, 루프탑 테라스";Text
+;en;ko;"✓ Study rooms, TV lounge, Sauna";"✓ 스터디 룸, TV 라운지, 사우나";Text
+;en;ko;"✓ Swimming Pool";"✓ 수영장";Text
+;en;ko;"✓ Swimming pool, BBQ area, Fitness center, Tennis courts and Beach Volleyball Court";"✓ 수영장, 바비큐장, 피트니스 센터, 테니스 코트 및 비치 발리볼 코트";Text
+;en;ko;"✓ Towels and linen are provided";"✓ 침구와 수건이 제공됨";Text
+;en;ko;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ 트윈 객실은 한명이 예약 가능.트윈 객실을 예약한 학생은 다른 학생(같은 성별)과 객실을 공유";Text
+;en;ko;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ 트윈 객실은 한명이 예약 가능. 트윈 객실을 예약한 학생은 다른 학생(같은 성별)과 객실을 공유";Text
+;en;ko;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 도보 거리에 위치한 식료품점, 3rd Street Promenade, 메트로라인, 공공 도서관 등";Text
+;en;ko;"✓ Washer and dryer in the apartment (free for charge)";"✓ 아파트 내 세탁기 및 건조기(무료)";Text

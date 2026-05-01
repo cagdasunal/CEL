@@ -1,7 +1,21 @@
 id;language_from;language_to;word_from;word_to;type
 ;en;ja;"1 teacher per student";"生徒一人に対して教師一人";Text
+;en;ja;"10 - 20 min. by bus to CEL";"CELまでバスで10-20分";Text
+;en;ja;"10 min. walk to CEL";"CELまで徒歩10分";Text
+;en;ja;"16 min. walk to CEL";"CELまで徒歩16分";Text
 ;en;ja;"16+ years";"最少年齢:16歳";Text
 ;en;ja;"18 + years";"18歳以上";Text
+;en;ja;"20 min. by bus to CEL";"CELまでバスで20分";Text
+;en;ja;"25 min. by bus to CEL";"CELまでバスで25分";Text
+;en;ja;"25 min. walk to CEL";"CELまで徒歩25分";Text
+;en;ja;"30 - 45 min. by bus to CEL";"CELまでバスで30-45分";Text
+;en;ja;"30 - 75 min. by bus to CEL";"CELまでバスで30-75分";Text
+;en;ja;"30 Min. by Bus to CEL";"CELまでバスで30分";Text
+;en;ja;"30 min. by bus to CEL";"CELまでバスで30分";Text
+;en;ja;"30 min. walk to CEL";"CELまで徒歩30分";Text
+;en;ja;"30-75 min. by bus to CEL";"CELまでバスで30-75分";Text
+;en;ja;"30-75 min. by bus to EC";"ECまでバスで30-75分";Text
+;en;ja;"35 min. by bus to CEL";"CELまでバスで35分";Text
 ;en;ja;"4 hours of Surfing per Week";"サーフィン 4時間/週";Text
 ;en;ja;"4 sessions/year";"4セッション/年";Text
 ;en;ja;"Academic English for college success";"大学成功のためのアカデミック英語";Text
@@ -9,7 +23,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"Ages 18 and older";"最少年齢:18歳";Text
 ;en;ja;"All levels from Basic to Advanced";"初級から上級まで、全レベルに対応";Text
 ;en;ja;"All levels from basic to advanced";"基礎から高等レベルまであり";Text
+;en;ja;"Amenities";"設備";Text
+;en;ja;"Apartment Amenities";"アパートの設備";Text
+;en;ja;"Apartment Complex Amenities";"集合住宅のアメニティ";Text
 ;en;ja;"Available in different fields";"異なる分野";Text
+;en;ja;"Breakfast or breakfast & dinner";"朝食のみか朝食と夕食";Text
 ;en;ja;"Build career-ready skills";"キャリアに役立つスキルを身につける";Text
 ;en;ja;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
 ;en;ja;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
@@ -19,31 +37,67 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
 ;en;ja;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
 ;en;ja;"Can be combined with other courses";"他のコースと組み合わせ可能";Text
+;en;ja;"Cleaning, Bedding, Towels and more";"清掃、寝具";Text
 ;en;ja;"Designated academic advisor";"追加の学問のサポート";Text
 ;en;ja;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"現代のグローバルな職場で活躍するために、AI、ビジネス、マネジメントのキャリア対応スキルを身につけましょう。";Text
+;en;ja;"Distance";"距離";Text
 ;en;ja;"Do good, feel good!";"良いことをすると、気分がいい！";Text
 ;en;ja;"Elective class";"選択授業";Text
 ;en;ja;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
 ;en;ja;"Enhance your English while working";"働くことによって英語を上達させる";Text
+;en;ja;"Free Wi-Fi, Rooftop terrace with BBQ area";"無料Wi-Fi、屋上テラスとバーベキューエリア";Text
+;en;ja;"From $330 per week";"$330/週 から";Text
 ;en;ja;"From $350/Week";"From $350/week";Text
 ;en;ja;"From $390/Week";"From $390/week";Text
 ;en;ja;"From $400/Week";"From $400/week";Text
 ;en;ja;"From $460/Week";"From $460/week";Text
 ;en;ja;"From $550/Week";"From $550/week";Text
 ;en;ja;"From $999,999/Week";"From $999,999/week";Text
+;en;ja;"From CA$240 per week";"CA$240 /週 から";Text
+;en;ja;"From CA$350 per week";"CA$350 /週 から";Text
+;en;ja;"From CA$430 per week";"CA$430 /週 から";Text
+;en;ja;"From CA$440 per week";"CA$440 /週 から";Text
+;en;ja;"From CA$475 per week";"CA$475 /週 から";Text
+;en;ja;"From CA$580 per week";"CA$580 /週 から";Text
 ;en;ja;"Full focus on your needs";"学生の要求を重点的に取り扱う";Text
+;en;ja;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ja;"Gain relevant experience";"英語上達に関する経験を積む";Text
 ;en;ja;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
 ;en;ja;"General English 24 & Surfing";"General English Intensive Plus & Surfing (24 + 4)";Text
+;en;ja;"General Information";"一般情報";Text
+;en;ja;"Ideal For You";"あなたに理想的";Text
 ;en;ja;"Improve your overall English fluency while developing strong academic communication and writing skills";"英語の総合的な流暢さを高めながら、学術的なコミュニケーション力と文章力を伸ばしましょう。";Text
+;en;ja;"Location";"場所";Text
+;en;ja;"Managed by CEL";"CELが管理しています";Text
+;en;ja;"Max. 35 min by bus to CEL";"CELまでバスで35分";Text
+;en;ja;"Minimum age is 17 years";"最少年齢:17歳";Text
+;en;ja;"Minimum age is 18 years";"最少年齢:18歳";Text
+;en;ja;"Most families provide Wifi";"ほとんどの家族がfree Wi-Fi有り";Text
 ;en;ja;"New courses start every Monday";"毎週月曜日 新しいコース";Text
 ;en;ja;"No surf experience required";"サーフィンの経験は必要なし";Text
+;en;ja;"Pool, BBQ, small fitness room, jacuzzi";"設備の整ったキッチン、プール、バーベキュー設備、フィットネスルーム、ジャグジー";Text
+;en;ja;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"設備の整ったキッチン、プール、バーベキュー設備、フィットネスルーム、ジャグジー";Text
 ;en;ja;"Preparation for College & University";"大学入学の準備";Text
 ;en;ja;"Prepare for Cambridge exam";"ケンブリッジ試験の準備";Text
+;en;ja;"Private bathroom";"専用バスルーム";Text
 ;en;ja;"Private lessons";"プライベートレッスン";Text
 ;en;ja;"Project based learning";"プロジェクト型学習 (PBL)";Text
+;en;ja;"Room type";"部屋の種類";Text
+;en;ja;"Shared Apartment GEC Viva";"Residence Standard YWCA";Text
+;en;ja;"Shared bathroom";"シェアバスルーム";Text
+;en;ja;"Single and double rooms";"シングルルーム、ダブルルーム";Text
+;en;ja;"Single and double rooms with a shared bathroom";"共用バスルーム付きのシングルルーム・ツインルーム";Text
+;en;ja;"Single and double rooms with shared bathroom";"RT SM";Text
+;en;ja;"Single and twin rooms (shared bathroom), studios (private bathroom)";"シングルルーム・ツインルーム（共用バスルーム）、スタジオ（専用バスルーム）";Text
+;en;ja;"Single and twin rooms with a private bathroom";"各部屋に専用バスルーム付きのシングルルーム・ツインルーム";Text
+;en;ja;"Single and twin rooms with a shared bathroom";"Single and twin rooms with a shared bathoom";Text
+;en;ja;"Single room";"シングルルーム";Text
+;en;ja;"Single room with a shared bathroom";"共用バスルーム付きシングルルーム";Text
+;en;ja;"Single, semi-private, twin rooms";"シングルルーム、セミプライベートルーム、ツインルーム";Text
+;en;ja;"Sleeping pods";"スリープポッド付きの寝室";Text
 ;en;ja;"Small classes (avg. 7 students per class)";"小規模クラス(平均 7人/クラス)";Text
 ;en;ja;"Small classes (avg. 7 students/class)";"少人数制クラス(1クラス平均7名)";Text
+;en;ja;"Small fitness room, study rooms, lounge and rooftop terrace";"小さなフィットネスルーム、勉強部屋、ラウンジ、屋上テラス";Text
 ;en;ja;"Social, Educational or Conversatory Work";"社会、教育、または自然での仕事";Text
 ;en;ja;"Social, or conversatory Work";"社会、教育、または自然での仕事";Text
 ;en;ja;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"会話、文法、ライティング、読解、発音、リスニングなど";Text
@@ -51,9 +105,123 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"Specialized preparation for the TOEFL exam";"TOEFL試験のための専門的な準備";Text
 ;en;ja;"Spring and fall session intakes";"春・秋ごとの入学";Text
 ;en;ja;"Start your preparation to enter college or university in the U.S. or abroad.";"アメリカまたは海外の大学・カレッジへの進学に向けて準備を始めましょう。";Text
+;en;ja;"Studio (max. 1)";"スタジオ（最大1室）";Text
+;en;ja;"Study rooms, Lounge, Rooftop terrace";"勉強部屋、ラウンジ、屋上テラス";Text
+;en;ja;"Study rooms, TV lounge, fitness room, outdoor pool (summer only), sauna";"自習室、TVラウンジ、フィットネスルーム、屋外プール（夏季限定）、サウナ";Text
 ;en;ja;"Surf in one of the top surf spots";"最高のサーフスポットでサーフィン";Text
 ;en;ja;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
 ;en;ja;"TOEFL Exam Preparation 24 - GE20+TOEFL4";"TOEFL Exam Preparation 24 - GE20 + TOE4";Text
 ;en;ja;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"TOEFL Exam Preparation 28 - GE24 + TOE4";Text
 ;en;ja;"Upper Intermediate and Higher";"中上級以上";Text
 ;en;ja;"Upper intermediate and higher";"Upper Intermediate 以上";Text
+;en;ja;"✓ 10 minute walk to CEL";"✓ CELまで徒歩10分";Text
+;en;ja;"✓ 10-minute walk to Santa Monica Pier";"✓ サンタモニカの橋脚から徒歩10分";Text
+;en;ja;"✓ 15 minute walk to the beach";"✓ ビーチから徒歩15分";Text
+;en;ja;"✓ 16 minute walk to CEL";"✓ CELまで徒歩16分";Text
+;en;ja;"✓ 20 minute walk to Venice Beach";"✓ ベニスビーチから徒歩20分";Text
+;en;ja;"✓ 25 minute walk to CEL";"✓ CELまで徒歩25分";Text
+;en;ja;"✓ 25 minutes by public transportation to CEL";"✓ 公共交通機関でCELまで25分";Text
+;en;ja;"✓ 25 minutes walk to CEL";"✓ CELまで徒歩25分";Text
+;en;ja;"✓ 30 - 45 minutes by public transportation to CEL";"✓ CELまでバスで30-45分";Text
+;en;ja;"✓ 30 minute walk to CEL";"✓ CELまで徒歩30分";Text
+;en;ja;"✓ 30 minutes by public transportation to CEL";"✓ 公共交通機関でCELまで30分";Text
+;en;ja;"✓ 35 minutes by public transportation to CEL";"✓ 公共交通機関でCELまで35分";Text
+;en;ja;"✓ 5 minute walk to the beach";"✓ ビーチから徒歩5分";Text
+;en;ja;"✓ Air Conditioned";"✓ エアコン付き";Text
+;en;ja;"✓ Average distance to CEL: 25 minutes by public transportation";"✓ CELまでの公共交通機関でかかる時間:25分";Text
+;en;ja;"✓ Average distance to CEL: 30 to 45 minutes by public transportation";"✓ CELまでの公共交通機関でかかる時間:30-45分";Text
+;en;ja;"✓ Average distance to CEL: 40 to 50 minutes by public transportation";"✓ CELまでの平均所要時間：公共交通機関で40～50分";Text
+;en;ja;"✓ BBQ Area";"✓ バーベキューエリア";Text
+;en;ja;"✓ Bedrooms with Sleeping Pods";"✓ スリープポッド付きの寝室";Text
+;en;ja;"✓ Breakfast and dinner";"✓ General info 1";Text
+;en;ja;"✓ Breakfast or breakfast and dinner";"✓ 朝食、朝食と夕食";Text
+;en;ja;"✓ Check-in before 22:00";"✓ 22:00以前にチェックイン";Text
+;en;ja;"✓ Check-in: Saturday 16:00 - 20:00 (after 20:00 Check-In only upon request, late check-in fee of $50 applicable)";"✓ チェックイン: 土曜日 16:00 - 20:00 (20:00以降はリクエストに応じてのみチェックイン可能、遅いチェックインには50ドルの追加料金が適用されます)";Text
+;en;ja;"✓ Check-in: after 16:00";"✓ チェックイン：16:00以降";Text
+;en;ja;"✓ Check-in: from 15:00 on Saturdays";"✓ チェックイン：土曜日の15:00以降";Text
+;en;ja;"✓ Check-out: Saturday before 11:00";"✓ チェックアウト: 土曜日 11:00 前まで";Text
+;en;ja;"✓ Cleaning of common areas provided every second week";"✓ 共用スペースの掃除は2週間ごとに行われる";Text
+;en;ja;"✓ Cleaning provided every second week";"✓ 掃除は2週間ごとに行われる";Text
+;en;ja;"✓ Cleaning provided once a week";"✓ 掃除は1週間ごとに行われる";Text
+;en;ja;"✓ Close to supermarkets, restaurants and department stores";"✓ スーパーマーケット、レストラン、デパートが近くにある";Text
+;en;ja;"✓ Conveniently located in Downtown Vancouver";"✓ バンクーバーのダウンタウンに便利な立地";Text
+;en;ja;"✓ Different parts of Los Angeles (e.g. Westwood)";"✓ ロサンゼルスの別の地域(例:ウェストウッド)";Text
+;en;ja;"✓ Different parts of San Diego";"✓ サンディエゴの別の地域";Text
+;en;ja;"✓ Different parts of Santa Monica & Los Angeles";"✓ サンタモニカ、ロサンゼルスの別の地域";Text
+;en;ja;"✓ Double rooms have two separate beds and can only be booked by two students traveling together";"✓ ダブルルームは、一緒に旅行をしている学生二人にのみ予約可能";Text
+;en;ja;"✓ Each Apartment has 2 bedrooms and 2 bathrooms";"✓ それぞれのマンションに、寝室2部屋、バスルーム2部屋付き";Text
+;en;ja;"✓ Fairview district of Vancouver";"✓ バンクーバーのフェアビュー地区";Text
+;en;ja;"✓ Fully Equipped Kitchen with Dishwasher";"✓ 皿洗機付きの完全装備されたキッチン";Text
+;en;ja;"✓ If you are looking for an affordable housing option";"✓ 手頃な住宅オプションを探している学生";Text
+;en;ja;"✓ If you are under 18 years old";"✓ 18歳以下の学生";Text
+;en;ja;"✓ If you don‘t mind taking the bus to school";"✓ 学校までバスで通学することを厭わない学生";Text
+;en;ja;"✓ If you want to benefit from amenities such as pooland fitness room";"✓ プールやフィットネスルーム等のアメニティを得たい学生";Text
+;en;ja;"✓ If you want to interact with other tenants as much as possible";"✓ 可能な限り他の住居者と交流したい学生";Text
+;en;ja;"✓ If you want to live centrally";"✓ 中心部に住みたいなら";Text
+;en;ja;"✓ If you want to live close to the school";"✓ 学校の近くに住みたいなら";Text
+;en;ja;"✓ If you want to live independently";"✓ 自立して生活したいなら";Text
+;en;ja;"✓ If you want to live independently and make the most of Downtown Vancouver";"✓ 自分らしく暮らし、バンクーバーのダウンタウンを最大限に楽しみたいなら";Text
+;en;ja;"✓ If you want to live with an American family";"✓ アメリカの家族と一緒に住みたい学生";Text
+;en;ja;"✓ If you want to live with an Canadian family";"✓ カナダ人の家族と一緒に住みたい場合は";Text
+;en;ja;"✓ If you want to practice English every day with other students and with native speakers";"✓ 他の学生やネイティブスピーカーと毎日英語を練習したいなら";Text
+;en;ja;"✓ If you want to practice English every daywith native speakers";"✓ ネイティブスピーカーと毎日英語を練習したい学生";Text
+;en;ja;"✓ If you want to practice your English daily with native speakers";"✓ ネイティブスピーカーと毎日英語を練習したい学生";Text
+;en;ja;"✓ Laundry can be done at most homestays";"✓ ほとんどのホームステイで洗濯が可能";Text
+;en;ja;"✓ Linen are provided";"✓ リネンは提供されています";Text
+;en;ja;"✓ Living Room";"✓ リビングルーム";Text
+;en;ja;"✓ Living room, Balcony, TV";"✓ リビング、バルコニー、TV";Text
+;en;ja;"✓ Located in Venice";"✓ ベニスに位置する";Text
+;en;ja;"✓ Luxury Hostel Style Accommodation";"✓ 豪華なホステルスタイルの予約";Text
+;en;ja;"✓ Maximum distance to CEL: 35 minutes by public transportation";"✓ CELまでの最大距離:公共交通機関で35分";Text
+;en;ja;"✓ Maximum distance to CEL: 75 minutes by public transportation";"✓ CELまでの最大距離:公共交通機関で75分";Text
+;en;ja;"✓ Minimum age is 16 years";"✓ 最少年齢:16歳";Text
+;en;ja;"✓ Minimum age is 17 years";"✓ 最少年齢:17歳";Text
+;en;ja;"✓ Minimum age is 18 years";"✓ 最少年齢:18歳";Text
+;en;ja;"✓ Minimum age is 19 years";"✓ 最少年齢:19歳";Text
+;en;ja;"✓ Minimum duration is 1 week";"✓ 最短期間:1週間";Text
+;en;ja;"✓ Minimum duration is 1 week (2 weeks during high season)";"✓ 最短期間:1週間";Text
+;en;ja;"✓ Minimum duration is 13 weeks";"✓ 最短期間:13週間";Text
+;en;ja;"✓ Minimum duration is 2 weeks";"✓ 最短期間:2週間";Text
+;en;ja;"✓ Minimum duration is 3 weeks";"✓ 最短期間:3週間";Text
+;en;ja;"✓ Minimum duration is 4 weeks";"✓ 最短期間:4週間";Text
+;en;ja;"✓ Mixed Gender Apartments";"✓ 男女混合で利用のマンション";Text
+;en;ja;"✓ Most Families offer free Wi-Fi";"✓ ほとんどの家族がfree Wi-Fi有り";Text
+;en;ja;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 滞在中は清掃サービスはありません（清掃用具は提供されています）";Text
+;en;ja;"✓ No security deposit required";"✓ 保証金なし";Text
+;en;ja;"✓ Outdoor Area with BBQ";"✓ バーベキュー可能な野外エリア";Text
+;en;ja;"✓ Outdoor pool (Summer only)";"✓ 屋外プール（夏季限定）";Text
+;en;ja;"✓ Parking (currently at $150 per month)";"✓ パーキング(現在 月$150)";Text
+;en;ja;"✓ Private balcony";"✓ 専用バルコニー";Text
+;en;ja;"✓ Private bathroom";"✓ 各寝室にプライベートバスルーム付き";Text
+;en;ja;"✓ Private bathroom (Studio)";"✓ 専用バスルーム（スタジオ）";Text
+;en;ja;"✓ Private bathroom (for single room only) available at a surcharge";"✓ プライベートバスルーム（シングルルームのみ）は追加料金で利用可能です";Text
+;en;ja;"✓ Private bathroom available at a surcharge ($100/week) - limited availability";"✓ プライベートバスルーム付きを希望の場合は追加料金($100/週)-数量限定";Text
+;en;ja;"✓ Refundable security deposit: $300 (credit card recommended)";"✓ 返金可能な保証金:$300 (クレジットカード推奨)";Text
+;en;ja;"✓ Refundable security deposit: $500 (credit card recommended)";"✓ 返金可能な保証金:$500 (クレジットカード推奨)";Text
+;en;ja;"✓ Refundable security deposit: $600 (credit card recommended)";"✓ 返金可能な保証金:$600 (クレジットカード推奨)";Text
+;en;ja;"✓ Rooftop terrace with BBQ area";"✓ 屋上テラスとバーベキューエリア";Text
+;en;ja;"✓ Self-catering";"✓ 自炊";Text
+;en;ja;"✓ Shared Laundry Facilities ($)";"✓ 共用の洗濯施設($)";Text
+;en;ja;"✓ Shared bathroom";"✓ シェアバスルーム";Text
+;en;ja;"✓ Shared bathroom (single and twin rooms)";"✓ 共用バスルーム（シングルルームおよびツインルーム）";Text
+;en;ja;"✓ Si quieres practicar inglés cada dia con un hablante nativo";"✓ ネイティブスピーカーと毎日英語を練習したい学生";Text
+;en;ja;"✓ Single and double rooms";"✓ シングルルーム、ダブルルーム";Text
+;en;ja;"✓ Single and twin rooms";"✓ シングルルーム、ツインルーム";Text
+;en;ja;"✓ Single rooms";"✓ シングルルーム";Text
+;en;ja;"✓ Single, semi-private, twin rooms";"✓ シングルルーム、セミプライベートルーム、ツインルーム";Text
+;en;ja;"✓ Single, semi-private, twin rooms and studios";"✓ シングルルーム、セミプライベートルーム、ツインルーム、スタジオ";Text
+;en;ja;"✓ Small Roof Top Terrace";"✓ 小さい屋上テラス";Text
+;en;ja;"✓ Small fitness room";"✓ 小さなフィットネスルーム";Text
+;en;ja;"✓ Small kitchen with stove and microwave";"✓ コンロと電子レンジ付きの小さなキッチン";Text
+;en;ja;"✓ Small studio (16 square meters)";"✓ 小さなスタジオ（16平方メートル）";Text
+;en;ja;"✓ Students aged 17+";"✓ 17歳以上の学生";Text
+;en;ja;"✓ Students aged 18+";"✓ 18歳以上の学生";Text
+;en;ja;"✓ Students aged 19+";"✓ 19歳以上の学生";Text
+;en;ja;"✓ Study rooms, Lounge, Rooftop terrace";"✓ 勉強部屋、ラウンジ、屋上テラス";Text
+;en;ja;"✓ Study rooms, TV lounge, Sauna";"✓ 自習室、TVラウンジ、サウナ";Text
+;en;ja;"✓ Swimming Pool";"✓ プール";Text
+;en;ja;"✓ Swimming pool, BBQ area, Fitness center, Tennis courts and Beach Volleyball Court";"✓ プール、バーベキューエリア、フィットネスセンター、テニスコート、ビーチバレーコート";Text
+;en;ja;"✓ Towels and linen are provided";"✓ 備え付きの寝具とタオル";Text
+;en;ja;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
+;en;ja;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
+;en;ja;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 徒歩圏内に食料品店、3rd Street Promenade、メトロライン、公共図書館　等";Text
