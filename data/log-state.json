@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-01T13:36:17.444493-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-01T12:42:13.830084-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-01T03:45:52.777037-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-01T02:17:04.367926-07:00",
-      "detail": {
-        "slugs": [
-          "ou-vivent-etudiants-vancouver"
-        ]
-      }
     }
   ]
 }
