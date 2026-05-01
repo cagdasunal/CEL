@@ -35,6 +35,38 @@
     {
       "label": "intensity-row country",
       "path": "detail.fields.fidelo_intensity_rows[].country"
+    },
+    {
+      "label": "housing title (listing card)",
+      "path": "housing_listing.title"
+    },
+    {
+      "label": "housing card bullet",
+      "path": "housing_listing.bullets[]"
+    },
+    {
+      "label": "housing badge label",
+      "path": "housing_listing.badge"
+    },
+    {
+      "label": "housing title (detail page)",
+      "path": "housing_detail.fields.fidelo_title"
+    },
+    {
+      "label": "USP fact label",
+      "path": "housing_detail.fields.fidelo_usp_facts[].label"
+    },
+    {
+      "label": "USP fact value",
+      "path": "housing_detail.fields.fidelo_usp_facts[].value"
+    },
+    {
+      "label": "accordion section heading",
+      "path": "housing_detail.fields.fidelo_accordion_sections[].heading"
+    },
+    {
+      "label": "accordion section item",
+      "path": "housing_detail.fields.fidelo_accordion_sections[].items[]"
     }
   ],
   "bundle": {
@@ -59,13 +91,13 @@
     "schema": "fidelo.run-summary.v1",
     "started_at": "2026-04-30T06:39:48Z"
   },
-  "generated_at": "2026-04-30T15:48:28.794585+00:00",
+  "generated_at": "2026-05-01T08:28:39.558998+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
       "language_name": "Arabic",
       "language_to": "ar",
-      "row_count": 56,
+      "row_count": 220,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 13,
@@ -73,14 +105,43 @@
         "detail.fields.fidelo_main_facts[]": 15,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 110,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 24,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 19,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 20,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "ar",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "ar",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -140,6 +201,81 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "English"
+            },
+            {
+              "count": 1,
+              "word_to": "غرفة فردية و مزدوجة"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "English",
+          "word_from": "Single and double rooms"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "30 دقيقة عن طريق الباص الى المدرسه CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "30 دقيقة في الباص الى المعهد CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "30 دقيقة عن طريق الباص الى المدرسه CEL",
+          "word_from": "30 min. by bus to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ الحد الأدنى للمدة هو أسبوع واحد"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ الحد الأدنى للمدة هو أسبوع واحد",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 3,
+              "word_to": "✓ غرف مفردة وتوأم"
+            },
+            {
+              "count": 2,
+              "word_to": "✓ Single and twin roomsغرف مفردة وتوأم"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ غرف مفردة وتوأم",
+          "word_from": "✓ Single and twin rooms"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ الحد الأقصى لوقت السفر بالمواصلات العامة إلى CEL هو 75 دقيقة"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ أقصى مسافة إلى CEL: 75 دقيقة بوسائل النقل العام"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ الحد الأقصى لوقت السفر بالمواصلات العامة إلى CEL هو 75 دقيقة",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -147,7 +283,7 @@
       "csv_file": "de.csv",
       "language_name": "German",
       "language_to": "de",
-      "row_count": 60,
+      "row_count": 252,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -155,6 +291,14 @@
         "detail.fields.fidelo_main_facts[]": 18,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 5,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 127,
+        "housing_detail.fields.fidelo_title": 9,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 31,
+        "housing_listing.badge": 0,
+        "housing_listing.bullets[]": 15,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 18,
         "listing.title": 0
@@ -162,9 +306,32 @@
       "skipped_slugs": [
         "english-plus-surfing",
         "english-plus-toefl-exam-preparation",
-        "private-lessons"
+        "los-angeles/homestay",
+        "private-lessons",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay",
+        "vancouver/homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "de",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "de",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -224,6 +391,36 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "Einzel- und Zweibettzimmer mit eigenem Badezimmer"
+            },
+            {
+              "count": 1,
+              "word_to": "Einzel- und Zweibettzimmer mit eigenem Bad"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Einzel- und Zweibettzimmer mit eigenem Badezimmer",
+          "word_from": "Single and twin rooms with a private bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Maximal 75 min mit öffentlichen Verkehrsmitteln zu CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Maximale Entfernung zur CEL: 75 Minuten mit öffentlichen Verkehrsmitteln"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Maximal 75 min mit öffentlichen Verkehrsmitteln zu CEL",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -231,7 +428,7 @@
       "csv_file": "es.csv",
       "language_name": "Spanish",
       "language_to": "es",
-      "row_count": 59,
+      "row_count": 275,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 9,
@@ -239,15 +436,46 @@
         "detail.fields.fidelo_main_facts[]": 18,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 4,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 148,
+        "housing_detail.fields.fidelo_title": 11,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 31,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 15,
+        "housing_listing.title": 0,
         "listing.age_badge": 2,
         "listing.bullets[]": 20,
         "listing.title": 0
       },
       "skipped_slugs": [
         "english-plus-toefl-exam-preparation",
-        "private-lessons"
+        "los-angeles/homestay",
+        "private-lessons",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay",
+        "vancouver/homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "es",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "es",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -277,6 +505,220 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "16 min andando de CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "16 min a pie de CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "16 min andando de CEL",
+          "word_from": "16 min. walk to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "30 min andando de CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "30 min a pie de CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "30 min andando de CEL",
+          "word_from": "30 min. walk to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 3,
+              "word_to": "✓ Servicio de lavandería compartida($)"
+            },
+            {
+              "count": 3,
+              "word_to": "✓ Zona de lavandería compartida ($)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Servicio de lavandería compartida($)",
+          "word_from": "✓ Shared Laundry Facilities ($)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Servicio de limpieza semanal una vez a la semana"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Se proporciona servicio de limpieza semanal"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Servicio de limpieza semanal una vez a la semana",
+          "word_from": "✓ Cleaning provided once a week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Las habitaciones dobles solo pueden ser reservadas por alumnos que viajan juntos (dos camas twin)"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Las habitaciones dobles solo pueden ser reservadas por alumnos que viajan juntos (dos camas individuales)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Las habitaciones dobles solo pueden ser reservadas por alumnos que viajan juntos (dos camas twin)",
+          "word_from": "✓ Double rooms have two separate beds and can only be booked by two students traveling together"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ La mayoría de familias ofrecen Wifi gratis"
+            },
+            {
+              "count": 2,
+              "word_to": "✓ La mayoría de familias ofrecen Wi-fi gratis"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ La mayoría de familias ofrecen Wifi gratis",
+          "word_from": "✓ Most Families offer free Wi-Fi"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Duración mínima: 1 semana (2 en temporada alta)"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Duración mínima: 1 semana (2 semanas en temporada alta)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Duración mínima: 1 semana (2 en temporada alta)",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Promedio de distancia de CEL: 40 a 50 minutos en transporte público"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Distancia media a CEL: de 40 a 50 minutos en transporte público"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Promedio de distancia de CEL: 40 a 50 minutos en transporte público",
+          "word_from": "✓ Average distance to CEL: 40 to 50 minutes by public transportation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Distancia máxima de CEL: 75 minutos en transporte público"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ El tiempo máximo de traslado de CEL es 75 min"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Distancia máxima a CEL: 75 minutos en transporte público"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Distancia máxima de CEL: 75 minutos en transporte público",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ si quieres vivir en una familia americana"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ si quieres vivir con una familia americana"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ si quieres vivir en una familia americana",
+          "word_from": "✓ If you want to live with an American family"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Si tienes menos de 18 años"
+            },
+            {
+              "count": 2,
+              "word_to": "✓ Si eres menor de 18 años"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Si tienes menos de 18 años",
+          "word_from": "✓ If you are under 18 years old"
+        },
+        {
+          "candidates": [
+            {
+              "count": 4,
+              "word_to": "✓ Limpieza de areas comunes cada dos semanas"
+            },
+            {
+              "count": 2,
+              "word_to": "✓ Servicio de limpieza cada dos semanas"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Limpieza de areas comunes cada dos semanas",
+          "word_from": "✓ Cleaning of common areas provided every second week"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Si quieres buscar una opción de alojamiento asequible"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ si quieres buscar una opción de alojamiento asequible"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Si quieres buscar una opción de alojamiento asequible",
+          "word_from": "✓ If you are looking for an affordable housing option"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ 30 minutos en transporte público hasta CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 30 minutos a pie en transporte público de CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ 30 minutos en transporte público hasta CEL",
+          "word_from": "✓ 30 minutes by public transportation to CEL"
         }
       ]
     },
@@ -284,7 +726,7 @@
       "csv_file": "fr.csv",
       "language_name": "French",
       "language_to": "fr",
-      "row_count": 58,
+      "row_count": 227,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -292,14 +734,43 @@
         "detail.fields.fidelo_main_facts[]": 16,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 112,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 2,
+        "housing_detail.fields.fidelo_usp_facts[].value": 26,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 20,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "fr",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "fr",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -344,6 +815,81 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "30 min. en bus jusqu'au CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "30 minutes en bus jusqu'au CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "30 min. en bus jusqu'au CEL",
+          "word_from": "30 min. by bus to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "Single and twin rooms with a shared bathoom"
+            },
+            {
+              "count": 1,
+              "word_to": "Chambres individuelles et doubles avec salle de bain partagée"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Single and twin rooms with a shared bathoom",
+          "word_from": "Single and twin rooms with a shared bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Durée minimale : 1 semaine"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Durée minimale : 1 semaine",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Qui n'ont pas d'objection à prendre le bus pour aller à l'ésole"
+            },
+            {
+              "count": 2,
+              "word_to": "✓ Qui n'ont pas d'objection à prendre le bus pour aller à l'école"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Qui n'ont pas d'objection à prendre le bus pour aller à l'ésole",
+          "word_from": "✓ If you don‘t mind taking the bus to school"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Le temps de trajet maximal en transports en commun jusqu'au CEL est de 75 minutes"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Distance maximale jusqu’à CEL : 75 minutes en transport en commun"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Le temps de trajet maximal en transports en commun jusqu'au CEL est de 75 minutes",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -351,7 +897,7 @@
       "csv_file": "it.csv",
       "language_name": "Italian",
       "language_to": "it",
-      "row_count": 59,
+      "row_count": 227,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -359,14 +905,43 @@
         "detail.fields.fidelo_main_facts[]": 17,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 26,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 20,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "it",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "it",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -411,6 +986,66 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "30 minuti dal CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "30 minuti di bus dal CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "30 minuti dal CEL",
+          "word_from": "30 min. by bus to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "Single and twin rooms with a shared bathoom"
+            },
+            {
+              "count": 1,
+              "word_to": "Camere singole e doppie con bagno in comune"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Single and twin rooms with a shared bathoom",
+          "word_from": "Single and twin rooms with a shared bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Durata minima: 1 settimana"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Durata minima: 1 settimana",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Distanza massima dal CEL: 75 minuti con mezzi pubblici"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Distanza massima da CEL: 75 minuti con i mezzi pubblici"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Distanza massima dal CEL: 75 minuti con mezzi pubblici",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -418,7 +1053,7 @@
       "csv_file": "ja.csv",
       "language_name": "Japanese",
       "language_to": "ja",
-      "row_count": 58,
+      "row_count": 226,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -426,14 +1061,43 @@
         "detail.fields.fidelo_main_facts[]": 16,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 25,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 21,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "ja",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "ja",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -508,6 +1172,51 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "Single and twin rooms with a shared bathoom"
+            },
+            {
+              "count": 1,
+              "word_to": "共用バスルーム付きのシングルルーム・ツインルーム"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Single and twin rooms with a shared bathoom",
+          "word_from": "Single and twin rooms with a shared bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ 最短期間:1週間"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ 最短期間:1週間",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ CELまでの最大距離:公共交通機関で75分"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ CELまでの最長所要時間：公共交通機関で75分"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ CELまでの最大距離:公共交通機関で75分",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -515,7 +1224,7 @@
       "csv_file": "ko.csv",
       "language_name": "Korean",
       "language_to": "ko",
-      "row_count": 57,
+      "row_count": 238,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 11,
@@ -523,14 +1232,43 @@
         "detail.fields.fidelo_main_facts[]": 15,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 120,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 31,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 19,
+        "housing_listing.title": 0,
         "listing.age_badge": 2,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "ko",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "ko",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -575,6 +1313,85 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "CEL까지 30분"
+            },
+            {
+              "count": 1,
+              "word_to": "CEL까지 버스로 30분"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "CEL까지 30분",
+          "word_from": "30 min. by bus to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "공용 욕실이 있는 싱글 및 트윈룸"
+            },
+            {
+              "count": 1,
+              "word_to": "공용 욕실이 있는 싱글룸 및 트윈룸"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "공용 욕실이 있는 싱글 및 트윈룸",
+          "word_from": "Single and twin rooms with a shared bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ 최소 기간: 1주"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ 최소 기간: 1주",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ CEL까지 평균 거리: 대중교통으로 40~50분 소요"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ CEL까지 평균 거리: 대중교통으로 40~50분"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ CEL까지 평균 거리: 대중교통으로 40~50분 소요",
+          "word_from": "✓ Average distance to CEL: 40 to 50 minutes by public transportation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ CEL까지 최대 거리: 대중교통 이용 시 75분"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ CEL까지의 최대 거리: 대중교통으로 75분"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ CEL까지 최대 거리: 대중교통으로 75분"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ CEL까지 최대 거리: 대중교통 이용 시 75분",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     },
@@ -582,7 +1399,7 @@
       "csv_file": "pt.csv",
       "language_name": "Portuguese",
       "language_to": "pt",
-      "row_count": 59,
+      "row_count": 230,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -590,14 +1407,43 @@
         "detail.fields.fidelo_main_facts[]": 17,
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 113,
+        "housing_detail.fields.fidelo_title": 1,
+        "housing_detail.fields.fidelo_usp_facts[].label": 3,
+        "housing_detail.fields.fidelo_usp_facts[].value": 27,
+        "housing_listing.badge": 1,
+        "housing_listing.bullets[]": 20,
+        "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation"
+        "english-plus-toefl-exam-preparation",
+        "san-diego/cel-shared-apartment-premium",
+        "san-diego/cel-shared-apartment-standard",
+        "san-diego/cel-shared-apartment-superior-pacific-beach",
+        "san-diego/homestay",
+        "san-diego/premium-homestay"
       ],
       "warnings": [
+        {
+          "city": "vancouver",
+          "en": 3,
+          "kind": "housing_usp_count_mismatch",
+          "lang": "pt",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
+        {
+          "city": "vancouver",
+          "en": 7,
+          "kind": "housing_accordion_section_count_mismatch",
+          "lang": "pt",
+          "slug": "shared-apartment-gec-viva",
+          "target": 0
+        },
         {
           "candidates": [
             {
@@ -642,6 +1488,81 @@
           "kind": "ambiguous_source",
           "winner": "English Plus TOEFL Exam",
           "word_from": "English Plus TOEFL Exam Preparation"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "Café da manhã ou meia-pensão"
+            },
+            {
+              "count": 1,
+              "word_to": "Café da manhã ou café da manhã/jantar"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Café da manhã ou meia-pensão",
+          "word_from": "Breakfast or breakfast & dinner"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "30-75 minutos de ônibus até a CEL"
+            },
+            {
+              "count": 1,
+              "word_to": "35-75 minutos de ônibus até a CEL"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "30-75 minutos de ônibus até a CEL",
+          "word_from": "30-75 min. by bus to CEL"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "Single and twin rooms with a shared bathoom"
+            },
+            {
+              "count": 1,
+              "word_to": "Quartos individuais e duplos com banheiro compartilhado"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "Single and twin rooms with a shared bathoom",
+          "word_from": "Single and twin rooms with a shared bathroom"
+        },
+        {
+          "candidates": [
+            {
+              "count": 2,
+              "word_to": "✓ Duração mínima: 1 semana"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ 1 Woche Minimum (2 Wochen in der Hochsaison)"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Duração mínima: 1 semana",
+          "word_from": "✓ Minimum duration is 1 week (2 weeks during high season)"
+        },
+        {
+          "candidates": [
+            {
+              "count": 1,
+              "word_to": "✓ Distância máxima para a CEL: 75 minutos de transporte público"
+            },
+            {
+              "count": 1,
+              "word_to": "✓ Distância máxima até a CEL: 75 minutos de transporte público"
+            }
+          ],
+          "kind": "ambiguous_source",
+          "winner": "✓ Distância máxima para a CEL: 75 minutos de transporte público",
+          "word_from": "✓ Maximum distance to CEL: 75 minutes by public transportation"
         }
       ]
     }
@@ -649,6 +1570,6 @@
   "schema": "weglot.csv-export.v1",
   "totals": {
     "languages": 8,
-    "rows": 466
+    "rows": 1895
   }
 }

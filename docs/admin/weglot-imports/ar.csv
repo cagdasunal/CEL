@@ -1,14 +1,32 @@
 id;language_from;language_to;word_from;word_to;type
 ;en;ar;"1 teacher per student";"معلم واحد لكل طالب";Text
+;en;ar;"10 - 20 min. by bus to CEL";"20 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"10 min. walk to CEL";"10 دقيقة مشيا الى المدرسة CEL";Text
+;en;ar;"16 min. walk to CEL";"16 دقيقة مشيا الى المدرسة CEL";Text
 ;en;ar;"16+ years";"الحد الأدنى للعمر هو 16 سنة";Text
 ;en;ar;"18 + years";"أكثر من 18 عامًا";Text
+;en;ar;"20 min. by bus to CEL";"20 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"25 min. by bus to CEL";"25 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"25 min. walk to CEL";"25 دقيقة مشيا الى المدرسة CEL";Text
+;en;ar;"30 - 45 min. by bus to CEL";"30-45 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"30 - 75 min. by bus to CEL";"30-75 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"30 Min. by Bus to CEL";"30 دقيقة في الباص الى المعهد CEL";Text
+;en;ar;"30 min. by bus to CEL";"30 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"30 min. walk to CEL";"30 دقيقة مشيا الى المدرسة CEL";Text
+;en;ar;"30-75 min. by bus to CEL";"30-75 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"30-75 min. by bus to EC";"30-75 دقيقة عن طريق الباص الى المدرسه EC";Text
+;en;ar;"35 min. by bus to CEL";"35 دقيقة في الباص الى المعهد CEL";Text
 ;en;ar;"4 hours of Surfing per Week";"4 ساعات لحصص اضافيه في الاسبوع";Text
 ;en;ar;"4 sessions/year";"4 فصول بالسنه";Text
 ;en;ar;"Add a highlight to your CV";"التركيز والاضافه في السيرة الذاتية";Text
 ;en;ar;"Ages 18 and older";"الحد الأدنى للعمر هو 18 سنة";Text
 ;en;ar;"All levels from Basic to Advanced";"جميع المستويات من الأساسي الى المتقدم";Text
 ;en;ar;"All levels from basic to advanced";"جميع المستويات من الأساسي الى المتقدم";Text
+;en;ar;"Amenities";"مرافق";Text
+;en;ar;"Apartment Amenities";"وسائل الراحة في الشقة";Text
+;en;ar;"Apartment Complex Amenities";"مرافق مجمع الشقق";Text
 ;en;ar;"Available in different fields";"تطوع متاح في مختلف المجالات";Text
+;en;ar;"Breakfast or breakfast & dinner";"فطور فقط او فطور وعشاء";Text
 ;en;ar;"Build career-ready skills";"اكتسب مهارات مهنية مهمة";Text
 ;en;ar;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
 ;en;ar;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
@@ -18,40 +36,186 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
 ;en;ar;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
 ;en;ar;"Can be combined with other courses";"حصص شخصية يمكن دمجها مع الفئات الاخرى";Text
+;en;ar;"Cleaning, Bedding, Towels and more";"تنظيف";Text
 ;en;ar;"Designated academic advisor";"دعم اكاديمي اضافي";Text
 ;en;ar;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"طوّر مهارات جاهزة للمسار المهني في الذكاء الاصطناعي والأعمال والإدارة لتواكب بيئة العمل العالمية اليوم.";Text
+;en;ar;"Distance";"المسافة";Text
 ;en;ar;"Do good, feel good!";"عمل جيد , شعور جيد";Text
 ;en;ar;"Elective class";"دورة اختياريه";Text
 ;en;ar;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
 ;en;ar;"Enhance your English while working";"تعزيز لغتك الإنجليزية أثناء العمل";Text
+;en;ar;"Free Wi-Fi";"English";Text
+;en;ar;"Free Wi-Fi, Rooftop terrace with BBQ area";"واي فاي مجاني، تراس على السطح مع منطقة شواء";Text
+;en;ar;"From $330 per week";"يبدا من 330 الاسبوع";Text
 ;en;ar;"From $350/Week";"From $350/week";Text
 ;en;ar;"From $390/Week";"From $390/week";Text
 ;en;ar;"From $400/Week";"From $400/week";Text
 ;en;ar;"From $460/Week";"From $460/week";Text
 ;en;ar;"From $550/Week";"From $550/week";Text
 ;en;ar;"From $999,999/Week";"From $999,999/week";Text
+;en;ar;"From CA$240 per week";"يبدا من 240الاسبوع";Text
+;en;ar;"From CA$350 per week";"يبدا من 350الاسبوع";Text
+;en;ar;"From CA$430 per week";"يبدا من 430الاسبوع";Text
+;en;ar;"From CA$440 per week";"يبدا من 440الاسبوع";Text
+;en;ar;"From CA$475 per week";"يبدا من 475الاسبوع";Text
+;en;ar;"From CA$580 per week";"يبدا من 580الاسبوع";Text
 ;en;ar;"Full focus on your needs";"التركيز الكامل على احتياجاتك";Text
+;en;ar;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ar;"Gain relevant experience";"اكتساب الخبرة ذات الصلة";Text
 ;en;ar;"General English 20 & Surfing";"الإنكليزية العامة المكثفة وركوب الأمواج (20 + 4)";Text
 ;en;ar;"General English 24 & Surfing";"الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (24 + 4)";Text
 ;en;ar;"General English 28 & Surfing";"الإنكليزية العامة المكثفة بشكل زائد وركوب الأمواج (28 + 4)";Text
+;en;ar;"General Information";"معلومات عامة";Text
+;en;ar;"Ideal For You";"مثالي لك";Text
 ;en;ar;"Improve your overall English fluency while developing strong academic communication and writing skills";"حسّن طلاقتك العامة في اللغة الإنجليزية أثناء تطوير مهارات قوية في التواصل والكتابة الأكاديمية.";Text
+;en;ar;"Location";"الموقع";Text
+;en;ar;"Managed by CEL";"تحت إدارة CEL";Text
+;en;ar;"Max. 35 min by bus to CEL";"35 دقيقة في الباص الى المعهد CEL";Text
+;en;ar;"Minimum age is 17 years";"الحد الأدنى للعمر هو 17 سنة";Text
+;en;ar;"Minimum age is 18 years";"الحد الأدنى للعمر هو 18 سنة";Text
+;en;ar;"Most families provide Wifi";"توفر معظم العائلات خدمة الواي فاي المجانية";Text
 ;en;ar;"New courses start every Monday";"حصص جديدة لكل أيام الأثنين";Text
 ;en;ar;"No surf experience required";"لا يشترط وجود خبرة في ركوب الأمواج";Text
+;en;ar;"Pool, BBQ, small fitness room, jacuzzi";"Fill kitchen, pool, BBQ, fitness room, jacuzzi";Text
+;en;ar;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"Full kitchen, pool, BBQ area, tennis and basketball courts, beach volleyball, fitness";Text
 ;en;ar;"Prepare for Cambridge exam";"Prepare for Cambridge Exam";Text
 ;en;ar;"Private lessons";"دروس خصوصية";Text
 ;en;ar;"Project based learning";"التعلم القائم على المشروع";Text
+;en;ar;"Room type";"نوع الغرفة";Text
+;en;ar;"Shared Apartment GEC Viva";"Residence Standard YWCA";Text
+;en;ar;"Shared bathroom";"English";Text
+;en;ar;"Single and double rooms";"English";Text
+;en;ar;"Single and double rooms with shared bathroom";"RT SM";Text
+;en;ar;"Single and twin rooms (shared bathroom), studios (private bathroom)";"غرف فردية ومزدوجة (حمام مشترك)، استوديوهات (حمام خاص)";Text
+;en;ar;"Single and twin rooms with a private bathroom";"Single and twin rooms with a private bathroom per bedroom";Text
+;en;ar;"Single and twin rooms with a shared bathroom";"Single and twin rooms with a shared bathoom";Text
+;en;ar;"Single room";"غرفة فردية و مزدوجة";Text
+;en;ar;"Single, semi-private, twin rooms";"غرف فردية، شبه خاصة، مزدوجة";Text
 ;en;ar;"Small classes (avg. 7 students per class)";"فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)";Text
 ;en;ar;"Small classes (avg. 7 students/class)";"فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)";Text
+;en;ar;"Small fitness room, study rooms, lounge and rooftop terrace";"غرفة لياقة بدنية صغيرة، غرف دراسية، صالة، وتراس على السطح";Text
 ;en;ar;"Social, Educational or Conversatory Work";"اجتماعي او علمي او موسيقي";Text
 ;en;ar;"Social, or conversatory Work";"اجتماعي او علمي او موسيقي";Text
 ;en;ar;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"التحدث، القواعد، الكتابة، القراءة، النطق، الاستماع والمزيد";Text
 ;en;ar;"Specialized preparation for the Cambridge exam";"التحضير المتخصص لامتحان كامبريدج";Text
 ;en;ar;"Specialized preparation for the TOEFL exam";"التحضير المتخصص لامتحان TOEFL";Text
 ;en;ar;"Start your preparation to enter college or university in the U.S. or abroad.";"ابدأ تحضيرك للالتحاق بالجامعة في الولايات المتحدة أو في الخارج.";Text
+;en;ar;"Studio (max. 1)";"ستوديو (بحد أقصى 1)";Text
+;en;ar;"Study rooms, Lounge, Rooftop terrace";"غرف دراسية، صالة، تراس على السطح";Text
+;en;ar;"Study rooms, TV lounge, fitness room, outdoor pool (summer only), sauna";"غرف الدراسة، صالة التلفزيون، غرفة اللياقة البدنية، مسبح خارجي (فقط في الصيف)، ساونا";Text
 ;en;ar;"Surf in one of the top surf spots";"حصص تزحلق في الامواج";Text
 ;en;ar;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
 ;en;ar;"TOEFL Exam Preparation 24 - GE20+TOEFL4";"TOEFL Exam Preparation 24 - GE20 + TOE";Text
 ;en;ar;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"TOEFL Exam Preparation 28 - GE24 + TOE4";Text
 ;en;ar;"Upper Intermediate and Higher";"ابتداء من المستوى المتوسط فما فوق";Text
 ;en;ar;"Upper intermediate and higher";"ابتداء من المستوى المتوسط فما فوق";Text
+;en;ar;"✓ 10 minute walk to CEL";"✓ 10 دقائق سيرا على الأقدام إلى CEL";Text
+;en;ar;"✓ 10-minute walk to Santa Monica Pier";"✓ 10 دقائق سيرا على الأقدام إلى رصيف سانتا مونيكا";Text
+;en;ar;"✓ 15 minute walk to the beach";"✓ 15 دقائق سيرا على الأقدام إلى الشاطئ";Text
+;en;ar;"✓ 16 minute walk to CEL";"✓ 16 دقائق سيرا على الأقدام إلى CEL";Text
+;en;ar;"✓ 20 minute walk to Venice Beach";"✓ 20 دقيقة سيرا على الأقدام إلى شاطئ فينيسيا";Text
+;en;ar;"✓ 25 minute walk to CEL";"✓ 25 دقائق سيرا على الأقدام إلى CEL";Text
+;en;ar;"✓ 25 minutes by public transportation to CEL";"✓ 25 دقيقة بوسائل النقل العام إلى CEL";Text
+;en;ar;"✓ 25 minutes walk to CEL";"✓ 25 دقيقة مشيا الى المدرسة CEL";Text
+;en;ar;"✓ 30 - 45 minutes by public transportation to CEL";"✓ 30-45 دقيقة عن طريق الباص الى المدرسه CEL";Text
+;en;ar;"✓ 30 minute walk to CEL";"✓ 30 دقائق سيرا على الأقدام إلى CEL";Text
+;en;ar;"✓ 30 minutes by public transportation to CEL";"✓ 30 دقيقة بوسائل النقل العام إلى CEL";Text
+;en;ar;"✓ 35 minutes by public transportation to CEL";"✓ 35 دقيقة بوسائل النقل العام إلى CEL";Text
+;en;ar;"✓ 5 minute walk to the beach";"✓ 5 دقائق سيرا على الأقدام إلى الشاطئ";Text
+;en;ar;"✓ Air Conditioned";"✓ مكيفة الهواء";Text
+;en;ar;"✓ Average distance to CEL: 25 minutes by public transportation";"✓ تتراوح مدة السفر بالمواصلات العامة إلى CEL بين 25 دقيقة";Text
+;en;ar;"✓ Average distance to CEL: 30 to 45 minutes by public transportation";"✓ تتراوح مدة السفر بالمواصلات العامة إلى CEL بين 30 و45 دقيقة";Text
+;en;ar;"✓ Average distance to CEL: 40 to 50 minutes by public transportation";"✓ متوسط المسافة إلى CEL: من 40 إلى 50 دقيقة بوسائل النقل العام";Text
+;en;ar;"✓ BBQ Area";"✓ منطقة للشواء";Text
+;en;ar;"✓ Bedrooms with Sleeping Pods";"✓ غرف نوم مع كبسولات النوم";Text
+;en;ar;"✓ Breakfast and dinner";"✓ General info 1";Text
+;en;ar;"✓ Breakfast or breakfast and dinner";"✓ الإفطار أو الإفطار والعشاء";Text
+;en;ar;"✓ Check-in before 22:00";"✓ تسجيل الوصول قبل الساعة 22:00";Text
+;en;ar;"✓ Check-in: Saturday 16:00 - 20:00 (after 20:00 Check-In only upon request, late check-in fee of $50 applicable)";"✓ تسجيل الوصول: السبت من 16:00 إلى 20:00 (بعد الساعة 20:00، تسجيل الوصول فقط عند الطلب، وتطبق رسوم تسجيل وصول متأخر بقيمة 50 دولارًا)";Text
+;en;ar;"✓ Check-in: after 16:00";"✓ تسجيل الوصول: بعد الساعة 16:00";Text
+;en;ar;"✓ Check-in: from 15:00 on Saturdays";"✓ تسجيل الوصول: من الساعة 15:00 أيام السبت";Text
+;en;ar;"✓ Check-out: Saturday before 11:00";"✓ 11:00 تسجيل المغادرة: السبت قبل الساعة";Text
+;en;ar;"✓ Cleaning of common areas provided every second week";"✓ يتم توفير تنظيف المناطق المشتركة كل أسبوعين";Text
+;en;ar;"✓ Cleaning provided every second week";"✓ يتم توفير التنظيف كل أسبوعين";Text
+;en;ar;"✓ Cleaning provided once a week";"✓ يتم توفير التنظيف مرة واحدة في الأسبوع";Text
+;en;ar;"✓ Close to supermarkets, restaurants and department stores";"✓ بالقرب من محلات السوبر ماركت والمطاعم والمتاجر";Text
+;en;ar;"✓ Conveniently located in Downtown Vancouver";"✓ موقع مريح في وسط مدينة فانكوفر";Text
+;en;ar;"✓ Different parts of Los Angeles (e.g. Westwood)";"✓ أجزاء مختلفة من لوس أنجلوس (مثل ويستوود)";Text
+;en;ar;"✓ Different parts of San Diego";"✓ أجزاء مختلفة من سان دييغو";Text
+;en;ar;"✓ Different parts of Santa Monica & Los Angeles";"✓ أجزاء مختلفة من سانتا مونيكا ولوس أنجلوس";Text
+;en;ar;"✓ Double rooms have two separate beds and can only be booked by two students traveling together";"✓ تحتوي الغرف المزدوجة على سريرين منفصلين، ولا يمكن حجزها إلا من قبل طالبين يسافران معًا";Text
+;en;ar;"✓ Each Apartment has 2 bedrooms and 2 bathrooms";"✓ تحتوي كل شقة على غرفتي نوم وحمامين";Text
+;en;ar;"✓ Fairview district of Vancouver";"✓ حي فيرفيو في فانكوفر";Text
+;en;ar;"✓ Fully Equipped Kitchen with Dishwasher";"✓ مطبخ مجهز بالكامل مع غسالة صحون";Text
+;en;ar;"✓ If you are looking for an affordable housing option";"✓ إذا كنت تبحث عن خيار السكن بأسعار معقولة";Text
+;en;ar;"✓ If you are under 18 years old";"✓ إذا كان عمرك أقل من 18 عامًا";Text
+;en;ar;"✓ If you don‘t mind taking the bus to school";"✓ إذا كنت لا تمانع في ركوب الحافلة إلى المدرسة";Text
+;en;ar;"✓ If you want to benefit from amenities such as pooland fitness room";"✓ إذا كنت ترغب في الاستفادة من وسائل الراحة مثل حمام السباحة وغرفة اللياقة البدنية";Text
+;en;ar;"✓ If you want to interact with other tenants as much as possible";"✓ إذا كنت ترغب في التفاعل مع المستأجرين الآخرين قدر الإمكان";Text
+;en;ar;"✓ If you want to live centrally";"✓ إذا كنت ترغب في العيش في وسط المدينة";Text
+;en;ar;"✓ If you want to live close to the school";"✓ إذا كنت تريد أن تعيش بالقرب من المدرسة";Text
+;en;ar;"✓ If you want to live independently";"✓ إذا كنت ترغب في العيش بشكل مستقل";Text
+;en;ar;"✓ If you want to live independently and make the most of Downtown Vancouver";"✓ إذا كنت تريد أن تعيش بشكل مستقل وتستمتع بأقصى استفادة من وسط مدينة فانكوفر";Text
+;en;ar;"✓ If you want to live with an American family";"✓ إذا كنت تريد العيش مع عائلة أمريكية";Text
+;en;ar;"✓ If you want to live with an Canadian family";"✓ إذا كنت تريد العيش مع عائلة أمريكية";Text
+;en;ar;"✓ If you want to practice English every day with other students and with native speakers";"✓ إذا كنت تريد ممارسة الإنجليزية يوميًا مع طلاب آخرين ومع متحدثين أصليين";Text
+;en;ar;"✓ If you want to practice English every daywith native speakers";"✓ إذا كنت ترغب في ممارسة اللغة الإنجليزية كل يوم مع الناطقين بها";Text
+;en;ar;"✓ If you want to practice your English daily with native speakers";"✓ إذا كنت ترغب في ممارسة اللغة الإنجليزية كل يوم مع الناطقين بها";Text
+;en;ar;"✓ Laundry can be done at most homestays";"✓ يمكن إجراء الغسيل في معظم أماكن الإقامة مع العائلات";Text
+;en;ar;"✓ Linen are provided";"✓ يتم توفير البياضات";Text
+;en;ar;"✓ Living Room";"✓ غرفة المعيشة";Text
+;en;ar;"✓ Living room, Balcony, TV";"✓ غرفة معيشة، شرفة، تلفزيون";Text
+;en;ar;"✓ Located in Venice";"✓ تقع في البندقية";Text
+;en;ar;"✓ Luxury Hostel Style Accommodation";"✓ إقامة فاخرة على طراز نزل";Text
+;en;ar;"✓ Maximum distance to CEL: 35 minutes by public transportation";"✓ الحد الأقصى لوقت السفر بالمواصلات العامة إلى CEL هو 35 دقيقة";Text
+;en;ar;"✓ Maximum distance to CEL: 75 minutes by public transportation";"✓ الحد الأقصى لوقت السفر بالمواصلات العامة إلى CEL هو 75 دقيقة";Text
+;en;ar;"✓ Minimum age is 16 years";"✓ الحد الأدنى للعمر هو 16 سنة";Text
+;en;ar;"✓ Minimum age is 17 years";"✓ الحد الأدنى للعمر هو 17 سنة";Text
+;en;ar;"✓ Minimum age is 18 years";"✓ الحد الأدنى للعمر هو 18 سنة";Text
+;en;ar;"✓ Minimum age is 19 years";"✓ الحد الأدنى للعمر هو 19 سنة";Text
+;en;ar;"✓ Minimum duration is 1 week";"✓ الحد الأدنى للمدة هو أسبوع واحد";Text
+;en;ar;"✓ Minimum duration is 1 week (2 weeks during high season)";"✓ الحد الأدنى للمدة هو أسبوع واحد";Text
+;en;ar;"✓ Minimum duration is 13 weeks";"✓ الحد الأدنى للمدة هو 13 أسابيع";Text
+;en;ar;"✓ Minimum duration is 2 weeks";"✓ الحد الأدنى للمدة هو 2 أسابيع";Text
+;en;ar;"✓ Minimum duration is 3 weeks";"✓ الحد الأدنى للمدة هو 3 أسابيع";Text
+;en;ar;"✓ Minimum duration is 4 weeks";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
+;en;ar;"✓ Mixed Gender Apartments";"✓ شقق مختلطة بين الجنسين";Text
+;en;ar;"✓ Most Families offer free Wi-Fi";"✓ توفر معظم العائلات خدمة الواي فاي المجانية";Text
+;en;ar;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ لا يتم توفير خدمة التنظيف أثناء الإقامة (يتم توفير معدات التنظيف)";Text
+;en;ar;"✓ No security deposit required";"✓ لا يوجد إيداع ضمان مطلوب";Text
+;en;ar;"✓ Outdoor Area with BBQ";"✓ منطقة خارجية مع مرافق للشواء";Text
+;en;ar;"✓ Outdoor pool (Summer only)";"✓ مسبح خارجي (فقط في الصيف)";Text
+;en;ar;"✓ Parking (currently at $150 per month)";"✓ مواقف السيارات (حاليًا بسعر 150 دولارًا شهريًا)";Text
+;en;ar;"✓ Private balcony";"✓ شرفة خاصة";Text
+;en;ar;"✓ Private bathroom";"✓ حمام خاص لكل غرفة نوم";Text
+;en;ar;"✓ Private bathroom (Studio)";"✓ حمام خاص (استوديو)";Text
+;en;ar;"✓ Private bathroom (for single room only) available at a surcharge";"✓ حمام خاص (للغرفة الفردية فقط) متوفر مقابل رسوم إضافية";Text
+;en;ar;"✓ Private bathroom available at a surcharge ($100/week) - limited availability";"✓ يتوفر حمام خاص مقابل تكلفة إضافية (100 دولار في الأسبوع) - توفر محدود";Text
+;en;ar;"✓ Refundable security deposit: $300 (credit card recommended)";"✓ مبلغ تأمين قابل للاسترداد: 300 دولار (يوصى باستخدام بطاقة الائتمان)";Text
+;en;ar;"✓ Refundable security deposit: $500 (credit card recommended)";"✓ مبلغ تأمين قابل للاسترداد: 500 دولار (يوصى باستخدام بطاقة الائتمان)";Text
+;en;ar;"✓ Refundable security deposit: $600 (credit card recommended)";"✓ مبلغ تأمين قابل للاسترداد: 600 دولار (يوصى باستخدام بطاقة الائتمان)";Text
+;en;ar;"✓ Rooftop terrace with BBQ area";"✓ تراس على السطح مع منطقة شواء";Text
+;en;ar;"✓ Self-catering";"✓ الاعتماد على النفس فى تجهيز الوجبات";Text
+;en;ar;"✓ Shared Laundry Facilities ($)";"✓ مرافق غسيل الملابس المشتركة ($)";Text
+;en;ar;"✓ Shared bathroom (single and twin rooms)";"✓ حمام مشترك (للغرف الفردية والمزدوجة)";Text
+;en;ar;"✓ Si quieres practicar inglés cada dia con un hablante nativo";"✓ إذا كنت ترغب في ممارسة اللغة الإنجليزية كل يوم مع الناطقين بها";Text
+;en;ar;"✓ Single and double rooms";"✓ غرفة فردية و مزدوجة";Text
+;en;ar;"✓ Single and twin rooms";"✓ غرف مفردة وتوأم";Text
+;en;ar;"✓ Single rooms";"✓ غرفة فردية و مزدوجة";Text
+;en;ar;"✓ Single, semi-private, twin rooms";"✓ غرف فردية، شبه خاصة، مزدوجة";Text
+;en;ar;"✓ Single, semi-private, twin rooms and studios";"✓ غرف فردية، شبه خاصة، مزدوجة، واستوديوهات";Text
+;en;ar;"✓ Small Roof Top Terrace";"✓ تراس صغير على السطح";Text
+;en;ar;"✓ Small fitness room";"✓ غرفة لياقة بدنية صغيرة";Text
+;en;ar;"✓ Small kitchen with stove and microwave";"✓ مطبخ صغير مع موقد وميكروويف";Text
+;en;ar;"✓ Small studio (16 square meters)";"✓ استوديو صغير (16 متر مربع)";Text
+;en;ar;"✓ Students aged 17+";"✓ الطلاب الذين تبلغ أعمارهم 17 عامًا فما فوق";Text
+;en;ar;"✓ Students aged 18+";"✓ الطلاب الذين تبلغ أعمارهم 18 عامًا فما فوق";Text
+;en;ar;"✓ Students aged 19+";"✓ الطلاب الذين تبلغ أعمارهم 19 عامًا فما فوق";Text
+;en;ar;"✓ Study rooms, Lounge, Rooftop terrace";"✓ غرف دراسية، صالة، تراس على السطح";Text
+;en;ar;"✓ Study rooms, TV lounge, Sauna";"✓ غرف الدراسة، صالة التلفزيون، ساونا";Text
+;en;ar;"✓ Swimming Pool";"✓ حمام السباحة";Text
+;en;ar;"✓ Swimming pool, BBQ area, Fitness center, Tennis courts and Beach Volleyball Court";"✓ حمام سباحة ومنطقة للشواء ومركز للياقة البدنية وملاعب تنس وملعب للكرة الطائرة الشاطئية";Text
+;en;ar;"✓ Towels and linen are provided";"✓ البياضات والمناشف المقدمة";Text
+;en;ar;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
+;en;ar;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
+;en;ar;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ على مسافة قريبة من متجر البقالة ومنتزه الشارع الثالث وميترولاين والمكتبة العامة والمزيد";Text

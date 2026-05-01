@@ -1,14 +1,32 @@
 id;language_from;language_to;word_from;word_to;type
 ;en;pt;"1 teacher per student";"1 professor por aluno";Text
+;en;pt;"10 - 20 min. by bus to CEL";"10 - 20 minutos de ônibus até a CEL";Text
+;en;pt;"10 min. walk to CEL";"10 minutos andando até a CEL";Text
+;en;pt;"16 min. walk to CEL";"16 minutos andando até a CEL";Text
 ;en;pt;"16+ years";"Idade mínima: 16 anos";Text
 ;en;pt;"18 + years";"Mais de 18 anos";Text
+;en;pt;"20 min. by bus to CEL";"20 minutos de ônibus até a CEL";Text
+;en;pt;"25 min. by bus to CEL";"25 minutos de ônibus até a CEL";Text
+;en;pt;"25 min. walk to CEL";"25 minutos andando até a CEL";Text
+;en;pt;"30 - 45 min. by bus to CEL";"30-45 minutos de ônibus até a CEL";Text
+;en;pt;"30 - 75 min. by bus to CEL";"30 - 75 minutos de ônibus até a CEL";Text
+;en;pt;"30 Min. by Bus to CEL";"30 minutos de ônibus até a CEL";Text
+;en;pt;"30 min. by bus to CEL";"30 minutos de ônibus até a CEL";Text
+;en;pt;"30 min. walk to CEL";"30 minutos andando até a CEL";Text
+;en;pt;"30-75 min. by bus to CEL";"30-75 minutos de ônibus até a CEL";Text
+;en;pt;"30-75 min. by bus to EC";"35-75 minutos de ônibus até a EC";Text
+;en;pt;"35 min. by bus to CEL";"35 minutos de ônibus até a CEL";Text
 ;en;pt;"4 hours of Surfing per Week";"4 horas de surf por semana";Text
 ;en;pt;"4 sessions/year";"4 sessões por ano";Text
 ;en;pt;"Add a highlight to your CV";"Destaque seu currículo";Text
 ;en;pt;"Ages 18 and older";"Idade mínima: 18 anos";Text
 ;en;pt;"All levels from Basic to Advanced";"Todos os níveis: básico - avançado";Text
 ;en;pt;"All levels from basic to advanced";"Todos os níveis: do básico ao avançado";Text
+;en;pt;"Amenities";"Comodidades";Text
+;en;pt;"Apartment Amenities";"Comodidades do apartamento";Text
+;en;pt;"Apartment Complex Amenities";"Comodidades do complexo de apartamentos";Text
 ;en;pt;"Available in different fields";"Disponível em diferentes áreas";Text
+;en;pt;"Breakfast or breakfast & dinner";"Café da manhã ou meia-pensão";Text
 ;en;pt;"Build career-ready skills";"Competências para a carreira";Text
 ;en;pt;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
 ;en;pt;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
@@ -18,32 +36,69 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"Cambridge Exam Preparation 24 - GE20+CAE4";"Cambridge Exam Preparation GE20+CAE4";Text
 ;en;pt;"Cambridge Exam Preparation 28 - GE24+CAE4";"Cambridge Exam Preparation GE24+CAE4";Text
 ;en;pt;"Can be combined with other courses";"Reservável além do curso em grupo";Text
+;en;pt;"Cleaning, Bedding, Towels and more";"Limpeza, roupa de cama e toalhas";Text
 ;en;pt;"Designated academic advisor";"Apoio Acadêmico Adicional";Text
 ;en;pt;"Develop career-ready skills in AI, business, and management for today’s global workplace.";"Desenvolva habilidades profissionais em IA, negócios e gestão para o ambiente de trabalho global de hoje.";Text
+;en;pt;"Distance";"Distância";Text
 ;en;pt;"Do good, feel good!";"Faça o bem, se sinta bem";Text
 ;en;pt;"Elective class";"Aula eletiva";Text
 ;en;pt;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
 ;en;pt;"Enhance your English while working";"Melhore seu inglês no trabalho";Text
 ;en;pt;"For all English and for all surf levels";"Para todos os níveis de inglês e surfe";Text
+;en;pt;"Free Wi-Fi";"Wi-Fi grátis";Text
+;en;pt;"Free Wi-Fi, Rooftop terrace with BBQ area";"Wi-Fi gratuito, terraço na cobertura com área de churrasqueira";Text
+;en;pt;"From $330 per week";"A partir de $330 por semana";Text
 ;en;pt;"From $350/Week";"A partir de $350/week";Text
 ;en;pt;"From $390/Week";"A partir de $390/week";Text
 ;en;pt;"From $400/Week";"A partir de $400/week";Text
 ;en;pt;"From $460/Week";"A partir de $460/week";Text
 ;en;pt;"From $550/Week";"A partir de $550/week";Text
 ;en;pt;"From $999,999/Week";"A partir de $999,999/week";Text
+;en;pt;"From CA$240 per week";"A partir de CA$240 por semana";Text
+;en;pt;"From CA$350 per week";"A partir de CA$350 por semana";Text
+;en;pt;"From CA$430 per week";"A partir de CA$430 por semana";Text
+;en;pt;"From CA$440 per week";"A partir de CA$440 por semana";Text
+;en;pt;"From CA$475 per week";"A partir de CA$475 por semana";Text
+;en;pt;"From CA$580 per week";"A partir de CA$580 por semana";Text
 ;en;pt;"Full focus on your needs";"Foco total nas suas necessidades";Text
+;en;pt;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;pt;"Gain relevant experience";"Ganhe experiência relevante";Text
 ;en;pt;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
 ;en;pt;"General English 24 & Surfing";"General English Intensive Plus & Surfing (24 + 4)";Text
+;en;pt;"General Information";"Informações gerais";Text
+;en;pt;"Ideal For You";"Ideal para você.";Text
 ;en;pt;"Improve your overall English fluency while developing strong academic communication and writing skills";"Melhore sua fluência geral em inglês enquanto desenvolve fortes habilidades de comunicação e escrita acadêmica.";Text
+;en;pt;"Location";"Localização";Text
+;en;pt;"Managed by CEL";"Operado pela CEL";Text
+;en;pt;"Max. 35 min by bus to CEL";"35 minutos de ônibus até a CEL";Text
+;en;pt;"Minimum age is 17 years";"Idade mínima: 17 anos";Text
+;en;pt;"Minimum age is 18 years";"Idade mínima: 18 anos";Text
+;en;pt;"Most families provide Wifi";"A maioria das famílias oferece Wi-Fi gratuito";Text
 ;en;pt;"New courses start every Monday";"Novos cursos toda Segunda-feira";Text
 ;en;pt;"No surf experience required";"Não é necessária experiência com surf";Text
+;en;pt;"Pool, BBQ, small fitness room, jacuzzi";"Cozinha totalmente equipada, piscina, churrasqueira, sala de ginástica, jacuzzi";Text
+;en;pt;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"Cozinha totalmente equipada, piscina, churrasqueira, sala de ginástica, jacuzzi";Text
 ;en;pt;"Preparation for College & University";"Preparação para Universidade";Text
 ;en;pt;"Prepare for Cambridge exam";"Preparação para o exame Cambridge";Text
+;en;pt;"Private bathroom";"Banheiro privativo";Text
 ;en;pt;"Private lessons";"Aulas particulares";Text
 ;en;pt;"Project based learning";"Aprendizagem baseada em projetos";Text
+;en;pt;"Room type";"Tipo de quarto";Text
+;en;pt;"Shared Apartment GEC Viva";"Residence Standard YWCA";Text
+;en;pt;"Shared bathroom";"Banheiro compartilhado";Text
+;en;pt;"Single and double rooms";"Quartos individuais e duplos";Text
+;en;pt;"Single and double rooms with a shared bathroom";"Quartos individuais e duplos com banheiro compartilhado";Text
+;en;pt;"Single and double rooms with shared bathroom";"RT SM";Text
+;en;pt;"Single and twin rooms (shared bathroom), studios (private bathroom)";"Quartos individuais e duplos (banheiro compartilhado), estúdios (banheiro privativo)";Text
+;en;pt;"Single and twin rooms with a private bathroom";"Quartos individuais e duplos com banheiro privativo";Text
+;en;pt;"Single and twin rooms with a shared bathroom";"Single and twin rooms with a shared bathoom";Text
+;en;pt;"Single room";"Quartos individuais";Text
+;en;pt;"Single room with a shared bathroom";"Quarto individual com banheiro compartilhado";Text
+;en;pt;"Single, semi-private, twin rooms";"Quartos individuais, semi-privativos e duplos";Text
+;en;pt;"Sleeping pods";"Quartos com cápsulas para dormir";Text
 ;en;pt;"Small classes (avg. 7 students per class)";"Turmas pequenas (média de 7 alunos por sala)";Text
 ;en;pt;"Small classes (avg. 7 students/class)";"Turmas pequenas (média de 7 alunos)";Text
+;en;pt;"Small fitness room, study rooms, lounge and rooftop terrace";"Pequena sala de fitness, salas de estudo, lounge e terraço na cobertura";Text
 ;en;pt;"Social, Educational or Conversatory Work";"Trabalho social, educacional ou conversação";Text
 ;en;pt;"Social, or conversatory Work";"Trabalho social, ou conversação";Text
 ;en;pt;"Speaking, Grammar, Writing, Reading, Pronunciation, Listening and more";"Fala, Gramática, Escrita, Leitura, Pronúncia, Compreensão Auditiva e mais";Text
@@ -51,6 +106,9 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"Specialized preparation for the TOEFL exam";"Preparação especializada para o exame TOEFL";Text
 ;en;pt;"Spring and fall session intakes";"2 datas de início por ano";Text
 ;en;pt;"Start your preparation to enter college or university in the U.S. or abroad.";"Comece sua preparação para ingressar em uma faculdade ou universidade nos Estados Unidos ou no exterior.";Text
+;en;pt;"Studio (max. 1)";"Estúdio (máx. 1)";Text
+;en;pt;"Study rooms, Lounge, Rooftop terrace";"Salas de estudo, lounge, terraço na cobertura";Text
+;en;pt;"Study rooms, TV lounge, fitness room, outdoor pool (summer only), sauna";"Salas de estudo, sala de TV, sala de fitness, piscina ao ar livre (apenas no verão), sauna";Text
 ;en;pt;"Surf in one of the top surf spots";"Surfe nos melhores pontos do mundo";Text
 ;en;pt;"Surfing max 5 per instructor, English max 12 per teacher";"Surfe: máximo de 5 por instrutor, Inglês: máximo de 12 por professor";Text
 ;en;pt;"TOEFL Exam Preparation 23 - GE20+TOEFL3";"TOEFL Exam Preparation 23 - GE20 + TOE3";Text
@@ -58,3 +116,116 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"TOEFL Exam Preparation 28 - GE24+TOEFL4";"TOEFL Exam Preparation 28 - GE24 + TOE4";Text
 ;en;pt;"Upper Intermediate and Higher";"Intermediário superior e avançado";Text
 ;en;pt;"Upper intermediate and higher";"Intermediário superior e avançado";Text
+;en;pt;"✓ 10 minute walk to CEL";"✓ 10 minutos andando até a CEL";Text
+;en;pt;"✓ 10-minute walk to Santa Monica Pier";"✓ 10 minutos andando até o Pier de Santa Monica";Text
+;en;pt;"✓ 15 minute walk to the beach";"✓ 15 minutos andando até a praia";Text
+;en;pt;"✓ 16 minute walk to CEL";"✓ 16 minutos andando até a CEL";Text
+;en;pt;"✓ 20 minute walk to Venice Beach";"✓ 20 minutos andando para Venice Beach";Text
+;en;pt;"✓ 25 minute walk to CEL";"✓ 25 minutos andando até a CEL";Text
+;en;pt;"✓ 25 minutes by public transportation to CEL";"✓ 25 minutos de transporte público até a CEL";Text
+;en;pt;"✓ 25 minutes walk to CEL";"✓ 25 minutos andando até a CEL";Text
+;en;pt;"✓ 30 - 45 minutes by public transportation to CEL";"✓ 30-45 minutos de ônibus até a CEL";Text
+;en;pt;"✓ 30 minute walk to CEL";"✓ 30 minutos andando até a CEL";Text
+;en;pt;"✓ 30 minutes by public transportation to CEL";"✓ 30 minutos de transporte público até a CEL";Text
+;en;pt;"✓ 35 minutes by public transportation to CEL";"✓ 35 minutos de transporte público até a CEL";Text
+;en;pt;"✓ 5 minute walk to the beach";"✓ 5 minutos andando até a praia";Text
+;en;pt;"✓ Air Conditioned";"✓ Ar condicionado";Text
+;en;pt;"✓ Average distance to CEL: 25 minutes by public transportation";"✓ 30-45 minutos de transporte público para a CEL";Text
+;en;pt;"✓ Average distance to CEL: 30 to 45 minutes by public transportation";"✓ 30-45 minutos de transporte público para a CEL";Text
+;en;pt;"✓ Average distance to CEL: 40 to 50 minutes by public transportation";"✓ Distância média até a CEL: 40 a 50 minutos de transporte público";Text
+;en;pt;"✓ BBQ Area";"✓ Área para churrasco";Text
+;en;pt;"✓ Bedrooms with Sleeping Pods";"✓ Quartos com cápsulas para dormir";Text
+;en;pt;"✓ Breakfast and dinner";"✓ Café da manhã e jantar";Text
+;en;pt;"✓ Breakfast or breakfast and dinner";"✓ Café da manhã ou café da manhã e jantar";Text
+;en;pt;"✓ Check-in before 22:00";"✓ Check-in: antes das 22h";Text
+;en;pt;"✓ Check-in: Saturday 16:00 - 20:00 (after 20:00 Check-In only upon request, late check-in fee of $50 applicable)";"✓ Check-in: Sábado das 16:00 às 20:00 (após as 20:00, check-in somente mediante solicitação, taxa de check-in tardio de $50 aplicável)";Text
+;en;pt;"✓ Check-in: after 16:00";"✓ Check-in: após as 16:00";Text
+;en;pt;"✓ Check-in: from 15:00 on Saturdays";"✓ Check-in: a partir das 15:00 aos sábados";Text
+;en;pt;"✓ Check-out: Saturday before 11:00";"✓ Check-out: Sábado antes das 11:00";Text
+;en;pt;"✓ Cleaning of common areas provided every second week";"✓ Limpeza das áreas comuns realizada a cada duas semanas";Text
+;en;pt;"✓ Cleaning provided every second week";"✓ Limpeza fornecida a cada duas semanas";Text
+;en;pt;"✓ Cleaning provided once a week";"✓ Limpeza fornecida uma vez por semana";Text
+;en;pt;"✓ Close to supermarkets, restaurants and department stores";"✓ Perto de supermercados, restaurantes e lojas de departamento";Text
+;en;pt;"✓ Conveniently located in Downtown Vancouver";"✓ Convenientemente localizado no centro de Vancouver";Text
+;en;pt;"✓ Different parts of Los Angeles (e.g. Westwood)";"✓ Diferentes partes de Los Angeles (exemplo: Westwood)";Text
+;en;pt;"✓ Different parts of San Diego";"✓ Diferentes partes de San Diego";Text
+;en;pt;"✓ Different parts of Santa Monica & Los Angeles";"✓ Diferentes partes de Santa Monica e Los Angeles";Text
+;en;pt;"✓ Double rooms have two separate beds and can only be booked by two students traveling together";"✓ Quartos duplos só podem ser reservados por dois estudantes que estão viajando juntos";Text
+;en;pt;"✓ Each Apartment has 2 bedrooms and 1 bathroom";"✓ Cada apartamento tem 2 quartos e 2 banheiro";Text
+;en;pt;"✓ Each Apartment has 2 bedrooms and 2 bathrooms";"✓ Cada apartamento tem 2 quartos e 2 banheiros";Text
+;en;pt;"✓ Fairview district of Vancouver";"✓ Distrito Fairview de Vancouver";Text
+;en;pt;"✓ Fully Equipped Kitchen";"✓ Cozinha totalmente equipada";Text
+;en;pt;"✓ Fully Equipped Kitchen with Dishwasher";"✓ Cozinha totalmente equipada com máquina de lavar louça";Text
+;en;pt;"✓ If you are looking for an affordable housing option";"✓ Para quem procura uma opção de moradia acessível";Text
+;en;pt;"✓ If you are under 18 years old";"✓ Estudantes menores de 18 anos";Text
+;en;pt;"✓ If you don‘t mind taking the bus to school";"✓ Quem não se importa de pegar ônibus para a escola";Text
+;en;pt;"✓ If you want to benefit from amenities such as pooland fitness room";"✓ Para quem quer aproveitar comodidades como piscinae sala de ginástica";Text
+;en;pt;"✓ If you want to interact with other tenants as much as possible";"✓ Para quem deseja interagir com outros inquilinos";Text
+;en;pt;"✓ If you want to live centrally";"✓ Se você quer viver no centro";Text
+;en;pt;"✓ If you want to live close to the school";"✓ Se você quer morar perto da escola";Text
+;en;pt;"✓ If you want to live independently";"✓ Se você quer viver de forma independente";Text
+;en;pt;"✓ If you want to live independently and make the most of Downtown Vancouver";"✓ Se você quer viver de forma independente e aproveitar ao máximo o centro de Vancouver";Text
+;en;pt;"✓ If you want to live with an American family";"✓ Para quem deseja viver com uma família americana";Text
+;en;pt;"✓ If you want to live with an Canadian family";"✓ Para quem deseja viver com uma família canadense";Text
+;en;pt;"✓ If you want to practice English every day with other students and with native speakers";"✓ Se você quer praticar inglês todos os dias com outros estudantes e com falantes nativos";Text
+;en;pt;"✓ If you want to practice English every daywith native speakers";"✓ Para quem quer praticar o inglês todos os dias com nativos";Text
+;en;pt;"✓ If you want to practice your English daily with native speakers";"✓ Para quem quer praticar o inglês todos os dias com nativos";Text
+;en;pt;"✓ Laundry can be done at most homestays";"✓ É possível lavar roupas na maioria das casas de família";Text
+;en;pt;"✓ Linen are provided";"✓ Roupa de cama fornecida";Text
+;en;pt;"✓ Living Room";"✓ Sala de estar";Text
+;en;pt;"✓ Living room, Balcony, TV";"✓ Sala, varanda e TV";Text
+;en;pt;"✓ Located in Venice";"✓ Localizado em Venice";Text
+;en;pt;"✓ Luxury Hostel Style Accommodation";"✓ Acomodação estilo hostel de luxo";Text
+;en;pt;"✓ Maximum distance to CEL: 35 minutes by public transportation";"✓ Distância máxima para a CEL: 35 minutos de transporte público";Text
+;en;pt;"✓ Maximum distance to CEL: 75 minutes by public transportation";"✓ Distância máxima para a CEL: 75 minutos de transporte público";Text
+;en;pt;"✓ Minimum age is 16 years";"✓ Idade mínima: 16 anos";Text
+;en;pt;"✓ Minimum age is 17 years";"✓ Idade mínima: 17 anos";Text
+;en;pt;"✓ Minimum age is 18 years";"✓ Idade mínima: 18 anos";Text
+;en;pt;"✓ Minimum age is 19 years";"✓ Idade mínima: 19 anos";Text
+;en;pt;"✓ Minimum duration is 1 week";"✓ Duração mínima: 1 semana";Text
+;en;pt;"✓ Minimum duration is 1 week (2 weeks during high season)";"✓ Duração mínima: 1 semana";Text
+;en;pt;"✓ Minimum duration is 13 weeks";"✓ Duração mínima: 13 semanas";Text
+;en;pt;"✓ Minimum duration is 2 weeks";"✓ Duração mínima: 2 semanas";Text
+;en;pt;"✓ Minimum duration is 3 weeks";"✓ Duração mínima: 3 semanas";Text
+;en;pt;"✓ Minimum duration is 4 weeks";"✓ Duração mínima: 4 semanas";Text
+;en;pt;"✓ Mixed Gender Apartments";"✓ Apartamentos mistos";Text
+;en;pt;"✓ Most Families offer free Wi-Fi";"✓ A maioria das famílias oferece Wi-Fi gratuito";Text
+;en;pt;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ Não há limpeza fornecida durante a estadia (equipamentos de limpeza são fornecidos)";Text
+;en;pt;"✓ No security deposit required";"✓ Não é necessário depósito de segurança";Text
+;en;pt;"✓ Outdoor Area with BBQ";"✓ Área externa com churrasqueira";Text
+;en;pt;"✓ Outdoor pool (Summer only)";"✓ Piscina ao ar livre (apenas no verão)";Text
+;en;pt;"✓ Parking (currently at $150 per month)";"✓ Estacionamento (atualmente em US$ 150 por mês)";Text
+;en;pt;"✓ Private balcony";"✓ Varanda privativa";Text
+;en;pt;"✓ Private bathroom";"✓ Banheiro privativo";Text
+;en;pt;"✓ Private bathroom (Studio)";"✓ Banheiro privativo (estúdio)";Text
+;en;pt;"✓ Private bathroom (for single room only) available at a surcharge";"✓ Banheiro privativo (apenas para quarto individual) disponível por uma taxa adicional";Text
+;en;pt;"✓ Private bathroom available at a surcharge ($100/week) - limited availability";"✓ Banheiro privativo disponível por um custo adicional (US$ 100/semana) - disponibilidade limitada";Text
+;en;pt;"✓ Refundable security deposit: $300 (credit card recommended)";"✓ Depósito reembolsável: $300";Text
+;en;pt;"✓ Refundable security deposit: $500 (credit card recommended)";"✓ Depósito reembolsável: $500";Text
+;en;pt;"✓ Refundable security deposit: $600 (credit card recommended)";"✓ Depósito reembolsável: $600";Text
+;en;pt;"✓ Rooftop terrace with BBQ area";"✓ Terraço na cobertura com área de churrasqueira";Text
+;en;pt;"✓ Self-catering";"✓ auto atendimento";Text
+;en;pt;"✓ Shared Laundry Facilities ($)";"✓ Lavanderia compartilhada ($)";Text
+;en;pt;"✓ Shared bathroom";"✓ Banheiro compartilhado";Text
+;en;pt;"✓ Shared bathroom (single and twin rooms)";"✓ Banheiro compartilhado (quartos individuais e duplos)";Text
+;en;pt;"✓ Si quieres practicar inglés cada dia con un hablante nativo";"✓ Para quem quer praticar o inglês todos os dias com nativos";Text
+;en;pt;"✓ Single and double rooms";"✓ Quartos individuais e duplos";Text
+;en;pt;"✓ Single and twin rooms";"✓ Quartos individuais e compartilhados";Text
+;en;pt;"✓ Single rooms";"✓ Quartos individuais";Text
+;en;pt;"✓ Single, semi-private, twin rooms";"✓ Quartos individuais, semi-privativos e duplos";Text
+;en;pt;"✓ Single, semi-private, twin rooms and studios";"✓ Quartos individuais, semiprivativos, duplos e estúdios";Text
+;en;pt;"✓ Small Roof Top Terrace";"✓ Pequeno terraço na cobertura";Text
+;en;pt;"✓ Small fitness room";"✓ Pequena sala de ginástica";Text
+;en;pt;"✓ Small kitchen with stove and microwave";"✓ Pequena cozinha com fogão e micro-ondas";Text
+;en;pt;"✓ Small studio (16 square meters)";"✓ Pequeno estúdio (16 metros quadrados)";Text
+;en;pt;"✓ Students aged 17+";"✓ Estudantes com 17 anos ou mais";Text
+;en;pt;"✓ Students aged 18+";"✓ Estudantes com 18 anos ou mais";Text
+;en;pt;"✓ Students aged 19+";"✓ Estudantes com 19 anos ou mais";Text
+;en;pt;"✓ Study rooms, Lounge, Rooftop terrace";"✓ Salas de estudo, lounge, terraço na cobertura";Text
+;en;pt;"✓ Study rooms, TV lounge, Sauna";"✓ Salas de estudo, sala de TV, sauna";Text
+;en;pt;"✓ Swimming Pool";"✓ Piscina";Text
+;en;pt;"✓ Swimming pool, BBQ area, Fitness center, Tennis courts and Beach Volleyball Court";"✓ Piscina, churrasqueira, academia, quadras de tênis e quadra de vôlei de praia";Text
+;en;pt;"✓ Towels and linen are provided";"✓ Lençóis e toalhas são fornecidas";Text
+;en;pt;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Os quartos compartilhados podem ser reservados por uma pessoa, e ela dividirá o quarto com outra do mesmo gênero";Text
+;en;pt;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Os quartos compartilhados podem ser reservados por uma pessoa, e ela dividirá o quarto com outra do mesmo gênero";Text
+;en;pt;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ A uma curta distância a pé do supermercado, 3rd Street Promenade, Metroline, Biblioteca pública, e muito mais";Text
