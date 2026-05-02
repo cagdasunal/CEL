@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-02T03:34:21.614950-07:00",
+      "detail": {
+        "slugs": [
+          "imparare-inglese-california-costa-ovest"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-02T02:35:01.568298-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-01T13:36:17.444493-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-01T12:42:13.830084-07:00",
       "detail": {}
     }
   ]
