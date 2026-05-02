@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-02T09:35:00.872956+00:00",
+  "last_sync": "2026-05-02T10:30:00.299357+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4438,6 +4438,21 @@
       "source": "api",
       "url_path": "/post/ou-vivent-etudiants-vancouver",
       "added_at": "2026-05-01T09:12:53.992431+00:00"
+    },
+    "imparare-inglese-california-costa-ovest": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-california-costa-ovest",
+      "added_at": "2026-05-02T10:30:00.299269+00:00"
     }
   }
 }
