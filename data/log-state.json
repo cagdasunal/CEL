@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-02T13:07:48.655920-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-02T12:36:23.336203-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-02T04:25:16.247865-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-02T03:34:21.614950-07:00",
-      "detail": {
-        "slugs": [
-          "imparare-inglese-california-costa-ovest"
-        ]
-      }
     }
   ]
 }
