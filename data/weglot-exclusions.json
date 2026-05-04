@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-04T11:19:26.317516+00:00",
+  "last_sync": "2026-05-04T12:59:14.815576+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4469,6 +4469,21 @@
       "source": "api",
       "url_path": "/post/first-week-at-language-school-abroad",
       "added_at": "2026-05-04T11:19:26.317423+00:00"
+    },
+    "wochenendausfluege-san-diego-guide-sprachschueler": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/wochenendausfluege-san-diego-guide-sprachschueler",
+      "added_at": "2026-05-04T12:59:14.815470+00:00"
     }
   }
 }
