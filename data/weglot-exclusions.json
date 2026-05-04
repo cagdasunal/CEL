@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-04T09:07:39.760314+00:00",
+  "last_sync": "2026-05-04T11:19:26.317516+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4453,6 +4453,22 @@
       "source": "api",
       "url_path": "/post/imparare-inglese-california-costa-ovest",
       "added_at": "2026-05-02T10:30:00.299269+00:00"
+    },
+    "first-week-at-language-school-abroad": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/first-week-at-language-school-abroad",
+      "added_at": "2026-05-04T11:19:26.317423+00:00"
     }
   }
 }

@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-04T04:23:20.528497-07:00",
+      "detail": {
+        "slugs": [
+          "first-week-at-language-school-abroad"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-04T02:07:39.843058-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-03T12:35:33.653801-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-03T11:31:55.939960-07:00",
       "detail": {}
     }
   ]
