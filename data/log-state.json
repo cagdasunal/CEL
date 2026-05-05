@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-04T20:52:42.509975-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-04T17:11:08.000757-07:00",
       "detail": {}
     },
@@ -46,15 +51,6 @@
       "detail": {
         "slugs": [
           "wochenendausfluege-san-diego-guide-sprachschueler"
-        ]
-      }
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-04T04:23:20.528497-07:00",
-      "detail": {
-        "slugs": [
-          "first-week-at-language-school-abroad"
         ]
       }
     }
