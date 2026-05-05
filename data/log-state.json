@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-04T23:25:38.794963-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-04T20:52:42.509975-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-04T08:15:31.114853-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-04T06:03:49.252797-07:00",
-      "detail": {
-        "slugs": [
-          "wochenendausfluege-san-diego-guide-sprachschueler"
-        ]
-      }
     }
   ]
 }
