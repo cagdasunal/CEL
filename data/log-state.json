@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-05T03:27:32.161291-07:00",
+      "detail": {
+        "slugs": [
+          "combien-de-temps-faut-il-pour-apprendre-anglais"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-05T01:35:29.163432-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-04T11:24:15.473889-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-04T10:02:57.910539-07:00",
       "detail": {}
     }
   ]
