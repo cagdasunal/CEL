@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-05T10:22:49.315271+00:00",
+  "last_sync": "2026-05-05T11:49:24.011477+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4499,6 +4499,21 @@
       "source": "api",
       "url_path": "/post/combien-de-temps-faut-il-pour-apprendre-anglais",
       "added_at": "2026-05-05T10:22:49.315154+00:00"
+    },
+    "famiglia-ospitante-vs-appartamento-progresso-inglese": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/famiglia-ospitante-vs-appartamento-progresso-inglese",
+      "added_at": "2026-05-05T11:49:24.011382+00:00"
     }
   }
 }
