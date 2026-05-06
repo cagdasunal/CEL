@@ -32,7 +32,7 @@
     '/vancouver': 'Vancouver',
     '/vancouver/costs': 'Costs',
     '/vancouver/adults-16': 'Adults 16+',
-    '/vancouver/duration-guide': 'How Long to Study',
+    '/vancouver/how-long-to-study': 'How Long to Study',
     '/vancouver/vs-toronto': 'Vancouver vs Toronto'
   };
 
