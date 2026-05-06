@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-05T23:39:12.790280-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-05T20:59:58.928204-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-05T05:59:57.601408-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-05T04:53:55.114231-07:00",
-      "detail": {
-        "slugs": [
-          "famiglia-ospitante-vs-appartamento-progresso-inglese"
-        ]
-      }
     }
   ]
 }
