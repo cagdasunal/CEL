@@ -1,9 +1,9 @@
 /*!
- * cel-how-long-to-study.js — CEL Vancouver / How Long to Study
+ * cel-duration-guide.js — CEL Vancouver / Duration Guide
  *
- * Source-of-truth: tools/cel-page-scripts/src/cel-how-long-to-study.js (cagdasunal/webflow monorepo)
- * Mirrored to:     docs/scripts/cel-how-long-to-study.{js,min.js} (cagdasunal/CEL repo)
- * Public URL:      https://cel.englishcollege.com/scripts/cel-how-long-to-study.min.js
+ * Source-of-truth: tools/cel-page-scripts/src/cel-duration-guide.js (cagdasunal/webflow monorepo)
+ * Mirrored to:     docs/scripts/cel-duration-guide.{js,min.js} (cagdasunal/CEL repo)
+ * Public URL:      https://cel.englishcollege.com/scripts/cel-duration-guide.min.js
  *
  * Bundles 7 scripts (was previously 7 inline-registered Webflow scripts):
    1. celnavtoc3 v1.0.0
