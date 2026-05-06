@@ -74,7 +74,7 @@
  *                          expiry, per-second tick, isConnected guard) but
  *                          the dayjs guard early-return is gone — Section 3
  *                          now also runs on the previously nav-only pages
- *                          (adults-16, duration-guide, costs, vs-toronto)
+ *                          (adults-16, how-long-to-study, costs, vs-toronto)
  *                          which don't ship dayjs. Pages without offer cards
  *                          remain a no-op (querySelectorAll returns empty).
  *
@@ -406,7 +406,7 @@
  *   Init runs immediately inside the IIFE (CDN-safe), same pattern as
  *       Sections 1 and 2.
  *   v1.4.0: vanilla Date instead of dayjs (no dayjs guard needed → runs
- *       on adults-16/duration-guide/costs/vs-toronto), and dual
+ *       on adults-16/how-long-to-study/costs/vs-toronto), and dual
  *       item/date selectors covering legacy `.offer_item`+`.offer_date`
  *       and new offer-bento `.offer-item` + `[data-wg-notranslate]`
  *       date markup. UTC end-of-day expiry semantics preserved.
@@ -497,7 +497,7 @@
  * Ticks the standalone navbar countdown against the soonest-expiring
  * .offer_item .offer_date on the page. Vanilla Date — no dayjs needed.
  * Exits cleanly when there's no .offer_item on the page (the 4 nav-only
- * pages /adults-16, /duration-guide, /costs, /vs-toronto — navbar counter
+ * pages /adults-16, /how-long-to-study, /costs, /vs-toronto — navbar counter
  * stays at its CMS-rendered "00" placeholder, current behavior unchanged).
  * Whole section is try/catch wrapped — any error → leave navbar alone.
  * ============================================================ */
