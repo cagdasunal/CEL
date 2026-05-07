@@ -1,9 +1,15 @@
 /*!
- * cel-vs-toronto.js — CEL Vancouver / VS Toronto
+ * cel-vs-toronto.js v2.0.0 — CEL Vancouver / VS Toronto
  *
  * Source-of-truth: tools/cel-page-scripts/src/cel-vs-toronto.js (cagdasunal/webflow monorepo)
  * Mirrored to:     docs/scripts/cel-vs-toronto.{js,min.js} (cagdasunal/CEL repo)
  * Public URL:      https://cel.englishcollege.com/scripts/cel-vs-toronto.min.js
+ *
+ * v2.0.0 (2026-05-07): Removed JS-injected schema partial.
+ *   Schema (WebPage + BreadcrumbList) is now server-rendered in HEAD via
+ *   Webflow Page Settings → Custom Code (Option B pattern). This makes
+ *   schema visible to Googlebot's first-pass HTTP fetch and lets Weglot
+ *   translate URLs at the proxy layer. Bundle now does behavior only.
  *
  * Bundles 9 scripts (was previously 9 inline-registered Webflow scripts):
    1. a16swipercdn v3.0.0
