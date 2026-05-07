@@ -1,9 +1,11 @@
 /*!
- * cel-costs.js — CEL Vancouver / Costs
+ * cel-cost-of-studying-english.js — CEL Vancouver / Cost of Studying English
  *
- * Source-of-truth: tools/cel-page-scripts/src/cel-costs.js (cagdasunal/webflow monorepo)
- * Mirrored to:     docs/scripts/cel-costs.{js,min.js} (cagdasunal/CEL repo)
- * Public URL:      https://cel.englishcollege.com/scripts/cel-costs.min.js
+ * Source-of-truth: tools/cel-page-scripts/src/cel-cost-of-studying-english.js (cagdasunal/webflow monorepo)
+ * Mirrored to:     docs/scripts/cel-cost-of-studying-english.{js,min.js} (cagdasunal/CEL repo)
+ * Public URL:      https://cel.englishcollege.com/scripts/cel-cost-of-studying-english.min.js
+ *
+ * Page slug renamed: costs (older) → cost-of-studying-english (current 2026-05-07).
  *
  * Bundles 9 scripts (was previously 9 inline-registered Webflow scripts):
    1. a16swipercdn v3.0.0
@@ -16,10 +18,18 @@
    8. costsbudget1 v1.0.0
    9. celtochov1 v2.0.0
  *
+ * v2.0.0 (2026-05-07) — Removed JS-injected JSON-LD schema partial
+ * (formerly cel-costs-schema.js). Schema is now fully server-rendered
+ * in the page's HEAD custom code (Option B pattern, same as
+ * cel-courses-template.js v2.0.0 and cel-how-long-to-learn-english.js v2.0.0).
+ * Google's first-pass HTTP fetch sees schema directly from the static
+ * HTML response — no runtime injection needed.
+ *
+ * v1.0.0 (2026-04-30) — Initial bundle (originally cel-costs.js).
  * Each section is the verbatim source captured from the live Webflow CDN
  * on 2026-04-30 (see tools/cel-page-scripts/sources/manifest.json).
  *
- * Migration date: 2026-04-30. See rules/cel-page-scripts-deploy.md.
+ * See rules/cel-page-scripts-deploy.md.
  */
 
 /* ============================================================
