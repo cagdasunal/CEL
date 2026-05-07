@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-07T03:07:12.645497-07:00",
+      "detail": {
+        "slugs": [
+          "vancouver-als-student-5-ueberraschungen"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-07T00:33:33.196310-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-06T10:09:32.109375-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-06T08:37:35.727606-07:00",
       "detail": {}
     }
   ]

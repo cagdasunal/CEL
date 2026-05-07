@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-07T07:33:33.061227+00:00",
+  "last_sync": "2026-05-07T10:02:45.310782+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4514,6 +4514,21 @@
       "source": "api",
       "url_path": "/post/famiglia-ospitante-vs-appartamento-progresso-inglese",
       "added_at": "2026-05-05T11:49:24.011382+00:00"
+    },
+    "vancouver-als-student-5-ueberraschungen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/vancouver-als-student-5-ueberraschungen",
+      "added_at": "2026-05-07T10:02:45.310692+00:00"
     }
   }
 }
