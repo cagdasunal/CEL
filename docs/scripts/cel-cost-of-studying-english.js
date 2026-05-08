@@ -1,11 +1,9 @@
 /*!
- * cel-cost-of-studying-english.js — CEL Vancouver / Cost of Studying English
+ * cel-costs.js — CEL Vancouver / Costs
  *
- * Source-of-truth: tools/cel-page-scripts/src/cel-cost-of-studying-english.js (cagdasunal/webflow monorepo)
- * Mirrored to:     docs/scripts/cel-cost-of-studying-english.{js,min.js} (cagdasunal/CEL repo)
- * Public URL:      https://cel.englishcollege.com/scripts/cel-cost-of-studying-english.min.js
- *
- * Page slug renamed: costs (older) → cost-of-studying-english (current 2026-05-07).
+ * Source-of-truth: tools/cel-page-scripts/src/cel-costs.js (cagdasunal/webflow monorepo)
+ * Mirrored to:     docs/scripts/cel-costs.{js,min.js} (cagdasunal/CEL repo)
+ * Public URL:      https://cel.englishcollege.com/scripts/cel-costs.min.js
  *
  * Bundles 9 scripts (was previously 9 inline-registered Webflow scripts):
    1. a16swipercdn v3.0.0
@@ -18,25 +16,26 @@
    8. costsbudget1 v1.0.0
    9. celtochov1 v2.0.0
  *
- * v2.0.0 (2026-05-07) — Removed JS-injected JSON-LD schema partial
- * (formerly cel-costs-schema.js). Schema is now fully server-rendered
- * in the page's HEAD custom code (Option B pattern, same as
- * cel-courses-template.js v2.0.0 and cel-how-long-to-learn-english.js v2.0.0).
- * Google's first-pass HTTP fetch sees schema directly from the static
- * HTML response — no runtime injection needed.
- *
- * v1.0.0 (2026-04-30) — Initial bundle (originally cel-costs.js).
  * Each section is the verbatim source captured from the live Webflow CDN
  * on 2026-04-30 (see tools/cel-page-scripts/sources/manifest.json).
  *
- * See rules/cel-page-scripts-deploy.md.
+ * Migration date: 2026-04-30. See rules/cel-page-scripts-deploy.md.
  */
 
 /* ============================================================
    1. a16swipercdn v3.0.0
    Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ba51a3905cc67b376c23af%2Fa16swipercdn-3.0.0.js
    ============================================================ */
-(function(){if(window.__swR)return;window.__swR=1;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';s.onload=function(){window.__swOK=true;document.dispatchEvent(new Event('swiperReady'))};document.head.appendChild(s);var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css';document.head.appendChild(l)})();
+(function(){if(window.__swR)return;window.__swR=1;var s=document.createElement('script');s.src='https://cel.englishcollege.com/scripts/vendor/swiper@11/swiper-bundle.min.js';s.onload=function(){window.__swOK=true;document.dispatchEvent(new Event('swiperReady'))};document.head.appendChild(s);var l=document.createElement('link');l.rel='stylesheet';l.href='https://cel.englishcollege.com/scripts/vendor/swiper@11/swiper-bundle.min.css';document.head.appendChild(l)})();
+
+/* ============================================================
+   1b. dayjs-loader v1.11.19 (self-hosted)
+   Loads dayjs@1 core + duration + utc plugins from cel.englishcollege.com.
+   Replaces the previous 3 jsdelivr <script> tags in Webflow Site Settings.
+   Idempotent: skips if window.dayjs already exists. Fires `dayjsReady`
+   event after all 3 files load + plugins extended.
+   ============================================================ */
+(function(){if(window.__dayjsR||window.dayjs)return;window.__dayjsR=1;const B='https://cel.englishcollege.com/scripts/vendor/dayjs@1';function a(u,c){const s=document.createElement('script');s.src=u;s.onload=c;document.head.appendChild(s)}a(B+'/dayjs.min.js',function(){let n=2;function d(){if(--n===0){window.__dayjsOK=true;document.dispatchEvent(new Event('dayjsReady'))}}a(B+'/plugin/duration.js',function(){if(window.dayjs&&window.dayjs_plugin_duration)dayjs.extend(dayjs_plugin_duration);d()});a(B+'/plugin/utc.js',function(){if(window.dayjs&&window.dayjs_plugin_utc)dayjs.extend(dayjs_plugin_utc);d()})})})();
 
 /* ============================================================
    2. celnavtoc3 v1.0.0

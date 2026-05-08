@@ -30,7 +30,16 @@
    1. a16swipercdn v3.0.0
    Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ba51a3905cc67b376c23af%2Fa16swipercdn-3.0.0.js
    ============================================================ */
-(function(){if(window.__swR)return;window.__swR=1;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js';s.onload=function(){window.__swOK=true;document.dispatchEvent(new Event('swiperReady'))};document.head.appendChild(s);var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css';document.head.appendChild(l)})();
+(function(){if(window.__swR)return;window.__swR=1;var s=document.createElement('script');s.src='https://cel.englishcollege.com/scripts/vendor/swiper@11/swiper-bundle.min.js';s.onload=function(){window.__swOK=true;document.dispatchEvent(new Event('swiperReady'))};document.head.appendChild(s);var l=document.createElement('link');l.rel='stylesheet';l.href='https://cel.englishcollege.com/scripts/vendor/swiper@11/swiper-bundle.min.css';document.head.appendChild(l)})();
+
+/* ============================================================
+   1b. dayjs-loader v1.11.19 (self-hosted)
+   Loads dayjs@1 core + duration + utc plugins from cel.englishcollege.com.
+   Replaces the previous 3 jsdelivr <script> tags in Webflow Site Settings.
+   Idempotent: skips if window.dayjs already exists. Fires `dayjsReady`
+   event after all 3 files load + plugins extended.
+   ============================================================ */
+(function(){if(window.__dayjsR||window.dayjs)return;window.__dayjsR=1;const B='https://cel.englishcollege.com/scripts/vendor/dayjs@1';function a(u,c){const s=document.createElement('script');s.src=u;s.onload=c;document.head.appendChild(s)}a(B+'/dayjs.min.js',function(){let n=2;function d(){if(--n===0){window.__dayjsOK=true;document.dispatchEvent(new Event('dayjsReady'))}}a(B+'/plugin/duration.js',function(){if(window.dayjs&&window.dayjs_plugin_duration)dayjs.extend(dayjs_plugin_duration);d()});a(B+'/plugin/utc.js',function(){if(window.dayjs&&window.dayjs_plugin_utc)dayjs.extend(dayjs_plugin_utc);d()})})})();
 
 /* ============================================================
    2. a16comparedrag v1.0.0
