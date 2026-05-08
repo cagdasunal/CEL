@@ -30,16 +30,16 @@
   // page is added; otherwise the extractor falls back to a title-cased slug.
   const BREADCRUMB_LABELS = {
     '/vancouver': 'Vancouver',
-    '/vancouver/costs': 'Costs',
-    '/vancouver/adults-16': 'Adults 16+',
-    '/vancouver/how-long-to-study': 'How Long to Study',
+    '/vancouver/cost-of-studying-english': 'Cost of Studying English',
+    '/vancouver/vancouver': 'Adults 16+',
+    '/vancouver/how-long-to-learn-english': 'How Long to Learn English',
     '/vancouver/vs-toronto': 'Vancouver vs Toronto'
   };
 
   // Per-page static JSON-LD blocks (Course / Article / etc.).
   // Filled in Phase 3 page-by-page. An empty map means FAQ + Breadcrumb only.
   const STATIC_SCHEMA_BY_PATH = {
-    // '/vancouver/adults-16': { '@type': 'Course', name: '...', ... }
+    // '/vancouver/vancouver': { '@type': 'Course', name: '...', ... }
   };
 
   function inject(obj) {
