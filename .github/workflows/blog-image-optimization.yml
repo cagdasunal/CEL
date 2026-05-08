@@ -1,0 +1,103 @@
+name: Blog Image Optimization
+
+on:
+  schedule:
+    # 11:00 UTC = 03:00 PST / 04:00 PDT — both deep night in San Diego.
+    # Picked off the 00:00 UTC peak documented in GitHub Actions community
+    # threads (cron jitter is worst at midnight UTC). Locked plan §6.
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      posts:
+        description: "Comma-separated post slugs to optimize (default: ALL)"
+        required: false
+        type: string
+        default: ""
+  # Triggered by a Webflow `collection_item_publish` webhook → forwarded
+  # via a Cloudflare Worker (or any HMAC-validating relay) to GitHub's
+  # /repos/{owner}/{repo}/dispatches endpoint with event_type
+  # `webflow_blog_published` and a JSON payload `{"slug": "<post-slug>"}`.
+  # See docs/blog-image-optimization-setup.md for the receiver setup.
+  repository_dispatch:
+    types: [webflow_blog_published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blog-image-optimization
+  cancel-in-progress: false
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install image-processing deps
+        run: |
+          python -m pip install --upgrade pip
+          # Versions match scripts/optimize_blog_richtext_images.py local test bed
+          # (Pillow 12.2.0 + pillow-avif-plugin 1.5.5). Forward-compatible within
+          # major versions — adjust if upstream breaks.
+          pip install "Pillow>=12,<13" "pillow-avif-plugin>=1.5.5"
+
+      - name: Resolve --posts filter (manual dispatch or webhook payload)
+        id: filter
+        run: |
+          # workflow_dispatch.inputs.posts (manual) — optional comma list
+          # repository_dispatch.client_payload.slug (webhook) — single slug
+          POSTS_INPUT="${{ github.event.inputs.posts }}"
+          DISPATCH_SLUG="${{ github.event.client_payload.slug }}"
+          if [ -n "$POSTS_INPUT" ]; then
+            echo "posts_arg=--posts $POSTS_INPUT" >> "$GITHUB_OUTPUT"
+            echo "Filter: manual posts=$POSTS_INPUT"
+          elif [ -n "$DISPATCH_SLUG" ]; then
+            echo "posts_arg=--posts $DISPATCH_SLUG" >> "$GITHUB_OUTPUT"
+            echo "Filter: webhook slug=$DISPATCH_SLUG"
+          else
+            echo "posts_arg=" >> "$GITHUB_OUTPUT"
+            echo "Filter: ALL posts (no filter)"
+          fi
+
+      - name: Run blog-image optimizer (--apply --auto-publish)
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: |
+          mkdir -p data/blog-richtext-backup
+          touch data/blog-optimization-log.jsonl
+          # --auto-publish is the DEFAULT but stated explicitly for clarity.
+          # The optimizer enforces the safeguard internally:
+          #   only items with lastPublished != null AND isDraft=False
+          #   AND isArchived=False are published. Drafts are NEVER published.
+          python scripts/optimize_blog_richtext_images.py \
+            --site cel \
+            --apply \
+            --auto-publish \
+            ${{ steps.filter.outputs.posts_arg }} \
+            --log-jsonl data/blog-optimization-log.jsonl \
+            --backup-dir data/blog-richtext-backup
+
+      - name: Commit + push state
+        if: always()
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          # Pull latest first to avoid conflicts with content-pipeline.yml
+          # (every-15-min) running concurrently.
+          git pull --rebase --autostash origin main || true
+          git add data/blog-optimization-log.jsonl \
+                  data/blog-richtext-backup/ \
+                  sites/cel/shared/uploaded_assets.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(blog-images): nightly AVIF optimization $(date -u +%Y-%m-%d)"
+          git push origin main
