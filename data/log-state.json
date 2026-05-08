@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-07T17:09:58.851561-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-07T16:14:34.726336-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "vancouver-als-student-5-ueberraschungen"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-07T00:33:33.196310-07:00",
-      "detail": {}
     }
   ]
 }
