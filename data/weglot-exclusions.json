@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-09T09:46:34.130958+00:00",
+  "last_sync": "2026-05-09T10:40:20.641806+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4544,6 +4544,21 @@
       "source": "api",
       "url_path": "/post/sejour-linguistique-san-diego-experience-edna",
       "added_at": "2026-05-08T10:58:53.090458+00:00"
+    },
+    "vancouver-non-tipico-studio-allestero": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/vancouver-non-tipico-studio-allestero",
+      "added_at": "2026-05-09T10:40:20.641711+00:00"
     }
   }
 }
