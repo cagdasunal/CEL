@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-08T17:12:18.184347-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-08T16:13:13.161375-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-08T05:15:27.447313-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-08T04:03:33.562699-07:00",
-      "detail": {
-        "slugs": [
-          "sejour-linguistique-san-diego-experience-edna"
-        ]
-      }
     }
   ]
 }
