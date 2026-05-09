@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-09T14:24:17.078830-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-09T13:23:27.342968-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-09T04:37:10.434883-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-09T03:45:09.602685-07:00",
-      "detail": {
-        "slugs": [
-          "vancouver-non-tipico-studio-allestero"
-        ]
-      }
     }
   ]
 }
