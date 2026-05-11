@@ -1,0 +1,9 @@
+{
+  "_note": "Minimal mirror of the monorepo cel site config, scoped to fields read by the blog-image optimizer + asset_upload helpers (webflow_site_id, _site_path resolution). Update in lockstep with cagdasunal/webflow:sites/cel/site.json if the optimizer starts consuming additional fields.",
+  "nickname": "cel",
+  "name": "Canadian English Language College",
+  "platform": "webflow",
+  "webflow_site_id": "667453c576e8d35c454cc9ae",
+  "staging_url": "https://englishcollege.webflow.io",
+  "language": "en"
+}
