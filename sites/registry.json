@@ -1,0 +1,14 @@
+{
+  "_note": "Minimal mirror of the monorepo registry, scoped to CEL only. Loaded by scripts/optimize_blog_richtext_images.py (via scripts/asset_upload.py load_site_config). Update in lockstep with the canonical version in cagdasunal/webflow:sites/registry.json when fields the optimizer reads change.",
+  "sites": {
+    "cel": {
+      "name": "Canadian English Language College",
+      "platform": "webflow",
+      "staging_url": "https://englishcollege.webflow.io",
+      "production_url": null,
+      "language": "en",
+      "path": "sites/cel"
+    }
+  },
+  "default_site": "cel"
+}
