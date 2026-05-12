@@ -159,6 +159,41 @@ def filter_last_n_days(entries: list[dict], n: int) -> list[dict]:
     return out
 
 
+def filter_today_san_diego(entries: list[dict]) -> list[dict]:
+    today_sd = now_san_diego().strftime("%Y-%m-%d")
+    return [e for e in entries if san_diego_date_of(e) == today_sd]
+
+
+def filter_current_week(entries: list[dict]) -> list[dict]:
+    """ISO week (Mon 00:00 → now) in San Diego timezone."""
+    now = now_san_diego()
+    monday = (now - timedelta(days=now.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    out: list[dict] = []
+    for e in entries:
+        dt = iso_to_dt(e.get("ts", ""))
+        if dt is None:
+            continue
+        if dt.astimezone(SAN_DIEGO_TZ) >= monday:
+            out.append(e)
+    return out
+
+
+def filter_current_month(entries: list[dict]) -> list[dict]:
+    """Calendar month (1st 00:00 → now) in San Diego timezone."""
+    now = now_san_diego()
+    first = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    out: list[dict] = []
+    for e in entries:
+        dt = iso_to_dt(e.get("ts", ""))
+        if dt is None:
+            continue
+        if dt.astimezone(SAN_DIEGO_TZ) >= first:
+            out.append(e)
+    return out
+
+
 def aggregate(entries: list[dict]) -> dict:
     """Sum stats + per-action counts."""
     actions: dict[str, int] = defaultdict(int)
@@ -230,6 +265,108 @@ def render_kv(label: str, value: str, *, emphasize: bool = False) -> str:
     return (
         f'<tr><td class="k">{escape(label)}</td>'
         f'<td class="v"{style}>{escape(value)}</td></tr>'
+    )
+
+
+def render_stat_cards(entries: list[dict]) -> str:
+    """Four cards: Today / This week / This month / All-time bytes saved."""
+    periods = [
+        ("Today",      filter_today_san_diego(entries)),
+        ("This week",  filter_current_week(entries)),
+        ("This month", filter_current_month(entries)),
+        ("All-time",   entries),
+    ]
+    cards: list[str] = []
+    for label, subset in periods:
+        agg = aggregate(subset)
+        saved = max(agg["saved_bytes"], 0)
+        n_imgs = agg["replaced"]
+        plural = "s" if n_imgs != 1 else ""
+        cards.append(
+            '<div class="stat-card">'
+            f'<div class="stat-label">{escape(label)}</div>'
+            f'<div class="stat-value">{escape(fmt_bytes(saved))}</div>'
+            f'<div class="stat-sub">saved &middot; {n_imgs} image{plural}</div>'
+            '</div>'
+        )
+    return (
+        '<h2>Bytes saved</h2>'
+        '<div class="stat-cards">' + "".join(cards) + '</div>'
+    )
+
+
+def render_tab_styles() -> str:
+    """Inline CSS for the in-page tab nav + stat cards.
+
+    Mirrors the offers viewer pattern (tools/offers/build_offers_viewer.py).
+    Class names are scoped (.blog-tabs / .blog-tab-link / .stat-card) to avoid
+    collision with the offers page's `.offers-tab-link`.
+    """
+    return (
+        "<style>\n"
+        "  [data-tab]{display:none}\n"
+        "  [data-tab].is-active{display:block}\n"
+        "  .blog-tabs{margin:16px 0 20px;display:flex;gap:8px}\n"
+        "  .blog-tab-link{display:inline-block;padding:6px 14px;"
+        "border-radius:4px;text-decoration:none;color:inherit;"
+        "border:1px solid var(--border-strong);font-weight:500}\n"
+        "  .blog-tab-link:hover{background:var(--stripe)}\n"
+        "  .blog-tab-link.is-active{background:var(--stripe);"
+        "border-color:var(--accent);color:var(--accent);font-weight:600}\n"
+        "  .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);"
+        "gap:12px;margin:8px 0 32px}\n"
+        "  .stat-card{padding:16px;border:1px solid var(--border);"
+        "border-radius:var(--radius);background:var(--stripe)}\n"
+        "  .stat-label{font-size:var(--fs-xs);font-weight:600;"
+        "text-transform:uppercase;letter-spacing:0.08em;"
+        "color:var(--muted);margin-bottom:8px}\n"
+        "  .stat-value{font-size:24px;font-weight:600;"
+        "color:var(--fg);font-variant-numeric:tabular-nums}\n"
+        "  .stat-sub{font-size:var(--fs-sm);color:var(--muted);"
+        "margin-top:4px}\n"
+        "  .latest-run-line{font-size:var(--fs-sm);color:var(--muted);"
+        "margin:0 0 24px}\n"
+        "  @media (max-width:820px){"
+        ".stat-cards{grid-template-columns:repeat(2,1fr)}}\n"
+        "  @media (max-width:480px){"
+        ".stat-cards{grid-template-columns:1fr}}\n"
+        "</style>"
+    )
+
+
+def render_tab_nav() -> str:
+    return (
+        '<nav class="blog-tabs">'
+        '<a class="blog-tab-link" href="#status">Status</a>'
+        '<a class="blog-tab-link" href="#history">History</a>'
+        '</nav>'
+    )
+
+
+def render_tab_script() -> str:
+    return (
+        "<script>(function(){"
+        "function apply(){"
+        "var h=(location.hash||'#status').slice(1);"
+        "if(h!=='status'&&h!=='history')h='status';"
+        "document.querySelectorAll('[data-tab]').forEach(function(el){"
+        "el.classList.toggle('is-active',el.getAttribute('data-tab')===h);});"
+        "document.querySelectorAll('.blog-tab-link').forEach(function(a){"
+        "a.classList.toggle('is-active',a.getAttribute('href')==='#'+h);});}"
+        "window.addEventListener('hashchange',apply);apply();"
+        "})();</script>"
+    )
+
+
+def render_latest_run_line(run_stats: dict, last_run_iso: str | None) -> str:
+    lr = iso_to_sd(last_run_iso) if last_run_iso else "—"
+    return (
+        '<p class="latest-run-line">'
+        f'Latest run: <strong>{escape(lr)}</strong> &middot; '
+        f'{run_stats["post_count"]} post(s) touched &middot; '
+        f'{run_stats["replaced"]} replaced &middot; '
+        f'{run_stats["errors"]} error(s)'
+        '</p>'
     )
 
 
@@ -411,22 +548,34 @@ def render_html(entries: list[dict]) -> str:
         run_stats = aggregate(run_entries)
         any_errors = run_stats["errors"] > 0
         is_ok = not any_errors
-
         last_run_label = iso_to_sd(last_run_ts) if last_run_ts else "—"
-        parts.append("    " + render_sync_status_card(
+
+        # In-page tab nav + scoped CSS + toggle script (offers pattern)
+        parts.append("    " + render_tab_styles())
+        parts.append("    " + render_tab_nav())
+
+        # ── Status tab (default) ───────────────────────────────────────────
+        parts.append('    <section data-tab="status">')
+        parts.append("      " + render_sync_status_card(
             "Latest run completed.",
             last_run_label,
             is_ok=is_ok,
         ))
+        parts.append("      " + render_stat_cards(entries))
+        parts.append("      " + render_latest_run_line(run_stats, last_run_ts))
+        parts.append("    </section>")
 
+        # ── History tab ────────────────────────────────────────────────────
+        parts.append('    <section data-tab="history">')
         today_sd_label = now_sd.strftime("%Y-%m-%d")
-        parts.append("    " + render_summary_card(run_stats, today_sd_label, last_run_ts))
-
+        parts.append("      " + render_summary_card(run_stats, today_sd_label, last_run_ts))
         rollup_entries = filter_last_n_days(entries, LAST_N_DAYS_ROLLUP)
         rollup_stats = aggregate(rollup_entries)
-        parts.append("    " + render_rollup_card(rollup_stats))
+        parts.append("      " + render_rollup_card(rollup_stats))
+        parts.append("      " + render_image_table(run_entries))
+        parts.append("    </section>")
 
-        parts.append("    " + render_image_table(run_entries))
+        parts.append("    " + render_tab_script())
 
     parts.append("  <footer>")
     parts.append(
