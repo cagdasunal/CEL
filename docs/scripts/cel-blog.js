@@ -191,6 +191,8 @@
     }
   }
 
+  window.__celApplyWordSpans = applyWordSpans;
+
   applyWordSpans();
 
   const observer = new MutationObserver(function(mutations) {
@@ -376,6 +378,10 @@
           ix2.init();
           document.dispatchEvent(new CustomEvent('IX2_AFTER_SETUP'));
         }
+      }
+
+      if (typeof window.__celApplyWordSpans === 'function') {
+        window.__celApplyWordSpans();
       }
     } catch (error) {
       console.warn('blog-render failed:', error);
