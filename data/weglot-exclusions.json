@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-12T09:26:37.044386+00:00",
+  "last_sync": "2026-05-12T13:22:31.945873+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4589,6 +4589,21 @@
       "source": "api",
       "url_path": "/post/ragione-nascosta-soggiorno-linguistico-estero",
       "added_at": "2026-05-12T09:26:37.044310+00:00"
+    },
+    "day-trips-from-vancouver": {
+      "language": "en",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/day-trips-from-vancouver"
     }
   }
 }
