@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-12T06:43:55.229187+00:00",
+  "last_sync": "2026-05-12T09:26:37.044386+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4559,6 +4559,36 @@
       "source": "api",
       "url_path": "/post/vancouver-non-tipico-studio-allestero",
       "added_at": "2026-05-09T10:40:20.641711+00:00"
+    },
+    "excursions-week-end-san-diego-guide-etudiant": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/excursions-week-end-san-diego-guide-etudiant",
+      "added_at": "2026-05-12T09:26:37.044287+00:00"
+    },
+    "ragione-nascosta-soggiorno-linguistico-estero": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/ragione-nascosta-soggiorno-linguistico-estero",
+      "added_at": "2026-05-12T09:26:37.044310+00:00"
     }
   }
 }

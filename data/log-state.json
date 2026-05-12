@@ -1,6 +1,16 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-12T02:34:28.452422-07:00",
+      "detail": {
+        "slugs": [
+          "excursions-week-end-san-diego-guide-etudiant",
+          "ragione-nascosta-soggiorno-linguistico-estero"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-11T23:43:55.344022-07:00",
       "detail": {}
@@ -43,11 +53,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-11T07:16:11.716789-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-11T04:50:22.468603-07:00",
       "detail": {}
     }
   ]
