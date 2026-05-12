@@ -25,17 +25,60 @@
  *   - Canonical/redirect/hreflang cleanup script
  *   - JSON-LD BlogPosting + BreadcrumbList schema
  *
+ * Replaces inline Embed components (safe to delete from Blog Posts Template):
+ *   - FAQ-section <div class="faq_embed w-embed w-script"> that contains
+ *     the Finsweet a11y loader pointing at cdn.jsdelivr.net — IIFE #2 below
+ *     does the same job from your own origin, with an idempotency guard
+ *     so a leftover Embed wouldn't double-execute anyway.
+ *
  * Loaded with `defer` in footer → DOM is parsed when this runs.
  */
 
-/* 1. Finsweet Attributes v2 — fs-toc mode */
-(function(){if(window.__fsR||window.fsAttributes)return;window.__fsR=1;const s=document.createElement('script');s.type='module';s.async=true;s.crossOrigin='anonymous';s.src='https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes@2/attributes.js';s.setAttribute('fs-toc','');document.head.appendChild(s)})();
+/* 1. Finsweet Attributes v2 (self-hosted) — fs-toc mode
+ *    Source: cel.englishcollege.com/scripts/vendor/@finsweet/attributes@2/
+ *    Idempotent via window.__fsR (also short-circuits if Finsweet's own
+ *    runtime has already set window.fsAttributes from a prior load).
+ */
+(function () {
+  if (window.__fsR || window.fsAttributes) return;
+  window.__fsR = 1;
+  const s = document.createElement('script');
+  s.type = 'module';
+  s.async = true;
+  s.crossOrigin = 'anonymous';
+  s.src = 'https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes@2/attributes.js';
+  s.setAttribute('fs-toc', '');
+  document.head.appendChild(s);
+})();
 
-/* 2. Finsweet a11y v1 */
-(function(){if(window.__celA11y)return;window.__celA11y=1;const s=document.createElement('script');s.async=true;s.crossOrigin='anonymous';s.src='https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes-a11y@1/a11y.js';document.head.appendChild(s)})();
+/* 2. Finsweet a11y v1 (self-hosted) — FAQ accessibility behaviors
+ *    Source: cel.englishcollege.com/scripts/vendor/@finsweet/attributes-a11y@1/a11y.js
+ *    Idempotent via window.__celA11y (safe even if an old FAQ Embed pointing
+ *    at the same vendor is still in the DOM during the cleanup window).
+ */
+(function () {
+  if (window.__celA11y) return;
+  window.__celA11y = 1;
+  const s = document.createElement('script');
+  s.async = true;
+  s.crossOrigin = 'anonymous';
+  s.src = 'https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes-a11y@1/a11y.js';
+  document.head.appendChild(s);
+})();
 
-/* 3. Finsweet modal v1 */
-(function(){if(window.__celModal)return;window.__celModal=1;const s=document.createElement('script');s.async=true;s.crossOrigin='anonymous';s.src='https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes-modal@1/modal.js';document.head.appendChild(s)})();
+/* 3. Finsweet modal v1 (self-hosted)
+ *    Source: cel.englishcollege.com/scripts/vendor/@finsweet/attributes-modal@1/modal.js
+ *    Idempotent via window.__celModal.
+ */
+(function () {
+  if (window.__celModal) return;
+  window.__celModal = 1;
+  const s = document.createElement('script');
+  s.async = true;
+  s.crossOrigin = 'anonymous';
+  s.src = 'https://cel.englishcollege.com/scripts/vendor/@finsweet/attributes-modal@1/modal.js';
+  document.head.appendChild(s);
+})();
 
 /* 4. TOC class cleanup — remove Webflow's auto-added w--current class */
 (function () {
