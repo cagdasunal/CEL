@@ -34,27 +34,33 @@
 
 /* 4. Heading word spans (XSS-safe via textContent, idempotency guard) */
 (function () {
-  const headings = document.querySelectorAll('[data-span="true"]');
-  for (let i = 0; i < headings.length; i++) {
-    const heading = headings[i];
-    if (heading.querySelector('.heading_span')) continue;
-    const text = heading.textContent.trim();
-    if (!text) continue;
+  function applyWordSpans(root) {
+    const headings = (root || document).querySelectorAll('[data-span="true"]');
+    for (let i = 0; i < headings.length; i++) {
+      const heading = headings[i];
+      if (heading.querySelector('.heading_span')) continue;
+      const text = heading.textContent.trim();
+      if (!text) continue;
 
-    const outerSpan = document.createElement('span');
-    outerSpan.className = 'heading_span';
+      const outerSpan = document.createElement('span');
+      outerSpan.className = 'heading_span';
 
-    const words = text.split(/\s+/);
-    for (let j = 0; j < words.length; j++) {
-      const wordSpan = document.createElement('span');
-      wordSpan.className = 'word_span';
-      wordSpan.textContent = words[j];
-      outerSpan.appendChild(wordSpan);
+      const words = text.split(/\s+/);
+      for (let j = 0; j < words.length; j++) {
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'word_span';
+        wordSpan.textContent = words[j];
+        outerSpan.appendChild(wordSpan);
+      }
+
+      heading.textContent = '';
+      heading.appendChild(outerSpan);
     }
-
-    heading.textContent = '';
-    heading.appendChild(outerSpan);
   }
+
+  window.__celApplyWordSpans = applyWordSpans;
+
+  applyWordSpans();
 })();
 
 /* 5. Modal binding — translated aria-label, role/dialog wiring */
@@ -153,6 +159,10 @@
           ix2.init();
           document.dispatchEvent(new CustomEvent('IX2_AFTER_SETUP'));
         }
+      }
+
+      if (typeof window.__celApplyWordSpans === 'function') {
+        window.__celApplyWordSpans();
       }
     } catch (error) {
       console.warn('category-render failed:', error);
