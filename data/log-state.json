@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-14T01:15:33.904744-07:00",
+      "detail": {
+        "slugs": [
+          "studying-in-california-tips-for-international-students"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-13T22:28:46.885760-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-13T05:34:16.752080-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-13T03:45:31.859089-07:00",
       "detail": {}
     }
   ]
