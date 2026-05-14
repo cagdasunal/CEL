@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-14T10:36:21.016516+00:00",
+  "last_sync": "2026-05-14T12:14:31.431779+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4620,6 +4620,21 @@
       "source": "api",
       "url_path": "/post/studying-in-california-tips-for-international-students",
       "added_at": "2026-05-14T08:11:08.183957+00:00"
+    },
+    "kontakt-halten-sprachaufenthalt": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/kontakt-halten-sprachaufenthalt",
+      "added_at": "2026-05-14T12:14:31.431716+00:00"
     }
   }
 }
