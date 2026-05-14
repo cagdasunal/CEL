@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-14T05:18:17.346654-07:00",
+      "detail": {
+        "slugs": [
+          "kontakt-halten-sprachaufenthalt"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-14T03:36:21.092483-07:00",
       "detail": {}
@@ -47,11 +56,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-13T10:36:17.820384-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-13T08:29:08.266579-07:00",
       "detail": {}
     }
   ]
