@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-15T00:34:41.579063-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-14T21:14:16.544985-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "kontakt-halten-sprachaufenthalt"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-14T03:36:21.092483-07:00",
-      "detail": {}
     }
   ]
 }
