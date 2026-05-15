@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-15T03:05:58.012418-07:00",
+      "detail": {
+        "slugs": [
+          "5-surprises-vivre-vancouver-etudiant"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-15T00:34:41.579063-07:00",
       "detail": {}
@@ -44,15 +53,6 @@
       "kind": "no_change",
       "ts": "2026-05-14T07:46:13.047237-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-14T05:18:17.346654-07:00",
-      "detail": {
-        "slugs": [
-          "kontakt-halten-sprachaufenthalt"
-        ]
-      }
     }
   ]
 }
