@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-16T11:33:21.244651-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-16T10:32:16.042298-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "imparare-inglese-san-diego"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-15T21:58:58.555541-07:00",
-      "detail": {}
     }
   ]
 }
