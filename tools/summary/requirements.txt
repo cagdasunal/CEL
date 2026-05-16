@@ -1,0 +1,6 @@
+# tools/summary/ runtime dependencies.
+# Installed by .github/workflows/summary.yml. Stdlib-only for the rest of the
+# script — only the Anthropic SDK is needed for live API calls. Dry-run mode
+# works without this dependency.
+
+anthropic>=0.40.0,<1.0.0

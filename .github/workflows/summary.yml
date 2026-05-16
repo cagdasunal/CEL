@@ -1,0 +1,131 @@
+name: Summary script (Webflow CMS + landing pages → Weglot CSVs)
+
+# Manual trigger only. Deployment-ready but execution is deferred until the user
+# explicitly runs it. Default inputs run in dry-run mode (no API calls, no Webflow
+# writes — produces JSONL batch payload + Markdown report as artifacts).
+#
+# Requires repo secrets:
+#   - WEBFLOW_API_TOKEN  (already used by fidelo-sync.yml)
+#   - ANTHROPIC_API_KEY  (new — for Claude Message Batches API)
+#
+# Both secrets must be rotated before first live run (the values pasted in the
+# planning conversation are now in chat transcripts; see tools/summary/README.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Subcommand to run"
+        required: true
+        default: "plan"
+        type: choice
+        options:
+          - plan
+          - generate-english
+          - audit
+          - translate
+          - all
+      dry_run:
+        description: "Dry-run (no API calls, no Webflow writes). Disable only when you've reviewed dry-run output."
+        required: true
+        default: true
+        type: boolean
+      collection_filter:
+        description: "Filter to one collection (blog | courses | housing_new). Leave blank for all."
+        required: false
+        default: ""
+        type: string
+      locale_filter:
+        description: "Filter to one locale (en | de | fr | es | it | pt | ko | ja | ar). Leave blank for all."
+        required: false
+        default: ""
+        type: string
+      limit:
+        description: "Cap items processed (integer). Leave blank for unlimited."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: summary-script
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          set -o pipefail
+          python3 -m pip install --upgrade pip
+          pip install -r tools/summary/requirements.txt
+
+      - name: Run summary script
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODE: ${{ inputs.mode }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          COLLECTION_FILTER: ${{ inputs.collection_filter }}
+          LOCALE_FILTER: ${{ inputs.locale_filter }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -o pipefail
+          ARGS="$MODE"
+          if [ "$DRY_RUN" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          else
+            ARGS="$ARGS --no-dry-run"
+          fi
+          if [ -n "$COLLECTION_FILTER" ]; then
+            ARGS="$ARGS --collection $COLLECTION_FILTER"
+          fi
+          if [ -n "$LOCALE_FILTER" ]; then
+            ARGS="$ARGS --locale $LOCALE_FILTER"
+          fi
+          if [ -n "$LIMIT" ]; then
+            ARGS="$ARGS --limit $LIMIT"
+          fi
+          echo "Running: python3 -m tools.summary $ARGS"
+          python3 -m tools.summary $ARGS 2>&1 | tee /tmp/summary-stdout.log
+          rc=${PIPESTATUS[0]}
+          exit $rc
+
+      - name: Upload dry-run artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: summary-dryrun-${{ github.run_id }}
+          path: |
+            data/seo-intel/summary-dryrun/
+            /tmp/summary-stdout.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Commit CSV changes (live runs only)
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          set -o pipefail
+          if [ -z "$(git status --porcelain data/weglot-imports/)" ]; then
+            echo "No CSV changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/weglot-imports/
+          git commit -m "chore(summary): refresh Weglot CSVs ($(date -u +%Y-%m-%d))"
+          git push
