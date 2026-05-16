@@ -1,0 +1,52 @@
+# Test fixture — small llms.txt covering 9 locales + housing exclusions
+
+## Courses
+
+- [English Language Courses in USA & Canada | CEL](https://www.englishcollege.com/courses): Study English with CEL.
+- [English Plus Cambridge Prep in USA & Canada | CEL](https://www.englishcollege.com/courses/english-plus-cambridge-prep): Cambridge FCE prep.
+
+## Housing
+
+- [Student Housing](https://www.englishcollege.com/housing): Find housing.
+- [Vancouver Shared Apartment](https://www.englishcollege.com/vc/shared-apartment-downtown): VC slug — should be excluded.
+- [San Diego Premium Homestay](https://www.englishcollege.com/sd/premium-homestay): SD slug — should be excluded.
+- [Santa Monica Comfort Apartment](https://www.englishcollege.com/sm/apartment-comfort): SM slug — should be excluded.
+
+## Blog
+
+- [Why CEL San Diego](https://www.englishcollege.com/post/why-cel-san-diego): EN blog post.
+- [Sprachaufenthalt Kalifornien](https://www.englishcollege.com/de/post/sprachaufenthalt-kalifornien): DE-only post.
+- [Cours Anglais Vancouver](https://www.englishcollege.com/fr/post/cours-anglais-vancouver): FR-only post.
+
+## German pages
+
+- [Englischkurse USA Kanada | CEL](https://www.englishcollege.com/de/kurse): German courses page.
+- [Studentenunterkunft](https://www.englishcollege.com/de/housing): German housing page.
+
+## French pages
+
+- [Cours d'anglais USA Canada | CEL](https://www.englishcollege.com/fr/cours): French courses page.
+
+## Italian pages
+
+- [Corsi di inglese | CEL](https://www.englishcollege.com/it/corsi): Italian courses page.
+
+## Spanish pages
+
+- [Cursos de ingles | CEL](https://www.englishcollege.com/es/cursos): Spanish courses page.
+
+## Portuguese pages
+
+- [Cursos de ingles | CEL](https://www.englishcollege.com/pt/cursos): Portuguese courses page.
+
+## Korean pages
+
+- [영어 과정 | CEL](https://www.englishcollege.com/ko/courses): Korean courses page.
+
+## Japanese pages
+
+- [英語コース | CEL](https://www.englishcollege.com/ja/courses): Japanese courses page.
+
+## Arabic pages
+
+- [دورات اللغة الإنجليزية | CEL](https://www.englishcollege.com/ar/courses): Arabic courses page.

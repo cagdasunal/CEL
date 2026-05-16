@@ -1,0 +1,182 @@
+"""Fetch a live page and extract content needed for keyword derivation + audit.
+
+Pure stdlib: urllib + html.parser. NO lxml dependency (despite CEL's requirements.txt
+listing it for other tools, this module stays stdlib-only for resilience).
+
+Public API: `fetch_page(url) -> PageContent`.
+"""
+from __future__ import annotations
+
+import re
+import urllib.request
+from dataclasses import dataclass, field
+from html.parser import HTMLParser
+from typing import Optional
+
+
+_USER_AGENT = "cel-summary-script/1.0"
+_BODY_EXCERPT_MAX_CHARS = 8000
+_FETCH_TIMEOUT = 20.0
+
+
+@dataclass(frozen=True)
+class PageContent:
+    url: str
+    final_url: str
+    status: int
+    html: str
+    title: str
+    h1: str
+    headings: tuple[str, ...]
+    canonical: Optional[str]
+    hreflang_urls: tuple[str, ...]
+    existing_summary_html: str
+    body_text_excerpt: str  # ≤ 8000 chars, plain text
+
+
+def fetch_page(url: str, timeout: float = _FETCH_TIMEOUT) -> PageContent:
+    """Fetch a URL with Googlebot UA and parse fields."""
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": _USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        status = resp.status
+        final_url = resp.geturl()
+        body_bytes = resp.read()
+        charset = resp.headers.get_content_charset() or "utf-8"
+        html = body_bytes.decode(charset, errors="replace")
+    return _parse_html(url, final_url, status, html)
+
+
+def _parse_html(url: str, final_url: str, status: int, html: str) -> PageContent:
+    """Parse HTML and return a PageContent. Pure function — no I/O."""
+    parser = _ExtractParser()
+    try:
+        parser.feed(html)
+    except Exception:
+        # html.parser raises on some malformed inputs; degrade gracefully.
+        pass
+    body_text = _extract_body_text(html)
+    return PageContent(
+        url=url,
+        final_url=final_url,
+        status=status,
+        html=html,
+        title=parser.title.strip(),
+        h1=parser.h1.strip(),
+        headings=tuple(h.strip() for h in parser.headings if h.strip()),
+        canonical=parser.canonical or None,
+        hreflang_urls=tuple(parser.hreflang_urls),
+        existing_summary_html=parser.existing_summary_html.strip(),
+        body_text_excerpt=body_text[:_BODY_EXCERPT_MAX_CHARS],
+    )
+
+
+# ---- Internal parser ----
+
+
+class _ExtractParser(HTMLParser):
+    """Single-pass HTML parser that extracts title, H1, headings, canonical, hreflang,
+    and the contents of the `id="summary"` element (if present)."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.title = ""
+        self.h1 = ""
+        self.headings: list[str] = []
+        self.canonical = ""
+        self.hreflang_urls: list[str] = []
+        self.existing_summary_html = ""
+        # State
+        self._in_title = False
+        self._heading_tag: Optional[str] = None
+        self._heading_buffer: list[str] = []
+        self._in_summary_depth = 0  # >0 means we're inside the id="summary" element
+        self._summary_buffer: list[str] = []
+        # Skip script/style content entirely.
+        self._skip_tag: Optional[str] = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
+        attr_dict = {k: v or "" for k, v in attrs}
+        if self._skip_tag:
+            return
+        if tag in ("script", "style"):
+            self._skip_tag = tag
+            return
+        if tag == "title":
+            self._in_title = True
+            return
+        if tag in ("h1", "h2", "h3", "h4"):
+            self._heading_tag = tag
+            self._heading_buffer = []
+        if tag == "link":
+            rel = attr_dict.get("rel", "").lower()
+            href = attr_dict.get("href", "")
+            if rel == "canonical" and not self.canonical:
+                self.canonical = href
+            if "alternate" in rel and href:
+                self.hreflang_urls.append(href)
+        # Track entry into the id="summary" element.
+        if attr_dict.get("id") == "summary":
+            self._in_summary_depth = 1
+        elif self._in_summary_depth > 0:
+            self._in_summary_depth += 1
+        if self._in_summary_depth > 0:
+            self._summary_buffer.append(f"<{tag}>")
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._skip_tag == tag:
+            self._skip_tag = None
+            return
+        if self._skip_tag:
+            return
+        if self._in_summary_depth > 0:
+            self._summary_buffer.append(f"</{tag}>")
+            self._in_summary_depth -= 1
+            if self._in_summary_depth == 0:
+                self.existing_summary_html = "".join(self._summary_buffer)
+        if tag == "title":
+            self._in_title = False
+        if tag == self._heading_tag:
+            text = "".join(self._heading_buffer).strip()
+            if text:
+                self.headings.append(text)
+                if tag == "h1" and not self.h1:
+                    self.h1 = text
+            self._heading_tag = None
+            self._heading_buffer = []
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_tag:
+            return
+        if self._in_title:
+            self.title += data
+        if self._heading_tag:
+            self._heading_buffer.append(data)
+        if self._in_summary_depth > 0:
+            self._summary_buffer.append(data)
+
+
+def _extract_body_text(html: str) -> str:
+    """Best-effort plain-text extraction. Strips scripts/styles + all tags + collapses whitespace."""
+    # Remove script/style blocks.
+    cleaned = re.sub(
+        r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE
+    )
+    # Strip tags.
+    text = re.sub(r"<[^>]+>", " ", cleaned)
+    # Decode common entities.
+    text = (
+        text.replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", '"')
+    )
+    # Collapse whitespace.
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
