@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-16T00:27:11.505169-07:00",
+      "detail": {
+        "slugs": [
+          "imparare-inglese-san-diego"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-15T21:58:58.555541-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-15T09:20:30.259817-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-15T07:28:48.003139-07:00",
       "detail": {}
     }
   ]
