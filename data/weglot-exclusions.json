@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-16T04:58:58.477197+00:00",
+  "last_sync": "2026-05-16T07:22:31.050477+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4650,6 +4650,21 @@
       "source": "api",
       "url_path": "/post/5-surprises-vivre-vancouver-etudiant",
       "added_at": "2026-05-15T10:04:06.892158+00:00"
+    },
+    "imparare-inglese-san-diego": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-san-diego",
+      "added_at": "2026-05-16T07:22:31.050374+00:00"
     }
   }
 }
