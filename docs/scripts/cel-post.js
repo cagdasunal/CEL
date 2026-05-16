@@ -105,7 +105,9 @@
   window.Webflow.push(function () {
     const CLOSE_LABELS = {
       en: 'Close modal', it: 'Chiudi finestra', de: 'Fenster schließen',
-      fr: 'Fermer la fenêtre', ko: '모달 닫기'
+      fr: 'Fermer la fenêtre', ko: '모달 닫기',
+      es: 'Cerrar ventana', pt: 'Fechar janela',
+      ar: 'إغلاق النافذة', ja: 'ウィンドウを閉じる'
     };
     const lang = (document.documentElement.getAttribute('lang') || 'en').toLowerCase().split('-')[0];
     const closeLabel = CLOSE_LABELS[lang] || CLOSE_LABELS.en;
@@ -131,7 +133,9 @@
 (function () {
   const TOC_LABELS = {
     en: 'Table of contents', it: 'Indice', de: 'Inhaltsverzeichnis',
-    fr: 'Table des matières', ko: '목차'
+    fr: 'Table des matières', ko: '목차',
+    es: 'Tabla de contenidos', pt: 'Índice',
+    ar: 'جدول المحتويات', ja: '目次'
   };
 
   function init() {
@@ -264,7 +268,11 @@
       de: ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"],
       fr: ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"],
       ko: ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"],
-      it: ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"]
+      it: ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"],
+      es: ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"],
+      pt: ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"],
+      ar: ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"],
+      ja: ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
     };
     const monthIndex = months.en.findIndex(function (m) { return m.toLowerCase() === monthEn.toLowerCase(); });
     if (monthIndex === -1) return;
@@ -273,9 +281,17 @@
     else if (lang.startsWith('fr')) monthLocalized = months.fr[monthIndex];
     else if (lang.startsWith('ko')) monthLocalized = months.ko[monthIndex];
     else if (lang.startsWith('it')) monthLocalized = months.it[monthIndex];
-    node.textContent = lang.startsWith('ko')
-      ? year + '년 ' + monthLocalized + ' ' + day + '일'
-      : day + ' ' + monthLocalized + ' ' + year;
+    else if (lang.startsWith('es')) monthLocalized = months.es[monthIndex];
+    else if (lang.startsWith('pt')) monthLocalized = months.pt[monthIndex];
+    else if (lang.startsWith('ar')) monthLocalized = months.ar[monthIndex];
+    else if (lang.startsWith('ja')) monthLocalized = months.ja[monthIndex];
+    if (lang.startsWith('ko')) {
+      node.textContent = year + '년 ' + monthLocalized + ' ' + day + '일';
+    } else if (lang.startsWith('ja')) {
+      node.textContent = year + '年 ' + monthLocalized + ' ' + day + '日';
+    } else {
+      node.textContent = day + ' ' + monthLocalized + ' ' + year;
+    }
   }
   if (window.Webflow && typeof window.Webflow.push === 'function') {
     window.Webflow.push(init);
