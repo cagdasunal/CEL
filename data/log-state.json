@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-18T05:45:44.370249-07:00",
+      "detail": {
+        "slugs": [
+          "ist-san-diego-sicher-fuer-sprachschueler"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-18T02:00:43.613570-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-17T11:13:25.669498-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-17T10:18:14.576516-07:00",
       "detail": {}
     }
   ]
