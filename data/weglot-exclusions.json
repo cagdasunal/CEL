@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-18T09:00:43.533212+00:00",
+  "last_sync": "2026-05-18T12:42:51.505899+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4665,6 +4665,21 @@
       "source": "api",
       "url_path": "/post/imparare-inglese-san-diego",
       "added_at": "2026-05-16T07:22:31.050374+00:00"
+    },
+    "ist-san-diego-sicher-fuer-sprachschueler": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/ist-san-diego-sicher-fuer-sprachschueler",
+      "added_at": "2026-05-18T12:42:51.505832+00:00"
     }
   }
 }
