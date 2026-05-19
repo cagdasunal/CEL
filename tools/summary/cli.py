@@ -70,6 +70,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--out-dir", type=Path, default=None,
         help="Override output artifact directory.",
     )
+    parser.add_argument(
+        "--from-run", type=Path, default=None,
+        help=(
+            "Translate phase only — directory containing en-summaries.json from a "
+            "prior generate-english run. Defaults to <out-dir>/en-summaries.json."
+        ),
+    )
     return parser
 
 
@@ -215,7 +222,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         if target["kind"] == "static_page":
             try:
                 pc: PageContent = fetch_page(target["url"])
-                kw = derive_keywords(pc.title, pc.h1, pc.url, pc.body_text_excerpt)
+                kw = derive_keywords(pc.title, pc.h1, pc.url, pc.body_text_excerpt, locale="en")
                 item = SourceItem(
                     url=pc.url, title=pc.title, body_excerpt=pc.body_text_excerpt[:8000],
                     locale="en", content_type="landing",
@@ -240,7 +247,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     if target["locale"] != "native_per_item":
                         locale = "en"
                     url = f"https://www.englishcollege.com/post/{slug}"  # rough; CMS items map to URLs by collection
-                    kw = derive_keywords(title, title, url, body)
+                    kw = derive_keywords(title, title, url, body, locale=locale)
                     item = SourceItem(
                         url=url, title=title, body_excerpt=body[:8000],
                         locale=locale, content_type=target["content_type"],
@@ -284,15 +291,60 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "submitted": False, "warnings": warnings,
         }
 
+    # Helper to build the EN-summaries manifest that the translate phase consumes.
+    def _write_en_summaries_manifest(succeeded_results, _sources):
+        manifest: dict[str, dict] = {}
+        src_by_cid: dict[str, Any] = {}
+        for i, (sitem, _kw, _tgt) in enumerate(_sources):
+            cid = f"gen-{i}-{sitem.cms_item_id or sitem.url[-50:]}"
+            src_by_cid[cid] = sitem
+        for r in succeeded_results:
+            cid = r.custom_id
+            if cid.startswith("retry-"):
+                cid = cid[len("retry-"):]
+            sitem = src_by_cid.get(cid)
+            if not sitem:
+                continue
+            manifest[cid] = {
+                "url": sitem.url,
+                "markdown": r.content,
+                "content_type": sitem.content_type,
+                "locale": sitem.locale,
+            }
+        manifest_path = out_dir / "en-summaries.json"
+        # Atomic write.
+        import os as _os, tempfile as _tempfile
+        out_dir.mkdir(parents=True, exist_ok=True)
+        tfd, tpath = _tempfile.mkstemp(dir=str(out_dir), prefix=".en-summaries.", suffix=".tmp")
+        try:
+            with _os.fdopen(tfd, "w", encoding="utf-8") as f:
+                json.dump(manifest, f, indent=2, ensure_ascii=False)
+            _os.replace(tpath, manifest_path)
+        except OSError:
+            try:
+                _os.remove(tpath)
+            except OSError:
+                pass
+            raise
+        return manifest_path, len(manifest)
+
     # Submit (real or dry-run).
     artifact_dir = out_dir / "batches"
     if args.dry_run:
         handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
+        # Dry-run: write a stub manifest so test_execute_translate_dry_run can read it.
+        stub_results = [
+            batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content="")
+            for r in requests
+        ]
+        mpath, mcount = _write_en_summaries_manifest(stub_results, sources)
         return {
             "target_count": len(plan["targets"]), "sources_resolved": len(sources),
             "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
             "submitted": True, "dry_run": True, "batch_id": handle.batch_id,
-            "artifact_path": str(handle.artifact_path), "warnings": warnings,
+            "artifact_path": str(handle.artifact_path),
+            "manifest_path": str(mpath), "manifest_entries": mcount,
+            "warnings": warnings,
         }
     # Live run.
     handle = batch_runner.submit_batch(requests)
@@ -321,6 +373,24 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                 if rr.succeeded:
                     succeeded.append(rr)
                     failed = [f for f in failed if not rr.custom_id.endswith(f.custom_id)]
+    # MANUAL_REVIEW state for persistent failures (closes audit-086 H-5 / tracker-087 F-4).
+    manual_review_path = out_dir / "manual-review.json"
+    manual_review_payload = {
+        "custom_ids": [f.custom_id for f in failed],
+        "details": [
+            {
+                "custom_id": f.custom_id,
+                "error": f.error,
+                "retry_attempted": True,
+            }
+            for f in failed
+        ],
+    }
+    manual_review_path.write_text(
+        json.dumps(manual_review_payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    # Write the EN-summaries manifest for the translate phase to read.
+    mpath, mcount = _write_en_summaries_manifest(succeeded, sources)
     # Write back. Static pages → JSON. CMS items → Webflow API.
     write_log = _write_back_summaries(succeeded, sources, args, out_dir, warnings)
     return {
@@ -328,7 +398,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
         "submitted": True, "dry_run": False, "batch_id": handle.batch_id,
         "succeeded": len(succeeded), "failed": len(failed),
-        "write_log": write_log, "warnings": warnings,
+        "write_log": write_log,
+        "manifest_path": str(mpath), "manifest_entries": mcount,
+        "manual_review_path": str(manual_review_path),
+        "manual_review_count": len(failed),
+        "warnings": warnings,
     }
 
 
@@ -410,8 +484,23 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     }
 
 
+_MARKDOWN_LINK_RE = __import__("re").compile(r"\[[^\]]+\]\(([^)]+)\)")
+
+
+def _extract_markdown_links(md: str) -> list[str]:
+    """Extract URLs from `[anchor](url)` patterns in Markdown."""
+    if not md:
+        return []
+    return _MARKDOWN_LINK_RE.findall(md)
+
+
 def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
-    """Translate EN summaries into 8 locales; emit consolidated per-language CSVs."""
+    """Translate EN summaries into 8 locales; emit consolidated per-language CSVs.
+
+    Reads `en-summaries.json` from `--from-run <dir>` if provided, else from
+    `<out_dir>/en-summaries.json` (the path generate-english writes to in the
+    same run). Closes audit-086 C-4 (tracker-087 F-2).
+    """
     from tools.summary import batch_runner, csv_emitter, llms_parser
     from tools.summary.prompt_builder import (
         LinkSwap, build_translation_system_prompt, build_translation_user_message,
@@ -422,30 +511,148 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         [args.locale] if args.locale and args.locale != "en"
         else list(config.TARGET_TRANSLATION_LOCALES)
     )
-    # In a full live run, this consumes EN summaries from the generate-english
-    # phase's output. For this orchestrator skeleton, dry-run produces a
-    # description of what would happen and a CSV preview file in out_dir.
-    per_locale_results = {}
+
+    # Resolve manifest path: --from-run takes precedence.
+    manifest_path = (
+        (args.from_run / "en-summaries.json")
+        if args.from_run
+        else (out_dir / "en-summaries.json")
+    )
+    if not manifest_path.exists():
+        warnings.append(
+            f"no EN summaries manifest at {manifest_path}; nothing to translate. "
+            f"Run generate-english first or pass --from-run <dir>."
+        )
+        return {
+            "target_locales": target_locales,
+            "per_locale": {},
+            "manifest_path": str(manifest_path),
+            "warnings": warnings,
+        }
+
+    en_summaries: dict[str, dict] = json.loads(manifest_path.read_text(encoding="utf-8"))
+    # Manifest shape: {"<custom_id>": {"url": ..., "markdown": ..., "content_type": ..., "locale": ...}}
+
+    # llms.txt for cross-locale link swaps (live only — dry-run skips the network).
+    llms_index = None
+    if not args.dry_run:
+        try:
+            llms_index = llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
+        except Exception as e:
+            warnings.append(f"llms.txt fetch failed: {e}; link swaps will all REMOVE")
+
+    per_locale_results: dict[str, dict] = {}
     for locale in target_locales:
-        existing_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
+        # Build one BatchRequest per EN summary for this locale.
+        requests = []
+        for cid, en in en_summaries.items():
+            md = en.get("markdown", "") or ""
+            if not md.strip():
+                continue
+            link_swaps = []
+            for src_url in _extract_markdown_links(md):
+                target_url = (
+                    llms_index.find_equivalent(src_url, locale) if llms_index else None
+                )
+                link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
+            system_blocks = build_translation_system_prompt(locale)
+            user_msg = build_translation_user_message(md, locale, link_swaps)
+            requests.append(batch_runner.BatchRequest(
+                custom_id=f"tr-{locale}-{cid}",
+                system_blocks=system_blocks,
+                user_message=user_msg,
+                enable_thinking=False,
+            ))
+
+        if not requests:
+            per_locale_results[locale] = {
+                "skipped": True,
+                "reason": "no EN summaries had non-empty markdown",
+            }
+            continue
+
+        # Per-locale cost check.
+        cost_estimate = batch_runner.estimate_batch_cost_usd(requests)
+        if cost_estimate > config.MAX_BATCH_COST_USD:
+            warnings.append(
+                f"locale {locale}: cost cap exceeded "
+                f"(${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}). Skipping."
+            )
+            per_locale_results[locale] = {
+                "skipped": True, "cost_estimate_usd": round(cost_estimate, 2),
+                "reason": "exceeded MAX_BATCH_COST_USD",
+            }
+            continue
+
+        # Submit (dry-run or live).
         if args.dry_run:
-            # Preview: count rows that would be appended.
+            artifact_dir = out_dir / "translate-batches" / locale
+            handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
             per_locale_results[locale] = {
-                "existing_csv": str(existing_csv),
-                "existing_exists": existing_csv.exists(),
-                "would_append_rows": 0,  # actual count requires real EN summary content
-                "note": "dry-run: no live EN summaries to translate; preview only.",
+                "dry_run": True,
+                "batch_id": handle.batch_id,
+                "request_count": len(requests),
+                "cost_estimate_usd": round(cost_estimate, 2),
+                "artifact_path": str(handle.artifact_path),
             }
-        else:
-            # Live mode: build LinkSwap map, submit translation batch, emit CSV.
-            # In a real run, this consumes EN summaries written to disk by the
-            # generate-english phase. This wiring is minimal for safety.
-            per_locale_results[locale] = {
-                "existing_csv": str(existing_csv),
-                "csv_path": str(existing_csv),
-                "note": "live-mode wiring requires EN summaries from generate-english phase output.",
-            }
-    return {"target_locales": target_locales, "per_locale": per_locale_results, "warnings": warnings}
+            continue
+
+        # Live mode.
+        handle = batch_runner.submit_batch(requests)
+        results = batch_runner.wait_for_batch(handle)
+        succeeded = [r for r in results if r.succeeded]
+        failed_count = sum(1 for r in results if not r.succeeded)
+
+        # Build SummaryPairs for the CSV.
+        pairs: list[csv_emitter.SummaryPair] = []
+        for r in succeeded:
+            # custom_id is "tr-<locale>-<orig_cid>"
+            parts = r.custom_id.split("-", 2)
+            if len(parts) < 3:
+                continue
+            orig_cid = parts[2]
+            en_md = en_summaries.get(orig_cid, {}).get("markdown", "")
+            en_paragraphs = csv_emitter.split_summary_into_paragraphs(en_md)
+            tr_paragraphs = csv_emitter.split_summary_into_paragraphs(r.content)
+            if len(en_paragraphs) != len(tr_paragraphs):
+                warnings.append(
+                    f"locale {locale} cid {orig_cid}: paragraph count mismatch "
+                    f"(en={len(en_paragraphs)} tr={len(tr_paragraphs)}); skipping"
+                )
+                continue
+            try:
+                pairs.extend(csv_emitter.pair_from_paragraphs(en_paragraphs, tr_paragraphs))
+            except ValueError as e:
+                warnings.append(f"pair_from_paragraphs failed for {orig_cid}: {e}")
+
+        # Emit consolidated CSV.
+        existing_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
+        out_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"  # overwrite in place
+        emission_report = csv_emitter.emit_consolidated_csv(
+            target_locale=locale,
+            existing_csv_path=existing_csv,
+            summary_pairs=pairs,
+            out_path=out_csv,
+        )
+        per_locale_results[locale] = {
+            "dry_run": False,
+            "batch_id": handle.batch_id,
+            "request_count": len(requests),
+            "succeeded": len(succeeded),
+            "failed": failed_count,
+            "cost_estimate_usd": round(cost_estimate, 2),
+            "csv_path": str(out_csv),
+            "rows_appended": emission_report.new_row_count,
+            "duplicates_skipped": emission_report.duplicates_skipped,
+            "existing_rows": emission_report.existing_row_count,
+        }
+
+    return {
+        "target_locales": target_locales,
+        "per_locale": per_locale_results,
+        "manifest_path": str(manifest_path),
+        "warnings": warnings,
+    }
 
 
 # ---- Write-back helpers ----

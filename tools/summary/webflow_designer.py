@@ -18,10 +18,12 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional
 
 from tools.summary import config
@@ -193,3 +195,74 @@ def _walk_elements(items: list[dict[str, Any]]):
         children = el.get("children") or el.get("nodes") or []
         if children:
             yield from _walk_elements(children)
+
+
+def write_static_summary(
+    page_url: str,
+    summary_markdown: str,
+    out_dir: Path,
+    dry_run: bool = True,
+) -> WriteResult:
+    """Write a static-page summary to a Markdown file for manual paste into Webflow Designer.
+
+    The user pastes the Markdown into the Rich Text element below the hero on the
+    page. This avoids the unverified Designer-API endpoint risk (audit-086 H-1).
+
+    Returns a WriteResult mirroring the CMS-write shape so the orchestrator can
+    treat both paths uniformly.
+
+    Closes audit-086 H-1 (tracker-087 F-1) — `WebflowDesignerClient.find_summary_element`
+    and `write_summary_element` are DEPRECATED 2026-05-19; do not call them from
+    production. The Designer API endpoints they target were unverified and dropped.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    parsed = urllib.parse.urlparse(page_url)
+    slug = parsed.path.strip("/").replace("/", "-") or "home"
+    # Path-traversal safety: reject any slug containing ".." or null bytes
+    # after the strip/replace. Defense-in-depth — urlparse already strips host.
+    if ".." in slug or "\x00" in slug:
+        return WriteResult(
+            dry_run=dry_run,
+            success=False,
+            method="WRITE_FILE",
+            url=page_url,
+            payload={"slug": slug},
+            error=f"unsafe slug derived from URL: {slug!r}",
+        )
+    out_path = out_dir / f"{slug}.summary.md"
+    if dry_run:
+        return WriteResult(
+            dry_run=True,
+            success=True,
+            method="WRITE_FILE",
+            url=page_url,
+            payload={"path": str(out_path), "bytes": len(summary_markdown)},
+            response={"_dry_run": True, "would_write": str(out_path)},
+        )
+    # Atomic write via temp + rename.
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=str(out_dir), prefix=".tmp-", suffix=".md")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            f.write(summary_markdown)
+        os.replace(tmp_path, out_path)
+        return WriteResult(
+            dry_run=False,
+            success=True,
+            method="WRITE_FILE",
+            url=page_url,
+            payload={"path": str(out_path), "bytes": len(summary_markdown)},
+            response={"written": str(out_path)},
+        )
+    except OSError as e:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        return WriteResult(
+            dry_run=False,
+            success=False,
+            method="WRITE_FILE",
+            url=page_url,
+            payload={"path": str(out_path)},
+            error=str(e),
+        )

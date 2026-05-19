@@ -16,22 +16,28 @@ Each `<locale>.md` file in this directory contains the locale-specific tone/idio
 10. **Accents/diacritics or script notes** — critical for FR, ES, IT, PT, AR, KO, JA
 11. **Anti-patterns** — common machine-translation tells to avoid (anglicisms, missing accents, wrong gender agreement)
 12. **Char-limit applicability** — note "no Latin char limit" for KO, JA, AR (Google measures pixel width on non-Latin scripts)
+13. **AI-tell banlist** *(new 2026-05-19, tracker-087)* — per-language list of 15-35 words/phrases that are AI-generated tells in that language. Sourced from 2026 detector word-lists (Walter Writes, HumanizeThisAI, ContentConsultants, Digitad, Hastewire, Rebrandb, AI総合研究所, Harmash, etc.).
+14. **Syntactic AI-tells** *(new 2026-05-19)* — 5-7 grammar/structure patterns that mark machine-generated text in this locale (e.g. tri-adjective + em-dash; uniform sentence length; English-influenced word order).
+15. **ESL industry glossary** *(new 2026-05-19, tracker-087)* — per-language list of 18-25 native ESL / study-abroad industry terms that an English-school summary should naturally use. Sourced from native-language ESL marketing sites (ESL.de, Mundo Joven, EF Italia, EF Brasil, Studydestiny, 留学ジャーナル, Language International).
+16. **Native-voice examples** *(new 2026-05-19)* — one paragraph "❌ AI-feeling" + one paragraph "✅ human-feeling" example per locale, anchored in CEL Vancouver context for consistency.
 
-## Coverage status (2026-05-16)
+## Coverage status (updated 2026-05-19, tracker-087 F-7)
 
-| Locale | Direction | Tone | Expansion | Punctuation | Numbers | Currency | Date | Entities | Geo | Accents/Script | Anti-patterns | Char-limit |
-|--------|-----------|------|-----------|-------------|---------|----------|------|----------|-----|----------------|---------------|------------|
-| en | LTR | ✓ | (baseline) | ✓ | ✓ | ✓ | ✓ | (n/a) | (n/a) | (n/a) | ✓ | (n/a) |
-| de | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (Latin) | ✓ | (n/a) |
-| fr | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) |
-| es | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) |
-| it | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) |
-| pt | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) |
-| ko | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (implicit) | ✓ | ✓ | ✓ |
-| ja | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (implicit) | ✓ | ✓ | ✓ |
-| ar | **RTL** | ✓ | ✓ | (Arabic) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Locale | Direction | Tone | Expansion | Punctuation | Numbers | Currency | Date | Entities | Geo | Accents/Script | Anti-patterns | Char-limit | **AI-tells** | **ESL glossary** |
+|--------|-----------|------|-----------|-------------|---------|----------|------|----------|-----|----------------|---------------|------------|--------------|------------------|
+| en | LTR | ✓ | (baseline) | ✓ | ✓ | ✓ | ✓ | (n/a) | (n/a) | (n/a) | ✓ | (n/a) | 35 items | 22 terms |
+| de | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (Latin) | ✓ | (n/a) | 19 items | 24 terms |
+| fr | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) | 19 items | 21 terms |
+| es | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) | 25 items | 21 terms |
+| it | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) | 23 items | 21 terms |
+| pt | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | (n/a) | 22 items | 21 terms |
+| ko | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 19 items* | 20 terms |
+| ja | LTR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 19 items* | 22 terms |
+| ar | **RTL** | ✓ | ✓ | (Arabic) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | 21 items* | 21 terms |
 
-All 9 locales cover all applicable dimensions. Asymmetry confirmed minimal as of 2026-05-16; audit-086 M-3 finding verified closed.
+\* Coverage caveats noted in individual locale files: KO/JA AI-tell research is moderate; AR is the weakest of the nine. Banlists should be expanded post-2026 as native-language detector research accumulates.
+
+All 9 locales cover all 16 applicable dimensions. Audit-086 M-3 (locale asymmetry) verified closed; tracker-087 F-7 (locale prompts thin) closed by 2026-05-19 expansion from 10-15 lines → 54-69 lines per locale with AI-tell banlist + ESL glossary added.
 
 ## Adding a new locale
 

@@ -108,3 +108,59 @@ def test_translation_system_prompt_two_blocks():
     assert len(blocks) == 2
     assert all(b["cache_control"] == {"type": "ephemeral", "ttl": "1h"} for b in blocks)
     assert "Target Locale: de" in blocks[1]["text"]
+
+
+# ---- B3: prompts+keywords flow end-to-end (tracker-087) ----
+
+
+def test_user_message_contains_keyword_plan_in_order():
+    """The user message renders Primary / Secondary / Entities sections in that order."""
+    item = SourceItem(
+        url="https://www.englishcollege.com/learn-english-canada",
+        title="Learn English in Canada",
+        body_excerpt="Vancouver is the largest CEL campus in Canada.",
+        locale="en",
+        content_type="landing",
+    )
+    kw = KeywordPlan(
+        primary="learn english in canada",
+        secondaries=("vancouver", "campus"),
+        entities=("CEFR", "DLI"),
+    )
+    msg = build_user_message(item, link_candidates=[], keywords=kw)
+    # All three keyword fields must appear, in the documented order.
+    p_idx = msg.find("Primary:")
+    s_idx = msg.find("Secondary:")
+    e_idx = msg.find("Entities to spell out")
+    assert p_idx > 0, "Primary: section missing"
+    assert s_idx > p_idx, "Secondary: section missing or before Primary:"
+    assert e_idx > s_idx, "Entities section missing or before Secondary:"
+    # The actual keyword content is inlined.
+    assert "learn english in canada" in msg.lower()
+    assert "vancouver" in msg.lower()
+    assert "CEFR" in msg
+    assert "DLI" in msg
+
+
+def test_system_prompt_blocks_for_generation_use_1h_ttl():
+    """All three system blocks for the generate phase carry ttl=1h cache_control."""
+    blocks = build_system_prompt(content_type="course", source_locale="en")
+    assert len(blocks) == 3
+    for b in blocks:
+        assert b["cache_control"]["ttl"] == "1h"
+
+
+def test_common_md_contains_2026_corrections():
+    """common.md (loaded as first system block) has the 2026 research corrections."""
+    blocks = build_system_prompt(content_type="landing", source_locale="en")
+    common = blocks[0]["text"]
+    # Density narrowed to 1–2%.
+    assert "1–2%" in common or "1-2%" in common
+    # FAQPage schema lift.
+    assert "FAQPage" in common
+    # Trust > Experience EEAT re-weight.
+    assert "Trust > Experience" in common
+    # 134–167 answer-block target.
+    assert "134–167" in common or "134-167" in common
+    # Anti-AI burstiness section.
+    assert "burstiness" in common.lower()

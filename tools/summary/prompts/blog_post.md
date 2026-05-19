@@ -2,9 +2,9 @@
 
 This is a blog post Summary. Apply on top of common.md.
 
-## Content type
+## Content type — ORIGINAL per locale
 
-Blog posts are AUTHORED in a specific language per post (DE / FR / IT / KO). Each post is original content for its locale, not a translation of an English original. There is no cross-locale equivalent.
+Blog posts are **ORIGINAL per locale** (DE / FR / IT / KO / ES / PT / JA / AR / EN). Each post is original content authored in that locale, not a translation of an English original. **Write the summary in the SAME locale as the source post — do NOT translate from English.** The Summary you produce is the only summary that locale will have; there is no downstream translation pass for blog content (see `config.NATIVE_LANGUAGE_COLLECTIONS = ("blog",)`).
 
 ## Scope of this summary section
 
