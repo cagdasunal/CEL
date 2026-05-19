@@ -127,6 +127,15 @@ def test_generate_english_dry_run_writes_en_summaries_manifest(tmp_path: Path, m
     data = json.loads(manifest.read_text(encoding="utf-8"))
     assert isinstance(data, dict)
     assert len(data) >= 1
+    # tracker-090 C1: keyword_plan persisted in manifest so the Summaries
+    # dashboard page can show keyword counts.
+    first_entry = next(iter(data.values()))
+    assert "keyword_plan" in first_entry, "entry missing keyword_plan field"
+    kp = first_entry["keyword_plan"]
+    assert isinstance(kp, dict)
+    assert "primary" in kp
+    assert "secondaries" in kp and isinstance(kp["secondaries"], list)
+    assert "entities" in kp and isinstance(kp["entities"], list)
 
 
 # ---- A3: _execute_translate actually wires the pipeline (tracker-087 F-2 closure) ----

@@ -901,11 +901,18 @@ _SHELL_HTML = """\
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
-        <details class="shell-tab-dropdown" data-topbar="seo">
+        <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
             <li><a class="shell-tab-subitem" href="#translations" data-target="translations">Translations</a></li>
-            <li><a class="shell-tab-subitem" href="#log" data-target="log">Blog</a></li>
+            <li><a class="shell-tab-subitem" href="#log" data-target="log">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown" data-topbar="seo">
+          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="#summaries" data-target="summaries">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="#files" data-target="files">Files</a></li>
           </ul>
         </details>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
@@ -930,15 +937,19 @@ _SHELL_HTML = """\
       housing:      '/admin/housing/',
       courses:      '/admin/courses/',
       translations: '/admin/translations/',
-      blog:         '/admin/blog/'
+      blog:         '/admin/blog/',
+      summaries:    '/admin/summaries/',
+      files:        '/admin/files/'
     };
     var TOPBAR_FOR = {
-      log:          'seo',
+      log:          'weglot',
       offers:       'offers',
       housing:      'fidelo',
       courses:      'fidelo',
-      translations: 'seo',
-      blog:         'blog'
+      translations: 'weglot',
+      blog:         'blog',
+      summaries:    'seo',
+      files:        'seo'
     };
     var frame = document.getElementById('shell-frame');
     var topbarEls = document.querySelectorAll('[data-topbar]');

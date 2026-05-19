@@ -295,9 +295,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     def _write_en_summaries_manifest(succeeded_results, _sources):
         manifest: dict[str, dict] = {}
         src_by_cid: dict[str, Any] = {}
-        for i, (sitem, _kw, _tgt) in enumerate(_sources):
+        kw_by_cid: dict[str, Any] = {}
+        for i, (sitem, kw, _tgt) in enumerate(_sources):
             cid = f"gen-{i}-{sitem.cms_item_id or sitem.url[-50:]}"
             src_by_cid[cid] = sitem
+            kw_by_cid[cid] = kw
         for r in succeeded_results:
             cid = r.custom_id
             if cid.startswith("retry-"):
@@ -305,11 +307,20 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             sitem = src_by_cid.get(cid)
             if not sitem:
                 continue
+            kw_plan = kw_by_cid.get(cid)
             manifest[cid] = {
                 "url": sitem.url,
                 "markdown": r.content,
                 "content_type": sitem.content_type,
                 "locale": sitem.locale,
+                # tracker-090 C1: persist keyword plan so the Summaries dashboard
+                # page can show keyword counts. Backward-compatible — readers
+                # treat absence as "—" and don't error.
+                "keyword_plan": {
+                    "primary": kw_plan.primary if kw_plan else "",
+                    "secondaries": list(kw_plan.secondaries) if kw_plan else [],
+                    "entities": list(kw_plan.entities) if kw_plan else [],
+                },
             }
         manifest_path = out_dir / "en-summaries.json"
         # Atomic write.
