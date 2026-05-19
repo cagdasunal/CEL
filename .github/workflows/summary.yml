@@ -116,16 +116,20 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      - name: Commit CSV changes (live runs only)
+      - name: Commit CSV + static-summaries changes (live runs only)
         if: ${{ inputs.dry_run == false }}
         run: |
           set -o pipefail
-          if [ -z "$(git status --porcelain data/weglot-imports/)" ]; then
-            echo "No CSV changes to commit."
+          # Path matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1). Captures both
+          # the per-locale CSVs written by translate phase AND the static-page
+          # Markdown files written by generate-english phase
+          # (static-summaries/<slug>.summary.md for manual paste into Webflow Designer).
+          if [ -z "$(git status --porcelain docs/admin/weglot-imports/)" ]; then
+            echo "No CSV or static-summary changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/weglot-imports/
-          git commit -m "chore(summary): refresh Weglot CSVs ($(date -u +%Y-%m-%d))"
+          git add docs/admin/weglot-imports/
+          git commit -m "chore(summary): refresh Weglot CSVs + static summaries ($(date -u +%Y-%m-%d))"
           git push

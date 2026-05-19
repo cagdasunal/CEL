@@ -110,8 +110,21 @@ Before flipping `dry_run=false`:
 - [ ] Added BOTH secrets to CEL repo's GitHub Actions secrets.
 - [ ] Reviewed dry-run output at least once on the `plan` subcommand.
 - [ ] Verified the `Summary` rich-text field exists on the three target CMS collections (Blog, Courses, Housing). If missing, the script's first live run auto-creates it via `data_cms_tool.create_collection_rich_text_field`.
+- [ ] **Ran a pilot live invocation with `--limit 1` FIRST.** The staged CMS endpoint (`/items/{id}`, switched from `/live` in tracker-088 F-3) has been validated against the sibling `tools/fidelo/cms_writer.py` pattern but has not been live-tested against the Webflow Data API v2 yet (no API key during the audit window). A `--limit 1` pilot confirms the endpoint accepts the PATCH payload, the staged write lands, and (after the user clicks Publish in Webflow Designer) the change propagates to the live site. Only after the pilot succeeds end-to-end should the full live run be triggered.
 
 Static-page summaries do NOT auto-write — they land as Markdown files for manual paste into Webflow Designer. Plan to spend ~10–15 minutes pasting after each generate-english run that touches the 12 static pages.
+
+### Pilot live-run procedure
+
+```bash
+# 1. Trigger workflow_dispatch with mode=generate-english, dry_run=false, limit=1
+# 2. Wait for the workflow to complete (typical: 5–15 minutes for 1 item)
+# 3. Open the affected CMS item in Webflow Designer (Blog or Courses or Housing — whichever the pilot hit)
+# 4. Confirm the Summary field now contains the generated Markdown
+# 5. Click "Publish" in Webflow Designer to push the staged change live
+# 6. Verify the published page renders the summary correctly
+# Only after step 6 succeeds, re-trigger workflow_dispatch without --limit for the full run.
+```
 
 ## Architecture
 
