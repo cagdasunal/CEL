@@ -31,12 +31,24 @@ from tools.summary import config
 
 @dataclass(frozen=True)
 class BatchRequest:
-    """One request in a Gemini batch."""
+    """One request in a Gemini batch.
+
+    NOTE on max_tokens (tracker-091 M-11, 2026-05-19): Gemini's
+    `max_output_tokens` is a CEILING on thinking_tokens + visible_tokens —
+    NOT just visible output (this is a critical semantic difference from
+    Anthropic's `max_tokens`). With THINKING_BUDGET_TOKENS=1500, a
+    `max_tokens=2000` request leaves only ~500 visible-output tokens
+    before truncation, which silently cut a pilot home-page summary off
+    mid-sentence at ~60 words. Default raised to 4000 (≈2500 visible
+    tokens after thinking) to fit our 200-word summary target with
+    headroom. Callers should pick higher values if they need longer
+    output.
+    """
 
     custom_id: str
     system_blocks: list[dict]
     user_message: str
-    max_tokens: int = 2000
+    max_tokens: int = 4000
     enable_thinking: bool = True
 
 
@@ -327,9 +339,9 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
 
     # Try response.text (convenience property on GenerateContentResponse).
     text = getattr(response, "text", None)
+    candidates = getattr(response, "candidates", None) or []
     if not text:
         # Fall back to candidates[0].content.parts[*].text.
-        candidates = getattr(response, "candidates", None) or []
         if candidates:
             content = getattr(candidates[0], "content", None)
             if content is not None:
@@ -337,10 +349,38 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
                 text = "".join(getattr(p, "text", "") for p in parts)
     text = text or ""
 
+    # tracker-091 M-11: detect MAX_TOKENS truncation. Gemini's
+    # `max_output_tokens` ceiling can clip the visible response mid-sentence
+    # when thinking tokens consume most of the budget. The candidate's
+    # `finish_reason` reveals this — STOP means clean completion;
+    # MAX_TOKENS means the cap was hit. We surface that as a failure so the
+    # caller can either retry with a larger budget or mark the row as
+    # MANUAL_REVIEW, rather than persisting truncated copy.
+    finish_reason = ""
+    if candidates:
+        fr = getattr(candidates[0], "finish_reason", None)
+        if fr is not None:
+            finish_reason = getattr(fr, "name", None) or str(fr)
+    truncated = finish_reason.upper().endswith("MAX_TOKENS")
+
     usage = getattr(response, "usage_metadata", None)
     input_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
     output_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
     cache_read = getattr(usage, "cached_content_token_count", 0) if usage else 0
+
+    if truncated:
+        return BatchResult(
+            custom_id=custom_id,
+            succeeded=False,
+            content=text,  # preserved for forensics, NOT for write-back
+            error=f"truncated: finish_reason={finish_reason} "
+                  f"(output_tokens={output_tokens}, max_tokens cap hit — "
+                  f"raise BatchRequest.max_tokens)",
+            input_tokens=int(input_tokens or 0),
+            output_tokens=int(output_tokens or 0),
+            cache_creation_tokens=0,
+            cache_read_tokens=int(cache_read or 0),
+        )
 
     return BatchResult(
         custom_id=custom_id,
