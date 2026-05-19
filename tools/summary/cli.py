@@ -375,9 +375,12 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     # Retry IDs are exactly "retry-<orig>"; strip prefix for explicit equality
                     # match (tracker-088 F-5: previous endswith() worked but was fragile —
                     # would mis-handle two IDs that happen to be suffixes of each other).
-                    assert rr.custom_id.startswith("retry-"), (
-                        f"retry result has unexpected custom_id: {rr.custom_id!r}"
-                    )
+                    # Explicit raise instead of assert so the check survives
+                    # `python -O` (tracker-089 M-1).
+                    if not rr.custom_id.startswith("retry-"):
+                        raise ValueError(
+                            f"retry result has unexpected custom_id: {rr.custom_id!r}"
+                        )
                     orig_cid = rr.custom_id[len("retry-"):]
                     failed = [f for f in failed if f.custom_id != orig_cid]
     # MANUAL_REVIEW state for persistent failures (closes audit-086 H-5 / tracker-087 F-4).

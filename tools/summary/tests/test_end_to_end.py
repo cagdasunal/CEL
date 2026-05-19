@@ -139,6 +139,11 @@ def test_generate_english_live_mode_writes_manifest_and_manual_review(
             dry_run=False, success=True, method="PATCH", url="x",
         ),
     )
+    # Redirect WEGLOT_IMPORTS_DIR to tmp_path so the live _write_back_summaries
+    # path doesn't pollute the real docs/admin/weglot-imports/ directory
+    # (tracker-089 H-1; tracker-088 deviation log #2).
+    from tools.summary import config
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
 
     # Limit to 2 static pages so we have exactly 2 batch requests.
     rc = cli.main([
