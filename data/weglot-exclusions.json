@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-19T11:47:37.591803+00:00",
+  "last_sync": "2026-05-19T14:19:14.018980+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4680,6 +4680,21 @@
       "source": "api",
       "url_path": "/post/ist-san-diego-sicher-fuer-sprachschueler",
       "added_at": "2026-05-18T12:42:51.505832+00:00"
+    },
+    "quel-niveau-anglais-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/quel-niveau-anglais-sejour-linguistique",
+      "added_at": "2026-05-19T14:19:14.018887+00:00"
     }
   }
 }
