@@ -4,7 +4,7 @@ Reads existing Fidelo CSV (semicolon-separated, columns
 `id;language_from;language_to;word_from;word_to;type`), appends new Summary
 translation rows, deduplicates on (word_from + language_to), atomic-writes.
 
-Existing CSVs live at `data/weglot-imports/<lang>.csv` and are written by
+Existing CSVs live at `docs/admin/weglot-imports/<lang>.csv` and are written by
 `tools/weglot/csv_export.py`. The Summary script reads them, appends rows,
 and writes back — replacing the prior split-file pattern (Fidelo separate
 from Summary) with a single consolidated CSV per target language.

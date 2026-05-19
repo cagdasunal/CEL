@@ -72,7 +72,7 @@ LLMS_TXT_URL = "https://cel.englishcollege.com/llms.txt"
 
 # Filesystem layout.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-WEGLOT_IMPORTS_DIR = PROJECT_ROOT / "data" / "weglot-imports"
+WEGLOT_IMPORTS_DIR = PROJECT_ROOT / "docs" / "admin" / "weglot-imports"
 DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 

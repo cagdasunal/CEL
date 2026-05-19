@@ -682,6 +682,7 @@
   .badge-ok      { background: rgba(29,107,58,0.12);  color: var(--ok); }
   .badge-partial { background: rgba(166,95,31,0.15);  color: var(--warn); }
   .badge-failed  { background: rgba(160,38,36,0.12);  color: var(--err); }
+  .badge-when    { font-size: var(--fs-xs); color: var(--muted); font-weight: 400; }
 
   .gallery-grid { display: flex; flex-wrap: wrap; gap: 6px; }
   .section-block { margin-bottom: 20px; }
