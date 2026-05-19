@@ -6,7 +6,7 @@ Production pipeline for generating SEO summary content on englishcollege.com pag
 
 **As of 2026-05-19 (tracker-087 closure)**: production-ready for workflow_dispatch. Previously "deployment-ready but execution deferred" framing was inaccurate — the audit-086 commit shipped two false-closure claims (H-1 missing `write_static_summary` function; C-4 stub `_execute_translate`). Both are now genuinely closed and exercised by the end-to-end stress test in `tests/test_end_to_end.py`. Live workflow_dispatch still requires the user to rotate API keys (see below) and trigger manually.
 
-## Known limitations (resolved 2026-05-19)
+## Known limitations (resolved 2026-05-19 morning, tracker-087)
 
 The following audit-086 closures were proven incomplete by `/review` 2026-05-17 and re-closed in tracker-087 (`docs/reviews/087-summary-script-followup-2026-05-19.md` in the monorepo):
 
@@ -14,6 +14,15 @@ The following audit-086 closures were proven incomplete by `/review` 2026-05-17 
 - **C-4 (was false-closed)**: `_execute_translate` actually runs the pipeline now. The CEL `f094fad` version was a skeleton that imported `LinkSwap`, `batch_runner`, `csv_emitter`, `llms_parser` but used none of them.
 - **H-5 (was partial)**: persistent failures after the retry loop now land in `manual-review.json`. Tracker-086 had ticked H-5 as "MANUAL_REVIEW state written" — no such state was written before 2026-05-19.
 - **M-1 (line-count partial)**: `prompts/common.md` is now 185 lines (was 139 in CEL `f094fad`) with 2026 SEO research corrections — keyword density narrowed to 1–2%, FAQPage schema 3.2× citation rate, EEAT re-weighted Trust > Experience > Expertise > Authoritativeness, 134–167 word answer-block target, anti-AI burstiness section.
+
+## Known limitations (resolved 2026-05-19 afternoon, tracker-088)
+
+The tracker-087 executor's final-summary observations surfaced 4 production-blocking bugs that would have broken the first live `workflow_dispatch`. tracker-088 (`docs/reviews/088-summary-production-readiness-2026-05-19.md` in the monorepo) closes them:
+
+- **F-1 (was production bug)**: `config.WEGLOT_IMPORTS_DIR` pointed at `data/weglot-imports/`, but the dashboard + downloads + Weglot status page all serve from `docs/admin/weglot-imports/`. Live CSV writes would have been orphaned. Config now points at the served path.
+- **F-2 (was production bug)**: `.github/workflows/summary.yml` had `timeout-minutes: 60` but `batch_runner.wait_for_batch` defaults to 24h timeout. Live runs > 60 min would have been killed mid-poll. Now `360` (6h, GHA free-tier hard cap). For batches > 6h, the user splits the workflow: `generate-english` first, then `translate --from-run <prior run dir>` separately once the batch completes in background.
+- **F-3 (was production bug)**: `webflow_client.update_item_summary` wrote to `/items/{id}/live` which requires items already published — first-time writes on drafts returned 409. Switched to staged `/items/{id}`. The user publishes the Webflow site via Designer to push changes live, per `rules/workflow.md §7.1` ("Claude never publishes"). Pattern matches `tools/fidelo/cms_writer.py` + `cms_writer_courses.py` (monorepo) which already write to this CEL site.
+- **F-4 (was production bug)**: CEL `tools/dashboard.py` + `docs/assets/css/dashboard.css` were uncommitted despite the monorepo equivalent shipping in audit-086 `340bc39`. Closes a `rules/dashboard-deploy.md` two-repo-lockstep violation. The 15-min `content-pipeline.yml` cron now renders IMAGES + WEGLOT-dropdown nav (was stale BLOG + FIDELO-Translations).
 
 ## Repository
 

@@ -170,9 +170,15 @@ class WebflowClient:
         item_id: str,
         summary_html: str,
     ) -> WriteResult:
-        """Patch the Summary field on a CMS item. Dry-run safe."""
+        """Patch the Summary field on a CMS item via the STAGED endpoint. Dry-run safe.
+
+        Writes to `/items/{id}` (no `/live` suffix) so the call succeeds on draft items.
+        The user publishes the Webflow site to push staged changes live. Per
+        rules/workflow.md §7.1, Claude never publishes. This matches the pattern
+        used by tools/fidelo/cms_writer.py + cms_writer_courses.py in the monorepo.
+        """
         url = (
-            f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}/live"
+            f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}"
         )
         payload = {
             "fieldData": {

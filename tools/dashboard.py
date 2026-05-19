@@ -746,6 +746,7 @@ SHELL_CSS = """
   .badge-ok      { background: rgba(29,107,58,0.12);  color: var(--ok); }
   .badge-partial { background: rgba(166,95,31,0.15);  color: var(--warn); }
   .badge-failed  { background: rgba(160,38,36,0.12);  color: var(--err); }
+  .badge-when    { font-size: var(--fs-xs); color: var(--muted); font-weight: 400; }
 
   .gallery-grid { display: flex; flex-wrap: wrap; gap: 6px; }
   .section-block { margin-bottom: 20px; }
@@ -899,14 +900,19 @@ _SHELL_HTML = """\
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
-        <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">BLOG</a>
-        <a class="shell-tab" href="#log" data-target="log" data-topbar="seo">WEGLOT</a>
+        <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
+        <details class="shell-tab-dropdown" data-topbar="seo">
+          <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="#translations" data-target="translations">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="#log" data-target="log">Blog</a></li>
+          </ul>
+        </details>
         <details class="shell-tab-dropdown" data-topbar="fidelo">
           <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
             <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
             <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
-            <li><a class="shell-tab-subitem" href="#translations" data-target="translations">Translations</a></li>
           </ul>
         </details>
       </nav>
@@ -931,7 +937,7 @@ _SHELL_HTML = """\
       offers:       'offers',
       housing:      'fidelo',
       courses:      'fidelo',
-      translations: 'fidelo',
+      translations: 'seo',
       blog:         'blog'
     };
     var frame = document.getElementById('shell-frame');
