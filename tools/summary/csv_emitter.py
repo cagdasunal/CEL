@@ -172,7 +172,7 @@ def pair_from_paragraphs(
     """Zip EN paragraphs with translated paragraphs into SummaryPair objects.
 
     Caller is responsible for ensuring both sequences are the same length and
-    aligned (Claude produces paragraph-for-paragraph translations).
+    aligned (the model produces paragraph-for-paragraph translations).
     """
     if len(en_paragraphs) != len(translated_paragraphs):
         raise ValueError(

@@ -1,15 +1,13 @@
 name: Summary script (Webflow CMS + landing pages → Weglot CSVs)
 
-# Manual trigger only. Deployment-ready but execution is deferred until the user
-# explicitly runs it. Default inputs run in dry-run mode (no API calls, no Webflow
-# writes — produces JSONL batch payload + Markdown report as artifacts).
+# Manual trigger only. Default inputs run in dry-run mode (no API calls, no
+# Webflow writes — produces JSONL batch payload + Markdown report as artifacts).
 #
 # Requires repo secrets:
 #   - WEBFLOW_API_TOKEN  (already used by fidelo-sync.yml)
-#   - ANTHROPIC_API_KEY  (new — for Claude Message Batches API)
+#   - GEMINI_API_KEY     (Google Gemini 3.1 Pro Batch API; tracker-091 migration)
 #
-# Both secrets must be rotated before first live run (the values pasted in the
-# planning conversation are now in chat transcripts; see tools/summary/README.md).
+# See tools/summary/README.md for pre-execution checklist.
 
 on:
   workflow_dispatch:
@@ -56,7 +54,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6h — matches GHA free-tier hard cap; covers realistic Anthropic batch sizes (1-4h typical). For batches expected to exceed 6h, run translate phase separately with --from-run pointing at the prior generate-english run dir.
+    timeout-minutes: 360  # 6h — matches GHA free-tier hard cap; covers realistic Gemini batch sizes (1-4h typical, 24h SLA). For batches expected to exceed 6h, run translate phase separately with --from-run pointing at the prior generate-english run dir.
     steps:
       - uses: actions/checkout@v6
         with:
@@ -77,7 +75,7 @@ jobs:
       - name: Run summary script
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MODE: ${{ inputs.mode }}
           DRY_RUN: ${{ inputs.dry_run }}
           COLLECTION_FILTER: ${{ inputs.collection_filter }}
