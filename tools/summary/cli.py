@@ -554,6 +554,20 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     en_summaries: dict[str, dict] = json.loads(manifest_path.read_text(encoding="utf-8"))
     # Manifest shape: {"<custom_id>": {"url": ..., "markdown": ..., "content_type": ..., "locale": ...}}
 
+    # Content-type → collection-slug mapping (mirrors _collection_id_for_content_type).
+    # Skip any content_type that maps to a collection NOT meant for translation.
+    # Static pages (content_type="landing") have no mapping → never skipped (tracker-091 M-10).
+    _CT_TO_COLLECTION = {
+        "blog_post": "blog",
+        "course":    "courses",
+        "housing":   "housing_new",
+    }
+    _SKIP_TRANSLATE_TYPES = {
+        ct for ct, slug in _CT_TO_COLLECTION.items()
+        if slug in config.NATIVE_LANGUAGE_COLLECTIONS
+        or slug in config.NO_TRANSLATE_COLLECTIONS
+    }
+
     # llms.txt for cross-locale link swaps (live only — dry-run skips the network).
     llms_index = None
     if not args.dry_run:
@@ -567,6 +581,8 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         # Build one BatchRequest per EN summary for this locale.
         requests = []
         for cid, en in en_summaries.items():
+            if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
+                continue
             md = en.get("markdown", "") or ""
             if not md.strip():
                 continue

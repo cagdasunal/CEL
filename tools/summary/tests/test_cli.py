@@ -142,8 +142,14 @@ def test_generate_english_dry_run_writes_en_summaries_manifest(tmp_path: Path, m
 
 
 def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Path):
-    """Translate phase reads en-summaries.json and writes per-locale batch artifacts."""
-    # Pre-stage a manifest with a single EN summary containing a Markdown link.
+    """Translate phase reads en-summaries.json and writes per-locale batch artifacts.
+
+    Tracker-091 M-10: also verifies the content-type filter — a housing CMS
+    entry is included in the manifest but MUST be skipped (housing_new is in
+    NO_TRANSLATE_COLLECTIONS). Expected request_count == 1 (the landing
+    entry), not 2.
+    """
+    # Pre-stage a manifest with a landing entry + a housing entry (filter target).
     manifest = {
         "gen-0-test": {
             "url": "https://www.englishcollege.com/learn-english-usa",
@@ -154,7 +160,13 @@ def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Pa
             ),
             "content_type": "landing",
             "locale": "en",
-        }
+        },
+        "gen-1-housing": {
+            "url": "https://www.englishcollege.com/housing/some-residence",
+            "markdown": "## Where to live\n\nKitsilano apartment with kitchenette.\n",
+            "content_type": "housing",  # ← filter target (NO_TRANSLATE_COLLECTIONS)
+            "locale": "en",
+        },
     }
     (tmp_path / "en-summaries.json").write_text(
         json.dumps(manifest), encoding="utf-8"
@@ -170,7 +182,10 @@ def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Pa
     assert phase["target_locales"] == ["de"]
     de_result = phase["per_locale"]["de"]
     assert de_result.get("dry_run") is True
-    assert de_result.get("request_count") == 1
+    # M-10: housing entry must be filtered out — only the landing entry produces a request.
+    assert de_result.get("request_count") == 1, (
+        f"expected 1 request (landing only; housing filtered), got {de_result.get('request_count')}"
+    )
     assert "batch_id" in de_result
     # Artifact dir exists.
     assert (tmp_path / "translate-batches" / "de").exists()
