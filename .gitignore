@@ -2,6 +2,9 @@
 logs/
 run_log.txt
 
+# Secrets (tracker-091 — GEMINI_API_KEY etc.)
+.env
+
 # Python
 __pycache__/
 *.pyc

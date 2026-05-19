@@ -1,11 +1,16 @@
-"""Compose Claude API messages from content type + locale + source item.
+"""Compose Gemini API messages from content type + locale + source item.
 
-System prompt is built as a stack of cacheable blocks:
+System prompt is built as a list of text blocks:
     [common.md, <content_type>.md, locales/<source_locale>.md]
 
-Each block carries `cache_control={"type": "ephemeral"}` so the static prefix
-is cached across batch requests. The user message contains the per-item
-variable input: source body, keywords, link inventory subset.
+Gemini caches the system prompt prefix implicitly on the Batch tier — no
+explicit `cache_control` markers are needed (unlike the prior Anthropic
+implementation; see tracker-091). `batch_runner._flatten_system_blocks`
+concatenates the block list into a single `system_instruction` string at
+submit time.
+
+The user message contains the per-item variable input: source body, keywords,
+link inventory subset.
 """
 from __future__ import annotations
 
@@ -76,10 +81,13 @@ def _content_type_filename(content_type: str) -> str:
 
 
 def build_system_prompt(content_type: str, source_locale: str) -> list[dict]:
-    """Return a list of system-prompt blocks ready for the Anthropic API.
+    """Return a list of system-prompt blocks (tracker-091 — Gemini-compatible shape).
 
-    Each block carries `cache_control={"type": "ephemeral"}` so the static
-    prefix is cached. Order: common → content_type → locale.
+    Order: common → content_type → locale.
+    Each block is `{"type": "text", "text": "..."}` — NO cache_control field.
+    Gemini caches the prefix implicitly on the Batch tier.
+    `batch_runner._flatten_system_blocks` concatenates these into a single
+    `system_instruction` string at submit time.
     """
     common = _load_prompt("common.md")
     type_layer = _load_prompt(_content_type_filename(content_type))
@@ -90,17 +98,14 @@ def build_system_prompt(content_type: str, source_locale: str) -> list[dict]:
         {
             "type": "text",
             "text": common,
-            "cache_control": {"type": "ephemeral", "ttl": "1h"},
         },
         {
             "type": "text",
             "text": f"\n\n---\n\n# {content_type.replace('_', ' ').title()} Layer\n\n{type_layer}",
-            "cache_control": {"type": "ephemeral", "ttl": "1h"},
         },
         {
             "type": "text",
             "text": f"\n\n---\n\n# Source Locale: {source_locale}\n\n{locale_layer}",
-            "cache_control": {"type": "ephemeral", "ttl": "1h"},
         },
     ]
 
@@ -165,7 +170,10 @@ def build_user_message(
 
 
 def build_translation_system_prompt(target_locale: str) -> list[dict]:
-    """System prompt for translation pass — common.md + target locale layer only."""
+    """System prompt for translation pass — common.md + target locale layer only.
+
+    Tracker-091: cache_control removed; Gemini caches implicitly on Batch tier.
+    """
     common = _load_prompt("common.md")
     locale_path = f"locales/{target_locale}.md"
     locale_layer = _load_prompt(locale_path)
@@ -173,12 +181,10 @@ def build_translation_system_prompt(target_locale: str) -> list[dict]:
         {
             "type": "text",
             "text": common,
-            "cache_control": {"type": "ephemeral", "ttl": "1h"},
         },
         {
             "type": "text",
             "text": f"\n\n---\n\n# Target Locale: {target_locale}\n\n{locale_layer}",
-            "cache_control": {"type": "ephemeral", "ttl": "1h"},
         },
     ]
 

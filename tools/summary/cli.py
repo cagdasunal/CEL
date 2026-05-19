@@ -7,7 +7,7 @@ Subcommands:
   translate        — translate EN summaries into 8 locales + emit Weglot CSVs
   all              — run generate-english → audit → translate
 
-Default mode is `--dry-run`: no live Claude API calls, no Webflow writes, no live
+Default mode is `--dry-run`: no live Gemini API calls, no Webflow writes, no live
 CSV mutations. `--no-dry-run` enables real API calls + Webflow writes. Static-
 page summaries are written to Markdown files under
 `docs/admin/weglot-imports/static-summaries/` regardless of mode — the user copy-
@@ -51,11 +51,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--dry-run", dest="dry_run", action="store_true", default=True,
-        help="Default. No Claude API calls, no Webflow writes.",
+        help="Default. No Gemini API calls, no Webflow writes.",
     )
     parser.add_argument(
         "--no-dry-run", dest="dry_run", action="store_false",
-        help="Real API calls + Webflow writes. Requires WEBFLOW_API_TOKEN and ANTHROPIC_API_KEY.",
+        help="Real API calls + Webflow writes. Requires WEBFLOW_API_TOKEN and GEMINI_API_KEY.",
     )
     parser.add_argument(
         "--collection", choices=["blog", "courses", "housing_new"], default=None,
@@ -187,12 +187,12 @@ def _plan_translate(args: argparse.Namespace) -> dict[str, Any]:
 # These functions do the actual work. Each respects `args.dry_run`:
 #   - dry_run=True: assemble inputs, build prompts, write a JSONL artifact
 #     describing what would happen. NO API calls. NO Webflow writes.
-#   - dry_run=False: assemble inputs, build prompts, submit Claude batches,
+#   - dry_run=False: assemble inputs, build prompts, submit Gemini batches,
 #     parse results, write to Webflow CMS (or to static-summaries Markdown
 #     for static pages).
 #
 # Imports of network-touching modules are lazy so dry-run + --help work
-# without the anthropic SDK installed.
+# without the google-genai SDK installed.
 
 
 def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:

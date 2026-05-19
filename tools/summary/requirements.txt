@@ -1,6 +1,10 @@
 # tools/summary/ runtime dependencies.
 # Installed by .github/workflows/summary.yml. Stdlib-only for the rest of the
-# script — only the Anthropic SDK is needed for live API calls. Dry-run mode
-# works without this dependency.
+# script — only the Google Gemini SDK is needed for live API calls. Dry-run
+# mode works without this dependency.
+#
+# Tracker-091 (2026-05-19): migrated from anthropic → google-genai for
+# ~7× lower Batch API pricing on equivalent-benchmark model (Gemini 3.1 Pro
+# Preview vs Claude Opus 4.7).
 
-anthropic>=0.40.0,<1.0.0
+google-genai>=0.3.0

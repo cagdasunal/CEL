@@ -30,27 +30,27 @@ This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/
 
 The Weglot CSV outputs land at `docs/admin/weglot-imports/<lang>.csv` and are served via GitHub Pages.
 
-## ⚠️ Security: rotate API keys before first live run
+## ⚠️ Security: API key handling
 
-Both `WEBFLOW_API_TOKEN` and `ANTHROPIC_API_KEY` values that were pasted in the planning conversation are now in chat transcripts. **Rotate both before any live execution.**
+The `WEBFLOW_API_TOKEN` value that was pasted in earlier planning conversations is in chat transcripts — **rotate before any live execution**. The new `GEMINI_API_KEY` (tracker-091 migration from Anthropic) is freshly issued by the user.
 
-1. Webflow Dashboard → Site Settings → API Access → revoke the leaked token + generate a new one.
-2. Anthropic Console → Settings → API Keys → revoke the leaked key + generate a new one.
+1. Webflow Dashboard → Site Settings → API Access → revoke any leaked token + generate a new one.
+2. Google AI Studio (`englishcollege-seo` project) → create the API key restricted to "Generative Language API".
 3. CEL repo → Settings → Secrets and variables → Actions:
    - `WEBFLOW_API_TOKEN` → paste new value.
-   - `ANTHROPIC_API_KEY` → paste new value (this secret is NEW; add it).
+   - `GEMINI_API_KEY` → paste the key (this secret name changed in tracker-091; the old `ANTHROPIC_API_KEY` is no longer used).
 
 ## Default mode = `--dry-run`
 
 `--dry-run` (the default):
 - Fetches live HTML for static landing pages (no API charge — public pages)
 - Builds prompts + writes a JSONL batch payload to disk
-- Does NOT call the Claude API
+- Does NOT call the Gemini API
 - Does NOT write to Webflow CMS or commit CSV changes
 
 `--no-dry-run`:
-- Submits Claude Message Batches API requests
-- Polls for completion (≤24h)
+- Submits Gemini Batch API requests
+- Polls for completion (≤24h SLA, 48h hard expiry)
 - Writes Summary content to Webflow CMS items (Blog, Courses, Housing collections)
 - For static pages, writes Markdown to `docs/admin/weglot-imports/static-summaries/<slug>.summary.md` for **manual paste** into Webflow Designer (auto-write to Designer was dropped per audit-086 H-1 — endpoints were unverified)
 - Translate phase appends rows to `docs/admin/weglot-imports/<lang>.csv` per locale
@@ -106,8 +106,8 @@ The workflow uploads dry-run artifacts as a build artifact (`summary-dryrun-<run
 
 Before flipping `dry_run=false`:
 
-- [ ] Rotated `WEBFLOW_API_TOKEN` and `ANTHROPIC_API_KEY` (both leaked in transcripts).
-- [ ] Added BOTH secrets to CEL repo's GitHub Actions secrets.
+- [ ] Rotated `WEBFLOW_API_TOKEN` (was leaked in transcripts). `GEMINI_API_KEY` was freshly issued in tracker-091; restrict it to "Generative Language API" only.
+- [ ] Added BOTH secrets (`WEBFLOW_API_TOKEN`, `GEMINI_API_KEY`) to CEL repo's GitHub Actions secrets.
 - [ ] Reviewed dry-run output at least once on the `plan` subcommand.
 - [ ] Verified the `Summary` rich-text field exists on the three target CMS collections (Blog, Courses, Housing). If missing, the script's first live run auto-creates it via `data_cms_tool.create_collection_rich_text_field`.
 - [ ] **Ran a pilot live invocation with `--limit 1` FIRST.** The staged CMS endpoint (`/items/{id}`, switched from `/live` in tracker-088 F-3) has been validated against the sibling `tools/fidelo/cms_writer.py` pattern but has not been live-tested against the Webflow Data API v2 yet (no API key during the audit window). A `--limit 1` pilot confirms the endpoint accepts the PATCH payload, the staged write lands, and (after the user clicks Publish in Webflow Designer) the change propagates to the live site. Only after the pilot succeeds end-to-end should the full live run be triggered.
@@ -137,14 +137,14 @@ tools/summary/
 ├── page_fetcher.py        # stdlib HTML fetch + parse (title, H1, headings, summary element, body)
 ├── keyword_extractor.py   # /page-summary Phase 2.5 derivation
 ├── llms_parser.py         # llms.txt → structured graph
-├── prompt_builder.py      # composes system + user messages with cache_control (1h TTL)
+├── prompt_builder.py      # composes system + user messages (Gemini caches implicitly on Batch tier)
 ├── qa.py                  # locked rule checks (em-dash, lists, keyword placement, density)
 ├── audit.py               # score existing summaries → REGENERATE / KEEP / MANUAL_REVIEW
 ├── webflow_client.py      # CMS Data API reader/writer (dry-run safe; pagination via metadata)
 ├── webflow_designer.py    # static-page summary → Markdown file (manual paste)
-├── batch_runner.py        # Claude Message Batches submission + retrieval + cost estimator
+├── batch_runner.py        # Gemini Batch API submission + retrieval + cost estimator (tracker-091)
 ├── csv_emitter.py         # Fidelo CSV merge + atomic write
-├── requirements.txt       # documents anthropic SDK (installed via CEL root requirements.txt)
+├── requirements.txt       # documents google-genai SDK (installed via CEL root requirements.txt)
 ├── prompts/
 │   ├── common.md          # locked critical rules (~200 lines; 2026-refreshed)
 │   ├── blog_post.md       # blog post adaptation
@@ -159,18 +159,22 @@ tools/summary/
 
 ## Cost expectation
 
-Rough estimate for one full run (~240 items + 184 translations ≈ 424 Claude API calls):
+Rough estimate against the live CEL catalog (491 generate-english + 1,352 translate ≈ 1,843 Gemini API calls):
 
-- Opus 4.7 + Message Batches API (50% discount) + 1-hour prompt caching: **~$15–25 USD**
-- Per new blog post (ongoing): **~$0.07–0.13 USD**
+- Gemini 3.1 Pro Preview + Batch API (already 50% off standard) + implicit caching: **~$15 USD full sweep**
+- Skip-translate (491 generate-english only): **~$5 USD**
+- Per new blog post (ongoing): **~$0.01–0.02 USD**
+- Single-request pilot (`--limit 1`): **~$0.002 USD**
 
-Pricing as of 2026-05-16; verify at https://www.anthropic.com/pricing.
+Pricing as of 2026-05-19; verify at https://ai.google.dev/gemini-api/docs/pricing.
 
-Defensive cost cap: `MAX_BATCH_COST_USD = 100` in `config.py`. The orchestrator estimates cost before each batch submission and aborts if it would exceed the cap.
+Migrated from Anthropic Claude Opus 4.7 → Gemini 3.1 Pro Preview in tracker-091 for ~7× cost reduction at equivalent benchmarks (Artificial Analysis Intelligence Index 57 = 57).
+
+Defensive cost cap: `MAX_BATCH_COST_USD = 100` in `config.py`. The orchestrator estimates cost before each batch submission and aborts if it would exceed the cap. With Gemini's lower per-request cost, this cap is now ~7× margin — safer.
 
 ## Troubleshooting
 
-### "ANTHROPIC_API_KEY env var not set"
+### "GEMINI_API_KEY env var not set"
 The script ran in `--no-dry-run` but the secret isn't configured. Add to CEL repo Secrets and re-run.
 
 ### "WEBFLOW_API_TOKEN env var not set"
@@ -180,7 +184,7 @@ Same as above for the Webflow token.
 The batch estimate exceeded `MAX_BATCH_COST_USD` (100). Either reduce scope (`--limit` flag) or raise the cap in `config.py`. Don't raise without thinking — the cap is defensive.
 
 ### "Batch submission timed out"
-`wait_for_batch` polls for ≤24 hours then raises `TimeoutError`. If this fires, check the Anthropic Console for batch status; it may still be processing. Re-run the workflow to re-poll.
+`wait_for_batch` polls for ≤24 hours then raises `TimeoutError`. If this fires, check the Google AI Studio / Gemini batch console for batch status; it may still be processing (48h hard expiry). Re-run the workflow to re-poll.
 
 ### Partial batch failures
 Each generation can fail individually (model refusal, token overrun, etc.). The orchestrator retries failed items once with a tightened prompt. After retry, persistent failures are logged in the run report and marked MANUAL_REVIEW. They do not block the rest of the run.
@@ -212,10 +216,10 @@ The dashboard's "Translations" tab shows the per-language import status badge.
 
 | Failure | Symptom | Recovery |
 |---|---|---|
-| Anthropic rate limit | Batch submission returns 429 | SDK auto-retries with backoff. If persistent, reduce `--limit` and re-run. |
-| Anthropic batch quota exceeded | submit_batch raises an error mentioning quota | Wait for the 24-hour rolling window to reset. |
+| Gemini rate limit | Batch submission returns 429 | SDK auto-retries with backoff. If persistent, reduce `--limit` and re-run. |
+| Gemini batch infrastructure issue | Random per-request failures within a successful batch | Tracker-091 retry-once + MANUAL_REVIEW path handles this. Google has flagged this as a known incident in the Batch API docs. |
 | Webflow CMS write conflict (412) | update_item_summary returns 412 | Item was modified between read and write. Re-run; the orchestrator will re-fetch. |
-| `--no-dry-run` with no SDK installed | `ImportError: anthropic` | Install via `pip install -r requirements.txt` (CEL root). |
+| `--no-dry-run` with no SDK installed | `ImportError: google.genai` | Install via `pip install -r requirements.txt` (CEL root). |
 | Static page has no `id="summary"` element | The static-page summary is generated but invisible on the page | Add the element manually in Webflow Designer (one-time per page). |
 | Workflow timeout | GitHub Actions kills the job at 60 minutes | Run with `--limit N` to keep batches small. The 24-hour batch SLA is the bottleneck for large runs. |
 
@@ -270,6 +274,8 @@ Current: 64 tests across 8 test files (llms_parser, qa, csv_emitter, prompt_buil
 - 2026 SEO research backing the rules: `cagdasunal/webflow/.claude/skills/page-summary/best-practices.md`.
 - llms.txt source: https://cel.englishcollege.com/llms.txt (765 URLs, 9 locales).
 - Webflow Data API v2: https://developers.webflow.com/v2.0.0/data/reference
-- Claude Message Batches: https://docs.claude.com/en/docs/build-with-claude/batch-processing
-- Anthropic SDK (Python): https://github.com/anthropics/anthropic-sdk-python
+- Gemini Batch API: https://ai.google.dev/gemini-api/docs/batch-api
+- Gemini pricing: https://ai.google.dev/gemini-api/docs/pricing
+- google-genai SDK (Python): https://github.com/googleapis/python-genai
 - Audit tracker: `cagdasunal/webflow/docs/reviews/086-summary-script-audit-2026-05-16.md`
+- Migration tracker: `cagdasunal/webflow/docs/reviews/091-summary-gemini-migration-2026-05-19.md`

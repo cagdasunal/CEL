@@ -15,12 +15,13 @@ from tools.summary.prompt_builder import (
 )
 
 
-def test_system_prompt_three_blocks_with_cache_control():
+def test_system_prompt_three_blocks_present():
+    """Tracker-091: blocks are plain {type:text, text:...}; no cache_control (Gemini implicit cache)."""
     blocks = build_system_prompt(content_type="landing", source_locale="en")
     assert len(blocks) == 3
     for b in blocks:
         assert b["type"] == "text"
-        assert b["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+        assert "cache_control" not in b
         assert b["text"].strip()
 
 
@@ -104,9 +105,11 @@ def test_translation_user_message_contains_swap_table():
 
 
 def test_translation_system_prompt_two_blocks():
+    """Tracker-091: blocks are plain {type:text, text:...}; no cache_control."""
     blocks = build_translation_system_prompt("de")
     assert len(blocks) == 2
-    assert all(b["cache_control"] == {"type": "ephemeral", "ttl": "1h"} for b in blocks)
+    assert all("cache_control" not in b for b in blocks)
+    assert all(b["type"] == "text" for b in blocks)
     assert "Target Locale: de" in blocks[1]["text"]
 
 
@@ -142,12 +145,14 @@ def test_user_message_contains_keyword_plan_in_order():
     assert "DLI" in msg
 
 
-def test_system_prompt_blocks_for_generation_use_1h_ttl():
-    """All three system blocks for the generate phase carry ttl=1h cache_control."""
+def test_system_prompt_blocks_no_cache_control_after_gemini_migration():
+    """Tracker-091: cache_control removed; Gemini caches the system prefix implicitly."""
     blocks = build_system_prompt(content_type="course", source_locale="en")
     assert len(blocks) == 3
     for b in blocks:
-        assert b["cache_control"]["ttl"] == "1h"
+        assert "cache_control" not in b
+        assert b["type"] == "text"
+        assert b["text"].strip()
 
 
 def test_common_md_contains_2026_corrections():

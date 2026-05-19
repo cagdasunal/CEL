@@ -1,15 +1,17 @@
 """Config — locale codes, collection IDs, model, exclusions, paths.
 
 Single source of truth for IDs and rules. No business logic — pure constants.
-Update MODEL_ID when a more capable Claude production model ships.
+Update MODEL_ID when a more capable Gemini production model ships.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
-# Anthropic model — most capable production model as of 2026-05-16.
-# 1M context not required for this workload; the standard alias is fine.
-MODEL_ID = "claude-opus-4-7"
+# Google Gemini 3.1 Pro Preview — top-tier production model on Artificial
+# Analysis Intelligence Index (tied with Opus 4.7 at 57) at ~7× lower Batch
+# pricing. Migrated from claude-opus-4-7 in tracker-091 (2026-05-19 evening).
+# Pricing reference: https://ai.google.dev/gemini-api/docs/pricing
+MODEL_ID = "gemini-3.1-pro-preview"
 
 # Batches API — sanity ceiling, well below the API max (~10,000).
 BATCH_SIZE_TARGET = 500
