@@ -146,3 +146,63 @@ def test_brand_suffix_strip_handles_locale_variants():
         body_text="",
     )
     assert "英語学校" not in plan_ja.primary
+
+
+# ---- M-12.4: home page override prevents brand-slogan primary keyword ----
+
+
+def test_homepage_primary_uses_override_not_brand_slogan():
+    """The home page's title + H1 both contain CEL's brand slogan ("fluent in
+    creating memories") — the candidate-A/B/C heuristic would pick the slogan
+    as the longest shared phrase. The _PRIMARY_KEYWORD_OVERRIDES map forces
+    an intent-driven keyword instead.
+
+    Tracker-091 M-12.4: pilot's home.summary.md primary was the brand slogan
+    (zero search volume). Override map fixes this without disturbing other
+    pages' content-derived behavior.
+    """
+    plan = derive_keywords(
+        title="Fluent in Creating Memories | College of English Language",
+        h1="How does CEL ensure we are fluent in creating memories?",
+        url="https://www.englishcollege.com/",
+        body_text="At CEL we offer English courses across San Diego, Los Angeles, "
+                  "and Vancouver. Students study English at our accredited campuses.",
+    )
+    assert plan.primary == "english language school", (
+        f"home page primary should be the override 'english language school', "
+        f"got {plan.primary!r}"
+    )
+    assert "fluent" not in plan.primary
+    assert "memories" not in plan.primary
+
+
+def test_homepage_override_applies_across_locales():
+    """The override map is keyed by locale-stripped path, so a single entry
+    covers all 9 locales without per-locale duplication."""
+    for prefix in ("", "/de", "/fr", "/es", "/it", "/pt", "/ar", "/ko", "/ja"):
+        url = f"https://www.englishcollege.com{prefix}/"
+        plan = derive_keywords(
+            title="Fluent in Creating Memories | CEL",
+            h1="Fluent in creating memories",
+            url=url,
+            body_text="",
+        )
+        assert plan.primary == "english language school", (
+            f"home page override didn't apply for locale prefix {prefix!r}: "
+            f"got {plan.primary!r}"
+        )
+
+
+def test_non_homepage_unaffected_by_override():
+    """Pages NOT in the override map fall through to the heuristic — make sure
+    a typical landing page still derives its primary from content."""
+    plan = derive_keywords(
+        title="Learn English in USA | CEL",
+        h1="Learn English in USA",
+        url="https://www.englishcollege.com/learn-english-usa",
+        body_text="",
+    )
+    # The intersection of A/B/C should produce something USA-related, NOT
+    # the homepage override.
+    assert plan.primary != "english language school"
+    assert "english" in plan.primary or "usa" in plan.primary

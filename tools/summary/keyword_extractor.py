@@ -131,6 +131,25 @@ _LOCALE_STOPWORDS: dict[str, frozenset[str]] = {
 }
 
 
+# Per-URL primary-keyword overrides (tracker-091 M-12.4).
+#
+# Some pages (notably the home page) carry brand-slogan copy in both their
+# title and H1 — so the candidate-A/B/C heuristic below picks "fluent in
+# creating memories" as primary, which has zero search volume. This map
+# overrides the heuristic for known slogan-dominated pages with the
+# intent-driven keyword the SEO team actually wants to anchor on.
+#
+# Keys are URL paths after `strip("/")` (so the home page's key is "");
+# locale prefixes (de/, fr/, etc.) are stripped before lookup, so the home
+# override applies across all 9 locales without per-locale entries.
+#
+# Grow this map ONLY for pages where the SEO team confirms the heuristic
+# misses. Most pages do the right thing without an entry.
+_PRIMARY_KEYWORD_OVERRIDES: dict[str, str] = {
+    "": "english language school",  # home page — was "fluent in creating memories"
+}
+
+
 # Brand suffix patterns to strip from titles. Includes locale-translated variants
 # of the brand name (audit-086 follow-up — tracker-087 F-6).
 _BRAND_SUFFIX_RE = re.compile(
@@ -158,12 +177,18 @@ def derive_keywords(
 
     `locale` selects the stopword set for body-frequency filtering. Defaults to
     English. Falls back to English if the locale is unknown.
+
+    URL-level overrides in `_PRIMARY_KEYWORD_OVERRIDES` take precedence over
+    the candidate-A/B/C heuristic (tracker-091 M-12.4) so brand-slogan-dominated
+    pages anchor on intent-driven keywords instead of zero-volume marketing copy.
     """
     candidate_a = _strip_brand(title)
     candidate_b = _strip_brand(h1)
     candidate_c = _slug_to_phrase(url)
 
-    primary = _longest_common_phrase([candidate_a, candidate_b, candidate_c])
+    primary = _lookup_override_primary(url)
+    if not primary:
+        primary = _longest_common_phrase([candidate_a, candidate_b, candidate_c])
     if not primary:
         primary = candidate_b or candidate_a or candidate_c or "english school"
     primary = primary.strip().lower()
@@ -192,6 +217,26 @@ def _strip_brand(text: str) -> str:
         return ""
     cleaned = _BRAND_SUFFIX_RE.sub("", text).strip()
     return cleaned
+
+
+def _lookup_override_primary(url: str) -> str:
+    """Return the SEO-team-curated primary keyword for `url`, or "" if none.
+
+    Path keys in `_PRIMARY_KEYWORD_OVERRIDES` are matched after stripping
+    leading/trailing slashes AND any 2-char locale prefix, so a single
+    override entry covers all 9 locales (en + de/fr/es/it/pt/ko/ja/ar).
+
+    Empty path ("/" or "") → home page; check the home entry.
+    """
+    if not url:
+        return ""
+    parsed = urllib.parse.urlparse(url)
+    parts = [p for p in parsed.path.strip("/").split("/") if p]
+    # Strip locale prefix if present (mirrors _slug_to_phrase).
+    if parts and parts[0] in {"de", "fr", "es", "it", "pt", "ko", "ja", "ar"}:
+        parts = parts[1:]
+    key = "/".join(parts)
+    return _PRIMARY_KEYWORD_OVERRIDES.get(key, "")
 
 
 def _slug_to_phrase(url: str) -> str:

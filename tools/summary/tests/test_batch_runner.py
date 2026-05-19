@@ -121,24 +121,31 @@ def test_parse_empty_text_marks_failed():
 
 
 def test_batchrequest_default_max_tokens_leaves_visible_headroom():
-    """The default max_tokens MUST exceed THINKING_BUDGET_TOKENS by enough to
-    fit a 200-word summary (~300 visible output tokens). Anything less and
-    we recreate the home.summary.md truncation bug by default.
+    """The default max_tokens MUST be large enough that the observed-worst-case
+    dynamic thinking consumption (~4000 tokens on the home page, despite
+    thinking_budget=1500) does NOT clip visible output below ~1000 tokens.
 
-    Margin: at least 1500 visible tokens after subtracting thinking budget
-    (≈2× a 200-word summary, leaves room for tables/lists).
+    Tracker-091 M-12.5 (2026-05-19 smoke test): pilot run 26117270255 hit
+    MAX_TOKENS with output_tokens=156 because Gemini's thinking_budget is
+    advisory — actual thinking can exceed the configured value by 2.5×.
+    Default raised from 4000 → 8000 to cover this. If this test fails
+    because the default was lowered, run a fresh limit=1 pilot against
+    the home page BEFORE accepting the lower value.
     """
     req = batch_runner.BatchRequest(
         custom_id="x",
         system_blocks=[],
         user_message="x",
     )
-    headroom = req.max_tokens - config.THINKING_BUDGET_TOKENS
-    assert headroom >= 1500, (
-        f"BatchRequest default max_tokens={req.max_tokens} only leaves "
-        f"{headroom} visible tokens after THINKING_BUDGET_TOKENS="
-        f"{config.THINKING_BUDGET_TOKENS}. Pilot home.summary.md was "
-        f"clipped at ~500. Bump max_tokens or shrink THINKING_BUDGET_TOKENS."
+    # 6500 = observed-worst-case thinking (~4000) + visible target (1000) +
+    # safety margin (1500). If a future model behaves better we can lower this.
+    assert req.max_tokens >= 6500, (
+        f"BatchRequest default max_tokens={req.max_tokens} is below the "
+        f"M-12.5 floor of 6500. Smoke test 2026-05-19 (pilot 26117270255) "
+        f"showed Gemini consumed ~3844 thinking tokens despite "
+        f"THINKING_BUDGET_TOKENS={config.THINKING_BUDGET_TOKENS}, clipping "
+        f"visible output to 156 tokens. Re-run a limit=1 pilot before "
+        f"lowering this."
     )
 
 
@@ -172,3 +179,153 @@ def test_parse_falls_back_to_index_when_metadata_missing():
     )
     result = batch_runner._parse_inline_response(inline, fallback_custom_id="from-index")
     assert result.custom_id == "from-index"
+
+
+# ---- M-12.2: BATCH_DISCOUNT removed; cost-estimate still sane ----
+
+
+def test_batch_discount_constant_removed():
+    """The dead Anthropic-era BATCH_DISCOUNT constant must not reappear.
+
+    If a future migration re-introduces a discount multiplier it should be
+    explicit and named for its purpose (e.g. PROMOTION_DISCOUNT_2027). The
+    bare `BATCH_DISCOUNT` name was misleading — Gemini's Batch prices are
+    pre-discounted at source.
+    """
+    assert not hasattr(batch_runner, "BATCH_DISCOUNT"), (
+        "BATCH_DISCOUNT was removed in M-12.2 — Gemini's Batch tier "
+        "carries no extra multiplier. If you need a discount factor, "
+        "name it for its purpose."
+    )
+
+
+def test_estimate_batch_cost_zero_requests_returns_zero():
+    """Empty input still returns 0.0 (no multiplier silently inflating it)."""
+    assert batch_runner.estimate_batch_cost_usd(requests=[]) == 0.0
+
+
+def test_estimate_batch_cost_scales_linearly_with_request_count():
+    """Doubling request count should ~double cost; sanity check the formula
+    after removing the * BATCH_DISCOUNT factor."""
+    def _req(i: int) -> batch_runner.BatchRequest:
+        return batch_runner.BatchRequest(
+            custom_id=f"r-{i}", system_blocks=[], user_message="x"
+        )
+    cost_10 = batch_runner.estimate_batch_cost_usd([_req(i) for i in range(10)])
+    cost_20 = batch_runner.estimate_batch_cost_usd([_req(i) for i in range(20)])
+    # Not exactly 2× because the first request always "writes cache" (free),
+    # but should be in (1.8×, 2.2×) range.
+    ratio = cost_20 / cost_10
+    assert 1.8 < ratio < 2.2, f"cost ratio 20/10 was {ratio:.2f}, expected near 2.0"
+
+
+# ---- M-12.3: cache_creation_tokens still 0 via dataclass default ----
+
+
+def test_parse_success_sets_cache_creation_tokens_to_dataclass_default():
+    """After M-12.3 dropped the explicit `cache_creation_tokens=0` arg,
+    the BatchResult dataclass default must still apply — Gemini doesn't
+    expose this metric, so callers see 0 either way."""
+    inline = _make_inline_response(text="ok", finish_reason="STOP")
+    result = batch_runner._parse_inline_response(inline, fallback_custom_id="x")
+    assert result.cache_creation_tokens == 0
+
+
+def test_parse_max_tokens_truncation_sets_cache_creation_tokens_to_zero():
+    """Same invariant on the truncation path."""
+    inline = _make_inline_response(text="clipped", finish_reason="MAX_TOKENS")
+    result = batch_runner._parse_inline_response(inline, fallback_custom_id="x")
+    assert result.cache_creation_tokens == 0
+
+
+# ---- M-12.1: _PENDING_BATCHES cleaned up on every wait_for_batch exit path ----
+
+
+def test_pending_batches_pop_on_terminal_state_failure(monkeypatch):
+    """wait_for_batch must drain _PENDING_BATCHES even when it raises
+    RuntimeError because the batch ended in JOB_STATE_FAILED.
+
+    Tracker-091 M-12.1: previously the .pop() ran only on the success
+    branch, leaving one entry per failed batch alive for the process
+    lifetime. The try/finally wrap fixes this.
+    """
+    import sys
+    # Pre-stash an entry as if submit_batch had run.
+    batch_runner._PENDING_BATCHES["test-fail-batch"] = [
+        batch_runner.BatchRequest(custom_id="r-0", system_blocks=[], user_message="x"),
+    ]
+
+    # Fake genai module that returns a FAILED batch on the first .get() call.
+    class _FakeBatchesAPI:
+        def get(self, name):
+            return SimpleNamespace(state=SimpleNamespace(name="JOB_STATE_FAILED"))
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            self.batches = _FakeBatchesAPI()
+
+    fake_genai = SimpleNamespace(Client=_FakeClient)
+    fake_google = SimpleNamespace(genai=fake_genai)
+    monkeypatch.setitem(sys.modules, "google", fake_google)
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+
+    handle = batch_runner.BatchHandle(
+        batch_id="test-fail-batch",
+        request_count=1,
+        submitted_at="now",
+        dry_run=False,
+    )
+    try:
+        batch_runner.wait_for_batch(handle, poll_interval_sec=0, timeout_sec=5)
+    except RuntimeError as e:
+        assert "JOB_STATE_FAILED" in str(e)
+    else:
+        raise AssertionError("expected RuntimeError on FAILED state")
+
+    # The critical assertion — entry was popped despite the RuntimeError.
+    assert "test-fail-batch" not in batch_runner._PENDING_BATCHES, (
+        "_PENDING_BATCHES leaked an entry on the FAILED-state raise path"
+    )
+
+
+def test_pending_batches_pop_on_timeout(monkeypatch):
+    """Same invariant for the TimeoutError path: deadline elapses with
+    no terminal state, .pop() must still run via finally."""
+    import sys
+    batch_runner._PENDING_BATCHES["test-timeout-batch"] = [
+        batch_runner.BatchRequest(custom_id="r-0", system_blocks=[], user_message="x"),
+    ]
+
+    class _FakeBatchesAPI:
+        def get(self, name):
+            # Always pending — never returns SUCCEEDED, never terminal.
+            return SimpleNamespace(state=SimpleNamespace(name="JOB_STATE_PENDING"))
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            self.batches = _FakeBatchesAPI()
+
+    fake_genai = SimpleNamespace(Client=_FakeClient)
+    fake_google = SimpleNamespace(genai=fake_genai)
+    monkeypatch.setitem(sys.modules, "google", fake_google)
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+
+    handle = batch_runner.BatchHandle(
+        batch_id="test-timeout-batch",
+        request_count=1,
+        submitted_at="now",
+        dry_run=False,
+    )
+    try:
+        # timeout_sec=0 → deadline is in the past → loop body never executes.
+        batch_runner.wait_for_batch(handle, poll_interval_sec=0, timeout_sec=0)
+    except TimeoutError:
+        pass
+    else:
+        raise AssertionError("expected TimeoutError when deadline already passed")
+
+    assert "test-timeout-batch" not in batch_runner._PENDING_BATCHES, (
+        "_PENDING_BATCHES leaked an entry on the TimeoutError path"
+    )
