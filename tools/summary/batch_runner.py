@@ -33,22 +33,33 @@ from tools.summary import config
 class BatchRequest:
     """One request in a Gemini batch.
 
-    NOTE on max_tokens (tracker-091 M-11, 2026-05-19): Gemini's
+    NOTE on max_tokens (tracker-091 M-11 + M-12.5, 2026-05-19): Gemini's
     `max_output_tokens` is a CEILING on thinking_tokens + visible_tokens —
     NOT just visible output (this is a critical semantic difference from
-    Anthropic's `max_tokens`). With THINKING_BUDGET_TOKENS=1500, a
-    `max_tokens=2000` request leaves only ~500 visible-output tokens
-    before truncation, which silently cut a pilot home-page summary off
-    mid-sentence at ~60 words. Default raised to 4000 (≈2500 visible
-    tokens after thinking) to fit our 200-word summary target with
-    headroom. Callers should pick higher values if they need longer
-    output.
+    Anthropic's `max_tokens`).
+
+    M-11 bumped this 2000 → 4000 after a 60-word pilot truncation. M-12.5
+    bumped it again 4000 → 8000 after a second pilot smoke-test showed
+    the home page still truncating at output_tokens=156 — Gemini's
+    `thinking_config.thinking_budget=1500` setting is ADVISORY, not a
+    hard cap; the model spent ~3844 thinking tokens on the home summary
+    and hit the 4000 ceiling. Bump to 8000 gives headroom for up to
+    ~7000 dynamic thinking + ~1000 visible output, which covers every
+    summary length we currently produce. The trade-off is cost: billed
+    output is `thinking + visible` tokens × $6/M; a typical summary now
+    costs ~$0.025 instead of ~$0.013, but that's $0.001-0.002 per page
+    in absolute terms.
+
+    If thinking-budget enforcement improves in a future Gemini model
+    we can pull this back down. Until then, the M-11 truncation detector
+    in `_parse_inline_response` ensures any future shortfall fails loud
+    (MANUAL_REVIEW) instead of silently writing clipped copy.
     """
 
     custom_id: str
     system_blocks: list[dict]
     user_message: str
-    max_tokens: int = 4000
+    max_tokens: int = 8000
     enable_thinking: bool = True
 
 
@@ -83,11 +94,12 @@ class BatchResult:
 # Gemini 3.1 Pro Preview — Batch tier pricing (prompts ≤ 200k tokens).
 # Per https://ai.google.dev/gemini-api/docs/pricing as of 2026-05-19.
 # These ARE the batched prices already — no additional discount multiplier.
+# (tracker-091 M-12.2: BATCH_DISCOUNT constant removed — was a no-op carryover
+#  from the Anthropic implementation where Batch tier carried a 0.5 multiplier.)
 PRICE_INPUT_PER_M = 1.00
 PRICE_OUTPUT_PER_M = 6.00
 PRICE_CACHE_READ_PER_M = 0.20
 PRICE_CACHE_WRITE_PER_M = 0.0  # Implicit caching on Batch tier — no explicit write cost
-BATCH_DISCOUNT = 1.0  # Kept for backward-compat signature; already baked into prices
 
 
 def estimate_batch_cost_usd(
@@ -96,7 +108,11 @@ def estimate_batch_cost_usd(
     avg_output_tokens_per_request: int = 800,
     cached_prefix_tokens: int = 2500,
 ) -> float:
-    """Rough cost estimate for a batch. Assumes implicit prompt caching is active."""
+    """Rough cost estimate for a batch. Assumes implicit prompt caching is active.
+
+    Returns USD. Prices in PRICE_* constants are already the Batch-tier rates
+    published by Gemini; no extra discount multiplier is applied.
+    """
     n = sum(1 for _ in requests)
     if n == 0:
         return 0.0
@@ -107,13 +123,12 @@ def estimate_batch_cost_usd(
     variable_input_total = n * max(0, avg_input_tokens_per_request - cached_prefix_tokens)
     output_total = n * avg_output_tokens_per_request
 
-    cost = (
+    return (
         (variable_input_total / 1_000_000) * PRICE_INPUT_PER_M
         + (cache_write_total / 1_000_000) * PRICE_CACHE_WRITE_PER_M
         + (cache_read_total / 1_000_000) * PRICE_CACHE_READ_PER_M
         + (output_total / 1_000_000) * PRICE_OUTPUT_PER_M
     )
-    return cost * BATCH_DISCOUNT
 
 
 # ---- Submit→wait fallback (for custom_id mapping when metadata is missing) ----
@@ -277,18 +292,24 @@ def wait_for_batch(
     client = genai.Client(api_key=api_key)
     deadline = time.time() + timeout_sec
     batch_job = None
-    while time.time() < deadline:
-        batch_job = client.batches.get(name=handle.batch_id)
-        state = _job_state_name(batch_job)
-        if state == "JOB_STATE_SUCCEEDED":
-            break
-        if state in ("JOB_STATE_FAILED", "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED"):
-            raise RuntimeError(f"Batch {handle.batch_id} ended in state {state}")
-        time.sleep(poll_interval_sec)
-    else:
-        raise TimeoutError(f"Batch {handle.batch_id} did not complete within {timeout_sec}s")
-
-    original_requests = _PENDING_BATCHES.pop(handle.batch_id, [])
+    # tracker-091 M-12.1: pop the stashed request list in a `finally` block so
+    # it's released on EVERY exit path — including TimeoutError and the
+    # FAILED/CANCELLED/EXPIRED RuntimeError raises. Previously the .pop()
+    # only ran on the success path, which leaked one entry per failed batch
+    # for the lifetime of the process.
+    try:
+        while time.time() < deadline:
+            batch_job = client.batches.get(name=handle.batch_id)
+            state = _job_state_name(batch_job)
+            if state == "JOB_STATE_SUCCEEDED":
+                break
+            if state in ("JOB_STATE_FAILED", "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED"):
+                raise RuntimeError(f"Batch {handle.batch_id} ended in state {state}")
+            time.sleep(poll_interval_sec)
+        else:
+            raise TimeoutError(f"Batch {handle.batch_id} did not complete within {timeout_sec}s")
+    finally:
+        original_requests = _PENDING_BATCHES.pop(handle.batch_id, [])
 
     # Extract inline responses. Gemini returns them in submission order.
     inline_responses = []
@@ -368,6 +389,11 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
     output_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
     cache_read = getattr(usage, "cached_content_token_count", 0) if usage else 0
 
+    # Note (tracker-091 M-12.3): cache_creation_tokens omitted from both
+    # BatchResult constructions below — Gemini's Batch tier uses implicit
+    # caching with no explicit "write" cost or signal, so the field has no
+    # source to populate from. The dataclass default (0) carries forward
+    # for interface stability with the original Anthropic-era callers.
     if truncated:
         return BatchResult(
             custom_id=custom_id,
@@ -378,7 +404,6 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
                   f"raise BatchRequest.max_tokens)",
             input_tokens=int(input_tokens or 0),
             output_tokens=int(output_tokens or 0),
-            cache_creation_tokens=0,
             cache_read_tokens=int(cache_read or 0),
         )
 
@@ -388,6 +413,5 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
         content=text,
         input_tokens=int(input_tokens or 0),
         output_tokens=int(output_tokens or 0),
-        cache_creation_tokens=0,
         cache_read_tokens=int(cache_read or 0),
     )
