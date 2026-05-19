@@ -210,7 +210,9 @@ def test_translate_live_mode_emits_csv_for_target_locale(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """Translate phase reads manifest, submits batch, writes CSV via csv_emitter."""
-    # Stage an EN manifest.
+    # Stage an EN manifest with a landing entry + a housing entry. Tracker-091
+    # M-10: housing CMS items must be filtered out of the translate phase
+    # (housing_new is in NO_TRANSLATE_COLLECTIONS).
     manifest = {
         "gen-0-test": {
             "url": "https://www.englishcollege.com/learn-english-usa",
@@ -220,11 +222,20 @@ def test_translate_live_mode_emits_csv_for_target_locale(
             ),
             "content_type": "landing",
             "locale": "en",
-        }
+        },
+        "gen-1-housing": {
+            "url": "https://www.englishcollege.com/housing/some-residence",
+            "markdown": "## Where to live\n\nKitsilano apartment with kitchenette.\n",
+            "content_type": "housing",  # M-10: must be filtered out
+            "locale": "en",
+        },
     }
     (tmp_path / "en-summaries.json").write_text(json.dumps(manifest), encoding="utf-8")
 
+    captured_submit_calls = []
+
     def fake_submit(requests, *args, **kwargs):
+        captured_submit_calls.append(list(requests))
         return _fake_batch_handle()
 
     def fake_wait(handle, *args, **kwargs):
@@ -270,6 +281,11 @@ def test_translate_live_mode_emits_csv_for_target_locale(
     csv_text = csv_path.read_text(encoding="utf-8")
     assert "Zwölf Wochen" in csv_text
     assert "en;de" in csv_text  # Weglot CSV format: language_from;language_to
+    # M-10: housing entry must have been filtered out — submit_batch saw exactly 1 request.
+    assert len(captured_submit_calls) == 1, "expected exactly 1 submit_batch call (1 locale)"
+    assert len(captured_submit_calls[0]) == 1, (
+        f"expected 1 request (landing only; housing filtered), got {len(captured_submit_calls[0])}"
+    )
 
 
 # ---- Test 5: full `all` subcommand wires the three phases together ----
