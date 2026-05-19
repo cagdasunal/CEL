@@ -77,3 +77,72 @@ def test_slug_with_locale_prefix_stripped():
     )
     # URL slug rendered should strip /de/ prefix.
     assert "de" not in plan.primary.split()
+
+
+# ---- B1: multi-locale stopwords + brand-suffix variants (tracker-087 F-6) ----
+
+
+def test_derives_secondaries_from_german_body_filters_german_stopwords():
+    """German bodies use German stopwords; common articles like 'der/die/das' are filtered."""
+    body = (
+        "Sprachkurs Sprachkurs Sprachkurs Sprachkurs "
+        "Vancouver Vancouver Vancouver Vancouver "
+        "Studenten Studenten Studenten "
+        "der der der der der die die die die das das das das "  # German stopwords
+    )
+    plan = derive_keywords(
+        title="Englischkurs",
+        h1="Englischkurs",
+        url="https://www.englishcollege.com/de/kurse",
+        body_text=body,
+        locale="de",
+    )
+    # German function words must NOT appear in secondaries.
+    assert "der" not in plan.secondaries
+    assert "die" not in plan.secondaries
+    assert "das" not in plan.secondaries
+    # German content words SHOULD appear.
+    assert any(t in plan.secondaries for t in ("sprachkurs", "vancouver", "studenten"))
+
+
+def test_derives_secondaries_from_korean_body_filters_korean_stopwords():
+    """Korean bodies use Korean stopwords; particles like 은/는/이/가 are filtered."""
+    body = (
+        "어학연수 어학연수 어학연수 어학연수 "
+        "밴쿠버 밴쿠버 밴쿠버 밴쿠버 "
+        "캠퍼스 캠퍼스 캠퍼스 "
+        "은 은 은 은 는 는 는 는 이 이 이 가 가 가 "  # Korean particles (stopwords)
+    )
+    plan = derive_keywords(
+        title="어학연수 프로그램",
+        h1="어학연수 프로그램",
+        url="https://www.englishcollege.com/ko/courses",
+        body_text=body,
+        locale="ko",
+    )
+    # Korean particles must NOT appear.
+    assert "은" not in plan.secondaries
+    assert "는" not in plan.secondaries
+    # Korean content words SHOULD appear (at least one).
+    assert any(t in plan.secondaries for t in ("어학연수", "밴쿠버", "캠퍼스"))
+
+
+def test_brand_suffix_strip_handles_locale_variants():
+    """The brand-suffix regex catches non-EN brand translations too."""
+    # German variant
+    plan_de = derive_keywords(
+        title="Englischkurs in Vancouver | Englische Schule",
+        h1="Englischkurs in Vancouver",
+        url="https://www.englishcollege.com/de/kurse",
+        body_text="",
+    )
+    assert "englische schule" not in plan_de.primary
+
+    # Japanese variant
+    plan_ja = derive_keywords(
+        title="バンクーバーの英語コース | 英語学校",
+        h1="バンクーバーの英語コース",
+        url="https://www.englishcollege.com/ja/courses",
+        body_text="",
+    )
+    assert "英語学校" not in plan_ja.primary

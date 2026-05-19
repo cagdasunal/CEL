@@ -1,6 +1,8 @@
 """Tests for tools.summary.page_fetcher — HTML parsing (no live network calls)."""
 
-from tools.summary.page_fetcher import _parse_html
+import pytest
+
+from tools.summary.page_fetcher import _parse_html, fetch_page
 
 
 _SAMPLE_HTML = """<!DOCTYPE html>
@@ -69,3 +71,45 @@ def test_parser_handles_missing_summary_element():
     html_no_summary = "<html><head><title>X</title></head><body><h1>Y</h1></body></html>"
     pc = _parse_html("https://example.com", "https://example.com", 200, html_no_summary)
     assert pc.existing_summary_html == ""
+
+
+# ---- URL-scheme validation (closes tracker-087 F-3 SSRF) ----
+
+
+def test_fetch_page_rejects_file_scheme():
+    """file:// URLs are rejected before urllib touches them."""
+    with pytest.raises(ValueError, match="must be http or https"):
+        fetch_page("file:///etc/passwd")
+
+
+def test_fetch_page_rejects_ftp_scheme():
+    with pytest.raises(ValueError, match="must be http or https"):
+        fetch_page("ftp://example.com/test")
+
+
+def test_fetch_page_rejects_gopher_scheme():
+    with pytest.raises(ValueError, match="must be http or https"):
+        fetch_page("gopher://example.com/")
+
+
+def test_fetch_page_rejects_empty_scheme():
+    """Bare paths or schemeless URLs are rejected."""
+    with pytest.raises(ValueError, match="must be http or https"):
+        fetch_page("/etc/passwd")
+
+
+def test_fetch_page_accepts_http_and_https_schemes_at_validation_layer():
+    """The scheme check itself passes for http(s); we don't make a network call here.
+
+    The test simply asserts ValueError is NOT raised on validation. The actual
+    urlopen() that follows would do real I/O, so we expect a network-style error
+    (URLError / connection refused / DNS) — NOT a ValueError.
+    """
+    import urllib.error
+    for scheme in ("http", "https"):
+        try:
+            fetch_page(f"{scheme}://nonexistent-host-for-test.invalid/")
+        except ValueError:
+            pytest.fail(f"unexpected ValueError for valid scheme {scheme}")
+        except (urllib.error.URLError, OSError):
+            pass  # expected — network failure for a fake host

@@ -2,6 +2,19 @@
 
 Production pipeline for generating SEO summary content on englishcollege.com pages and emitting consolidated Weglot-ready translation CSVs.
 
+## Status
+
+**As of 2026-05-19 (tracker-087 closure)**: production-ready for workflow_dispatch. Previously "deployment-ready but execution deferred" framing was inaccurate — the audit-086 commit shipped two false-closure claims (H-1 missing `write_static_summary` function; C-4 stub `_execute_translate`). Both are now genuinely closed and exercised by the end-to-end stress test in `tests/test_end_to_end.py`. Live workflow_dispatch still requires the user to rotate API keys (see below) and trigger manually.
+
+## Known limitations (resolved 2026-05-19)
+
+The following audit-086 closures were proven incomplete by `/review` 2026-05-17 and re-closed in tracker-087 (`docs/reviews/087-summary-script-followup-2026-05-19.md` in the monorepo):
+
+- **H-1 (was false-closed)**: `write_static_summary` is now a real function in `webflow_designer.py`. The CEL `f094fad` commit had `cli.py:459` importing a symbol that didn't exist — first live static-page write would have `ImportError`. The Designer-API endpoints (`find_summary_element`, `write_summary_element`) remain DEPRECATED.
+- **C-4 (was false-closed)**: `_execute_translate` actually runs the pipeline now. The CEL `f094fad` version was a skeleton that imported `LinkSwap`, `batch_runner`, `csv_emitter`, `llms_parser` but used none of them.
+- **H-5 (was partial)**: persistent failures after the retry loop now land in `manual-review.json`. Tracker-086 had ticked H-5 as "MANUAL_REVIEW state written" — no such state was written before 2026-05-19.
+- **M-1 (line-count partial)**: `prompts/common.md` is now 185 lines (was 139 in CEL `f094fad`) with 2026 SEO research corrections — keyword density narrowed to 1–2%, FAQPage schema 3.2× citation rate, EEAT re-weighted Trust > Experience > Expertise > Authoritativeness, 134–167 word answer-block target, anti-AI burstiness section.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.

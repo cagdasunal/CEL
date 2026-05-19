@@ -8,6 +8,7 @@ Public API: `fetch_page(url) -> PageContent`.
 from __future__ import annotations
 
 import re
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
@@ -35,7 +36,16 @@ class PageContent:
 
 
 def fetch_page(url: str, timeout: float = _FETCH_TIMEOUT) -> PageContent:
-    """Fetch a URL with Googlebot UA and parse fields."""
+    """Fetch a URL with Googlebot UA and parse fields.
+
+    URL scheme is restricted to http/https. file://, ftp://, gopher:// and other
+    urllib-supported handlers are rejected to prevent SSRF (tracker-087 F-3).
+    """
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme not in ("http", "https"):
+        raise ValueError(
+            f"URL scheme must be http or https; got {parsed_url.scheme!r} for {url!r}"
+        )
     req = urllib.request.Request(
         url,
         headers={

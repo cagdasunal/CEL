@@ -43,16 +43,122 @@ _STOPWORDS = frozenset(
     """.split()
 )
 
-# Brand suffix patterns to strip from titles.
+# Per-locale stopword sets. Used by body-frequency to filter the most common
+# function words in each language so the surfaced secondaries are content words.
+# Lists are intentionally small (30–60 items) — enough to filter dominant noise
+# without an external dependency.
+_LOCALE_STOPWORDS: dict[str, frozenset[str]] = {
+    "en": _STOPWORDS,
+    "de": frozenset(
+        """
+        der die das den dem des ein eine einer einem einen eines und oder aber
+        wenn als ob ist sind war waren sein hat haben hatte hatten wird werden
+        wurde wurden kann können konnte konnten muss müssen für mit ohne durch
+        gegen über unter auf in an zu von bei nach vor seit nur auch schon noch
+        nicht kein keine wir uns unser ihr ihre sie er sie es man dieser diese
+        dieses jener jene jenes so dass weil dann
+        """.split()
+    ),
+    "fr": frozenset(
+        """
+        le la les un une des de du au aux et ou mais si quand où qui que quoi
+        est sont était étaient être ai as a avons avez ont avait avaient
+        sera seront pour avec sans contre sur dans à par chez vers depuis pendant
+        ne pas plus moins très tout tous toute toutes ce cette ces cet
+        je tu il elle on nous vous ils elles me te se moi toi soi mon ma mes
+        ton ta tes son sa ses notre nos votre vos leur leurs
+        """.split()
+    ),
+    "es": frozenset(
+        """
+        el la los las un una unos unas de del al a y o pero si cuando donde
+        que cual quien es son era eran ser estar he ha han habia habian
+        sera seran para con sin contra sobre en por hacia desde durante
+        no muy mas menos todo todos toda todas este esta estos estas ese esa
+        esos esas aquel aquella aquellos aquellas yo tu el ella nosotros vosotros
+        ellos ellas me te se mi mis tu tus su sus nuestro nuestra
+        """.split()
+    ),
+    "it": frozenset(
+        """
+        il lo la i gli le un uno una di del della dello dei degli delle e o ma
+        se quando dove chi che cui è sono era erano essere ho hai ha abbiamo avete
+        hanno aveva avevano sarà saranno per con senza contro su in a da tra fra
+        non più meno molto tutto tutti tutta tutte questo questa questi queste
+        quello quella quelli quelle io tu egli ella noi voi essi esse mi ti si
+        ci vi lo la li le mio mia miei mie tuo tua tuoi tue suo sua suoi sue
+        """.split()
+    ),
+    "pt": frozenset(
+        """
+        o a os as um uma uns umas de do da dos das ao à aos às e ou mas se
+        quando onde que qual quem é são era eram ser ter tenho tens tem temos
+        têm tinha tinham será serão para com sem contra sobre em por desde
+        não muito mais menos todo todos toda todas este esta estes estas
+        esse essa esses essas aquele aquela aqueles aquelas eu tu ele ela nós
+        vós eles elas me te se nos vos lhe lhes meu minha teu tua seu sua
+        """.split()
+    ),
+    "ko": frozenset(
+        """
+        은 는 이 가 을 를 의 에 에서 도 만 와 과 도 또 그리고 그래서
+        하지만 그러나 그런데 그래도 또한 따라서 위해 위한 위해서 이다 있다
+        없다 하다 되다 보다 같다 다른 모든 어떤 무슨 이런 그런 저런 정말
+        매우 굉장히 너무 아주 좀 잘 못 더 덜 가장 제일 우리 너희 그들 저
+        나 너 그 그녀 이것 그것 저것 이거 그거 저거 여기 거기 저기
+        """.split()
+    ),
+    "ja": frozenset(
+        """
+        は が を に へ で と も や か から まで より だ である です ます ました
+        の こと もの ところ それ これ あれ この その あの どの
+        私 僕 彼 彼女 我々 あなた 君 たち 達 ない ある いる する なる
+        できる また しかし そして だから なお また なぜ どう とても
+        非常に 大変 すごく とても 少し まだ もう だけ しか
+        """.split()
+    ),
+    "ar": frozenset(
+        """
+        في من إلى على عن عند مع بين أمام خلف فوق تحت قبل بعد لدى لدي
+        هذا هذه ذلك تلك هؤلاء أولئك الذي التي الذين اللواتي
+        أنا نحن أنت أنتم هو هي هم هن
+        كان كانت كانوا يكون تكون يكونون سوف قد لقد
+        و أو لكن إذا متى أين كيف ما من لماذا
+        لا لم لن ليس لست ليست
+        كل بعض جميع كثير قليل
+        """.split()
+    ),
+}
+
+
+# Brand suffix patterns to strip from titles. Includes locale-translated variants
+# of the brand name (audit-086 follow-up — tracker-087 F-6).
 _BRAND_SUFFIX_RE = re.compile(
-    r"\s*[\|\-–—]\s*(CEL|College of English Language).*$", re.IGNORECASE
+    r"\s*[\|\-–—]\s*("
+    r"CEL|"
+    r"College of English Language|"
+    r"English College|"
+    r"Escuela de Inglés|"
+    r"École d'anglais|"
+    r"Englische Schule|"
+    r"Scuola di Inglese|"
+    r"Escola de Inglês|"
+    r"영어 학교|"
+    r"英語学校|"
+    r"كلية اللغة الإنجليزية"
+    r").*$",
+    re.IGNORECASE,
 )
 
 
 def derive_keywords(
-    title: str, h1: str, url: str, body_text: str = ""
+    title: str, h1: str, url: str, body_text: str = "", locale: str = "en"
 ) -> KeywordPlan:
-    """Derive a KeywordPlan per /page-summary Phase 2.5."""
+    """Derive a KeywordPlan per /page-summary Phase 2.5.
+
+    `locale` selects the stopword set for body-frequency filtering. Defaults to
+    English. Falls back to English if the locale is unknown.
+    """
     candidate_a = _strip_brand(title)
     candidate_b = _strip_brand(h1)
     candidate_c = _slug_to_phrase(url)
@@ -62,8 +168,8 @@ def derive_keywords(
         primary = candidate_b or candidate_a or candidate_c or "english school"
     primary = primary.strip().lower()
 
-    # Secondary keywords: body frequency + heading tokens.
-    secondaries = _body_frequency_terms(body_text, exclude=primary, limit=5)
+    # Secondary keywords: body frequency + heading tokens (locale-aware).
+    secondaries = _body_frequency_terms(body_text, exclude=primary, limit=5, locale=locale)
 
     # Entity terms found in the page.
     entities = tuple(
@@ -140,14 +246,28 @@ def _longest_common_phrase(candidates: list[str]) -> str:
     return max(common, key=lambda g: (len(g.split()), len(g)))
 
 
-def _body_frequency_terms(body_text: str, exclude: str, limit: int = 5) -> list[str]:
-    """Top non-stopword tokens by frequency in body, excluding the primary keyword's tokens."""
+def _body_frequency_terms(
+    body_text: str, exclude: str, limit: int = 5, locale: str = "en"
+) -> list[str]:
+    """Top non-stopword tokens by frequency in body, excluding primary-keyword tokens.
+
+    `locale` selects which stopword set to apply. For non-Latin scripts (ko/ja/ar)
+    a Unicode-aware tokenizer is used; for Latin scripts the original regex applies.
+    """
     if not body_text:
         return []
-    tokens = re.findall(r"[a-zA-Z][a-zA-Z\-]{3,}", body_text.lower())
-    exclude_tokens = set(re.findall(r"[a-z]+", exclude.lower()))
+    stopwords = _LOCALE_STOPWORDS.get(locale, _STOPWORDS)
+    # Tokenizer: for non-Latin scripts use a broader Unicode word regex.
+    # For Latin scripts keep the original `[a-zA-Z][a-zA-Z\-]{3,}` to skip short
+    # words. KO/JA/AR words can be 1–2 chars (e.g. 비자), so minimum length is 2.
+    if locale in ("ko", "ja", "ar"):
+        tokens = re.findall(r"\w{2,}", body_text, flags=re.UNICODE)
+        tokens = [t.lower() for t in tokens]
+    else:
+        tokens = re.findall(r"[a-zA-Z][a-zA-Z\-]{3,}", body_text.lower())
+    exclude_tokens = set(re.findall(r"\w+", exclude.lower(), flags=re.UNICODE))
     counts = collections.Counter(
-        t for t in tokens if t not in _STOPWORDS and t not in exclude_tokens
+        t for t in tokens if t not in stopwords and t not in exclude_tokens
     )
     # Filter to terms appearing ≥ 3 times.
     common = [w for w, c in counts.most_common() if c >= 3]

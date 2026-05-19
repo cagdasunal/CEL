@@ -1,15 +1,63 @@
-# Arabic (ar) — Locale Layer
+# العربية (ar) — Locale Layer
 
-- **Direction**: **RIGHT-TO-LEFT (RTL)**. The script reads right-to-left though numerals and Latin loan words remain LTR within sentences.
-- **Tone**: Formal, respectful. Modern Standard Arabic (MSA / فُصْحى) for web copy across all Arab markets.
-- **Register**: Formal address. Avoid colloquial / dialectal forms (Egyptian, Levantine, Gulf) — those are spoken, not standard web copy.
-- **Text length**: Arabic typically expands 10–25% over English.
-- **Numbers**: Use Hindu-Arabic numerals (1, 2, 3...) — they display correctly in RTL contexts. Eastern Arabic numerals (١, ٢, ٣) are an option in some regions; default to Hindu-Arabic for consistency.
-- **Currency**: "1500 دولار شهرياً" (1500 dollars monthly) — use دولار for USD.
-- **Date**: "15 مارس 2026" — day + month name + year. Month names: يناير، فبراير، مارس، أبريل، مايو، يونيو، يوليو، أغسطس، سبتمبر، أكتوبر، نوفمبر، ديسمبر.
-- **Entity terms**: "دورة اللغة الإنجليزية" (English language course), "مدرسة اللغة الإنجليزية" (English language school), "سكن الطلاب" (student housing), "الدراسة في الخارج" (study abroad).
-- **Geography**: "فانكوفر، بريتش كولومبيا" (Vancouver, British Columbia) on first mention.
-- **No Latin char limit**: Title/description char-count limits do NOT apply.
-- **Connector words**: "و" (and), "أو" (or), "في" (in) — attach without space to following word per Arabic standard.
-- **Anti-patterns**: Mixing MSA with dialect; English word order; missing diacritics on proper nouns (acceptable for web copy — full vowel marks (تشكيل) are usually omitted).
-- **Note on rendering**: Hreflang and HTML `dir="rtl"` handle layout; copy text should be plain UTF-8.
+## Direction + script
+**RIGHT-TO-LEFT (RTL)**. Arabic script reads right-to-left, but Hindu-Arabic numerals (1, 2, 3) and Latin loan words remain LTR within RTL sentences. Layout direction is handled by `dir="rtl"` HTML attribute — the prose text itself is plain UTF-8.
+
+## Tone + register
+رسمي ومحترم، باللغة العربية الفصحى الحديثة (MSA / فُصْحى) المناسبة للويب في جميع الأسواق العربية. تجنب التعابير العامية (المصرية، الشامية، الخليجية) — تلك للمحادثة، وليست لمحتوى المواقع الرسمي.
+
+## Text expansion factor
+العربية تتوسع **+10 إلى +25%** عن الإنجليزية.
+
+## Punctuation conventions
+- **علامات ترقيم عربية**: الفاصلة العربية «،» (وليس "," الإنجليزية)، الفاصلة المنقوطة «؛»، علامة الاستفهام «؟».
+- بدون شَرطات طويلة (— أو –) — قاعدة عامة (common.md).
+- اقتباس مزدوج «...» للنصوص المنقولة.
+- الفاصلة العربية «،» تأتي بعد الكلمة مباشرة بدون مسافة قبلها.
+
+## Number + currency formatting
+- استخدم الأرقام الهندية-العربية (1, 2, 3) للاتساق — تظهر بشكل صحيح في سياق RTL. الأرقام العربية الشرقية (١، ٢، ٣) خيار في بعض المناطق.
+- العملة: "1,890 دولار شهرياً" — استخدم كلمة "دولار" للدولار الأمريكي.
+- الوقت: نظام 24 ساعة ("14:30") أو 12 ساعة مع "ص" / "م" ("2:30 م").
+
+## Date format
+"15 مارس 2026" — اليوم + اسم الشهر بالعربية + السنة. أسماء الأشهر: يناير، فبراير، مارس، أبريل، مايو، يونيو، يوليو، أغسطس، سبتمبر، أكتوبر، نوفمبر، ديسمبر. لا تستخدم "March 15, 2026" أو "15/03/2026".
+
+## ESL industry glossary (USE these native terms)
+دراسة اللغة الإنجليزية في الخارج, معاهد اللغة الإنجليزية, مدرسة لغة, دورة لغة إنجليزية, الإقامة لدى عائلة, العائلة المضيفة, شهادة كامبريدج, اختبار الآيلتس (IELTS), اختبار التوفل (TOEFL), شهادة CELPIP (كندا), تأشيرة طالب, تصريح الدراسة (كندا), فيزا F-1 (أمريكا), إنجليزية عامة, إنجليزية مكثفة, إنجليزية للأعمال, إنجليزية أكاديمية, اختبار تحديد المستوى, برنامج المسار الجامعي, الفصل الدراسي, التدريب العملي, التحضير الأكاديمي.
+
+## AI-tell banlist (NEVER use)
+في عالم, في عالم اليوم, في عصرنا الحالي, من المهم أن نلاحظ, من الجدير بالذكر, تجدر الإشارة إلى, علاوة على ذلك, بالإضافة إلى ذلك (filler), في الختام, في نهاية المطاف, الغوص في (figurative), استكشاف (figurative), التنقل في (figurative), شامل (filler), متعدد الأوجه, ديناميكي, متطور (filler), ثوري (filler), لا مثيل له, نسيج غني, في عالم متسارع الخطى, في ظل التطور المستمر.
+
+## Syntactic AI-tells (avoid)
+- إفراط في استخدام الفصحى الكلاسيكية حيث تكون اللغة العربية المعاصرة الخفيفة أكثر طبيعية للويب.
+- بنية "ليس X فحسب، بل Y أيضاً" كحشو إيقاعي.
+- بنية الجملة بترتيب SVO (تأثير إنجليزي) بدلاً من VSO الطبيعي للعربية.
+- طول فقرات موحد (تكرار جمل بـ 15-22 كلمة).
+- غياب أي مؤشرات لهجات إقليمية = نص "محايد" بشكل غير طبيعي.
+- تكرار حروف الجر العطفية ("بالتالي / وعليه / لذلك") بشكل مفرط.
+
+## Anti-patterns
+- ترجمة حرفية من الإنجليزية بترتيب الجملة الإنجليزية.
+- استخدام الكلمات الإنجليزية حيث توجد مكافئات عربية واضحة.
+- إهمال علامات الترقيم العربية (استخدام "," بدلاً من "،").
+- إفراط في علامات التشكيل (الحركات الكاملة) — تُحذف عادةً في النصوص الإخبارية والإعلامية للويب.
+
+## Char-limit applicability
+**نصوص غير لاتينية — قيود عدد الأحرف لا تنطبق.** Google تقيس العرض البكسل للنصوص غير اللاتينية. حدود 60/130 حرف الإنجليزية لا تنطبق على العربية.
+
+## Geography
+"فانكوفر، بريتش كولومبيا" عند الإشارة الأولى؛ بعد ذلك "فانكوفر" فقط. "كاليفورنيا"، "سان دييغو"، "لوس أنجلوس".
+
+## Native-voice examples
+
+❌ أسلوب الذكاء الاصطناعي:
+> "في عالمنا المتسارع، يصبح تعلم اللغة الإنجليزية أمراً جوهرياً. يقدم برنامجنا الشامل تجربة ديناميكية ومتعددة الأوجه، تستكشف كل جانب من جوانب اللغة."
+
+✅ أسلوب طبيعي:
+> "يصل معظم طلابنا إلى المستوى B2 خلال 12 أسبوعاً من الدراسة بدوام كامل في حرم فانكوفر. الشرط: 25 ساعة دراسة أسبوعياً، بالإضافة إلى ساعة عمل صادقة في الواجبات كل مساء. بدون الواجبات، أضف شهراً آخر."
+
+## Sources
+[Harmash ChatGPT Arabic](https://harmash.com/posts/chatgpt-the-artificial-intelligence-revolution-in-the-world-of-communication) · [SciSpace Arabic AI Detector](https://scispace.com/resources/arabic-ai-detector-academic-writing/) · [arwriter.ai 2026 comparison](https://arwriter.ai/best-arabic-gpt-2026-comparison/) · [Language International Canada AR](https://www.languageinternational.com/english-schools-canada)
+
+(Coverage caveat: Arabic AI-tell research is the weakest of the nine. Phrases are triangulated from detector tool examples and the Harmash article, not from a dedicated detector word-list study. Banlist should be expanded post-2026 as Arabic-specific detector research accumulates.)

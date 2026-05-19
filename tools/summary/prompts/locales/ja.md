@@ -1,14 +1,69 @@
-# Japanese (ja) — Locale Layer
+# 日本語 (ja) — Locale Layer
 
-- **Tone**: Polite, structured, respectful. Japanese web copy uses keigo (敬語) appropriate to the audience.
-- **Register**: Use です/ます (desu/masu) polite form for student-facing content. Avoid casual です抜き (desu-nuki) endings.
-- **SOV word order**: Verbs at end. Restructure English SVO into natural Japanese.
-- **Script mix**: Kanji + Hiragana + Katakana. Use kanji for nouns/verbs where standard; katakana for loan words (アメリカ for "America"); hiragana for particles and inflections.
-- **Text length**: Japanese typically runs shorter than English in character count.
-- **Numbers**: Period for decimal (3.5). Use 万 (10,000) for large numbers (10万 = 100,000) in flowing prose; numeric form (100,000) in factual contexts.
-- **Currency**: "月額1,500ドル" (USD 1,500 per month) — use ドル for USD.
-- **Date**: "2026年3月15日" — year + 年 + month + 月 + day + 日.
-- **Entity terms**: "英語コース" (English course), "語学留学" (language study abroad), "語学学校" (language school), "学生寮" (student dorm) or "学生用住居" (student housing).
-- **Punctuation**: Use Japanese full-width punctuation: 、(comma), 。(period), 「」(quotes). Avoid mixing half-width unless quoting English content.
-- **No Latin char limit**: Title/description char-count limits do NOT apply.
-- **Anti-patterns**: Half-width punctuation in flowing Japanese; missing です/ます; over-use of katakana for words that have natural Japanese equivalents (use 学校 not スクール).
+## Direction + script
+LTR, 日本語 (漢字 + ひらがな + カタカナ). 漢字は名詞・動詞・形容詞の語幹に使用、ひらがなは助詞・活用語尾、カタカナは外来語と擬音語に使用.
+
+## Tone + register
+丁寧で構造的、信頼感のある文体. 教育機関のウェブサイトとして**「です・ます調」**を一貫して使用. カジュアルな「だ・である調」は不可. 学生向けでも敬体を維持し、CTAでも「お申し込みください」のような丁寧表現を使う.
+
+## Word order
+**SOV** (主語-目的語-述語). 英語のSVO構造をそのまま訳さない. "We offer English courses in Vancouver" → 「当校はバンクーバーで英語コースを提供しています」(述語が文末).
+
+## Text expansion factor
+日本語は英語より **−10% から ±0%** (英語より短いか同程度). 英語の単語数に合わせて文字数を伸ばすのは不自然. 250–400英単語 ≈ 500–900 日本語文字.
+
+## Punctuation conventions
+- **全角句読点を使用** : 「、」(読点)、「。」(句点)、「「」」(かぎ括弧). 半角の「,」「.」「""」は混在させない (英語引用部分を除く).
+- 中黒「・」で並列を表す ("英語・スペイン語・フランス語") — リスト記号として有用.
+- 長いダッシュ (— または –) は使用禁止 — common.md 普遍規則.
+- 三点リーダー「…」は半角「...」より「……」を推奨 (出版規範).
+
+## Number + currency formatting
+- 千の桁区切り : 1,000 (半角コンマ). 小数点 : 3.5 (半角ピリオド).
+- 通貨 : 「月額1,890ドル」または「月額$1,890」. 「ドル」を漢字交じりで使用.
+- 大きな数値 : 万 (10,000) を使用 ("10万人" = 100,000人). ビジネス文書では数字表記 (100,000) も可.
+- 時刻 : 24時間制 ("14:30") または「午後2時30分」.
+
+## Date format
+「2026年3月15日」 — 年 + 月 + 日 の順. 「March 15, 2026」「15/03/2026」は使用しない.
+
+## ESL industry glossary (USE these native terms)
+語学留学, 語学学校, 英会話学校, 英会話スクール, ホームステイ, ホストファミリー, 学生ビザ, F-1ビザ, ワーキングホリデー (Canada), カナダ留学, スタディーパーミット, ESTA, ケンブリッジ英検, アイエルツ(IELTS)対策, TOEFL対策, ビジネス英語, アカデミック英語, 一般英語, 集中コース, レベルチェック, 滞在許可, 短期留学, 長期留学, インターンシップ, 大学進学プログラム.
+
+## AI-tell banlist (NEVER use)
+様々な (過剰使用), について見ていきましょう, 〜について解説します, 重要なポイント, ぜひ (filler), まさに (filler), 必ず (filler), 〜と言えるでしょう, 〜することが大切です, 多岐にわたる, 包括的な, 革新的な, 最先端の, シームレスな, 結論として, 総じて, 〜の世界で, 現代社会において, デジタル時代の, 進化し続ける, 急速に変化する世界において.
+
+## Syntactic AI-tells (avoid)
+- 「です・ます」が完全に均一(口調変化なし)で硬すぎる.
+- 半角ダッシュ「—」を「・」の代わりに使用 (英語影響).
+- 「①②③」三項目強制構造.
+- 平坦な敬体でキャラクター性ゼロ.
+- 「Xだけでなく、Yも」並列の過剰使用.
+- 英語語順影響の不自然な語順 (目的語が文頭に来る等).
+- 句読点リズムの欠如 (短文 / 長文の混在がない).
+
+## Anti-patterns
+- カタカナ過剰使用 ("学校"とすべきところを"スクール").
+- 漢字を読みにくく多用 (現代ウェブはバランスを重視).
+- 英文直訳的な構造 ("私たちは...を提供します" → 自然なのは「...をご提供しています」).
+- 全角・半角の不整合 (本文内の「、」「，」の混在).
+- 敬語のレベル不一致 (「です・ます」と「〜だ」の混在).
+
+## Char-limit applicability
+**非ラテン文字 — 文字数制限は適用されない.** Googleは非ラテンスクリプトをピクセル幅で測定. 英語60/130文字制限は日本語に該当しない.
+
+## Geography
+「バンクーバー(ブリティッシュコロンビア州)」初出時; その後「バンクーバー」のみ. 「カリフォルニア州」「サンディエゴ」「ロサンゼルス」.
+
+## Native-voice examples
+
+❌ AIスタイル:
+> 「進化し続ける現代社会において、英語学習はまさに重要です。私たちの包括的なプログラムは、革新的で多岐にわたる学習体験を提供します。」
+
+✅ 自然な日本語:
+> 「バンクーバーキャンパスでは、ほとんどの学生が12週間のフルタイム学習でB2レベルに到達します。条件は週25時間の授業と毎晩1時間の自習。自習を省くと、もう1ヶ月かかります。」
+
+## Sources
+[AI総合研究所 ChatGPT検出](https://www.ai-souken.com/article/detecting-chatgpt-generated-text) · [SHIFT AI TIMES](https://shift-ai.co.jp/blog/10394/) · [Nablas detection paper](https://www.nablas.com/en/post/ai-getenated-text-detection) · [留学ジャーナル カナダ](https://www.ryugaku.co.jp/country/CA/)
+
+(Coverage caveat: Japanese AI-tell research is moderate. List triangulated from native-detector blogs and Nablas / SHIFT AI TIMES analyses.)
