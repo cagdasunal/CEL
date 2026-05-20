@@ -226,6 +226,37 @@ def _build_inlined_request_dict(r: BatchRequest, system_text: str) -> dict:
     }
 
 
+# ---- Transient-error retry (tracker-092 Phase 2.3) ----
+
+# Substrings that indicate a RETRYABLE (transient) failure — network blips,
+# 5xx, rate limits. Permanent errors (e.g. 400 API_KEY_INVALID) do NOT match
+# and raise immediately, so we never burn retries on an unfixable error.
+_TRANSIENT_MARKERS = (
+    "timeout", "timed out", "deadline", "temporarily", "unavailable",
+    "connection", "reset by peer", "503", "502", "500", "429", "rate limit",
+)
+
+
+def _is_transient(exc: Exception) -> bool:
+    s = str(exc).lower()
+    return any(m in s for m in _TRANSIENT_MARKERS)
+
+
+def _retry_transient(fn, *, attempts: int = 3, base_delay: float = 2.0):
+    """Call `fn()`; on a transient-looking exception retry with exponential
+    backoff (base_delay * 2**i). Non-transient errors and the final attempt
+    re-raise immediately. Keeps a mid-run 503/429 from crashing the pipeline.
+    """
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001 — classify, then re-raise
+            if not _is_transient(e) or i == attempts - 1:
+                raise
+            time.sleep(base_delay * (2 ** i))
+    raise RuntimeError("unreachable")  # pragma: no cover
+
+
 # ---- Live submit ----
 
 
@@ -251,11 +282,11 @@ def submit_batch(requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KE
         src.append(_build_inlined_request_dict(r, system_text))
 
     display_name = f"cel-summary-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-    batch = client.batches.create(
+    batch = _retry_transient(lambda: client.batches.create(
         model=config.MODEL_ID,
         src=src,
         config={"display_name": display_name},
-    )
+    ))
     batch_name = getattr(batch, "name", None) or str(batch)
 
     # Stash request list for wait_for_batch's custom_id reconstruction.
@@ -299,7 +330,7 @@ def wait_for_batch(
     # for the lifetime of the process.
     try:
         while time.time() < deadline:
-            batch_job = client.batches.get(name=handle.batch_id)
+            batch_job = _retry_transient(lambda: client.batches.get(name=handle.batch_id))
             state = _job_state_name(batch_job)
             if state == "JOB_STATE_SUCCEEDED":
                 break

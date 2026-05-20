@@ -10,6 +10,20 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+
+@pytest.fixture(autouse=True)
+def _isolate_summary_state(tmp_path, monkeypatch):
+    """tracker-092 Phase 2: redirect the idempotency state file to a per-test
+    tmp path so no live-mode test ever reads/writes the real
+    data/seo-intel/summary-state.json (which would leak state across tests and
+    pollute the repo). State still persists WITHIN a test (same tmp_path), so
+    the idempotency-skip test can run generate-english twice and observe the skip.
+    """
+    from tools.summary import config
+    monkeypatch.setattr(config, "SUMMARY_STATE_FILE", tmp_path / "summary-state.json")

@@ -349,6 +349,116 @@ def test_generate_english_qa_gate_demotes_critical_fail(tmp_path: Path, monkeypa
     # The demotion reason is recorded in manual-review.json.
     mr = json.loads((tmp_path / "manual-review.json").read_text())
     assert any("QA gate failed" in d["error"] for d in mr["details"])
+    # tracker-092 (2.2): MANUAL_REVIEW carries triage metadata.
+    assert mr["batch_id"] == "batch-x"
+    detail = mr["details"][0]
+    assert detail["content_type"] == "landing"
+    assert detail["url"] == "https://www.englishcollege.com/learn-english-usa"
+    assert "first_attempt_error" in detail
+
+
+def _fake_live_generate(monkeypatch, content: str, llms_raises: bool = False):
+    """Wire mocks for a live generate-english run. Returns the captured-requests dict.
+
+    `content` is the Gemini-returned summary for every request. If `llms_raises`,
+    the llms.txt fetch raises (to exercise the degraded flag).
+    """
+    from tools.summary import page_fetcher, batch_runner, llms_parser
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200,
+            html="<html><body><h1>Home</h1></body></html>",
+            title="Home | CEL", h1="Home", headings=("Home",),
+            canonical=url, hreflang_urls=(), existing_summary_html="",
+            body_text_excerpt=(
+                "CEL is an english language school with campuses in San Diego, "
+                "Los Angeles, and Vancouver. Students reach B2 in twelve weeks."
+            ),
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+
+    if llms_raises:
+        def boom(*a, **kw):
+            raise RuntimeError("network down")
+        monkeypatch.setattr(llms_parser, "fetch_and_parse", boom)
+    else:
+        monkeypatch.setattr(
+            llms_parser, "fetch_and_parse",
+            lambda *a, **kw: llms_parser.LlmsIndex(entries=[]),
+        )
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="b", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        return [
+            batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content=content)
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+    return captured
+
+
+# A QA-passing home-page summary (primary keyword = M-12.4 override "english language school").
+_PASSING_HOME = (
+    "## What to expect from an english language school\n\n"
+    "An english language school like CEL serves students across San Diego, "
+    "Los Angeles, and Vancouver, with most reaching B2 in twelve weeks.\n"
+)
+
+
+def test_generate_english_idempotency_skips_unchanged(tmp_path: Path, monkeypatch):
+    """tracker-092 (2.1): a second live run with unchanged source is skipped; --force overrides."""
+    from tools.summary import config
+
+    _fake_live_generate(monkeypatch, _PASSING_HOME)
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+
+    base = ["generate-english", "--no-dry-run", "--page", "https://www.englishcollege.com/", "--out-dir"]
+    # Run 1: generates + records idempotency state.
+    assert cli.main(base + [str(tmp_path / "run1")]) == 0
+    p1 = json.loads((tmp_path / "run1" / "report.json").read_text())["phases"]["generate_english"]
+    assert p1.get("idempotency_skipped") == 0
+    assert p1["succeeded"] == 1
+
+    # Run 2: same source hash → skipped, nothing submitted.
+    assert cli.main(base + [str(tmp_path / "run2")]) == 0
+    p2 = json.loads((tmp_path / "run2" / "report.json").read_text())["phases"]["generate_english"]
+    assert p2.get("idempotency_skipped") == 1
+    assert p2.get("submitted") is False
+
+    # Run 3: --force regenerates despite unchanged source.
+    assert cli.main(base + [str(tmp_path / "run3"), "--force"]) == 0
+    p3 = json.loads((tmp_path / "run3" / "report.json").read_text())["phases"]["generate_english"]
+    assert p3.get("idempotency_skipped") == 0
+    assert p3["succeeded"] == 1
+
+
+def test_generate_english_degraded_flag_on_llms_failure(tmp_path: Path, monkeypatch):
+    """tracker-092 (2.4): a failed llms.txt fetch marks the run degraded."""
+    from tools.summary import config
+
+    _fake_live_generate(monkeypatch, _PASSING_HOME, llms_raises=True)
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+
+    assert cli.main([
+        "generate-english", "--no-dry-run", "--page",
+        "https://www.englishcollege.com/", "--out-dir", str(tmp_path / "run"),
+    ]) == 0
+    phase = json.loads((tmp_path / "run" / "report.json").read_text())["phases"]["generate_english"]
+    assert phase.get("degraded") is True
+    assert any("llms.txt fetch failed" in w for w in phase["warnings"])
 
 
 def test_cms_item_url_per_collection_prefix():

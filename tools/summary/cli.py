@@ -72,6 +72,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Cap items processed (pilot batches).",
     )
     parser.add_argument(
+        "--force", action="store_true", default=False,
+        help=(
+            "generate-english only — regenerate every item even if its source "
+            "content is unchanged since the last successful run (bypasses the "
+            "summary-state idempotency skip)."
+        ),
+    )
+    parser.add_argument(
         "--out-dir", type=Path, default=None,
         help="Override output artifact directory.",
     )
@@ -282,6 +290,26 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     if args.limit:
         sources = sources[: args.limit]
 
+    # tracker-092 Phase 2 (2.1): idempotency — skip items whose source content is
+    # unchanged since the last successful run (live mode only; --force bypasses;
+    # dry-run never reads/writes state so tests stay deterministic).
+    idempotency_skipped = 0
+    summary_state = _load_summary_state() if not args.dry_run else {}
+    if not args.dry_run and not args.force and summary_state:
+        kept = []
+        for (sitem, kw, tgt) in sources:
+            cid_key = sitem.cms_item_id or sitem.url
+            if summary_state.get(cid_key, {}).get("source_hash") == _source_hash(sitem.body_excerpt, cid_key):
+                idempotency_skipped += 1
+                continue
+            kept.append((sitem, kw, tgt))
+        if idempotency_skipped:
+            warnings.append(
+                f"idempotency: skipped {idempotency_skipped} unchanged item(s) "
+                f"(use --force to regenerate)"
+            )
+        sources = kept
+
     # Build batch requests + cost check.
     requests = []
     for i, (item, kw, _target) in enumerate(sources):
@@ -298,6 +326,17 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             requests.append(req)
         except Exception as e:
             warnings.append(f"prompt-build failed for {item.url}: {e}")
+
+    if not requests:
+        # tracker-092 (2.1): nothing to do — every item was skipped as unchanged
+        # (or none resolved). Return cleanly instead of submitting an empty batch.
+        return {
+            "target_count": len(plan["targets"]), "sources_resolved": len(sources),
+            "requests_built": 0, "idempotency_skipped": idempotency_skipped,
+            "submitted": False, "dry_run": args.dry_run,
+            "reason": "no items to process (all unchanged or none resolved)",
+            "warnings": warnings,
+        }
 
     cost_estimate = batch_runner.estimate_batch_cost_usd(requests)
     if cost_estimate > config.MAX_BATCH_COST_USD:
@@ -385,6 +424,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     results = batch_runner.wait_for_batch(handle)
     succeeded = [r for r in results if r.succeeded]
     failed = [r for r in results if not r.succeeded]
+    _first_errors = {r.custom_id: r.error for r in failed}  # tracker-092 (2.2): first-attempt errors for triage
     # Retry failures once with a tightened prompt.
     if failed:
         retry_requests = []
@@ -469,17 +509,29 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         warnings.append(f"boilerplate risk: summaries {a} and {b} are {ov:.0%} similar (templated-content footprint)")
 
     # MANUAL_REVIEW state for persistent failures (closes audit-086 H-5 / tracker-087 F-4).
+    # tracker-092 (2.2): enrich each item with triage metadata so an operator can
+    # act without opening every URL (content_type, cms_item_id, locale, url,
+    # batch_id, first-attempt error).
+    def _mr_detail(f):
+        base = f.custom_id[len("retry-"):] if f.custom_id.startswith("retry-") else f.custom_id
+        mapped = _src_by_cid.get(base)
+        sitem = mapped[0] if mapped else None
+        return {
+            "custom_id": f.custom_id,
+            "error": f.error,
+            "retry_attempted": True,
+            "content_type": sitem.content_type if sitem else None,
+            "cms_item_id": sitem.cms_item_id if sitem else None,
+            "locale": sitem.locale if sitem else None,
+            "url": sitem.url if sitem else None,
+            "first_attempt_error": _first_errors.get(base),
+        }
+
     manual_review_path = out_dir / "manual-review.json"
     manual_review_payload = {
         "custom_ids": [f.custom_id for f in failed],
-        "details": [
-            {
-                "custom_id": f.custom_id,
-                "error": f.error,
-                "retry_attempted": True,
-            }
-            for f in failed
-        ],
+        "batch_id": handle.batch_id,
+        "details": [_mr_detail(f) for f in failed],
     }
     manual_review_path.write_text(
         json.dumps(manual_review_payload, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -488,12 +540,37 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     mpath, mcount = _write_en_summaries_manifest(succeeded, sources)
     # Write back. Static pages → JSON. CMS items → Webflow API.
     write_log = _write_back_summaries(succeeded, sources, args, out_dir, warnings)
+
+    # tracker-092 (2.1): persist idempotency state for successfully written items
+    # so the next run skips them while their source content is unchanged.
+    if not args.dry_run:
+        for r in succeeded:
+            base = r.custom_id[len("retry-"):] if r.custom_id.startswith("retry-") else r.custom_id
+            mapped = _src_by_cid.get(base)
+            if mapped:
+                sitem = mapped[0]
+                cid_key = sitem.cms_item_id or sitem.url
+                summary_state[cid_key] = {
+                    "source_hash": _source_hash(sitem.body_excerpt, cid_key),
+                    "generated_at": _now_iso(),
+                }
+        _save_summary_state(summary_state)
+
+    # tracker-092 (2.4): observability — flag the run as degraded when a critical
+    # input failed (llms.txt unreachable, or a source page/collection fetch failed),
+    # so an operator knows the output may be missing links or items.
+    degraded = any(
+        ("llms.txt fetch failed" in w) or ("fetch failed" in w) or ("enumeration failed" in w)
+        for w in warnings
+    )
     return {
         "target_count": len(plan["targets"]), "sources_resolved": len(sources),
         "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
         "submitted": True, "dry_run": False, "batch_id": handle.batch_id,
         "succeeded": len(succeeded), "failed": len(failed),
         "qa_gate": qa_gate_summary,
+        "idempotency_skipped": idempotency_skipped,
+        "degraded": degraded,
         "write_log": write_log,
         "manifest_path": str(mpath), "manifest_entries": mcount,
         "manual_review_path": str(manual_review_path),
@@ -842,6 +919,51 @@ def _cms_item_url(content_type: str, slug: str) -> str:
         "housing": "pb",
     }.get(content_type, "post")
     return f"https://www.englishcollege.com/{prefix}/{slug}"
+
+
+# ---- tracker-092 Phase 2: idempotency state ----
+
+
+def _source_hash(source_text: str, content_id: str) -> str:
+    """Stable hash of an item's source content + identity + prompt version.
+
+    Including SUMMARY_PROMPT_VERSION means a prompt/keyword-logic change bumps
+    every hash, forcing regeneration (Hotspot #4) — a source-only hash would
+    freeze stale summaries after a prompt improvement.
+    """
+    import hashlib
+    payload = f"{content_id}\x00{config.SUMMARY_PROMPT_VERSION}\x00{source_text}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _load_summary_state() -> dict[str, dict]:
+    """Load the idempotency state ({content_id: {source_hash, generated_at}}). {} if absent/corrupt."""
+    path = config.SUMMARY_STATE_FILE
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_summary_state(state: dict[str, dict]) -> None:
+    """Atomically persist the idempotency state."""
+    import os as _os, tempfile as _tempfile
+    path = config.SUMMARY_STATE_FILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tfd, tpath = _tempfile.mkstemp(dir=str(path.parent), prefix=".summary-state.", suffix=".tmp")
+    try:
+        with _os.fdopen(tfd, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False)
+        _os.replace(tpath, path)
+    except OSError:
+        try:
+            _os.remove(tpath)
+        except OSError:
+            pass
+        raise
 
 
 def _build_link_candidate_pool(
