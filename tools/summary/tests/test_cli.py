@@ -492,6 +492,55 @@ def test_translate_meta_dry_run_emits_typed_csv_rows(tmp_path: Path, monkeypatch
     assert "meta_description" in rows
 
 
+def test_translate_meta_live_emits_csv_via_engine(tmp_path: Path, monkeypatch):
+    """tracker-092 (3.4) review gap-close: the LIVE translate-meta path (engine →
+    Weglot CSV in WEGLOT_IMPORTS_DIR) was previously only covered in dry-run."""
+    from tools.summary import page_fetcher, batch_runner, config
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200, html="<html></html>",
+            title="Learn English at CEL", h1="Home", headings=(), canonical=url,
+            hreflang_urls=(), existing_summary_html="", body_text_excerpt="x",
+            description="Study English at CEL campuses.",
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+    weglot = tmp_path / "weglot"
+    weglot.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot)
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(batch_id="b", request_count=len(requests), submitted_at="t", dry_run=False)
+
+    def fake_wait(handle, **kw):
+        # Echo a German translation per unit, preserving any required tokens.
+        out = []
+        for r in captured["requests"]:
+            field = "Titel" if "meta_title" in r.custom_id else "Beschreibung"
+            out.append(batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content=f"[DE {field}]"))
+        return out
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    rc = cli.main([
+        "translate-meta", "--no-dry-run", "--locale", "de", "--page",
+        "https://www.englishcollege.com/", "--out-dir", str(tmp_path),
+    ])
+    assert rc == 0
+    phase = json.loads((tmp_path / "report.json").read_text())["phases"]["translate_meta"]
+    assert phase["per_locale"]["de"]["dry_run"] is False
+    csv_path = weglot / "de.csv"
+    assert csv_path.exists()
+    rows = csv_path.read_text(encoding="utf-8")
+    assert "meta_title" in rows and "meta_description" in rows
+    assert "[DE Titel]" in rows  # the engine-translated value reached the CSV
+
+
 def test_cms_item_url_per_collection_prefix():
     """tracker-092 (1.5/M-14): each collection's CMS item URL uses the right
     live path prefix. Verified against llms.txt 2026-05-20."""
