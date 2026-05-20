@@ -212,3 +212,80 @@ def test_boilerplate_pairs_flags_near_identical_summaries():
 
 def test_boilerplate_pairs_empty_for_single_summary():
     assert boilerplate_pairs({"only": _PASSING_DRAFT}) == []
+
+
+# ---- tracker-096: 4-part structure (Tagline / Title / Paragraph / Content) ----
+
+_FOUR_PART_PASS = """## English School Life
+
+### How long does it take to learn english in vancouver
+
+Most students learn english in vancouver in 6 to 12 months at CEL, with small classes of about 7 students and full-time intensive options that accelerate progress.
+
+#### What level do I need to start
+
+CEL accepts all levels from A1 to C2. See [our Vancouver campus](https://www.englishcollege.com/vancouver) for placement details.
+"""
+
+_FP_KW = "learn english in vancouver"
+_FP_INV = ["https://www.englishcollege.com/vancouver"]
+
+
+def test_four_part_passing_draft():
+    r = qa_checks(
+        _FOUR_PART_PASS, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert r.passed, f"notes: {r.notes}"
+    assert r.checks["tagline_word_count"]
+    assert r.checks["keyword_in_title"]
+    assert r.checks["keyword_in_paragraph"]
+    assert r.checks["links_only_in_content"]
+    assert r.checks["heading_order"]
+    assert r.checks["content_starts_with_h4"]
+
+
+def test_four_part_tagline_too_long_is_critical():
+    draft = _FOUR_PART_PASS.replace("## English School Life", "## A Tagline With Far Too Many Words")
+    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
+    assert not r.checks["tagline_word_count"]
+    assert not r.passed
+
+
+def test_four_part_keyword_must_be_in_title():
+    draft = _FOUR_PART_PASS.replace(
+        "How long does it take to learn english in vancouver", "A generic section title"
+    )
+    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
+    assert not r.checks["keyword_in_title"]
+    assert not r.passed
+
+
+def test_four_part_link_outside_content_is_critical():
+    # A link in the Paragraph (before the first H4) must fail links_only_in_content.
+    draft = _FOUR_PART_PASS.replace(
+        "accelerate progress.",
+        "accelerate progress at [our campus](https://www.englishcollege.com/vancouver).",
+    )
+    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
+    assert not r.checks["links_only_in_content"]
+    assert not r.passed
+
+
+def test_four_part_em_dash_still_critical():
+    draft = _FOUR_PART_PASS.replace("6 to 12 months", "6 to 12 months — quickly")
+    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
+    assert not r.checks["no_em_dashes"]
+    assert not r.passed
+
+
+def test_four_part_excluded_link_in_content_flags():
+    draft = _FOUR_PART_PASS.replace(
+        "[our Vancouver campus](https://www.englishcollege.com/vancouver)",
+        "[a legacy listing](https://www.englishcollege.com/vc/student-house)",
+    )
+    r = qa_checks(
+        draft, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert not r.checks["no_excluded_links"]

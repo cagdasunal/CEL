@@ -42,6 +42,14 @@ _SCORED_CHECKS = (
     "first_occurrence_only", "no_excluded_links", "keyword_in_h2",
     "keyword_in_p1", "keyword_in_h3", "keyword_density",
 )
+# tracker-096: the parallel stable scored set for the 4-part structure
+# (Tagline/Title/Paragraph/Content). Same count + role as _SCORED_CHECKS, with the
+# structure/keyword checks swapped for their 4-part equivalents.
+_SCORED_CHECKS_FOUR_PART = (
+    "no_em_dashes", "no_lists", "heading_order", "link_density",
+    "first_occurrence_only", "no_excluded_links", "keyword_in_title",
+    "keyword_in_paragraph", "tagline_word_count", "keyword_density",
+)
 
 
 @dataclass
@@ -64,6 +72,7 @@ def qa_checks(
     link_inventory: Iterable[str],
     excluded_path_segments: Iterable[str] = (),
     source_text: str = "",
+    structure: str = "single_block",
 ) -> QaReport:
     """Run all rule checks on a draft. Returns a QaReport with per-check pass/fail.
 
@@ -76,7 +85,16 @@ def qa_checks(
     provided (the generate-english phase has it; the audit phase may not), the
     fact-grounding and near-duplicate checks run against it. When empty those
     checks pass vacuously, so audit-phase callers keep their prior behavior.
+
+    tracker-096: `structure="four_part"` switches to the Tagline/Title/Paragraph/
+    Content rule set (see `_qa_checks_four_part`). The default "single_block" path
+    below is unchanged — blog summaries + audit callers keep their exact behavior.
     """
+    if structure == "four_part":
+        return _qa_checks_four_part(
+            draft, primary_keyword, locale, link_inventory,
+            excluded_path_segments=excluded_path_segments, source_text=source_text,
+        )
     report = QaReport(passed=True, score=100.0)
     primary_kw_lower = primary_keyword.lower().strip()
     body_text = re.sub(r"<[^>]+>", "", draft)
@@ -305,6 +323,193 @@ def qa_checks(
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
         "fact_grounding_prices", "no_faq_schema",
+    }
+    report.passed = all(report.checks.get(c, False) for c in critical)
+
+    return report
+
+
+def _qa_checks_four_part(
+    draft: str,
+    primary_keyword: str,
+    locale: str,
+    link_inventory: Iterable[str],
+    excluded_path_segments: Iterable[str] = (),
+    source_text: str = "",
+) -> QaReport:
+    """QA for the 4-part structure (tracker-096): Tagline (H2, 2-3 words) → Title
+    (H3, carries the primary keyword) → Paragraph (lead block) → Content (H4/H5;
+    the ONLY part with internal links). Structure-agnostic guards (em-dash, lists,
+    grounding, schema, anchors, inventory, excluded-links) mirror the single-block
+    set; the structure/keyword/link checks are 4-part specific.
+    """
+    from tools.summary.structure import parse_four_part
+
+    report = QaReport(passed=True, score=100.0)
+    primary_kw_lower = primary_keyword.lower().strip()
+    body_text = re.sub(r"<[^>]+>", "", draft)
+    word_count = len(re.findall(r"\b\w+\b", body_text))
+    inventory = set(link_inventory)
+    excluded = tuple(excluded_path_segments)
+    source_digits = re.sub(r"[^\d]", "", source_text)
+    parts = parse_four_part(draft)
+    links = _LINK_RE.findall(draft)
+    target_links = [url for _, url in links]
+
+    # 1. No em dashes (agnostic).
+    em_dash_count = sum(draft.count(ch) for ch in _EM_DASH_CHARS)
+    report.add("no_em_dashes", em_dash_count == 0, f"found {em_dash_count} em-dash character(s)")
+
+    # 2. No HTML list tags (agnostic).
+    report.add("no_lists", _LIST_TAG_RE.search(draft) is None, "draft contains <ul>/<ol>/<li>")
+
+    # 3. Heading order: exactly one H2 (tagline) + one H3 (title), no H1, H4/H5 only
+    #    beyond, at least one H4 to open the Content section.
+    h_levels = [len(m.group(1)) for m in _H_RE.finditer(draft)]
+    heading_ok = (
+        h_levels.count(2) == 1
+        and h_levels.count(3) == 1
+        and 1 not in h_levels
+        and all(2 <= h <= 5 for h in h_levels)
+        and any(h == 4 for h in h_levels)
+    )
+    report.add(
+        "heading_order", heading_ok,
+        f"heading levels {h_levels} (need one H2, one H3, >=1 H4, H4/H5 only)",
+    )
+
+    # tagline_word_count (CRITICAL): the Tagline is 2-3 words.
+    tagline_words = len(parts.tagline.split())
+    report.add(
+        "tagline_word_count", 2 <= tagline_words <= 3,
+        f"tagline has {tagline_words} word(s), need 2-3: {parts.tagline!r}",
+    )
+
+    # keyword_in_title (CRITICAL): primary keyword in the H3 Title.
+    report.add(
+        "keyword_in_title",
+        bool(primary_kw_lower) and primary_kw_lower in parts.title.lower(),
+        f"primary keyword {primary_keyword!r} not in title {parts.title!r}",
+    )
+
+    # keyword_in_paragraph (CRITICAL): keyword in the first 120 chars of the Paragraph.
+    report.add(
+        "keyword_in_paragraph",
+        bool(primary_kw_lower) and primary_kw_lower in parts.paragraph[:_KEYWORD_P1_WINDOW_CHARS].lower(),
+        f"primary keyword not in first {_KEYWORD_P1_WINDOW_CHARS} chars of paragraph",
+    )
+
+    # content_starts_with_h4: the Content section opens with an H4.
+    first_content_line = ""
+    if parts.content_md.strip():
+        first_content_line = parts.content_md.lstrip().splitlines()[0]
+    report.add(
+        "content_starts_with_h4",
+        bool(re.match(r"^####\s+\S", first_content_line)),
+        f"content does not start with an H4: {first_content_line[:60]!r}",
+    )
+
+    # links_only_in_content (CRITICAL): no links before the first H4.
+    content_idx = draft.find("####")
+    pre_content = draft[:content_idx] if content_idx >= 0 else draft
+    links_before = _LINK_RE.findall(pre_content)
+    report.add(
+        "links_only_in_content", not links_before,
+        f"links found outside the Content section: {[u for _, u in links_before]}",
+    )
+
+    # link_density: 2-5 per 1000 words, computed over the Content text only.
+    content_body = re.sub(r"<[^>]+>", "", parts.content_md)
+    content_words = len(re.findall(r"\b\w+\b", content_body))
+    content_links = [u for _, u in _LINK_RE.findall(parts.content_md)]
+    density = (len(content_links) / max(content_words, 1)) * 1000
+    density_ok = _LINKS_PER_1000_LOW <= density <= _LINKS_PER_1000_HIGH or (
+        content_words < 250 and len(content_links) <= _LINKS_PER_1000_HIGH
+    )
+    report.add(
+        "link_density", density_ok,
+        f"{len(content_links)} links in {content_words} content words ({density:.1f}/1000)",
+    )
+
+    # first_occurrence_only (agnostic).
+    duplicate_targets = [u for u in target_links if target_links.count(u) > 1]
+    report.add(
+        "first_occurrence_only", not duplicate_targets,
+        f"duplicate link targets: {sorted(set(duplicate_targets))}",
+    )
+
+    # no_excluded_links (agnostic).
+    bad_segment_links = [u for u in target_links if any(_path_has_segment(u, seg) for seg in excluded)]
+    report.add("no_excluded_links", not bad_segment_links, f"links to excluded segments: {bad_segment_links}")
+
+    # keyword_density 0.3-2.0% (over body text).
+    if word_count > 0 and primary_kw_lower:
+        hits = body_text.lower().count(primary_kw_lower)
+        density_kw = hits / word_count
+        density_kw_ok = _DENSITY_LOW <= density_kw <= _DENSITY_HIGH
+    else:
+        density_kw = 0.0
+        density_kw_ok = False
+    report.add("keyword_density", density_kw_ok, f"density {density_kw * 100:.2f}% (target 0.3-2.0%)")
+
+    # 11. fact_grounding_prices — CRITICAL (agnostic).
+    price_pct_tokens = re.findall(r"\$\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?%", draft)
+    if source_text:
+        unmatched_money = [
+            t for t in price_pct_tokens
+            if re.sub(r"[^\d]", "", t) and re.sub(r"[^\d]", "", t) not in source_digits
+        ]
+    else:
+        unmatched_money = []
+    report.add("fact_grounding_prices", not unmatched_money, f"prices/percentages not found in source: {unmatched_money}")
+
+    # 12. fact_grounding_figures — WARNING (agnostic).
+    if source_text:
+        draft_for_figures = re.sub(r"\$\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?%", " ", draft)
+        figure_tokens = re.findall(r"\b(?:19|20)\d{2}\b|\b\d+\.\d+\b|\b\d{3,}\b", draft_for_figures)
+        unmatched_figures = [t for t in figure_tokens if re.sub(r"[^\d]", "", t) not in source_digits]
+    else:
+        unmatched_figures = []
+    report.add("fact_grounding_figures", not unmatched_figures, f"figures not found in source (review): {unmatched_figures}")
+
+    # 13. near_duplicate — WARNING (agnostic).
+    if source_text and word_count >= 40:
+        draft_shingles = _word_shingles(body_text, 5)
+        source_shingles = _word_shingles(source_text, 5)
+        contained = (len(draft_shingles & source_shingles) / len(draft_shingles)) if draft_shingles else 0.0
+        not_duplicate = contained <= 0.70
+    else:
+        contained = 0.0
+        not_duplicate = True
+    report.add("near_duplicate", not_duplicate, f"draft shingle-containment vs source {contained:.0%} (>70% = verbatim copy)")
+
+    # 14. answer_first — WARNING. The Paragraph must open with a direct answer.
+    first_sentence = re.split(r"(?<=[.!?])\s", parts.paragraph.strip(), maxsplit=1)[0] if parts.paragraph.strip() else ""
+    answer_first = bool(first_sentence) and not _HEDGE_OPENER_RE.match(first_sentence)
+    report.add("answer_first", answer_first, f"paragraph opens with a hedge/meta phrase: {first_sentence[:60]!r}")
+
+    # 15. descriptive_anchors — WARNING (agnostic).
+    link_anchors = [a for a, _ in links]
+    bad_anchors = [a for a in link_anchors if len(a.split()) < 2 or a.strip().lower() in _GENERIC_ANCHORS]
+    report.add("descriptive_anchors", not bad_anchors, f"non-descriptive anchors: {bad_anchors}")
+
+    # 16. no_faq_schema — CRITICAL (agnostic).
+    has_schema = bool(re.search(r"faqpage|application/ld\+json|<\s*script|<\s*iframe", draft, re.IGNORECASE))
+    report.add("no_faq_schema", not has_schema, "draft contains schema/script/iframe markup (must be plain Markdown)")
+
+    # 17. link_in_inventory — WARNING (agnostic).
+    invented = [u for u in target_links if u not in inventory] if inventory else []
+    report.add("link_in_inventory", not invented, f"link targets not in inventory (invented?): {invented}")
+
+    scored = [report.checks[c] for c in _SCORED_CHECKS_FOUR_PART if c in report.checks]
+    report.score = (sum(scored) / len(scored)) * 100 if scored else 0
+    # CRITICAL set for 4-part: AI-tell formatting + the structure invariants the user
+    # was explicit about (2-3 word tagline, links only in Content) + keyword placement
+    # + fabricated prices + embedded schema.
+    critical = {
+        "no_em_dashes", "no_lists", "keyword_in_title", "keyword_in_paragraph",
+        "fact_grounding_prices", "no_faq_schema", "tagline_word_count",
+        "links_only_in_content",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 

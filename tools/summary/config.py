@@ -64,6 +64,11 @@ STATIC_PAGES = (
     "https://www.englishcollege.com/pathway/certificate-programs",
     "https://www.englishcollege.com/pathway/undergraduate-programs",
     "https://www.englishcollege.com/pathway/graduate-programs",
+    # tracker-096: Vancouver landing pages (added to the existing 12 → 16 total).
+    "https://www.englishcollege.com/vancouver",
+    "https://www.englishcollege.com/vancouver/cost-of-studying-english",
+    "https://www.englishcollege.com/vancouver/how-long-to-learn-english",
+    "https://www.englishcollege.com/vancouver/vs-toronto",
 )
 
 # llms.txt — internal-linking source of truth (NOT sitemap.xml).
@@ -81,7 +86,7 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # since the last successful run (unless --force) so re-runs don't re-submit
 # unchanged items to Gemini. Bump SUMMARY_PROMPT_VERSION whenever the prompts or
 # keyword logic change materially, to force a full regeneration.
-SUMMARY_PROMPT_VERSION = "2026-05-20-t092"
+SUMMARY_PROMPT_VERSION = "2026-05-21-t096"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
 # tracker-092 Phase 3: dedicated translator memory. Persists
@@ -90,14 +95,30 @@ TRANSLATION_MEMORY_FILE = PROJECT_ROOT / "data" / "seo-intel" / "translation-mem
 
 # Field slug for the Summary field on each CMS collection. Webflow rich-text field
 # slug — if it doesn't exist on a collection, the script auto-creates it (dry-run
-# gated). The display name is "Summary".
+# gated). The display name is "Summary". Used for the single-block blog summary AND
+# (tracker-096) as the Content part of the 4-part structure on Courses/Housing.
 SUMMARY_FIELD_SLUG = "summary"
 SUMMARY_FIELD_DISPLAY_NAME = "Summary"
 
-# Static page summary element CSS selector. The script targets the element with
-# id="summary" via Webflow Designer API. If the element doesn't exist, dry-run
-# reports it; the script does NOT auto-create.
+# tracker-096: 4-part Summary section (Tagline / Title / Paragraph / Content) on the
+# Courses + Housing collections. CMS field slugs use TRIPLE hyphens — Webflow
+# slugifies the display name "Summary - Tagline" → "summary---tagline" (verified
+# live via get_collection_details 2026-05-20). The Content part reuses the existing
+# RichText `summary` slug (renamed display → "Summary - Content"), so only the three
+# plain-text parts are genuinely new field slugs.
+SUMMARY_CONTENT_FIELD_SLUG = SUMMARY_FIELD_SLUG  # "summary" (RichText)
+SUMMARY_TAGLINE_FIELD_SLUG = "summary---tagline"  # PlainText, singleLine
+SUMMARY_TITLE_FIELD_SLUG = "summary---title"  # PlainText, singleLine
+SUMMARY_PARAGRAPH_FIELD_SLUG = "summary---paragraph"  # PlainText, singleLine
+
+# Static page summary element CSS selector. The single-block legacy element is
+# id="summary". tracker-096: static landing pages now use FOUR elements whose ids use
+# SINGLE hyphens (distinct from the CMS triple-hyphen slugs above — do not cross-wire).
 STATIC_PAGE_SUMMARY_ELEMENT_ID = "summary"
+STATIC_SUMMARY_TAGLINE_ID = "summary-tagline"
+STATIC_SUMMARY_TITLE_ID = "summary-title"
+STATIC_SUMMARY_PARAGRAPH_ID = "summary-paragraph"
+STATIC_SUMMARY_CONTENT_ID = "summary-content"
 
 # Audit thresholds. Score < 60 → REGENERATE; 60–80 → MANUAL_REVIEW; > 80 → KEEP.
 AUDIT_REGENERATE_THRESHOLD = 60

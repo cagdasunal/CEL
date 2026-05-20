@@ -30,7 +30,7 @@ def test_plan_target_count_includes_static_and_cms(tmp_path: Path):
     targets = data["phases"]["generate_english"]["targets"]
     static_targets = [t for t in targets if t["kind"] == "static_page"]
     cms_targets = [t for t in targets if t["kind"] == "cms_collection"]
-    assert len(static_targets) == 12  # all 12 static pages
+    assert len(static_targets) == 16  # 12 original + 4 Vancouver (tracker-096)
     assert len(cms_targets) == 3  # blog + courses + housing_new
 
 
@@ -410,11 +410,18 @@ def _fake_live_generate(monkeypatch, content: str, llms_raises: bool = False):
     return captured
 
 
-# A QA-passing home-page summary (primary keyword = M-12.4 override "english language school").
+# A QA-passing home-page summary (primary keyword = M-12.4 override "english language
+# school"). tracker-096: the home page is a static landing page, so it now uses the
+# 4-part structure (Tagline / Title / Paragraph / Content) and must pass the 4-part
+# QA gate — keyword in the Title + first 120 chars of the Paragraph, tagline 2-3 words.
 _PASSING_HOME = (
-    "## What to expect from an english language school\n\n"
+    "## English School Life\n\n"
+    "### What to expect from an english language school\n\n"
     "An english language school like CEL serves students across San Diego, "
-    "Los Angeles, and Vancouver, with most reaching B2 in twelve weeks.\n"
+    "Los Angeles, and Vancouver, with most reaching B2 in twelve weeks.\n\n"
+    "#### How long does it take to reach B2\n\n"
+    "Most students at CEL reach B2 within twelve weeks, while beginners need "
+    "longer depending on weekly hours.\n"
 )
 
 
@@ -622,3 +629,71 @@ def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatc
     assert "https://www.englishcollege.com/pb/test-residence" in user_msg, (
         "housing URL from the link pool did not reach the prompt's user_message"
     )
+
+
+# ---- tracker-096: write-back branches by content type ----
+
+
+def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
+    """course/housing CMS items → update_item_summary_parts (4 fields, HTML Content);
+    blog → update_item_summary (single block, UNCHANGED); landing → 4-section static file."""
+    from tools.summary import batch_runner, webflow_client, config
+    from tools.summary.prompt_builder import KeywordPlan, SourceItem
+
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    calls = {"single": [], "parts": []}
+
+    def rec_single(self, **kw):
+        calls["single"].append(kw)
+        return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
+
+    def rec_parts(self, **kw):
+        calls["parts"].append(kw)
+        return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
+
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(webflow_client.WebflowClient, "update_item_summary", rec_single)
+    monkeypatch.setattr(webflow_client.WebflowClient, "update_item_summary_parts", rec_parts)
+
+    four_part = (
+        "## English School Life\n\n### A good section title\n\nA short lead paragraph.\n\n"
+        "#### A detail heading\n\nSome body text here.\n"
+    )
+    single = "## A blog question\n\nA blog answer paragraph.\n"
+    van_url = "https://www.englishcollege.com/vancouver"
+    sources = [
+        (SourceItem(url="https://www.englishcollege.com/courses/x", title="C", body_excerpt="b",
+                    locale="en", content_type="course", cms_item_id="c1"), KeywordPlan(primary="x"), "cms"),
+        (SourceItem(url="https://www.englishcollege.com/pb/y", title="H", body_excerpt="b",
+                    locale="en", content_type="housing", cms_item_id="h1"), KeywordPlan(primary="x"), "cms"),
+        (SourceItem(url="https://www.englishcollege.com/post/z", title="B", body_excerpt="b",
+                    locale="en", content_type="blog_post", cms_item_id="b1"), KeywordPlan(primary="x"), "cms"),
+        (SourceItem(url=van_url, title="V", body_excerpt="b",
+                    locale="en", content_type="landing"), KeywordPlan(primary="x"), "static"),
+    ]
+    results = [
+        batch_runner.BatchResult(custom_id="gen-0-c1", succeeded=True, content=four_part),
+        batch_runner.BatchResult(custom_id="gen-1-h1", succeeded=True, content=four_part),
+        batch_runner.BatchResult(custom_id="gen-2-b1", succeeded=True, content=single),
+        batch_runner.BatchResult(custom_id=f"gen-3-{van_url[-50:]}", succeeded=True, content=four_part),
+    ]
+
+    class _Args:
+        dry_run = False
+
+    out = cli._write_back_summaries(results, sources, _Args(), tmp_path, [])
+    # course + housing → 4-part parts (2 calls); blog → single (1 call); landing → static file.
+    assert len(calls["parts"]) == 2, calls
+    assert len(calls["single"]) == 1, calls
+    assert out["cms_writes"] == 3
+    assert out["static_writes"] == 1
+    assert out["failures"] == 0
+    # The 4-part call carries the parsed fields, with the Content rendered to HTML.
+    pcall = calls["parts"][0]
+    assert pcall["tagline"] == "English School Life"
+    assert pcall["title"] == "A good section title"
+    assert "<h4>A detail heading</h4>" in pcall["content_html"]
+    # Blog keeps the legacy single-field write with the raw Markdown (byte-identical).
+    assert calls["single"][0]["summary_html"] == single
+    # The static 4-section file was written for the Vancouver landing page.
+    assert (tmp_path / "weglot-out" / "static-summaries" / "vancouver.summary.md").exists()

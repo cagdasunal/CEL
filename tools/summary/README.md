@@ -24,6 +24,24 @@ The tracker-087 executor's final-summary observations surfaced 4 production-bloc
 - **F-3 (was production bug)**: `webflow_client.update_item_summary` wrote to `/items/{id}/live` which requires items already published — first-time writes on drafts returned 409. Switched to staged `/items/{id}`. The user publishes the Webflow site via Designer to push changes live, per `rules/workflow.md §7.1` ("Claude never publishes"). Pattern matches `tools/fidelo/cms_writer.py` + `cms_writer_courses.py` (monorepo) which already write to this CEL site.
 - **F-4 (was production bug)**: CEL `tools/dashboard.py` + `docs/assets/css/dashboard.css` were uncommitted despite the monorepo equivalent shipping in audit-086 `340bc39`. Closes a `rules/dashboard-deploy.md` two-repo-lockstep violation. The 15-min `content-pipeline.yml` cron now renders IMAGES + WEGLOT-dropdown nav (was stale BLOG + FIDELO-Translations).
 
+## 4-part Summary structure (tracker-096, 2026-05-21)
+
+The Summary section was redesigned so it reads like a genuine, designed part of the page rather than an SEO block. Courses, Housing, and the static landing pages now use a **4-part** structure; **blog posts keep the single-block** summary unchanged.
+
+| Part | Static element id | Courses/Housing CMS field slug | Type | Rule |
+|---|---|---|---|---|
+| Tagline | `#summary-tagline` (H2) | `summary---tagline` | PlainText | 2–3 related words (editorial kicker) |
+| Title | `#summary-title` (H3) | `summary---title` | PlainText | short title; primary keyword lands here |
+| Paragraph | `#summary-paragraph` | `summary---paragraph` | PlainText | one short lead paragraph |
+| Content | `#summary-content` (rich) | **`summary`** (renamed "Summary - Content") | RichText | the ONLY part with internal links; starts at H4, uses H5 |
+
+- The model emits ONE Markdown document (`## Tagline` → `### Title` → Paragraph → `#### …` Content); `tools/summary/structure.py` (`parse_four_part`) splits it into the four parts, and `four_part_content_html` renders the Content part to the HTML subset Webflow's RichText field needs (plain Markdown into a RichText field would render literal `####`). The three plain parts are written as stripped plain text.
+- **CMS write**: `webflow_client.update_item_summary_parts` patches the 3 plain `summary---*` slugs + the RichText `summary` (Content reuses the existing slug — only 3 new slugs were added; verified live via `get_collection_details`). Note the slug asymmetry: CMS slugs use triple hyphens, static element ids use single hyphens.
+- **Static write**: `webflow_designer.write_static_summary_parts` writes one `<slug>.summary.md` with 4 labeled sections for paste into the 4 elements.
+- **QA**: `qa.qa_checks(..., structure="four_part")` validates the 4-part contract (Tagline 2–3 words, keyword in Title + Paragraph, links only in Content, H4/H5-only Content). The default `structure="single_block"` path is unchanged, so blog + audit keep their exact behavior.
+- **Vancouver pages**: 4 new static pages (`/vancouver`, `/vancouver/cost-of-studying-english`, `/vancouver/how-long-to-learn-english`, `/vancouver/vs-toronto`) were added → **16 static pages** total.
+- `SUMMARY_PROMPT_VERSION` bumped to `2026-05-21-t096`, which invalidates the idempotency hash + translation memory so existing items regenerate under the new structure.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.
@@ -114,7 +132,7 @@ Before flipping `dry_run=false`:
 - [ ] Verified the `Summary` rich-text field exists on the three target CMS collections (Blog, Courses, Housing). If missing, the script's first live run auto-creates it via `data_cms_tool.create_collection_rich_text_field`.
 - [ ] **Ran a pilot live invocation with `--limit 1` FIRST.** The staged CMS endpoint (`/items/{id}`, switched from `/live` in tracker-088 F-3) has been validated against the sibling `tools/fidelo/cms_writer.py` pattern but has not been live-tested against the Webflow Data API v2 yet (no API key during the audit window). A `--limit 1` pilot confirms the endpoint accepts the PATCH payload, the staged write lands, and (after the user clicks Publish in Webflow Designer) the change propagates to the live site. Only after the pilot succeeds end-to-end should the full live run be triggered.
 
-Static-page summaries do NOT auto-write — they land as Markdown files for manual paste into Webflow Designer. Plan to spend ~10–15 minutes pasting after each generate-english run that touches the 12 static pages.
+Static-page summaries do NOT auto-write — they land as Markdown files for manual paste into Webflow Designer. Plan to spend ~10–15 minutes pasting after each generate-english run that touches the 16 static pages. tracker-096: each static `.summary.md` now carries 4 labeled sections (Tagline / Title / Paragraph / Content) to paste into the four `#summary-*` elements.
 
 ### Pilot live-run procedure
 
@@ -142,8 +160,9 @@ tools/summary/
 ├── prompt_builder.py      # composes system + user messages (Gemini caches implicitly on Batch tier)
 ├── qa.py                  # locked rule checks (em-dash, lists, keyword placement, density)
 ├── audit.py               # score existing summaries → REGENERATE / KEEP / MANUAL_REVIEW
-├── webflow_client.py      # CMS Data API reader/writer (dry-run safe; pagination via metadata)
-├── webflow_designer.py    # static-page summary → Markdown file (manual paste)
+├── structure.py           # tracker-096: 4-part parse (Tagline/Title/Paragraph/Content) + Content Markdown→HTML
+├── webflow_client.py      # CMS Data API reader/writer (dry-run safe; single-field + 4-part writes)
+├── webflow_designer.py    # static-page summary → Markdown file (single-block or 4-section, manual paste)
 ├── batch_runner.py        # Gemini Batch API submission + retrieval + cost estimator (tracker-091); shared by the translator
 ├── csv_emitter.py         # summary paragraph splitters; re-exports Weglot-CSV emission from tools/translator/weglot.py (tracker-094)
 ├── requirements.txt       # documents google-genai SDK (installed via CEL root requirements.txt)
@@ -255,7 +274,7 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 - No em dashes (—, –).
 - No bullet/numbered lists (paragraphs only).
-- Primary keyword in H2 + first 120 chars of P1 + ≥1 H3.
+- Primary keyword placement (tracker-096): blog (single-block) → H2 + first 120 chars of P1 + ≥1 H3; courses/housing/landing (4-part) → Title (H3) + first 120 chars of the Paragraph.
 - Body keyword density 0.5–2.5%.
 - Internal link density 2–5 per 1000 words.
 - First-occurrence-only link rule.
@@ -276,10 +295,10 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 ```bash
 cd /path/to/englishcollege
-python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 168 passed
+python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 198 passed
 ```
 
-Current: **135 tests** across 12 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, webflow_client_dryrun, webflow_designer) plus **33 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **168 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`) and Phase-2 idempotency/retry hardening; the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
+Current: **159 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **198 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` + the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 

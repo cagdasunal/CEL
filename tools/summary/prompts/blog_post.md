@@ -14,11 +14,16 @@ This summary is ADDED at the bottom of an existing blog post. The body of the po
 - Links to 2–3 sibling blog posts (same locale, same category) AND 1 relevant landing page (same locale)
 - Adds genuine information-gain — a summary, an extra angle, a "what to do next" — not a duplicate of the post's opening
 
-## Structure
+## Output structure (single-block)
 
-- 1 H2 (the question the post answers, framed as a search query in the post's locale)
-- 1–2 paragraphs immediately under the H2
-- Optional: 1 H3 with a long-tail variant question and 1 short paragraph
+Blog summaries use the SINGLE-BLOCK structure — NOT the 4-part Tagline/Title/Paragraph/Content layout (that one is for courses, housing, and landing pages). Emit one Markdown document:
+
+- Exactly ONE `## H2` — the question the post answers, framed as a search query in the post's locale. Same lexical core as the post title but a different syntactic frame.
+- 1–2 paragraphs immediately under the H2; the first leads with a direct answer.
+- Optional: ONE `### H3` with a long-tail variant question + 1 short paragraph.
+- **Primary keyword** in the H2 AND in the first 120 characters of the first paragraph AND in the H3 when present.
+
+Return only the rendered Markdown (one `## H2`, optional `### H3`, plain paragraphs). No code fences, no preamble, no trailing commentary.
 
 ## Word count target
 

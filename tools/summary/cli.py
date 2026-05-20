@@ -483,6 +483,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             r.content, kw.primary if kw else "", sitem.locale, link_inv,
             excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
             source_text=sitem.body_excerpt,
+            structure=_structure_for_content_type(sitem.content_type),
         )
         qa_scores[base_cid] = round(rep.score, 1)
         if rep.passed:
@@ -604,8 +605,13 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
         try:
             pc = fetch_page(url)
             kw = derive_keywords(pc.title, pc.h1, pc.url, pc.body_text_excerpt)
+            # tracker-096: static pages now use the 4-part structure. Audit the
+            # Content element when present (the richest part, closest analog to the
+            # legacy single #summary block); fall back to the legacy element so a
+            # not-yet-migrated page still scores.
+            existing = pc.existing_summary_parts.get(config.STATIC_SUMMARY_CONTENT_ID) or pc.existing_summary_html
             score = audit_existing_summary(
-                url=url, summary_markdown=pc.existing_summary_html,
+                url=url, summary_markdown=existing,
                 primary_keyword=kw.primary, locale="en",
                 link_inventory=config.STATIC_PAGES,
             )
@@ -1026,8 +1032,9 @@ def _write_back_summaries(
     succeeded: list, sources: list, args: argparse.Namespace, out_dir: Path, warnings: list[str],
 ) -> dict[str, Any]:
     """Write generated summaries to Webflow CMS (CMS items) or to JSON files (static pages)."""
+    from tools.summary.structure import four_part_content_html, parse_four_part
     from tools.summary.webflow_client import WebflowClient
-    from tools.summary.webflow_designer import write_static_summary
+    from tools.summary.webflow_designer import write_static_summary_parts
 
     static_dir = config.WEGLOT_IMPORTS_DIR / "static-summaries"
     wf = WebflowClient(dry_run=args.dry_run)
@@ -1049,7 +1056,10 @@ def _write_back_summaries(
             continue
         item, target = entry
         if target == "static":
-            wr = write_static_summary(item.url, result.content, static_dir, dry_run=args.dry_run)
+            # tracker-096: static landing pages use the 4-part structure — write the
+            # 4 sections for paste into #summary-tagline/title/paragraph/content.
+            parts = parse_four_part(result.content)
+            wr = write_static_summary_parts(item.url, parts, static_dir, dry_run=args.dry_run)
             if wr.success:
                 static_writes += 1
             else:
@@ -1057,11 +1067,25 @@ def _write_back_summaries(
                 warnings.append(f"static write failed: {item.url}: {wr.error}")
         elif target == "cms" and item.cms_item_id:
             # In dry-run, the WebflowClient already returns a mock response.
-            wresult = wf.update_item_summary(
-                collection_id=_collection_id_for_content_type(item.content_type),
-                item_id=item.cms_item_id,
-                summary_html=result.content,
-            )
+            if item.content_type == "blog_post":
+                # tracker-096: blog keeps the legacy single-block Summary (unchanged).
+                wresult = wf.update_item_summary(
+                    collection_id=_collection_id_for_content_type(item.content_type),
+                    item_id=item.cms_item_id,
+                    summary_html=result.content,
+                )
+            else:
+                # Courses / Housing → 4-part: 3 plain-text fields + RichText Content
+                # (Markdown rendered to HTML so H4/H5 + links display).
+                parts = parse_four_part(result.content)
+                wresult = wf.update_item_summary_parts(
+                    collection_id=_collection_id_for_content_type(item.content_type),
+                    item_id=item.cms_item_id,
+                    tagline=parts.tagline,
+                    title=parts.title,
+                    paragraph=parts.paragraph,
+                    content_html=four_part_content_html(parts.content_md),
+                )
             if wresult.success:
                 cms_writes += 1
             else:
@@ -1076,6 +1100,12 @@ def _collection_id_for_content_type(content_type: str) -> str:
         "course": config.COLLECTIONS["courses"],
         "housing": config.COLLECTIONS["housing_new"],
     }.get(content_type, "")
+
+
+def _structure_for_content_type(content_type: str) -> str:
+    """tracker-096: blog posts keep the single-block Summary; courses, housing, and
+    static landing pages use the 4-part Tagline/Title/Paragraph/Content structure."""
+    return "single_block" if content_type == "blog_post" else "four_part"
 
 
 def _cms_item_url(content_type: str, slug: str) -> str:

@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from tools.summary.webflow_designer import write_static_summary
+from tools.summary.structure import FourPartSummary
+from tools.summary.webflow_designer import write_static_summary, write_static_summary_parts
 
 
 def test_write_static_summary_dry_run_returns_result_but_no_file(tmp_path: Path) -> None:
@@ -85,3 +86,53 @@ def test_write_static_summary_rejects_traversal_slug(tmp_path: Path) -> None:
     assert "unsafe slug" in (result.error or "")
     # And nothing was written.
     assert not any(out_dir.rglob("*.md")) if out_dir.exists() else True
+
+
+# ---- tracker-096: 4-part static writer ----
+
+
+def _parts() -> FourPartSummary:
+    return FourPartSummary(
+        tagline="English School Life",
+        title="What to expect",
+        paragraph="Twelve weeks to a strong B2.",
+        content_md="#### How long\n\nTwelve weeks at CEL.",
+    )
+
+
+def test_write_static_summary_parts_writes_labeled_sections(tmp_path: Path) -> None:
+    out_dir = tmp_path / "static-summaries"
+    result = write_static_summary_parts(
+        page_url="https://www.englishcollege.com/vancouver",
+        parts=_parts(), out_dir=out_dir, dry_run=False,
+    )
+    assert result.success is True
+    path = out_dir / "vancouver.summary.md"
+    assert path.exists()
+    text = path.read_text(encoding="utf-8")
+    # Each section is labeled with its element id + carries its content.
+    assert "#summary-tagline" in text and "English School Life" in text
+    assert "#summary-title" in text and "What to expect" in text
+    assert "#summary-paragraph" in text and "Twelve weeks to a strong B2." in text
+    assert "#summary-content" in text and "#### How long" in text
+
+
+def test_write_static_summary_parts_dry_run_no_file(tmp_path: Path) -> None:
+    out_dir = tmp_path / "static-summaries"
+    result = write_static_summary_parts(
+        page_url="https://www.englishcollege.com/", parts=_parts(),
+        out_dir=out_dir, dry_run=True,
+    )
+    assert result.dry_run is True and result.success is True
+    assert not (out_dir / "home.summary.md").exists()
+    assert result.payload["path"].endswith("home.summary.md")
+
+
+def test_write_static_summary_parts_rejects_traversal(tmp_path: Path) -> None:
+    out_dir = tmp_path / "static-summaries"
+    result = write_static_summary_parts(
+        page_url="https://www.englishcollege.com/../../etc/passwd",
+        parts=_parts(), out_dir=out_dir, dry_run=False,
+    )
+    assert result.success is False
+    assert "unsafe slug" in (result.error or "")

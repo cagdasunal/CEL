@@ -71,6 +71,40 @@ def test_parser_handles_missing_summary_element():
     html_no_summary = "<html><head><title>X</title></head><body><h1>Y</h1></body></html>"
     pc = _parse_html("https://example.com", "https://example.com", 200, html_no_summary)
     assert pc.existing_summary_html == ""
+    assert pc.existing_summary_parts == {}
+
+
+# ---- tracker-096: 4-part Summary element extraction ----
+
+_FOUR_PART_HTML = """<html><body>
+<h1>Vancouver</h1>
+<h2 id="summary-tagline">English School Life</h2>
+<h3 id="summary-title">What to expect</h3>
+<p id="summary-paragraph">Twelve weeks to a strong B2.</p>
+<div id="summary-content"><h4>How long</h4><p>Twelve weeks at CEL.</p></div>
+</body></html>"""
+
+
+def test_parser_extracts_four_part_elements():
+    pc = _parse_html("https://x.com/vancouver", "https://x.com/vancouver", 200, _FOUR_PART_HTML)
+    parts = pc.existing_summary_parts
+    assert set(parts.keys()) == {
+        "summary-tagline", "summary-title", "summary-paragraph", "summary-content",
+    }
+    assert "English School Life" in parts["summary-tagline"]
+    assert "What to expect" in parts["summary-title"]
+    assert "Twelve weeks to a strong B2." in parts["summary-paragraph"]
+    assert "How long" in parts["summary-content"]
+    # No legacy single #summary element on a 4-part page.
+    assert pc.existing_summary_html == ""
+
+
+def test_parser_four_part_does_not_break_legacy_single_summary():
+    """The legacy single id="summary" still populates existing_summary_html."""
+    html = '<html><body><div id="summary"><h2>Q</h2><p>A</p></div></body></html>'
+    pc = _parse_html("https://x.com", "https://x.com", 200, html)
+    assert "Q" in pc.existing_summary_html and "A" in pc.existing_summary_html
+    assert pc.existing_summary_parts == {}
 
 
 # ---- URL-scheme validation (closes tracker-087 F-3 SSRF) ----
