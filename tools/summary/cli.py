@@ -66,6 +66,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--collection", choices=["blog", "courses", "housing_new"], default=None,
     )
     parser.add_argument("--page", default=None, help="Filter to a single static-page URL.")
+    parser.add_argument(
+        "--exclude-blog", dest="exclude_blog", action="store_true", default=False,
+        help=(
+            "Skip the blog collection (blog keeps its single-block summary; tracker-096 "
+            "'except Blog Posts'). Lets static + courses + housing run in one pass without "
+            "regenerating blog."
+        ),
+    )
     parser.add_argument("--locale", choices=config.LOCALES, default=None)
     parser.add_argument(
         "--limit", type=int, default=None,
@@ -164,6 +172,8 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             targets.append({"kind": "static_page", "url": url, "locale": "en", "content_type": "landing"})
     for slug, cid in config.COLLECTIONS.items():
         if args.collection and args.collection != slug:
+            continue
+        if getattr(args, "exclude_blog", False) and slug == "blog":
             continue
         content_type = {"blog": "blog_post", "courses": "course", "housing_new": "housing"}[slug]
         translate = slug in config.TRANSLATE_COLLECTIONS

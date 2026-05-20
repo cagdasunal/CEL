@@ -38,6 +38,11 @@ on:
         required: false
         default: ""
         type: string
+      exclude_blog:
+        description: "Skip the blog collection (tracker-096 'except Blog Posts'). Runs static + courses + housing without regenerating blog."
+        required: false
+        default: false
+        type: boolean
       locale_filter:
         description: "Filter to one locale (en | de | fr | es | it | pt | ko | ja | ar). Leave blank for all."
         required: false

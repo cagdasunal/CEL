@@ -45,6 +45,18 @@ def test_collection_filter(tmp_path: Path):
     assert not any(t["kind"] == "static_page" for t in targets)
 
 
+def test_exclude_blog_drops_blog_collection_target(tmp_path: Path):
+    """tracker-096: --exclude-blog runs static + courses + housing but skips blog."""
+    cli.main(["plan", "--exclude-blog", "--out-dir", str(tmp_path)])
+    data = json.loads((tmp_path / "report.json").read_text())
+    targets = data["phases"]["generate_english"]["targets"]
+    cms_slugs = {t["collection"] for t in targets if t["kind"] == "cms_collection"}
+    assert "blog" not in cms_slugs
+    assert {"courses", "housing_new"} <= cms_slugs
+    # Static pages still included.
+    assert any(t["kind"] == "static_page" for t in targets)
+
+
 def test_limit_applies(tmp_path: Path):
     cli.main([
         "plan", "--limit", "3", "--out-dir", str(tmp_path),
