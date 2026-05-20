@@ -463,7 +463,7 @@ def test_generate_english_degraded_flag_on_llms_failure(tmp_path: Path, monkeypa
 
 def test_translate_meta_dry_run_emits_typed_csv_rows(tmp_path: Path, monkeypatch):
     """tracker-092 (3.4): translate-meta extracts page title+description and emits
-    Weglot CSV rows typed meta_title / meta_description via the translation engine."""
+    Weglot CSV rows typed meta_title / meta_description via the translator."""
     from tools.summary import page_fetcher
 
     def fake_fetch(url, timeout=20.0):

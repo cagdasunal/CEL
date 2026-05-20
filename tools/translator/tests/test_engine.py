@@ -1,7 +1,7 @@
 """Integration tests for translate_batch (Gemini mocked at the batch_runner boundary)."""
-from tools.translation_engine import translate_batch, TranslationUnit
-from tools.translation_engine.glossary import Glossary, GlossaryTerm
-from tools.translation_engine.tm import TranslationMemory
+from tools.translator import translate_batch, TranslationUnit
+from tools.translator.glossary import Glossary, GlossaryTerm
+from tools.translator.tm import TranslationMemory
 
 _GLOSSARY = Glossary(terms=[GlossaryTerm(term="CEL", do_not_translate=True, case_sensitive=True)], version="v1")
 

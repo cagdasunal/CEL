@@ -1,5 +1,5 @@
 """Tests for the translation memory."""
-from tools.translation_engine.tm import TranslationMemory, tm_key
+from tools.translator.tm import TranslationMemory, tm_key
 
 
 def test_key_includes_glossary_version():
@@ -43,7 +43,7 @@ def test_glossary_version_bump_invalidates_hit(tmp_path):
 
 def test_tm_evicts_oldest_over_cap(monkeypatch):
     """tracker-093 L3: the memory caps its size (FIFO) so it can't grow unbounded."""
-    from tools.translation_engine import tm as tm_mod
+    from tools.translator import tm as tm_mod
 
     monkeypatch.setattr(tm_mod, "_MAX_ENTRIES", 3)
     m = tm_mod.TranslationMemory(None)
@@ -58,7 +58,7 @@ def test_tm_evicts_oldest_over_cap(monkeypatch):
 
 def test_tm_update_existing_key_does_not_evict(monkeypatch):
     """Updating an existing key must not trigger eviction (store size unchanged)."""
-    from tools.translation_engine import tm as tm_mod
+    from tools.translator import tm as tm_mod
 
     monkeypatch.setattr(tm_mod, "_MAX_ENTRIES", 2)
     m = tm_mod.TranslationMemory(None)
