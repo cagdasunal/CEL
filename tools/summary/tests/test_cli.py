@@ -291,6 +291,79 @@ def test_link_candidate_pool_excludes_legacy_segments():
         )
 
 
+def test_generate_english_qa_gate_demotes_critical_fail(tmp_path: Path, monkeypatch):
+    """tracker-092 (1.2): a summary that fails a CRITICAL QA check (em-dash) is
+    demoted to MANUAL_REVIEW and NOT written back. Exercises the LIVE path with a
+    mocked Gemini batch so the gate (which only runs live) is reached."""
+    from tools.summary import page_fetcher, batch_runner, llms_parser
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200,
+            html="<html><body><h1>Learn English USA</h1><p>Body.</p></body></html>",
+            title="Learn English in the USA | CEL", h1="Learn English in the USA",
+            headings=("Learn English in the USA",), canonical=url, hreflang_urls=(),
+            existing_summary_html="", body_text_excerpt="Learn English in the USA at CEL.",
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="batch-x", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        # Echo each submitted custom_id with content that has an em-dash → CRITICAL fail.
+        return [
+            batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=True,
+                content="## Learn English in the USA — a guide\n\nStudy at CEL.",
+            )
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    rc = cli.main([
+        "generate-english", "--no-dry-run", "--page",
+        "https://www.englishcollege.com/learn-english-usa",
+        "--out-dir", str(tmp_path),
+    ])
+    assert rc == 0
+    data = json.loads((tmp_path / "report.json").read_text())
+    phase = data["phases"]["generate_english"]
+    # The em-dash summary was demoted: 0 passed, 1 to review, written-back nothing.
+    assert phase["qa_gate"]["checked"] == 1
+    assert phase["qa_gate"]["passed"] == 0
+    assert phase["qa_gate"]["demoted_to_review"] == 1
+    assert phase["succeeded"] == 0
+    assert phase["manual_review_count"] == 1
+    # The demotion reason is recorded in manual-review.json.
+    mr = json.loads((tmp_path / "manual-review.json").read_text())
+    assert any("QA gate failed" in d["error"] for d in mr["details"])
+
+
+def test_cms_item_url_per_collection_prefix():
+    """tracker-092 (1.5/M-14): each collection's CMS item URL uses the right
+    live path prefix. Verified against llms.txt 2026-05-20."""
+    assert cli._cms_item_url("housing", "cel-shared-apartment-premium") == \
+        "https://www.englishcollege.com/pb/cel-shared-apartment-premium"
+    assert cli._cms_item_url("course", "english-academic-skills") == \
+        "https://www.englishcollege.com/courses/english-academic-skills"
+    assert cli._cms_item_url("blog_post", "3-common-mistakes-english-language") == \
+        "https://www.englishcollege.com/post/3-common-mistakes-english-language"
+    # Unknown content types fall back to /post/ (prior behavior).
+    assert cli._cms_item_url("mystery", "x") == "https://www.englishcollege.com/post/x"
+
+
 def test_link_candidate_pool_none_index_falls_back_to_static_only():
     """If llms.txt fetch failed (or dry-run), llms_index is None → STATIC_PAGES only."""
     from tools.summary import config

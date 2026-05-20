@@ -23,6 +23,26 @@ _DENSITY_LOW = 0.003  # 0.3%
 _DENSITY_HIGH = 0.020  # 2.0%
 _KEYWORD_P1_WINDOW_CHARS = 120
 
+# tracker-092: hedge/meta openers that violate the answer-first rule.
+_HEDGE_OPENER_RE = re.compile(
+    r"^\s*(this page|in this|here we|here you|welcome to|learn about|"
+    r"in today'?s|in the world of|when it comes to|it'?s important to)",
+    re.IGNORECASE,
+)
+# Generic CTA anchors that are never acceptable as link text.
+_GENERIC_ANCHORS = frozenset(
+    {"click here", "read more", "learn more", "here", "this page", "more", "link"}
+)
+# The stable set of checks that contribute to QaReport.score. The audit phase's
+# REGENERATE/MANUAL_REVIEW/KEEP thresholds are calibrated against these 10; the
+# tracker-092 SEO/grounding guards gate `passed` but are intentionally excluded
+# from the score so audit calibration is preserved.
+_SCORED_CHECKS = (
+    "no_em_dashes", "no_lists", "heading_order", "link_density",
+    "first_occurrence_only", "no_excluded_links", "keyword_in_h2",
+    "keyword_in_p1", "keyword_in_h3", "keyword_density",
+)
+
 
 @dataclass
 class QaReport:
@@ -43,11 +63,19 @@ def qa_checks(
     locale: str,
     link_inventory: Iterable[str],
     excluded_path_segments: Iterable[str] = (),
+    source_text: str = "",
 ) -> QaReport:
     """Run all rule checks on a draft. Returns a QaReport with per-check pass/fail.
 
     A draft is Markdown-formatted text (rich-text Summary section). The check
-    set mirrors the locked rules in `.claude/skills/page-summary/SKILL.md` Phase 7.
+    set mirrors the locked rules in `.claude/skills/page-summary/SKILL.md` Phase 7,
+    plus the tracker-092 SEO/no-new-content guards (fact-grounding, near-duplicate,
+    answer-first, descriptive anchors, no-schema, link-in-inventory).
+
+    `source_text` is the source page body the summary was generated from. When
+    provided (the generate-english phase has it; the audit phase may not), the
+    fact-grounding and near-duplicate checks run against it. When empty those
+    checks pass vacuously, so audit-phase callers keep their prior behavior.
     """
     report = QaReport(passed=True, score=100.0)
     primary_kw_lower = primary_keyword.lower().strip()
@@ -55,6 +83,7 @@ def qa_checks(
     word_count = len(re.findall(r"\b\w+\b", body_text))
     inventory = set(link_inventory)
     excluded = tuple(excluded_path_segments)
+    source_digits = re.sub(r"[^\d]", "", source_text)
 
     # 1. No em dashes.
     em_dash_count = sum(draft.count(ch) for ch in _EM_DASH_CHARS)
@@ -153,11 +182,125 @@ def qa_checks(
         f"density {density * 100:.2f}% (target 0.3–2.0%)",
     )
 
-    # Aggregate score (10 checks, 10 points each).
-    passes = sum(1 for ok in report.checks.values() if ok)
-    report.score = (passes / len(report.checks)) * 100 if report.checks else 0
-    # The "passed" flag flips false on ANY CRITICAL miss (em-dashes, lists, H2 kw, P1 kw).
-    critical = {"no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1"}
+    # ---- tracker-092 SEO / no-new-content guards ----
+
+    # 11. Fact-grounding (prices + percentages) — CRITICAL. Every $-price and
+    #     %-figure in the draft must be traceable to the source page. A
+    #     fabricated price is the most harmful "new content" failure. Matching
+    #     is digit-normalized + loose (errs toward PASS) so a legitimately
+    #     source-present figure is never falsely blocked. Vacuous-pass when no
+    #     source_text is supplied (audit phase).
+    price_pct_tokens = re.findall(r"\$\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?%", draft)
+    if source_text:
+        unmatched_money = [
+            t for t in price_pct_tokens
+            if re.sub(r"[^\d]", "", t) and re.sub(r"[^\d]", "", t) not in source_digits
+        ]
+    else:
+        unmatched_money = []
+    report.add(
+        "fact_grounding_prices",
+        not unmatched_money,
+        f"prices/percentages not found in source: {unmatched_money}",
+    )
+
+    # 12. Fact-grounding (years / decimals / large integers) — WARNING. Softer
+    #     signals that often have word-forms in source; flag for review, don't block.
+    if source_text:
+        figure_tokens = re.findall(r"\b(?:19|20)\d{2}\b|\b\d+\.\d+\b|\b\d{3,}\b", draft)
+        unmatched_figures = [
+            t for t in figure_tokens
+            if re.sub(r"[^\d]", "", t) not in source_digits
+        ]
+    else:
+        unmatched_figures = []
+    report.add(
+        "fact_grounding_figures",
+        not unmatched_figures,
+        f"figures not found in source (review): {unmatched_figures}",
+    )
+
+    # 13. Near-duplicate vs source — WARNING. If most of the draft's word-5-gram
+    #     shingles also appear in the source, the model copied the page verbatim
+    #     instead of recapping it. Containment > 0.70 flags. Vacuous-pass w/o source.
+    if source_text and word_count >= 40:
+        draft_shingles = _word_shingles(body_text, 5)
+        source_shingles = _word_shingles(source_text, 5)
+        if draft_shingles:
+            contained = len(draft_shingles & source_shingles) / len(draft_shingles)
+        else:
+            contained = 0.0
+        not_duplicate = contained <= 0.70
+    else:
+        contained = 0.0
+        not_duplicate = True
+    report.add(
+        "near_duplicate",
+        not_duplicate,
+        f"draft shingle-containment vs source {contained:.0%} (>70% = verbatim copy)",
+    )
+
+    # 14. Answer-first — WARNING. P1 must open with a direct answer, not a hedge/
+    #     meta opener ("This page...", "In this...", "Welcome to...").
+    p1_text = _first_paragraph_under_h2(draft)
+    first_sentence = re.split(r"(?<=[.!?])\s", p1_text.strip(), maxsplit=1)[0] if p1_text.strip() else ""
+    answer_first = bool(first_sentence) and not _HEDGE_OPENER_RE.match(first_sentence)
+    report.add(
+        "answer_first",
+        answer_first,
+        f"P1 opens with a hedge/meta phrase: {first_sentence[:60]!r}",
+    )
+
+    # 15. Descriptive anchors — WARNING. Anchor text must be ≥2 words and not a
+    #     generic CTA ("click here", "read more", "here").
+    link_anchors = [a for a, _ in links]
+    bad_anchors = [
+        a for a in link_anchors
+        if len(a.split()) < 2 or a.strip().lower() in _GENERIC_ANCHORS
+    ]
+    report.add(
+        "descriptive_anchors",
+        not bad_anchors,
+        f"non-descriptive anchors: {bad_anchors}",
+    )
+
+    # 16. No schema / script — CRITICAL. The summary is plain rich-text Markdown;
+    #     it must never carry JSON-LD (incl. FAQPage), <script>, or <iframe>.
+    has_schema = bool(re.search(r"faqpage|application/ld\+json|<\s*script|<\s*iframe", draft, re.IGNORECASE))
+    report.add(
+        "no_faq_schema",
+        not has_schema,
+        "draft contains schema/script/iframe markup (must be plain Markdown)",
+    )
+
+    # 17. Links in inventory — WARNING. Every link target must come from the
+    #     provided inventory (the model must not invent URLs). Only enforced
+    #     when an inventory was supplied.
+    if inventory:
+        invented = [u for u in target_links if u not in inventory]
+    else:
+        invented = []
+    report.add(
+        "link_in_inventory",
+        not invented,
+        f"link targets not in inventory (invented?): {invented}",
+    )
+
+    # Aggregate score over the STABLE original-10 set only. The tracker-092
+    # guards (checks 11-17) gate `passed` and surface in notes, but they do NOT
+    # enter the score — that keeps the audit-phase REGENERATE/MANUAL_REVIEW/KEEP
+    # calibration (config thresholds) exactly where it was. Several of the new
+    # guards pass vacuously when source_text/inventory are absent (audit phase),
+    # so counting them would silently inflate audit scores.
+    scored = [report.checks[c] for c in _SCORED_CHECKS if c in report.checks]
+    report.score = (sum(scored) / len(scored)) * 100 if scored else 0
+    # The "passed" flag flips false on ANY CRITICAL miss. CRITICAL = the failures
+    # that make a summary unsafe to publish: AI-tell formatting (em-dashes/lists),
+    # missing primary-keyword placement, fabricated prices, or embedded schema.
+    critical = {
+        "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
+        "fact_grounding_prices", "no_faq_schema",
+    }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
     return report
@@ -194,3 +337,38 @@ def _path_has_segment(url: str, segment: str) -> bool:
 
     parts = urllib.parse.urlparse(url).path.strip("/").split("/")
     return segment in parts
+
+
+def _word_shingles(text: str, n: int) -> set[tuple[str, ...]]:
+    """Return the set of lowercase word n-grams in `text` (for near-duplicate detection)."""
+    words = re.findall(r"\b\w+\b", text.lower())
+    if len(words) < n:
+        return {tuple(words)} if words else set()
+    return {tuple(words[i : i + n]) for i in range(len(words) - n + 1)}
+
+
+def boilerplate_pairs(
+    texts: dict[str, str], threshold: float = 0.80
+) -> list[tuple[str, str, float]]:
+    """Find pairs of summaries that are near-duplicates of EACH OTHER.
+
+    Templated boilerplate repeated across pages is the scaled-content-abuse
+    footprint Google's March-2024 policy targets (tracker-092 1.3). Returns
+    `(id_a, id_b, overlap)` for pairs whose mutual 5-gram shingle overlap
+    (intersection / smaller-set size) exceeds `threshold`. Non-blocking — the
+    caller surfaces these as warnings.
+    """
+    shingles = {
+        cid: _word_shingles(re.sub(r"<[^>]+>", "", t), 5) for cid, t in texts.items()
+    }
+    ids = list(shingles)
+    out: list[tuple[str, str, float]] = []
+    for i in range(len(ids)):
+        for j in range(i + 1, len(ids)):
+            a, b = shingles[ids[i]], shingles[ids[j]]
+            if not a or not b:
+                continue
+            overlap = len(a & b) / min(len(a), len(b))
+            if overlap > threshold:
+                out.append((ids[i], ids[j], round(overlap, 2)))
+    return out

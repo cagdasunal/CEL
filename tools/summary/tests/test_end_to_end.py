@@ -110,7 +110,17 @@ def test_generate_english_live_mode_writes_manifest_and_manual_review(
                 _fake_batch_result(
                     submit_calls[0][0].custom_id,
                     succeeded=True,
-                    content="## How long?\n\nTwelve weeks for B2.\n",
+                    # tracker-092: content must pass the generate-phase QA gate or
+                    # it would be demoted to MANUAL_REVIEW. The first static page is
+                    # the home page, whose primary keyword is the M-12.4 override
+                    # "english language school" — so the H2 + first 120 chars of P1
+                    # must contain that exact phrase.
+                    content=(
+                        "## What to expect from an english language school\n\n"
+                        "Twelve weeks is the typical timeline: at an english language "
+                        "school like CEL, most students reach B2 in that time across "
+                        "our Vancouver, San Diego, and Los Angeles campuses.\n"
+                    ),
                 ),
                 _fake_batch_result(
                     submit_calls[0][1].custom_id,

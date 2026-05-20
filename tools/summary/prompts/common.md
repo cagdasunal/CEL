@@ -82,7 +82,7 @@ For pages that need indexing-pressure relief (crawled-not-indexed or discovered-
 
 Per 2026 research (Citedify, Megrisoft, Wellows, Neil Patel, Otterly):
 
-- **Schema markup is the single highest-ROI structural lever**: Schema.org appears on **81%** of AIO-cited pages. **FAQPage schema specifically lifts citation rate 3.2×**; LocalBusiness + EducationalOrganization is the right combo for CEL multi-campus pages. The page's JSON-LD (handled at site level) does the heavy lifting; the summary's job is to make the on-page content match the schema's claims.
+- **Schema markup is a high-ROI structural lever — handled at SITE level, never by this summary**: Schema.org appears on ~**81%** of AIO-cited pages. LocalBusiness + EducationalOrganization is the right combo for CEL multi-campus pages. **Do NOT use or recommend FAQPage schema**: Google restricted FAQ rich results to government/health sites in Aug 2023, so adding FAQPage to a promotional page earns no rich result and risks a structured-data mismatch flag. The summary itself emits NO schema/JSON-LD (plain Markdown only — see Output format); its only job is to make the on-page prose match the site-level schema's claims.
 - **134–167 word answer blocks**: 4.2× citation rate vs. shorter or longer first-block lengths. The opening paragraph under the H2 should be self-contained — readable as a standalone answer without the rest of the page.
 - **Question-format H3s**: 68.7% of cited pages use them. Mirror People Also Ask phrasing where natural.
 - **YouTube embeds**: +414% AIO citation surge in 2026. Long-form (>10 min, 94% of cited videos) + timestamped chapters drive 78% re-citation rate. When the source page mentions a CEL video resource, reference it inline in the summary.
@@ -174,7 +174,7 @@ The rules above incorporate 2026 SEO + GEO research findings:
 - **March 2026 SpamBrain spam update** (Mar 24 2026, 24-hour rollout): keyword stuffing, programmatic location pages, auto-built content without verifiable expertise — all newly penalised. Source: thatware.co / marketing4ecommerce.net / evertune.ai 2026.
 - **Keyword density 1–2%** (narrowed from 2025's 0.5–2.5% band): Shopify 2026, SearchX 2026.
 - **Anchor diversity 40/30/30** (branded/partial/descriptive — previously 20/40/40): March 2026 spam update implications.
-- **FAQPage schema 3.2× citation rate; Schema.org on 81% of cited pages**: sarvaya.in 2026, discoverability.co 2026.
+- **Schema.org on ~81% of cited pages** (LocalBusiness + EducationalOrganization for CEL; FAQPage is NOT used — Google restricted FAQ rich results to gov/health since Aug 2023): sarvaya.in 2026, discoverability.co 2026.
 - **134–167-word answer block 4.2× citation rate**: Citedify GEO 2026 / Megrisoft 2026.
 - **YouTube embeds +414% citation surge**: Neil Patel 2026, Otterly 2026.
 - **EEAT re-weighting Trust > Experience > Expertise > Authoritativeness**: orbitinfotech 2026, evertune.ai.
