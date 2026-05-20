@@ -20,9 +20,14 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from tools.summary import config
+
+if TYPE_CHECKING:
+    # Type-only import — llms_parser is pure-stdlib but kept lazy at runtime
+    # to mirror the existing per-phase import pattern (cli.py:200, :525).
+    from tools.summary.llms_parser import LlmsIndex
 
 
 # ---- Helpers ----
@@ -208,6 +213,20 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     items_to_process: list[dict[str, Any]] = []
     warnings: list[str] = []
 
+    # tracker-091 M-13: fetch llms.txt once for the whole phase so every item's
+    # link-candidate pool can include CMS items (housing /pb/, courses, blog) —
+    # not just the 12 curated STATIC_PAGES. Mirrors the translate-phase pattern
+    # (cli.py _execute_translate). Dry-run skips the network; failure falls back
+    # to STATIC_PAGES-only via _build_link_candidate_pool's None handling.
+    llms_index = None
+    if not args.dry_run:
+        try:
+            llms_index = llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
+        except Exception as e:
+            warnings.append(
+                f"llms.txt fetch failed; link pool falls back to STATIC_PAGES only: {e}"
+            )
+
     # Resolve targets → SourceItem list. Static pages fetch live HTML; CMS
     # collections enumerate via the Webflow Data API (or get mocked in tests).
     sources: list[tuple[SourceItem, KeywordPlan, str]] = []  # (item, keywords, target)
@@ -267,7 +286,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     for i, (item, kw, _target) in enumerate(sources):
         try:
             system_blocks = build_system_prompt(item.content_type, item.locale if item.content_type == "blog_post" else "en")
-            link_inv = config.STATIC_PAGES  # baseline inventory; the orchestrator can enrich later
+            link_inv = _build_link_candidate_pool(item.content_type, llms_index, item.locale)
             user_msg = build_user_message(item, link_inv, kw)
             req = batch_runner.BatchRequest(
                 custom_id=f"gen-{i}-{item.cms_item_id or item.url[-50:]}",
@@ -749,6 +768,38 @@ def _collection_id_for_content_type(content_type: str) -> str:
         "course": config.COLLECTIONS["courses"],
         "housing": config.COLLECTIONS["housing_new"],
     }.get(content_type, "")
+
+
+def _build_link_candidate_pool(
+    source_content_type: str,
+    llms_index: "Optional[LlmsIndex]",
+    source_locale: str = "en",
+) -> tuple[str, ...]:
+    """Build the per-item link-candidate pool for `_execute_generate_english`.
+
+    Pool = STATIC_PAGES (curated, prepended) + llms.txt URLs in `source_locale`
+    (deduplicated), minus EXCLUDED_LINK_PATH_SEGMENTS. When the source item is
+    housing, also exclude `/pb/` so a housing summary can't link to other housing
+    items (mirrors the prompt rule in tools/summary/prompts/housing.md line 28).
+
+    STATIC_PAGES are prepended so the curated set survives the 30-URL prompt cap
+    in prompt_builder.build_user_message. Returns the FULL pool; the cap is
+    applied one layer down, not here (tracker-091 M-13).
+    """
+    static = list(config.STATIC_PAGES)
+    llms_urls: list[str] = []
+    if llms_index is not None:
+        excluded = list(config.EXCLUDED_LINK_PATH_SEGMENTS)
+        if source_content_type == "housing":
+            excluded.append("pb")
+        llms_urls = llms_index.urls_in_locale_excluding(source_locale, excluded)
+    seen: set[str] = set()
+    out: list[str] = []
+    for u in static + llms_urls:
+        if u not in seen:
+            seen.add(u)
+            out.append(u)
+    return tuple(out)
 
 
 # ---- Report rendering ----

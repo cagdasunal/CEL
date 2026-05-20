@@ -230,3 +230,132 @@ def test_execute_translate_from_run_reads_external_manifest(tmp_path: Path):
     phase = data["phases"]["translate"]
     assert phase["manifest_path"].endswith("prior/en-summaries.json")
     assert phase["per_locale"]["es"].get("request_count") == 1
+
+
+# ---- M-13: link candidate pool builder (tracker-091) ----
+#
+# _execute_generate_english previously passed only config.STATIC_PAGES (12
+# curated landing URLs) as link candidates, so the model could never suggest
+# links to CMS items (housing /pb/<slug>, courses, blog). The new helper
+# _build_link_candidate_pool merges STATIC_PAGES (prepended) with the source
+# locale's llms.txt URLs (minus legacy vc/sd/sm segments), and — when the
+# source is housing — also drops /pb/ so housing summaries don't link to other
+# housing items (mirrors prompts/housing.md line 28).
+
+
+def _fake_llms_index():
+    """A small LlmsIndex with one housing /pb/, one course, and one legacy /sd/."""
+    from tools.summary import llms_parser
+
+    return llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/pb/test-residence",
+            title="Test Residence", description="", section="Housing", locale="en",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/courses/general-english",
+            title="General English", description="", section="Courses", locale="en",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/sd/legacy-apartment",
+            title="Legacy", description="", section="Legacy", locale="en",
+        ),
+    ])
+
+
+def test_link_candidate_pool_nonhousing_includes_housing_items():
+    """A landing-page source sees housing /pb/ + course URLs as link candidates,
+    and STATIC_PAGES come first (so they survive the 30-URL prompt cap)."""
+    from tools.summary import config
+
+    pool = cli._build_link_candidate_pool("landing", _fake_llms_index(), "en")
+    assert "https://www.englishcollege.com/pb/test-residence" in pool
+    assert "https://www.englishcollege.com/courses/general-english" in pool
+    assert pool[0] == config.STATIC_PAGES[0]  # curated entry prepended
+
+
+def test_link_candidate_pool_housing_excludes_other_housing():
+    """A housing source must NOT see other /pb/ items (housing.md rule) but
+    still sees non-housing candidates like courses."""
+    pool = cli._build_link_candidate_pool("housing", _fake_llms_index(), "en")
+    assert "https://www.englishcollege.com/pb/test-residence" not in pool
+    assert "https://www.englishcollege.com/courses/general-english" in pool
+
+
+def test_link_candidate_pool_excludes_legacy_segments():
+    """Legacy per-city housing segments (vc/sd/sm) are excluded for any source."""
+    for ct in ("landing", "housing", "course"):
+        pool = cli._build_link_candidate_pool(ct, _fake_llms_index(), "en")
+        assert "https://www.englishcollege.com/sd/legacy-apartment" not in pool, (
+            f"legacy /sd/ leaked into pool for content_type={ct}"
+        )
+
+
+def test_link_candidate_pool_none_index_falls_back_to_static_only():
+    """If llms.txt fetch failed (or dry-run), llms_index is None → STATIC_PAGES only."""
+    from tools.summary import config
+
+    pool = cli._build_link_candidate_pool("landing", None, "en")
+    assert pool == tuple(config.STATIC_PAGES)
+
+
+def test_link_candidate_pool_deduplicates_overlap():
+    """A URL present in BOTH STATIC_PAGES and llms.txt appears only once."""
+    from tools.summary import llms_parser
+
+    # /housing is already a STATIC_PAGES entry; add it to llms.txt too.
+    idx = llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing",
+            title="Housing hub", description="", section="Housing", locale="en",
+        ),
+    ])
+    pool = cli._build_link_candidate_pool("landing", idx, "en")
+    assert pool.count("https://www.englishcollege.com/housing") == 1
+
+
+def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatch):
+    """End-to-end: _execute_generate_english uses _build_link_candidate_pool's
+    output as the link inventory passed to the prompt builder. Patch the helper
+    to return a known pool (bypasses the dry-run network gate) and assert the
+    housing URL lands in the generated batch request's user_message."""
+    from tools.summary import page_fetcher
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200,
+            html="<html><body><h1>Test</h1><p>Body.</p></body></html>",
+            title="Test Page | CEL", h1="Test Page", headings=("Test Page",),
+            canonical=url, hreflang_urls=(), existing_summary_html="",
+            body_text_excerpt="Test page body text for keyword derivation.",
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+    # Inject a known pool that includes a housing /pb/ URL. This bypasses the
+    # dry-run network gate (which leaves llms_index None) so the integration
+    # path is exercised regardless.
+    monkeypatch.setattr(
+        cli, "_build_link_candidate_pool",
+        lambda *a, **kw: (
+            "https://www.englishcollege.com/",
+            "https://www.englishcollege.com/pb/test-residence",
+        ),
+    )
+
+    rc = cli.main([
+        "generate-english", "--dry-run", "--page",
+        "https://www.englishcollege.com/learn-english-usa",
+        "--out-dir", str(tmp_path),
+    ])
+    assert rc == 0
+    batch_files = list((tmp_path / "batches").glob("*-batch.jsonl"))
+    assert len(batch_files) == 1
+    lines = batch_files[0].read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) >= 1
+    first = json.loads(lines[0])
+    user_msg = first["request"]["contents"][0]["parts"][0]["text"]
+    assert "https://www.englishcollege.com/pb/test-residence" in user_msg, (
+        "housing URL from the link pool did not reach the prompt's user_message"
+    )
