@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-20T12:50:52.337821-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-20T10:33:06.490379-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-19T13:54:47.727967-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-19T12:25:31.146951-07:00",
-      "detail": {
-        "slugs": [
-          "giornata-vita-direttrice-centro-cel-vancouver"
-        ]
-      }
     }
   ]
 }
