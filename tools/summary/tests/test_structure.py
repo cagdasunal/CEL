@@ -4,6 +4,7 @@ from tools.summary.structure import (
     FourPartSummary,
     four_part_content_html,
     parse_four_part,
+    parts_to_markdown,
 )
 
 _FOUR_PART = """## English School Life
@@ -90,3 +91,31 @@ def test_content_html_empty():
 def test_four_part_summary_defaults():
     p = FourPartSummary()
     assert p.tagline == "" and p.title == "" and p.paragraph == "" and p.content_md == ""
+
+
+# ---- tracker-096 review: parts_to_markdown (audit reconstruction from live HTML) ----
+
+
+def test_parts_to_markdown_reconstructs_and_round_trips():
+    parts = {
+        "summary-tagline": "<h2>English School Life</h2>",
+        "summary-title": "<h3>What to expect</h3>",
+        "summary-paragraph": "<p>Twelve weeks to B2.</p>",
+        "summary-content": "<h4>How long</h4><p>Twelve weeks.</p><h5>Beginners</h5><p>Longer.</p>",
+    }
+    md = parts_to_markdown(parts)
+    assert md.startswith("## English School Life")
+    assert "### What to expect" in md
+    assert "Twelve weeks to B2." in md
+    assert "#### How long" in md
+    assert "##### Beginners" in md
+    # Round-trips back through the parser.
+    p = parse_four_part(md)
+    assert p.tagline == "English School Life"
+    assert p.title == "What to expect"
+    assert p.content_md.startswith("#### How long")
+
+
+def test_parts_to_markdown_empty():
+    assert parts_to_markdown({}) == ""
+    assert parts_to_markdown({"summary-tagline": ""}) == ""

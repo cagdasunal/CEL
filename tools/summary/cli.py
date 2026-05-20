@@ -584,6 +584,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
 
 def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     """Audit existing summaries; score; surface REGENERATE candidates."""
+    from tools.summary import structure
     from tools.summary.audit import audit_existing_summary
     from tools.summary.keyword_extractor import derive_keywords
     from tools.summary.page_fetcher import fetch_page
@@ -605,16 +606,23 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
         try:
             pc = fetch_page(url)
             kw = derive_keywords(pc.title, pc.h1, pc.url, pc.body_text_excerpt)
-            # tracker-096: static pages now use the 4-part structure. Audit the
-            # Content element when present (the richest part, closest analog to the
-            # legacy single #summary block); fall back to the legacy element so a
-            # not-yet-migrated page still scores.
-            existing = pc.existing_summary_parts.get(config.STATIC_SUMMARY_CONTENT_ID) or pc.existing_summary_html
-            score = audit_existing_summary(
-                url=url, summary_markdown=existing,
-                primary_keyword=kw.primary, locale="en",
-                link_inventory=config.STATIC_PAGES,
-            )
+            # tracker-096: static pages use the 4-part structure. Reconstruct the
+            # 4-part Markdown from the live elements and score with the 4-part rule
+            # set; fall back to the legacy single #summary element if a page hasn't
+            # been migrated yet.
+            if pc.existing_summary_parts:
+                reconstructed = structure.parts_to_markdown(pc.existing_summary_parts)
+                score = audit_existing_summary(
+                    url=url, summary_markdown=reconstructed,
+                    primary_keyword=kw.primary, locale="en",
+                    link_inventory=config.STATIC_PAGES, structure="four_part",
+                )
+            else:
+                score = audit_existing_summary(
+                    url=url, summary_markdown=pc.existing_summary_html,
+                    primary_keyword=kw.primary, locale="en",
+                    link_inventory=config.STATIC_PAGES,
+                )
             scores.append({
                 "url": url, "score": score.score, "action": score.action,
                 "failed_checks": score.failed_checks,

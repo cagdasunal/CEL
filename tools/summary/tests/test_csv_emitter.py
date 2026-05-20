@@ -32,6 +32,21 @@ def test_split_paragraphs_html():
     assert paras == ["First.", "Second."]
 
 
+def test_split_paragraphs_strips_markdown_headings():
+    """tracker-096: heading markers are stripped so the Weglot word_from matches the
+    rendered page text (the heading TEXT, not '## …'). Covers H2/H3 (single-block)
+    and H4/H5 (4-part)."""
+    text = (
+        "## English School Life\n\n### What to expect\n\nLead paragraph.\n\n"
+        "#### How long\n\nContent prose.\n\n##### Beginners\n\nMore prose."
+    )
+    paras = split_summary_into_paragraphs(text)
+    assert paras == [
+        "English School Life", "What to expect", "Lead paragraph.",
+        "How long", "Content prose.", "Beginners", "More prose.",
+    ]
+
+
 def test_emit_merges_existing_and_new(tmp_path: Path):
     existing = tmp_path / "de.csv"
     existing.write_text(_EXISTING_CSV, encoding="utf-8")

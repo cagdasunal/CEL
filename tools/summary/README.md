@@ -275,7 +275,7 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 - No em dashes (—, –).
 - No bullet/numbered lists (paragraphs only).
 - Primary keyword placement (tracker-096): blog (single-block) → H2 + first 120 chars of P1 + ≥1 H3; courses/housing/landing (4-part) → Title (H3) + first 120 chars of the Paragraph.
-- Body keyword density 0.5–2.5%.
+- Body keyword density 0.3–2.0% (`qa.py` `_DENSITY_LOW`/`_DENSITY_HIGH`).
 - Internal link density 2–5 per 1000 words.
 - First-occurrence-only link rule.
 - Never link to URLs containing `/vc/`, `/sd/`, `/sm/`.
@@ -295,10 +295,10 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 ```bash
 cd /path/to/englishcollege
-python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 198 passed
+python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 203 passed
 ```
 
-Current: **159 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **198 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` + the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
+Current: **164 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **203 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 

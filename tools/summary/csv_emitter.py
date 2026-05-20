@@ -29,6 +29,12 @@ def split_summary_into_paragraphs(rich_text_html_or_markdown: str) -> list[str]:
 
     Per LOCKED DECISION: ONE row per paragraph (not per sentence). Handles both
     plain Markdown (blank-line-separated) and Webflow rich-text HTML (`<p>` tags).
+
+    tracker-096: a leading Markdown heading marker (`## ` / `### ` / `#### ` /
+    `##### `) is stripped from each block so the resulting Weglot `word_from` is the
+    rendered heading TEXT, not `## …`. On the live page a heading renders as its text
+    (an `<h2>`/`<h3>`/… element), so the un-stripped marker never matched. This
+    applies to both the single-block (H2/H3) and the 4-part (H2/H3/H4/H5) structures.
     """
     text = rich_text_html_or_markdown.strip()
     if not text:
@@ -42,9 +48,21 @@ def split_summary_into_paragraphs(rich_text_html_or_markdown: str) -> list[str]:
         cleaned = [_strip_html(p).strip() for p in parts]
         return [p for p in cleaned if p]
 
-    # Markdown: split on double-newline.
-    parts = [p.strip() for p in text.split("\n\n")]
+    # Markdown: split on double-newline, then strip a leading heading marker.
+    parts = [_strip_md_heading(p.strip()) for p in text.split("\n\n")]
     return [p for p in parts if p]
+
+
+def _strip_md_heading(block: str) -> str:
+    """Strip a leading ATX heading marker from a single-line heading block.
+
+    `## How long?` → `How long?`. Prose blocks (and multi-line blocks that aren't a
+    bare heading line) pass through unchanged.
+    """
+    import re
+
+    m = re.match(r"^#{1,6}\s+(.*?)\s*#*\s*$", block)
+    return m.group(1).strip() if m else block
 
 
 def _strip_html(s: str) -> str:

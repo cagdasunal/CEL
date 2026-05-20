@@ -83,3 +83,24 @@ CEL covers all CEFR levels.
     # The em-dash in the H2 fails; depending on other checks, score should be
     # below 80 but action may be REGENERATE or MANUAL_REVIEW.
     assert result.action in ("REGENERATE", "MANUAL_REVIEW")
+
+
+def test_four_part_reconstruction_scores_via_structure():
+    """tracker-096: a live 4-part page reconstructed from its elements scores against
+    the 4-part rule set (structure="four_part")."""
+    from tools.summary.structure import parts_to_markdown
+
+    parts = {
+        "summary-tagline": "<h2>English School Life</h2>",
+        "summary-title": "<h3>How long does it take to learn english in vancouver</h3>",
+        "summary-paragraph": "<p>Most students learn english in vancouver in 6 to 12 months at CEL.</p>",
+        "summary-content": "<h4>What level do I need</h4><p>CEL accepts all levels from A1 to C2.</p>",
+    }
+    md = parts_to_markdown(parts)
+    result = audit_existing_summary(
+        url="https://www.englishcollege.com/vancouver/how-long-to-learn-english",
+        summary_markdown=md, primary_keyword="learn english in vancouver",
+        locale="en", link_inventory=[], structure="four_part",
+    )
+    assert result.action == "KEEP", f"score={result.score}, notes={result.notes}"
+    assert result.score >= 80.0
