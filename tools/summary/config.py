@@ -84,6 +84,10 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 SUMMARY_PROMPT_VERSION = "2026-05-20-t092"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
+# tracker-092 Phase 3: dedicated translation-engine memory. Persists
+# source→translation across runs so unchanged strings are never re-translated.
+TRANSLATION_MEMORY_FILE = PROJECT_ROOT / "data" / "seo-intel" / "translation-memory.json"
+
 # Field slug for the Summary field on each CMS collection. Webflow rich-text field
 # slug — if it doesn't exist on a collection, the script auto-creates it (dry-run
 # gated). The display name is "Summary".

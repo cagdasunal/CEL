@@ -33,6 +33,7 @@ class PageContent:
     hreflang_urls: tuple[str, ...]
     existing_summary_html: str
     body_text_excerpt: str  # ≤ 8000 chars, plain text
+    description: str = ""  # <meta name="description"> content (tracker-092 Phase 3 meta caller)
 
 
 def fetch_page(url: str, timeout: float = _FETCH_TIMEOUT) -> PageContent:
@@ -83,6 +84,7 @@ def _parse_html(url: str, final_url: str, status: int, html: str) -> PageContent
         hreflang_urls=tuple(parser.hreflang_urls),
         existing_summary_html=parser.existing_summary_html.strip(),
         body_text_excerpt=body_text[:_BODY_EXCERPT_MAX_CHARS],
+        description=parser.description.strip(),
     )
 
 
@@ -97,6 +99,7 @@ class _ExtractParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.title = ""
         self.h1 = ""
+        self.description = ""
         self.headings: list[str] = []
         self.canonical = ""
         self.hreflang_urls: list[str] = []
@@ -130,6 +133,9 @@ class _ExtractParser(HTMLParser):
                 self.canonical = href
             if "alternate" in rel and href:
                 self.hreflang_urls.append(href)
+        if tag == "meta" and not self.description:
+            if attr_dict.get("name", "").lower() == "description":
+                self.description = attr_dict.get("content", "")
         # Track entry into the id="summary" element.
         if attr_dict.get("id") == "summary":
             self._in_summary_depth = 1
