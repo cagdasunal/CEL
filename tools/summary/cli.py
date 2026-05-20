@@ -680,9 +680,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     from tools.summary.prompt_builder import (
         LinkSwap, build_translation_system_prompt, build_translation_user_message,
     )
-    from tools.translation_engine import translate_batch, TranslationUnit
-    from tools.translation_engine.glossary import load_glossary
-    from tools.translation_engine.tm import TranslationMemory
+    from tools.translator import translate_batch, TranslationUnit
+    from tools.translator.glossary import load_glossary
+    from tools.translator.tm import TranslationMemory
 
     warnings: list[str] = []
     target_locales = (
@@ -854,7 +854,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         )
         per_locale_results[locale] = {
             "dry_run": False,
-            "engine": "translation_engine",
+            "engine": "translator",
             "request_count": len(units),
             "succeeded": succeeded_count,
             "failed": failed_count,
@@ -884,7 +884,7 @@ _NON_LATIN_LOCALES = ("ar", "ko", "ja")
 
 def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     """Translate static-page meta titles/descriptions into the 8 locales via the
-    dedicated translation engine; emit Weglot CSV rows typed `meta_title` /
+    dedicated translator; emit Weglot CSV rows typed `meta_title` /
     `meta_description`. The engine's second caller (tracker-092 Phase 3).
 
     Scope: the 12 STATIC_PAGES (bounded, high-value). Each page contributes up to
@@ -894,9 +894,9 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
     import urllib.parse as _urlparse
     from tools.summary import csv_emitter
     from tools.summary.page_fetcher import fetch_page
-    from tools.translation_engine import translate_batch, TranslationUnit
-    from tools.translation_engine.glossary import load_glossary
-    from tools.translation_engine.tm import TranslationMemory
+    from tools.translator import translate_batch, TranslationUnit
+    from tools.translator.glossary import load_glossary
+    from tools.translator.tm import TranslationMemory
 
     warnings: list[str] = []
     target_locales = (

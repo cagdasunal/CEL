@@ -1,0 +1,161 @@
+"""Weglot CSV emission — the reusable translate→CSV output adapter (tracker-094).
+
+Relocated from `tools/summary/csv_emitter.py` so the `translator` package owns the
+Weglot import-CSV format and any tool can produce one. Format is byte-identical to
+the Fidelo exporter `tools/weglot/csv_export.py` (monorepo), so translator rows and
+Fidelo rows interleave cleanly in the same per-locale file:
+
+    id;language_from;language_to;word_from;word_to;type   (semicolon, minimal-quote)
+
+`emit_consolidated_csv` reads the existing CSV (which already holds Fidelo rows),
+dedups on (word_from, language_to), appends the new rows, and atomic-writes — so a
+translator run never clobbers Fidelo translations. The CSVs are published on the
+dashboard.
+
+Pure stdlib; no dependency on the summary tool, so other projects can reuse it.
+"""
+from __future__ import annotations
+
+import csv
+import os
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterable, Sequence
+
+from tools.translator.units import Translation
+
+_CSV_COLUMNS = ("id", "language_from", "language_to", "word_from", "word_to", "type")
+_CSV_DIALECT = "weglot-semicolon"
+_SEPARATOR = ";"
+
+
+# Register a dialect with semicolon separator (Weglot's required format).
+class _WeglotDialect(csv.Dialect):
+    delimiter = _SEPARATOR
+    quotechar = '"'
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = "\n"
+    quoting = csv.QUOTE_MINIMAL
+
+
+csv.register_dialect(_CSV_DIALECT, _WeglotDialect)
+
+
+@dataclass(frozen=True)
+class WeglotPair:
+    """One Weglot row: source English text → target-language translation."""
+
+    word_from: str
+    word_to: str
+    type_: str = "Text"
+
+    def as_row(self, target_locale: str) -> list[str]:
+        return ["", "en", target_locale, self.word_from, self.word_to, self.type_]
+
+
+@dataclass
+class EmissionReport:
+    existing_row_count: int = 0
+    new_row_count: int = 0
+    duplicates_skipped: int = 0
+    written_to: Path | None = None
+    warnings: list[str] = field(default_factory=list)
+
+
+def pairs_from_translations(
+    translations: Iterable[Translation], type_: str = "Text"
+) -> list[WeglotPair]:
+    """Map engine `Translation` objects → Weglot rows (one row per translation).
+
+    Skips empty/failed targets. This is the simple 1:1 path for callers whose
+    units map directly to rows (meta tags, future tools). The summary caller uses
+    paragraph-level pairing instead (see csv_emitter.pair_from_paragraphs).
+    """
+    return [
+        WeglotPair(word_from=t.source, word_to=t.target, type_=type_)
+        for t in translations
+        if t.target.strip()
+    ]
+
+
+def read_existing_csv(path: Path) -> list[list[str]]:
+    """Read an existing Weglot CSV. Returns [] if the file doesn't exist."""
+    if not path.exists():
+        return []
+    rows: list[list[str]] = []
+    with path.open(encoding="utf-8", newline="") as f:
+        reader = csv.reader(f, dialect=_CSV_DIALECT)
+        for row in reader:
+            if len(row) == len(_CSV_COLUMNS):
+                rows.append(row)
+    return rows
+
+
+def emit_consolidated_csv(
+    target_locale: str,
+    existing_csv_path: Path,
+    summary_pairs: Sequence[WeglotPair],
+    out_path: Path,
+) -> EmissionReport:
+    """Merge existing rows (incl. Fidelo) with new translation rows; atomic-write.
+
+    Idempotent: re-running with the same inputs produces byte-identical output.
+    Dedup key: (word_from, language_to). Existing rows are preserved as-is; new
+    rows are appended in order; collisions (same word_from + language_to) are
+    skipped. (`summary_pairs` is the historical param name; it accepts any
+    WeglotPair sequence.)
+    """
+    report = EmissionReport()
+    rows: list[list[str]] = []
+    seen: set[tuple[str, str]] = set()
+    header_written = False
+
+    existing = read_existing_csv(existing_csv_path)
+    for row in existing:
+        if not header_written and row == list(_CSV_COLUMNS):
+            rows.append(row)
+            header_written = True
+            continue
+        key = (row[3], row[2])  # word_from, language_to
+        if key in seen:
+            report.duplicates_skipped += 1
+            continue
+        seen.add(key)
+        rows.append(row)
+        report.existing_row_count += 1
+
+    # If no header was found (e.g. brand-new file), prepend one.
+    if not header_written:
+        rows.insert(0, list(_CSV_COLUMNS))
+
+    # Append translation pairs.
+    for pair in summary_pairs:
+        key = (pair.word_from, target_locale)
+        if key in seen:
+            report.duplicates_skipped += 1
+            continue
+        seen.add(key)
+        rows.append(pair.as_row(target_locale))
+        report.new_row_count += 1
+
+    # Atomic write — write to tempfile in same directory, then rename.
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_fd, tmp_path_str = tempfile.mkstemp(
+        prefix=f".{out_path.name}.", suffix=".tmp", dir=str(out_path.parent)
+    )
+    tmp_path = Path(tmp_path_str)
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="") as f:
+            writer = csv.writer(f, dialect=_CSV_DIALECT)
+            for row in rows:
+                writer.writerow(row)
+        os.replace(tmp_path, out_path)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        raise
+
+    report.written_to = out_path
+    return report

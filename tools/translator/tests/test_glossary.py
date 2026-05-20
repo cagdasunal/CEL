@@ -1,5 +1,5 @@
-"""Tests for the translation-engine glossary."""
-from tools.translation_engine.glossary import Glossary, GlossaryTerm, load_glossary
+"""Tests for the translator glossary."""
+from tools.translator.glossary import Glossary, GlossaryTerm, load_glossary
 
 
 def test_load_default_glossary_has_brand_dnt_terms():

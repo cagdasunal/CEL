@@ -1,5 +1,5 @@
 """Tests for translation QA checks."""
-from tools.translation_engine.qa import check_translation
+from tools.translator.qa import check_translation
 
 
 def test_clean_translation_passes():

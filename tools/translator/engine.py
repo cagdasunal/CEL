@@ -14,10 +14,10 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from tools.translation_engine.glossary import Glossary, GlossaryTerm
-from tools.translation_engine.qa import check_translation
-from tools.translation_engine.tm import TranslationMemory
-from tools.translation_engine.units import Translation, TranslationUnit
+from tools.translator.glossary import Glossary, GlossaryTerm
+from tools.translator.qa import check_translation
+from tools.translator.tm import TranslationMemory
+from tools.translator.units import Translation, TranslationUnit
 
 _LOCALE_NAMES = {
     "de": "German", "fr": "French", "es": "Spanish", "it": "Italian",
