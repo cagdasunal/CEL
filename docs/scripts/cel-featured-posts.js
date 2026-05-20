@@ -25,7 +25,8 @@
  *   2. data-lang cleaner — removes [data-lang] elements that don't match <html lang>.
  *   3. Featured-posts renderer (Weglot-aware) — pulls .posts_collection .w-dyn-item
  *      source items into [post-type="recent-big"] (1) + [post-type="recent-small"] (4)
- *      target slots via [data-blog-slot] mapping.
+ *      target slots via [data-blog-slot] mapping, then REMOVES the hidden source list
+ *      so the rendered DOM (what Google indexes) holds only active-language posts.
  *
  * DOM contract (renaming any of these silently disables the section):
  *   Source:  .posts_collection .w-dyn-item       (CMS list; per-item data-lang)
@@ -223,7 +224,10 @@
     });
   };
 
+  let didRender = false;
   const buildAndRender = function () {
+    if (didRender) return;   // one-shot: never re-run (would wipe rendered content after source removal)
+    didRender = true;
     try {
       const activeLang = getActiveLang();
 
@@ -261,6 +265,15 @@
             break;
           }
         }
+      });
+
+      // SEO: the source collection is a hidden ("hide" + weglot-exclude) list carrying
+      // blog posts in ALL languages. The active-language posts are now cloned into the
+      // visible slots, so remove the hidden source entirely — this keeps the rendered
+      // HTML (what Google indexes) free of other-language and duplicate post content.
+      // Safe: a language switch triggers window.location.reload(), regenerating it.
+      document.querySelectorAll('.posts_collection').forEach(function (list) {
+        list.remove();
       });
 
       if (window.Webflow && window.Webflow.require) {
