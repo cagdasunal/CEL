@@ -755,3 +755,19 @@ def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatc
     assert captured["sync"] == 1, "generate_sync was not called in --sync mode"
     assert phase["succeeded"] == 1
     assert phase["batch_id"].startswith("sync-")
+
+
+def test_resolve_item_locale_blog_language_reference():
+    """tracker-096: blog posts resolve their `language` Reference to the post's locale
+    (native-per-item), so e.g. a French post yields a French summary — not English."""
+    from tools.summary import config
+
+    fr_id = "687659b3281d98a9803a86ae"  # French, per BLOG_LANGUAGE_ID_TO_LOCALE
+    assert config.BLOG_LANGUAGE_ID_TO_LOCALE[fr_id] == "fr"
+    # Blog (native_per_item) → resolves to the post's language.
+    assert cli._resolve_item_locale({"language": fr_id}, "native_per_item") == "fr"
+    # Unknown language id, or no language field → en fallback.
+    assert cli._resolve_item_locale({"language": "unknown-id"}, "native_per_item") == "en"
+    assert cli._resolve_item_locale({}, "native_per_item") == "en"
+    # Non-native target (courses/housing summarized in English) → forced en.
+    assert cli._resolve_item_locale({"language": fr_id}, "en") == "en"

@@ -46,6 +46,23 @@ TRANSLATE_COLLECTIONS = ("courses",)
 # authored language; no translation).
 NATIVE_LANGUAGE_COLLECTIONS = ("blog",)
 
+# Blog posts are ORIGINAL per locale but carry their language as a Reference (the
+# `language` field → the Languages collection 687658de56f115eff1e02e18), NOT a shortcode
+# string. Map each Languages item id → locale shortcode so a blog summary is generated
+# in the post's actual language (e.g. a French post gets a French summary), not English.
+# Verified live via the Languages collection 2026-05-20 (tracker-096 follow-up).
+BLOG_LANGUAGE_ID_TO_LOCALE = {
+    "6876590744e1f69b128ef245": "en",
+    "6876596a3a4d6e078bebe528": "de",
+    "6876591fab42b61d6b9e5d68": "es",
+    "687659b3281d98a9803a86ae": "fr",
+    "687659cca45f80dbea92430c": "it",
+    "6876599de124298a6bd8cb8d": "pt",
+    "6876597d1d2fe4f1a294fd77": "ko",
+    "687659e4ab42b61d6b9f6a96": "ja",
+    "687659fe11c147ceed4f09cd": "ar",
+}
+
 # Which collections are summarized in English but never translated. Their items still
 # get a Summary field populated; Weglot fallback handles display on locale URLs.
 NO_TRANSLATE_COLLECTIONS = ("housing_new",)

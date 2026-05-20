@@ -292,9 +292,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     title = field_data.get("name") or field_data.get("title", "")
                     slug = field_data.get("slug", "")
                     body = field_data.get("post-body") or field_data.get("description") or ""
-                    locale = field_data.get("language-shortcode") or field_data.get("locale", "en")
-                    if target["locale"] != "native_per_item":
-                        locale = "en"
+                    locale = _resolve_item_locale(field_data, target["locale"])
                     url = _cms_item_url(target["content_type"], slug)  # per-collection prefix (M-14)
                     kw = derive_keywords(title, title, url, body, locale=locale)
                     item = SourceItem(
@@ -1143,6 +1141,26 @@ def _structure_for_content_type(content_type: str) -> str:
     """tracker-096: blog posts keep the single-block Summary; courses, housing, and
     static landing pages use the 4-part Tagline/Title/Paragraph/Content structure."""
     return "single_block" if content_type == "blog_post" else "four_part"
+
+
+def _resolve_item_locale(field_data: dict, target_locale_mode: str) -> str:
+    """Resolve a CMS item's locale shortcode (tracker-096 follow-up).
+
+    Blog posts carry their language as a `language` Reference (an item id) → mapped via
+    config.BLOG_LANGUAGE_ID_TO_LOCALE so a French post yields a French summary, etc.
+    Other collections fall back to a shortcode field or 'en'. Non-native targets
+    (courses/housing — summarized in English) force 'en'. Any unknown/unsupported value
+    falls back to 'en'.
+    """
+    locale = field_data.get("language-shortcode") or field_data.get("locale", "en")
+    lang_ref = field_data.get("language")
+    if isinstance(lang_ref, str) and lang_ref in config.BLOG_LANGUAGE_ID_TO_LOCALE:
+        locale = config.BLOG_LANGUAGE_ID_TO_LOCALE[lang_ref]
+    if target_locale_mode != "native_per_item":
+        locale = "en"
+    if locale not in config.LOCALES:
+        locale = "en"
+    return locale
 
 
 def _cms_item_url(content_type: str, slug: str) -> str:
