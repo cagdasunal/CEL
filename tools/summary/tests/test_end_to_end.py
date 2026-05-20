@@ -110,16 +110,21 @@ def test_generate_english_live_mode_writes_manifest_and_manual_review(
                 _fake_batch_result(
                     submit_calls[0][0].custom_id,
                     succeeded=True,
-                    # tracker-092: content must pass the generate-phase QA gate or
-                    # it would be demoted to MANUAL_REVIEW. The first static page is
-                    # the home page, whose primary keyword is the M-12.4 override
-                    # "english language school" — so the H2 + first 120 chars of P1
-                    # must contain that exact phrase.
+                    # tracker-092/096: content must pass the generate-phase QA gate
+                    # or it would be demoted to MANUAL_REVIEW. The first static page
+                    # is the home page (a landing page → 4-part structure), whose
+                    # primary keyword is the M-12.4 override "english language school"
+                    # — so the Title (H3) + first 120 chars of the Paragraph must
+                    # contain that exact phrase, and the Tagline (H2) is 2-3 words.
                     content=(
-                        "## What to expect from an english language school\n\n"
-                        "Twelve weeks is the typical timeline: at an english language "
-                        "school like CEL, most students reach B2 in that time across "
-                        "our Vancouver, San Diego, and Los Angeles campuses.\n"
+                        "## English School Life\n\n"
+                        "### What to expect from an english language school\n\n"
+                        "Twelve weeks is the typical timeline at an english language "
+                        "school like CEL, where most students reach B2 across our San "
+                        "Diego, Los Angeles, and Vancouver campuses.\n\n"
+                        "#### How long does it take to reach B2\n\n"
+                        "Most students at CEL reach B2 within twelve weeks of full-time "
+                        "study, while beginners need longer depending on weekly hours.\n"
                     ),
                 ),
                 _fake_batch_result(

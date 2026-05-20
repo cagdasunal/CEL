@@ -24,9 +24,7 @@ Each locale's system-prompt block contains a banlist of 15-35 specific words/phr
 
 ## Heading + keyword placement
 
-- Exactly ONE H2 — the question the summary answers. Same lexical core as the page H1 but a different syntactic frame; never byte-identical to the H1.
-- 0–4 H3s — each a long-tail variant or a People Also Ask question. **Question-format H3s** ("How long does it take to learn English in Vancouver?") outperform descriptive labels ("Timeline" or "Duration"). 68.7% of ChatGPT-cited pages obey a logical H1→H2→H3 hierarchy with question-format headings.
-- **Primary keyword** must appear in the H2 AND in the first 120 characters of P1 AND in at least one H3.
+- **Heading structure + primary-keyword placement are defined in your content-type layer below.** It specifies the exact heading levels, where the primary keyword goes, and where internal links may appear — follow it exactly; do not invent a different structure. Question-format headings ("How long does it take to learn English in Vancouver?") outperform descriptive labels ("Timeline" or "Duration"); 68.7% of ChatGPT-cited pages obey a logical heading hierarchy with question-format headings.
 - **Body density (2026 update)**: **1–2%** of primary keyword across the body. Target the middle of the band. The 2025 widening to 0.5–2.5% was rolled back by 2026 consensus (Shopify 2026, SearchX 2026): under 0.5% reads as "topic unclear" to retrieval models; over 2.5% reads as stuffing under post-March-2026 enforcement.
 - **Never list cities, numbers, or synonyms in groups** (anti-stuffing). "in San Diego, Los Angeles, and Vancouver" once is acceptable; repeating the triplet three times is not.
 - Use semantic variants and entity co-occurrence terms naturally — not "LSI keywords". The model already does this; do not force it.
@@ -122,9 +120,9 @@ Per 2026 research (Surfer SEO, ProofreaderPro, Walter Writes), the #1 detector s
 
 Before emitting the summary, mentally verify:
 
-1. Primary keyword in H2 ✓
-2. Primary keyword in first 120 chars of P1 ✓
-3. Primary keyword in ≥1 H3 (if H3s present) ✓
+1. Primary keyword placed exactly where your content-type Output structure specifies ✓
+2. Primary keyword appears within the first 120 characters of the lead paragraph ✓
+3. Heading levels and internal-link placement match your content-type structure ✓
 4. Body density 1–2% (count primary keyword instances ÷ word count) ✓
 5. ≥1 EEAT signal in first 100 words (for indexing-pressure pages) ✓
 6. ≥1 question-format H3 (for AIO drivers) ✓
@@ -165,7 +163,11 @@ The bottom of every content-type rule file specifies its target. Use that target
 
 ## Output format
 
-Return only the rendered Markdown of the Summary section: one `## H2` line, optional `### H3` lines, plain paragraphs in between. No code fences. No preamble. No trailing commentary. No "Here is the summary:" line. Just the Markdown content, ready to paste into Webflow.
+Return only the rendered Markdown of the Summary section, in the exact structure your content-type layer defines (blog posts: one `## H2` + optional `### H3`s with plain paragraphs; courses, housing, and landing pages: the 4-part Tagline / Title / Paragraph / Content document). No code fences. No preamble. No trailing commentary. No "Here is the summary:" line. Just the Markdown content, ready to paste into Webflow.
+
+## Helpfulness, not an SEO box (tracker-096)
+
+The Summary must feel like a designed part of the page, not a block bolted on for search engines. The Tagline reads like an editorial kicker, the Title like a real section heading, the Paragraph like a genuine lead, and the Content like the depth a curious reader actually wants. A visitor — and Google — should never sense the section exists only for SEO. Write the section a strong human editor would write; the ranking signals follow from being genuinely useful.
 
 ## Research provenance (for context — do not cite in output)
 

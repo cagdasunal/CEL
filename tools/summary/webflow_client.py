@@ -219,6 +219,67 @@ class WebflowClient:
                 error=str(e),
             )
 
+    def update_item_summary_parts(
+        self,
+        collection_id: str,
+        item_id: str,
+        tagline: str,
+        title: str,
+        paragraph: str,
+        content_html: str,
+    ) -> WriteResult:
+        """Patch the 4-part Summary fields on a CMS item (tracker-096). Dry-run safe.
+
+        Writes the three plain-text parts (Tagline / Title / Paragraph) + the
+        RichText Content (as HTML) on the Courses/Housing collections via the same
+        STAGED `/items/{id}` endpoint as `update_item_summary`. The Content part
+        reuses the existing `summary` slug (renamed "Summary - Content"); the three
+        plain parts use the `summary---*` triple-hyphen slugs. Claude never
+        publishes — the user publishes the staged changes (rules/workflow.md §7.1).
+        """
+        url = f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}"
+        payload = {
+            "fieldData": {
+                config.SUMMARY_TAGLINE_FIELD_SLUG: tagline,
+                config.SUMMARY_TITLE_FIELD_SLUG: title,
+                config.SUMMARY_PARAGRAPH_FIELD_SLUG: paragraph,
+                config.SUMMARY_CONTENT_FIELD_SLUG: content_html,
+            }
+        }
+        if self.dry_run:
+            return WriteResult(
+                dry_run=True,
+                success=True,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                response={"_dry_run": True, "would_patch": payload},
+            )
+        try:
+            response = self._request(
+                "PATCH",
+                url,
+                headers=self._headers(),
+                payload=payload,
+            )
+            return WriteResult(
+                dry_run=False,
+                success=True,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                response=response,
+            )
+        except WebflowApiError as e:
+            return WriteResult(
+                dry_run=False,
+                success=False,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                error=str(e),
+            )
+
     def ensure_summary_field(self, collection_id: str) -> dict[str, Any]:
         """Verify the Summary rich-text field exists on the collection; create if missing.
 

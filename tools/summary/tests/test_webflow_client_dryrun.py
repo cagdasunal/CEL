@@ -28,6 +28,29 @@ def test_dry_run_does_not_require_token():
     assert result.success is True
 
 
+def test_dry_run_update_item_summary_parts_writes_four_fields():
+    """tracker-096: the 4-part CMS write patches the 3 plain slugs + the RichText
+    Content (reusing the `summary` slug). Triple-hyphen slugs for the plain parts."""
+    client = WebflowClient(dry_run=True)
+    result = client.update_item_summary_parts(
+        collection_id="cid", item_id="i1",
+        tagline="English School Life",
+        title="What to expect from an english language school",
+        paragraph="Twelve weeks to a strong B2.",
+        content_html="<h4>How long</h4><p>Twelve weeks.</p>",
+    )
+    assert result.dry_run is True
+    assert result.success is True
+    assert result.method == "PATCH"
+    assert "cid" in result.url and "i1" in result.url
+    fd = result.payload["fieldData"]
+    assert fd["summary---tagline"] == "English School Life"
+    assert fd["summary---title"] == "What to expect from an english language school"
+    assert fd["summary---paragraph"] == "Twelve weeks to a strong B2."
+    # Content reuses the existing `summary` slug and carries HTML, not Markdown.
+    assert fd["summary"] == "<h4>How long</h4><p>Twelve weeks.</p>"
+
+
 def test_dry_run_ensure_summary_field_when_missing():
     # We can't easily test the "exists" branch without a real API. The missing-
     # field branch is the one we care about for dry-run safety.

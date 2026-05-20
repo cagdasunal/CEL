@@ -169,3 +169,30 @@ def test_common_md_contains_2026_corrections():
     assert "134–167" in common or "134-167" in common
     # Anti-AI burstiness section.
     assert "burstiness" in common.lower()
+
+
+# ---- tracker-096: content-type-aware Task block ----
+
+
+def test_user_message_task_is_four_part_for_landing():
+    item = SourceItem(
+        url="https://www.englishcollege.com/vancouver", title="Vancouver",
+        body_excerpt="CEL Vancouver.", locale="en", content_type="landing",
+    )
+    msg = build_user_message(item, link_candidates=[], keywords=KeywordPlan(primary="x"))
+    assert "## Task" in msg
+    assert "4-part" in msg
+    assert "Tagline" in msg and "Title" in msg and "Paragraph" in msg
+    # Links-only-in-Content instruction is present.
+    assert "links in the Content" in msg.lower() or "links in the content" in msg.lower()
+
+
+def test_user_message_task_is_single_block_for_blog():
+    item = SourceItem(
+        url="https://www.englishcollege.com/post/x", title="Post",
+        body_excerpt="A post.", locale="de", content_type="blog_post",
+    )
+    msg = build_user_message(item, link_candidates=[], keywords=KeywordPlan(primary="x"))
+    assert "## Task" in msg
+    assert "4-part" not in msg  # blog keeps the single-block instruction
+    assert "## H2" in msg

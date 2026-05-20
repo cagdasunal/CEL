@@ -10,11 +10,16 @@ Course detail pages (`/courses/<slug>`) feature one English language course. The
 
 250–400 words.
 
-## Structure
+## Output structure (4-part)
 
-- 1 H2 (e.g., "Is the [Course Name] right for me?" or "What does the [Course Name] cover?")
-- 2–3 H3s answering PAA-shaped sub-questions: who is it for; level requirements; outcomes; comparisons to related courses
-- Paragraphs only (no lists)
+Emit ONE Markdown document with EXACTLY these four parts, in this order — a `## ` Tagline line, a `### ` Title line, the Paragraph prose, then the Content starting at `#### `. The script splits the document into four separate page fields, so the shape must be exact:
+
+- **Tagline** (the single `## ` line): 2–3 evocative, related words. Not a sentence, not a question, no trailing punctuation. An editorial kicker that makes the section feel designed, not an SEO block. Do NOT put the full primary keyword here.
+- **Title** (the single `### ` line): a short, human section title — e.g. "Is the [Course Name] right for me?" or "What does the [Course Name] cover?". Place the PRIMARY KEYWORD here, phrased naturally.
+- **Paragraph** (the prose between the Title and the first `#### `): ONE self-contained lead paragraph (~60–110 words, single block, no line breaks) that directly answers the Title. Primary keyword within the first 120 characters. No headings, no links, no lists.
+- **Content** (everything from the first `#### ` onward): the depth layer and the ONLY part that may contain internal links. Open with an `#### ` H4 (a PAA-shaped sub-question: who it's for, level requirements, outcomes, comparisons) and use `##### ` H5 only where a sub-point needs it. Place all internal links here. Paragraphs only.
+
+Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links ONLY in Content; no code fences, no preamble, output the Markdown only.
 
 ## Information gain to add
 

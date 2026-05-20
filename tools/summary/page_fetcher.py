@@ -34,6 +34,10 @@ class PageContent:
     existing_summary_html: str
     body_text_excerpt: str  # ≤ 8000 chars, plain text
     description: str = ""  # <meta name="description"> content (tracker-092 Phase 3 meta caller)
+    # tracker-096: inner HTML of the 4-part Summary elements, keyed by element id
+    # (summary-tagline / summary-title / summary-paragraph / summary-content). Empty
+    # when the page has none (e.g. the legacy single id="summary" → existing_summary_html).
+    existing_summary_parts: dict = field(default_factory=dict)
 
 
 def fetch_page(url: str, timeout: float = _FETCH_TIMEOUT) -> PageContent:
@@ -85,15 +89,27 @@ def _parse_html(url: str, final_url: str, status: int, html: str) -> PageContent
         existing_summary_html=parser.existing_summary_html.strip(),
         body_text_excerpt=body_text[:_BODY_EXCERPT_MAX_CHARS],
         description=parser.description.strip(),
+        existing_summary_parts={k: v.strip() for k, v in parser.existing_summary_parts.items()},
     )
 
 
 # ---- Internal parser ----
 
 
+_CAPTURE_IDS = (
+    "summary",  # legacy single-block element → existing_summary_html
+    "summary-tagline",  # tracker-096 4-part elements → existing_summary_parts
+    "summary-title",
+    "summary-paragraph",
+    "summary-content",
+)
+
+
 class _ExtractParser(HTMLParser):
     """Single-pass HTML parser that extracts title, H1, headings, canonical, hreflang,
-    and the contents of the `id="summary"` element (if present)."""
+    the legacy `id="summary"` element, and (tracker-096) the four 4-part Summary
+    elements (`summary-tagline` / `summary-title` / `summary-paragraph` /
+    `summary-content`)."""
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -104,12 +120,16 @@ class _ExtractParser(HTMLParser):
         self.canonical = ""
         self.hreflang_urls: list[str] = []
         self.existing_summary_html = ""
+        self.existing_summary_parts: dict[str, str] = {}
         # State
         self._in_title = False
         self._heading_tag: Optional[str] = None
         self._heading_buffer: list[str] = []
-        self._in_summary_depth = 0  # >0 means we're inside the id="summary" element
-        self._summary_buffer: list[str] = []
+        # Generic single-element capture: the id currently being captured + nesting
+        # depth + buffer. One element captured at a time (the 4 parts are siblings).
+        self._capture_id: Optional[str] = None
+        self._capture_depth = 0
+        self._capture_buffer: list[str] = []
         # Skip script/style content entirely.
         self._skip_tag: Optional[str] = None
 
@@ -136,13 +156,17 @@ class _ExtractParser(HTMLParser):
         if tag == "meta" and not self.description:
             if attr_dict.get("name", "").lower() == "description":
                 self.description = attr_dict.get("content", "")
-        # Track entry into the id="summary" element.
-        if attr_dict.get("id") == "summary":
-            self._in_summary_depth = 1
-        elif self._in_summary_depth > 0:
-            self._in_summary_depth += 1
-        if self._in_summary_depth > 0:
-            self._summary_buffer.append(f"<{tag}>")
+        # Track entry into a captured Summary element (legacy #summary or one of the
+        # four 4-part elements). Capture one element at a time; the depth counter
+        # handles nested children within it.
+        el_id = attr_dict.get("id")
+        if self._capture_id is None and el_id in _CAPTURE_IDS:
+            self._capture_id = el_id
+            self._capture_depth = 1
+        elif self._capture_id is not None:
+            self._capture_depth += 1
+        if self._capture_id is not None:
+            self._capture_buffer.append(f"<{tag}>")
 
     def handle_endtag(self, tag: str) -> None:
         if self._skip_tag == tag:
@@ -150,11 +174,17 @@ class _ExtractParser(HTMLParser):
             return
         if self._skip_tag:
             return
-        if self._in_summary_depth > 0:
-            self._summary_buffer.append(f"</{tag}>")
-            self._in_summary_depth -= 1
-            if self._in_summary_depth == 0:
-                self.existing_summary_html = "".join(self._summary_buffer)
+        if self._capture_id is not None:
+            self._capture_buffer.append(f"</{tag}>")
+            self._capture_depth -= 1
+            if self._capture_depth == 0:
+                captured = "".join(self._capture_buffer)
+                if self._capture_id == "summary":
+                    self.existing_summary_html = captured
+                else:
+                    self.existing_summary_parts[self._capture_id] = captured
+                self._capture_id = None
+                self._capture_buffer = []
         if tag == "title":
             self._in_title = False
         if tag == self._heading_tag:
@@ -173,8 +203,8 @@ class _ExtractParser(HTMLParser):
             self.title += data
         if self._heading_tag:
             self._heading_buffer.append(data)
-        if self._in_summary_depth > 0:
-            self._summary_buffer.append(data)
+        if self._capture_id is not None:
+            self._capture_buffer.append(data)
 
 
 def _extract_body_text(html: str) -> str:

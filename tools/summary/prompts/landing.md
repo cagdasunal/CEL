@@ -17,11 +17,16 @@ By page type:
 - `/summer-camp-san-diego`: 350–500
 - `/pathway-program-usa` + `/pathway/*` (4 sub-pages): 400–600 each
 
-## Structure
+## Output structure (4-part)
 
-- 1 H2 (the question the page answers, in the search-query phrasing)
-- 3–5 H3s answering PAA-shaped sub-questions
-- Paragraphs only
+Emit ONE Markdown document with EXACTLY these four parts, in this order — a `## ` Tagline line, a `### ` Title line, the Paragraph prose, then the Content starting at `#### `. The script splits the document into four separate page fields, so the shape must be exact:
+
+- **Tagline** (the single `## ` line): 2–3 evocative, related words. Not a sentence, not a question, no trailing punctuation. An editorial kicker that makes the section feel designed, not an SEO block. Do NOT put the full primary keyword here.
+- **Title** (the single `### ` line): a short, human section title — the question the page answers, in search-query phrasing. Place the PRIMARY KEYWORD here, phrased naturally.
+- **Paragraph** (the prose between the Title and the first `#### `): ONE self-contained lead paragraph (~60–110 words, single block, no line breaks) that directly answers the Title. Primary keyword within the first 120 characters; open with a concrete fact (number, year, named entity). No headings, no links, no lists.
+- **Content** (everything from the first `#### ` onward): the depth layer and the ONLY part that may contain internal links. Open with an `#### ` H4 (a PAA-shaped sub-question) and use `##### ` H5 only where needed; 3–5 H4 sub-questions is typical for a landing page. Place all internal links here (1–2 blog posts + 2–3 related landing pages). Paragraphs only.
+
+Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links ONLY in Content; no code fences, no preamble, output the Markdown only.
 
 ## Information gain
 
@@ -52,7 +57,7 @@ Landing pages carry the highest indexing pressure when in `crawled_not_indexed`.
 
 ## Voice
 
-Direct. Lead with the answer. The first sentence under the H2 must contain the primary keyword + a concrete fact (number, year, named entity) within 40–60 words.
+Direct. Lead with the answer. The Paragraph's first sentence must contain the primary keyword + a concrete fact (number, year, named entity) within 40–60 words.
 
 ## What this summary is NOT
 

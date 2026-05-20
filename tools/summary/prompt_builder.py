@@ -158,11 +158,23 @@ def build_user_message(
     lines.append("")
 
     lines.append("## Task")
-    lines.append(
-        "Write the Summary section for this page per the rules above. Return only the "
-        "rendered Markdown (one `## H2`, optional `### H3` lines, paragraphs). No code "
-        "fences, no preamble, no trailing commentary."
-    )
+    if item.content_type == "blog_post":
+        lines.append(
+            "Write the Summary section for this page per the rules above. Return only "
+            "the rendered Markdown (one `## H2`, optional `### H3` lines, paragraphs). "
+            "No code fences, no preamble, no trailing commentary."
+        )
+    else:
+        # tracker-096: courses, housing, and landing pages use the 4-part structure.
+        lines.append(
+            "Write the 4-part Summary section per the rules above, as ONE Markdown "
+            "document in this exact order: a `## ` Tagline (2-3 related words, no "
+            "punctuation), a `### ` Title (place the primary keyword here), one short "
+            "lead Paragraph (primary keyword in the first sentence), then the Content "
+            "starting at `#### ` (use `##### ` only where needed). Put ALL internal "
+            "links in the Content only — never in the Tagline, Title, or Paragraph. "
+            "No code fences, no preamble, no trailing commentary."
+        )
     return "\n".join(lines)
 
 
@@ -206,9 +218,10 @@ def build_translation_user_message(
     lines: list[str] = []
     lines.append("## Task")
     lines.append(
-        f"Translate the following English Summary into {target_locale}, keeping the "
-        f"Markdown structure (one H2, optional H3s, paragraphs). Apply the locale-"
-        f"specific tone, idiom, and conventions from the system prompt."
+        f"Translate the following English Summary into {target_locale}, preserving the "
+        f"exact Markdown structure (every heading level and its position, paragraph "
+        f"breaks, and link placement). Apply the locale-specific tone, idiom, and "
+        f"conventions from the system prompt."
     )
     lines.append("")
     lines.append("## Link swap rules")
