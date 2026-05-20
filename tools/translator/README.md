@@ -18,9 +18,12 @@ tool's `translate` and `translate-meta` phases; it's designed so other tools (CM
 fields, UI strings, new content types) can adopt it without copying translation,
 glossary, memory, or CSV-format logic.
 
-It is **not** coupled to the summary tool — `tools.translator` imports only
-`tools.summary.batch_runner` (the shared Gemini client) and Python stdlib. The
-Weglot CSV writer (`tools.translator.weglot`) has no summary dependency at all.
+It depends on the summary tool only for the shared Gemini client:
+`tools.translator.engine` imports `tools.summary.batch_runner`. Everything else
+is Python stdlib, and the Weglot CSV writer (`tools.translator.weglot`) has no
+summary dependency at all. To reuse the translator from a non-CEL project,
+vendor `tools.summary.batch_runner` (+ its `config`) alongside it, or lift the
+shared Gemini client into a neutral location.
 
 ## Public API
 
@@ -55,9 +58,10 @@ emit_consolidated_csv(target_locale="de",
    `request_builder(unit, locale, glossary_slice) -> (system_blocks, user_message)`
    to override the default generic translator prompt (the summary caller does this
    to reproduce its exact summary-translation prompt + llms.txt link swaps).
-4. **Glossary post-edit** — HARD for do-not-translate + forbidden (flag a dropped DNT
-   term / a forbidden term); SOFT for preferred (warn only — over-rigid enforcement
-   lowers quality).
+4. **Glossary post-edit** — a **forbidden** term in the output is BLOCKING (sets
+   `ok=False`); a dropped **do-not-translate** term is flagged (advisory — DNT is
+   enforced via the prompt slice, not by rewriting); **preferred** is SOFT (warn
+   only — over-rigid enforcement lowers quality).
 5. **Translation QA** — see below. Sets `Translation.ok=False` on a blocking failure.
 6. **TM write** — only `ok` translations are cached (live mode).
 

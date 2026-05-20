@@ -95,3 +95,26 @@ def test_output_order_matches_input(monkeypatch):
     _mock_gemini(monkeypatch, {f"u{i}": f"trans {i}" for i in range(5)})
     out = translate_batch(units, "de", _GLOSSARY)
     assert [t.id for t in out] == [f"u{i}" for i in range(5)]
+
+
+def test_forbidden_term_blocks_and_not_cached(monkeypatch, tmp_path):
+    # tracker-095 M2: a forbidden glossary term in the output sets ok=False
+    # (must never ship) and is not written to the TM.
+    glossary = Glossary(terms=[GlossaryTerm(term="cheap", forbidden=True)], version="v1")
+    tm = TranslationMemory(tmp_path / "tm.json")
+    units = [TranslationUnit(id="u1", text="Affordable courses")]
+    _mock_gemini(monkeypatch, {"u1": "cheap Kurse"})  # contains the forbidden word
+    out = translate_batch(units, "de", glossary, tm=tm)
+    assert out[0].ok is False
+    assert any(f.startswith("forbidden_term_present") for f in out[0].qa_flags)
+    assert tm.get("Affordable courses", "de", "v1") is None
+
+
+def test_qa_check_urls_false_allows_link_swap(monkeypatch):
+    # tracker-095 H2: the link-swap caller disables url preservation, so a
+    # swapped target URL does not block.
+    units = [TranslationUnit(id="u1", text="See https://www.englishcollege.com/x")]
+    _mock_gemini(monkeypatch, {"u1": "Siehe https://www.englishcollege.com/de/x"})
+    out = translate_batch(units, "de", _GLOSSARY, qa_check_urls=False)
+    assert out[0].ok
+    assert not any(f.startswith("url_drift") for f in out[0].qa_flags)

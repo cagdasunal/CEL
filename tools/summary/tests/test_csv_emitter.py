@@ -89,8 +89,9 @@ def test_emit_preserves_semicolon_separator(tmp_path: Path):
     content = out.read_text(encoding="utf-8")
     # Header line uses semicolon.
     assert content.split("\n")[0] == "id;language_from;language_to;word_from;word_to;type"
-    # New row uses semicolon too.
-    assert ";en;de;hello;hallo;Text" in content
+    # New row uses semicolon too; word_from/word_to are quoted (Fidelo parity,
+    # tracker-095 I1) — id/lang/type stay bare.
+    assert ';en;de;"hello";"hallo";Text' in content
 
 
 def test_emit_handles_missing_existing_csv(tmp_path: Path):
