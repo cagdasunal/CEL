@@ -132,6 +132,17 @@ def test_fact_grounding_figures_warns_on_unsourced_year():
     assert not report.checks["fact_grounding_figures"]  # 1962 not in source (1985 is)
 
 
+def test_fact_grounding_figures_does_not_double_flag_price_digits():
+    """tracker-093 L1: a fabricated price is flagged ONCE (by prices), not also by
+    figures on its inner digit-core (the '750' inside '$2,750')."""
+    draft = _PASSING_DRAFT.replace("for details.", "for details. Tuition is $2,750 monthly.")
+    report = qa_checks(draft, _PRIMARY_KW, "en", _INVENTORY, source_text=_SOURCE)
+    assert not report.checks["fact_grounding_prices"], "price should be flagged (fabricated)"
+    assert report.checks["fact_grounding_figures"], (
+        f"figures must NOT re-flag the price's digits; notes: {report.notes}"
+    )
+
+
 def test_near_duplicate_flags_verbatim_copy():
     """A draft that copies the source verbatim trips the near-duplicate guard."""
     verbatim = (

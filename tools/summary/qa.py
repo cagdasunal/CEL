@@ -206,8 +206,13 @@ def qa_checks(
 
     # 12. Fact-grounding (years / decimals / large integers) — WARNING. Softer
     #     signals that often have word-forms in source; flag for review, don't block.
+    #     tracker-093 L1: strip price/percentage spans first so a figure already
+    #     reported by check 11 (e.g. the "750" inside "$2,750") isn't double-flagged.
     if source_text:
-        figure_tokens = re.findall(r"\b(?:19|20)\d{2}\b|\b\d+\.\d+\b|\b\d{3,}\b", draft)
+        draft_for_figures = re.sub(
+            r"\$\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?%", " ", draft
+        )
+        figure_tokens = re.findall(r"\b(?:19|20)\d{2}\b|\b\d+\.\d+\b|\b\d{3,}\b", draft_for_figures)
         unmatched_figures = [
             t for t in figure_tokens
             if re.sub(r"[^\d]", "", t) not in source_digits

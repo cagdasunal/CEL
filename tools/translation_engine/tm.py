@@ -16,6 +16,14 @@ import tempfile
 from pathlib import Path
 
 
+# tracker-093 L3: cap the memory so the JSON file can't grow unbounded across
+# runs (the repo's documented anti-pattern). Generous — at CEL's scale (~756
+# URLs × paragraphs × 8 locales) this won't bite in normal use; it's a safety
+# valve. FIFO eviction (oldest insertion first); a bumped glossary_version
+# naturally ages out stale keys anyway.
+_MAX_ENTRIES = 20000
+
+
 def _normalize(source: str) -> str:
     """Collapse whitespace so trivial reformatting doesn't bust the cache."""
     return re.sub(r"\s+", " ", source).strip()
@@ -49,7 +57,13 @@ class TranslationMemory:
         return entry.get("target") if entry else None
 
     def put(self, source: str, locale: str, glossary_version: str, target: str, tone: str = "") -> None:
-        self._store[tm_key(source, locale, glossary_version, tone)] = {
+        key = tm_key(source, locale, glossary_version, tone)
+        # FIFO eviction when at capacity for a NEW key (updating an existing key
+        # never grows the store). Dict preserves insertion order, so the first
+        # key is the oldest.
+        if key not in self._store and len(self._store) >= _MAX_ENTRIES:
+            self._store.pop(next(iter(self._store)))
+        self._store[key] = {
             "target": target,
             "locale": locale,
             "glossary_version": glossary_version,
