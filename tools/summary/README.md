@@ -42,6 +42,13 @@ The Summary section was redesigned so it reads like a genuine, designed part of 
 - **Vancouver pages**: 4 new static pages (`/vancouver`, `/vancouver/cost-of-studying-english`, `/vancouver/how-long-to-learn-english`, `/vancouver/vs-toronto`) were added → **16 static pages** total.
 - `SUMMARY_PROMPT_VERSION` bumped to `2026-05-21-t096`, which invalidates the idempotency hash + translation memory so existing items regenerate under the new structure.
 
+### Processing modes + Gemini quota (operational, 2026-05-20)
+
+- **Blog posts** keep the single-block summary (no 4-part structure) but ARE summarized. They carry their language as a `language` **Reference**, so the locale is resolved via `config.BLOG_LANGUAGE_ID_TO_LOCALE` → each post gets a summary in its own language (415 posts across 9 locales).
+- **Batch (default)** — cheapest + async, the right mode for the full catalog. Requires Batch API quota: as of 2026-05-20 a full-catalog batch returned `429 RESOURCE_EXHAUSTED` ("check your plan and billing") on `batches.create`, i.e. **the Gemini project needs billing enabled to use the Batch API at scale** (esp. the 415 blog posts).
+- **Sync (`--sync`)** — instant `generateContent`, validated live (a 2-course run wrote 2/2 staged, QA-passed, in ~1m). Sequential + RPM-limited, so it's for **testing + small runs**, NOT the full 415-post blog catalog.
+- **Live-validated**: the 4-part CMS write path was confirmed end-to-end (sync 2-course run → 4 staged fields, QA passed) before any fan-out.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.
@@ -99,6 +106,8 @@ Filters:
 | `--locale <code>` | Filter CSV emission to one locale. |
 | `--limit <n>` | Cap items processed (use during pilot batches). |
 | `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). |
+| `--sync` | `generate-english` only — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). |
+| `--exclude-blog` | Skip the blog collection (static + courses + housing only). Blog keeps its single-block summary; this just lets the 4-part scope run without regenerating the 415 blog posts. |
 | `--out-dir <path>` | Override the run artifact location. |
 
 ## Running it
@@ -118,6 +127,8 @@ CEL repo → Actions tab → "Summary script (Webflow CMS + landing pages → We
 
 - **mode**: `plan`, `generate-english`, `audit`, `translate`, or `all`
 - **dry_run**: `true` (default) or `false` (real run)
+- **sync**: `true` = instant synchronous `generateContent` (fast testing + small runs); `false` (default) = Batch API
+- **exclude_blog**: `true` = run static + courses + housing without regenerating blog (tracker-096 "except Blog Posts")
 - **collection_filter** / **locale_filter** / **limit**: optional
 
 The workflow uploads dry-run artifacts as a build artifact (`summary-dryrun-<run-id>`). Live runs additionally commit changes to `docs/admin/weglot-imports/*.csv` + the static-summaries Markdown files.
@@ -295,10 +306,10 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 ```bash
 cd /path/to/englishcollege
-python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 203 passed
+python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 209 passed
 ```
 
-Current: **164 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **203 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
+Current: **170 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **209 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 
