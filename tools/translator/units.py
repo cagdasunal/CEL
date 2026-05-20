@@ -36,8 +36,9 @@ class Translation:
     from_tm   True when served from the translation memory (no API call).
     qa_flags  list of QA findings (e.g. "untranslated_passthrough",
               "number_drift:12", "length_ratio:3.1"); empty = clean.
-    ok        False when a BLOCKING QA check failed (placeholder/number/URL/HTML)
-              or the translation is empty — the caller should not ship it.
+    ok        False when a BLOCKING QA check failed (placeholder/number/URL),
+              a forbidden glossary term is present, or the translation is empty.
+              Callers MUST NOT ship a translation with ok=False (tracker-095 H1).
     """
 
     id: str

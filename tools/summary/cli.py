@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
             report["phases"]["audit"] = _execute_audit(args, out_dir)
         if args.subcommand in ("translate", "all"):
             report["phases"]["translate"] = _execute_translate(args, out_dir)
-        if args.subcommand == "translate-meta":
+        if args.subcommand in ("translate-meta", "all"):
             report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
 
     # Write the report.
@@ -767,13 +767,20 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
 
         # request_builder reproduces the existing summary-translation prompt
         # (llms.txt link swaps) so behaviour + CSV structure are preserved.
-        def _summary_rb(unit, loc, _gslice, _llms=llms_index):
+        def _summary_rb(unit, loc, gslice, _llms=llms_index):
             link_swaps = []
             for src_url in _extract_markdown_links(unit.text):
                 target_url = _llms.find_equivalent(src_url, loc) if _llms else None
                 link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
+            # tracker-095 M1: inject the per-unit glossary slice (do-not-translate
+            # brand/entity terms) into the summary translation prompt. The engine
+            # computes it; previously this builder discarded it, so brand terms
+            # were never told to the model for summaries.
+            system_blocks = build_translation_system_prompt(loc)
+            if gslice:
+                system_blocks = system_blocks + [{"type": "text", "text": gslice}]
             return (
-                build_translation_system_prompt(loc),
+                system_blocks,
                 build_translation_user_message(unit.text, loc, link_swaps),
             )
 
@@ -810,8 +817,12 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             continue
 
         # Live: translate via the dedicated engine (TM skip + glossary + QA).
+        # qa_check_urls=False: this path swaps/removes links per locale (see
+        # _summary_rb), so source URLs are intentionally absent from the target
+        # — url_drift would false-flag every linked paragraph (tracker-095 H2).
         translations = translate_batch(
             units, locale, glossary, request_builder=_summary_rb, tm=tm,
+            qa_check_urls=False,
         )
         pairs: list[csv_emitter.SummaryPair] = []
         succeeded_count = 0
@@ -820,9 +831,14 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             if not t.target.strip():
                 failed_count += 1
                 continue
+            # tracker-095 H1: a translation that failed a BLOCKING QA check
+            # (ok=False — placeholder/number drift, forbidden term, empty) must
+            # NOT ship. url_drift is excluded for summaries (qa_check_urls=False).
+            if not t.ok:
+                failed_count += 1
+                warnings.append(f"locale {locale} {t.id}: QA blocked, not shipped — {t.qa_flags}")
+                continue
             succeeded_count += 1
-            # QA flags are surfaced as warnings (non-blocking for summaries — a
-            # translated paragraph may legitimately reformat numbers).
             if t.qa_flags and not t.from_tm:
                 warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")
             parts = t.id.split("-", 2)
@@ -892,7 +908,7 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
     meta on the locale URLs.
     """
     import urllib.parse as _urlparse
-    from tools.summary import csv_emitter
+    from tools.summary import batch_runner, csv_emitter
     from tools.summary.page_fetcher import fetch_page
     from tools.translator import translate_batch, TranslationUnit
     from tools.translator.glossary import load_glossary
@@ -936,12 +952,31 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
             TranslationUnit(id=f"meta-{field}-{slug}", text=text, content_type=field)
             for (slug, field, text) in en_meta
         ]
+        # tracker-095 L2: cost cap mirroring the summary path. estimate_batch_cost_usd
+        # is count-based, so the unit list is a valid proxy for the request count.
+        cost_estimate = batch_runner.estimate_batch_cost_usd(units)
+        if not args.dry_run and cost_estimate > config.MAX_BATCH_COST_USD:
+            warnings.append(
+                f"locale {locale}: meta cost cap exceeded "
+                f"(${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}). Skipping."
+            )
+            per_locale[locale] = {
+                "skipped": True, "cost_estimate_usd": round(cost_estimate, 2),
+                "reason": "exceeded MAX_BATCH_COST_USD",
+            }
+            continue
         translations = translate_batch(units, locale, glossary, tm=tm, dry_run=args.dry_run)
         by_id = {t.id: t for t in translations}
         pairs: list[csv_emitter.SummaryPair] = []
         for (slug, field, text) in en_meta:
             t = by_id.get(f"meta-{field}-{slug}")
             if not t or not t.target.strip():
+                continue
+            # tracker-095 H1: don't ship a meta string that failed a BLOCKING QA
+            # check (placeholder/number/URL drift, forbidden term). dry-run stubs
+            # are ok=True so they still pass for wiring parity.
+            if not t.ok:
+                warnings.append(f"locale {locale} {t.id}: QA blocked, not shipped — {t.qa_flags}")
                 continue
             if t.qa_flags and not t.from_tm and "dry_run" not in t.qa_flags:
                 warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")

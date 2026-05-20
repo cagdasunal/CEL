@@ -43,6 +43,15 @@ class _WeglotDialect(csv.Dialect):
 csv.register_dialect(_CSV_DIALECT, _WeglotDialect)
 
 
+def _weglot_quote(s: str) -> str:
+    """Wrap in double quotes, escaping internal `"` as `""`. Byte-identical to
+    the Fidelo exporter `tools/weglot/csv_export.py:_weglot_quote` (tracker-095
+    I1) — the Fidelo writer ALWAYS quotes word_from/word_to, leaving id, the
+    language codes, and type bare. `csv.QUOTE_MINIMAL` omitted quotes on
+    quote-free values, so the two outputs diverged; this restores parity."""
+    return '"' + s.replace('"', '""') + '"'
+
+
 @dataclass(frozen=True)
 class WeglotPair:
     """One Weglot row: source English text → target-language translation."""
@@ -140,17 +149,27 @@ def emit_consolidated_csv(
         rows.append(pair.as_row(target_locale))
         report.new_row_count += 1
 
-    # Atomic write — write to tempfile in same directory, then rename.
+    # Atomic write — match the Fidelo exporter byte-for-byte (tracker-095 I1):
+    # header + id/language/type cells bare; word_from/word_to ALWAYS quoted with
+    # `""` escaping. (csv.writer + QUOTE_MINIMAL omits quotes on simple values,
+    # which diverged from tools/weglot/csv_export.py.)
+    def _fmt_row(r: list[str]) -> str:
+        if r == list(_CSV_COLUMNS):
+            return _SEPARATOR.join(r)  # header stays bare
+        cells = list(r)
+        cells[3] = _weglot_quote(cells[3])  # word_from
+        cells[4] = _weglot_quote(cells[4])  # word_to
+        return _SEPARATOR.join(cells)
+
+    out_text = "\n".join(_fmt_row(r) for r in rows) + "\n"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_fd, tmp_path_str = tempfile.mkstemp(
         prefix=f".{out_path.name}.", suffix=".tmp", dir=str(out_path.parent)
     )
     tmp_path = Path(tmp_path_str)
     try:
-        with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f, dialect=_CSV_DIALECT)
-            for row in rows:
-                writer.writerow(row)
+        with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(out_text)
         os.replace(tmp_path, out_path)
     except Exception:
         if tmp_path.exists():
