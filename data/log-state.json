@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-20T07:12:29.765149-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-20T04:36:45.393229-07:00",
       "detail": {}
     },
@@ -48,15 +53,6 @@
       "kind": "no_change",
       "ts": "2026-05-19T10:20:50.088944-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-19T07:22:37.139906-07:00",
-      "detail": {
-        "slugs": [
-          "quel-niveau-anglais-sejour-linguistique"
-        ]
-      }
     }
   ]
 }
