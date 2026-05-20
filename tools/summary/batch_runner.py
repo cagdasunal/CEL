@@ -300,6 +300,51 @@ def submit_batch(requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KE
     )
 
 
+def generate_sync(
+    requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KEY"
+) -> list[BatchResult]:
+    """Synchronous generation — one `models.generate_content` call per request,
+    results returned immediately (no Batch API queue / ≤24h SLA).
+
+    Same model (`config.MODEL_ID`) + generation config as the Batch path; only the
+    transport differs. Cost is the standard (non-batch) rate, so this is for FAST
+    TESTING + small runs — not the full catalog (use the Batch API for that). Each
+    request is independent: a per-request failure becomes a failed BatchResult and
+    never aborts the rest (mirrors the Batch path's per-row isolation). Imports the
+    google-genai SDK lazily so dry-run + module import work without it installed.
+    """
+    if not requests:
+        return []
+    api_key = os.environ.get(api_key_env, "").strip()
+    if not api_key:
+        raise RuntimeError(
+            f"Environment variable {api_key_env} is not set. Required for live API calls."
+        )
+    try:
+        from google import genai  # type: ignore
+    except ImportError as e:
+        raise RuntimeError(
+            "google-genai SDK is not installed. Run `pip install google-genai` "
+            "or use tools/summary/requirements.txt."
+        ) from e
+
+    client = genai.Client(api_key=api_key)
+    results: list[BatchResult] = []
+    for r in requests:
+        system_text = _flatten_system_blocks(r.system_blocks)
+        cfg = _build_generation_config(r, system_text)
+        try:
+            resp = _retry_transient(
+                lambda r=r, cfg=cfg: client.models.generate_content(
+                    model=config.MODEL_ID, contents=r.user_message, config=cfg
+                )
+            )
+            results.append(_result_from_response(resp, r.custom_id))
+        except Exception as e:  # noqa: BLE001 — isolate per-request failure
+            results.append(BatchResult(custom_id=r.custom_id, succeeded=False, error=str(e)))
+    return results
+
+
 def wait_for_batch(
     handle: BatchHandle,
     poll_interval_sec: int = 60,
@@ -389,6 +434,17 @@ def _parse_inline_response(inline: Any, fallback_custom_id: str) -> BatchResult:
     if response is None:
         return BatchResult(custom_id=custom_id, succeeded=False, error="no response")
 
+    return _result_from_response(response, custom_id)
+
+
+def _result_from_response(response: Any, custom_id: str) -> BatchResult:
+    """Parse a Gemini `GenerateContentResponse` → BatchResult.
+
+    Shared by the Batch path (`_parse_inline_response`, via `inline.response`) and
+    the synchronous path (`generate_sync`, which gets the response directly). Carries
+    the tracker-091 M-11 MAX_TOKENS truncation guard so neither path persists clipped
+    copy.
+    """
     # Try response.text (convenience property on GenerateContentResponse).
     text = getattr(response, "text", None)
     candidates = getattr(response, "candidates", None) or []

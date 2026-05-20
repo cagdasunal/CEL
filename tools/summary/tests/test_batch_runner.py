@@ -374,3 +374,65 @@ def test_pending_batches_pop_on_timeout(monkeypatch):
     assert "test-timeout-batch" not in batch_runner._PENDING_BATCHES, (
         "_PENDING_BATCHES leaked an entry on the TimeoutError path"
     )
+
+
+# ---- tracker-096 review: synchronous (instant) generation path ----
+
+
+def _fake_genai_for_sync(monkeypatch, *, fail_marker: str = "boom"):
+    """Inject a fake google-genai whose models.generate_content returns a STOP
+    response (or raises on `fail_marker`)."""
+    import sys
+
+    class _FakeModels:
+        def generate_content(self, model, contents, config):
+            if fail_marker and fail_marker in contents:
+                raise RuntimeError("400 bad request")  # permanent → isolated failure
+            return SimpleNamespace(
+                text=f"summary::{contents}",
+                candidates=[SimpleNamespace(
+                    finish_reason=SimpleNamespace(name="STOP"),
+                    content=SimpleNamespace(parts=[SimpleNamespace(text=f"summary::{contents}")]),
+                )],
+                usage_metadata=SimpleNamespace(
+                    prompt_token_count=10, candidates_token_count=20, cached_content_token_count=0,
+                ),
+            )
+
+    class _FakeClient:
+        def __init__(self, *a, **k):
+            self.models = _FakeModels()
+
+    fake_genai = SimpleNamespace(Client=_FakeClient)
+    monkeypatch.setitem(sys.modules, "google", SimpleNamespace(genai=fake_genai))
+    monkeypatch.setitem(sys.modules, "google.genai", fake_genai)
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+
+
+def test_generate_sync_returns_result_per_request(monkeypatch):
+    """generate_sync calls generate_content per request and parses results immediately."""
+    _fake_genai_for_sync(monkeypatch)
+    reqs = [
+        batch_runner.BatchRequest(custom_id="ok-1", system_blocks=[{"type": "text", "text": "sys"}], user_message="hello"),
+        batch_runner.BatchRequest(custom_id="bad-1", system_blocks=[], user_message="boom please"),
+    ]
+    results = batch_runner.generate_sync(reqs)
+    assert len(results) == 2
+    by_id = {r.custom_id: r for r in results}
+    assert by_id["ok-1"].succeeded is True
+    assert "summary::hello" in by_id["ok-1"].content
+    # Per-request failure is isolated, not raised.
+    assert by_id["bad-1"].succeeded is False
+    assert "400" in by_id["bad-1"].error
+
+
+def test_generate_sync_empty_returns_empty():
+    assert batch_runner.generate_sync([]) == []
+
+
+def test_generate_sync_requires_api_key(monkeypatch):
+    import pytest as _pytest
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    reqs = [batch_runner.BatchRequest(custom_id="x", system_blocks=[], user_message="hi")]
+    with _pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
+        batch_runner.generate_sync(reqs)
