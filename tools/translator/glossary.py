@@ -1,8 +1,13 @@
 """Glossary: do-not-translate / forbidden / preferred term enforcement.
 
 Per the Phase 3 research: per-unit lexical match (inject only the terms present
-in a given source string), HARD enforcement for do-not-translate + forbidden,
-SOFT (warn) for preferred — over-rigid enforcement lowers quality.
+in a given source string). Enforcement tiers (tracker-095 M2):
+  - **forbidden** term in the output → BLOCKING (the engine sets `ok=False`).
+  - **do-not-translate** → enforced via the prompt; `enforce()` only flags (warn)
+    if a source DNT term vanished from the target — it never rewrites the text.
+  - **preferred** → SOFT (warn only).
+Over-rigid post-edit replacement lowers quality, so `enforce()` never rewrites;
+the one hard gate (forbidden) lives in the engine.
 
 The default glossary lives in `glossary.json` next to this module and is seeded
 from CEL's brand/entity terms (the same entities common.md spells out). Bump
@@ -63,13 +68,16 @@ class Glossary:
         return "\n".join(lines)
 
     def enforce(self, source: str, target: str, locale: str) -> tuple[str, list[str]]:
-        """Post-edit: restore do-not-translate terms verbatim; flag violations.
+        """Post-edit: flag glossary violations. Does NOT rewrite the target.
 
-        Returns (possibly-corrected target, list of warning flags). HARD for DNT
-        (verbatim restore is left to the model via the prompt; here we only WARN
-        if a DNT term present in source vanished from target) + forbidden; SOFT
-        (warn) for preferred — we never force-replace, to avoid the over-rigid
-        quality penalty the research flagged.
+        Returns (target unchanged, list of flags):
+          - `forbidden_term_present:<t>` — the engine treats this as BLOCKING
+            (sets ok=False); a forbidden word must never reach output.
+          - `dnt_term_dropped:<t>` — advisory; do-not-translate is enforced by
+            the prompt, this only warns when a source DNT term vanished.
+          - `preferred_not_used:<t>` — advisory (SOFT); never force-replaced.
+        We never force-replace text here, to avoid the over-rigid quality penalty
+        the research flagged — forbidden is the single hard gate (in the engine).
         """
         flags: list[str] = []
         # DNT + preferred are evaluated for terms present in the SOURCE.

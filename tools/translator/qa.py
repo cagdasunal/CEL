@@ -13,11 +13,25 @@ the check list, not the dependency). Split by severity:
 from __future__ import annotations
 
 import re
+import unicodedata
 
 # {var}, {{var}}, %s, %(name)s, <tag> — runtime placeholders that MUST survive.
 _PLACEHOLDER_RE = re.compile(r"\{\{?[^}]*\}?\}|%\([^)]+\)[sd]|%[sd]|<[^>]+>")
 _NUMBER_RE = re.compile(r"\d[\d,.]*")
 _URL_RE = re.compile(r"https?://[^\s)]+")
+
+
+def _to_ascii_digits(s: str) -> str:
+    """Fold any Unicode decimal digit (Arabic-Indic ٠-٩, fullwidth ０-９, …) to
+    its ASCII value so number-preservation comparison works for non-Latin
+    locales. Non-digit characters pass through unchanged. (tracker-095 M3 — a
+    model that localizes numerals for `ar` must not trip number_drift.)
+    """
+    out = []
+    for ch in s:
+        d = unicodedata.digit(ch, None)
+        out.append(str(d) if d is not None else ch)
+    return "".join(out)
 
 # Per-locale acceptable target/source character-length ratio band. CJK + Arabic
 # render shorter; German/long-form locales render longer.
@@ -35,8 +49,18 @@ def _multiset(matches: list[str]) -> dict[str, int]:
     return out
 
 
-def check_translation(source: str, target: str, locale: str) -> tuple[bool, list[str]]:
-    """Run translation QA. Returns (ok, flags). ok=False on any BLOCKING failure."""
+def check_translation(
+    source: str, target: str, locale: str, *, check_urls: bool = True
+) -> tuple[bool, list[str]]:
+    """Run translation QA. Returns (ok, flags). ok=False on any BLOCKING failure.
+
+    `check_urls`: when False, skip the URL-preservation check. The summary
+    caller deliberately swaps/removes links per locale (see prompt_builder
+    `build_translation_user_message`), so source URLs are EXPECTED to be absent
+    from the target — url_drift would false-flag every linked paragraph
+    (tracker-095 H2). Meta-tag translation has no link swaps, so it keeps the
+    default True.
+    """
     flags: list[str] = []
     ok = True
 
@@ -50,20 +74,24 @@ def check_translation(source: str, target: str, locale: str) -> tuple[bool, list
         ok = False
         flags.append(f"placeholder_mismatch:src={sorted(src_ph)}|tgt={sorted(tgt_ph)}")
 
-    # BLOCKING — every number in source must appear in target (digit-normalized).
-    src_nums = {re.sub(r"[^\d]", "", n) for n in _NUMBER_RE.findall(source) if re.sub(r"[^\d]", "", n)}
-    tgt_digits = re.sub(r"[^\d]", "", target)
+    # BLOCKING — every number in source must appear in target (digit-normalized,
+    # Unicode→ASCII folded so localized numerals for ar/etc. still match).
+    src_ascii = _to_ascii_digits(source)
+    tgt_digits = re.sub(r"[^0-9]", "", _to_ascii_digits(target))
+    src_nums = {re.sub(r"[^0-9]", "", n) for n in _NUMBER_RE.findall(src_ascii) if re.sub(r"[^0-9]", "", n)}
     missing_nums = sorted(n for n in src_nums if n not in tgt_digits)
     if missing_nums:
         ok = False
         flags.append(f"number_drift:{missing_nums}")
 
-    # BLOCKING — every URL in source must appear verbatim in target.
-    src_urls = set(_URL_RE.findall(source))
-    missing_urls = sorted(u for u in src_urls if u not in target)
-    if missing_urls:
-        ok = False
-        flags.append(f"url_drift:{missing_urls}")
+    # BLOCKING — every URL in source must appear verbatim in target (unless the
+    # caller swaps links, in which case check_urls=False).
+    if check_urls:
+        src_urls = set(_URL_RE.findall(source))
+        missing_urls = sorted(u for u in src_urls if u not in target)
+        if missing_urls:
+            ok = False
+            flags.append(f"url_drift:{missing_urls}")
 
     # WARNING — untranslated passthrough (target byte-identical to source).
     if source.strip() and target.strip() == source.strip():

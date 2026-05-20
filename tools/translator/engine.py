@@ -56,6 +56,7 @@ def translate_batch(
     tm: Optional[TranslationMemory] = None,
     dry_run: bool = False,
     request_builder: Optional[RequestBuilder] = None,
+    qa_check_urls: bool = True,
     api_key_env: str = "GEMINI_API_KEY",
 ) -> list[Translation]:
     """Translate `units` into `target_locale`. Returns Translations in input order.
@@ -66,6 +67,9 @@ def translate_batch(
       so callers can exercise their wiring without the network.
     - `request_builder`: override the Gemini prompt (summary caller uses this for
       parity); defaults to a generic translator prompt.
+    - `qa_check_urls`: pass False when the prompt swaps/removes links per locale
+      (the summary caller), so URL-preservation QA doesn't false-flag the
+      intentional URL changes (tracker-095 H2). Defaults True (meta caller).
     """
     from tools.summary import batch_runner
 
@@ -132,8 +136,12 @@ def translate_batch(
             )
             continue
         target, gflags = glossary.enforce(u.text, br.content, target_locale)
-        qa_ok, qa_flags = check_translation(u.text, target, target_locale)
-        ok = qa_ok and bool(target.strip())
+        qa_ok, qa_flags = check_translation(u.text, target, target_locale, check_urls=qa_check_urls)
+        # A forbidden glossary term in the output is BLOCKING (must never ship);
+        # do-not-translate / preferred flags are advisory (the prompt enforces
+        # DNT). tracker-095 M2.
+        glossary_blocking = any(f.startswith("forbidden_term_present:") for f in gflags)
+        ok = qa_ok and bool(target.strip()) and not glossary_blocking
         by_id[u.id] = Translation(
             id=u.id, source=u.text, target=target, target_locale=target_locale,
             from_tm=False, qa_flags=gflags + qa_flags, ok=ok,

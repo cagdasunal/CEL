@@ -54,7 +54,7 @@ class TranslationMemory:
 
     def get(self, source: str, locale: str, glossary_version: str, tone: str = "") -> str | None:
         entry = self._store.get(tm_key(source, locale, glossary_version, tone))
-        return entry.get("target") if entry else None
+        return entry.get("target") if isinstance(entry, dict) else None
 
     def put(self, source: str, locale: str, glossary_version: str, target: str, tone: str = "") -> None:
         key = tm_key(source, locale, glossary_version, tone)
