@@ -504,12 +504,14 @@ def _qa_checks_four_part(
     scored = [report.checks[c] for c in _SCORED_CHECKS_FOUR_PART if c in report.checks]
     report.score = (sum(scored) / len(scored)) * 100 if scored else 0
     # CRITICAL set for 4-part: AI-tell formatting + the structure invariants the user
-    # was explicit about (2-3 word tagline, links only in Content) + keyword placement
-    # + fabricated prices + embedded schema.
+    # was explicit about (2-3 word tagline, Content starts with H4, links only in
+    # Content) + keyword placement + fabricated prices + embedded schema.
+    # content_starts_with_h4 is critical because it guarantees a non-empty Content
+    # part — without it a summary could ship with an empty RichText `summary` field.
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_title", "keyword_in_paragraph",
         "fact_grounding_prices", "no_faq_schema", "tagline_word_count",
-        "links_only_in_content",
+        "links_only_in_content", "content_starts_with_h4",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 

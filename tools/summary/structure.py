@@ -155,3 +155,56 @@ def four_part_content_html(content_md: str) -> str:
             para.append(line)
     _flush()
     return "".join(out)
+
+
+def _collapse_ws(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _strip_tags(html: str) -> str:
+    return _collapse_ws(re.sub(r"<[^>]+>", " ", html or ""))
+
+
+def _content_html_to_markdown(html: str) -> str:
+    """Reconstruct Content Markdown from captured live-page HTML (h4/h5/p in order).
+
+    Best-effort and lossy — `page_fetcher` drops tag attributes, so link hrefs are
+    absent (audit link checks then pass vacuously). Anchor text survives inside the
+    paragraph text. Used only for audit reconstruction, never for generation.
+    """
+    blocks: list[str] = []
+    for m in re.finditer(r"<(h4|h5|p)[^>]*>(.*?)</\1>", html or "", re.DOTALL | re.IGNORECASE):
+        tag = m.group(1).lower()
+        inner = _strip_tags(m.group(2))
+        if not inner:
+            continue
+        if tag == "h4":
+            blocks.append(f"#### {inner}")
+        elif tag == "h5":
+            blocks.append(f"##### {inner}")
+        else:
+            blocks.append(inner)
+    return "\n\n".join(blocks)
+
+
+def parts_to_markdown(parts: dict) -> str:
+    """Rebuild a 4-part Markdown document from `page_fetcher.existing_summary_parts`
+    (the captured inner HTML of `#summary-tagline/title/paragraph/content`) so the
+    audit phase can score a live 4-part page with `qa_checks(structure="four_part")`.
+
+    Best-effort (see `_content_html_to_markdown`). Returns "" if no parts are present.
+    """
+    out: list[str] = []
+    tagline = _strip_tags(parts.get("summary-tagline", ""))
+    title = _strip_tags(parts.get("summary-title", ""))
+    paragraph = _strip_tags(parts.get("summary-paragraph", ""))
+    content_md = _content_html_to_markdown(parts.get("summary-content", ""))
+    if tagline:
+        out.append(f"## {tagline}")
+    if title:
+        out.append(f"### {title}")
+    if paragraph:
+        out.append(paragraph)
+    if content_md:
+        out.append(content_md)
+    return "\n\n".join(out)

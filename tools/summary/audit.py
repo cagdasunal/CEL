@@ -31,10 +31,14 @@ def audit_existing_summary(
     locale: str,
     link_inventory: Iterable[str],
     excluded_path_segments: Iterable[str] = ("vc", "sd", "sm"),
+    structure: str = "single_block",
 ) -> AuditScore:
     """Run QA against an existing Summary; return a score + recommended action.
 
     If summary_markdown is empty, the score is 0 and the action is REGENERATE.
+    `structure="four_part"` (tracker-096) scores against the 4-part rule set — the
+    audit phase passes it for static pages reconstructed via
+    `structure.parts_to_markdown`.
     """
     if not summary_markdown.strip():
         return AuditScore(
@@ -51,6 +55,7 @@ def audit_existing_summary(
         locale,
         link_inventory,
         excluded_path_segments=excluded_path_segments,
+        structure=structure,
     )
 
     failed = [name for name, ok in report.checks.items() if not ok]

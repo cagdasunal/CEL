@@ -279,6 +279,19 @@ def test_four_part_em_dash_still_critical():
     assert not r.passed
 
 
+def test_four_part_empty_content_is_critical():
+    """A 4-part draft with no Content section fails content_starts_with_h4 (CRITICAL),
+    so it can't ship an empty RichText `summary` field."""
+    draft = (
+        "## English School Life\n\n"
+        "### How long does it take to learn english in vancouver\n\n"
+        "Most students learn english in vancouver in 6 to 12 months at CEL.\n"
+    )
+    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
+    assert not r.checks["content_starts_with_h4"]
+    assert not r.passed
+
+
 def test_four_part_excluded_link_in_content_flags():
     draft = _FOUR_PART_PASS.replace(
         "[our Vancouver campus](https://www.englishcollege.com/vancouver)",
