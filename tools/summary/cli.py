@@ -52,7 +52,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "subcommand",
-        choices=["generate-english", "audit", "translate", "all", "plan"],
+        choices=["generate-english", "audit", "translate", "translate-meta", "all", "plan"],
     )
     parser.add_argument(
         "--dry-run", dest="dry_run", action="store_true", default=True,
@@ -129,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
             report["phases"]["audit"] = _execute_audit(args, out_dir)
         if args.subcommand in ("translate", "all"):
             report["phases"]["translate"] = _execute_translate(args, out_dir)
+        if args.subcommand == "translate-meta":
+            report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
 
     # Write the report.
     (out_dir / "report.json").write_text(
@@ -678,6 +680,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     from tools.summary.prompt_builder import (
         LinkSwap, build_translation_system_prompt, build_translation_user_message,
     )
+    from tools.translation_engine import translate_batch, TranslationUnit
+    from tools.translation_engine.glossary import load_glossary
+    from tools.translation_engine.tm import TranslationMemory
 
     warnings: list[str] = []
     target_locales = (
@@ -728,39 +733,57 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         except Exception as e:
             warnings.append(f"llms.txt fetch failed: {e}; link swaps will all REMOVE")
 
+    # tracker-092 Phase 3: translation runs through the dedicated engine (glossary
+    # + translation-memory + translation-QA). The engine reuses batch_runner as
+    # its Gemini client; this caller keeps the M-10 content-type filter, the
+    # llms.txt link-swaps (via the request_builder, for prompt parity), and the
+    # paragraph-split → Weglot-CSV emission. Dry-run keeps the original
+    # build-requests + dry_run_submit path UNCHANGED (request_count + JSONL
+    # artifact parity for the M-10 tests).
+    glossary = load_glossary()
+    tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
+
     per_locale_results: dict[str, dict] = {}
     for locale in target_locales:
-        # Build one BatchRequest per EN summary for this locale.
-        requests = []
+        # Build TranslationUnits (one per non-skipped, non-empty EN summary).
+        units = []
         for cid, en in en_summaries.items():
             if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
                 continue
             md = en.get("markdown", "") or ""
             if not md.strip():
                 continue
-            link_swaps = []
-            for src_url in _extract_markdown_links(md):
-                target_url = (
-                    llms_index.find_equivalent(src_url, locale) if llms_index else None
-                )
-                link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
-            system_blocks = build_translation_system_prompt(locale)
-            user_msg = build_translation_user_message(md, locale, link_swaps)
-            requests.append(batch_runner.BatchRequest(
-                custom_id=f"tr-{locale}-{cid}",
-                system_blocks=system_blocks,
-                user_message=user_msg,
-                enable_thinking=False,
+            units.append(TranslationUnit(
+                id=f"tr-{locale}-{cid}", text=md,
+                content_type=en.get("content_type", "landing"),
             ))
 
-        if not requests:
+        if not units:
             per_locale_results[locale] = {
                 "skipped": True,
                 "reason": "no EN summaries had non-empty markdown",
             }
             continue
 
-        # Per-locale cost check.
+        # request_builder reproduces the existing summary-translation prompt
+        # (llms.txt link swaps) so behaviour + CSV structure are preserved.
+        def _summary_rb(unit, loc, _gslice, _llms=llms_index):
+            link_swaps = []
+            for src_url in _extract_markdown_links(unit.text):
+                target_url = _llms.find_equivalent(src_url, loc) if _llms else None
+                link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
+            return (
+                build_translation_system_prompt(loc),
+                build_translation_user_message(unit.text, loc, link_swaps),
+            )
+
+        # Cost check (build the would-be requests once via the same builder).
+        requests = []
+        for u in units:
+            sb, um = _summary_rb(u, locale, "")
+            requests.append(batch_runner.BatchRequest(
+                custom_id=u.id, system_blocks=sb, user_message=um, enable_thinking=False,
+            ))
         cost_estimate = batch_runner.estimate_batch_cost_usd(requests)
         if cost_estimate > config.MAX_BATCH_COST_USD:
             warnings.append(
@@ -773,7 +796,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             }
             continue
 
-        # Submit (dry-run or live).
+        # Dry-run: original path (request_count + JSONL artifact parity).
         if args.dry_run:
             artifact_dir = out_dir / "translate-batches" / locale
             handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
@@ -786,23 +809,29 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             }
             continue
 
-        # Live mode.
-        handle = batch_runner.submit_batch(requests)
-        results = batch_runner.wait_for_batch(handle)
-        succeeded = [r for r in results if r.succeeded]
-        failed_count = sum(1 for r in results if not r.succeeded)
-
-        # Build SummaryPairs for the CSV.
+        # Live: translate via the dedicated engine (TM skip + glossary + QA).
+        translations = translate_batch(
+            units, locale, glossary, request_builder=_summary_rb, tm=tm,
+        )
         pairs: list[csv_emitter.SummaryPair] = []
-        for r in succeeded:
-            # custom_id is "tr-<locale>-<orig_cid>"
-            parts = r.custom_id.split("-", 2)
+        succeeded_count = 0
+        failed_count = 0
+        for t in translations:
+            if not t.target.strip():
+                failed_count += 1
+                continue
+            succeeded_count += 1
+            # QA flags are surfaced as warnings (non-blocking for summaries — a
+            # translated paragraph may legitimately reformat numbers).
+            if t.qa_flags and not t.from_tm:
+                warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")
+            parts = t.id.split("-", 2)
             if len(parts) < 3:
                 continue
             orig_cid = parts[2]
             en_md = en_summaries.get(orig_cid, {}).get("markdown", "")
             en_paragraphs = csv_emitter.split_summary_into_paragraphs(en_md)
-            tr_paragraphs = csv_emitter.split_summary_into_paragraphs(r.content)
+            tr_paragraphs = csv_emitter.split_summary_into_paragraphs(t.target)
             if len(en_paragraphs) != len(tr_paragraphs):
                 warnings.append(
                     f"locale {locale} cid {orig_cid}: paragraph count mismatch "
@@ -825,9 +854,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         )
         per_locale_results[locale] = {
             "dry_run": False,
-            "batch_id": handle.batch_id,
-            "request_count": len(requests),
-            "succeeded": len(succeeded),
+            "engine": "translation_engine",
+            "request_count": len(units),
+            "succeeded": succeeded_count,
             "failed": failed_count,
             "cost_estimate_usd": round(cost_estimate, 2),
             "csv_path": str(out_csv),
@@ -840,6 +869,117 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         "target_locales": target_locales,
         "per_locale": per_locale_results,
         "manifest_path": str(manifest_path),
+        "warnings": warnings,
+    }
+
+
+# ---- Meta-tags translation caller (tracker-092 Phase 3, caller #2) ----
+
+# Mobile-safe char limits (mirror scripts/meta_locale_audit.py). Latin scripts
+# only — ar/ko/ja render fewer characters per pixel, so length isn't enforced.
+_META_TITLE_LIMIT = 60
+_META_DESC_LIMIT = 130
+_NON_LATIN_LOCALES = ("ar", "ko", "ja")
+
+
+def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
+    """Translate static-page meta titles/descriptions into the 8 locales via the
+    dedicated translation engine; emit Weglot CSV rows typed `meta_title` /
+    `meta_description`. The engine's second caller (tracker-092 Phase 3).
+
+    Scope: the 12 STATIC_PAGES (bounded, high-value). Each page contributes up to
+    two source strings (title + meta description). Weglot serves the translated
+    meta on the locale URLs.
+    """
+    import urllib.parse as _urlparse
+    from tools.summary import csv_emitter
+    from tools.summary.page_fetcher import fetch_page
+    from tools.translation_engine import translate_batch, TranslationUnit
+    from tools.translation_engine.glossary import load_glossary
+    from tools.translation_engine.tm import TranslationMemory
+
+    warnings: list[str] = []
+    target_locales = (
+        [args.locale] if args.locale and args.locale != "en"
+        else list(config.TARGET_TRANSLATION_LOCALES)
+    )
+    glossary = load_glossary()
+    tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
+
+    # Extract EN meta (title + description) per static page.
+    pages = [u for u in config.STATIC_PAGES if not args.page or u == args.page]
+    if args.limit:
+        pages = pages[: args.limit]
+    en_meta: list[tuple[str, str, str]] = []  # (slug, field, text)
+    for url in pages:
+        try:
+            pc = fetch_page(url)
+        except Exception as e:
+            warnings.append(f"meta fetch failed for {url}: {e}")
+            continue
+        slug = _urlparse.urlparse(url).path.strip("/").replace("/", "-") or "home"
+        if pc.title.strip():
+            en_meta.append((slug, "meta_title", pc.title.strip()))
+        if pc.description.strip():
+            en_meta.append((slug, "meta_description", pc.description.strip()))
+
+    if not en_meta:
+        warnings.append("no EN meta titles/descriptions extracted")
+        return {
+            "target_locales": target_locales, "per_locale": {},
+            "pages": len(pages), "warnings": warnings,
+        }
+
+    per_locale: dict[str, dict] = {}
+    for locale in target_locales:
+        units = [
+            TranslationUnit(id=f"meta-{field}-{slug}", text=text, content_type=field)
+            for (slug, field, text) in en_meta
+        ]
+        translations = translate_batch(units, locale, glossary, tm=tm, dry_run=args.dry_run)
+        by_id = {t.id: t for t in translations}
+        pairs: list[csv_emitter.SummaryPair] = []
+        for (slug, field, text) in en_meta:
+            t = by_id.get(f"meta-{field}-{slug}")
+            if not t or not t.target.strip():
+                continue
+            if t.qa_flags and not t.from_tm and "dry_run" not in t.qa_flags:
+                warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")
+            if locale not in _NON_LATIN_LOCALES:
+                limit = _META_TITLE_LIMIT if field == "meta_title" else _META_DESC_LIMIT
+                if len(t.target) > limit:
+                    warnings.append(
+                        f"locale {locale} {field} {slug}: {len(t.target)} chars "
+                        f"exceeds mobile-safe {limit}"
+                    )
+            pairs.append(csv_emitter.SummaryPair(word_from=text, word_to=t.target, type_=field))
+
+        # Dry-run writes to an isolated artifact dir; live writes the real CSV.
+        if args.dry_run:
+            out_csv = out_dir / "meta-batches" / f"{locale}.csv"
+            existing_csv = out_csv
+        else:
+            out_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
+            existing_csv = out_csv
+        emission_report = csv_emitter.emit_consolidated_csv(
+            target_locale=locale,
+            existing_csv_path=existing_csv,
+            summary_pairs=pairs,
+            out_path=out_csv,
+        )
+        per_locale[locale] = {
+            "dry_run": args.dry_run,
+            "unit_count": len(units),
+            "rows_appended": emission_report.new_row_count,
+            "duplicates_skipped": emission_report.duplicates_skipped,
+            "csv_path": str(out_csv),
+        }
+
+    return {
+        "target_locales": target_locales,
+        "per_locale": per_locale,
+        "pages": len(pages),
+        "meta_strings": len(en_meta),
         "warnings": warnings,
     }
 

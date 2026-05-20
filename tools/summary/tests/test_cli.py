@@ -461,6 +461,37 @@ def test_generate_english_degraded_flag_on_llms_failure(tmp_path: Path, monkeypa
     assert any("llms.txt fetch failed" in w for w in phase["warnings"])
 
 
+def test_translate_meta_dry_run_emits_typed_csv_rows(tmp_path: Path, monkeypatch):
+    """tracker-092 (3.4): translate-meta extracts page title+description and emits
+    Weglot CSV rows typed meta_title / meta_description via the translation engine."""
+    from tools.summary import page_fetcher
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200,
+            html="<html></html>", title="Learn English at CEL", h1="Home",
+            headings=(), canonical=url, hreflang_urls=(), existing_summary_html="",
+            body_text_excerpt="x",
+            description="Study English at CEL campuses in San Diego and Vancouver.",
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+
+    rc = cli.main([
+        "translate-meta", "--dry-run", "--locale", "de", "--page",
+        "https://www.englishcollege.com/", "--out-dir", str(tmp_path),
+    ])
+    assert rc == 0
+    phase = json.loads((tmp_path / "report.json").read_text())["phases"]["translate_meta"]
+    assert phase["meta_strings"] == 2  # title + description
+    assert "de" in phase["per_locale"]
+    csv_path = tmp_path / "meta-batches" / "de.csv"
+    assert csv_path.exists()
+    rows = csv_path.read_text(encoding="utf-8")
+    assert "meta_title" in rows
+    assert "meta_description" in rows
+
+
 def test_cms_item_url_per_collection_prefix():
     """tracker-092 (1.5/M-14): each collection's CMS item URL uses the right
     live path prefix. Verified against llms.txt 2026-05-20."""

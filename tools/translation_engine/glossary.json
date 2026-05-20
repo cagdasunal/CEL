@@ -1,0 +1,30 @@
+{
+  "version": "2026-05-20-t092",
+  "terms": [
+    {"term": "College of English Language", "do_not_translate": true},
+    {"term": "CEL", "do_not_translate": true, "case_sensitive": true},
+    {"term": "CEFR", "do_not_translate": true, "case_sensitive": true},
+    {"term": "IELTS", "do_not_translate": true, "case_sensitive": true},
+    {"term": "TOEFL", "do_not_translate": true, "case_sensitive": true},
+    {"term": "TOEFL iBT", "do_not_translate": true, "case_sensitive": true},
+    {"term": "Cambridge English", "do_not_translate": true},
+    {"term": "CELPIP", "do_not_translate": true, "case_sensitive": true},
+    {"term": "DLI", "do_not_translate": true, "case_sensitive": true},
+    {"term": "PGWPP", "do_not_translate": true, "case_sensitive": true},
+    {"term": "ACCET", "do_not_translate": true, "case_sensitive": true},
+    {"term": "CEA", "do_not_translate": true, "case_sensitive": true},
+    {"term": "Languages Canada", "do_not_translate": true},
+    {"term": "GIC", "do_not_translate": true, "case_sensitive": true},
+    {"term": "SEVIS", "do_not_translate": true, "case_sensitive": true},
+    {"term": "ESTA", "do_not_translate": true, "case_sensitive": true},
+    {"term": "eTA", "do_not_translate": true, "case_sensitive": true},
+    {"term": "I-20", "do_not_translate": true, "case_sensitive": true},
+    {"term": "F-1", "do_not_translate": true, "case_sensitive": true},
+    {"term": "San Diego", "do_not_translate": true},
+    {"term": "Los Angeles", "do_not_translate": true},
+    {"term": "Vancouver", "do_not_translate": true},
+    {"term": "British Columbia", "do_not_translate": true},
+    {"term": "California", "do_not_translate": true},
+    {"term": "Weglot", "do_not_translate": true, "forbidden": false}
+  ]
+}
