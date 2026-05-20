@@ -68,7 +68,8 @@ Subcommands:
 | `plan` | Show what would be processed; produce report.json + report.md. Cheapest sanity check. |
 | `generate-english` | Fetch source content, derive keywords, generate EN summaries for static pages + courses + housing. Blog posts get native-language summaries. |
 | `audit` | Score existing summaries; surface REGENERATE candidates with reasons. |
-| `translate` | Emit per-language CSVs with Fidelo rows + new Summary translation rows. |
+| `translate` | Translate EN summaries into the 8 locales via the **`translator`** package (glossary + translation-memory + translation-QA); append rows to the per-language Weglot CSVs, consolidated with the existing Fidelo rows. |
+| `translate-meta` | Translate static-page `<title>` + `<meta name="description">` into the 8 locales via the `translator`; emit Weglot CSV rows typed `meta_title` / `meta_description` (mobile-safe char limits flagged for Latin locales). |
 | `all` | Run generate-english → audit → translate in sequence. |
 
 Filters:
@@ -79,6 +80,7 @@ Filters:
 | `--page <URL>` | Process only one static page. |
 | `--locale <code>` | Filter CSV emission to one locale. |
 | `--limit <n>` | Cap items processed (use during pilot batches). |
+| `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). |
 | `--out-dir <path>` | Override the run artifact location. |
 
 ## Running it
@@ -142,8 +144,8 @@ tools/summary/
 ├── audit.py               # score existing summaries → REGENERATE / KEEP / MANUAL_REVIEW
 ├── webflow_client.py      # CMS Data API reader/writer (dry-run safe; pagination via metadata)
 ├── webflow_designer.py    # static-page summary → Markdown file (manual paste)
-├── batch_runner.py        # Gemini Batch API submission + retrieval + cost estimator (tracker-091)
-├── csv_emitter.py         # Fidelo CSV merge + atomic write
+├── batch_runner.py        # Gemini Batch API submission + retrieval + cost estimator (tracker-091); shared by the translator
+├── csv_emitter.py         # summary paragraph splitters; re-exports Weglot-CSV emission from tools/translator/weglot.py (tracker-094)
 ├── requirements.txt       # documents google-genai SDK (installed via CEL root requirements.txt)
 ├── prompts/
 │   ├── common.md          # locked critical rules (~200 lines; 2026-refreshed)
@@ -154,8 +156,19 @@ tools/summary/
 │   └── locales/
 │       ├── README.md      # canonical dimension checklist + coverage matrix
 │       └── {en,de,fr,es,it,pt,ko,ja,ar}.md
-└── tests/                 # pytest suite — 64 tests covering parse, qa, csv, audit, prompt, CLI, page_fetcher, keyword_extractor
+└── tests/                 # pytest suite (see Tests section for the current count + files)
 ```
+
+### Sibling package: `tools/translator/`
+
+Translation is handled by the reusable **`tools/translator/`** package (renamed from
+`tools/translation_engine/` in tracker-094), not by the summary tool directly. The
+`translate` and `translate-meta` phases call `translator.translate_batch(...)`, which
+adds a glossary (do-not-translate brand/entity terms), a translation-memory (skips
+unchanged source), and translation-QA (number/URL/placeholder preservation) on top of
+the shared `batch_runner` Gemini client. The Weglot-CSV emission also lives there
+(`tools/translator/weglot.py`) — `csv_emitter.py` re-exports it. Other CEL tools can
+reuse the translator independently; see `tools/translator/README.md` for the full API.
 
 ## Cost expectation
 
@@ -263,10 +276,10 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 ```bash
 cd /path/to/englishcollege
-python3 -m pytest tools/summary/tests/ -q
+python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 168 passed
 ```
 
-Current: 64 tests across 8 test files (llms_parser, qa, csv_emitter, prompt_builder, audit, webflow_client_dryrun, page_fetcher, keyword_extractor, cli).
+Current: **135 tests** across 12 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, webflow_client_dryrun, webflow_designer) plus **33 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **168 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`) and Phase-2 idempotency/retry hardening; the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 
