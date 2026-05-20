@@ -212,6 +212,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     plan = _plan_generate_english(args)
     items_to_process: list[dict[str, Any]] = []
     warnings: list[str] = []
+    qa_scores: dict[str, float] = {}  # tracker-092 (1.2): cid → QA score; recorded in manifest + report
 
     # tracker-091 M-13: fetch llms.txt once for the whole phase so every item's
     # link-candidate pool can include CMS items (housing /pb/, courses, blog) —
@@ -265,7 +266,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     locale = field_data.get("language-shortcode") or field_data.get("locale", "en")
                     if target["locale"] != "native_per_item":
                         locale = "en"
-                    url = f"https://www.englishcollege.com/post/{slug}"  # rough; CMS items map to URLs by collection
+                    url = _cms_item_url(target["content_type"], slug)  # per-collection prefix (M-14)
                     kw = derive_keywords(title, title, url, body, locale=locale)
                     item = SourceItem(
                         url=url, title=title, body_excerpt=body[:8000],
@@ -340,6 +341,9 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     "secondaries": list(kw_plan.secondaries) if kw_plan else [],
                     "entities": list(kw_plan.entities) if kw_plan else [],
                 },
+                # tracker-092 (1.2): QA score (0-100) over the stable scored set.
+                # None for dry-run / unmapped entries — readers treat absence as "—".
+                "qa_score": qa_scores.get(cid),
             }
         manifest_path = out_dir / "en-summaries.json"
         # Atomic write.
@@ -413,6 +417,57 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                         )
                     orig_cid = rr.custom_id[len("retry-"):]
                     failed = [f for f in failed if f.custom_id != orig_cid]
+
+    # tracker-092 (1.2): QA-GATE every succeeded summary BEFORE write-back. A draft
+    # that fails a CRITICAL check (em-dash / list / keyword-placement / fabricated
+    # price / embedded schema) is demoted to MANUAL_REVIEW and never written to
+    # production. Non-critical warnings (answer-first, anchors, near-duplicate,
+    # figures, link-in-inventory) are recorded in the score/notes but do not block.
+    from tools.summary.qa import qa_checks
+    _src_by_cid = {
+        f"gen-{i}-{s.cms_item_id or s.url[-50:]}": (s, kw)
+        for i, (s, kw, _t) in enumerate(sources)
+    }
+    qa_passed = []
+    for r in succeeded:
+        base_cid = r.custom_id[len("retry-"):] if r.custom_id.startswith("retry-") else r.custom_id
+        mapped = _src_by_cid.get(base_cid)
+        if mapped is None:
+            qa_passed.append(r)  # unmappable result → don't block on QA
+            continue
+        sitem, kw = mapped
+        link_inv = _build_link_candidate_pool(sitem.content_type, llms_index, sitem.locale)
+        rep = qa_checks(
+            r.content, kw.primary if kw else "", sitem.locale, link_inv,
+            excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
+            source_text=sitem.body_excerpt,
+        )
+        qa_scores[base_cid] = round(rep.score, 1)
+        if rep.passed:
+            qa_passed.append(r)
+        else:
+            failed.append(batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=False,
+                error="QA gate failed: " + "; ".join(rep.notes[:5] or ["critical check failed"]),
+            ))
+    qa_gate_summary = {
+        "checked": len(succeeded),
+        "passed": len(qa_passed),
+        "demoted_to_review": len(succeeded) - len(qa_passed),
+    }
+    succeeded = qa_passed
+
+    # tracker-092 (1.3): cross-page boilerplate guard (non-blocking). Flag pairs
+    # of shipped summaries that are near-duplicates of EACH OTHER — templated
+    # content across pages is the scaled-content-abuse footprint Google penalizes.
+    from tools.summary.qa import boilerplate_pairs
+    _bp_texts = {
+        (r.custom_id[len("retry-"):] if r.custom_id.startswith("retry-") else r.custom_id): r.content
+        for r in succeeded
+    }
+    for a, b, ov in boilerplate_pairs(_bp_texts):
+        warnings.append(f"boilerplate risk: summaries {a} and {b} are {ov:.0%} similar (templated-content footprint)")
+
     # MANUAL_REVIEW state for persistent failures (closes audit-086 H-5 / tracker-087 F-4).
     manual_review_path = out_dir / "manual-review.json"
     manual_review_payload = {
@@ -438,6 +493,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
         "submitted": True, "dry_run": False, "batch_id": handle.batch_id,
         "succeeded": len(succeeded), "failed": len(failed),
+        "qa_gate": qa_gate_summary,
         "write_log": write_log,
         "manifest_path": str(mpath), "manifest_entries": mcount,
         "manual_review_path": str(manual_review_path),
@@ -768,6 +824,24 @@ def _collection_id_for_content_type(content_type: str) -> str:
         "course": config.COLLECTIONS["courses"],
         "housing": config.COLLECTIONS["housing_new"],
     }.get(content_type, "")
+
+
+def _cms_item_url(content_type: str, slug: str) -> str:
+    """Build the live public URL for a CMS item (tracker-092 1.5 / M-14).
+
+    URL path prefix differs by collection — verified live 2026-05-20 via llms.txt:
+      blog  → /post/<slug>   (HTTP 200)
+      course→ /courses/<slug> (HTTP 200)
+      housing→ /pb/<slug>     (HTTP 200; /post/ and /housing/ both 404)
+    The previous code hardcoded /post/ for ALL collections, producing 404 URLs
+    for housing + courses in the prompt context.
+    """
+    prefix = {
+        "blog_post": "post",
+        "course": "courses",
+        "housing": "pb",
+    }.get(content_type, "post")
+    return f"https://www.englishcollege.com/{prefix}/{slug}"
 
 
 def _build_link_candidate_pool(
