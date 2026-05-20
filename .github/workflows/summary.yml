@@ -28,6 +28,11 @@ on:
         required: true
         default: true
         type: boolean
+      sync:
+        description: "Instant mode (generate-english): synchronous generateContent, no Batch API ≤24h wait. For fast testing + small runs. Leave false for the full catalog (Batch)."
+        required: false
+        default: false
+        type: boolean
       collection_filter:
         description: "Filter to one collection (blog | courses | housing_new). Leave blank for all."
         required: false
@@ -78,6 +83,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MODE: ${{ inputs.mode }}
           DRY_RUN: ${{ inputs.dry_run }}
+          SYNC: ${{ inputs.sync }}
           COLLECTION_FILTER: ${{ inputs.collection_filter }}
           LOCALE_FILTER: ${{ inputs.locale_filter }}
           LIMIT: ${{ inputs.limit }}
@@ -88,6 +94,9 @@ jobs:
             ARGS="$ARGS --dry-run"
           else
             ARGS="$ARGS --no-dry-run"
+          fi
+          if [ "$SYNC" = "true" ]; then
+            ARGS="$ARGS --sync"
           fi
           if [ -n "$COLLECTION_FILTER" ]; then
             ARGS="$ARGS --collection $COLLECTION_FILTER"

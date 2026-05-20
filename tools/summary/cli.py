@@ -80,6 +80,15 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--sync", action="store_true", default=False,
+        help=(
+            "generate-english only — use synchronous Gemini generateContent calls "
+            "(instant, no Batch API ≤24h SLA) instead of the Batch API. Higher "
+            "per-call cost; intended for fast testing + small runs. Use the default "
+            "(Batch) for the full catalog."
+        ),
+    )
+    parser.add_argument(
         "--out-dir", type=Path, default=None,
         help="Override output artifact directory.",
     )
@@ -421,9 +430,16 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "manifest_path": str(mpath), "manifest_entries": mcount,
             "warnings": warnings,
         }
-    # Live run.
-    handle = batch_runner.submit_batch(requests)
-    results = batch_runner.wait_for_batch(handle)
+    # Live run. --sync uses instant generateContent; default uses the Batch API.
+    if args.sync:
+        handle = batch_runner.BatchHandle(
+            batch_id=f"sync-{_timestamp_slug()}", request_count=len(requests),
+            submitted_at=_now_iso(), dry_run=False,
+        )
+        results = batch_runner.generate_sync(requests)
+    else:
+        handle = batch_runner.submit_batch(requests)
+        results = batch_runner.wait_for_batch(handle)
     succeeded = [r for r in results if r.succeeded]
     failed = [r for r in results if not r.succeeded]
     _first_errors = {r.custom_id: r.error for r in failed}  # tracker-092 (2.2): first-attempt errors for triage
@@ -443,8 +459,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     )
                 )
         if retry_requests:
-            retry_handle = batch_runner.submit_batch(retry_requests)
-            retry_results = batch_runner.wait_for_batch(retry_handle)
+            if args.sync:
+                retry_results = batch_runner.generate_sync(retry_requests)
+            else:
+                retry_handle = batch_runner.submit_batch(retry_requests)
+                retry_results = batch_runner.wait_for_batch(retry_handle)
             for rr in retry_results:
                 if rr.succeeded:
                     succeeded.append(rr)

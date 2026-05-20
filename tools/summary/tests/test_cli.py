@@ -697,3 +697,49 @@ def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
     assert calls["single"][0]["summary_html"] == single
     # The static 4-section file was written for the Vancouver landing page.
     assert (tmp_path / "weglot-out" / "static-summaries" / "vancouver.summary.md").exists()
+
+
+def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatch):
+    """tracker-096 review: --sync routes generation through batch_runner.generate_sync
+    (instant) and must NOT touch the Batch API (submit_batch / wait_for_batch)."""
+    from tools.summary import page_fetcher, batch_runner, llms_parser, config
+
+    def fake_fetch(url, timeout=20.0):
+        return page_fetcher.PageContent(
+            url=url, final_url=url, status=200,
+            html="<html><body><h1>Home</h1></body></html>",
+            title="Home | CEL", h1="Home", headings=("Home",), canonical=url,
+            hreflang_urls=(), existing_summary_html="",
+            body_text_excerpt=(
+                "CEL is an english language school with campuses in San Diego, "
+                "Los Angeles, and Vancouver. Students reach B2 in twelve weeks."
+            ),
+        )
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+
+    captured = {"sync": 0}
+
+    def fake_sync(requests, **kw):
+        captured["sync"] += 1
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content=_PASSING_HOME) for r in requests]
+
+    def boom_submit(*a, **kw):
+        raise AssertionError("submit_batch must NOT be called in --sync mode")
+
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
+    monkeypatch.setattr(batch_runner, "submit_batch", boom_submit)
+
+    rc = cli.main([
+        "generate-english", "--no-dry-run", "--sync", "--page",
+        "https://www.englishcollege.com/", "--out-dir", str(tmp_path / "run"),
+    ])
+    assert rc == 0
+    phase = json.loads((tmp_path / "run" / "report.json").read_text())["phases"]["generate_english"]
+    assert captured["sync"] == 1, "generate_sync was not called in --sync mode"
+    assert phase["succeeded"] == 1
+    assert phase["batch_id"].startswith("sync-")
