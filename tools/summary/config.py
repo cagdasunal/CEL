@@ -13,9 +13,6 @@ from pathlib import Path
 # Pricing reference: https://ai.google.dev/gemini-api/docs/pricing
 MODEL_ID = "gemini-3.1-pro-preview"
 
-# Batches API — sanity ceiling, well below the API max (~10,000).
-BATCH_SIZE_TARGET = 500
-
 # Defensive cost cap. Batch run aborts with an error if estimated cost exceeds this.
 MAX_BATCH_COST_USD = 100
 
@@ -77,6 +74,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEGLOT_IMPORTS_DIR = PROJECT_ROOT / "docs" / "admin" / "weglot-imports"
 DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
+
+# tracker-092 Phase 2: idempotency. summary-state.json maps a content id
+# (cms_item_id for CMS items, or the static-page URL) → a hash of its source
+# content + prompt version. generate-english skips items whose hash is unchanged
+# since the last successful run (unless --force) so re-runs don't re-submit
+# unchanged items to Gemini. Bump SUMMARY_PROMPT_VERSION whenever the prompts or
+# keyword logic change materially, to force a full regeneration.
+SUMMARY_PROMPT_VERSION = "2026-05-20-t092"
+SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
 # Field slug for the Summary field on each CMS collection. Webflow rich-text field
 # slug — if it doesn't exist on a collection, the script auto-creates it (dry-run

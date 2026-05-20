@@ -159,6 +159,51 @@ def test_parse_uses_metadata_custom_id_when_present():
     assert result.custom_id == "real-id"
 
 
+def test_retry_transient_retries_then_succeeds(monkeypatch):
+    """tracker-092 (2.3): a transient (503) failure is retried with backoff, then succeeds."""
+    monkeypatch.setattr(batch_runner.time, "sleep", lambda s: None)  # no real sleep
+    calls = {"n": 0}
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise RuntimeError("503 Service Unavailable")
+        return "ok"
+
+    assert batch_runner._retry_transient(flaky, attempts=3, base_delay=0.0) == "ok"
+    assert calls["n"] == 3
+
+
+def test_retry_transient_reraises_permanent_immediately(monkeypatch):
+    """A permanent error (e.g. API_KEY_INVALID) is NOT retried — fail fast."""
+    import pytest as _pytest
+    monkeypatch.setattr(batch_runner.time, "sleep", lambda s: None)
+    calls = {"n": 0}
+
+    def permanent():
+        calls["n"] += 1
+        raise RuntimeError("400 API_KEY_INVALID")
+
+    with _pytest.raises(RuntimeError, match="API_KEY_INVALID"):
+        batch_runner._retry_transient(permanent, attempts=3, base_delay=0.0)
+    assert calls["n"] == 1  # no retry burned on a permanent error
+
+
+def test_retry_transient_gives_up_after_max_attempts(monkeypatch):
+    """A persistently transient error re-raises after the attempt cap."""
+    import pytest as _pytest
+    monkeypatch.setattr(batch_runner.time, "sleep", lambda s: None)
+    calls = {"n": 0}
+
+    def always_503():
+        calls["n"] += 1
+        raise RuntimeError("503 unavailable")
+
+    with _pytest.raises(RuntimeError, match="503"):
+        batch_runner._retry_transient(always_503, attempts=3, base_delay=0.0)
+    assert calls["n"] == 3
+
+
 def test_parse_falls_back_to_index_when_metadata_missing():
     """When metadata is absent, use the fallback custom_id (index-mapped)."""
     inline = SimpleNamespace(
