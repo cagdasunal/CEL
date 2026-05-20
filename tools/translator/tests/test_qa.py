@@ -53,3 +53,24 @@ def test_untranslated_passthrough_warns_not_blocks():
 def test_length_ratio_warns():
     ok, flags = check_translation("Hi", "X" * 50, "de")
     assert any(f.startswith("length_ratio") for f in flags)
+
+
+def test_url_check_skipped_when_disabled():
+    # tracker-095 H2: the summary path swaps/removes links per locale, so the
+    # source URL is intentionally absent — url preservation must be skippable.
+    ok, flags = check_translation(
+        "See https://www.englishcollege.com/courses",
+        "Siehe unsere Kursseite",
+        "de",
+        check_urls=False,
+    )
+    assert ok
+    assert not any(f.startswith("url_drift") for f in flags)
+
+
+def test_arabic_indic_numerals_not_number_drift():
+    # tracker-095 M3: a model that localizes digits for `ar` (١٢ = 12) must not
+    # trip number_drift — digits are Unicode→ASCII folded before comparison.
+    ok, flags = check_translation("12 weeks", "١٢ أسبوعًا", "ar")
+    assert not any(f.startswith("number_drift") for f in flags)
+    assert ok

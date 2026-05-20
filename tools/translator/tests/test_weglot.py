@@ -98,6 +98,37 @@ def test_emit_brand_new_file_writes_header(tmp_path: Path):
     assert "Bonjour" in text
 
 
+def test_emit_byte_identical_to_fidelo_exporter(tmp_path: Path):
+    """tracker-095 I1: output must match the Fidelo exporter
+    (tools/weglot/csv_export.py) byte-for-byte so rows interleave in one file —
+    header + id/lang/type bare, word_from/word_to ALWAYS double-quoted."""
+    csv_path = tmp_path / "de.csv"
+    emit_consolidated_csv(
+        target_locale="de", existing_csv_path=csv_path,
+        summary_pairs=[WeglotPair(word_from="Learn English", word_to="Englisch lernen")],
+        out_path=csv_path,
+    )
+    assert csv_path.read_text(encoding="utf-8") == (
+        "id;language_from;language_to;word_from;word_to;type\n"
+        ';en;de;"Learn English";"Englisch lernen";Text\n'
+    )
+
+
+def test_emit_escapes_internal_quotes_like_fidelo(tmp_path: Path):
+    """Internal double-quotes are escaped as "" (Fidelo _weglot_quote parity)."""
+    csv_path = tmp_path / "de.csv"
+    emit_consolidated_csv(
+        target_locale="de", existing_csv_path=csv_path,
+        summary_pairs=[WeglotPair(word_from='Say "hi"', word_to='Sag "hallo"')],
+        out_path=csv_path,
+    )
+    line = csv_path.read_text(encoding="utf-8").splitlines()[1]
+    assert line == ';en;de;"Say ""hi""";"Sag ""hallo""";Text'
+    # And it round-trips back through the reader to the original text.
+    rows = read_existing_csv(csv_path)
+    assert rows[1][3] == 'Say "hi"' and rows[1][4] == 'Sag "hallo"'
+
+
 def test_csv_emitter_reexports_still_work():
     """The summary-side csv_emitter must still expose the moved names (back-compat)."""
     from tools.summary.csv_emitter import (
