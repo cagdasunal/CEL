@@ -192,6 +192,13 @@ def derive_keywords(
     if not primary:
         primary = candidate_b or candidate_a or candidate_c or "english school"
     primary = primary.strip().lower()
+    # tracker-097 follow-up: CMS items pass title==h1, so _longest_common_phrase
+    # returns the WHOLE title. For blog (long native-language titles) that yields a
+    # 8-word keyword that fails the keyword-placement + density QA checks (which
+    # assume a short 2-4 word keyword). Collapse an over-long keyword to its most
+    # body-recurring 2-4 word core — a real primary keyword. Short keywords
+    # (courses, static, English) are <= the cap and pass through unchanged.
+    primary = _shorten_primary(primary, body_text)
 
     # Secondary keywords: body frequency + heading tokens (locale-aware).
     secondaries = _body_frequency_terms(body_text, exclude=primary, limit=5, locale=locale)
@@ -272,7 +279,11 @@ def _longest_common_phrase(candidates: list[str]) -> str:
     # Build all 2-to-N gram sets per candidate.
     grams_per_candidate: list[set[str]] = []
     for c in cleaned:
-        tokens = re.findall(r"[a-z0-9]+", c)
+        # tracker-097 follow-up: \w (Unicode) instead of ASCII [a-z0-9] so accented
+        # languages tokenize correctly. The old ASCII regex split "sûre"->"s","re"
+        # and "séjour"->"s","jour", producing garbled keywords that never matched
+        # the (accented) summary text — the blog non-English QA failure.
+        tokens = re.findall(r"\w+", c)
         grams: set[str] = set()
         for n in range(2, min(len(tokens), 8) + 1):
             for i in range(len(tokens) - n + 1):
@@ -289,6 +300,41 @@ def _longest_common_phrase(candidates: list[str]) -> str:
         return ""
     # Longest by word count.
     return max(common, key=lambda g: (len(g.split()), len(g)))
+
+
+# Max words in a primary keyword. Longer derived keywords (blog's full-title case)
+# are collapsed to their body-recurring core so the QA keyword-placement + density
+# checks (which assume a short keyword) behave. 4 keeps phrases like
+# "learn english in vancouver" intact while shortening 8-word blog titles.
+_MAX_PRIMARY_WORDS = 4
+
+
+def _shorten_primary(primary: str, body_text: str) -> str:
+    """Collapse an over-long primary keyword to its most body-recurring 2-4 word
+    sub-phrase. Returns `primary` unchanged when it is already <= _MAX_PRIMARY_WORDS.
+
+    Selection: among all 2-to-4 word contiguous sub-phrases of `primary`, pick the
+    one with the highest count in `body_text` (tie-break: more words, then earliest).
+    A phrase whose tokens are split by punctuation in the body (e.g. a hyphenated
+    "est-elle") counts 0 there, so the recurring clean phrase ("séjour linguistique")
+    wins naturally. If nothing recurs, fall back to the first _MAX_PRIMARY_WORDS words.
+    """
+    words = primary.split()
+    if len(words) <= _MAX_PRIMARY_WORDS:
+        return primary
+    body_lower = (body_text or "").lower()
+    best_phrase: str | None = None
+    best_key: tuple[int, int, int] | None = None
+    for n in range(_MAX_PRIMARY_WORDS, 1, -1):
+        for i in range(len(words) - n + 1):
+            phrase = " ".join(words[i : i + n])
+            freq = body_lower.count(phrase) if body_lower else 0
+            key = (freq, n, -i)
+            if best_key is None or key > best_key:
+                best_key, best_phrase = key, phrase
+    if not best_phrase or best_key is None or best_key[0] == 0:
+        return " ".join(words[:_MAX_PRIMARY_WORDS])
+    return best_phrase
 
 
 def _body_frequency_terms(
@@ -309,7 +355,10 @@ def _body_frequency_terms(
         tokens = re.findall(r"\w{2,}", body_text, flags=re.UNICODE)
         tokens = [t.lower() for t in tokens]
     else:
-        tokens = re.findall(r"[a-zA-Z][a-zA-Z\-]{3,}", body_text.lower())
+        # tracker-097 follow-up: Unicode-aware (was ASCII [a-zA-Z]) so accented
+        # Latin words ("séjour", "français") aren't dropped/garbled. Keep the
+        # "starts with a letter, length >= 4" intent: a letter, then 3+ letters/hyphens.
+        tokens = re.findall(r"[^\W\d_](?:[^\W\d_]|-){3,}", body_text.lower())
     exclude_tokens = set(re.findall(r"\w+", exclude.lower(), flags=re.UNICODE))
     counts = collections.Counter(
         t for t in tokens if t not in stopwords and t not in exclude_tokens

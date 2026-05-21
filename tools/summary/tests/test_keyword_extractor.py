@@ -193,6 +193,48 @@ def test_homepage_override_applies_across_locales():
         )
 
 
+# ---- tracker-097 follow-up: non-English (accented) blog keyword derivation ----
+
+
+def test_french_blog_keyword_preserves_accents_and_shortens():
+    """A French blog post (title==h1, accented, long) must yield a SHORT, accented,
+    body-recurring keyword — not the accent-stripped 8-word title that fails QA.
+
+    Regression for the pilot failure: the ASCII tokenizer produced
+    'pour un s jour linguistique aux tats unis' (accents stripped) → every keyword
+    QA check failed + density 0.00%. The fix: Unicode tokenizing + shortening to the
+    recurring core."""
+    plan = derive_keywords(
+        title="San Diego est-elle sûre pour un séjour linguistique",
+        h1="San Diego est-elle sûre pour un séjour linguistique",
+        url="https://www.englishcollege.com/fr/post/san-diego-est-elle-sure-sejour-linguistique",
+        body_text=(
+            "Pour un séjour linguistique à San Diego, la sécurité compte. "
+            "Un séjour linguistique réussi dépend du quartier. Beaucoup d'étudiants "
+            "en séjour linguistique choisissent Pacific Beach."
+        ),
+        locale="fr",
+    )
+    # Accents preserved (NOT stripped to 's jour' / 's re').
+    assert any(c in plan.primary for c in "àâäéèêëîïôöûüç"), f"accents lost: {plan.primary!r}"
+    # Shortened to a real primary keyword (<= 4 words), not the 8-word title.
+    assert len(plan.primary.split()) <= 4, f"keyword too long: {plan.primary!r}"
+    # It's the recurring topical core that appears in the source body.
+    assert "séjour linguistique" in plan.primary
+
+
+def test_short_titles_not_shortened():
+    """Short keywords (courses, static, English) pass through unchanged — shortening
+    only triggers above the 4-word cap."""
+    plan = derive_keywords(
+        title="English Plus Career Dev",
+        h1="English Plus Career Dev",
+        url="https://www.englishcollege.com/courses/english-career-development",
+        body_text="The English Plus Career Dev course builds workplace English.",
+    )
+    assert plan.primary == "english plus career dev"
+
+
 def test_non_homepage_unaffected_by_override():
     """Pages NOT in the override map fall through to the heuristic — make sure
     a typical landing page still derives its primary from content."""
