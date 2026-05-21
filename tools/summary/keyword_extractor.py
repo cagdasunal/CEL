@@ -198,7 +198,7 @@ def derive_keywords(
     # assume a short 2-4 word keyword). Collapse an over-long keyword to its most
     # body-recurring 2-4 word core — a real primary keyword. Short keywords
     # (courses, static, English) are <= the cap and pass through unchanged.
-    primary = _shorten_primary(primary, body_text)
+    primary = _shorten_primary(primary, body_text, locale)
 
     # Secondary keywords: body frequency + heading tokens (locale-aware).
     secondaries = _body_frequency_terms(body_text, exclude=primary, limit=5, locale=locale)
@@ -309,30 +309,43 @@ def _longest_common_phrase(candidates: list[str]) -> str:
 _MAX_PRIMARY_WORDS = 4
 
 
-def _shorten_primary(primary: str, body_text: str) -> str:
-    """Collapse an over-long primary keyword to its most body-recurring 2-4 word
-    sub-phrase. Returns `primary` unchanged when it is already <= _MAX_PRIMARY_WORDS.
+def _shorten_primary(primary: str, body_text: str, locale: str = "en") -> str:
+    """Collapse an over-long primary keyword to its most body-recurring, content-bearing
+    2-4 word sub-phrase. Returns `primary` unchanged when already <= _MAX_PRIMARY_WORDS.
 
-    Selection: among all 2-to-4 word contiguous sub-phrases of `primary`, pick the
-    one with the highest count in `body_text` (tie-break: more words, then earliest).
-    A phrase whose tokens are split by punctuation in the body (e.g. a hyphenated
-    "est-elle") counts 0 there, so the recurring clean phrase ("séjour linguistique")
-    wins naturally. If nothing recurs, fall back to the first _MAX_PRIMARY_WORDS words.
+    A candidate sub-phrase must contain at least one CONTENT word (length >= 3 and not a
+    locale stopword) — otherwise frequent function-word fragments win (e.g. French
+    "à l" from "à l'étranger", the most common bigram in any French body). Among
+    content-bearing phrases, pick the one most frequent in `body_text` (tie-break: more
+    words, then earliest) so the keyword recurs (good density). A phrase split by
+    punctuation in the body counts 0 there, so a clean recurring phrase wins naturally.
     """
     words = primary.split()
     if len(words) <= _MAX_PRIMARY_WORDS:
         return primary
     body_lower = (body_text or "").lower()
+    stopwords = _LOCALE_STOPWORDS.get(locale, _STOPWORDS)
+
+    def _is_content(w: str) -> bool:
+        return len(w) >= 3 and w not in stopwords
+
     best_phrase: str | None = None
-    best_key: tuple[int, int, int] | None = None
+    best_key: tuple[bool, int, int, int] | None = None
     for n in range(_MAX_PRIMARY_WORDS, 1, -1):
         for i in range(len(words) - n + 1):
-            phrase = " ".join(words[i : i + n])
+            seg = words[i : i + n]
+            if not any(_is_content(w) for w in seg):
+                continue  # skip function-word-only phrases ("à l", "de la", "un")
+            phrase = " ".join(seg)
             freq = body_lower.count(phrase) if body_lower else 0
-            key = (freq, n, -i)
+            # Prefer phrases bounded by content words (a real phrase like
+            # "séjour linguistique") over fragments ("niveau d" from "niveau d'anglais"),
+            # then the most body-recurring (good density), then longer, then earliest.
+            clean_ends = _is_content(seg[0]) and _is_content(seg[-1])
+            key = (clean_ends, freq, n, -i)
             if best_key is None or key > best_key:
                 best_key, best_phrase = key, phrase
-    if not best_phrase or best_key is None or best_key[0] == 0:
+    if not best_phrase:
         return " ".join(words[:_MAX_PRIMARY_WORDS])
     return best_phrase
 
