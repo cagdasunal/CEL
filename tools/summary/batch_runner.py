@@ -54,12 +54,19 @@ class BatchRequest:
     we can pull this back down. Until then, the M-11 truncation detector
     in `_parse_inline_response` ensures any future shortfall fails loud
     (MANUAL_REVIEW) instead of silently writing clipped copy.
+
+    tracker-098 (2026-05-21): bumped 8000 -> 16000. The reconfiguration raised
+    summary length (650-1100 words ~= 1500-2500 visible tokens); combined with
+    ~7000 dynamic thinking tokens that exceed 8000, the 3 longest landing
+    summaries truncated (visible output clipped at ~850-1365 tokens). 16000
+    covers ~13000 thinking + ~3000 visible. Only ACTUAL tokens are billed, so
+    raising the ceiling adds no cost on its own — it just stops the clip.
     """
 
     custom_id: str
     system_blocks: list[dict]
     user_message: str
-    max_tokens: int = 8000
+    max_tokens: int = 16000
     enable_thinking: bool = True
     # tracker-097: per-request model (tiering). Empty → config.MODEL_ID (Pro).
     # cli sets this from config.model_for_content_type(content_type), so blog
