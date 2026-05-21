@@ -1,11 +1,9 @@
 {
-  "batch_id": "batches/199youkvlppaos1biv0uck7qp1sch281td2g",
+  "batch_id": "batches/m9554gfc3vrj2l09mua535at701fmkr1ngpz",
   "model": "gemini-2.5-flash",
-  "submitted_at": "2026-05-21T11:14:06.221022+00:00",
-  "request_count": 3,
+  "submitted_at": "2026-05-21T11:21:16.839276+00:00",
+  "request_count": 1,
   "custom_ids": [
-    "gen-0-6a05df11f0c087a6d0b82f19",
-    "gen-1-6a05da1181ace31a96df93c5",
-    "gen-2-6a05d69c53ef0dd94a5bff1b"
+    "gen-0-6a05d69c53ef0dd94a5bff1b"
   ]
 }
