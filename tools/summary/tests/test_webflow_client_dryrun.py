@@ -29,14 +29,15 @@ def test_dry_run_does_not_require_token():
 
 
 def test_dry_run_update_item_summary_parts_writes_four_fields():
-    """tracker-096: the 4-part CMS write patches the 3 plain slugs + the RichText
-    Content (reusing the `summary` slug). Triple-hyphen slugs for the plain parts."""
+    """tracker-096/098: the legacy 4-part CMS write (retained for back-compat) patches
+    Tagline/Title/Paragraphs + the RichText Content. tracker-098 renamed the Paragraphs
+    slug to `summary---paragraphs`."""
     client = WebflowClient(dry_run=True)
     result = client.update_item_summary_parts(
         collection_id="cid", item_id="i1",
         tagline="English School Life",
         title="What to expect from an english language school",
-        paragraph="Twelve weeks to a strong B2.",
+        paragraph="<p>Twelve weeks to a strong B2.</p>",
         content_html="<h4>How long</h4><p>Twelve weeks.</p>",
     )
     assert result.dry_run is True
@@ -46,9 +47,32 @@ def test_dry_run_update_item_summary_parts_writes_four_fields():
     fd = result.payload["fieldData"]
     assert fd["summary---tagline"] == "English School Life"
     assert fd["summary---title"] == "What to expect from an english language school"
-    assert fd["summary---paragraph"] == "Twelve weeks to a strong B2."
+    # tracker-098: Paragraphs slug renamed (singular → plural).
+    assert fd["summary---paragraphs"] == "<p>Twelve weeks to a strong B2.</p>"
     # Content reuses the existing `summary` slug and carries HTML, not Markdown.
     assert fd["summary"] == "<h4>How long</h4><p>Twelve weeks.</p>"
+
+
+def test_dry_run_update_item_summary_body_writes_only_two_richtext_fields():
+    """tracker-098: the live 4-part write path patches ONLY the two RichText bodies
+    (Paragraphs + Content), preserving the author-owned Tagline + Title."""
+    client = WebflowClient(dry_run=True)
+    result = client.update_item_summary_body(
+        collection_id="cid", item_id="i1",
+        paragraph_html="<p>Most students reach B2 in 12 weeks.</p><p>Beginners need longer.</p>",
+        content_html="<h4>Who is this for</h4><p>University-bound students.</p>",
+    )
+    assert result.dry_run is True
+    assert result.success is True
+    assert result.method == "PATCH"
+    assert "cid" in result.url and "i1" in result.url
+    fd = result.payload["fieldData"]
+    # Only the two RichText bodies are written — NOT the tagline/title slugs.
+    assert set(fd.keys()) == {"summary---paragraphs", "summary"}
+    assert "summary---tagline" not in fd
+    assert "summary---title" not in fd
+    assert fd["summary---paragraphs"].startswith("<p>Most students reach B2")
+    assert fd["summary"] == "<h4>Who is this for</h4><p>University-bound students.</p>"
 
 
 def test_dry_run_ensure_summary_field_when_missing():

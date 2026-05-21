@@ -9,13 +9,13 @@ Static landing pages live at fixed URLs (e.g., `/courses`, `/san-diego-ca/langua
 ## Word count target
 
 By page type:
-- `/` (home): 400–600
-- City landing (`/san-diego-ca/...`, `/los-angeles-ca/...`): 400–600
-- Country landing (`/learn-english-usa`, `/learn-english-canada`): 400–700
-- `/courses` listing: 400–600
-- `/housing` hub: 350–500
-- `/summer-camp-san-diego`: 350–500
-- `/pathway-program-usa` + `/pathway/*` (4 sub-pages): 400–600 each
+- `/` (home): 750–1050
+- City landing (`/san-diego-ca/...`, `/los-angeles-ca/...`): 750–1050
+- Country landing (`/learn-english-usa`, `/learn-english-canada`): 800–1100
+- `/courses` listing: 750–1050
+- `/housing` hub: 650–900
+- `/summer-camp-san-diego`: 650–900
+- `/pathway-program-usa` + `/pathway/*` (4 sub-pages): 700–1000 each
 
 ## Output structure (4-part)
 
@@ -23,10 +23,10 @@ Emit ONE Markdown document with EXACTLY these four parts, in this order — a `#
 
 - **Tagline** (the single `## ` line): 2–3 evocative, related words. Not a sentence, not a question, no trailing punctuation. An editorial kicker that makes the section feel designed, not an SEO block. Do NOT put the full primary keyword here.
 - **Title** (the single `### ` line): a short, human section title — the question the page answers, in search-query phrasing. Place the PRIMARY KEYWORD here, phrased naturally.
-- **Paragraph** (the prose between the Title and the first `#### `): ONE self-contained lead paragraph (~60–110 words, single block, no line breaks) that directly answers the Title. Primary keyword within the first 120 characters; open with a concrete fact (number, year, named entity). No headings, no links, no lists.
-- **Content** (everything from the first `#### ` onward): the depth layer and the ONLY part that may contain internal links. Open with an `#### ` H4 (a PAA-shaped sub-question) and use `##### ` H5 only where needed; 3–5 H4 sub-questions is typical for a landing page. Place all internal links here (1–2 blog posts + 2–3 related landing pages). Paragraphs only.
+- **Paragraph** (the prose between the Title and the first `#### `): TWO or THREE paragraphs (~150–260 words total), blank-line separated. The FIRST is the self-contained lead answer (primary keyword in the first 120 characters; open with a concrete fact — number, year, named entity). 1–2 contextually-relevant internal links MAY appear across the lead paragraphs. No headings, no lists.
+- **Content** (everything from the first `#### ` onward): the depth layer. Open with an `#### ` H4 (a PAA-shaped sub-question) and use `##### ` H5 only where needed; 3–5 H4 sub-questions is typical for a landing page. Place the remaining internal links here. Paragraphs only.
 
-Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links ONLY in Content; no code fences, no preamble, output the Markdown only.
+Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links may appear in the lead Paragraphs AND in the Content — NEVER in the Tagline or Title; no code fences, no preamble, output the Markdown only.
 
 ## Information gain
 
@@ -38,7 +38,7 @@ Each landing page already has hero + cards + visible sections. The summary secti
 
 ## Internal links
 
-YES — landing pages MAY link to blog posts in the same locale (rule reversed from prior pass). Pick 1–2 relevant blog posts plus 2–3 related landing pages. Anchor text diversity rules apply.
+YES — landing pages MAY link to blog posts in the same locale (rule reversed from prior pass). Aim for 6–8 meaningful links total, distributed across the lead Paragraphs and the Content (≈ 1 link per 100–150 words; never exceed 1 per 80 words): a mix of relevant blog posts and related landing pages. Anchor text diversity rules apply.
 
 Excluded targets:
 - `/vc/*`, `/sd/*`, `/sm/*` housing slugs (unpublished collections)

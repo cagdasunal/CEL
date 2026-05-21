@@ -135,7 +135,7 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # per-content-type model tiering). The model is also folded into _source_hash, so a
 # future model change regenerates without a version bump; this bump forces a one-time
 # full regeneration under the new cheaper (tiered + cached) pipeline.
-SUMMARY_PROMPT_VERSION = "2026-05-21-t097"
+SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
 # tracker-097: the last submitted Batch job's id + metadata, persisted on submit so a
@@ -184,7 +184,11 @@ SUMMARY_FIELD_DISPLAY_NAME = "Summary"
 SUMMARY_CONTENT_FIELD_SLUG = SUMMARY_FIELD_SLUG  # "summary" (RichText)
 SUMMARY_TAGLINE_FIELD_SLUG = "summary---tagline"  # PlainText, singleLine
 SUMMARY_TITLE_FIELD_SLUG = "summary---title"  # PlainText, singleLine
-SUMMARY_PARAGRAPH_FIELD_SLUG = "summary---paragraph"  # PlainText, singleLine
+# tracker-098: the Paragraph field is now RichText holding TWO paragraphs that may
+# carry inline internal links, and the CMS slug was renamed "summary---paragraph" →
+# "summary---paragraphs" (display "Summary - Paragraphs"). RichText writes get HTML
+# (<p>…</p> with inline <a>), not plain text.
+SUMMARY_PARAGRAPH_FIELD_SLUG = "summary---paragraphs"  # RichText (two paragraphs + links)
 
 # Static page summary element CSS selector. The single-block legacy element is
 # id="summary". tracker-096: static landing pages now use FOUR elements whose ids use

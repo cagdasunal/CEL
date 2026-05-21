@@ -1,10 +1,12 @@
-"""Tests for tools.summary.structure — 4-part parse + Markdown→HTML (tracker-096)."""
+"""Tests for tools.summary.structure — 4-part parse + Markdown→HTML (tracker-096/098)."""
 
 from tools.summary.structure import (
     FourPartSummary,
     four_part_content_html,
+    four_part_paragraph_html,
     parse_four_part,
     parts_to_markdown,
+    summary_markdown_to_html,
 )
 
 _FOUR_PART = """## English School Life
@@ -119,3 +121,77 @@ def test_parts_to_markdown_reconstructs_and_round_trips():
 def test_parts_to_markdown_empty():
     assert parts_to_markdown({}) == ""
     assert parts_to_markdown({"summary-tagline": ""}) == ""
+
+
+# ---- tracker-098: RichText Paragraphs (markdown source) + render helpers ----
+
+_TWO_PARA = """## Coastal Study Life
+
+### How long does it take to learn English in San Diego
+
+Most students reach B2 in 12 weeks at [CEL San Diego](https://www.englishcollege.com/san-diego-ca/language-school), where classes average 7 students.
+
+Beginners typically need 24 to 36 weeks depending on weekly hours and study intensity.
+
+#### Who is this course for
+
+University-bound students. See [our courses](https://www.englishcollege.com/courses).
+"""
+
+
+def test_parse_captures_two_paragraphs_as_markdown_with_links():
+    """tracker-098: the Paragraphs part keeps Markdown (blank-line-separated paragraphs
+    + inline links), no longer stripped to plain text."""
+    p = parse_four_part(_TWO_PARA)
+    # Blank-line separation between the two paragraphs is preserved.
+    assert "\n\n" in p.paragraph
+    paras = [blk for blk in p.paragraph.split("\n\n") if blk.strip()]
+    assert len(paras) == 2
+    # The inline link Markdown survives in the paragraph source.
+    assert "[CEL San Diego](https://www.englishcollege.com/san-diego-ca/language-school)" in p.paragraph
+    assert paras[1].startswith("Beginners typically need")
+
+
+def test_four_part_paragraph_html_renders_two_paragraphs_and_links():
+    p = parse_four_part(_TWO_PARA)
+    html = four_part_paragraph_html(p.paragraph)
+    assert html.count("<p>") == 2
+    assert '<a href="https://www.englishcollege.com/san-diego-ca/language-school">CEL San Diego</a>' in html
+    # No heading tags leak from the Paragraphs render.
+    assert "<h" not in html
+
+
+def test_four_part_paragraph_html_emphasis_and_escape():
+    html = four_part_paragraph_html("It is **fast** & cheap.\n\nLevels A1 < C2 apply.")
+    assert "<strong>fast</strong>" in html
+    assert "&amp;" in html and "&lt;" in html
+    assert html.count("<p>") == 2
+
+
+def test_four_part_paragraph_html_empty():
+    assert four_part_paragraph_html("") == ""
+    assert four_part_paragraph_html("   \n  ") == ""
+
+
+def test_summary_markdown_to_html_renders_blog_single_block():
+    md = (
+        "## How long does it take to learn English?\n\n"
+        "Most reach B2 in [12 weeks](https://www.englishcollege.com/courses). It is **fast**.\n\n"
+        "### What level do I need\n\n"
+        "All levels from A1 to C2, with *placement* on day one.\n\n"
+        "#### A deeper note\n\nExtra detail."
+    )
+    html = summary_markdown_to_html(md)
+    assert "<h2>How long does it take to learn English?</h2>" in html
+    assert "<h3>What level do I need</h3>" in html
+    assert "<h4>A deeper note</h4>" in html
+    assert '<a href="https://www.englishcollege.com/courses">12 weeks</a>' in html
+    assert "<strong>fast</strong>" in html
+    assert "<em>placement</em>" in html
+    # No literal Markdown markers leak through.
+    assert "## " not in html and "](http" not in html
+
+
+def test_summary_markdown_to_html_empty():
+    assert summary_markdown_to_html("") == ""
+    assert summary_markdown_to_html("  \n  ") == ""

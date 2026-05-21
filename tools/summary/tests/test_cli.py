@@ -596,6 +596,44 @@ def test_link_candidate_pool_deduplicates_overlap():
     assert pool.count("https://www.englishcollege.com/housing") == 1
 
 
+def test_link_candidate_pool_caps_housing_path_at_one(tmp_path, monkeypatch):
+    """tracker-098: at most ONE /housing-path candidate survives (down-weight, not
+    exclude). STATIC_PAGES contributes the /housing hub; extra /housing/<slug> detail
+    URLs from llms.txt are dropped past the cap. Non-housing candidates are unaffected."""
+    from tools.summary import config, llms_parser
+
+    idx = llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/kitsilano-residence",
+            title="Kitsilano Residence", description="", section="Housing", locale="en",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/downtown-residence",
+            title="Downtown Residence", description="", section="Housing", locale="en",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/courses/general-english",
+            title="General English", description="", section="Courses", locale="en",
+        ),
+    ])
+    pool = cli._build_link_candidate_pool("landing", idx, "en")
+    housing_paths = [u for u in pool if cli._is_housing_path(u)]
+    assert len(housing_paths) == 1, housing_paths
+    # The surviving one is the curated /housing hub (STATIC_PAGES is prepended).
+    assert housing_paths[0] == "https://www.englishcollege.com/housing"
+    # Non-housing candidates are untouched.
+    assert "https://www.englishcollege.com/courses/general-english" in pool
+
+
+def test_is_housing_path_helper():
+    """_is_housing_path matches the /housing hub + /housing/* details, not /pb/ or others."""
+    assert cli._is_housing_path("https://www.englishcollege.com/housing")
+    assert cli._is_housing_path("https://www.englishcollege.com/housing/kitsilano")
+    assert not cli._is_housing_path("https://www.englishcollege.com/pb/some-residence")
+    assert not cli._is_housing_path("https://www.englishcollege.com/courses/general-english")
+    assert not cli._is_housing_path("https://www.englishcollege.com/")
+
+
 def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatch):
     """End-to-end: _execute_generate_english uses _build_link_candidate_pool's
     output as the link inventory passed to the prompt builder. Patch the helper
@@ -647,31 +685,34 @@ def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatc
 
 
 def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
-    """course/housing CMS items → update_item_summary_parts (4 fields, HTML Content);
-    blog → update_item_summary (single block, UNCHANGED); landing → 4-section static file."""
+    """tracker-098: course/housing CMS items → update_item_summary_body (Paragraphs +
+    Content RichText, both HTML, Tagline/Title preserved); blog → update_item_summary
+    (single block, Markdown rendered to HTML); landing → 4-section static file."""
     from tools.summary import batch_runner, webflow_client, config
     from tools.summary.prompt_builder import KeywordPlan, SourceItem
 
     monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
-    calls = {"single": [], "parts": []}
+    calls = {"single": [], "body": []}
 
     def rec_single(self, **kw):
         calls["single"].append(kw)
         return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
 
-    def rec_parts(self, **kw):
-        calls["parts"].append(kw)
+    def rec_body(self, **kw):
+        calls["body"].append(kw)
         return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
 
     monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
     monkeypatch.setattr(webflow_client.WebflowClient, "update_item_summary", rec_single)
-    monkeypatch.setattr(webflow_client.WebflowClient, "update_item_summary_parts", rec_parts)
+    monkeypatch.setattr(webflow_client.WebflowClient, "update_item_summary_body", rec_body)
 
     four_part = (
-        "## English School Life\n\n### A good section title\n\nA short lead paragraph.\n\n"
+        "## English School Life\n\n### A good section title\n\n"
+        "A short lead paragraph with [a campus link](https://www.englishcollege.com/vancouver).\n\n"
+        "A second lead paragraph.\n\n"
         "#### A detail heading\n\nSome body text here.\n"
     )
-    single = "## A blog question\n\nA blog answer paragraph.\n"
+    single = "## A blog question\n\nA blog answer paragraph with a [sibling post](https://www.englishcollege.com/post/x).\n"
     van_url = "https://www.englishcollege.com/vancouver"
     sources = [
         (SourceItem(url="https://www.englishcollege.com/courses/x", title="C", body_excerpt="b",
@@ -694,19 +735,25 @@ def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
         dry_run = False
 
     out = cli._write_back_summaries(results, sources, _Args(), tmp_path, [])
-    # course + housing → 4-part parts (2 calls); blog → single (1 call); landing → static file.
-    assert len(calls["parts"]) == 2, calls
+    # course + housing → 4-part body writes (2 calls); blog → single (1 call); landing → static file.
+    assert len(calls["body"]) == 2, calls
     assert len(calls["single"]) == 1, calls
     assert out["cms_writes"] == 3
     assert out["static_writes"] == 1
     assert out["failures"] == 0
-    # The 4-part call carries the parsed fields, with the Content rendered to HTML.
-    pcall = calls["parts"][0]
-    assert pcall["tagline"] == "English School Life"
-    assert pcall["title"] == "A good section title"
-    assert "<h4>A detail heading</h4>" in pcall["content_html"]
-    # Blog keeps the legacy single-field write with the raw Markdown (byte-identical).
-    assert calls["single"][0]["summary_html"] == single
+    # The 4-part body write carries ONLY the two RichText bodies as HTML; Tagline/Title
+    # are NOT in the call (they are preserved on the item, never overwritten).
+    bcall = calls["body"][0]
+    assert set(bcall.keys()) == {"collection_id", "item_id", "paragraph_html", "content_html"}
+    # Both lead paragraphs are rendered, the inline link survives, Content has the H4.
+    assert bcall["paragraph_html"].count("<p>") == 2
+    assert '<a href="https://www.englishcollege.com/vancouver">a campus link</a>' in bcall["paragraph_html"]
+    assert "<h4>A detail heading</h4>" in bcall["content_html"]
+    # Blog single-block write now carries HTML (tracker-098), not raw Markdown.
+    blog_html = calls["single"][0]["summary_html"]
+    assert "<h2>A blog question</h2>" in blog_html
+    assert '<a href="https://www.englishcollege.com/post/x">sibling post</a>' in blog_html
+    assert "## " not in blog_html  # no literal Markdown headings leaked
     # The static 4-section file was written for the Vancouver landing page.
     assert (tmp_path / "weglot-out" / "static-summaries" / "vancouver.summary.md").exists()
 
@@ -767,6 +814,23 @@ def test_sanitize_summary_strips_em_and_en_dashes():
     # No banned dash means the text is returned unchanged.
     clean = "Most students reach B2 in twelve weeks."
     assert cli._sanitize_summary(clean) == clean
+
+
+def test_sanitize_summary_normalizes_html_to_markdown():
+    """tracker-098: the model (esp. Flash) sometimes emits raw inline HTML (<a>/<strong>/
+    <em>) despite the Markdown-only rule. _sanitize_summary normalizes it back to Markdown
+    BEFORE QA + write-back, so QA's Markdown link checks see the links and the
+    Markdown->HTML converter emits real <a> rather than escaped &lt;a&gt; (the live blog bug)."""
+    out = cli._sanitize_summary('See <a href="https://www.englishcollege.com/fr/cours">nos cours</a> today.')
+    assert out == "See [nos cours](https://www.englishcollege.com/fr/cours) today."
+    # Single-quoted href + extra attributes around href are handled.
+    assert cli._sanitize_summary("<a href='https://x.com/p'>p</a>") == "[p](https://x.com/p)"
+    assert cli._sanitize_summary('<a class="c" href="https://x.com/p" target="_blank">p</a>') == "[p](https://x.com/p)"
+    # strong/b -> **, em/i -> *.
+    assert cli._sanitize_summary("<strong>bold</strong> and <em>it</em>") == "**bold** and *it*"
+    # Already-Markdown is left untouched (no double-conversion).
+    md = "See [our courses](https://www.englishcollege.com/courses)."
+    assert cli._sanitize_summary(md) == md
 
 
 def test_resolve_item_locale_blog_language_reference():

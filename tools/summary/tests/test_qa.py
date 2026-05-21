@@ -240,9 +240,11 @@ def test_four_part_passing_draft():
     assert r.checks["tagline_word_count"]
     assert r.checks["keyword_in_title"]
     assert r.checks["keyword_in_paragraph"]
-    assert r.checks["links_only_in_content"]
+    # tracker-098: links_only_in_content was relaxed to no_links_in_tagline_title.
+    assert r.checks["no_links_in_tagline_title"]
     assert r.checks["heading_order"]
     assert r.checks["content_starts_with_h4"]
+    assert r.checks["no_link_stuffing"]
 
 
 def test_four_part_tagline_too_long_is_critical():
@@ -261,14 +263,33 @@ def test_four_part_keyword_must_be_in_title():
     assert not r.passed
 
 
-def test_four_part_link_outside_content_is_critical():
-    # A link in the Paragraph (before the first H4) must fail links_only_in_content.
+def test_four_part_link_in_paragraph_now_allowed():
+    """tracker-098: a link in the Paragraphs (before the first H4) is now ALLOWED —
+    no_links_in_tagline_title still passes and the draft still passes overall."""
     draft = _FOUR_PART_PASS.replace(
         "accelerate progress.",
-        "accelerate progress at [our campus](https://www.englishcollege.com/vancouver).",
+        "accelerate progress at [our Vancouver campus](https://www.englishcollege.com/vancouver).",
     )
-    r = qa_checks(draft, _FP_KW, "en", _FP_INV, structure="four_part")
-    assert not r.checks["links_only_in_content"]
+    r = qa_checks(
+        draft, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert r.checks["no_links_in_tagline_title"], r.notes
+    assert r.passed, r.notes
+
+
+def test_four_part_link_in_title_is_critical():
+    """tracker-098: a link in the Title (H3) must fail no_links_in_tagline_title (CRITICAL).
+    Links in headings are detected on the raw heading line (parts.title is markdown-stripped).
+    A distinct URL is used so first_occurrence_only stays green and the failure is isolated."""
+    draft = _FOUR_PART_PASS.replace(
+        "### How long does it take to learn english in vancouver",
+        "### How long to [learn english in vancouver](https://www.englishcollege.com/courses)",
+    )
+    inv = _FP_INV + ["https://www.englishcollege.com/courses"]
+    r = qa_checks(draft, _FP_KW, "en", inv, structure="four_part")
+    assert not r.checks["no_links_in_tagline_title"], r.notes
+    assert r.checks["first_occurrence_only"], r.notes  # the failure is isolated to the heading-link rule
     assert not r.passed
 
 
@@ -419,3 +440,182 @@ def test_four_part_keyword_matches_when_title_paraphrases():
     r = qa_checks(draft, "anglais pour étudier", "fr", [], structure="four_part")
     assert r.checks["keyword_in_title"], r.notes
     assert r.checks["keyword_in_paragraph"], r.notes
+
+
+# ---- tracker-098: locale-matched links for blog (single_block) ----
+
+_DE_BLOG = (
+    "## Wie lange dauert es, Englisch zu lernen\n\n"
+    "Die meisten Lernenden erreichen B2 in etwa zwölf Wochen, abhängig vom Startniveau "
+    "und den Wochenstunden. Siehe {LINK} für Details.\n"
+)
+_DE_INV = [
+    "https://www.englishcollege.com/de/post/englisch-lernen",
+    "https://www.englishcollege.com/de/vancouver",
+    "https://www.englishcollege.com/post/learn-english",  # an EN sibling (wrong locale for a DE post)
+]
+
+
+def test_blog_links_locale_matched_passes_for_same_locale_link():
+    draft = _DE_BLOG.format(
+        LINK="[unser Vancouver-Campus](https://www.englishcollege.com/de/vancouver)"
+    )
+    r = qa_checks(draft, "englisch lernen", "de", _DE_INV)
+    assert r.checks["links_locale_matched"], r.notes
+    assert r.passed, r.notes
+
+
+def test_blog_off_locale_link_is_critical():
+    """A DE blog post linking to an unprefixed (EN) URL fails links_locale_matched (CRITICAL)."""
+    draft = _DE_BLOG.format(
+        LINK="[learn English](https://www.englishcollege.com/post/learn-english)"
+    )
+    r = qa_checks(draft, "englisch lernen", "de", _DE_INV)
+    assert not r.checks["links_locale_matched"], r.notes
+    assert not r.passed
+
+
+def test_blog_en_post_rejects_prefixed_locale_link():
+    """An EN post must NOT link to a /de/ (or any prefixed-locale) URL."""
+    draft = (
+        "## How long does it take to learn English\n\n"
+        "Most students reach B2 in about 12 weeks. See "
+        "[our German page](https://www.englishcollege.com/de/vancouver) for more.\n"
+    )
+    inv = ["https://www.englishcollege.com/de/vancouver", "https://www.englishcollege.com/vancouver"]
+    r = qa_checks(draft, "learn english", "en", inv)
+    assert not r.checks["links_locale_matched"], r.notes
+    assert not r.passed
+
+
+def test_blog_locale_check_vacuous_without_inventory():
+    """Audit phase (no inventory) must not block on the locale-match check."""
+    draft = _DE_BLOG.format(
+        LINK="[learn English](https://www.englishcollege.com/post/learn-english)"
+    )
+    r = qa_checks(draft, "englisch lernen", "de", [])  # no inventory
+    assert r.checks["links_locale_matched"]
+
+
+def test_four_part_is_exempt_from_locale_match():
+    """Courses/housing/landing (Weglot-translated) are EXEMPT — the locale-match check
+    is not even present in the four_part report."""
+    draft = (
+        "## English School Life\n\n"
+        "### How long does it take to learn english in vancouver\n\n"
+        "Most students learn english in vancouver in 6 to 12 months at CEL.\n\n"
+        "#### What level do I need\n\nAll levels. See "
+        "[our German page](https://www.englishcollege.com/de/vancouver).\n"
+    )
+    inv = ["https://www.englishcollege.com/de/vancouver"]
+    r = qa_checks(draft, "learn english in vancouver", "en", inv, structure="four_part")
+    assert "links_locale_matched" not in r.checks
+
+
+# ---- tracker-098: 6-8 link target + hard anti-stuffing ceiling ----
+
+
+def _long_body(words: int) -> str:
+    """A blank-line-separated prose body of ~`words` words (no links, no headings)."""
+    sentence = "Students reach strong fluency through steady daily practice and feedback. "
+    text = (sentence * ((words // 10) + 1)).strip()
+    return text
+
+
+def test_link_density_passes_in_target_band_for_long_summary():
+    """A long summary with 7 links (inside the 6-8 target / 5-9 band) passes link_density
+    and is not flagged as stuffing."""
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(7)
+    )
+    draft = "## How long to learn english in vancouver\n\n" + _long_body(700) + " " + links + "\n"
+    r = qa_checks(draft, "learn english in vancouver", "en", [])
+    assert r.checks["link_density"], r.notes
+    assert r.checks["no_link_stuffing"], r.notes
+
+
+def test_link_density_warns_when_under_linked_long_summary():
+    """A long (700-word) summary with only 1 link falls below the band → link_density
+    warns (scored fail), but it's NOT a critical stuffing failure."""
+    draft = (
+        "## How long to learn english in vancouver\n\n" + _long_body(700)
+        + " See [our Vancouver campus](https://www.englishcollege.com/vancouver).\n"
+    )
+    r = qa_checks(draft, "learn english in vancouver", "en", [])
+    assert not r.checks["link_density"], r.notes
+    assert r.checks["no_link_stuffing"]  # under-linking is not stuffing
+
+
+def test_link_stuffing_ceiling_is_critical():
+    """Exceeding 1 link per ~90 words trips no_link_stuffing (CRITICAL)."""
+    # ~120 words with 20 links → ~6 words/link, far over the 1/90 ceiling.
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(20)
+    )
+    draft = "## How long to learn english in vancouver\n\n" + _long_body(120) + " " + links + "\n"
+    r = qa_checks(draft, "learn english in vancouver", "en", [])
+    assert not r.checks["no_link_stuffing"], r.notes
+    assert not r.passed
+
+
+def test_short_draft_with_few_links_still_passes_density():
+    """The original short fixtures (1 link, ~120 words) must remain green under the new band."""
+    r = qa_checks(_PASSING_DRAFT, _PRIMARY_KW, "en", _INVENTORY)
+    assert r.checks["link_density"], r.notes
+    assert r.checks["no_link_stuffing"]
+
+
+# ---- tracker-098 pass 2: ceiling loosened 90 → 80 (so the raised word-count targets,
+#      every minimum ≥ 650, leave headroom for 8 links @ 1/80 = 640 words). ----
+
+
+def _exact_words(n: int) -> str:
+    """Return a prose string of EXACTLY `n` words (no links, no headings)."""
+    return " ".join(["word"] * n) + "."  # the trailing period is not a \b\w+\b match
+
+
+def _draft_with_links(body_words: int, n_links: int) -> str:
+    """A single-block draft: one H2, a body of `body_words` plain words, and `n_links`
+    Markdown links appended. qa counts the H2 text (3 words) + body + 9 words/link."""
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(n_links)
+    )
+    return f"## a section heading\n\n{_exact_words(body_words)} {links}\n"
+
+
+def test_link_stuffing_ceiling_constant_is_80():
+    """tracker-098 pass 2: the hard anti-stuffing ceiling moved from 90 to 80 words/link."""
+    from tools.summary.qa import _LINK_STUFFING_WORDS_PER_LINK
+
+    assert _LINK_STUFFING_WORDS_PER_LINK == 80
+
+
+def test_link_stuffing_function_boundary_at_80():
+    """The pure ceiling: 8 links pass at 640 words (8/80), fail at 639."""
+    from tools.summary.qa import _link_stuffing
+
+    assert not _link_stuffing(8, 640)  # exactly 1/80 — not over the ceiling
+    assert _link_stuffing(8, 639)      # one word short — over the ceiling, FAIL
+
+
+def test_650_word_8_link_draft_passes_no_link_stuffing():
+    """A 650-word / 8-link summary clears the 1/80 ceiling (650/80 = 8.125 > 8)."""
+    # body sized so total word_count == 650: 3 (heading) + body + 8*9 (links) = 650.
+    draft = _draft_with_links(body_words=650 - 3 - 8 * 9, n_links=8)
+    r = qa_checks(draft, "a section", "en", [])
+    # A passing check appends no note, so verify the boolean directly. (notes is a
+    # list populated only on failure; assert nothing about no_link_stuffing is in it.)
+    assert r.checks["no_link_stuffing"], r.notes
+    assert not any(n.startswith("no_link_stuffing") for n in r.notes), r.notes
+
+
+def test_400_word_8_link_draft_fails_no_link_stuffing():
+    """A 400-word / 8-link summary trips the 1/80 ceiling (400/80 = 5 < 8) → CRITICAL fail."""
+    draft = _draft_with_links(body_words=400 - 3 - 8 * 9, n_links=8)
+    r = qa_checks(draft, "a section", "en", [])
+    assert not r.checks["no_link_stuffing"], r.notes
+    assert not r.passed
+    # The failure note records the actual word count + ceiling for triage.
+    stuffing_note = next(n for n in r.notes if n.startswith("no_link_stuffing"))
+    assert "400 words" in stuffing_note, stuffing_note
+    assert "ceiling 1 per 80" in stuffing_note, stuffing_note

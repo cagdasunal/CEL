@@ -35,6 +35,10 @@ class SourceItem:
     locale: str  # Source language; "en" for landing pages and most CMS items
     content_type: str  # one of: "landing", "course", "housing", "blog_post"
     cms_item_id: Optional[str] = None
+    # tracker-098 pass 2: the item's CURRENT summary (plain text, ≤~1500 chars), passed
+    # to build_user_message as the reuse seed so generation expands what exists instead
+    # of starting blank. Empty when the item has no prior summary.
+    existing_summary_excerpt: str = ""
 
 
 @dataclass(frozen=True)
@@ -137,7 +141,11 @@ def build_user_message(
     lines.append("")
 
     if existing_summary_excerpt.strip():
-        lines.append("## Existing summary (if any — improve, don't duplicate)")
+        lines.append(
+            "## Existing summary — REUSE this: keep its verified facts, EXPAND it to "
+            "the new length, and add the new internal links. Do NOT discard it or "
+            "rewrite from scratch."
+        )
         lines.append("")
         lines.append(existing_summary_excerpt.strip())
         lines.append("")
@@ -151,9 +159,9 @@ def build_user_message(
     lines.append("")
 
     lines.append("## Available internal link candidates")
-    lines.append("Pick 1-3 contextually-relevant links from this list. Do NOT invent URLs.")
+    lines.append("Pick 6–8 contextually-relevant links, distributed across the summary. Do NOT invent URLs.")
     lines.append("")
-    for url in candidates[:30]:  # cap to 30 to stay within reasonable prompt size
+    for url in candidates[:60]:  # cap to 60 to stay within reasonable prompt size
         lines.append(f"- {url}")
     lines.append("")
 
@@ -166,14 +174,17 @@ def build_user_message(
         )
     else:
         # tracker-096: courses, housing, and landing pages use the 4-part structure.
+        # tracker-098 pass 2: the Paragraph part is now TWO or THREE paragraphs that
+        # may carry links (raised from two; structure renders N paragraphs).
         lines.append(
             "Write the 4-part Summary section per the rules above, as ONE Markdown "
             "document in this exact order: a `## ` Tagline (2-3 related words, no "
-            "punctuation), a `### ` Title (place the primary keyword here), one short "
-            "lead Paragraph (primary keyword in the first sentence), then the Content "
-            "starting at `#### ` (use `##### ` only where needed). Put ALL internal "
-            "links in the Content only — never in the Tagline, Title, or Paragraph. "
-            "No code fences, no preamble, no trailing commentary."
+            "punctuation), a `### ` Title (place the primary keyword here), TWO or "
+            "THREE lead Paragraphs (blank-line separated; the first leads with the "
+            "answer + the primary keyword in its first sentence), then the Content "
+            "starting at `#### ` (use `##### ` only where needed). Distribute 6–8 "
+            "internal links across the lead Paragraphs and the Content (never in the "
+            "Tagline or Title). No code fences, no preamble, no trailing commentary."
         )
     return "\n".join(lines)
 
