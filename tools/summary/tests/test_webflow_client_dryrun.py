@@ -28,6 +28,60 @@ def test_dry_run_does_not_require_token():
     assert result.success is True
 
 
+class _FakeResp:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return b'{"ok": true}'
+
+
+def test_request_retries_on_timeout_then_succeeds():
+    """tracker-098: a transient socket read-timeout (bare TimeoutError) is retried with
+    backoff — it must NOT propagate. Two timeouts then success → one successful write."""
+    from unittest import mock
+    from tools.summary import webflow_client as wc
+
+    client = wc.WebflowClient(dry_run=False)
+    client._token = "test-token"  # bypass env token fetch
+    calls = {"n": 0}
+
+    def fake_urlopen(req, timeout=None):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise TimeoutError("The read operation timed out")
+        return _FakeResp()
+
+    with mock.patch.object(wc.urllib.request, "urlopen", fake_urlopen), \
+            mock.patch.object(wc.time, "sleep", lambda s: None):
+        out = client.update_item_summary("c", "i", "<p>x</p>")
+    assert out.success is True
+    assert calls["n"] == 3  # retried past the two timeouts
+
+
+def test_request_persistent_timeout_returns_failure_not_crash():
+    """tracker-098: a PERSISTENT read-timeout must return a failed WriteResult (so the
+    write-back loop logs it and continues) — NOT raise a bare TimeoutError that crashes
+    the whole batch after a paid generation (the run-098-full incident)."""
+    from unittest import mock
+    from tools.summary import webflow_client as wc
+
+    client = wc.WebflowClient(dry_run=False)
+    client._token = "test-token"
+
+    def always_timeout(req, timeout=None):
+        raise TimeoutError("The read operation timed out")
+
+    with mock.patch.object(wc.urllib.request, "urlopen", always_timeout), \
+            mock.patch.object(wc.time, "sleep", lambda s: None):
+        out = client.update_item_summary("c", "i", "<p>x</p>")
+    assert out.success is False
+    assert "Network error" in (out.error or "")
+
+
 def test_dry_run_update_item_summary_parts_writes_four_fields():
     """tracker-096/098: the legacy 4-part CMS write (retained for back-compat) patches
     Tagline/Title/Paragraphs + the RichText Content. tracker-098 renamed the Paragraphs

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -396,19 +397,37 @@ class WebflowClient:
         headers: dict[str, str],
         payload: Optional[dict[str, Any]] = None,
         timeout: float = 30.0,
+        max_attempts: int = 3,
     ) -> dict[str, Any]:
         data = None
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data, headers=headers, method=method)
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                body = resp.read().decode("utf-8")
-                if not body:
-                    return {}
-                return json.loads(body)
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""
-            raise WebflowApiError(f"HTTP {e.code} {method} {url}: {body[:500]}") from e
-        except urllib.error.URLError as e:
-            raise WebflowApiError(f"Network error {method} {url}: {e.reason}") from e
+        last_exc: Optional[WebflowApiError] = None
+        for attempt in range(max_attempts):
+            req = urllib.request.Request(url, data=data, headers=headers, method=method)
+            try:
+                with urllib.request.urlopen(req, timeout=timeout) as resp:
+                    body = resp.read().decode("utf-8")
+                    if not body:
+                        return {}
+                    return json.loads(body)
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", errors="replace") if hasattr(e, "read") else ""
+                # Retry transient rate-limit / server errors with backoff; fail fast on other 4xx.
+                if e.code in (429, 500, 502, 503, 504) and attempt < max_attempts - 1:
+                    last_exc = WebflowApiError(f"HTTP {e.code} {method} {url}: {body[:200]}")
+                    time.sleep(2 ** attempt)
+                    continue
+                raise WebflowApiError(f"HTTP {e.code} {method} {url}: {body[:500]}") from e
+            except (TimeoutError, urllib.error.URLError) as e:
+                # tracker-098: a socket read-timeout raises a BARE TimeoutError (not a
+                # URLError) and was previously uncaught — it crashed the entire write-back
+                # phase after a paid generation (run-098-full). Catch both; retry transient
+                # ones with backoff so one slow PATCH no longer aborts the batch.
+                reason = getattr(e, "reason", e)
+                last_exc = WebflowApiError(f"Network error {method} {url}: {reason}")
+                if attempt < max_attempts - 1:
+                    time.sleep(2 ** attempt)
+                    continue
+                raise last_exc from e
+        raise last_exc if last_exc else WebflowApiError(f"Request failed: {method} {url}")
