@@ -352,6 +352,16 @@ def test_keyword_matches_across_inflection():
     assert r.checks["keyword_in_p1"]
 
 
+def test_keyword_matches_german_suffix_inflection():
+    """German verb inflection (suffix substitution): keyword 'überraschen' vs the H2's
+    'überrascht' must match via shared stem — without false-matching short shared prefixes."""
+    from tools.summary.qa import _keyword_covered
+    h2 = "Was überrascht Studenten in Vancouver"
+    assert _keyword_covered("studenten in vancouver überraschen", h2, "de")
+    # Guard: a 5-char shared prefix ("inter") must NOT cause a false match.
+    assert not _keyword_covered("international", "an interesting topic", "en")
+
+
 def test_keyword_topic_absent_still_fails():
     """Robustness guard: if NONE of the keyword's content words are present, the
     check still FAILS — the fix must not make every keyword pass."""

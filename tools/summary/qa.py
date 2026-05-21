@@ -550,15 +550,33 @@ def _keyword_covered(keyword: str, text: str, locale: str) -> bool:
     for t in _content_tokens(keyword, locale):
         if t in text_tokens:
             continue
-        # Tolerate inflection (heavily inflected non-English locales): a keyword token
-        # matches a text token if one is a prefix of the other (both >= 4 chars), so
-        # "learn"~"learning", "étudier"~"étudie", "kurs"~"kurse".
+        # Tolerate suffix-ADDITION inflection: one token is a prefix of the other
+        # (both >= 4 chars), so "learn"~"learning", "étudier"~"étudie", "kurs"~"kurse".
         if len(t) >= 4 and any(
             len(w) >= 4 and (w.startswith(t) or t.startswith(w)) for w in text_tokens
         ):
             continue
+        # Tolerate suffix-SUBSTITUTION inflection via a long shared stem, e.g. German
+        # "überraschen"~"überrascht" (stem "überrasch"). Conservative: shared prefix
+        # >= 6 chars AND >= 60% of the shorter token, so "inter"(5) won't collide.
+        if len(t) >= 6 and any(
+            len(w) >= 6
+            and _shared_prefix_len(t, w) >= 6
+            and _shared_prefix_len(t, w) >= 0.6 * min(len(t), len(w))
+            for w in text_tokens
+        ):
+            continue
         return False
     return True
+
+
+def _shared_prefix_len(a: str, b: str) -> int:
+    n = 0
+    for ca, cb in zip(a, b):
+        if ca != cb:
+            break
+        n += 1
+    return n
 
 
 def _keyword_density_ok(
