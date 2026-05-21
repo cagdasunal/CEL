@@ -223,6 +223,26 @@ def test_french_blog_keyword_preserves_accents_and_shortens():
     assert "séjour linguistique" in plan.primary
 
 
+def test_french_keyword_avoids_function_word_fragments():
+    """The shortener must NOT pick a function-word fragment like 'à l' (from
+    "à l'étranger") or 'niveau d' (from "niveau d'anglais") even though those are
+    the most frequent bigrams in a French body — every token of the chosen keyword
+    must be a real content word. Regression for the re-pilot's 1 remaining failure."""
+    plan = derive_keywords(
+        title="Quel niveau d'anglais pour un séjour linguistique à l'étranger",
+        h1="Quel niveau d'anglais pour un séjour linguistique à l'étranger",
+        url="https://www.englishcollege.com/fr/post/quel-niveau-anglais-sejour-linguistique",
+        body_text=(
+            "Partir en séjour linguistique à l'étranger demande un niveau d'anglais. "
+            "Le niveau d'anglais requis varie selon le séjour linguistique choisi."
+        ),
+        locale="fr",
+    )
+    # No 1-2 char fragment tokens ('à', 'l', 'd') in the keyword.
+    assert all(len(w) >= 3 for w in plan.primary.split()), f"fragment in keyword: {plan.primary!r}"
+    assert plan.primary == "séjour linguistique"
+
+
 def test_short_titles_not_shortened():
     """Short keywords (courses, static, English) pass through unchanged — shortening
     only triggers above the 4-word cap."""
