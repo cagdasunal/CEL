@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-21T08:22:59.060805+00:00",
+  "last_sync": "2026-05-21T11:49:54.144446+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4710,6 +4710,21 @@
       "source": "api",
       "url_path": "/post/giornata-vita-direttrice-centro-cel-vancouver",
       "added_at": "2026-05-19T19:21:26.679988+00:00"
+    },
+    "englisch-sprachschule-im-ausland-waehlen": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/englisch-sprachschule-im-ausland-waehlen",
+      "added_at": "2026-05-21T11:49:54.144336+00:00"
     }
   }
 }

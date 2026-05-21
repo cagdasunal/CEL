@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-21T04:54:01.535234-07:00",
+      "detail": {
+        "slugs": [
+          "englisch-sprachschule-im-ausland-waehlen"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-21T01:22:59.143791-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-20T04:36:45.393229-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-20T01:45:18.261555-07:00",
       "detail": {}
     }
   ]
