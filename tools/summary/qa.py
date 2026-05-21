@@ -161,43 +161,37 @@ def qa_checks(
 
     # 7. Primary keyword in H2.
     h2_lines = [m.group(2) for m in _H_RE.finditer(draft) if len(m.group(1)) == 2]
-    kw_in_h2 = any(primary_kw_lower in h2.lower() for h2 in h2_lines) if h2_lines else False
+    kw_in_h2 = any(_keyword_covered(primary_keyword, h2, locale) for h2 in h2_lines) if h2_lines else False
     report.add(
         "keyword_in_h2",
         kw_in_h2,
-        f"primary keyword {primary_keyword!r} not found in any H2 ({h2_lines})",
+        f"primary keyword {primary_keyword!r} (topic) not found in any H2 ({h2_lines})",
     )
 
     # 8. Primary keyword in first 120 chars of P1 (under the H2).
     p1_text = _first_paragraph_under_h2(draft)
-    kw_in_p1 = primary_kw_lower in p1_text[:_KEYWORD_P1_WINDOW_CHARS].lower()
+    kw_in_p1 = _keyword_covered(primary_keyword, p1_text[:_KEYWORD_P1_WINDOW_CHARS], locale)
     report.add(
         "keyword_in_p1",
         kw_in_p1,
-        f"primary keyword not in first {_KEYWORD_P1_WINDOW_CHARS} chars of P1",
+        f"primary keyword (topic) not in first {_KEYWORD_P1_WINDOW_CHARS} chars of P1",
     )
 
     # 9. Primary keyword in ≥1 H3.
     h3_lines = [m.group(2) for m in _H_RE.finditer(draft) if len(m.group(1)) == 3]
-    kw_in_h3 = any(primary_kw_lower in h3.lower() for h3 in h3_lines)
+    kw_in_h3 = any(_keyword_covered(primary_keyword, h3, locale) for h3 in h3_lines)
     report.add(
         "keyword_in_h3",
         kw_in_h3 or not h3_lines,  # If no H3s, this check passes vacuously.
         f"no H3 contains primary keyword (H3 lines: {len(h3_lines)})",
     )
 
-    # 10. Body density 0.3–2.0%.
-    if word_count > 0:
-        hits = body_text.lower().count(primary_kw_lower)
-        density = hits / word_count
-        in_density_range = _DENSITY_LOW <= density <= _DENSITY_HIGH
-    else:
-        density = 0.0
-        in_density_range = False
+    # 10. Body density — keyword topic present (content tokens), not over-stuffed (<=2.0%).
+    in_density_range, density = _keyword_density_ok(primary_keyword, body_text, word_count, locale)
     report.add(
         "keyword_density",
         in_density_range,
-        f"density {density * 100:.2f}% (target 0.3–2.0%)",
+        f"density {density * 100:.2f}% (keyword topic present + <=2.0% ceiling)",
     )
 
     # ---- tracker-092 SEO / no-new-content guards ----
@@ -385,18 +379,18 @@ def _qa_checks_four_part(
         f"tagline has {tagline_words} word(s), need 2-3: {parts.tagline!r}",
     )
 
-    # keyword_in_title (CRITICAL): primary keyword in the H3 Title.
+    # keyword_in_title (CRITICAL): primary keyword (topic) in the H3 Title.
     report.add(
         "keyword_in_title",
-        bool(primary_kw_lower) and primary_kw_lower in parts.title.lower(),
-        f"primary keyword {primary_keyword!r} not in title {parts.title!r}",
+        _keyword_covered(primary_keyword, parts.title, locale),
+        f"primary keyword {primary_keyword!r} (topic) not in title {parts.title!r}",
     )
 
-    # keyword_in_paragraph (CRITICAL): keyword in the first 120 chars of the Paragraph.
+    # keyword_in_paragraph (CRITICAL): keyword (topic) in the first 120 chars of the Paragraph.
     report.add(
         "keyword_in_paragraph",
-        bool(primary_kw_lower) and primary_kw_lower in parts.paragraph[:_KEYWORD_P1_WINDOW_CHARS].lower(),
-        f"primary keyword not in first {_KEYWORD_P1_WINDOW_CHARS} chars of paragraph",
+        _keyword_covered(primary_keyword, parts.paragraph[:_KEYWORD_P1_WINDOW_CHARS], locale),
+        f"primary keyword (topic) not in first {_KEYWORD_P1_WINDOW_CHARS} chars of paragraph",
     )
 
     # content_starts_with_h4: the Content section opens with an H4.
@@ -442,15 +436,9 @@ def _qa_checks_four_part(
     bad_segment_links = [u for u in target_links if any(_path_has_segment(u, seg) for seg in excluded)]
     report.add("no_excluded_links", not bad_segment_links, f"links to excluded segments: {bad_segment_links}")
 
-    # keyword_density 0.3-2.0% (over body text).
-    if word_count > 0 and primary_kw_lower:
-        hits = body_text.lower().count(primary_kw_lower)
-        density_kw = hits / word_count
-        density_kw_ok = _DENSITY_LOW <= density_kw <= _DENSITY_HIGH
-    else:
-        density_kw = 0.0
-        density_kw_ok = False
-    report.add("keyword_density", density_kw_ok, f"density {density_kw * 100:.2f}% (target 0.3-2.0%)")
+    # keyword_density — topic present (content tokens) + not over-stuffed (<=2.0%).
+    density_kw_ok, density_kw = _keyword_density_ok(primary_keyword, body_text, word_count, locale)
+    report.add("keyword_density", density_kw_ok, f"density {density_kw * 100:.2f}% (keyword topic present + <=2.0% ceiling)")
 
     # 11. fact_grounding_prices — CRITICAL (agnostic).
     price_pct_tokens = re.findall(r"\$\s?\d[\d,]*(?:\.\d+)?|\d[\d,]*(?:\.\d+)?\s?%", draft)
@@ -519,6 +507,75 @@ def _qa_checks_four_part(
 
 
 # Internal helpers
+
+
+def _norm_match(s: str) -> str:
+    """Lowercase + collapse every run of non-word characters (punctuation, hyphens,
+    apostrophes, whitespace) to a single space. Unicode-aware, so accented letters
+    survive. Used to compare a derived keyword against generated text tolerant of
+    punctuation/spacing differences ("est-elle" ~ "est elle", "d'anglais" ~ "d anglais")."""
+    return re.sub(r"[^\w]+", " ", s.lower(), flags=re.UNICODE).strip()
+
+
+def _content_tokens(keyword: str, locale: str) -> list[str]:
+    """Content tokens of `keyword`: normalized tokens that are >= 3 chars and not a
+    locale stopword. Falls back to all tokens if the keyword is entirely function
+    words. Lazy import of the locale stopword sets mirrors the existing lazy-import
+    pattern (no import-time coupling)."""
+    from tools.summary.keyword_extractor import _LOCALE_STOPWORDS, _STOPWORDS
+
+    stop = _LOCALE_STOPWORDS.get(locale, _STOPWORDS)
+    toks = _norm_match(keyword).split()
+    content = [t for t in toks if len(t) >= 3 and t not in stop]
+    return content or toks
+
+
+def _keyword_covered(keyword: str, text: str, locale: str) -> bool:
+    """True if every content token of `keyword` appears as a token of `text`.
+
+    tracker-097 follow-up: the QA gate used to require the keyword as a VERBATIM
+    substring, but a generative model reorders, inserts words into, and re-punctuates
+    the derived keyword (derives "anglais étudier", writes "anglais ... pour étudier";
+    derives "séjour linguistique", writes "séjour-linguistique"). The verbatim check
+    false-failed every such case → blog summaries demoted en masse. Matching on
+    content-token presence confirms the keyword's TOPIC is in the text, which is what
+    the placement checks actually care about, while staying accent/punctuation tolerant.
+    """
+    if not keyword.strip():
+        return False
+    text_tokens = set(_norm_match(text).split())
+    for t in _content_tokens(keyword, locale):
+        if t in text_tokens:
+            continue
+        # Tolerate inflection (heavily inflected non-English locales): a keyword token
+        # matches a text token if one is a prefix of the other (both >= 4 chars), so
+        # "learn"~"learning", "étudier"~"étudie", "kurs"~"kurse".
+        if len(t) >= 4 and any(
+            len(w) >= 4 and (w.startswith(t) or t.startswith(w)) for w in text_tokens
+        ):
+            continue
+        return False
+    return True
+
+
+def _keyword_density_ok(
+    keyword: str, body_text: str, word_count: int, locale: str
+) -> tuple[bool, float]:
+    """Paraphrase-tolerant density check. Floor = the keyword's topic is present
+    (its content tokens appear in the body); ceiling = the exact phrase is not
+    over-repeated (anti-stuffing, the 2.0% cap). Returns (ok, phrase_density).
+
+    The old `phrase_count / word_count` floor structurally false-failed multi-word
+    keywords (a long exact phrase appears ~once → density < 0.3%) and paraphrased
+    keywords (phrase absent → 0%). Topic-presence is the right floor: a keyword
+    derived FROM the page, whose content words are in the summary, is on-topic.
+    """
+    if word_count <= 0 or not keyword.strip():
+        return False, 0.0
+    hits = _norm_match(body_text).count(_norm_match(keyword))
+    density = hits / word_count
+    present = _keyword_covered(keyword, body_text, locale)
+    return (present and density <= _DENSITY_HIGH), density
 
 
 def _first_paragraph_under_h2(draft: str) -> str:

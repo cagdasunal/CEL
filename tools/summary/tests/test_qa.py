@@ -302,3 +302,95 @@ def test_four_part_excluded_link_in_content_flags():
         excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
     )
     assert not r.checks["no_excluded_links"]
+
+
+# ---- tracker-097 follow-up: paraphrase/accent/punctuation/inflection-tolerant keyword matching ----
+#
+# The QA gate used to require the derived keyword as a VERBATIM substring, but a
+# generative model reorders, inserts words into, re-punctuates, and inflects the
+# keyword. That false-failed blog summaries en masse (the real pilot failures below).
+# Matching is now content-token presence (accent/punctuation/inflection tolerant).
+
+
+def test_keyword_matches_when_model_paraphrases_h2():
+    """Real pilot failure: keyword 'anglais pour étudier' (derived) is NOT a contiguous
+    substring of the model's H2 'Quel niveau d'anglais est requis pour étudier...'.
+    Content-token matching must PASS (the topic is clearly present)."""
+    draft = (
+        "## Quel niveau d'anglais est requis pour étudier à l'étranger ?\n\n"
+        "Pour étudier à l'étranger, un niveau B1 en anglais suffit souvent, "
+        "selon le programme choisi et vos objectifs personnels.\n\n"
+        "### Comment évaluer son anglais avant de partir étudier\n\n"
+        "CEL propose un test de placement dès le premier jour.\n"
+    )
+    r = qa_checks(draft, "anglais pour étudier", "fr", [])
+    assert r.checks["keyword_in_h2"], r.notes
+    assert r.checks["keyword_in_p1"], r.notes
+    assert r.passed, r.notes
+
+
+def test_keyword_matches_across_punctuation():
+    """A hyphen/apostrophe between the keyword's words must not break the match
+    ('séjour linguistique' ~ 'séjour-linguistique')."""
+    draft = (
+        "## Tout sur le séjour-linguistique à San Diego\n\n"
+        "Un séjour-linguistique à San Diego combine cours d'anglais et plage.\n"
+    )
+    r = qa_checks(draft, "séjour linguistique", "fr", [])
+    assert r.checks["keyword_in_h2"]
+    assert r.checks["keyword_in_p1"]
+
+
+def test_keyword_matches_across_inflection():
+    """Inflected forms match ('learn' ~ 'learning')."""
+    draft = (
+        "## Learning English in Vancouver\n\n"
+        "Learning English in Vancouver at CEL takes most students 6 to 12 months.\n"
+    )
+    r = qa_checks(draft, "learn english", "en", [])
+    assert r.checks["keyword_in_h2"]
+    assert r.checks["keyword_in_p1"]
+
+
+def test_keyword_topic_absent_still_fails():
+    """Robustness guard: if NONE of the keyword's content words are present, the
+    check still FAILS — the fix must not make every keyword pass."""
+    draft = (
+        "## A completely unrelated heading about cooking recipes\n\n"
+        "This paragraph is about food and has nothing to do with the subject.\n"
+    )
+    r = qa_checks(draft, "séjour linguistique", "fr", [])
+    assert not r.checks["keyword_in_h2"]
+    assert not r.passed
+
+
+def test_density_floor_satisfied_when_topic_present_but_phrase_paraphrased():
+    """A multi-word keyword whose words are present but never appear as the exact
+    phrase satisfies the density FLOOR via topic presence (old code scored 0.00% → fail)."""
+    draft = (
+        "## Le séjour idéal pour apprendre une langue\n\n"
+        "Un bon séjour à l'étranger améliore votre apprentissage linguistique. "
+        "Le séjour combine cours et immersion, et l'expérience linguistique reste intense.\n"
+    )
+    r = qa_checks(draft, "séjour linguistique", "fr", [])  # exact phrase never appears
+    assert r.checks["keyword_density"], r.notes
+
+
+def test_density_ceiling_still_catches_stuffing():
+    """Anti-stuffing preserved: repeating the exact keyword phrase trips the 2.0% ceiling."""
+    stuffed = "## learn english\n\n" + ("learn english " * 25) + "is great.\n"
+    r = qa_checks(stuffed, "learn english", "en", [])
+    assert not r.checks["keyword_density"], r.notes
+
+
+def test_four_part_keyword_matches_when_title_paraphrases():
+    """4-part Title may paraphrase the keyword (content words present, not verbatim)."""
+    draft = (
+        "## English School Life\n\n"
+        "### Niveau d'anglais requis avant de partir étudier à l'étranger\n\n"
+        "Pour étudier à l'étranger en anglais, un niveau B1 suffit souvent selon le programme.\n\n"
+        "#### Comment se préparer\n\nCEL propose un test de placement dès le premier jour.\n"
+    )
+    r = qa_checks(draft, "anglais pour étudier", "fr", [], structure="four_part")
+    assert r.checks["keyword_in_title"], r.notes
+    assert r.checks["keyword_in_paragraph"], r.notes
