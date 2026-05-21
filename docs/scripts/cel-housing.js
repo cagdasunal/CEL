@@ -24,11 +24,13 @@
  * empty. The script then no-ops (no handler, no iframe). Hide the whole
  * .video_player for those items via Webflow CMS conditional visibility.
  *
- * v1.1.0 (2026-05-21) — Fit fix. The template's .custom-video-wrapper-3 has a
- *   fixed height (35rem desktop) while .video_player is width:100% aspect-ratio
- *   16/9 (~920px tall), so the player overflowed the wrapper and the Vimeo
- *   controls at the bottom were covered by the section below. Release the
- *   wrapper to height:auto on load so it contains the full 16:9 player.
+ * v1.2.0 (2026-05-21) — Fit fix, corrected. The template's wrapper has a fixed
+ *   height while .video_player is width:100% aspect-ratio 16/9 (taller), so the
+ *   player overflowed and the Vimeo controls at the bottom were covered. Cap the
+ *   player at its wrapper's height (max-height:100%) so the 16:9 video fits the
+ *   designed box and the wrapper/page layout is left untouched.
+ * v1.1.0 (2026-05-21) — Superseded by v1.2.0. (Released the wrapper to
+ *   height:auto, which grew the section and broke the page layout.)
  * v1.0.0 (2026-05-21) — Initial bundle.
  */
 
@@ -69,12 +71,13 @@
 
     player.__celHousingInit = true;
 
-    // .custom-video-wrapper-3 has a fixed height (35rem desktop) but .video_player
-    // is width:100% aspect-ratio 16/9 (taller than that), so the player overflows
-    // and the video's bottom controls get covered. Let the wrapper grow to the
-    // 16:9 player. Inline overrides the fixed height at every breakpoint.
-    const wrapper = player.closest('.custom-video-wrapper-3');
-    if (wrapper) wrapper.style.height = 'auto';
+    // .video_player is width:100% aspect-ratio 16/9, taller than the template's
+    // fixed-height wrapper, so it overflowed and the video's bottom controls were
+    // covered. Cap the player at its wrapper's height instead of touching the
+    // wrapper. max-height (not height) only constrains — it caps the overflow on
+    // fixed-height breakpoints and resolves to "none" on the auto-height mobile
+    // breakpoint, so the wrapper and page layout are left exactly as designed.
+    player.style.maxHeight = '100%';
 
     function loadVideo(e) {
       if (e && e.preventDefault) e.preventDefault();
