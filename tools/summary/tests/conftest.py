@@ -28,3 +28,6 @@ def _isolate_summary_state(tmp_path, monkeypatch):
     from tools.summary import config
     monkeypatch.setattr(config, "SUMMARY_STATE_FILE", tmp_path / "summary-state.json")
     monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "translation-memory.json")
+    # tracker-097: the persisted last-batch id (written by submit_batch) — isolate so
+    # no test writes the real data/seo-intel/summary-last-batch.json.
+    monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "summary-last-batch.json")

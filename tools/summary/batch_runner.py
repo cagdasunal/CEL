@@ -61,6 +61,11 @@ class BatchRequest:
     user_message: str
     max_tokens: int = 8000
     enable_thinking: bool = True
+    # tracker-097: per-request model (tiering). Empty → config.MODEL_ID (Pro).
+    # cli sets this from config.model_for_content_type(content_type), so blog
+    # requests run on Flash and the rest on Pro. The Batch API takes ONE model
+    # per job, so cli groups requests by this field before submitting.
+    model: str = ""
 
 
 @dataclass
@@ -72,6 +77,10 @@ class BatchHandle:
     submitted_at: str
     dry_run: bool
     artifact_path: Optional[Path] = None
+    # tracker-097: explicit-context-cache resource names created for this batch.
+    # wait_for_batch deletes them once the batch reaches a terminal state (the
+    # cache must outlive async batch processing, so we can't delete at submit).
+    cache_names: list = field(default_factory=list)
 
 
 @dataclass
@@ -88,47 +97,134 @@ class BatchResult:
     cache_read_tokens: int = 0
 
 
-# ---- Cost estimation ----
+# ---- Cost estimation (tracker-097: per-model, batch-vs-interactive, cache-aware) ----
 
 
-# Gemini 3.1 Pro Preview — Batch tier pricing (prompts ≤ 200k tokens).
-# Per https://ai.google.dev/gemini-api/docs/pricing as of 2026-05-19.
-# These ARE the batched prices already — no additional discount multiplier.
-# (tracker-091 M-12.2: BATCH_DISCOUNT constant removed — was a no-op carryover
-#  from the Anthropic implementation where Batch tier carried a 0.5 multiplier.)
-PRICE_INPUT_PER_M = 1.00
-PRICE_OUTPUT_PER_M = 6.00
-PRICE_CACHE_READ_PER_M = 0.20
-PRICE_CACHE_WRITE_PER_M = 0.0  # Implicit caching on Batch tier — no explicit write cost
+# Verified 2026-05-21 against https://ai.google.dev/gemini-api/docs/pricing.
+# Rates are (input_$/M, output_$/M). "interactive" = the synchronous
+# generate_content path (used by --sync); "batch" = the Batch API (50% of
+# interactive). cache_read = price of a cached-prefix token; cache_min = the
+# minimum prefix size that is cacheable for that model family.
+#
+# tracker-097 RC2: the old PRICE_* constants were the Pro Batch rates ($1/$6)
+# applied to BOTH paths — but --sync bills at interactive ($2/$12), so every sync
+# run undershot by 2×. The estimator now prices by the path actually used.
+_PRICING = {
+    "pro": {
+        "interactive": (2.00, 12.00),
+        "batch": (1.00, 6.00),
+        "cache_read": 0.20,
+        "cache_min": 4096,
+    },
+    "flash": {
+        "interactive": (0.30, 2.50),
+        "batch": (0.15, 1.25),
+        "cache_read": 0.03,
+        "cache_min": 1024,
+    },
+}
+
+# Back-compat module constants (Pro Batch tier — the historical defaults). The
+# estimator drives off _PRICING; these remain for any external reference.
+PRICE_INPUT_PER_M = _PRICING["pro"]["batch"][0]        # 1.00
+PRICE_OUTPUT_PER_M = _PRICING["pro"]["batch"][1]       # 6.00
+PRICE_CACHE_READ_PER_M = _PRICING["pro"]["cache_read"]  # 0.20
+
+
+def _model_family(model: str) -> str:
+    """Classify a Gemini model id into a pricing family ('flash' | 'pro')."""
+    return "flash" if "flash" in (model or "").lower() else "pro"
+
+
+def _cache_min_tokens(model: str) -> int:
+    return _PRICING[_model_family(model)]["cache_min"]
+
+
+def _est_tokens(text: str) -> int:
+    """Cheap token estimate (~4 chars/token). Floor of 1 for any non-empty text."""
+    if not text:
+        return 0
+    return max(1, len(text) // 4)
+
+
+def _request_model(r: Any, default_model: str) -> str:
+    return (getattr(r, "model", "") or "") or default_model
 
 
 def estimate_batch_cost_usd(
-    requests: Iterable[BatchRequest],
-    avg_input_tokens_per_request: int = 4500,
+    requests: Iterable[Any],
+    *,
+    mode: str = "batch",
+    cached: bool = False,
     avg_output_tokens_per_request: int = 800,
-    cached_prefix_tokens: int = 2500,
+    avg_input_tokens_per_request: int = 6500,
+    default_model: Optional[str] = None,
 ) -> float:
-    """Rough cost estimate for a batch. Assumes implicit prompt caching is active.
+    """Estimate a run's USD cost from the actual request content.
 
-    Returns USD. Prices in PRICE_* constants are already the Batch-tier rates
-    published by Gemini; no extra discount multiplier is applied.
+    tracker-097 rewrite. Honest accounting that fixes the two undershoots that
+    masked the real spend:
+      - RC2: `mode` selects the rate tier actually billed — "interactive" for the
+        --sync path ($2/$12 Pro), "batch" for the Batch API ($1/$6 Pro).
+      - RC1: caching is credited ONLY when `cached=True` (explicit caching actually
+        engaged this run). The old estimator always assumed a fictional 2,500-token
+        cached prefix, so it under-priced reality.
+
+    Per-request input/output tokens come from the request's own system + user text
+    when available (BatchRequest), falling back to the avg defaults for objects
+    without that shape (e.g. TranslationUnit count-proxy callers). Each request is
+    priced at its own model's rate (BatchRequest.model), defaulting to
+    default_model or config.MODEL_ID. When cached, requests are grouped by
+    (model, system text); a group with >= config.CACHE_MIN_GROUP_SIZE items and a
+    prefix >= the model's cache_min pays one full-rate prefix "write" + the
+    cache-read rate on every request's prefix. Per-request user tokens always pay
+    full rate.
     """
-    n = sum(1 for _ in requests)
+    reqs = list(requests)
+    n = len(reqs)
     if n == 0:
         return 0.0
-    # First request "writes" cache implicitly (cost 0 on Gemini Batch);
-    # remaining (n-1) read cache at the cache-read rate.
-    cache_write_total = cached_prefix_tokens
-    cache_read_total = max(0, n - 1) * cached_prefix_tokens
-    variable_input_total = n * max(0, avg_input_tokens_per_request - cached_prefix_tokens)
-    output_total = n * avg_output_tokens_per_request
+    default_model = default_model or config.MODEL_ID
+    mode = "interactive" if mode == "interactive" else "batch"
 
-    return (
-        (variable_input_total / 1_000_000) * PRICE_INPUT_PER_M
-        + (cache_write_total / 1_000_000) * PRICE_CACHE_WRITE_PER_M
-        + (cache_read_total / 1_000_000) * PRICE_CACHE_READ_PER_M
-        + (output_total / 1_000_000) * PRICE_OUTPUT_PER_M
-    )
+    total = 0.0
+    cache_groups: dict[tuple[str, str], dict[str, int]] = {}
+
+    for r in reqs:
+        model = _request_model(r, default_model)
+        in_rate, out_rate = _PRICING[_model_family(model)][mode]
+
+        sys_blocks = getattr(r, "system_blocks", None)
+        user_msg = getattr(r, "user_message", None)
+        if sys_blocks is None and user_msg is None:
+            # Non-BatchRequest (e.g. TranslationUnit) — fall back to avg input.
+            sys_text, sys_tok, usr_tok = "", 0, avg_input_tokens_per_request
+        else:
+            sys_text = _flatten_system_blocks(sys_blocks or [])
+            sys_tok = _est_tokens(sys_text)
+            usr_tok = _est_tokens(user_msg or "")
+
+        total += (avg_output_tokens_per_request / 1_000_000) * out_rate
+
+        if cached and sys_tok >= _cache_min_tokens(model):
+            g = cache_groups.setdefault((model, sys_text), {"prefix": sys_tok, "count": 0})
+            g["count"] += 1
+            total += (usr_tok / 1_000_000) * in_rate  # user tokens always full rate
+        else:
+            total += ((sys_tok + usr_tok) / 1_000_000) * in_rate
+
+    # Cached groups: only groups large enough to cache get the discount; smaller
+    # groups fall back to a full-rate prefix on every request (mirrors submit_batch).
+    for (model, _sys), g in cache_groups.items():
+        in_rate, _ = _PRICING[_model_family(model)][mode]
+        cache_read_rate = _PRICING[_model_family(model)]["cache_read"]
+        prefix, count = g["prefix"], g["count"]
+        if count >= config.CACHE_MIN_GROUP_SIZE:
+            total += (prefix / 1_000_000) * in_rate                  # 1 cache write
+            total += (count * prefix / 1_000_000) * cache_read_rate  # N cache reads
+        else:
+            total += (count * prefix / 1_000_000) * in_rate          # too small to cache
+    return total
 
 
 # ---- Submit→wait fallback (for custom_id mapping when metadata is missing) ----
@@ -155,10 +251,11 @@ def dry_run_submit(
     with artifact_path.open("w", encoding="utf-8") as f:
         for r in requests:
             system_text = _flatten_system_blocks(r.system_blocks)
+            model = r.model or config.MODEL_ID
             line = {
                 "custom_id": r.custom_id,
-                "model": config.MODEL_ID,
-                "request": _build_inlined_request_dict(r, system_text),
+                "model": model,
+                "request": _build_inlined_request_dict(r, system_text, model=model),
             }
             f.write(json.dumps(line, ensure_ascii=False) + "\n")
 
@@ -190,28 +287,45 @@ def _flatten_system_blocks(blocks: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-def _build_generation_config(r: BatchRequest, system_text: str) -> dict:
+def _build_generation_config(
+    r: BatchRequest,
+    system_text: str,
+    model: str = "",
+    cached_content_name: Optional[str] = None,
+) -> dict:
     """Build Gemini's GenerateContentConfig dict from our BatchRequest.
 
-    NOTE: Gemini 3.1 Pro Preview REQUIRES thinking mode — `thinking_budget=0`
-    is rejected with "This model only works in thinking mode". When the
-    caller passes `enable_thinking=True` we use the configured budget;
-    when `enable_thinking=False` (the translate phase) we OMIT thinking_config
-    entirely so the model uses its dynamic default (typically small for
-    short tasks). Verified live 2026-05-19 against gemini-3.1-pro-preview.
+    NOTE: Gemini 3.x Pro REQUIRES thinking mode — `thinking_budget=0` is rejected
+    with "This model only works in thinking mode". For Pro we pass the configured
+    budget when `enable_thinking=True`; when False (the translate phase) we OMIT
+    thinking_config so the model uses its dynamic default. Verified live 2026-05-19.
+
+    tracker-097: Gemini 2.5 Flash (the blog tier) DOES support disabling thinking,
+    so we set `thinking_budget=0` to minimize output/thinking cost on the bulk blog
+    path (the QA gate is the quality backstop). When `cached_content_name` is set
+    (explicit context cache), we OMIT system_instruction — it lives in the cache —
+    and reference the cache instead.
     """
-    cfg: dict[str, Any] = {
-        "max_output_tokens": r.max_tokens,
-    }
-    if system_text:
+    model = model or r.model or config.MODEL_ID
+    cfg: dict[str, Any] = {"max_output_tokens": r.max_tokens}
+    if cached_content_name:
+        cfg["cached_content"] = cached_content_name
+    elif system_text:
         cfg["system_instruction"] = system_text
-    if r.enable_thinking:
+    if _model_family(model) == "flash":
+        cfg["thinking_config"] = {"thinking_budget": 0}
+    elif r.enable_thinking:
         cfg["thinking_config"] = {"thinking_budget": config.THINKING_BUDGET_TOKENS}
-    # else: omit thinking_config — model picks default budget dynamically.
+    # else (Pro, no thinking requested): omit — model picks its dynamic default.
     return cfg
 
 
-def _build_inlined_request_dict(r: BatchRequest, system_text: str) -> dict:
+def _build_inlined_request_dict(
+    r: BatchRequest,
+    system_text: str,
+    model: str = "",
+    cached_content_name: Optional[str] = None,
+) -> dict:
     """Build the InlinedRequest payload (dict shape) for the SDK.
 
     Verified against google-genai 2.4.0:
@@ -221,7 +335,7 @@ def _build_inlined_request_dict(r: BatchRequest, system_text: str) -> dict:
     """
     return {
         "contents": [{"parts": [{"text": r.user_message}], "role": "user"}],
-        "config": _build_generation_config(r, system_text),
+        "config": _build_generation_config(r, system_text, model, cached_content_name),
         "metadata": {"custom_id": r.custom_id},
     }
 
@@ -257,11 +371,151 @@ def _retry_transient(fn, *, attempts: int = 3, base_delay: float = 2.0):
     raise RuntimeError("unreachable")  # pragma: no cover
 
 
+# ---- Explicit context caching (tracker-097 Phase 1) ----
+
+
+@dataclass
+class CachePlanEntry:
+    """One (model, system-prefix) group + whether it's worth caching."""
+
+    system_text: str
+    model: str
+    request_count: int
+    prefix_tokens: int
+    eligible: bool
+    reason: str = ""
+
+
+def plan_caches(requests: list[BatchRequest], model: str = "") -> list[CachePlanEntry]:
+    """Group requests by their flattened system prefix; decide which to cache.
+
+    A group is cache-eligible when it has >= config.CACHE_MIN_GROUP_SIZE requests
+    AND its prefix is >= the model's minimum cacheable size. Pure function (no API
+    calls) so the dry-run report can show the plan and tests can assert it offline.
+    """
+    default = model or config.MODEL_ID
+    counts: dict[tuple[str, str], int] = {}
+    order: list[tuple[str, str]] = []
+    for r in requests:
+        m = r.model or default
+        sys_text = _flatten_system_blocks(r.system_blocks)
+        if not sys_text:
+            continue
+        key = (m, sys_text)
+        if key not in counts:
+            counts[key] = 0
+            order.append(key)
+        counts[key] += 1
+    out: list[CachePlanEntry] = []
+    for (m, sys_text) in order:
+        count = counts[(m, sys_text)]
+        prefix_tokens = _est_tokens(sys_text)
+        min_tok = _cache_min_tokens(m)
+        if count < config.CACHE_MIN_GROUP_SIZE:
+            eligible, reason = False, f"group too small ({count} < {config.CACHE_MIN_GROUP_SIZE})"
+        elif prefix_tokens < min_tok:
+            eligible, reason = False, f"prefix {prefix_tokens} tok < model min {min_tok}"
+        else:
+            eligible, reason = True, "cacheable"
+        out.append(CachePlanEntry(
+            system_text=sys_text, model=m, request_count=count,
+            prefix_tokens=prefix_tokens, eligible=eligible, reason=reason,
+        ))
+    return out
+
+
+def _create_caches(client: Any, plan: list[CachePlanEntry]) -> dict[str, str]:
+    """Create explicit context caches for eligible plan entries. Fallback-safe:
+    any per-cache failure is swallowed so the run proceeds at full price.
+    Returns {system_text: cache_resource_name}."""
+    created: dict[str, str] = {}
+    for entry in plan:
+        if not entry.eligible:
+            continue
+        try:
+            ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            cache = _retry_transient(lambda e=entry, ts=ts: client.caches.create(
+                model=e.model,
+                config={
+                    "system_instruction": e.system_text,
+                    "ttl": f"{config.CACHE_TTL_SECONDS}s",
+                    "display_name": f"cel-summary-cache-{ts}",
+                },
+            ))
+            name = getattr(cache, "name", None)
+            if name:
+                created[entry.system_text] = name
+        except Exception:  # noqa: BLE001 — caching is an optimization; never fatal
+            continue
+    return created
+
+
+def _delete_caches(client: Any, cache_names: Iterable[str]) -> None:
+    """Best-effort delete of created caches (the TTL is the backstop)."""
+    for name in cache_names:
+        try:
+            client.caches.delete(name=name)
+        except Exception:  # noqa: BLE001 — TTL auto-expires the cache anyway
+            continue
+
+
+def _persist_last_batch(handle: BatchHandle, requests: list[BatchRequest], model: str) -> None:
+    """Persist the submitted batch's id + custom_ids so a cancelled/failed run can
+    `cancel-batch` / `retrieve-batch` it later (tracker-097 RC5). Best-effort —
+    never fatal to a submit. Overwrites: a multi-model run records its LAST group's
+    batch_id (the per-run report.json carries every batch_id)."""
+    try:
+        path = config.LAST_BATCH_FILE
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "batch_id": handle.batch_id,
+            "model": model,
+            "submitted_at": handle.submitted_at,
+            "request_count": handle.request_count,
+            "custom_ids": [r.custom_id for r in requests],
+        }
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def cancel_batch(batch_id: str, api_key_env: str = "GEMINI_API_KEY") -> str:
+    """Cancel a running Gemini batch so it stops processing + billing (RC5).
+
+    A submitted Gemini batch keeps running (and billing) even after the GitHub
+    Actions run that launched it is cancelled — this is the recovery handle.
+    Returns the post-cancel state name. Imports the SDK lazily.
+    """
+    api_key = os.environ.get(api_key_env, "").strip()
+    if not api_key:
+        raise RuntimeError(f"Environment variable {api_key_env} is not set.")
+    from google import genai  # type: ignore
+
+    client = genai.Client(api_key=api_key)
+    _retry_transient(lambda: client.batches.cancel(name=batch_id))
+    job = _retry_transient(lambda: client.batches.get(name=batch_id))
+    return _job_state_name(job)
+
+
 # ---- Live submit ----
 
 
-def submit_batch(requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KEY") -> BatchHandle:
-    """Submit a real batch to Gemini. Imports google-genai SDK lazily."""
+def submit_batch(
+    requests: list[BatchRequest],
+    api_key_env: str = "GEMINI_API_KEY",
+    model: Optional[str] = None,
+) -> BatchHandle:
+    """Submit a real batch to Gemini. Imports google-genai SDK lazily.
+
+    tracker-097: all requests in one batch share ONE model (cli groups by model
+    before calling, since the Batch API takes a single model per job). When
+    config.ENABLE_EXPLICIT_CACHE is on, eligible system-prefix groups are cached
+    and referenced via `cached_content`; the cache names ride on the returned
+    handle and are deleted by wait_for_batch after the batch completes (the cache
+    must outlive async batch processing). Caching is fallback-safe: if the cached
+    submit is rejected, we rebuild the batch without caching and submit once. The
+    submitted batch_id is persisted to config.LAST_BATCH_FILE for cancel/retrieve.
+    """
     api_key = os.environ.get(api_key_env, "").strip()
     if not api_key:
         raise RuntimeError(
@@ -275,29 +529,48 @@ def submit_batch(requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KE
             "or use tools/summary/requirements.txt."
         ) from e
 
+    model = model or (requests[0].model if requests else "") or config.MODEL_ID
     client = genai.Client(api_key=api_key)
-    src: list[dict] = []
-    for r in requests:
-        system_text = _flatten_system_blocks(r.system_blocks)
-        src.append(_build_inlined_request_dict(r, system_text))
-
     display_name = f"cel-summary-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
-    batch = _retry_transient(lambda: client.batches.create(
-        model=config.MODEL_ID,
-        src=src,
-        config={"display_name": display_name},
-    ))
+
+    cache_by_system: dict[str, str] = {}
+    if config.ENABLE_EXPLICIT_CACHE:
+        cache_by_system = _create_caches(client, plan_caches(requests, model))
+
+    def _src(with_cache: bool) -> list[dict]:
+        out: list[dict] = []
+        for r in requests:
+            system_text = _flatten_system_blocks(r.system_blocks)
+            cname = cache_by_system.get(system_text) if with_cache else None
+            out.append(_build_inlined_request_dict(r, system_text, model=model, cached_content_name=cname))
+        return out
+
+    try:
+        batch = _retry_transient(lambda: client.batches.create(
+            model=model, src=_src(bool(cache_by_system)),
+            config={"display_name": display_name},
+        ))
+    except Exception:  # noqa: BLE001 — if caching made the submit invalid, retry uncached
+        if not cache_by_system:
+            raise
+        _delete_caches(client, list(cache_by_system.values()))
+        cache_by_system = {}
+        batch = _retry_transient(lambda: client.batches.create(
+            model=model, src=_src(False),
+            config={"display_name": display_name},
+        ))
+
     batch_name = getattr(batch, "name", None) or str(batch)
-
-    # Stash request list for wait_for_batch's custom_id reconstruction.
     _PENDING_BATCHES[batch_name] = list(requests)
-
-    return BatchHandle(
+    handle = BatchHandle(
         batch_id=batch_name,
         request_count=len(requests),
         submitted_at=datetime.now(timezone.utc).isoformat(),
         dry_run=False,
+        cache_names=list(cache_by_system.values()),
     )
+    _persist_last_batch(handle, requests, model)
+    return handle
 
 
 def generate_sync(
@@ -306,12 +579,14 @@ def generate_sync(
     """Synchronous generation — one `models.generate_content` call per request,
     results returned immediately (no Batch API queue / ≤24h SLA).
 
-    Same model (`config.MODEL_ID`) + generation config as the Batch path; only the
-    transport differs. Cost is the standard (non-batch) rate, so this is for FAST
-    TESTING + small runs — not the full catalog (use the Batch API for that). Each
-    request is independent: a per-request failure becomes a failed BatchResult and
-    never aborts the rest (mirrors the Batch path's per-row isolation). Imports the
-    google-genai SDK lazily so dry-run + module import work without it installed.
+    Per-request model (tracker-097 tiering: `BatchRequest.model` or config.MODEL_ID)
+    + generation config as the Batch path; only the transport differs. Cost is the
+    standard (non-batch / interactive) rate, so this is for FAST TESTING + small runs
+    — not the full catalog (use the Batch API for that). The sync path does NOT use
+    explicit context caching (negligible ROI on the handful of items it's meant for;
+    Gemini 3.x still applies implicit prefix caching automatically). Each request is
+    independent: a per-request failure becomes a failed BatchResult and never aborts
+    the rest. Imports the google-genai SDK lazily so dry-run + import work without it.
     """
     if not requests:
         return []
@@ -332,11 +607,12 @@ def generate_sync(
     results: list[BatchResult] = []
     for r in requests:
         system_text = _flatten_system_blocks(r.system_blocks)
-        cfg = _build_generation_config(r, system_text)
+        model = r.model or config.MODEL_ID
+        cfg = _build_generation_config(r, system_text, model)
         try:
             resp = _retry_transient(
-                lambda r=r, cfg=cfg: client.models.generate_content(
-                    model=config.MODEL_ID, contents=r.user_message, config=cfg
+                lambda r=r, cfg=cfg, model=model: client.models.generate_content(
+                    model=model, contents=r.user_message, config=cfg
                 )
             )
             results.append(_result_from_response(resp, r.custom_id))
@@ -386,6 +662,10 @@ def wait_for_batch(
             raise TimeoutError(f"Batch {handle.batch_id} did not complete within {timeout_sec}s")
     finally:
         original_requests = _PENDING_BATCHES.pop(handle.batch_id, [])
+        # tracker-097: release the explicit context caches now that the batch has
+        # reached a terminal state (or we've abandoned it on timeout). Best-effort;
+        # the cache TTL is the backstop. Safe when cache_names is empty.
+        _delete_caches(client, handle.cache_names)
 
     # Extract inline responses. Gemini returns them in submission order.
     inline_responses = []

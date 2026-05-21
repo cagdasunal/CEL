@@ -23,11 +23,23 @@ on:
           - audit
           - translate
           - all
+          - cancel-batch     # tracker-097: stop an orphaned Gemini batch (still billing)
+          - retrieve-batch   # tracker-097: reclaim a submitted batch's results by id
       dry_run:
         description: "Dry-run (no API calls, no Webflow writes). Disable only when you've reviewed dry-run output."
         required: true
         default: true
         type: boolean
+      confirm_cost:
+        description: "generate-english LIVE: authorize a paid run over the confirm threshold. Leave false to see the projected cost first (pilot-first; no batch submitted)."
+        required: false
+        default: false
+        type: boolean
+      batch_id:
+        description: "cancel-batch / retrieve-batch: the Gemini batch resource name. Leave blank to use the last persisted submit."
+        required: false
+        default: ""
+        type: string
       sync:
         description: "Instant mode (generate-english): synchronous generateContent, no Batch API ≤24h wait. For fast testing + small runs. Leave false for the full catalog (Batch)."
         required: false
@@ -89,9 +101,11 @@ jobs:
           MODE: ${{ inputs.mode }}
           DRY_RUN: ${{ inputs.dry_run }}
           SYNC: ${{ inputs.sync }}
+          CONFIRM_COST: ${{ inputs.confirm_cost }}
           COLLECTION_FILTER: ${{ inputs.collection_filter }}
           LOCALE_FILTER: ${{ inputs.locale_filter }}
           LIMIT: ${{ inputs.limit }}
+          BATCH_ID: ${{ inputs.batch_id }}
         run: |
           set -o pipefail
           ARGS="$MODE"
@@ -103,6 +117,9 @@ jobs:
           if [ "$SYNC" = "true" ]; then
             ARGS="$ARGS --sync"
           fi
+          if [ "$CONFIRM_COST" = "true" ]; then
+            ARGS="$ARGS --confirm-cost"
+          fi
           if [ -n "$COLLECTION_FILTER" ]; then
             ARGS="$ARGS --collection $COLLECTION_FILTER"
           fi
@@ -111,6 +128,9 @@ jobs:
           fi
           if [ -n "$LIMIT" ]; then
             ARGS="$ARGS --limit $LIMIT"
+          fi
+          if [ -n "$BATCH_ID" ]; then
+            ARGS="$ARGS --batch-id $BATCH_ID"
           fi
           echo "Running: python3 -m tools.summary $ARGS"
           python3 -m tools.summary $ARGS 2>&1 | tee /tmp/summary-stdout.log
@@ -128,20 +148,28 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
-      - name: Commit CSV + static-summaries changes (live runs only)
+      - name: Commit CSVs + static summaries + idempotency state (live runs only)
         if: ${{ inputs.dry_run == false }}
         run: |
           set -o pipefail
-          # Path matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1). Captures both
-          # the per-locale CSVs written by translate phase AND the static-page
-          # Markdown files written by generate-english phase
-          # (static-summaries/<slug>.summary.md for manual paste into Webflow Designer).
-          if [ -z "$(git status --porcelain docs/admin/weglot-imports/)" ]; then
-            echo "No CSV or static-summary changes to commit."
-            exit 0
-          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # docs/admin/weglot-imports/ matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1):
+          # the per-locale CSVs (translate phase) + static-page Markdown (generate phase).
           git add docs/admin/weglot-imports/
-          git commit -m "chore(summary): refresh Weglot CSVs + static summaries ($(date -u +%Y-%m-%d))"
+          # tracker-097 RC3: persist the idempotency state + translation memory + last-batch
+          # id ACROSS runs. Without committing summary-state.json, every GHA run started with
+          # empty state and re-billed every unchanged item. Stage only if present (a sync run
+          # or a phase that didn't write one leaves some absent).
+          for f in \
+            data/seo-intel/summary-state.json \
+            data/seo-intel/translation-memory.json \
+            data/seo-intel/summary-last-batch.json; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+          if git diff --cached --quiet; then
+            echo "No CSV / static-summary / state changes to commit."
+            exit 0
+          fi
+          git commit -m "chore(summary): refresh CSVs + static summaries + idempotency state ($(date -u +%Y-%m-%d))"
           git push

@@ -52,7 +52,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "subcommand",
-        choices=["generate-english", "audit", "translate", "translate-meta", "all", "plan"],
+        choices=[
+            "generate-english", "audit", "translate", "translate-meta", "all", "plan",
+            # tracker-097: orphaned-batch recovery (RC5). A submitted Gemini batch keeps
+            # billing after its GHA run is cancelled; these stop / reclaim it by id.
+            "cancel-batch", "retrieve-batch",
+        ],
     )
     parser.add_argument(
         "--dry-run", dest="dry_run", action="store_true", default=True,
@@ -97,6 +102,18 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--confirm-cost", dest="confirm_cost", action="store_true", default=False,
+        help=(
+            "generate-english only — authorize a LIVE run whose projected cost exceeds "
+            "COST_CONFIRM_THRESHOLD_USD. Without it, such a run prints the projection and "
+            "refuses to submit (pilot-first). Tiny pilots (under the threshold) don't need it."
+        ),
+    )
+    parser.add_argument(
+        "--batch-id", dest="batch_id", default=None,
+        help="cancel-batch / retrieve-batch — the Gemini batch resource name to act on.",
+    )
+    parser.add_argument(
         "--out-dir", type=Path, default=None,
         help="Override output artifact directory.",
     )
@@ -115,6 +132,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     out_dir = args.out_dir or (config.DRYRUN_DIR / _timestamp_slug())
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # tracker-097: orphaned-batch recovery short-circuits the report pipeline.
+    if args.subcommand in ("cancel-batch", "retrieve-batch"):
+        return _execute_batch_recovery(args, out_dir)
 
     if args.dry_run:
         print(f"[summary] DRY RUN — artifacts → {out_dir}", file=sys.stderr)
@@ -169,7 +190,10 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
         for url in config.STATIC_PAGES:
             if args.page and url != args.page:
                 continue
-            targets.append({"kind": "static_page", "url": url, "locale": "en", "content_type": "landing"})
+            targets.append({
+                "kind": "static_page", "url": url, "locale": "en", "content_type": "landing",
+                "model": config.model_for_content_type("landing"),
+            })
     for slug, cid in config.COLLECTIONS.items():
         if args.collection and args.collection != slug:
             continue
@@ -181,6 +205,8 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             "kind": "cms_collection", "collection": slug, "collection_id": cid,
             "locale": "native_per_item" if slug in config.NATIVE_LANGUAGE_COLLECTIONS else "en",
             "content_type": content_type, "translate": translate,
+            # tracker-097: show the tiered model so `plan` reveals blog → Flash.
+            "model": config.model_for_content_type(content_type),
         })
     if args.limit:
         targets = targets[: args.limit]
@@ -216,6 +242,63 @@ def _plan_translate(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+# ---- Orphaned-batch recovery (tracker-097 RC5) ----
+
+
+def _execute_batch_recovery(args: argparse.Namespace, out_dir: Path) -> int:
+    """Cancel or retrieve a Gemini batch by id.
+
+    A submitted Gemini batch keeps processing + billing even after the GitHub
+    Actions run that launched it is cancelled. `cancel-batch` stops it;
+    `retrieve-batch` fetches its results and dumps them to JSON (reclaims output
+    a cancelled run would otherwise discard). The batch id resolves from
+    --batch-id, else the last persisted submit (config.LAST_BATCH_FILE).
+    """
+    from tools.summary import batch_runner
+
+    batch_id = args.batch_id
+    if not batch_id:
+        try:
+            last = json.loads(config.LAST_BATCH_FILE.read_text(encoding="utf-8"))
+            batch_id = last.get("batch_id")
+        except (OSError, ValueError):
+            batch_id = None
+    if not batch_id:
+        print(
+            "[summary] no --batch-id and no persisted last batch "
+            f"({config.LAST_BATCH_FILE}); nothing to do.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.subcommand == "cancel-batch":
+        state = batch_runner.cancel_batch(batch_id)
+        print(f"[summary] cancel-batch {batch_id} -> state {state}", file=sys.stderr)
+        return 0
+
+    # retrieve-batch: poll to terminal state, then dump results keyed by custom_id
+    # (round-tripped via response metadata, so this works cross-process).
+    handle = batch_runner.BatchHandle(
+        batch_id=batch_id, request_count=0, submitted_at=_now_iso(), dry_run=False,
+    )
+    results = batch_runner.wait_for_batch(handle, poll_interval_sec=10, timeout_sec=6 * 3600)
+    dump = {
+        r.custom_id: {
+            "succeeded": r.succeeded, "content": r.content, "error": r.error,
+            "input_tokens": r.input_tokens, "output_tokens": r.output_tokens,
+            "cache_read_tokens": r.cache_read_tokens,
+        }
+        for r in results
+    }
+    out_path = out_dir / "retrieved-batch.json"
+    out_path.write_text(json.dumps(dump, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(
+        f"[summary] retrieve-batch {batch_id} -> {len(results)} results -> {out_path}",
+        file=sys.stderr,
+    )
+    return 0
+
+
 # ---- Executors (the orchestrator) ----
 #
 # These functions do the actual work. Each respects `args.dry_run`:
@@ -227,6 +310,44 @@ def _plan_translate(args: argparse.Namespace) -> dict[str, Any]:
 #
 # Imports of network-touching modules are lazy so dry-run + --help work
 # without the google-genai SDK installed.
+
+
+def _submit_and_wait(requests: list, args: argparse.Namespace):
+    """Run a batch of requests and collect results (tracker-097).
+
+    --sync: one synchronous generate_sync over all requests (per-request model).
+    Batch (default): group requests by resolved model and run one Batch job per
+    model — the Batch API accepts a single model per job, so tiering (blog → Flash,
+    rest → Pro) requires per-model jobs. Returns (results, primary_handle, batch_ids).
+    """
+    from tools.summary import batch_runner
+
+    if args.sync:
+        handle = batch_runner.BatchHandle(
+            batch_id=f"sync-{_timestamp_slug()}", request_count=len(requests),
+            submitted_at=_now_iso(), dry_run=False,
+        )
+        return batch_runner.generate_sync(requests), handle, [handle.batch_id]
+
+    groups: dict[str, list] = {}
+    order: list[str] = []
+    for r in requests:
+        m = r.model or config.MODEL_ID
+        if m not in groups:
+            groups[m] = []
+            order.append(m)
+        groups[m].append(r)
+
+    results: list = []
+    handles = []
+    for m in order:
+        h = batch_runner.submit_batch(groups[m], model=m)
+        handles.append(h)
+        results.extend(batch_runner.wait_for_batch(h))
+    primary = handles[0] if handles else batch_runner.BatchHandle(
+        batch_id="none", request_count=0, submitted_at=_now_iso(), dry_run=False,
+    )
+    return results, primary, [h.batch_id for h in handles]
 
 
 def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
@@ -318,7 +439,8 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         kept = []
         for (sitem, kw, tgt) in sources:
             cid_key = sitem.cms_item_id or sitem.url
-            if summary_state.get(cid_key, {}).get("source_hash") == _source_hash(sitem.body_excerpt, cid_key):
+            model = config.model_for_content_type(sitem.content_type)
+            if summary_state.get(cid_key, {}).get("source_hash") == _source_hash(sitem.body_excerpt, cid_key, model):
                 idempotency_skipped += 1
                 continue
             kept.append((sitem, kw, tgt))
@@ -341,6 +463,8 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                 system_blocks=system_blocks,
                 user_message=user_msg,
                 enable_thinking=True,
+                # tracker-097: tier the model by content type (blog → Flash, rest → Pro).
+                model=config.model_for_content_type(item.content_type),
             )
             requests.append(req)
         except Exception as e:
@@ -357,7 +481,30 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "warnings": warnings,
         }
 
-    cost_estimate = batch_runner.estimate_batch_cost_usd(requests)
+    # tracker-097: estimate at the rate tier actually billed (--sync = interactive,
+    # else batch) and credit explicit caching only when it will engage this run.
+    est_mode = "interactive" if args.sync else "batch"
+    cache_plan = [] if (args.sync or not config.ENABLE_EXPLICIT_CACHE) else batch_runner.plan_caches(requests)
+    cache_will_engage = any(e.eligible for e in cache_plan)
+    cost_estimate = batch_runner.estimate_batch_cost_usd(
+        requests, mode=est_mode, cached=cache_will_engage,
+    )
+    model_breakdown: dict[str, int] = {}
+    for r in requests:
+        m = r.model or config.MODEL_ID
+        model_breakdown[m] = model_breakdown.get(m, 0) + 1
+    cost_gate = {
+        "projected_usd": round(cost_estimate, 4),
+        "mode": est_mode,
+        "cost_cap_usd": config.MAX_BATCH_COST_USD,
+        "confirm_threshold_usd": config.COST_CONFIRM_THRESHOLD_USD,
+        "caching_engaged": cache_will_engage,
+        "cacheable_groups": sum(1 for e in cache_plan if e.eligible),
+        "model_breakdown": model_breakdown,
+        "confirm_required": False,
+        "confirmed": bool(getattr(args, "confirm_cost", False)),
+    }
+    # Hard cost cap — abort regardless of confirmation.
     if cost_estimate > config.MAX_BATCH_COST_USD:
         warnings.append(
             f"COST CAP EXCEEDED: estimated ${cost_estimate:.2f} > "
@@ -366,7 +513,20 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         return {
             "target_count": len(plan["targets"]), "sources_resolved": len(sources),
             "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
-            "submitted": False, "warnings": warnings,
+            "submitted": False, "cost_gate": cost_gate, "warnings": warnings,
+        }
+    # tracker-097 pilot-first: a LIVE run over the confirm threshold needs --confirm-cost.
+    if (not args.dry_run) and cost_estimate > config.COST_CONFIRM_THRESHOLD_USD and not getattr(args, "confirm_cost", False):
+        cost_gate["confirm_required"] = True
+        warnings.append(
+            f"COST CONFIRM REQUIRED: projected ${cost_estimate:.2f} > "
+            f"${config.COST_CONFIRM_THRESHOLD_USD:.2f}. Re-run with --confirm-cost to authorize "
+            f"this paid run (pilot-first). No batch submitted."
+        )
+        return {
+            "target_count": len(plan["targets"]), "sources_resolved": len(sources),
+            "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
+            "submitted": False, "cost_gate": cost_gate, "warnings": warnings,
         }
 
     # Helper to build the EN-summaries manifest that the translate phase consumes.
@@ -422,6 +582,15 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
 
     # Submit (real or dry-run).
     artifact_dir = out_dir / "batches"
+    cache_plan_report = {
+        "groups": len(cache_plan),
+        "cacheable_groups": sum(1 for e in cache_plan if e.eligible),
+        "entries": [
+            {"model": e.model, "request_count": e.request_count,
+             "prefix_tokens": e.prefix_tokens, "eligible": e.eligible, "reason": e.reason}
+            for e in cache_plan
+        ],
+    }
     if args.dry_run:
         handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
         # Dry-run: write a stub manifest so test_execute_translate_dry_run can read it.
@@ -436,18 +605,13 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "submitted": True, "dry_run": True, "batch_id": handle.batch_id,
             "artifact_path": str(handle.artifact_path),
             "manifest_path": str(mpath), "manifest_entries": mcount,
+            "cost_gate": cost_gate, "cache_plan": cache_plan_report,
             "warnings": warnings,
         }
-    # Live run. --sync uses instant generateContent; default uses the Batch API.
-    if args.sync:
-        handle = batch_runner.BatchHandle(
-            batch_id=f"sync-{_timestamp_slug()}", request_count=len(requests),
-            submitted_at=_now_iso(), dry_run=False,
-        )
-        results = batch_runner.generate_sync(requests)
-    else:
-        handle = batch_runner.submit_batch(requests)
-        results = batch_runner.wait_for_batch(handle)
+    # Live run. _submit_and_wait: --sync = instant generate_sync (per-request model);
+    # else group requests by model and run one Batch job per model (the Batch API
+    # takes a single model per job — tracker-097 tiering).
+    results, handle, batch_ids = _submit_and_wait(requests, args)
     succeeded = [r for r in results if r.succeeded]
     failed = [r for r in results if not r.succeeded]
     _first_errors = {r.custom_id: r.error for r in failed}  # tracker-092 (2.2): first-attempt errors for triage
@@ -464,14 +628,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                         system_blocks=orig.system_blocks,
                         user_message=retry_user,
                         enable_thinking=False,
+                        model=orig.model,  # tracker-097: retry on the same tier
                     )
                 )
         if retry_requests:
-            if args.sync:
-                retry_results = batch_runner.generate_sync(retry_requests)
-            else:
-                retry_handle = batch_runner.submit_batch(retry_requests)
-                retry_results = batch_runner.wait_for_batch(retry_handle)
+            retry_results, _retry_handle, _retry_ids = _submit_and_wait(retry_requests, args)
             for rr in retry_results:
                 if rr.succeeded:
                     succeeded.append(rr)
@@ -581,7 +742,10 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                 sitem = mapped[0]
                 cid_key = sitem.cms_item_id or sitem.url
                 summary_state[cid_key] = {
-                    "source_hash": _source_hash(sitem.body_excerpt, cid_key),
+                    "source_hash": _source_hash(
+                        sitem.body_excerpt, cid_key,
+                        config.model_for_content_type(sitem.content_type),
+                    ),
                     "generated_at": _now_iso(),
                 }
         _save_summary_state(summary_state)
@@ -597,8 +761,10 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "target_count": len(plan["targets"]), "sources_resolved": len(sources),
         "requests_built": len(requests), "cost_estimate_usd": round(cost_estimate, 2),
         "submitted": True, "dry_run": False, "batch_id": handle.batch_id,
+        "batch_ids": batch_ids,
         "succeeded": len(succeeded), "failed": len(failed),
         "qa_gate": qa_gate_summary,
+        "cost_gate": cost_gate, "cache_plan": cache_plan_report,
         "idempotency_skipped": idempotency_skipped,
         "degraded": degraded,
         "write_log": write_log,
@@ -1184,15 +1350,17 @@ def _cms_item_url(content_type: str, slug: str) -> str:
 # ---- tracker-092 Phase 2: idempotency state ----
 
 
-def _source_hash(source_text: str, content_id: str) -> str:
-    """Stable hash of an item's source content + identity + prompt version.
+def _source_hash(source_text: str, content_id: str, model: str = "") -> str:
+    """Stable hash of an item's source content + identity + prompt version + model.
 
-    Including SUMMARY_PROMPT_VERSION means a prompt/keyword-logic change bumps
-    every hash, forcing regeneration (Hotspot #4) — a source-only hash would
-    freeze stale summaries after a prompt improvement.
+    Including SUMMARY_PROMPT_VERSION means a prompt/keyword-logic change bumps every
+    hash, forcing regeneration — a source-only hash would freeze stale summaries
+    after a prompt improvement. tracker-097 (Hotspot #3): the resolved model is also
+    folded in, so retiering an item (e.g. blog Pro → Flash) regenerates it without a
+    version bump while unchanged items still skip.
     """
     import hashlib
-    payload = f"{content_id}\x00{config.SUMMARY_PROMPT_VERSION}\x00{source_text}"
+    payload = f"{content_id}\x00{config.SUMMARY_PROMPT_VERSION}\x00{model}\x00{source_text}"
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
