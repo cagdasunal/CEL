@@ -8,13 +8,41 @@ from __future__ import annotations
 from pathlib import Path
 
 # Google Gemini 3.1 Pro Preview — top-tier production model on Artificial
-# Analysis Intelligence Index (tied with Opus 4.7 at 57) at ~7× lower Batch
-# pricing. Migrated from claude-opus-4-7 in tracker-091 (2026-05-19 evening).
-# Pricing reference: https://ai.google.dev/gemini-api/docs/pricing
+# Analysis Intelligence Index (tied with Opus 4.7 at 57). Migrated from
+# claude-opus-4-7 in tracker-091 (2026-05-19 evening).
+# Pricing reference (verified 2026-05-21 — tracker-097): interactive
+# $2.00 in / $12.00 out per 1M (≤200k ctx); Batch $1.00 / $6.00; cached read $0.20.
+# https://ai.google.dev/gemini-api/docs/pricing
 MODEL_ID = "gemini-3.1-pro-preview"
 
-# Defensive cost cap. Batch run aborts with an error if estimated cost exceeds this.
-MAX_BATCH_COST_USD = 100
+# tracker-097: model tiering. The bulk blog catalog (415 posts × locales) is the
+# single-block, lower-stakes path — generate it on Gemini 2.5 Flash (~6.7× cheaper
+# input / ~4.8× cheaper output than Pro, and supports thinking_budget=0). The
+# high-value designed pages (static landing + courses + housing 4-part) stay on Pro.
+# QA gate is the quality backstop: a weak Flash summary is demoted to MANUAL_REVIEW,
+# never shipped. Reversible — change this map and bump SUMMARY_PROMPT_VERSION.
+MODEL_BLOG = "gemini-2.5-flash"
+MODEL_BY_CONTENT_TYPE = {
+    "blog_post": MODEL_BLOG,
+    # course / housing / landing default to MODEL_ID (Pro) via model_for_content_type.
+}
+
+
+def model_for_content_type(content_type: str) -> str:
+    """Resolve the Gemini model for a content type (tracker-097 tiering)."""
+    return MODEL_BY_CONTENT_TYPE.get(content_type, MODEL_ID)
+
+
+# Defensive cost cap (tracker-097: 100 → 15). A run aborts if estimated cost
+# exceeds this — a real guardrail, not the old ~$100 no-op. Tunable.
+MAX_BATCH_COST_USD = 15
+
+# tracker-097: a LIVE run whose projected cost exceeds this refuses to submit
+# unless --confirm-cost is passed (operationalizes pilot-first: you always see
+# the projection before any spend). Tiny pilot runs (a few items, well under $1)
+# proceed without the flag. The standing rule "no paid run without explicit
+# go-ahead" is the human layer; this is the code-level backstop.
+COST_CONFIRM_THRESHOLD_USD = 1.00
 
 # Locales. EN is the source language; the other 8 are translation targets.
 LOCALES = ("en", "de", "fr", "es", "it", "pt", "ko", "ja", "ar")
@@ -103,8 +131,38 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # since the last successful run (unless --force) so re-runs don't re-submit
 # unchanged items to Gemini. Bump SUMMARY_PROMPT_VERSION whenever the prompts or
 # keyword logic change materially, to force a full regeneration.
-SUMMARY_PROMPT_VERSION = "2026-05-21-t096"
+# tracker-097: bumped 2026-05-21-t096 → -t097 (provenance trimmed from common.md +
+# per-content-type model tiering). The model is also folded into _source_hash, so a
+# future model change regenerates without a version bump; this bump forces a one-time
+# full regeneration under the new cheaper (tiered + cached) pipeline.
+SUMMARY_PROMPT_VERSION = "2026-05-21-t097"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
+
+# tracker-097: the last submitted Batch job's id + metadata, persisted on submit so a
+# cancelled/failed GHA run can `cancel-batch`/`retrieve-batch` it (a submitted Gemini
+# batch keeps billing even after the GHA run is cancelled — see RC5). Committed by the
+# workflow alongside summary-state.json so it survives across runs.
+LAST_BATCH_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-last-batch.json"
+
+# tracker-097: explicit context-cache lifecycle. The ~6,500-token system prefix is
+# identical across every (content_type, locale, model) group; caching it drops the
+# prefix from full input rate to the cache-read rate ($0.20/M Pro, $0.03/M Flash).
+# Only groups with >= CACHE_MIN_GROUP_SIZE items are cached (a 1-item cache adds a
+# create/delete round-trip for negligible saving).
+#
+# TTL note: a Batch job runs ASYNCHRONOUSLY (1-4h typical, capped by the GHA job's
+# 6h timeout) and the cache is looked up at PROCESSING time — so the TTL must cover
+# the whole in-job batch run, NOT just submit. Caches are deleted in wait_for_batch
+# once the batch reaches a terminal state (storage is billed for actual lifetime,
+# usually << TTL); the TTL is the backstop if the run is cancelled/crashes.
+CACHE_TTL_SECONDS = 6 * 3600  # 6h — matches the GHA job timeout (covers in-job batch processing)
+CACHE_MIN_GROUP_SIZE = 2
+
+# Safety valve: the live explicit-cache path is exercised on real Gemini Batch infra
+# only (no offline test can hit it). If a run shows cache misbehaviour, set this False
+# to fall back to full-price generation without a code change. The submit path is also
+# fallback-safe per-request (a cache create/reference failure degrades to full price).
+ENABLE_EXPLICIT_CACHE = True
 
 # tracker-092 Phase 3: dedicated translator memory. Persists
 # source→translation across runs so unchanged strings are never re-translated.

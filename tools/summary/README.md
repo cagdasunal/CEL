@@ -202,18 +202,29 @@ reuse the translator independently; see `tools/translator/README.md` for the ful
 
 ## Cost expectation
 
-Rough estimate against the live CEL catalog (491 generate-english + 1,352 translate ≈ 1,843 Gemini API calls):
+**Verified pricing (2026-05-21, https://ai.google.dev/gemini-api/docs/pricing):**
 
-- Gemini 3.1 Pro Preview + Batch API (already 50% off standard) + implicit caching: **~$15 USD full sweep**
-- Skip-translate (491 generate-english only): **~$5 USD**
-- Per new blog post (ongoing): **~$0.01–0.02 USD**
-- Single-request pilot (`--limit 1`): **~$0.002 USD**
+| Model | Interactive (`--sync`) in/out per 1M | Batch in/out per 1M | Cached read per 1M |
+|---|---|---|---|
+| Gemini 3.1 Pro Preview (landing/courses/housing) | $2.00 / $12.00 | $1.00 / $6.00 | $0.20 |
+| Gemini 2.5 Flash (blog) | $0.30 / $2.50 | $0.15 / $1.25 | $0.03 |
 
-Pricing as of 2026-05-19; verify at https://ai.google.dev/gemini-api/docs/pricing.
+The workload is **input-token dominated**: ~6,500 tokens of stable system prefix + ~1,000 tokens of body/links per request, ~800 output. So input price + prefix re-use drive the bill.
 
-Migrated from Anthropic Claude Opus 4.7 → Gemini 3.1 Pro Preview in tracker-091 for ~7× cost reduction at equivalent benchmarks (Artificial Analysis Intelligence Index 57 = 57).
+### tracker-097 cost levers
+- **Honest estimation.** `estimate_batch_cost_usd` prices by the path actually billed (`--sync` = interactive, default = Batch) and credits caching only when it engages. The earlier estimator priced sync at Batch rates and assumed a fictional cached prefix, so it undershot real spend ~2×.
+- **Explicit context caching** of the shared system prefix (per content-type/locale/model group; Batch path). Drops the prefix from full input rate to the cache-read rate — **~60% input-cost reduction** on a typical run. Fallback-safe: a cache failure degrades to full price. Toggle with `config.ENABLE_EXPLICIT_CACHE`.
+- **Model tiering.** The 415 blog posts (single-block, bulk) run on **Gemini 2.5 Flash** (~6.7× cheaper input, `thinking_budget=0`); the high-value designed pages (landing/courses/housing 4-part) stay on **Pro**. See `config.model_for_content_type`. The QA gate is the quality backstop.
+- **Idempotency across runs.** `summary-state.json` is now committed by the workflow, so a re-run no longer re-bills unchanged items (the model is folded into the hash, so retiering regenerates correctly).
 
-Defensive cost cap: `MAX_BATCH_COST_USD = 100` in `config.py`. The orchestrator estimates cost before each batch submission and aborts if it would exceed the cap. With Gemini's lower per-request cost, this cap is now ~7× margin — safer.
+Rough full-catalog estimate after these levers: well under the cap; a single blog post ~$0.002–0.005; a `--limit 1` pilot ~$0.001.
+
+### Spend guardrails
+- **Hard cap**: `MAX_BATCH_COST_USD = 15` in `config.py` (was 100). A run aborts before submitting if the projection exceeds it.
+- **Pilot-first confirm gate**: a LIVE run projected over `COST_CONFIRM_THRESHOLD_USD` ($1) refuses to submit unless `--confirm-cost` is passed (workflow input `confirm_cost`). You always see the projected cost (in `report.json` → `phases.generate_english.cost_gate`) before any spend.
+- **Orphaned-batch recovery**: a submitted Gemini batch keeps billing even after its GitHub Actions run is cancelled. `submit_batch` persists the batch id to `data/seo-intel/summary-last-batch.json` (committed); `python3 -m tools.summary cancel-batch [--batch-id …]` stops it and `retrieve-batch` reclaims its results.
+
+Migrated from Anthropic Claude Opus 4.7 → Gemini 3.1 Pro Preview in tracker-091 (Artificial Analysis Intelligence Index 57 = 57).
 
 ## Troubleshooting
 
@@ -223,8 +234,11 @@ The script ran in `--no-dry-run` but the secret isn't configured. Add to CEL rep
 ### "WEBFLOW_API_TOKEN env var not set"
 Same as above for the Webflow token.
 
-### "Cost cap exceeded"
-The batch estimate exceeded `MAX_BATCH_COST_USD` (100). Either reduce scope (`--limit` flag) or raise the cap in `config.py`. Don't raise without thinking — the cap is defensive.
+### "COST CAP EXCEEDED"
+The estimate exceeded `MAX_BATCH_COST_USD` (15). Either reduce scope (`--limit`) or raise the cap in `config.py`. Don't raise without thinking — the cap is defensive (tracker-097 lowered it 100 → 15).
+
+### "COST CONFIRM REQUIRED"
+A LIVE run is projected over `COST_CONFIRM_THRESHOLD_USD` ($1) and no batch was submitted (pilot-first). Review the projected cost in `report.json` → `cost_gate`, then re-run with `--confirm-cost` (workflow input `confirm_cost: true`) to authorize the spend.
 
 ### "Batch submission timed out"
 `wait_for_batch` polls for ≤24 hours then raises `TimeoutError`. If this fires, check the Google AI Studio / Gemini batch console for batch status; it may still be processing (48h hard expiry). Re-run the workflow to re-poll.

@@ -169,19 +169,9 @@ Return only the rendered Markdown of the Summary section, in the exact structure
 
 The Summary must feel like a designed part of the page, not a block bolted on for search engines. The Tagline reads like an editorial kicker, the Title like a real section heading, the Paragraph like a genuine lead, and the Content like the depth a curious reader actually wants. A visitor — and Google — should never sense the section exists only for SEO. Write the section a strong human editor would write; the ranking signals follow from being genuinely useful.
 
-## Research provenance (for context — do not cite in output)
+The on-page summary you generate is the primary GEO/AIO citation surface: it must satisfy retrieval models AND human readers simultaneously. Optimize for helpfulness first; the SEO signals follow.
 
-The rules above incorporate 2026 SEO + GEO research findings:
-
-- **March 2026 SpamBrain spam update** (Mar 24 2026, 24-hour rollout): keyword stuffing, programmatic location pages, auto-built content without verifiable expertise — all newly penalised. Source: thatware.co / marketing4ecommerce.net / evertune.ai 2026.
-- **Keyword density 1–2%** (narrowed from 2025's 0.5–2.5% band): Shopify 2026, SearchX 2026.
-- **Anchor diversity 40/30/30** (branded/partial/descriptive — previously 20/40/40): March 2026 spam update implications.
-- **Schema.org on ~81% of cited pages** (LocalBusiness + EducationalOrganization for CEL; FAQPage is NOT used — Google restricted FAQ rich results to gov/health since Aug 2023): sarvaya.in 2026, discoverability.co 2026.
-- **134–167-word answer block 4.2× citation rate**: Citedify GEO 2026 / Megrisoft 2026.
-- **YouTube embeds +414% citation surge**: Neil Patel 2026, Otterly 2026.
-- **EEAT re-weighting Trust > Experience > Expertise > Authoritativeness**: orbitinfotech 2026, evertune.ai.
-- **Top-10 SERP → AIO citation rate 76% → 38%**: ALM Corp 2026.
-- **Topical authority +57% faster traffic vs. keyword targeting**: BacklinkGen 2026 / clickrank.ai 2026.
-- **AI-detection burstiness signal, transition-stripping −32 points**: Walter Writes 2026, Surfer SEO 2026, ProofreaderPro.
-
-The on-page summary you generate is the primary GEO/AIO citation surface — it must satisfy retrieval models AND human readers simultaneously. Optimize for helpfulness first; the SEO signals follow.
+<!-- tracker-097: the "Research provenance" citation list (the dated source list
+behind the rules above) was removed from this system prompt — it was dev-facing
+context the model never needed (~650 input tokens on EVERY request, uncached). The
+provenance lives in docs/reviews/097-* in the monorepo. Do not re-add it here. -->>
