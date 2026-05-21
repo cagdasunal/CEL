@@ -1,17 +1,23 @@
-"""Four-part Summary structure — parse + Markdown→HTML (tracker-096).
+"""Four-part Summary structure — parse + Markdown→HTML (tracker-096, tracker-098).
 
 The redesigned Summary section has four parts:
-  - Tagline   (H2, 2-3 words)        → plain text
-  - Title     (H3)                   → plain text
-  - Paragraph (one short lead block) → plain text
-  - Content   (starts at H4, uses H5; the ONLY part with internal links) → rich text
+  - Tagline    (H2, 2-3 words)              → plain text
+  - Title      (H3)                         → plain text
+  - Paragraphs (1-2 lead blocks, may link)  → rich text  (tracker-098)
+  - Content    (starts at H4, uses H5)      → rich text
 
 `course` / `housing` / `landing` summaries are generated as ONE Markdown document in
-that exact order; this module splits it into the four parts and renders the Content
-part to the HTML subset Webflow's RichText field expects (`<h4>/<h5>/<p>/<a>/<strong>
-/<em>`). Plain Markdown into a RichText field renders literal `####`, so the CMS
-Content write needs real HTML; the three plain parts are written as stripped plain
-text. Blog posts keep the single-block path and never touch this module.
+that exact order; this module splits it into the four parts and renders the RichText
+parts (Paragraphs + Content) to the HTML subset Webflow's RichText field expects
+(`<h2>/<h3>/<h4>/<h5>/<p>/<a>/<strong>/<em>`). Plain Markdown into a RichText field
+renders literal `####`/`[](url)`, so every RichText write needs real HTML; only the
+two plain-text parts (Tagline, Title) are written as stripped plain text.
+
+tracker-098: the Paragraph field became RichText holding 1-2 paragraphs that may carry
+inline internal links, so `FourPartSummary.paragraph` is now the MARKDOWN source (no
+longer plain-text-stripped) and `four_part_paragraph_html` renders it. Blog posts keep
+the single-block path; their Markdown is rendered to HTML by `summary_markdown_to_html`
+(also a RichText write) before the CMS PATCH.
 
 Pure stdlib — no dependency on the rest of the tool.
 """
@@ -23,14 +29,18 @@ from dataclasses import dataclass
 
 # Heading line: 1-6 leading '#'. Trailing '#'s (ATX-closed headings) are tolerated.
 _H_LINE = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
-# Content headings only: H4 / H5.
-_CONTENT_H = re.compile(r"^(#{4,5})\s+(.*?)\s*#*\s*$")
 _LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 @dataclass(frozen=True)
 class FourPartSummary:
-    """The four parts parsed out of a generated 4-part Summary Markdown document."""
+    """The four parts parsed out of a generated 4-part Summary Markdown document.
+
+    tracker-098: `paragraph` holds the MARKDOWN source of the lead Paragraphs part
+    (1-2 blank-line-separated paragraphs that MAY contain inline links/emphasis), not
+    stripped plain text. Render it to RichText HTML via `four_part_paragraph_html`.
+    `tagline` and `title` remain stripped plain text.
+    """
 
     tagline: str = ""
     title: str = ""
@@ -79,10 +89,12 @@ def _inline_md_to_html(text: str) -> str:
 def parse_four_part(markdown: str) -> FourPartSummary:
     """Split a 4-part Summary Markdown document into its four parts.
 
-    Contract (emitted in this order): `## Tagline` → `### Title` → lead paragraph →
-    `#### …` Content (H4/H5 + the only links). Tolerant of missing parts — a
-    malformed draft returns empty strings for the parts it lacks, so the QA gate
-    fails it (and the orchestrator demotes it to MANUAL_REVIEW) rather than crashing.
+    Contract (emitted in this order): `## Tagline` → `### Title` → 1-2 lead Paragraphs
+    → `#### …` Content (H4/H5). tracker-098: the Paragraphs part is captured as MARKDOWN
+    preserving blank-line separation between the two paragraphs and any inline links —
+    `four_part_paragraph_html` renders it. Tolerant of missing parts — a malformed draft
+    returns empty strings for the parts it lacks, so the QA gate fails it (and the
+    orchestrator demotes it to MANUAL_REVIEW) rather than crashing.
     """
     tagline = ""
     title = ""
@@ -113,24 +125,28 @@ def parse_four_part(markdown: str) -> FourPartSummary:
             in_content = True
             content_lines.append(line)
             continue
-        # Non-heading text becomes the lead paragraph once we are past the Title.
-        if seen_h3 and stripped:
+        # Non-heading text becomes the lead Paragraphs once we are past the Title. Blank
+        # lines are KEPT (as empty strings) so the 1-2 paragraph breaks survive into the
+        # captured Markdown; leading blanks before the first prose line are dropped.
+        if seen_h3 and (stripped or para_lines):
             para_lines.append(stripped)
 
-    paragraph = _strip_inline_md(" ".join(para_lines)).strip()
+    paragraph = "\n".join(para_lines).strip()
     content_md = "\n".join(content_lines).strip()
     return FourPartSummary(
         tagline=tagline, title=title, paragraph=paragraph, content_md=content_md
     )
 
 
-def four_part_content_html(content_md: str) -> str:
-    """Render the Content part's Markdown to the Webflow RichText HTML subset.
+def _markdown_to_html(md: str, allowed_heading_levels: tuple[int, ...]) -> str:
+    """Render a Markdown block to the Webflow RichText HTML subset.
 
-    `#### X` → `<h4>X</h4>`, `##### X` → `<h5>X</h5>`, blank-line-separated prose →
-    `<p>…</p>`, `[t](u)` → `<a href="u">t</a>`, `**b**`/`*i*` → `<strong>`/`<em>`.
-    Line-oriented so a heading immediately followed by prose (no blank line) still
-    splits correctly. Returns "" for empty input.
+    Heading lines whose level is in `allowed_heading_levels` become `<hN>…</hN>`;
+    blank-line-separated prose becomes `<p>…</p>`; `[t](u)` → `<a href="u">t</a>`,
+    `**b**`/`*i*` → `<strong>`/`<em>`. Heading lines OUTSIDE the allowed set are treated
+    as prose (their `#` markers stripped) so an unexpected level never leaks raw `#`
+    into the field. Line-oriented so a heading immediately followed by prose (no blank
+    line) still splits correctly. Returns "" for empty input.
     """
     out: list[str] = []
     para: list[str] = []
@@ -142,19 +158,55 @@ def four_part_content_html(content_md: str) -> str:
                 out.append(f"<p>{text}</p>")
             para.clear()
 
-    for raw in content_md.splitlines():
+    for raw in md.splitlines():
         line = raw.strip()
-        hm = _CONTENT_H.match(line)
-        if hm:
+        hm = _H_LINE.match(line)
+        if hm and len(hm.group(1)) in allowed_heading_levels:
             _flush()
             level = len(hm.group(1))
             out.append(f"<h{level}>{_inline_md_to_html(hm.group(2).strip())}</h{level}>")
         elif not line:
             _flush()
+        elif hm:
+            # A heading at a non-allowed level — keep its text as prose, drop the marker.
+            para.append(hm.group(2).strip())
         else:
             para.append(line)
     _flush()
     return "".join(out)
+
+
+def four_part_content_html(content_md: str) -> str:
+    """Render the Content part's Markdown to the Webflow RichText HTML subset.
+
+    `#### X` → `<h4>X</h4>`, `##### X` → `<h5>X</h5>`, blank-line-separated prose →
+    `<p>…</p>`, `[t](u)` → `<a href="u">t</a>`, `**b**`/`*i*` → `<strong>`/`<em>`.
+    Only H4/H5 are recognized as headings (the Content contract). Returns "" for empty
+    input.
+    """
+    return _markdown_to_html(content_md, allowed_heading_levels=(4, 5))
+
+
+def four_part_paragraph_html(paragraph_md: str) -> str:
+    """Render the lead Paragraphs part's Markdown to RichText HTML (tracker-098).
+
+    Blank-line-separated paragraphs → `<p>…</p>` each, with inline `[t](u)` →
+    `<a href="u">t</a>` and `**b**`/`*i*` → `<strong>`/`<em>`. No headings are expected
+    in the Paragraphs part, so none are emitted (a stray heading line degrades to prose).
+    Returns "" for empty input.
+    """
+    return _markdown_to_html(paragraph_md, allowed_heading_levels=())
+
+
+def summary_markdown_to_html(md: str) -> str:
+    """Render a single-block (blog) Summary Markdown document to RichText HTML (tracker-098).
+
+    `## X`→`<h2>`, `### X`→`<h3>`, `#### X`→`<h4>`, blank-line-separated prose →`<p>`,
+    inline `[t](u)`→`<a href>`, `**b**`/`*i*`→`<strong>`/`<em>`. Fixes literal `##` /
+    `[](url)` rendering when blog Markdown was PATCHed straight into the RichText
+    `summary` field. Returns "" for empty input.
+    """
+    return _markdown_to_html(md, allowed_heading_levels=(2, 3, 4))
 
 
 def _collapse_ws(s: str) -> str:
@@ -192,7 +244,11 @@ def parts_to_markdown(parts: dict) -> str:
     (the captured inner HTML of `#summary-tagline/title/paragraph/content`) so the
     audit phase can score a live 4-part page with `qa_checks(structure="four_part")`.
 
-    Best-effort (see `_content_html_to_markdown`). Returns "" if no parts are present.
+    Best-effort (see `_content_html_to_markdown`). The Paragraphs part is reconstructed
+    as stripped plain text (page_fetcher drops link hrefs, so anchor text survives but
+    links don't); `parse_four_part` then captures it as a single-paragraph Markdown
+    source — consistent with the new RichText Paragraphs contract. Returns "" if no
+    parts are present.
     """
     out: list[str] = []
     tagline = _strip_tags(parts.get("summary-tagline", ""))

@@ -8,7 +8,7 @@ Course detail pages (`/courses/<slug>`) feature one English language course. The
 
 ## Word count target
 
-250–400 words.
+650–900 words.
 
 ## Output structure (4-part)
 
@@ -16,10 +16,10 @@ Emit ONE Markdown document with EXACTLY these four parts, in this order — a `#
 
 - **Tagline** (the single `## ` line): 2–3 evocative, related words. Not a sentence, not a question, no trailing punctuation. An editorial kicker that makes the section feel designed, not an SEO block. Do NOT put the full primary keyword here.
 - **Title** (the single `### ` line): a short, human section title — e.g. "Is the [Course Name] right for me?" or "What does the [Course Name] cover?". Place the PRIMARY KEYWORD here, phrased naturally.
-- **Paragraph** (the prose between the Title and the first `#### `): ONE self-contained lead paragraph (~60–110 words, single block, no line breaks) that directly answers the Title. Primary keyword within the first 120 characters. No headings, no links, no lists.
-- **Content** (everything from the first `#### ` onward): the depth layer and the ONLY part that may contain internal links. Open with an `#### ` H4 (a PAA-shaped sub-question: who it's for, level requirements, outcomes, comparisons) and use `##### ` H5 only where a sub-point needs it. Place all internal links here. Paragraphs only.
+- **Paragraph** (the prose between the Title and the first `#### `): TWO or THREE paragraphs (~150–260 words total), blank-line separated. The FIRST is the self-contained lead answer (primary keyword in the first 120 characters, open with a concrete fact). 1–2 contextually-relevant internal links MAY appear across the lead paragraphs. No headings, no lists.
+- **Content** (everything from the first `#### ` onward): the depth layer. Open with an `#### ` H4 (a PAA-shaped sub-question: who it's for, level requirements, outcomes, comparisons) and use `##### ` H5 only where a sub-point needs it. Place the remaining internal links here. Paragraphs only.
 
-Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links ONLY in Content; no code fences, no preamble, output the Markdown only.
+Hard rules: exactly ONE H2 (Tagline) + ONE H3 (Title), no H1, Content uses H4/H5 only (never another H2/H3); internal links may appear in the lead Paragraphs AND in the Content — NEVER in the Tagline or Title; no code fences, no preamble, output the Markdown only.
 
 ## Information gain to add
 
@@ -31,8 +31,9 @@ The course detail page already shows: title, hero, weekly hours, prices, what's 
 
 ## Internal links
 
-- Link to 2–3 RELATED courses (same level range or adjacent — General English ↔ English Plus Cambridge Prep is a natural pair)
-- Optionally link to one landing page (e.g., `/pathway-program-usa` for academic-prep angles)
+- Aim for 6–8 meaningful links total, distributed across the lead Paragraphs and the Content (≈ 1 link per 100–150 words; never exceed 1 per 80 words).
+- Link to RELATED courses (same level range or adjacent — General English ↔ English Plus Cambridge Prep is a natural pair)
+- Link to relevant landing pages (e.g., `/pathway-program-usa` for academic-prep angles, the served city pages)
 - Avoid linking to other course-tile galleries that the page already exposes
 
 ## EEAT

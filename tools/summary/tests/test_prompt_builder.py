@@ -76,8 +76,9 @@ def test_user_message_caps_link_candidates():
         link_candidates=[f"https://www.englishcollege.com/page-{i}" for i in range(100)],
         keywords=kw,
     )
-    # Cap is 30; ensure the 31st URL is not present.
-    assert "/page-30" not in msg
+    # tracker-098: cap raised to 60; ensure the 61st URL is not present but the 31st is.
+    assert "/page-60" not in msg
+    assert "/page-30" in msg
     assert "/page-0" in msg
 
 
@@ -183,8 +184,14 @@ def test_user_message_task_is_four_part_for_landing():
     assert "## Task" in msg
     assert "4-part" in msg
     assert "Tagline" in msg and "Title" in msg and "Paragraph" in msg
-    # Links-only-in-Content instruction is present.
-    assert "links in the Content" in msg.lower() or "links in the content" in msg.lower()
+    # tracker-098 pass 2: the lead is now TWO or THREE paragraphs (raised from two).
+    assert "TWO or THREE lead Paragraphs" in msg
+    # tracker-098: links are distributed across the lead Paragraphs AND the Content,
+    # never in the Tagline or Title.
+    low = msg.lower()
+    assert "6" in msg and "internal links" in low
+    assert "across the lead paragraphs and the content" in low
+    assert "never in the tagline or title" in low
 
 
 def test_user_message_task_is_single_block_for_blog():

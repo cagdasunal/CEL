@@ -228,14 +228,15 @@ class WebflowClient:
         paragraph: str,
         content_html: str,
     ) -> WriteResult:
-        """Patch the 4-part Summary fields on a CMS item (tracker-096). Dry-run safe.
+        """Patch all four Summary fields on a CMS item (tracker-096). Dry-run safe.
 
-        Writes the three plain-text parts (Tagline / Title / Paragraph) + the
-        RichText Content (as HTML) on the Courses/Housing collections via the same
-        STAGED `/items/{id}` endpoint as `update_item_summary`. The Content part
-        reuses the existing `summary` slug (renamed "Summary - Content"); the three
-        plain parts use the `summary---*` triple-hyphen slugs. Claude never
-        publishes — the user publishes the staged changes (rules/workflow.md §7.1).
+        tracker-098: NO LONGER the 4-part write path — `update_item_summary_body` is,
+        because it preserves the author-owned Tagline + Title (this method overwrites
+        them). Retained for back-compat + tests. Writes Tagline / Title / Paragraph(s)
+        + the RichText Content on the Courses/Housing collections via the same STAGED
+        `/items/{id}` endpoint as `update_item_summary`. The Content part reuses the
+        `summary` slug; the other parts use the `summary---*` triple-hyphen slugs (the
+        Paragraphs slug is now RichText). Claude never publishes (rules/workflow.md §7.1).
         """
         url = f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}"
         payload = {
@@ -243,6 +244,66 @@ class WebflowClient:
                 config.SUMMARY_TAGLINE_FIELD_SLUG: tagline,
                 config.SUMMARY_TITLE_FIELD_SLUG: title,
                 config.SUMMARY_PARAGRAPH_FIELD_SLUG: paragraph,
+                config.SUMMARY_CONTENT_FIELD_SLUG: content_html,
+            }
+        }
+        if self.dry_run:
+            return WriteResult(
+                dry_run=True,
+                success=True,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                response={"_dry_run": True, "would_patch": payload},
+            )
+        try:
+            response = self._request(
+                "PATCH",
+                url,
+                headers=self._headers(),
+                payload=payload,
+            )
+            return WriteResult(
+                dry_run=False,
+                success=True,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                response=response,
+            )
+        except WebflowApiError as e:
+            return WriteResult(
+                dry_run=False,
+                success=False,
+                method="PATCH",
+                url=url,
+                payload=payload,
+                error=str(e),
+            )
+
+    def update_item_summary_body(
+        self,
+        collection_id: str,
+        item_id: str,
+        paragraph_html: str,
+        content_html: str,
+    ) -> WriteResult:
+        """Patch ONLY the Paragraphs + Content RichText fields on a CMS item (tracker-098).
+
+        The model still emits the full 4-part document, but the Tagline and Title are
+        author-owned section furniture — regenerating them on every run would clobber
+        hand-tuned headings. So the 4-part write path now PATCHes only the two RichText
+        bodies: `summary---paragraphs` (the 1-2 lead paragraphs, as HTML) and `summary`
+        (the Content, as HTML). Both carry HTML (not Markdown) so links/headings render
+        rather than showing literal `##`/`[](url)`. Same STAGED `/items/{id}` endpoint
+        as the other writers; Claude never publishes (rules/workflow.md §7.1). Dry-run
+        safe. `update_item_summary_parts` is retained for back-compat/tests but is no
+        longer the 4-part write path.
+        """
+        url = f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}"
+        payload = {
+            "fieldData": {
+                config.SUMMARY_PARAGRAPH_FIELD_SLUG: paragraph_html,
                 config.SUMMARY_CONTENT_FIELD_SLUG: content_html,
             }
         }

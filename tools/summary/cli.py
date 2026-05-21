@@ -54,13 +54,54 @@ def _sanitize_summary(text: str) -> str:
     tidy any doubled comma/space. Applied before QA + write-back so shipped copy is clean
     and a recoverable tell doesn't cost a generation. NOT applied to anything else —
     genuine quality failures still demote.
+
+    tracker-098: ALSO normalizes raw inline HTML the model sometimes emits. Flash in
+    particular returns `<a href>` / `<strong>` / `<em>` tags despite the Markdown-only
+    rule. Left as-is they get HTML-escaped on RichText write-back into literal
+    `&lt;a&gt;` (broken links on the page) AND are invisible to QA's Markdown link
+    checks (so `links_locale_matched` / `link_density` pass vacuously on 0 detected
+    links). Converting them back to Markdown here — before QA and before write-back —
+    makes the Markdown→HTML converter emit real `<a>`/`<strong>`/`<em>` and lets QA see
+    and validate the links.
     """
     if not text:
         return text
+    # Raw inline HTML the model emitted → Markdown (so QA + the converter handle it).
+    text = re.sub(
+        r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+        r'[\2](\1)', text, flags=re.IGNORECASE | re.DOTALL,
+    )
+    text = re.sub(r'</?(?:strong|b)>', '**', text, flags=re.IGNORECASE)
+    text = re.sub(r'</?(?:em|i)>', '*', text, flags=re.IGNORECASE)
     out = _EM_DASH_SUB_RE.sub(", ", text)
     out = re.sub(r",\s*,", ", ", out)   # collapse ", ," from a dash next to existing punctuation
     out = re.sub(r"\s+,", ",", out)      # no space before a comma
     return out
+
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_EXISTING_SUMMARY_SEED_CAP = 1500  # chars; keeps the reuse seed within a sane prompt window
+
+
+def _existing_summary_seed(*parts: str) -> str:
+    """tracker-098 pass 2: build the reuse seed from an item's CURRENT summary fields.
+
+    Each `part` is an existing field value (RichText HTML or plain text) — typically the
+    CMS Content (`summary`) value, optionally followed by the Paragraphs
+    (`summary---paragraphs`) value. HTML tags are stripped, whitespace collapsed, the
+    non-empty parts joined with a blank line, and the result capped at
+    `_EXISTING_SUMMARY_SEED_CAP` chars so generation expands what exists rather than
+    starting from a blank page. Returns "" when no part carries content.
+    """
+    cleaned: list[str] = []
+    for part in parts:
+        if not part:
+            continue
+        text = re.sub(r"\s+", " ", _HTML_TAG_RE.sub(" ", part)).strip()
+        if text:
+            cleaned.append(text)
+    seed = "\n\n".join(cleaned).strip()
+    return seed[:_EXISTING_SUMMARY_SEED_CAP]
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -415,9 +456,12 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             try:
                 pc: PageContent = fetch_page(target["url"])
                 kw = derive_keywords(pc.title, pc.h1, pc.url, pc.body_text_excerpt, locale="en")
+                # tracker-098 pass 2: seed with the page's existing summary if readily
+                # available (the captured #summary HTML). Best-effort — skip if absent.
                 item = SourceItem(
                     url=pc.url, title=pc.title, body_excerpt=pc.body_text_excerpt[:8000],
                     locale="en", content_type="landing",
+                    existing_summary_excerpt=_existing_summary_seed(pc.existing_summary_html),
                 )
                 sources.append((item, kw, "static"))
             except Exception as e:
@@ -438,10 +482,18 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     locale = _resolve_item_locale(field_data, target["locale"])
                     url = _cms_item_url(target["content_type"], slug)  # per-collection prefix (M-14)
                     kw = derive_keywords(title, title, url, body, locale=locale)
+                    # tracker-098 pass 2: seed generation with the item's CURRENT summary
+                    # so it expands what exists instead of regenerating from scratch.
+                    # Content (`summary`) first, then the Paragraphs RichText if present.
+                    existing_seed = _existing_summary_seed(
+                        field_data.get(config.SUMMARY_CONTENT_FIELD_SLUG, "") or "",
+                        field_data.get(config.SUMMARY_PARAGRAPH_FIELD_SLUG, "") or "",
+                    )
                     item = SourceItem(
                         url=url, title=title, body_excerpt=body[:8000],
                         locale=locale, content_type=target["content_type"],
                         cms_item_id=cms_item.id,
+                        existing_summary_excerpt=existing_seed,
                     )
                     sources.append((item, kw, "cms"))
                     if args.limit and len(sources) >= args.limit:
@@ -479,7 +531,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         try:
             system_blocks = build_system_prompt(item.content_type, item.locale if item.content_type == "blog_post" else "en")
             link_inv = _build_link_candidate_pool(item.content_type, llms_index, item.locale)
-            user_msg = build_user_message(item, link_inv, kw)
+            # tracker-098 pass 2: pass the item's existing summary as the reuse seed so
+            # generation expands it rather than starting blank (empty string = no seed).
+            user_msg = build_user_message(
+                item, link_inv, kw, existing_summary_excerpt=item.existing_summary_excerpt
+            )
             req = batch_runner.BatchRequest(
                 custom_id=f"gen-{i}-{item.cms_item_id or item.url[-50:]}",
                 system_blocks=system_blocks,
@@ -1262,7 +1318,12 @@ def _write_back_summaries(
     succeeded: list, sources: list, args: argparse.Namespace, out_dir: Path, warnings: list[str],
 ) -> dict[str, Any]:
     """Write generated summaries to Webflow CMS (CMS items) or to JSON files (static pages)."""
-    from tools.summary.structure import four_part_content_html, parse_four_part
+    from tools.summary.structure import (
+        four_part_content_html,
+        four_part_paragraph_html,
+        parse_four_part,
+        summary_markdown_to_html,
+    )
     from tools.summary.webflow_client import WebflowClient
     from tools.summary.webflow_designer import write_static_summary_parts
 
@@ -1298,22 +1359,23 @@ def _write_back_summaries(
         elif target == "cms" and item.cms_item_id:
             # In dry-run, the WebflowClient already returns a mock response.
             if item.content_type == "blog_post":
-                # tracker-096: blog keeps the legacy single-block Summary (unchanged).
+                # Blog keeps the single-block Summary, but tracker-098: convert the
+                # Markdown to HTML before PATCH so the RichText field renders headings
+                # + links instead of literal `##` / `[](url)`.
                 wresult = wf.update_item_summary(
                     collection_id=_collection_id_for_content_type(item.content_type),
                     item_id=item.cms_item_id,
-                    summary_html=result.content,
+                    summary_html=summary_markdown_to_html(result.content),
                 )
             else:
-                # Courses / Housing → 4-part: 3 plain-text fields + RichText Content
-                # (Markdown rendered to HTML so H4/H5 + links display).
+                # Courses / Housing → 4-part. tracker-098: write ONLY the two RichText
+                # bodies (Paragraphs + Content), both as HTML, preserving the
+                # author-owned Tagline + Title (never regenerate-overwrite them).
                 parts = parse_four_part(result.content)
-                wresult = wf.update_item_summary_parts(
+                wresult = wf.update_item_summary_body(
                     collection_id=_collection_id_for_content_type(item.content_type),
                     item_id=item.cms_item_id,
-                    tagline=parts.tagline,
-                    title=parts.title,
-                    paragraph=parts.paragraph,
+                    paragraph_html=four_part_paragraph_html(parts.paragraph),
                     content_html=four_part_content_html(parts.content_md),
                 )
             if wresult.success:
@@ -1435,8 +1497,14 @@ def _build_link_candidate_pool(
     housing, also exclude `/pb/` so a housing summary can't link to other housing
     items (mirrors the prompt rule in tools/summary/prompts/housing.md line 28).
 
-    STATIC_PAGES are prepended so the curated set survives the 30-URL prompt cap
-    in prompt_builder.build_user_message. Returns the FULL pool; the cap is
+    tracker-098: down-weight (do NOT exclude) `/housing`-path candidates to at most
+    ONE — the housing pages are newly added / unpublished, so the link inventory
+    should not push the model toward several housing links. A safe no-op while
+    housing detail URLs are absent from llms.txt (only the `/housing` hub appears,
+    via STATIC_PAGES); the cap holds the line if/when they appear.
+
+    STATIC_PAGES are prepended so the curated set survives the prompt cap in
+    prompt_builder.build_user_message. Returns the FULL pool; the prompt cap is
     applied one layer down, not here (tracker-091 M-13).
     """
     static = list(config.STATIC_PAGES)
@@ -1448,11 +1516,25 @@ def _build_link_candidate_pool(
         llms_urls = llms_index.urls_in_locale_excluding(source_locale, excluded)
     seen: set[str] = set()
     out: list[str] = []
+    housing_kept = 0
     for u in static + llms_urls:
-        if u not in seen:
-            seen.add(u)
-            out.append(u)
+        if u in seen:
+            continue
+        if _is_housing_path(u):
+            if housing_kept >= 1:
+                continue  # cap: at most one /housing-path candidate
+            housing_kept += 1
+        seen.add(u)
+        out.append(u)
     return tuple(out)
+
+
+def _is_housing_path(url: str) -> bool:
+    """True if `url`'s path is the /housing hub or a /housing/* detail page (tracker-098)."""
+    import urllib.parse
+
+    segments = urllib.parse.urlparse(url).path.strip("/").split("/")
+    return bool(segments) and segments[0] == "housing"
 
 
 # ---- Report rendering ----

@@ -96,13 +96,13 @@ def _render_static_parts(parts: FourPartSummary) -> str:
     is Markdown (Webflow Designer converts Markdown headings/links on paste).
     """
     return (
-        "<!-- tracker-096: 4-part Summary. Paste each section into the matching "
+        "<!-- tracker-096/098: 4-part Summary. Paste each section into the matching "
         "element on the page. -->\n\n"
         "<!-- #summary-tagline (plain text) -->\n"
         f"{parts.tagline}\n\n"
         "<!-- #summary-title (plain text) -->\n"
         f"{parts.title}\n\n"
-        "<!-- #summary-paragraph (plain text) -->\n"
+        "<!-- #summary-paragraphs (rich text — two paragraphs, paste as Markdown) -->\n"
         f"{parts.paragraph}\n\n"
         "<!-- #summary-content (rich text — paste as Markdown) -->\n"
         f"{parts.content_md}\n"

@@ -17,11 +17,29 @@ _EM_DASH_CHARS = ("—", "–")
 _LIST_TAG_RE = re.compile(r"<\s*(ul|ol|li)\b", re.IGNORECASE)
 _H_RE = re.compile(r"^\s*(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 _LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-_LINKS_PER_1000_LOW = 2
-_LINKS_PER_1000_HIGH = 5
+# tracker-098: SEO-safe internal-link density. The Summary targets 6-8 meaningful
+# internal links; the scored band is a tolerant 5-9 (warn/score, not critical) for a
+# full-length summary, with a word-count-proportional fallback (≈ 1 link / 100-150
+# words) so short drafts with proportionally fewer links still pass. The HARD ceiling
+# is 1 link per ~80 words (anti-stuffing) — a REAL failure. tracker-098 pass 2: the
+# ceiling was loosened 90 → 80 so the raised word-count targets (every minimum now
+# ≥ 650) leave headroom for 8 links (8 @ 1/80 needs 640 words) without false-failing.
+_LINK_TARGET_LOW = 6
+_LINK_TARGET_HIGH = 8
+_LINK_BAND_LOW = 5
+_LINK_BAND_HIGH = 9
+_LINK_WORDS_PER_LINK_MIN = 100  # densest acceptable proportional rate
+_LINK_WORDS_PER_LINK_MAX = 150  # sparsest acceptable proportional rate
+_LINK_STUFFING_WORDS_PER_LINK = 80  # hard anti-stuffing ceiling (>1 link / 80 words fails)
+_SHORT_DRAFT_WORDS = 250  # below this, link count is not held to the 6-8 band
 _DENSITY_LOW = 0.003  # 0.3%
 _DENSITY_HIGH = 0.020  # 2.0%
 _KEYWORD_P1_WINDOW_CHARS = 120
+
+# Locales whose URLs carry a `/{locale}/` path prefix. EN is the unprefixed source.
+# (Mirrors config.LOCALES without importing config — qa.py stays I/O- and config-free.)
+_PREFIXED_LOCALES = ("de", "fr", "es", "it", "pt", "ko", "ja", "ar")
+_KNOWN_LOCALES = ("en",) + _PREFIXED_LOCALES
 
 # tracker-092: hedge/meta openers that violate the answer-first rule.
 _HEDGE_OPENER_RE = re.compile(
@@ -126,17 +144,15 @@ def qa_checks(
         f"heading-level distribution {h_levels}",
     )
 
-    # 4. Link count within 2–5 per 1000 words.
+    # 4. Link density — tracker-098: target 6-8 links, scored band 5-9 / proportional
+    #    for longer content. Scored, non-critical (the hard ceiling is check 18).
     links = _LINK_RE.findall(draft)
     target_links = [url for _, url in links]
-    link_density = (len(target_links) / max(word_count, 1)) * 1000
-    in_range = _LINKS_PER_1000_LOW <= link_density <= _LINKS_PER_1000_HIGH or (
-        word_count < 250 and len(target_links) <= _LINKS_PER_1000_HIGH
-    )
     report.add(
         "link_density",
-        in_range,
-        f"{len(target_links)} links in {word_count} words ({link_density:.1f}/1000)",
+        _link_density_ok(len(target_links), word_count),
+        f"{len(target_links)} links in {word_count} words "
+        f"(target {_LINK_TARGET_LOW}-{_LINK_TARGET_HIGH}, band {_LINK_BAND_LOW}-{_LINK_BAND_HIGH})",
     )
 
     # 5. First-occurrence-only — no duplicate link targets.
@@ -306,6 +322,31 @@ def qa_checks(
         f"link targets not in inventory (invented?): {invented}",
     )
 
+    # 18. No link-stuffing — CRITICAL (tracker-098). The hard ceiling: never exceed
+    #     1 internal link per ~80 words. Real failure, independent of the scored band.
+    report.add(
+        "no_link_stuffing",
+        not _link_stuffing(len(target_links), word_count),
+        f"link-stuffing: {len(target_links)} links in {word_count} words "
+        f"(ceiling 1 per {_LINK_STUFFING_WORDS_PER_LINK})",
+    )
+
+    # 19. Locale-matched links — CRITICAL for blog (tracker-098). Blog posts are
+    #     ORIGINAL per locale and must link only to SAME-LOCALE siblings/landing pages.
+    #     The data flow already filters the candidate pool by locale; this is the
+    #     regression guard. Only enforced when an inventory + a known locale are present
+    #     (so audit-phase callers without an inventory pass vacuously). Courses/housing/
+    #     landing are Weglot-translated → EXEMPT (this check only runs on single_block).
+    if inventory and locale in _KNOWN_LOCALES:
+        off_locale = [u for u in target_links if not _link_locale_ok(u, locale)]
+    else:
+        off_locale = []
+    report.add(
+        "links_locale_matched",
+        not off_locale,
+        f"links not in post locale {locale!r}: {off_locale}",
+    )
+
     # Aggregate score over the STABLE original-10 set only. The tracker-092
     # guards (checks 11-17) gate `passed` and surface in notes, but they do NOT
     # enter the score — that keeps the audit-phase REGENERATE/MANUAL_REVIEW/KEEP
@@ -316,10 +357,12 @@ def qa_checks(
     report.score = (sum(scored) / len(scored)) * 100 if scored else 0
     # The "passed" flag flips false on ANY CRITICAL miss. CRITICAL = the failures
     # that make a summary unsafe to publish: AI-tell formatting (em-dashes/lists),
-    # missing primary-keyword placement, fabricated prices, or embedded schema.
+    # missing primary-keyword placement, fabricated prices, embedded schema,
+    # link-stuffing (tracker-098), and (blog) off-locale internal links (tracker-098).
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
-        "fact_grounding_prices", "no_faq_schema",
+        "fact_grounding_prices", "no_faq_schema", "no_link_stuffing",
+        "links_locale_matched",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -334,11 +377,15 @@ def _qa_checks_four_part(
     excluded_path_segments: Iterable[str] = (),
     source_text: str = "",
 ) -> QaReport:
-    """QA for the 4-part structure (tracker-096): Tagline (H2, 2-3 words) → Title
-    (H3, carries the primary keyword) → Paragraph (lead block) → Content (H4/H5;
-    the ONLY part with internal links). Structure-agnostic guards (em-dash, lists,
-    grounding, schema, anchors, inventory, excluded-links) mirror the single-block
-    set; the structure/keyword/link checks are 4-part specific.
+    """QA for the 4-part structure (tracker-096; tracker-098): Tagline (H2, 2-3 words) →
+    Title (H3, carries the primary keyword) → Paragraphs (1-2 lead blocks) → Content
+    (H4/H5). tracker-098: internal links may now appear in BOTH the Paragraphs and the
+    Content (never in the Tagline or Title — `no_links_in_tagline_title` is the critical
+    replacement for the old links-only-in-Content rule). Structure-agnostic guards
+    (em-dash, lists, grounding, schema, anchors, inventory, excluded-links, link-stuffing)
+    mirror the single-block set; the structure/keyword/link checks are 4-part specific.
+    The locale-match check is single-block (blog) only — courses/housing/landing are
+    Weglot-translated, so it is intentionally absent here.
     """
     from tools.summary.structure import parse_four_part
 
@@ -406,26 +453,33 @@ def _qa_checks_four_part(
         f"content does not start with an H4: {first_content_line[:60]!r}",
     )
 
-    # links_only_in_content (CRITICAL): no links before the first H4.
-    content_idx = draft.find("####")
-    pre_content = draft[:content_idx] if content_idx >= 0 else draft
-    links_before = _LINK_RE.findall(pre_content)
+    # no_links_in_tagline_title (CRITICAL) — tracker-098: links may now appear in the
+    #    Paragraphs AND the Content, but NEVER in the Tagline or Title. (Replaces the old
+    #    links_only_in_content rule.) Detect links on the RAW H2/H3 heading lines — the
+    #    parsed parts.tagline/parts.title have already had inline Markdown stripped, so
+    #    they would never show a link.
+    heading_link_targets: list[str] = []
+    for m in _H_RE.finditer(draft):
+        if len(m.group(1)) in (2, 3):
+            heading_link_targets += [u for _, u in _LINK_RE.findall(m.group(2))]
     report.add(
-        "links_only_in_content", not links_before,
-        f"links found outside the Content section: {[u for _, u in links_before]}",
+        "no_links_in_tagline_title", not heading_link_targets,
+        f"links found in the Tagline/Title: {heading_link_targets}",
     )
 
-    # link_density: 2-5 per 1000 words, computed over the Content text only.
-    content_body = re.sub(r"<[^>]+>", "", parts.content_md)
-    content_words = len(re.findall(r"\b\w+\b", content_body))
-    content_links = [u for _, u in _LINK_RE.findall(parts.content_md)]
-    density = (len(content_links) / max(content_words, 1)) * 1000
-    density_ok = _LINKS_PER_1000_LOW <= density <= _LINKS_PER_1000_HIGH or (
-        content_words < 250 and len(content_links) <= _LINKS_PER_1000_HIGH
-    )
+    # link_density — tracker-098: target 6-8 links across the WHOLE summary (Paragraphs
+    #    + Content now both carry links). Scored, non-critical; the hard ceiling is below.
     report.add(
-        "link_density", density_ok,
-        f"{len(content_links)} links in {content_words} content words ({density:.1f}/1000)",
+        "link_density", _link_density_ok(len(target_links), word_count),
+        f"{len(target_links)} links in {word_count} words "
+        f"(target {_LINK_TARGET_LOW}-{_LINK_TARGET_HIGH}, band {_LINK_BAND_LOW}-{_LINK_BAND_HIGH})",
+    )
+
+    # no_link_stuffing (CRITICAL) — tracker-098: hard anti-stuffing ceiling, 1 link / ~80 words.
+    report.add(
+        "no_link_stuffing", not _link_stuffing(len(target_links), word_count),
+        f"link-stuffing: {len(target_links)} links in {word_count} words "
+        f"(ceiling 1 per {_LINK_STUFFING_WORDS_PER_LINK})",
     )
 
     # first_occurrence_only (agnostic).
@@ -495,14 +549,16 @@ def _qa_checks_four_part(
     scored = [report.checks[c] for c in _SCORED_CHECKS_FOUR_PART if c in report.checks]
     report.score = (sum(scored) / len(scored)) * 100 if scored else 0
     # CRITICAL set for 4-part: AI-tell formatting + the structure invariants the user
-    # was explicit about (2-3 word tagline, Content starts with H4, links only in
-    # Content) + keyword placement + fabricated prices + embedded schema.
-    # content_starts_with_h4 is critical because it guarantees a non-empty Content
-    # part — without it a summary could ship with an empty RichText `summary` field.
+    # was explicit about (2-3 word tagline, Content starts with H4, no links in
+    # Tagline/Title) + keyword placement + fabricated prices + embedded schema +
+    # link-stuffing ceiling (tracker-098). content_starts_with_h4 is critical because it
+    # guarantees a non-empty Content part — without it a summary could ship with an empty
+    # RichText `summary` field. tracker-098: links_only_in_content was relaxed to
+    # no_links_in_tagline_title (links are now allowed in the Paragraphs + Content).
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_title", "keyword_in_paragraph",
         "fact_grounding_prices", "no_faq_schema", "tagline_word_count",
-        "links_only_in_content", "content_starts_with_h4",
+        "no_links_in_tagline_title", "content_starts_with_h4", "no_link_stuffing",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -627,6 +683,53 @@ def _path_has_segment(url: str, segment: str) -> bool:
 
     parts = urllib.parse.urlparse(url).path.strip("/").split("/")
     return segment in parts
+
+
+def _link_density_ok(link_count: int, word_count: int) -> bool:
+    """tracker-098: scored (non-critical) link-density band.
+
+    Targets 6-8 links; the tolerant scored band is 5-9 for a full-length summary. Short
+    drafts (< _SHORT_DRAFT_WORDS) are not held to the band — any count from 0 up to the
+    band ceiling passes (a 120-word fixture with one link is fine). For longer content
+    the count must fall in a word-count-proportional window (≈ 1 link / 100-150 words),
+    which generalizes the 6-8 target across summary lengths. The hard anti-stuffing
+    ceiling is a SEPARATE real-failure check (`_link_stuffing`).
+    """
+    if word_count < _SHORT_DRAFT_WORDS:
+        return link_count <= _LINK_BAND_HIGH
+    if _LINK_BAND_LOW <= link_count <= _LINK_BAND_HIGH:
+        return True
+    # Proportional window for lengths where the 6-8 band is too few or too many.
+    low = word_count // _LINK_WORDS_PER_LINK_MAX
+    high = -(-word_count // _LINK_WORDS_PER_LINK_MIN)  # ceil division
+    return low <= link_count <= high
+
+
+def _link_stuffing(link_count: int, word_count: int) -> bool:
+    """tracker-098: hard anti-stuffing ceiling — True (FAIL) when the link rate exceeds
+    1 link per ~80 words. A real failure (gates `passed`), independent of the scored
+    `link_density` band. Tiny drafts (< ~1 ceiling-window of words) are exempt so a
+    short, legitimately link-dense intro isn't blocked."""
+    if word_count < _LINK_STUFFING_WORDS_PER_LINK:
+        return False
+    return link_count > (word_count / _LINK_STUFFING_WORDS_PER_LINK)
+
+
+def _link_locale_ok(url: str, locale: str) -> bool:
+    """tracker-098: True if `url`'s path belongs to `locale`.
+
+    A prefixed locale (de/fr/es/it/pt/ko/ja/ar) requires the path to begin with
+    `/{locale}/`. EN (the unprefixed source) requires the path to have NO prefixed-locale
+    first segment. Absolute or root-relative URLs both work (only the path is inspected).
+    """
+    import urllib.parse
+
+    segments = urllib.parse.urlparse(url).path.strip("/").split("/")
+    first = segments[0] if segments and segments[0] else ""
+    if locale in _PREFIXED_LOCALES:
+        return first == locale
+    # EN: reject any path that starts with another locale's prefix.
+    return first not in _PREFIXED_LOCALES
 
 
 def _word_shingles(text: str, n: int) -> set[tuple[str, ...]]:
