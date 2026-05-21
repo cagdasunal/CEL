@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +40,27 @@ def _now_iso() -> str:
 
 def _timestamp_slug() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+
+_EM_DASH_SUB_RE = re.compile(r"\s*[—–]\s*")
+
+
+def _sanitize_summary(text: str) -> str:
+    """Deterministically remove the banned em/en-dash AI-tell from a generated summary.
+
+    The model violates the no-em-dash prompt rule ~1 in 6 (confirmed on a live blog
+    pilot), which would demote an otherwise-good summary on the CRITICAL `no_em_dashes`
+    check. The prompt's own prescribed alternative is a comma, so we substitute one and
+    tidy any doubled comma/space. Applied before QA + write-back so shipped copy is clean
+    and a recoverable tell doesn't cost a generation. NOT applied to anything else —
+    genuine quality failures still demote.
+    """
+    if not text:
+        return text
+    out = _EM_DASH_SUB_RE.sub(", ", text)
+    out = re.sub(r",\s*,", ", ", out)   # collapse ", ," from a dash next to existing punctuation
+    out = re.sub(r"\s+,", ",", out)      # no space before a comma
+    return out
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -647,6 +669,13 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                         )
                     orig_cid = rr.custom_id[len("retry-"):]
                     failed = [f for f in failed if f.custom_id != orig_cid]
+
+    # tracker-097 follow-up: deterministically strip the banned em/en-dash AI-tell from
+    # generated copy BEFORE QA + write-back. The model violates the no-em-dash rule
+    # ~1 in 6 (live blog pilot), and that recoverable tell would otherwise demote an
+    # otherwise-good summary on the CRITICAL no_em_dashes check.
+    for r in succeeded:
+        r.content = _sanitize_summary(r.content)
 
     # tracker-092 (1.2): QA-GATE every succeeded summary BEFORE write-back. A draft
     # that fails a CRITICAL check (em-dash / list / keyword-placement / fabricated
