@@ -383,6 +383,21 @@ def test_density_ceiling_still_catches_stuffing():
     assert not r.checks["keyword_density"], r.notes
 
 
+def test_keyword_in_p1_allows_topic_later_in_lead_paragraph():
+    """The keyword topic may appear past the first 120 chars of the lead paragraph;
+    the whole lead block counts (the old fixed 120-char window false-failed multi-word
+    keywords whose words land just past the cutoff)."""
+    draft = (
+        "## Comment bien se préparer avant de partir\n\n"
+        "Avant le départ, il faut organiser son budget, réserver son logement, "
+        "obtenir son visa étudiant et vérifier son assurance, puis penser concrètement "
+        "à son séjour linguistique pour en tirer le maximum dès la première semaine.\n\n"
+        "### Détails pratiques\n\nCEL accompagne chaque étudiant pas à pas.\n"
+    )
+    r = qa_checks(draft, "séjour linguistique", "fr", [])
+    assert r.checks["keyword_in_p1"], r.notes
+
+
 def test_four_part_keyword_matches_when_title_paraphrases():
     """4-part Title may paraphrase the keyword (content words present, not verbatim)."""
     draft = (

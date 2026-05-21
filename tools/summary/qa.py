@@ -168,13 +168,16 @@ def qa_checks(
         f"primary keyword {primary_keyword!r} (topic) not found in any H2 ({h2_lines})",
     )
 
-    # 8. Primary keyword in first 120 chars of P1 (under the H2).
+    # 8. Primary keyword (topic) in the lead paragraph under the H2. (The separate
+    #    answer_first warning guards against burying the answer; requiring the topic in
+    #    the WHOLE lead block — not an arbitrary 120-char window — avoids false-failing
+    #    a multi-word keyword whose words span the first sentence.)
     p1_text = _first_paragraph_under_h2(draft)
-    kw_in_p1 = _keyword_covered(primary_keyword, p1_text[:_KEYWORD_P1_WINDOW_CHARS], locale)
+    kw_in_p1 = _keyword_covered(primary_keyword, p1_text, locale)
     report.add(
         "keyword_in_p1",
         kw_in_p1,
-        f"primary keyword (topic) not in first {_KEYWORD_P1_WINDOW_CHARS} chars of P1",
+        "primary keyword (topic) not found in the lead paragraph",
     )
 
     # 9. Primary keyword in ≥1 H3.
@@ -386,11 +389,11 @@ def _qa_checks_four_part(
         f"primary keyword {primary_keyword!r} (topic) not in title {parts.title!r}",
     )
 
-    # keyword_in_paragraph (CRITICAL): keyword (topic) in the first 120 chars of the Paragraph.
+    # keyword_in_paragraph (CRITICAL): keyword (topic) anywhere in the lead Paragraph.
     report.add(
         "keyword_in_paragraph",
-        _keyword_covered(primary_keyword, parts.paragraph[:_KEYWORD_P1_WINDOW_CHARS], locale),
-        f"primary keyword (topic) not in first {_KEYWORD_P1_WINDOW_CHARS} chars of paragraph",
+        _keyword_covered(primary_keyword, parts.paragraph, locale),
+        "primary keyword (topic) not found in the lead paragraph",
     )
 
     # content_starts_with_h4: the Content section opens with an H4.

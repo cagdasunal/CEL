@@ -757,6 +757,18 @@ def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatc
     assert phase["batch_id"].startswith("sync-")
 
 
+def test_sanitize_summary_strips_em_and_en_dashes():
+    """tracker-097 follow-up: the model emits banned em/en-dashes ~1 in 6; they are
+    deterministically replaced with the prompt's prescribed comma before QA/write-back."""
+    assert "—" not in cli._sanitize_summary("Vancouver — a great city — for students.")
+    assert "–" not in cli._sanitize_summary("Most students need 6–12 months.")
+    assert cli._sanitize_summary("Vancouver — a great city.") == "Vancouver, a great city."
+    assert cli._sanitize_summary("") == ""
+    # No banned dash means the text is returned unchanged.
+    clean = "Most students reach B2 in twelve weeks."
+    assert cli._sanitize_summary(clean) == clean
+
+
 def test_resolve_item_locale_blog_language_reference():
     """tracker-096: blog posts resolve their `language` Reference to the post's locale
     (native-per-item), so e.g. a French post yields a French summary — not English."""
