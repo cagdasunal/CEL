@@ -235,9 +235,14 @@
     try {
       const activeLang = getActiveLang();
 
-      // Is this the CMS-driven section (hidden source list present)? If not, the
-      // page has a static blog section we must never touch — bail out of removal.
-      const hasSource = !!document.querySelector(".posts_collection");
+      // Is this the bundle-owned CMS section? It is iff the render-target slots
+      // ([post-type="recent-big"|"recent-small"]) exist. We key on the TARGETS, not on
+      // a .posts_collection source: a page can carry the section skeleton with NO source
+      // bound at all (no posts) — that is exactly the "remove me" case. A static (non-CMS)
+      // blog section has no [post-type] slots, so it is never touched.
+      const hasRenderTargets = TARGET_MODULES.some(function (m) {
+        return !!document.querySelector(m.targetSelector);
+      });
 
       const sourceNodes = document.querySelectorAll(".posts_collection .w-dyn-item");
       sourceNodes.forEach(function (node) {
@@ -252,10 +257,11 @@
 
       // No featured posts for the active language → remove the whole section so
       // Google never indexes an empty "From Our Blog" block, and drop its matching
-      // TOC entry so no dead in-page anchor is left behind. Guarded on hasSource so
-      // a static (non-CMS) blog section is never removed. A language switch reloads
-      // the page (see init's languageChanged handler), so this re-evaluates per language.
-      if (hasSource && availablePosts.length === 0) {
+      // TOC entry so no dead in-page anchor is left behind. Guarded on hasRenderTargets
+      // so a static (non-CMS) blog section is never removed. Fires whether the source
+      // list is absent entirely (no posts ever bound) or filtered to empty for the active
+      // language. A language switch reloads the page, so this re-evaluates per language.
+      if (hasRenderTargets && availablePosts.length === 0) {
         document.querySelectorAll(".section_blog").forEach(function (sec) {
           const secId = sec.getAttribute("id");
           sec.remove();
