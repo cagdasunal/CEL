@@ -921,8 +921,15 @@ def _trim_links_to_ceiling(md: str) -> str:
     words — the QA `no_link_stuffing` ceiling. The link-insertion model occasionally
     over-links a short post (the 2026-05-22 full run held ~several for stuffing); trimming
     the tail deterministically recovers them instead of demoting the whole summary. Keeps
-    the earliest links (usually the most contextually anchored)."""
-    word_count = len(re.findall(r"\b\w+\b", _HTML_TAG_RE.sub(" ", md)))
+    the earliest links (usually the most contextually anchored).
+
+    Word count is taken on the DE-LINKED text (link markup → anchor text only, URLs
+    dropped). QA's `no_link_stuffing` counts URL tokens as words, which inflates its
+    word_count and would let one extra link through; counting prose+anchors only makes the
+    trim's ceiling a touch stricter than QA's, so a trimmed summary is GUARANTEED to pass
+    (the first full run left 2 blogs at 7 links / 556 words because the trim counted URLs)."""
+    de_linked = _MD_LINK_FULL_RE.sub(lambda m: m.group(1), md)
+    word_count = len(re.findall(r"\b\w+\b", _HTML_TAG_RE.sub(" ", de_linked)))
     max_links = word_count // _LINK_CEILING_WORDS
     matches = list(_MD_LINK_FULL_RE.finditer(md))
     if len(matches) <= max_links:
