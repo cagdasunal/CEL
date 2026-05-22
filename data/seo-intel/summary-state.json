@@ -1170,5 +1170,9 @@
   "696f9709550be9d964f4c194": {
     "source_hash": "0cd59f4ae9dac6d16094288cdedb013c3bb4152ed81e40b3fb726b7bfa177c06",
     "generated_at": "2026-05-21T13:08:25.870076+00:00"
+  },
+  "https://www.englishcollege.com/courses": {
+    "source_hash": "4db45c0ee551750dd730db99adb0746eafd0e414d49c9b8efbb1155431aacb2a",
+    "generated_at": "2026-05-22T11:52:16.641823+00:00"
   }
 }
