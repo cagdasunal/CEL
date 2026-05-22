@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-22T08:40:36.539012+00:00",
+  "last_sync": "2026-05-22T11:33:40.265844+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4725,6 +4725,21 @@
       "source": "api",
       "url_path": "/post/englisch-sprachschule-im-ausland-waehlen",
       "added_at": "2026-05-21T11:49:54.144336+00:00"
+    },
+    "rester-en-contact-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/rester-en-contact-sejour-linguistique",
+      "added_at": "2026-05-22T11:33:40.265745+00:00"
     }
   }
 }
