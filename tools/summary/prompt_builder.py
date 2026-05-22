@@ -189,6 +189,57 @@ def build_user_message(
     return "\n".join(lines)
 
 
+# ---- Link-insertion request (2026-05-22) ----
+#
+# A focused, Flash-optimized pass that INSERTS internal links into an existing blog
+# summary WITHOUT rewriting the prose (the user's "set links, don't regenerate texts").
+# System prompt is the single `link_insertion.md` layer — intentionally NOT the full
+# generation stack (common + blog_post + locale), so the model is told to do ONE thing
+# and the token cost stays minimal on Flash.
+
+
+def build_link_insertion_system_prompt() -> list[dict]:
+    """System prompt for the link-insertion pass: the focused link_insertion.md only."""
+    return [{"type": "text", "text": _load_prompt("link_insertion.md")}]
+
+
+def build_link_insertion_user_message(
+    existing_summary_md: str,
+    link_candidates: Iterable[str],
+    locale: str,
+    post_title: str = "",
+) -> str:
+    """User message for link insertion: the existing summary (to be preserved verbatim)
+    + the locale-filtered candidate URLs. No post body — the summary IS the context, and
+    keeping the message lean keeps the Flash pass cheap."""
+    candidates = list(link_candidates)
+    lines: list[str] = []
+    lines.append(f"## Post locale: {locale}")
+    if post_title:
+        lines.append(f"## Post title: {post_title}")
+    lines.append("")
+    lines.append(
+        "## Existing summary — INSERT links into THIS text, preserving every word"
+    )
+    lines.append("")
+    lines.append(existing_summary_md.strip())
+    lines.append("")
+    lines.append(
+        f"## Internal link candidates (same locale `{locale}`; use ONLY these URLs, "
+        f"each at most once)"
+    )
+    lines.append("")
+    for url in candidates[:60]:
+        lines.append(f"- {url}")
+    lines.append("")
+    lines.append(
+        "## Task\nWrap 6–8 existing phrases in `[phrase](URL)` using the candidates above. "
+        "Change NO words. Return only the edited summary Markdown — no code fences, no "
+        "preamble, no commentary."
+    )
+    return "\n".join(lines)
+
+
 # ---- Translation request ----
 
 
@@ -240,8 +291,15 @@ def build_translation_user_message(
         "For each Markdown link `[text](URL)` in the source, look up the URL in the "
         "swap table below. If the table has a target URL, use it. If the table maps "
         "the URL to `null` (no equivalent in the target locale), REMOVE the link "
-        "entirely — drop the `[...](...)` syntax and keep the anchor text inline as "
-        "plain prose. Do NOT translate the URL itself or link cross-language."
+        "entirely (drop the `[...](...)` syntax and keep the anchor text inline as "
+        "plain prose). Do NOT translate the URL itself or link cross-language."
+    )
+    lines.append(
+        f"ABSOLUTE rule: every link you output MUST be a `https://www.englishcollege.com` "
+        f"URL in the `{target_locale}` locale (a `/{target_locale}/` path) — exactly as it "
+        f"appears in the swap table. NEVER output an English (unprefixed) URL, a URL in "
+        f"another language, the bare `englishcollege.com` apex, or any other domain. When "
+        f"in doubt, REMOVE the link rather than link to the wrong locale."
     )
     lines.append("")
     lines.append("```json")
