@@ -27,11 +27,15 @@
  *      source items into [post-type="recent-big"] (1) + [post-type="recent-small"] (4)
  *      target slots via [data-blog-slot] mapping, then REMOVES the hidden source list
  *      so the rendered DOM (what Google indexes) holds only active-language posts.
+ *      If the active language has NO posts, the whole .section_blog is REMOVED from
+ *      the DOM (along with its TOC entry) so Google never sees an empty blog block.
  *
  * DOM contract (renaming any of these silently disables the section):
+ *   Section: .section_blog (id="blog")           (removed entirely when no posts)
  *   Source:  .posts_collection .w-dyn-item       (CMS list; per-item data-lang)
  *   Slots:   [data-blog-slot="title|paragraph|category|url|image"]
  *   Targets: [post-type="recent-big"] (1), [post-type="recent-small"] (4)
+ *   TOC:     .stoc_link[data-target="<section id>"]  (removed with the section)
  *   CSS:     .blog-bento_hero, .blog-bento_hero-img, .blog-bento_hero-overlay,
  *            .blog-bento_item, .blog-bento_item-title, .cta-pill-cream
  */
@@ -231,6 +235,10 @@
     try {
       const activeLang = getActiveLang();
 
+      // Is this the CMS-driven section (hidden source list present)? If not, the
+      // page has a static blog section we must never touch — bail out of removal.
+      const hasSource = !!document.querySelector(".posts_collection");
+
       const sourceNodes = document.querySelectorAll(".posts_collection .w-dyn-item");
       sourceNodes.forEach(function (node) {
         const rawLang = node.getAttribute("data-lang");
@@ -241,6 +249,26 @@
       const availablePosts = currentNodes.map(function (node, index) {
         return extractPostData(node, index);
       });
+
+      // No featured posts for the active language → remove the whole section so
+      // Google never indexes an empty "From Our Blog" block, and drop its matching
+      // TOC entry so no dead in-page anchor is left behind. Guarded on hasSource so
+      // a static (non-CMS) blog section is never removed. A language switch reloads
+      // the page (see init's languageChanged handler), so this re-evaluates per language.
+      if (hasSource && availablePosts.length === 0) {
+        document.querySelectorAll(".section_blog").forEach(function (sec) {
+          const secId = sec.getAttribute("id");
+          sec.remove();
+          if (secId && /^[\w-]+$/.test(secId)) {
+            document.querySelectorAll('.stoc_link[data-target="' + secId + '"]').forEach(function (link) {
+              link.remove();
+            });
+          }
+        });
+        document.querySelectorAll(".posts_collection").forEach(function (list) { list.remove(); });
+        return;
+      }
+
       const usedPostIds = new Set();
 
       TARGET_MODULES.forEach(function (module) {
