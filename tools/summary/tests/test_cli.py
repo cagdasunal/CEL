@@ -596,21 +596,20 @@ def test_link_candidate_pool_deduplicates_overlap():
     assert pool.count("https://www.englishcollege.com/housing") == 1
 
 
-def test_link_candidate_pool_caps_housing_paths(tmp_path, monkeypatch):
-    """2026-05-22: at most HOUSING_LINK_CANDIDATE_CAP (=3) /housing-path candidates
-    survive (down-weight, not exclude) — raised from 1 now that the published housing
-    detail pages are in llms.txt and should be linkable. STATIC_PAGES contributes the
-    /housing hub; extra /housing/<slug> detail URLs fill the remaining cap slots.
+def test_link_candidate_pool_offers_all_housing_first(tmp_path, monkeypatch):
+    """2026-05-22: NO cap on /housing candidates — the site has many new accommodation
+    pages that need inbound links, so ALL housing candidates are offered, ordered FIRST
+    after the curated STATIC_PAGES so they survive the downstream 60-candidate prompt cap.
     Non-housing candidates are unaffected."""
-    from tools.summary import config, llms_parser
+    from tools.summary import llms_parser
 
-    # 5 housing candidates available (hub from STATIC_PAGES + 4 detail URLs here).
+    # 6 housing detail candidates + 1 course; the /housing hub also comes via STATIC_PAGES.
     idx = llms_parser.LlmsIndex(entries=[
         llms_parser.LlmsEntry(
             url=f"https://www.englishcollege.com/housing/residence-{i}",
             title=f"Residence {i}", description="", section="Housing", locale="en",
         )
-        for i in range(4)
+        for i in range(6)
     ] + [
         llms_parser.LlmsEntry(
             url="https://www.englishcollege.com/courses/general-english",
@@ -619,14 +618,16 @@ def test_link_candidate_pool_caps_housing_paths(tmp_path, monkeypatch):
     ])
     pool = cli._build_link_candidate_pool("landing", idx, "en")
     housing_paths = [u for u in pool if cli._is_housing_path(u)]
-    # Capped at 3 (5 were available).
-    assert len(housing_paths) == config.HOUSING_LINK_CANDIDATE_CAP == 3, housing_paths
-    # The curated /housing hub survives (STATIC_PAGES is prepended) ...
+    # ALL 6 detail pages + the hub survive — no cap.
+    assert len(housing_paths) == 7, housing_paths
     assert "https://www.englishcollege.com/housing" in housing_paths
-    # ... and at least one detail page now also surfaces (the new behavior — detail
-    # pages can be linked, where before only the hub did).
-    assert any(p != "https://www.englishcollege.com/housing" for p in housing_paths)
-    # Non-housing candidates are untouched.
+    for i in range(6):
+        assert f"https://www.englishcollege.com/housing/residence-{i}" in housing_paths
+    # Housing is ordered ahead of non-housing llms URLs (so it survives the prompt cap):
+    # every housing index < the course's index.
+    course_idx = pool.index("https://www.englishcollege.com/courses/general-english")
+    assert all(pool.index(h) < course_idx for h in housing_paths), pool
+    # Non-housing candidates are still present.
     assert "https://www.englishcollege.com/courses/general-english" in pool
 
 

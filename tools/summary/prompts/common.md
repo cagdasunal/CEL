@@ -103,7 +103,7 @@ Sites demonstrating cluster-level expertise gain traffic 57% faster than keyword
 - **NEVER** "click here", "learn more" (standalone), or naked URLs as anchors.
 - For ORIGINAL-per-locale blog post summaries: link to sibling posts in the SAME locale and to landing pages in the same locale.
 - For landing page summaries: linking to blog posts IS permitted. The translation pass will handle cross-locale link-equivalence lookup; if no equivalent exists in the target locale, the link is dropped from that locale's translation.
-- Link to the /housing hub sparingly (at most once); housing detail pages are newly added.
+- **Accommodation pages — link them actively (2026-05-22)**: the inventory includes our `/housing` hub and per-city `/housing/<residence>` detail pages (homestays, shared apartments, student houses) in every locale. When the page relates to a city, student life, moving/arrival, budget, or studying abroad, LINK the relevant housing pages — match the city in the housing URL slug to the page's city (a Vancouver page → Vancouver housing). These are new pages that need inbound links; surface them. (They still count toward the 6–8 total; never force housing onto an unrelated page.)
 
 ## Anti-AI writing — burstiness + voice
 

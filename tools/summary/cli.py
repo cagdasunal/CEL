@@ -1761,12 +1761,14 @@ def _build_link_candidate_pool(
     housing, also exclude `/pb/` so a housing summary can't link to other housing
     items (mirrors the prompt rule in tools/summary/prompts/housing.md line 28).
 
-    tracker-098: down-weight (do NOT exclude) `/housing`-path candidates to a small
-    cap (`config.HOUSING_LINK_CANDIDATE_CAP`). 2026-05-22: raised 1 → 3 now that the
-    published /housing hub + 12 detail pages appear in llms.txt for every locale — a
-    few topically-relevant posts should be able to link the new accommodation pages.
-    The cap (not exclusion) keeps housing from dominating the inventory. Detail pages
-    are kept BEFORE the hub so the new pages (not just the already-linked hub) surface.
+    Housing (2026-05-22, NO cap): the site has many new `/housing` accommodation pages
+    (hub + per-city detail pages, in every locale) that need inbound internal links, so
+    EVERY housing candidate in the locale is offered — there is no count cap. To make sure
+    they actually reach the model (not get buried past the 60-candidate prompt cap in
+    `build_user_message`), housing URLs are ordered FIRST after the curated STATIC_PAGES.
+    The model still links housing only where contextually relevant (city-matched per the
+    prompt), and the link-stuffing + 6–8-link QA caps the total — so abundance in the pool
+    does not mean spam in the output. A housing-page summary still excludes `/pb/` siblings.
 
     STATIC_PAGES are prepended so the curated set survives the prompt cap in
     prompt_builder.build_user_message. Returns the FULL pool; the prompt cap is
@@ -1779,16 +1781,15 @@ def _build_link_candidate_pool(
         if source_content_type == "housing":
             excluded.append("pb")
         llms_urls = llms_index.urls_in_locale_excluding(source_locale, excluded)
+    # Housing first (right after the curated STATIC_PAGES), then everything else — so the
+    # new accommodation pages survive the downstream 60-candidate prompt cap.
+    housing = [u for u in llms_urls if _is_housing_path(u)]
+    non_housing = [u for u in llms_urls if not _is_housing_path(u)]
     seen: set[str] = set()
     out: list[str] = []
-    housing_kept = 0
-    for u in static + llms_urls:
+    for u in static + housing + non_housing:
         if u in seen:
             continue
-        if _is_housing_path(u):
-            if housing_kept >= config.HOUSING_LINK_CANDIDATE_CAP:
-                continue  # cap: at most HOUSING_LINK_CANDIDATE_CAP /housing-path candidates
-            housing_kept += 1
         seen.add(u)
         out.append(u)
     return tuple(out)
