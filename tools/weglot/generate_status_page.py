@@ -498,6 +498,14 @@ def _count_words_in_markdown(md: str) -> int:
     return len(_re.findall(r"\b\w+\b", stripped, flags=_re.UNICODE))
 
 
+def _count_internal_links(md: str) -> int:
+    """Count internal links in the summary Markdown (englishcollege.com or root-relative)."""
+    if not md:
+        return 0
+    import re as _re
+    return len(_re.findall(r"\]\(\s*(?:https?://(?:www\.)?englishcollege\.com|/)", md))
+
+
 def _slug_from_url(url: str) -> str:
     """Mirror webflow_designer.py:write_static_summary's slug derivation."""
     import urllib.parse as _urlparse
@@ -513,8 +521,15 @@ def _content_type_badge(content_type: str) -> str:
         "course": "badge-when",
         "housing": "badge-when",
     }
+    labels = {
+        "landing": "Landing Page",
+        "blog_post": "Blog Post",
+        "course": "Course",
+        "housing": "Housing",
+    }
     cls = mapping.get(content_type, "badge-when")
-    return f'<span class="{cls}">{escape(content_type or "—")}</span>'
+    label = labels.get(content_type) or (content_type or "—").replace("_", " ").title()
+    return f'<span class="{cls}">{escape(label)}</span>'
 
 
 def _audit_action_badge(action: str | None) -> str:
@@ -579,8 +594,6 @@ def render_summaries_html() -> str:
     # Load artifacts.
     report = {}
     en_summaries: dict[str, dict] = {}
-    audit_scores: dict[str, dict] = {}
-    manual_review: dict = {}
     try:
         report_path = latest / "report.json"
         if report_path.exists():
@@ -595,85 +608,57 @@ def render_summaries_html() -> str:
                 en_summaries = {}
     except (json.JSONDecodeError, OSError):
         en_summaries = {}
-    try:
-        audit_path = latest / "audit-scores.json"
-        if audit_path.exists():
-            audit_data = json.loads(audit_path.read_text(encoding="utf-8"))
-            for row in audit_data.get("scores", []):
-                if isinstance(row, dict) and "url" in row:
-                    audit_scores[row["url"]] = row
-    except (json.JSONDecodeError, OSError):
-        audit_scores = {}
-    try:
-        review_path = latest / "manual-review.json"
-        if review_path.exists():
-            manual_review = json.loads(review_path.read_text(encoding="utf-8"))
-            if not isinstance(manual_review, dict):
-                manual_review = {}
-    except (json.JSONDecodeError, OSError):
-        manual_review = {}
-
     # Derive aggregate stats.
     total = len(en_summaries)
     total_words = sum(_count_words_in_markdown(e.get("markdown", "")) for e in en_summaries.values())
     avg_words = (total_words // total) if total else 0
     by_locale: dict[str, int] = {}
+    total_keywords = 0
+    total_links = 0
     for entry in en_summaries.values():
         loc = entry.get("locale", "—")
         by_locale[loc] = by_locale.get(loc, 0) + 1
+        kp = entry.get("keyword_plan") or {}
+        if kp:
+            total_keywords += (1 if kp.get("primary") else 0) + len(kp.get("secondaries") or []) + len(kp.get("entities") or [])
+        total_links += _count_internal_links(entry.get("markdown", "") or "")
     started_at = report.get("started_at", "")
     started_human = iso_to_sd(started_at) if started_at else "—"
     is_dry = bool(report.get("dry_run"))
-    subcommand = report.get("subcommand", "—")
-    gen_phase = report.get("phases", {}).get("generate_english", {}) if isinstance(report.get("phases"), dict) else {}
-    cost_estimate = gen_phase.get("cost_estimate_usd")
-    batch_id = gen_phase.get("batch_id", "—")
-    succeeded = gen_phase.get("succeeded")
-    failed = gen_phase.get("failed")
+    dry_label = " (dry-run)" if is_dry else ""
 
     # Status banner.
-    status_class = "status-ok"
-    dry_label = " (dry-run)" if is_dry else ""
-    parts.append(f'    <section class="status {status_class}">')
-    parts.append(f'      <p class="status-label">Latest run: {escape(subcommand)}{dry_label}</p>')
-    parts.append(f'      <p>Generated on <strong>{escape(started_human)}</strong>. Run directory: <code>{escape(latest.name)}</code>.</p>')
+    parts.append('    <section class="status status-ok">')
+    if started_human != "—":
+        parts.append(f'      <p class="status-label">Last updated {escape(started_human)}{dry_label}.</p>')
+    else:
+        parts.append(f'      <p class="status-label">{total} page summaries ready{dry_label}.</p>')
     parts.append("    </section>")
 
-    # Manual-review banner (if applicable).
-    if manual_review.get("custom_ids"):
-        n_review = len(manual_review["custom_ids"])
-        parts.append('    <section class="status error">')
-        parts.append(f'      <p class="status-label">{n_review} item{"s" if n_review != 1 else ""} need manual review.</p>')
-        parts.append('      <p>The summary script retried these once and they still failed. Open <code>manual-review.json</code> for details.</p>')
-        parts.append("    </section>")
-
     # Aggregate KPIs.
-    parts.append("    <h2>Run overview</h2>")
+    parts.append("    <h2>Overview</h2>")
     parts.append('    <table class="kv-table">')
     parts.append('      <tbody>')
     parts.append(f'        <tr><td class="k">Total summaries</td><td class="v"><strong>{total}</strong></td></tr>')
     parts.append(f'        <tr><td class="k">Total words</td><td class="v"><strong>{total_words:,}</strong></td></tr>')
     parts.append(f'        <tr><td class="k">Average words per summary</td><td class="v">{avg_words:,}</td></tr>')
+    parts.append(f'        <tr><td class="k">Total keywords</td><td class="v">{total_keywords:,}</td></tr>')
+    parts.append(f'        <tr><td class="k">Total internal links</td><td class="v">{total_links:,}</td></tr>')
     if by_locale:
-        loc_pairs = ", ".join(f"{escape(k)}: {v}" for k, v in sorted(by_locale.items()))
-        parts.append(f'        <tr><td class="k">By locale</td><td class="v">{loc_pairs}</td></tr>')
-    if cost_estimate is not None:
-        parts.append(f'        <tr><td class="k">Estimated cost</td><td class="v">${cost_estimate:.2f}</td></tr>')
-    if succeeded is not None:
-        parts.append(f'        <tr><td class="k">Succeeded</td><td class="v">{succeeded}</td></tr>')
-    if failed is not None:
-        parts.append(f'        <tr><td class="k">Failed</td><td class="v">{failed}</td></tr>')
-    if batch_id and batch_id != "—":
-        parts.append(f'        <tr><td class="k">Batch ID</td><td class="v"><code>{escape(batch_id)}</code></td></tr>')
+        loc_pairs = ", ".join(
+            f"{escape(LANGUAGE_NAMES.get(k, k.upper()))}: {v}"
+            for k, v in sorted(by_locale.items(), key=lambda kv: (-kv[1], kv[0]))
+        )
+        parts.append(f'        <tr><td class="k">By language</td><td class="v">{loc_pairs}</td></tr>')
     parts.append('      </tbody>')
     parts.append('    </table>')
 
     # Per-item table.
-    parts.append("    <h2>Summaries</h2>")
+    parts.append("    <h2>Latest summaries</h2>")
     if en_summaries:
         parts.append("    <table>")
         parts.append("      <thead>")
-        parts.append("        <tr><th>Page</th><th>Type</th><th>Locale</th><th>Words</th><th>Keywords</th><th>Audit</th><th>Status</th></tr>")
+        parts.append("        <tr><th>Page</th><th>Type</th><th>Language</th><th>Words</th><th>Keywords</th><th>Links</th></tr>")
         parts.append("      </thead>")
         parts.append("      <tbody>")
         for cid, entry in en_summaries.items():
@@ -683,40 +668,25 @@ def render_summaries_html() -> str:
             locale = entry.get("locale", "—")
             kw_plan = entry.get("keyword_plan") or {}
             word_count = _count_words_in_markdown(md)
+            link_count = _count_internal_links(md)
             if kw_plan:
-                primary = 1 if kw_plan.get("primary") else 0
-                secondaries = len(kw_plan.get("secondaries") or [])
-                entities = len(kw_plan.get("entities") or [])
-                kw_count = primary + secondaries + entities
-                kw_display = (
-                    f'{kw_count} '
-                    f'<span class="subtle">'
-                    f'({primary}p, {secondaries}s, {entities}e)'
-                    f'</span>'
-                )
+                kw_count = (1 if kw_plan.get("primary") else 0) + len(kw_plan.get("secondaries") or []) + len(kw_plan.get("entities") or [])
+                kw_display = str(kw_count)
             else:
-                kw_display = '—'
+                kw_display = "—"
             if url.startswith("http://") or url.startswith("https://"):
                 page_html = f'<a href="{escape(url)}" target="_blank" rel="noopener">{escape(url)}</a>'
             else:
                 page_html = f'<span class="subtle">{escape(url)}</span>'
-            paste_html = ""
-            if content_type == "landing":
-                slug = _slug_from_url(url)
-                paste_file = STATIC_SUMMARIES_DIR / f"{slug}.summary.md"
-                if paste_file.exists():
-                    paste_html = ' <span class="badge-partial">Paste pending</span>'
-            audit_row = audit_scores.get(url)
-            audit_action = audit_row.get("action") if isinstance(audit_row, dict) else None
+            lang_label = LANGUAGE_NAMES.get(locale, locale.upper()) if locale and locale != "—" else "—"
             parts.append(
                 f"        <tr>"
                 f"<td>{page_html}</td>"
                 f"<td>{_content_type_badge(content_type)}</td>"
-                f"<td class=\"lang\">{escape(locale)}</td>"
+                f"<td class=\"lang\">{escape(lang_label)}</td>"
                 f"<td>{word_count}</td>"
                 f"<td>{kw_display}</td>"
-                f"<td>{_audit_action_badge(audit_action)}</td>"
-                f"<td>{paste_html.strip() or '—'}</td>"
+                f"<td>{link_count}</td>"
                 f"</tr>"
             )
         parts.append("      </tbody>")
