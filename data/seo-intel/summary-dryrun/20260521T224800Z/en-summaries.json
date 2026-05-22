@@ -6128,5 +6128,37 @@
       "entities": []
     },
     "qa_score": 100.0
+  },
+  "gen-0-https://www.englishcollege.com/courses": {
+    "url": "https://www.englishcollege.com/courses",
+    "markdown": "## Programs And Pathways\n### Why should students explore our engaging course options at CEL?\nFull accreditation and an average class size of just seven students back the decision to explore our engaging course offerings. Students who arrive at the College of English Language (CEL) choose between three campuses. You can study in Vancouver, British Columbia, or head south to San Diego, California, and Los Angeles, California. Every location runs the exact same curriculum. This small group size guarantees personal attention from experienced teachers. Whether you start a basic introductory program or prepare for higher education, general classes begin every single Monday. The school covers the complete Common European Framework of Reference (CEFR) scale. This means students progress steadily from beginner A1 and elementary A2 levels up through lower intermediate B1 and upper intermediate B2. Dedicated learners can eventually master advanced C1 and proficiency C2. The next weekly intake is always just days away. This keeps your timeline entirely flexible as you explore our engaging course structures across North America.\n\nSan Diego sits on the southern coast with a relaxed beach culture and year-round sun. It offers a calmer pace than larger metropolitan areas. Conversely, Los Angeles puts students directly inside the entertainment and media industries. You get easy access to world-class museums and the Pacific coastline. Up north, the [Vancouver campus](https://www.englishcollege.com/vancouver) sits between mountains and the ocean in a temperate rainforest climate. It hosts an incredibly diverse student mix. All three locations share the exact same seven-student class average. The city you select shapes your weekend trips and lifestyle rather than the academic quality. We encourage all prospective students to take time to [study in San Diego](https://www.englishcollege.com/san-diego-ca/language-school) or our other locations thoroughly before booking.\n\nMost students want to understand the details of their schedule before arriving. You can combine different modules based on your personal goals. Some students prefer to focus entirely on daily communication. Others add specific career development projects or prepare for academic exams. The right path depends on your current proficiency and your long-term plans.\n\n#### What are the main English study options?\nWhen you explore our engaging course catalog, the most popular route is the [General English program](https://www.englishcollege.com/courses/general-english). Students at all levels can participate. Classes focus heavily on practical communication skills. Beginners learn to use familiar everyday expressions and basic phrases. As you advance, you will quickly understand sentences related to routine tasks. You can discuss topics in simple terms. At higher levels, students can produce clear texts on complex subjects. They learn to express ideas spontaneously and precisely. If you need a completely tailored approach, you can book [one-to-one private lessons](https://www.englishcollege.com/courses/private-lessons). These individual sessions focus fully on your specific needs. You can combine them with any standard morning schedule. This flexibility helps students progress faster.\n\n#### How do academic and exam preparation electives work?\nMany students plan to attend university in North America. They need formal proof of their language abilities. Students who explore our engaging course tracks for higher education often choose specific electives. Preparation is available for the Test of English as a Foreign Language internet-Based Test (TOEFL iBT). You can also study for Cambridge English: First (FCE) and Cambridge English: Advanced (CAE). The International English Language Testing System (IELTS) is another common benchmark. You need an upper intermediate level to join these exam classes. Teachers help you understand the specific test structures. They review practice materials and teach time management strategies. Students aiming for college degrees can also take the [Global Pathway Preparation program](https://www.englishcollege.com/courses/global-pathway-preparation). This specific track builds academic skills for college success. It focuses on research, essay writing, and academic presentations.\n\n#### Can students combine language learning with career skills?\nYes. As you explore our engaging course combinations, you will find options for professional growth. Students aged 16 and older can take the English Plus Career Development track. This option features project-based learning. You will [build career-ready skills](https://www.englishcollege.com/courses/english-career-development) in areas like business communication, artificial intelligence, and project management. Older students might prefer the English Plus Experience program. This requires participants to be at least 18 years old. It allows you to enhance your language abilities while gaining relevant workplace experience. You add a strong highlight to your resume. Another popular alternative is the volunteering elective. You can help local organizations while practicing conversation in real-world settings. Doing good feels good. It also forces you to use new vocabulary outside the classroom.\n\n#### Are there active outdoor electives?\nSouthern California is famous for its outdoor lifestyle. If you explore our engaging course options near the coast, look into the English Plus Surfing program. You receive [four hours of surfing instruction per week](https://www.englishcollege.com/courses/english-plus-surfing). No prior surf experience is required. You get to ride waves in some of the top surf spots in the region. This option perfectly balances morning academics with afternoon physical activity. It provides a highly memorable study abroad experience. You meet local residents and bond with classmates over shared challenges in the water.\n\n#### How do I choose the right program?\nYou should explore our engaging course options by looking at your end goals. Do you need to pass a specific exam? Will you attend a local college? Do you simply want to travel and meet new people? Review the specific course details carefully. Look at the minimum age requirements and required starting levels. Every student takes a placement test before their first class. This ensures you start in the exact right room. You will never feel overwhelmed or bored. The academic staff monitors your progress continuously. If you learn quickly, you can move up to the next tier without waiting. Take time to explore our engaging course details today.",
+    "content_type": "landing",
+    "locale": "en",
+    "keyword_plan": {
+      "primary": "explore our engaging course",
+      "secondaries": [
+        "english",
+        "details",
+        "general",
+        "one-to-one",
+        "understand"
+      ],
+      "entities": [
+        "A1",
+        "A2",
+        "B1",
+        "B2",
+        "C1",
+        "C2",
+        "IELTS",
+        "TOEFL",
+        "FCE",
+        "CAE",
+        "San Diego",
+        "Los Angeles",
+        "Vancouver"
+      ]
+    },
+    "qa_score": 100.0
   }
 }
