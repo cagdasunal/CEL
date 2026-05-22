@@ -77,7 +77,7 @@ The `WEBFLOW_API_TOKEN` value that was pasted in earlier planning conversations 
 - Submits Gemini Batch API requests
 - Polls for completion (≤24h SLA, 48h hard expiry)
 - Writes Summary content to Webflow CMS items (Blog, Courses, Housing collections)
-- For static pages, writes Markdown to `docs/admin/weglot-imports/static-summaries/<slug>.summary.md` for **manual paste** into Webflow Designer (auto-write to Designer was dropped per audit-086 H-1 — endpoints were unverified)
+- For static pages, writes Markdown to `docs/admin/weglot-imports/static-summaries/<slug>.summary.md` for **manual paste** into Webflow Designer (the `tools/summary` tool itself never auto-writes static pages — audit-086 H-1). **An agent can, however, deploy these directly via the Webflow Designer MCP — see the static-page note below (proven 2026-05-22).**
 - Translate phase appends rows to `docs/admin/weglot-imports/<lang>.csv` per locale
 
 ## CLI
@@ -144,6 +144,8 @@ Before flipping `dry_run=false`:
 - [ ] **Ran a pilot live invocation with `--limit 1` FIRST.** The staged CMS endpoint (`/items/{id}`, switched from `/live` in tracker-088 F-3) has been validated against the sibling `tools/fidelo/cms_writer.py` pattern but has not been live-tested against the Webflow Data API v2 yet (no API key during the audit window). A `--limit 1` pilot confirms the endpoint accepts the PATCH payload, the staged write lands, and (after the user clicks Publish in Webflow Designer) the change propagates to the live site. Only after the pilot succeeds end-to-end should the full live run be triggered.
 
 Static-page summaries do NOT auto-write — they land as Markdown files for manual paste into Webflow Designer. Plan to spend ~10–15 minutes pasting after each generate-english run that touches the 16 static pages. tracker-096: each static `.summary.md` now carries 4 labeled sections (Tagline / Title / Paragraph / Content) to paste into the four `#summary-*` elements.
+
+**Agent-driven MCP deploy (proven 2026-05-22):** the manual paste is now optional — an agent can deploy the static-page summaries directly into the page's `Section / Summary` (and `Section / Summary / Alternative` on the Vancouver-cluster pages) component instances via the Webflow **Designer MCP**, with real inline links preserved. The parts are **richText component-instance props** (`Paragraphs`, `Content`/`Summary`). The ONLY working write path is: `element_builder` targeting the empty prop element — its `parent_element_id` accepts the `prop` field (which `whtml_builder` does not) — to seed one Paragraph, then `whtml_builder` to insert the real `<p>`/`<a>`/`<h4>` blocks as siblings after the seed, then `element_tool > remove_element` to delete the seed. Writes are **per-instance** (no cross-page leakage). What does NOT work on the primary locale: the Data API `data_localization_tool.update_static_content` (primary locale is read-only), `de_component_tool.set_component_instance_prop_values` (rejects plain text for richText), and `rich_text_inner_text` (escapes HTML → links die). This supersedes the earlier "rich-text component props can't be set via MCP" conclusion.
 
 ### Pilot live-run procedure
 
