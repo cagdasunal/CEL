@@ -128,6 +128,22 @@ def test_trim_links_to_ceiling_unwraps_excess():
     assert after <= wc // 80  # at/under the 1-per-80 ceiling
 
 
+def test_trim_output_passes_qa_no_link_stuffing():
+    """Regression for the 2026-05-22 stragglers (7 links / 556 words slipped past): QA's
+    no_link_stuffing counts URL tokens as words, so the trim must count the DE-LINKED text
+    to stay strictly under QA's ceiling. After trim, no_link_stuffing must PASS."""
+    from tools.summary.qa import qa_checks
+
+    body = " ".join(["word"] * 556)
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(9)
+    )
+    md = f"## a section heading\n\n{body} {links}"
+    trimmed = cli._trim_links_to_ceiling(md)
+    rep = qa_checks(trimmed, "a section", "en", [])
+    assert rep.checks["no_link_stuffing"], (cli._count_internal_md_links(trimmed), rep.notes)
+
+
 def test_trim_links_to_ceiling_leaves_within_ceiling_untouched():
     body = " ".join(["word"] * 700)  # ~700 words → ceiling ~8
     links = " ".join(
