@@ -1,6 +1,8 @@
 """Tests for tools.summary.qa — rule checks (em-dash, lists, headings, keyword placement, density)."""
 
-from tools.summary.qa import qa_checks, boilerplate_pairs
+from tools.summary.qa import (
+    qa_checks, boilerplate_pairs, text_preserved, strip_markdown_links,
+)
 
 
 _PASSING_DRAFT = """## How long does it take to learn English in Vancouver
@@ -702,3 +704,51 @@ def test_passing_drafts_satisfy_domain_check():
         excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
     )
     assert four.checks["links_internal_domain"], four.notes
+
+
+# ---- 2026-05-22: link-insertion text-preservation guard ----
+#
+# The link-insertion pass (cli.link-blogs) must ADD links to an existing blog summary
+# WITHOUT rewriting the prose. text_preserved de-links the output and confirms the words
+# are unchanged; a rewrite is rejected (held back, never shipped).
+
+
+def test_strip_markdown_links_drops_only_markup():
+    assert strip_markdown_links(
+        "see [our courses](https://www.englishcollege.com/courses) and [housing](/housing) now"
+    ) == "see our courses and housing now"
+    assert strip_markdown_links("no links here") == "no links here"
+
+
+def test_text_preserved_accepts_link_only_insertion():
+    """De-linking a link-only edit restores the EXACT original → ratio 1.0, accepted."""
+    orig = (
+        "## How long to learn English in Vancouver\n\n"
+        "Most students reach B2 in 12 weeks at our Vancouver school with small classes."
+    )
+    linked = (
+        "## How long to learn English in Vancouver\n\n"
+        "Most students reach B2 in 12 weeks at "
+        "[our Vancouver school](https://www.englishcollege.com/vancouver) with small classes."
+    )
+    ok, ratio = text_preserved(orig, linked)
+    assert ok and ratio == 1.0
+
+
+def test_text_preserved_tolerates_tiny_edits():
+    """A near-identical edit (e.g. a stray sanitized space) stays above the 0.92 floor."""
+    orig = "## Title\n\nMost students reach B2 in twelve weeks at our school here in town."
+    linked = "## Title\n\nMost students reach B2 in twelve weeks at our school here in town. "
+    ok, ratio = text_preserved(orig, linked)
+    assert ok, ratio
+
+
+def test_text_preserved_rejects_rewrite():
+    """A model that rewrites the prose (not just adds links) is rejected."""
+    orig = "## How long\n\nMost students reach B2 in 12 weeks at CEL with small classes."
+    rewrite = (
+        "## A completely different heading\n\n"
+        "This is entirely new marketing prose the model invented about a different topic."
+    )
+    ok, ratio = text_preserved(orig, rewrite)
+    assert not ok and ratio < 0.92

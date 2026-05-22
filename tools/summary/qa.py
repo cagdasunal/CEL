@@ -799,6 +799,34 @@ def _word_shingles(text: str, n: int) -> set[tuple[str, ...]]:
     return {tuple(words[i : i + n]) for i in range(len(words) - n + 1)}
 
 
+def strip_markdown_links(md: str) -> str:
+    """Replace every `[anchor](url)` with just `anchor` (drop the link markup)."""
+    return _LINK_RE.sub(lambda m: m.group(1), md)
+
+
+def text_preserved(original_md: str, linked_md: str, threshold: float = 0.92) -> tuple[bool, float]:
+    """True if `linked_md` is `original_md` with ONLY internal links added (2026-05-22).
+
+    The link-insertion pass must not rewrite prose. We de-link `linked_md` (strip the
+    `[ ](url)` markup), normalize whitespace, and compare to the original with difflib's
+    similarity ratio. >= `threshold` (default 0.92) means the words are essentially
+    unchanged — only link markup was added. Below that the model rephrased/added/removed
+    text and the result is rejected (held to MANUAL_REVIEW, not shipped). Returns
+    (ok, ratio).
+    """
+    import difflib
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s).strip()
+
+    a = _norm(original_md)
+    b = _norm(strip_markdown_links(linked_md))
+    if not a:
+        return (not b), (1.0 if not b else 0.0)
+    ratio = difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
+    return ratio >= threshold, ratio
+
+
 def boilerplate_pairs(
     texts: dict[str, str], threshold: float = 0.80
 ) -> list[tuple[str, str, float]]:

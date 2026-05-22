@@ -50,6 +50,45 @@ The Summary section was redesigned so it reads like a genuine, designed part of 
 - **Sync (`--sync`)** — instant `generateContent`, validated live (a 2-course run wrote 2/2 staged, QA-passed, in ~1m). Sequential + RPM-limited, so it's for **testing + small runs**, NOT the full 415-post blog catalog.
 - **Live-validated**: the 4-part CMS write path was confirmed end-to-end (sync 2-course run → 4 staged fields, QA passed) before any fan-out.
 
+## Internal-link remediation — `link-blogs` mode (2026-05-22)
+
+An audit found **138 of 241 blog summaries had ZERO internal links** (Flash under-followed
+the 6–8-link instruction; the 4-part course/housing/landing pages were fine at ~7.5 links).
+The fix is a dedicated **link-insertion** pass that ADDS links to the existing summary
+WITHOUT regenerating the prose:
+
+```bash
+# Pilot (2 EN blogs, instant/sync):
+python3 -m tools.summary link-blogs --no-dry-run --sync --locale en --limit 2 \
+    --from-run data/seo-intel/run-098-full --confirm-cost
+# Full zero-link remediation (all locales, Batch):
+python3 -m tools.summary link-blogs --no-dry-run --confirm-cost \
+    --from-run data/seo-intel/run-098-full
+```
+
+- **Source**: the `--from-run` manifest's existing summary Markdown. Only blog_post entries
+  with `<= --max-existing-links` internal links (default **0** → just the zero-link blogs)
+  are processed; the live blog collection supplies the `cms_item_id` for the staged write-back.
+- **Model**: Gemini 2.5 Flash, `thinking_budget=0` — optimized for the narrow link-only task.
+- **Prompt** (`prompts/link_insertion.md`): wrap EXISTING phrases in `[phrase](url)`; change
+  no words; 6–8 same-locale `www.englishcollege.com` links; never in a heading.
+- **Acceptance gate** (all must hold or the item is held back, never written): `qa.text_preserved`
+  (de-linked output ≈ original, so the prose wasn't rewritten) **AND** the critical QA checks
+  (`links_internal_domain`, `links_locale_matched`, `no_link_stuffing`) **AND** ≥1 link added.
+  Demotions are logged to `link-blogs-review.json`.
+- **Housing**: `config.HOUSING_LINK_CANDIDATE_CAP` (1 → **3**) lets the new `/housing` detail
+  pages (now in llms.txt for every locale) be linked from topically-relevant posts.
+
+## www + cross-locale link rules (2026-05-22)
+
+- **www**: every full URL must be `https://www.englishcollege.com/…`. `cli._sanitize_summary`
+  normalizes any bare `https://englishcollege.com` → `www.` before QA + write-back; the prompts
+  state the rule.
+- **Cross-locale (translation)**: a translated summary links ONLY to same-locale URLs. The
+  translate phase swaps each source link to its `/{locale}/` equivalent via
+  `LlmsIndex.find_equivalent`; when there is **no** equivalent the link is **removed** (kept as
+  plain prose), never linked cross-language. Reinforced in `build_translation_user_message`.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.

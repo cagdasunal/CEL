@@ -43,6 +43,11 @@ def _timestamp_slug() -> str:
 
 
 _EM_DASH_SUB_RE = re.compile(r"\s*[—–]\s*")
+# www rule (2026-05-22): full URLs must use www.englishcollege.com, never the bare apex.
+# Rewrites http(s)://englishcollege.com → https://www.englishcollege.com. Does NOT touch
+# www. (already correct) or any other subdomain (cel., etc.) — the `\.com` is anchored so
+# only the bare apex host matches.
+_BARE_DOMAIN_RE = re.compile(r"https?://englishcollege\.com", re.IGNORECASE)
 
 
 def _sanitize_summary(text: str) -> str:
@@ -73,6 +78,8 @@ def _sanitize_summary(text: str) -> str:
     )
     text = re.sub(r'</?(?:strong|b)>', '**', text, flags=re.IGNORECASE)
     text = re.sub(r'</?(?:em|i)>', '*', text, flags=re.IGNORECASE)
+    # www rule (2026-05-22): normalize any bare apex link to www. before QA + write-back.
+    text = _BARE_DOMAIN_RE.sub("https://www.englishcollege.com", text)
     out = _EM_DASH_SUB_RE.sub(", ", text)
     out = re.sub(r",\s*,", ", ", out)   # collapse ", ," from a dash next to existing punctuation
     out = re.sub(r"\s+,", ",", out)      # no space before a comma
@@ -120,6 +127,9 @@ def _build_parser() -> argparse.ArgumentParser:
             # tracker-097: orphaned-batch recovery (RC5). A submitted Gemini batch keeps
             # billing after its GHA run is cancelled; these stop / reclaim it by id.
             "cancel-batch", "retrieve-batch",
+            # 2026-05-22: insert internal links into existing under-linked blog summaries
+            # (Flash, link-only — does NOT regenerate the prose).
+            "link-blogs",
         ],
     )
     parser.add_argument(
@@ -183,8 +193,16 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--from-run", type=Path, default=None,
         help=(
-            "Translate phase only — directory containing en-summaries.json from a "
-            "prior generate-english run. Defaults to <out-dir>/en-summaries.json."
+            "Translate / link-blogs phases — directory containing en-summaries.json from "
+            "a prior generate-english run. Defaults to <out-dir>/en-summaries.json."
+        ),
+    )
+    parser.add_argument(
+        "--max-existing-links", dest="max_existing_links", type=int, default=0,
+        help=(
+            "link-blogs only — process blog summaries that currently have AT MOST this "
+            "many internal links (default 0 = only the zero-link blogs). Raise to also "
+            "top up thinly-linked posts."
         ),
     )
     return parser
@@ -232,6 +250,8 @@ def main(argv: list[str] | None = None) -> int:
             report["phases"]["translate"] = _execute_translate(args, out_dir)
         if args.subcommand in ("translate-meta", "all"):
             report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
+        if args.subcommand == "link-blogs":
+            report["phases"]["link_blogs"] = _execute_link_blogs(args, out_dir)
 
     # Write the report.
     (out_dir / "report.json").write_text(
@@ -857,6 +877,229 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "manual_review_path": str(manual_review_path),
         "manual_review_count": len(failed),
         "warnings": warnings,
+    }
+
+
+# ---- Link-insertion mode (2026-05-22): add internal links to under-linked blogs ----
+
+_INTERNAL_MD_LINK_RE = re.compile(
+    r"\]\(\s*(?:https?://(?:www\.)?englishcollege\.com|/)[^)]*\)"
+)
+
+
+def _count_internal_md_links(md: str) -> int:
+    """Count internal (englishcollege.com / root-relative) Markdown links in `md`."""
+    return len(_INTERNAL_MD_LINK_RE.findall(md or ""))
+
+
+def _slug_from_url(url: str) -> str:
+    import urllib.parse
+
+    return urllib.parse.urlparse(url).path.rstrip("/").split("/")[-1]
+
+
+def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
+    """Insert internal links into existing UNDER-LINKED blog summaries (Flash, link-only).
+
+    The 2026-05-22 internal-linking remediation: 138/241 blog summaries shipped with 0
+    internal links (Flash under-followed the link instruction; the 4-part designed pages
+    were fine). Rather than REGENERATE the prose (the user's explicit constraint: "only
+    set links, do not regenerate texts"), this pass feeds each under-linked summary back
+    to Flash with the locale-filtered link inventory and a strict link-INSERTION prompt:
+    wrap existing phrases in links, change no words. The de-linked output must match the
+    original (`qa.text_preserved`) AND pass the critical QA checks (internal-domain,
+    same-locale, anti-stuffing) or the item is held back (never written). Source summaries
+    come from the `--from-run` manifest; the live blog collection supplies the cms_item_id
+    for the staged write-back. Reuses the generate-english helpers; the generation path is
+    untouched.
+    """
+    from tools.summary import batch_runner, llms_parser
+    from tools.summary.prompt_builder import (
+        build_link_insertion_system_prompt, build_link_insertion_user_message,
+    )
+    from tools.summary.qa import qa_checks, text_preserved
+    from tools.summary.structure import summary_markdown_to_html
+
+    warnings: list[str] = []
+    max_existing = getattr(args, "max_existing_links", 0)
+    locale_filter = args.locale
+
+    # 1. Load the source manifest (existing summaries to link into).
+    from_run = args.from_run or out_dir
+    manifest_path = from_run / "en-summaries.json"
+    if not manifest_path.exists():
+        return {
+            "submitted": False, "requests_built": 0,
+            "reason": f"manifest not found: {manifest_path}",
+            "warnings": ["--from-run must point at a dir containing en-summaries.json"],
+        }
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    # 2. Select under-linked blog targets from the manifest.
+    targets: list[dict[str, Any]] = []
+    for _cid, entry in manifest.items():
+        if entry.get("content_type") != "blog_post":
+            continue
+        md = entry.get("markdown", "") or ""
+        if not md.strip():
+            continue
+        if _count_internal_md_links(md) > max_existing:
+            continue  # already has enough links
+        loc = entry.get("locale", "en")
+        if locale_filter and loc != locale_filter:
+            continue
+        targets.append({
+            "slug": _slug_from_url(entry.get("url", "")),
+            "existing_md": md, "url": entry.get("url", ""), "locale": loc,
+            "kw": entry.get("keyword_plan", {}) or {},
+        })
+
+    # 3. llms.txt → link candidates (live only).
+    llms_index = None
+    if not args.dry_run:
+        try:
+            llms_index = llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
+        except Exception as e:
+            warnings.append(f"llms.txt fetch failed; candidate pool falls back to STATIC_PAGES: {e}")
+
+    # 4. Map slug → cms_item_id from the live blog collection (for the staged write-back).
+    item_ids: dict[str, str] = {}
+    item_titles: dict[str, str] = {}
+    wf = None
+    if not args.dry_run:
+        from tools.summary.webflow_client import WebflowClient
+
+        wf = WebflowClient(dry_run=False)
+        try:
+            for it in wf.list_items(config.COLLECTIONS["blog"]):
+                if it.is_draft or it.is_archived:
+                    continue
+                s = it.field_data.get("slug", "")
+                if s:
+                    item_ids[s] = it.id
+                    item_titles[s] = it.field_data.get("name") or it.field_data.get("title", "")
+        except Exception as e:
+            warnings.append(f"blog collection enumeration failed: {e}")
+
+    # 5. Build link-insertion requests (Flash, no thinking — link-only).
+    requests = []
+    req_meta: dict[str, dict] = {}
+    for i, t in enumerate(targets):
+        cms_item_id = item_ids.get(t["slug"])
+        if (not args.dry_run) and not cms_item_id:
+            warnings.append(f"no live blog item for slug {t['slug']!r}; skipped")
+            continue
+        candidates = _build_link_candidate_pool("blog_post", llms_index, t["locale"])
+        user_msg = build_link_insertion_user_message(
+            t["existing_md"], candidates, t["locale"], post_title=item_titles.get(t["slug"], ""),
+        )
+        cid = f"link-{i}-{t['slug'][:40]}"
+        requests.append(batch_runner.BatchRequest(
+            custom_id=cid, system_blocks=build_link_insertion_system_prompt(),
+            user_message=user_msg, enable_thinking=False, model=config.MODEL_BLOG,
+        ))
+        req_meta[cid] = {**t, "cms_item_id": cms_item_id}
+        if args.limit and len(requests) >= args.limit:
+            break
+
+    if not requests:
+        return {
+            "submitted": False, "targets_found": len(targets), "requests_built": 0,
+            "reason": "no under-linked blog targets resolved", "warnings": warnings,
+        }
+
+    # 6. Cost gate — mirror generate-english (hard cap + pilot-first confirm).
+    est_mode = "interactive" if args.sync else "batch"
+    cost_estimate = batch_runner.estimate_batch_cost_usd(requests, mode=est_mode, cached=False)
+    cost_gate = {
+        "projected_usd": round(cost_estimate, 4), "mode": est_mode,
+        "cost_cap_usd": config.MAX_BATCH_COST_USD,
+        "confirm_threshold_usd": config.COST_CONFIRM_THRESHOLD_USD,
+        "confirm_required": False, "confirmed": bool(getattr(args, "confirm_cost", False)),
+        "model_breakdown": {config.MODEL_BLOG: len(requests)},
+    }
+    if cost_estimate > config.MAX_BATCH_COST_USD:
+        warnings.append(
+            f"COST CAP EXCEEDED: ${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}. Aborting."
+        )
+        return {"submitted": False, "targets_found": len(targets), "requests_built": len(requests),
+                "cost_gate": cost_gate, "warnings": warnings}
+    if (not args.dry_run) and cost_estimate > config.COST_CONFIRM_THRESHOLD_USD and not getattr(args, "confirm_cost", False):
+        cost_gate["confirm_required"] = True
+        warnings.append(
+            f"COST CONFIRM REQUIRED: projected ${cost_estimate:.2f} > "
+            f"${config.COST_CONFIRM_THRESHOLD_USD:.2f}. Re-run with --confirm-cost."
+        )
+        return {"submitted": False, "targets_found": len(targets), "requests_built": len(requests),
+                "cost_gate": cost_gate, "warnings": warnings}
+
+    # 7. Dry-run: stop at the plan.
+    if args.dry_run:
+        return {"submitted": False, "dry_run": True, "targets_found": len(targets),
+                "requests_built": len(requests), "cost_gate": cost_gate, "warnings": warnings}
+
+    # 8. Submit (Flash; sync or batch).
+    results, handle, batch_ids = _submit_and_wait(requests, args)
+    succeeded = [r for r in results if r.succeeded]
+    failed = [r for r in results if not r.succeeded]
+
+    # 9. Sanitize → QA (link rules + TEXT PRESERVATION) → staged write-back.
+    cms_writes = 0
+    write_failures = 0
+    demoted: list[dict] = []
+    links_added: list[int] = []
+    for r in succeeded:
+        meta = req_meta.get(r.custom_id)
+        if not meta:
+            continue
+        linked = _sanitize_summary(r.content)
+        ok_preserved, ratio = text_preserved(meta["existing_md"], linked)
+        rep = qa_checks(
+            linked, (meta["kw"] or {}).get("primary", ""), meta["locale"],
+            _build_link_candidate_pool("blog_post", llms_index, meta["locale"]),
+            excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
+        )
+        n_links = _count_internal_md_links(linked)
+        # Accept only if the prose is preserved, no CRITICAL QA failure, and links were
+        # actually added (≥1 is a strict improvement over the current 0; the link_density
+        # score still records whether it hit the 6–8 target).
+        if ok_preserved and rep.passed and n_links >= 1:
+            wres = wf.update_item_summary(
+                collection_id=config.COLLECTIONS["blog"], item_id=meta["cms_item_id"],
+                summary_html=summary_markdown_to_html(linked),
+            )
+            if wres.success:
+                cms_writes += 1
+                links_added.append(n_links)
+            else:
+                write_failures += 1
+                warnings.append(f"cms write failed for {meta['slug']}: {wres.error}")
+        else:
+            reasons = []
+            if not ok_preserved:
+                reasons.append(f"text not preserved (sim {ratio:.2f})")
+            if not rep.passed:
+                reasons.append("QA: " + "; ".join(rep.notes[:3] or ["critical fail"]))
+            if n_links < 1:
+                reasons.append("no links added")
+            demoted.append({"slug": meta["slug"], "url": meta["url"], "reason": "; ".join(reasons)})
+
+    review = {
+        "demoted": demoted,
+        "failed": [{"custom_id": f.custom_id, "error": f.error} for f in failed],
+    }
+    (out_dir / "link-blogs-review.json").write_text(
+        json.dumps(review, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    avg_links = round(sum(links_added) / len(links_added), 1) if links_added else 0
+    return {
+        "submitted": True, "dry_run": False, "targets_found": len(targets),
+        "requests_built": len(requests), "succeeded": len(succeeded), "failed": len(failed),
+        "cms_writes": cms_writes, "write_failures": write_failures,
+        "avg_links_added": avg_links, "links_added_distribution": sorted(links_added),
+        "demoted_count": len(demoted), "demoted": demoted[:20],
+        "cost_gate": cost_gate, "batch_ids": batch_ids,
+        "review_path": str(out_dir / "link-blogs-review.json"), "warnings": warnings,
     }
 
 
@@ -1497,11 +1740,12 @@ def _build_link_candidate_pool(
     housing, also exclude `/pb/` so a housing summary can't link to other housing
     items (mirrors the prompt rule in tools/summary/prompts/housing.md line 28).
 
-    tracker-098: down-weight (do NOT exclude) `/housing`-path candidates to at most
-    ONE — the housing pages are newly added / unpublished, so the link inventory
-    should not push the model toward several housing links. A safe no-op while
-    housing detail URLs are absent from llms.txt (only the `/housing` hub appears,
-    via STATIC_PAGES); the cap holds the line if/when they appear.
+    tracker-098: down-weight (do NOT exclude) `/housing`-path candidates to a small
+    cap (`config.HOUSING_LINK_CANDIDATE_CAP`). 2026-05-22: raised 1 → 3 now that the
+    published /housing hub + 12 detail pages appear in llms.txt for every locale — a
+    few topically-relevant posts should be able to link the new accommodation pages.
+    The cap (not exclusion) keeps housing from dominating the inventory. Detail pages
+    are kept BEFORE the hub so the new pages (not just the already-linked hub) surface.
 
     STATIC_PAGES are prepended so the curated set survives the prompt cap in
     prompt_builder.build_user_message. Returns the FULL pool; the prompt cap is
@@ -1521,8 +1765,8 @@ def _build_link_candidate_pool(
         if u in seen:
             continue
         if _is_housing_path(u):
-            if housing_kept >= 1:
-                continue  # cap: at most one /housing-path candidate
+            if housing_kept >= config.HOUSING_LINK_CANDIDATE_CAP:
+                continue  # cap: at most HOUSING_LINK_CANDIDATE_CAP /housing-path candidates
             housing_kept += 1
         seen.add(u)
         out.append(u)

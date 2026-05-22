@@ -8,11 +8,40 @@ from tools.summary.prompt_builder import (
     KeywordPlan,
     LinkSwap,
     SourceItem,
+    build_link_insertion_system_prompt,
+    build_link_insertion_user_message,
     build_system_prompt,
     build_translation_system_prompt,
     build_translation_user_message,
     build_user_message,
 )
+
+
+def test_link_insertion_system_prompt_is_focused_and_preserve_first():
+    blocks = build_link_insertion_system_prompt()
+    assert len(blocks) == 1  # the single focused link_insertion.md layer (cheap for Flash)
+    text = blocks[0]["text"].lower()
+    assert "preserve" in text and "do not" in text  # text-preservation is the hard rule
+    assert "englishcollege.com" in text  # the www domain rule
+    assert "same locale" in text
+
+
+def test_link_insertion_user_message_carries_summary_candidates_and_locale():
+    msg = build_link_insertion_user_message(
+        "## Title\n\nSome existing summary text about studying in Vancouver.",
+        [
+            "https://www.englishcollege.com/vancouver",
+            "https://www.englishcollege.com/courses",
+        ],
+        "de",
+        post_title="Mein Beitrag",
+    )
+    assert "Some existing summary text about studying in Vancouver." in msg
+    assert "https://www.englishcollege.com/vancouver" in msg
+    assert "de" in msg
+    assert "Mein Beitrag" in msg
+    # The task tells the model to change no words.
+    assert "change no words" in msg.lower()
 
 
 def test_system_prompt_three_blocks_present():

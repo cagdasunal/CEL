@@ -596,21 +596,22 @@ def test_link_candidate_pool_deduplicates_overlap():
     assert pool.count("https://www.englishcollege.com/housing") == 1
 
 
-def test_link_candidate_pool_caps_housing_path_at_one(tmp_path, monkeypatch):
-    """tracker-098: at most ONE /housing-path candidate survives (down-weight, not
-    exclude). STATIC_PAGES contributes the /housing hub; extra /housing/<slug> detail
-    URLs from llms.txt are dropped past the cap. Non-housing candidates are unaffected."""
+def test_link_candidate_pool_caps_housing_paths(tmp_path, monkeypatch):
+    """2026-05-22: at most HOUSING_LINK_CANDIDATE_CAP (=3) /housing-path candidates
+    survive (down-weight, not exclude) — raised from 1 now that the published housing
+    detail pages are in llms.txt and should be linkable. STATIC_PAGES contributes the
+    /housing hub; extra /housing/<slug> detail URLs fill the remaining cap slots.
+    Non-housing candidates are unaffected."""
     from tools.summary import config, llms_parser
 
+    # 5 housing candidates available (hub from STATIC_PAGES + 4 detail URLs here).
     idx = llms_parser.LlmsIndex(entries=[
         llms_parser.LlmsEntry(
-            url="https://www.englishcollege.com/housing/kitsilano-residence",
-            title="Kitsilano Residence", description="", section="Housing", locale="en",
-        ),
-        llms_parser.LlmsEntry(
-            url="https://www.englishcollege.com/housing/downtown-residence",
-            title="Downtown Residence", description="", section="Housing", locale="en",
-        ),
+            url=f"https://www.englishcollege.com/housing/residence-{i}",
+            title=f"Residence {i}", description="", section="Housing", locale="en",
+        )
+        for i in range(4)
+    ] + [
         llms_parser.LlmsEntry(
             url="https://www.englishcollege.com/courses/general-english",
             title="General English", description="", section="Courses", locale="en",
@@ -618,9 +619,13 @@ def test_link_candidate_pool_caps_housing_path_at_one(tmp_path, monkeypatch):
     ])
     pool = cli._build_link_candidate_pool("landing", idx, "en")
     housing_paths = [u for u in pool if cli._is_housing_path(u)]
-    assert len(housing_paths) == 1, housing_paths
-    # The surviving one is the curated /housing hub (STATIC_PAGES is prepended).
-    assert housing_paths[0] == "https://www.englishcollege.com/housing"
+    # Capped at 3 (5 were available).
+    assert len(housing_paths) == config.HOUSING_LINK_CANDIDATE_CAP == 3, housing_paths
+    # The curated /housing hub survives (STATIC_PAGES is prepended) ...
+    assert "https://www.englishcollege.com/housing" in housing_paths
+    # ... and at least one detail page now also surfaces (the new behavior — detail
+    # pages can be linked, where before only the hub did).
+    assert any(p != "https://www.englishcollege.com/housing" for p in housing_paths)
     # Non-housing candidates are untouched.
     assert "https://www.englishcollege.com/courses/general-english" in pool
 
