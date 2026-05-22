@@ -619,3 +619,86 @@ def test_400_word_8_link_draft_fails_no_link_stuffing():
     stuffing_note = next(n for n in r.notes if n.startswith("no_link_stuffing"))
     assert "400 words" in stuffing_note, stuffing_note
     assert "ceiling 1 per 80" in stuffing_note, stuffing_note
+
+
+# ---- 2026-05-22: internal-domain link guardrail (the /housing incident) ----
+#
+# A few external links (e.g. https://claude.ai/...) had leaked onto the live /housing
+# page. Root cause: the only domain-aware check (link_in_inventory) was a non-critical
+# WARNING, so a hallucinated off-site link passed QA and shipped. links_internal_domain
+# is now a CRITICAL check: every link target must be a root-relative path or an
+# englishcollege.com URL. A summary with any off-domain link is rejected (never ships).
+
+
+def test_link_internal_domain_helper():
+    """The host-level guardrail: relative paths + englishcollege.com (incl. subdomains)
+    are internal; foreign domains, lookalikes, and non-web schemes are external."""
+    from tools.summary.qa import _link_internal_domain_ok
+
+    # Internal — root-relative path / bare slug / fragment / query.
+    assert _link_internal_domain_ok("/courses")
+    assert _link_internal_domain_ok("courses")
+    assert _link_internal_domain_ok("#section")
+    assert _link_internal_domain_ok("?ref=x")
+    # Internal — englishcollege.com, www, and any subdomain.
+    assert _link_internal_domain_ok("https://www.englishcollege.com/courses")
+    assert _link_internal_domain_ok("https://englishcollege.com/courses")
+    assert _link_internal_domain_ok("http://www.englishcollege.com/de/kurse")
+    assert _link_internal_domain_ok("https://cel.englishcollege.com/llms.txt")
+    # External — foreign domains (the actual incident), lookalikes, non-web schemes.
+    assert not _link_internal_domain_ok("https://claude.ai/")
+    assert not _link_internal_domain_ok("https://claude.ai/vancouver")
+    assert not _link_internal_domain_ok("https://x.com")
+    assert not _link_internal_domain_ok("https://example.com/courses")
+    assert not _link_internal_domain_ok("https://notenglishcollege.com/x")  # suffix-bypass guard
+    assert not _link_internal_domain_ok("https://englishcollege.com.evil.com/x")  # lookalike guard
+    assert not _link_internal_domain_ok("mailto:info@englishcollege.com")
+    assert not _link_internal_domain_ok("javascript:alert(1)")
+    assert not _link_internal_domain_ok("")
+
+
+def test_external_domain_link_is_critical_single_block():
+    """A single-block (blog) summary linking to claude.ai fails links_internal_domain
+    (CRITICAL) and so does not pass QA."""
+    draft = _PASSING_DRAFT.replace(
+        "https://www.englishcollege.com/vancouver", "https://claude.ai/vancouver"
+    )
+    report = qa_checks(draft, _PRIMARY_KW, "en", _INVENTORY)
+    assert not report.checks["links_internal_domain"], report.notes
+    assert not report.passed
+    note = next(n for n in report.notes if n.startswith("links_internal_domain"))
+    assert "claude.ai" in note, note
+
+
+def test_external_domain_link_is_critical_four_part():
+    """A 4-part (course/housing/landing) summary linking to claude.ai fails
+    links_internal_domain (CRITICAL) and so does not pass QA — the /housing path."""
+    draft = _FOUR_PART_PASS.replace(
+        "https://www.englishcollege.com/vancouver", "https://claude.ai/vancouver"
+    )
+    r = qa_checks(
+        draft, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert not r.checks["links_internal_domain"], r.notes
+    assert not r.passed
+
+
+def test_relative_links_pass_domain_check():
+    """Root-relative internal links satisfy the domain check (and still pass overall)."""
+    draft = _PASSING_DRAFT.replace("https://www.englishcollege.com/vancouver", "/vancouver")
+    report = qa_checks(draft, _PRIMARY_KW, "en", [])  # empty inventory → link_in_inventory vacuous
+    assert report.checks["links_internal_domain"], report.notes
+    assert report.passed, report.notes
+
+
+def test_passing_drafts_satisfy_domain_check():
+    """Regression guard: the canonical passing fixtures (englishcollege.com links) keep
+    links_internal_domain green under both structures."""
+    single = qa_checks(_PASSING_DRAFT, _PRIMARY_KW, "en", _INVENTORY)
+    assert single.checks["links_internal_domain"], single.notes
+    four = qa_checks(
+        _FOUR_PART_PASS, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert four.checks["links_internal_domain"], four.notes

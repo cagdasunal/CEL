@@ -41,6 +41,17 @@ _KEYWORD_P1_WINDOW_CHARS = 120
 _PREFIXED_LOCALES = ("de", "fr", "es", "it", "pt", "ko", "ja", "ar")
 _KNOWN_LOCALES = ("en",) + _PREFIXED_LOCALES
 
+# The site's registrable domain. Every internal-link target in a summary must be a
+# root-relative path OR an absolute http(s) URL on this domain (or a subdomain of it).
+# Any other host — a foreign domain (claude.ai, x.com, …) or a non-web scheme
+# (mailto:/tel:/javascript:/data:) — is EXTERNAL and trips the critical
+# `links_internal_domain` check, so a hallucinated off-site link can NEVER reach a
+# staged or deployed summary. (2026-05-22 /housing guardrail: a few external links had
+# leaked onto the live /housing page because the only domain-aware check, link_in_inventory,
+# was a non-critical warning.) Mirrors the englishcollege.com host in config.STATIC_PAGES /
+# LLMS_TXT_URL without importing config — qa.py stays config-free per the module docstring.
+_INTERNAL_LINK_DOMAIN = "englishcollege.com"
+
 # tracker-092: hedge/meta openers that violate the answer-first rule.
 _HEDGE_OPENER_RE = re.compile(
     r"^\s*(this page|in this|here we|here you|welcome to|learn about|"
@@ -347,6 +358,17 @@ def qa_checks(
         f"links not in post locale {locale!r}: {off_locale}",
     )
 
+    # 20. Internal-domain links — CRITICAL (2026-05-22 /housing guardrail). EVERY link
+    #     target must be a root-relative path or an englishcollege.com URL; a foreign
+    #     domain (e.g. a hallucinated https://claude.ai/...) is a hard FAIL. Runs
+    #     unconditionally (no inventory/source needed) — a draft with no links passes.
+    external_domain_links = [u for u in target_links if not _link_internal_domain_ok(u)]
+    report.add(
+        "links_internal_domain",
+        not external_domain_links,
+        f"external (non-englishcollege.com) link target(s): {external_domain_links}",
+    )
+
     # Aggregate score over the STABLE original-10 set only. The tracker-092
     # guards (checks 11-17) gate `passed` and surface in notes, but they do NOT
     # enter the score — that keeps the audit-phase REGENERATE/MANUAL_REVIEW/KEEP
@@ -362,7 +384,7 @@ def qa_checks(
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
         "fact_grounding_prices", "no_faq_schema", "no_link_stuffing",
-        "links_locale_matched",
+        "links_locale_matched", "links_internal_domain",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -546,6 +568,16 @@ def _qa_checks_four_part(
     invented = [u for u in target_links if u not in inventory] if inventory else []
     report.add("link_in_inventory", not invented, f"link targets not in inventory (invented?): {invented}")
 
+    # links_internal_domain — CRITICAL (2026-05-22 /housing guardrail). Same rule as the
+    #     single-block path: every link target must be relative or on englishcollege.com;
+    #     a foreign domain (claude.ai, …) is a hard FAIL. Runs unconditionally.
+    external_domain_links = [u for u in target_links if not _link_internal_domain_ok(u)]
+    report.add(
+        "links_internal_domain",
+        not external_domain_links,
+        f"external (non-englishcollege.com) link target(s): {external_domain_links}",
+    )
+
     scored = [report.checks[c] for c in _SCORED_CHECKS_FOUR_PART if c in report.checks]
     report.score = (sum(scored) / len(scored)) * 100 if scored else 0
     # CRITICAL set for 4-part: AI-tell formatting + the structure invariants the user
@@ -559,6 +591,7 @@ def _qa_checks_four_part(
         "no_em_dashes", "no_lists", "keyword_in_title", "keyword_in_paragraph",
         "fact_grounding_prices", "no_faq_schema", "tagline_word_count",
         "no_links_in_tagline_title", "content_starts_with_h4", "no_link_stuffing",
+        "links_internal_domain",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -730,6 +763,32 @@ def _link_locale_ok(url: str, locale: str) -> bool:
         return first == locale
     # EN: reject any path that starts with another locale's prefix.
     return first not in _PREFIXED_LOCALES
+
+
+def _link_internal_domain_ok(url: str) -> bool:
+    """True if `url` is an INTERNAL link target: a root-relative path / query / fragment,
+    or an absolute http(s) URL whose host is `englishcollege.com` (or a subdomain of it).
+
+    Any absolute URL on a foreign host (claude.ai, x.com, …) returns False, as does a
+    non-web scheme (mailto:, tel:, javascript:, data:). This is the host-level guardrail
+    behind the critical `links_internal_domain` check; it is intentionally independent of
+    the link inventory (which is empty in the audit phase) so it ALWAYS runs.
+    """
+    import urllib.parse
+
+    u = url.strip()
+    if not u:
+        return False
+    parsed = urllib.parse.urlparse(u)
+    # No scheme AND no host → a relative path / fragment / query ("/courses",
+    # "courses", "#section") → internal.
+    if not parsed.scheme and not parsed.netloc:
+        return True
+    if parsed.scheme not in ("http", "https"):
+        return False  # mailto:/tel:/javascript:/data: is not an internal page link
+    # Strip any userinfo ("user@") and port (":443") before comparing the host.
+    host = parsed.netloc.lower().rsplit("@", 1)[-1].split(":", 1)[0]
+    return host == _INTERNAL_LINK_DOMAIN or host.endswith("." + _INTERNAL_LINK_DOMAIN)
 
 
 def _word_shingles(text: str, n: int) -> set[tuple[str, ...]]:

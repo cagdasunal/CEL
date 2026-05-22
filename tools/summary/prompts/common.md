@@ -96,6 +96,7 @@ Sites demonstrating cluster-level expertise gain traffic 57% faster than keyword
 
 ## Internal linking
 
+- **Domain rule (absolute)**: EVERY link URL must point to `https://www.englishcollege.com/…` (the site's own domain) or be a root-relative path. The provided link inventory only ever contains englishcollege.com URLs — never output a link to ANY other domain. No external sites, no `example.com`, no documentation/reference URLs, no AI-tool or search-result links. A summary that contains even one off-domain link is rejected.
 - Pick links from the provided link inventory only. Do NOT invent URLs.
 - Selection rule: a link must genuinely deepen what the paragraph discusses. No "see also" links. No generic "explore our programs".
 - **Anchor text diversity (2026 update)**: ~40% branded (CEL, College of English Language, "our courses"), ~30% partial-keyword ("English courses in Vancouver", "our IELTS prep"), ~30% descriptive ("learn more about the schedule", "see tuition details"). The 2026 spam update tightened on exact-match anchor ratios — the prior 20/40/40 ratio (exact/partial/descriptive) is deprecated in favor of 40/30/30 (branded/partial/descriptive).
