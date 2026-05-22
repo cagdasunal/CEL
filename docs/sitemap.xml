@@ -103,21 +103,6 @@
     <loc>https://www.englishcollege.com/courses/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pb/premium-homestay</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/post/13-fun-surprising-facts-english-language</loc>
   </url>
   <url>
@@ -514,45 +499,43 @@
     <loc>https://www.englishcollege.com/post/why-you-should-choose-san-diego-over-la-and-san-francisco</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/housing/homestay-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/post/rester-en-contact-sejour-linguistique</loc>
-    <lastmod>2026-05-22</lastmod>
+    <loc>https://www.englishcollege.com/housing/premium-homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/post/englisch-sprachschule-im-ausland-waehlen</loc>
-    <lastmod>2026-05-21</lastmod>
+    <loc>https://www.englishcollege.com/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/housing/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/post/day-trips-from-vancouver</loc>
@@ -561,10 +544,6 @@
   <url>
     <loc>https://www.englishcollege.com/post/welches-englischniveau-sprachreise</loc>
     <lastmod>2026-05-08</lastmod>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/post/giornata-vita-direttrice-centro-cel-vancouver</loc>
-    <lastmod>2026-05-21</lastmod>
   </url>
   <url>
     <loc>https://www.englishcollege.com/post/studiare-allestero-benefici-globali-carriere</loc>
@@ -734,52 +713,43 @@
     <loc>https://www.englishcollege.com/es/cursos/clases-particulares</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/pb/cel-apartamento-compartido-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/pb/cel-apartamento-compartido-estandar</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/pb/cel-apartamento-compartido-superior-pb</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/pb/familia-anfitriona</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/pb/familia-anfitriona-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/sm/cel-apartamento-comp-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/sm/familia-anfitriona</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/es/sm/apartamento-compartido-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/es/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/familia-anfitriona</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-estandar-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/familia-anfitriona-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/familia-anfitriona-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/es/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/es/alojamiento/familia-anfitriona-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/es/alojamiento/familia-anfitriona-premium-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/es/alojamiento/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/es/alojamiento/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/es/alojamiento/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/es/alojamiento/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/de</loc>
@@ -884,21 +854,6 @@
     <loc>https://www.englishcollege.com/de/kurse/einzelunterricht</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/pb/cel-wg-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/pb/cel-wg-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/pb/cel-wg-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/pb/gastfamilie</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/pb/gastfamilie-premium</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/de/post/21-business-englisch-ausdruecke-karriere</loc>
   </url>
   <url>
@@ -918,6 +873,9 @@
   </url>
   <url>
     <loc>https://www.englishcollege.com/de/post/englisch-sprachaufenthalt-trends-2026</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/post/englisch-sprachschule-im-ausland-waehlen</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/de/post/englisch-sprechen-sprachaufenthalt</loc>
@@ -1109,37 +1067,43 @@
     <loc>https://www.englishcollege.com/de/post/wochenendausfluege-san-diego-guide-sprachschueler</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/sm/cel-wg-premium-strand</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/sm/gastfamilie</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/de/sm/gemeinschaftswohnung-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/de/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/gastfamilie</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/cel-wg-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/cel-wg-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/cel-wg-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/gastfamilie-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/gastfamilie-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/de/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/de/unterkunft/gastfamilie-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/unterkunft/gastfamilie-premium-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/unterkunft/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/unterkunft/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/unterkunft/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/de/unterkunft/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/fr</loc>
@@ -1244,21 +1208,6 @@
     <loc>https://www.englishcollege.com/fr/cours/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/pb/premium-homestay</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/fr/post/5-surprises-vivre-vancouver-etudiant</loc>
   </url>
   <url>
@@ -1356,6 +1305,9 @@
   </url>
   <url>
     <loc>https://www.englishcollege.com/fr/post/quel-niveau-anglais-sejour-linguistique</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/post/rester-en-contact-sejour-linguistique</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/fr/post/san-diego-vs-hawaii-apprendre-anglais</loc>
@@ -1481,37 +1433,43 @@
     <loc>https://www.englishcollege.com/fr/post/vivre-comme-une-locale-a-san-diego-grace-a-cel</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/fr/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/fr/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/fr/logements/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/fr/logements/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/fr/logements/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/fr/logements/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/fr/logements/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/fr/logements/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/fr/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/fr/logements/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/logements/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/logements/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/logements/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/logements/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/fr/logements/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/ko</loc>
@@ -1616,21 +1574,6 @@
     <loc>https://www.englishcollege.com/ko/courses/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/pb/premium-homestay</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/ko/post/gugjejeogin-hwangyeongeseo-yeongeoro-ilhagi-saendieigo-cel-inteonsib-gyeongheom</loc>
   </url>
   <url>
@@ -1646,37 +1589,43 @@
     <loc>https://www.englishcollege.com/ko/post/wae-geulrobeol-daegieobdeuleun-haeoe-gyeongheomi-issneun-jiweonjareul-seonhohalgga</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ko/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/ko/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/ko/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/ko/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/ko/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/ko/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/ko/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/ko/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ko/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/ko/housing/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ko/housing/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ko/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ko/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ko/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ko/housing/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/pt</loc>
@@ -1778,52 +1727,43 @@
     <loc>https://www.englishcollege.com/pt/cursos/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/pb/premium-homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/pt/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/pt/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/pt/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/pt/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/pt/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/pt/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/pt/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/pt/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/pt/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/pt/housing/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/pt/housing/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/pt/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/pt/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/pt/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/pt/housing/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/it</loc>
@@ -1928,21 +1868,6 @@
     <loc>https://www.englishcollege.com/it/corsi/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/pb/premium-homestay</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/it/post/21-business-english-frasi-carriera-globale</loc>
   </url>
   <url>
@@ -1953,6 +1878,9 @@
   </url>
   <url>
     <loc>https://www.englishcollege.com/it/post/famiglia-ospitante-vs-appartamento-progresso-inglese</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/post/giornata-vita-direttrice-centro-cel-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/it/post/impara-inglese-san-diego-vancouver-personalita</loc>
@@ -2006,37 +1934,43 @@
     <loc>https://www.englishcollege.com/it/post/vancouver-vs-san-diego-ritmo-quotidiano-soggiorno-lingua</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/it/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/it/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/it/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/it/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/it/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/it/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/it/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/it/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/it/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/it/housing/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/housing/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/it/housing/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/ja</loc>
@@ -2138,52 +2072,43 @@
     <loc>https://www.englishcollege.com/ja/courses/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/pb/premium-homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ja/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/ja/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/ja/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/ja/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/ja/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/ja/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/ja/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/ja/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ja/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/ja/housing/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ja/housing/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ja/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ja/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ja/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ja/housing/student-house-vancouver</loc>
   </url>
   <url>
     <loc>https://www.englishcollege.com/ar</loc>
@@ -2285,51 +2210,42 @@
     <loc>https://www.englishcollege.com/ar/courses/private-lessons</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/pb/cel-shared-apartment-premium</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/pb/cel-shared-apartment-standard</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/pb/cel-shared-apartment-superior-pacific-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/pb/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/pb/premium-homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/sm/cel-shared-apartment-premium-beach</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/sm/homestay</loc>
-  </url>
-  <url>
-    <loc>https://www.englishcollege.com/ar/sm/shared-apartment-comfort</loc>
-  </url>
-  <url>
     <loc>https://www.englishcollege.com/ar/page/bppe</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/apartment-economy-apt-living</loc>
+    <loc>https://www.englishcollege.com/ar/housing/apartment-economy-apt-living-vancouver</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/homestay</loc>
+    <loc>https://www.englishcollege.com/ar/housing/cel-shared-apartment-premium-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/shared-apartment-downtown</loc>
+    <loc>https://www.englishcollege.com/ar/housing/cel-shared-apartment-standard-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/shared-apartment-gastown</loc>
+    <loc>https://www.englishcollege.com/ar/housing/cel-shared-apartment-superior-pacific-beach-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/shared-apartment-silverstone</loc>
+    <loc>https://www.englishcollege.com/ar/housing/homestay-los-angeles</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/student-house</loc>
+    <loc>https://www.englishcollege.com/ar/housing/homestay-san-diego</loc>
   </url>
   <url>
-    <loc>https://www.englishcollege.com/ar/vc/student-house-budget</loc>
+    <loc>https://www.englishcollege.com/ar/housing/homestay-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ar/housing/premium-homestay-san-diego</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ar/housing/shared-apartment-downtown-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ar/housing/shared-apartment-silverstone-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ar/housing/student-house-budget-vancouver</loc>
+  </url>
+  <url>
+    <loc>https://www.englishcollege.com/ar/housing/student-house-vancouver</loc>
   </url>
 </urlset>
