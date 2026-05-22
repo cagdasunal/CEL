@@ -913,6 +913,31 @@ def _dedup_md_links(md: str) -> str:
     return _MD_LINK_FULL_RE.sub(_repl, md)
 
 
+_LINK_CEILING_WORDS = 80  # mirror qa._LINK_STUFFING_WORDS_PER_LINK
+
+
+def _trim_links_to_ceiling(md: str) -> str:
+    """Unwrap excess links (keep the FIRST N) so the link rate stays at/under 1 per ~80
+    words — the QA `no_link_stuffing` ceiling. The link-insertion model occasionally
+    over-links a short post (the 2026-05-22 full run held ~several for stuffing); trimming
+    the tail deterministically recovers them instead of demoting the whole summary. Keeps
+    the earliest links (usually the most contextually anchored)."""
+    word_count = len(re.findall(r"\b\w+\b", _HTML_TAG_RE.sub(" ", md)))
+    max_links = word_count // _LINK_CEILING_WORDS
+    matches = list(_MD_LINK_FULL_RE.finditer(md))
+    if len(matches) <= max_links:
+        return md
+    # Unwrap every link past the first `max_links` (by position).
+    keep = max(max_links, 0)
+    idx = {"n": 0}
+
+    def _repl(m: "re.Match") -> str:
+        idx["n"] += 1
+        return m.group(0) if idx["n"] <= keep else m.group(1)
+
+    return _MD_LINK_FULL_RE.sub(_repl, md)
+
+
 def _slug_from_url(url: str) -> str:
     import urllib.parse
 
@@ -1073,7 +1098,7 @@ def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, An
         meta = req_meta.get(r.custom_id)
         if not meta:
             continue
-        linked = _dedup_md_links(_sanitize_summary(r.content))
+        linked = _trim_links_to_ceiling(_dedup_md_links(_sanitize_summary(r.content)))
         ok_preserved, ratio = text_preserved(meta["existing_md"], linked)
         rep = qa_checks(
             linked, (meta["kw"] or {}).get("primary", ""), meta["locale"],
@@ -1774,7 +1799,14 @@ def _build_link_candidate_pool(
     prompt_builder.build_user_message. Returns the FULL pool; the prompt cap is
     applied one layer down, not here (tracker-091 M-13).
     """
-    static = list(config.STATIC_PAGES)
+    # STATIC_PAGES are EN (unprefixed) URLs — valid only for EN content. A non-EN summary
+    # must link ONLY same-locale URLs (the blog `links_locale_matched` rule), so for non-EN
+    # locales the curated EN set is omitted and the locale's own llms URLs (which include
+    # that locale's landing + housing pages) are the whole pool. 2026-05-22 fix: previously
+    # the EN STATIC_PAGES were offered to every locale, so non-EN blogs linked EN pages
+    # (e.g. `/`, `/san-diego-ca/language-school`) and were correctly held by QA — starving
+    # those locales. Omitting EN static pages for non-EN keeps the pool same-locale-clean.
+    static = list(config.STATIC_PAGES) if source_locale == "en" else []
     llms_urls: list[str] = []
     if llms_index is not None:
         excluded = list(config.EXCLUDED_LINK_PATH_SEGMENTS)

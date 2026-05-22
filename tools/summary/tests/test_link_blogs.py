@@ -111,6 +111,33 @@ def test_dedup_md_links_unwraps_repeated_targets():
     assert cli._count_internal_md_links(out) == 2  # SD (once) + courses
 
 
+def test_trim_links_to_ceiling_unwraps_excess():
+    """An over-linked short post (links > 1 per ~80 words) is trimmed to the ceiling so it
+    passes no_link_stuffing instead of being demoted (2026-05-22 full-run finding)."""
+    body = " ".join(["word"] * 120)
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(10)
+    )
+    md = f"## Heading\n\n{body} {links}"
+    assert cli._count_internal_md_links(md) == 10
+    out = cli._trim_links_to_ceiling(md)
+    after = cli._count_internal_md_links(out)
+    assert after < 10  # trimmed
+    import re
+    wc = len(re.findall(r"\b\w+\b", re.sub(r"<[^>]+>", " ", out)))
+    assert after <= wc // 80  # at/under the 1-per-80 ceiling
+
+
+def test_trim_links_to_ceiling_leaves_within_ceiling_untouched():
+    body = " ".join(["word"] * 700)  # ~700 words → ceiling ~8
+    links = " ".join(
+        f"[anchor phrase {i}](https://www.englishcollege.com/page-{i})" for i in range(6)
+    )
+    md = f"## Heading\n\n{body} {links}"
+    out = cli._trim_links_to_ceiling(md)
+    assert cli._count_internal_md_links(out) == 6  # 6 within ceiling → unchanged
+
+
 def test_link_blogs_missing_manifest_is_clean_error(tmp_path):
     out_dir = tmp_path / "out"
     rc = cli.main(["link-blogs", "--from-run", str(tmp_path / "nope"), "--out-dir", str(out_dir)])

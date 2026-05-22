@@ -631,6 +631,33 @@ def test_link_candidate_pool_offers_all_housing_first(tmp_path, monkeypatch):
     assert "https://www.englishcollege.com/courses/general-english" in pool
 
 
+def test_link_candidate_pool_omits_en_static_for_non_en_locale():
+    """2026-05-22 fix: non-EN summaries must link only same-locale URLs, so the EN
+    STATIC_PAGES (unprefixed) are NOT offered to a non-EN locale (they previously caused
+    cross-locale demotions). EN still gets them."""
+    from tools.summary import config, llms_parser
+
+    idx = llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/de/vancouver",
+            title="DE Vancouver", description="", section="Campus", locale="de",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/de/housing/homestay-vancouver",
+            title="DE Homestay", description="", section="Housing", locale="de",
+        ),
+    ])
+    pool_de = cli._build_link_candidate_pool("blog_post", idx, "de")
+    # No EN STATIC_PAGES leaked into the DE pool.
+    assert not any(sp in pool_de for sp in config.STATIC_PAGES), pool_de
+    # The DE pool is non-empty and all-DE (de housing is offered, ordered first).
+    assert "https://www.englishcollege.com/de/housing/homestay-vancouver" in pool_de
+    assert all("/de/" in u for u in pool_de), pool_de
+    # EN still gets its curated static pages.
+    pool_en = cli._build_link_candidate_pool("blog_post", idx, "en")
+    assert "https://www.englishcollege.com/" in pool_en
+
+
 def test_is_housing_path_helper():
     """_is_housing_path matches the /housing hub + /housing/* details, not /pb/ or others."""
     assert cli._is_housing_path("https://www.englishcollege.com/housing")
