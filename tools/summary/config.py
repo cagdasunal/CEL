@@ -67,12 +67,11 @@ EXCLUDED_LINK_COLLECTION_IDS = (
 )
 EXCLUDED_LINK_PATH_SEGMENTS = ("vc", "sd", "sm")
 
-# Max number of `/housing`-path candidates offered to the model per item. Raised
-# 1 → 3 on 2026-05-22: llms.txt now carries the published /housing hub + 12 detail
-# pages in every locale, and the new accommodation pages should be linkable from a
-# few topically-relevant posts. The cap (not exclusion) keeps housing from dominating
-# the link inventory — the model still links only where contextually relevant.
-HOUSING_LINK_CANDIDATE_CAP = 3
+# Housing link policy (2026-05-22): there is NO cap on `/housing` link candidates — the
+# site has many new accommodation pages (hub + per-city detail pages, every locale) that
+# need inbound internal links. `_build_link_candidate_pool` offers ALL housing candidates,
+# ordered first so they survive the prompt cap; the model links them where contextually
+# relevant (city-matched) and the link-stuffing + 6–8-link QA caps the total.
 
 # Which collections get translated (English source → 8 target languages via CSV).
 TRANSLATE_COLLECTIONS = ("courses",)
