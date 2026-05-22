@@ -892,6 +892,27 @@ def _count_internal_md_links(md: str) -> int:
     return len(_INTERNAL_MD_LINK_RE.findall(md or ""))
 
 
+_MD_LINK_FULL_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+
+
+def _dedup_md_links(md: str) -> str:
+    """Keep the FIRST occurrence of each link target; unwrap later duplicates to plain
+    anchor text (first-occurrence-only). The link-insertion pass occasionally wraps the
+    same URL twice (the 2026-05-22 pilot saw one duplicate); `first_occurrence_only` is a
+    scored, non-critical QA check, so this deterministically fixes it before write-back
+    rather than demoting an otherwise-good summary."""
+    seen: set[str] = set()
+
+    def _repl(m: "re.Match") -> str:
+        url = m.group(2).strip()
+        if url in seen:
+            return m.group(1)  # unwrap the duplicate → plain anchor text
+        seen.add(url)
+        return m.group(0)
+
+    return _MD_LINK_FULL_RE.sub(_repl, md)
+
+
 def _slug_from_url(url: str) -> str:
     import urllib.parse
 
@@ -1052,7 +1073,7 @@ def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, An
         meta = req_meta.get(r.custom_id)
         if not meta:
             continue
-        linked = _sanitize_summary(r.content)
+        linked = _dedup_md_links(_sanitize_summary(r.content))
         ok_preserved, ratio = text_preserved(meta["existing_md"], linked)
         rep = qa_checks(
             linked, (meta["kw"] or {}).get("primary", ""), meta["locale"],
