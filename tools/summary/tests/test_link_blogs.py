@@ -94,6 +94,23 @@ def test_link_blogs_limit_caps_requests(tmp_path):
     assert lb["requests_built"] == 1, lb
 
 
+def test_dedup_md_links_unwraps_repeated_targets():
+    """The 2026-05-22 pilot saw one duplicate link; _dedup_md_links keeps the first
+    occurrence and unwraps later ones to plain text."""
+    md = (
+        "See [San Diego school](https://www.englishcollege.com/san-diego-ca/language-school) "
+        "and later [the SD school again](https://www.englishcollege.com/san-diego-ca/language-school) "
+        "plus [courses](https://www.englishcollege.com/courses)."
+    )
+    out = cli._dedup_md_links(md)
+    # First SD link kept; second unwrapped to its anchor text; courses untouched.
+    assert out.count("(https://www.englishcollege.com/san-diego-ca/language-school)") == 1
+    assert "the SD school again" in out  # anchor text preserved as plain prose
+    assert "[the SD school again]" not in out  # but no longer a link
+    assert "(https://www.englishcollege.com/courses)" in out
+    assert cli._count_internal_md_links(out) == 2  # SD (once) + courses
+
+
 def test_link_blogs_missing_manifest_is_clean_error(tmp_path):
     out_dir = tmp_path / "out"
     rc = cli.main(["link-blogs", "--from-run", str(tmp_path / "nope"), "--out-dir", str(out_dir)])
