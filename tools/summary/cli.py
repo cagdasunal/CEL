@@ -1549,6 +1549,15 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # commit step already commits docs/admin/weglot-imports/, so this ships with the CSVs.
     status_path = None
     if not args.dry_run:
+        # Count translated-per-locale from the SAME CSV-paired set that per_item
+        # records (review 105 F1), so the dashboard's Overview "Translations" row and
+        # the Latest "Translated" column never disagree. (per_locale_results' own
+        # "succeeded" is the QA-pass count — a superset that can exceed the paired set
+        # by a rare paragraph-mismatch item — and stays in report.json.)
+        paired_per_locale: dict[str, int] = {}
+        for locs in translated_per_item.values():
+            for loc in locs:
+                paired_per_locale[loc] = paired_per_locale.get(loc, 0) + 1
         status = {
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "source_run": (args.from_run.name if args.from_run else out_dir.name),
@@ -1556,7 +1565,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             "target_locales": target_locales,
             "per_locale": {
                 loc: {
-                    "translated": r.get("succeeded", 0),
+                    "translated": paired_per_locale.get(loc, 0),
                     "failed": r.get("failed", 0),
                     "csv": Path(r["csv_path"]).name if r.get("csv_path") else None,
                 }

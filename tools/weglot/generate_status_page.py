@@ -745,7 +745,12 @@ def render_summaries_html() -> str:
             tr_cell = ""
             if tshow:
                 _n = len(tper_item.get(cid, []))
-                tr_cell = f"<td>{_n}/{tn_targets}</td>" if _n else '<td class="subtle">—</td>'
+                if not _n:
+                    tr_cell = '<td class="subtle">—</td>'
+                elif tn_targets:
+                    tr_cell = f"<td>{_n}/{tn_targets}</td>"
+                else:  # status present but target_locales empty — avoid "N/0"
+                    tr_cell = f"<td>{_n}</td>"
             parts.append(
                 f"        <tr>"
                 f"<td>{page_html}</td>"
