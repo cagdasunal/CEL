@@ -414,6 +414,75 @@ def test_translate_surfaces_emit_warnings_into_report(tmp_path: Path, monkeypatc
         f"emit size warning did not surface into report.json: {phase.get('warnings')}"
 
 
+def test_translate_writes_translation_status(tmp_path: Path, monkeypatch):
+    """Dashboard feed (/admin/#summaries): a live translate run writes
+    translation-status.json next to the CSVs with per_locale counts + per_item
+    locale coverage, so generate_status_page can render the Overview 'Translations'
+    row + the Latest 'Translated' column."""
+    from tools.summary import llms_parser, batch_runner, config
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        "gen-0-landing": {
+            "url": "https://www.englishcollege.com/learn-english-usa",
+            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
+            "content_type": "landing",
+            "locale": "en",
+        }
+    }), encoding="utf-8")
+
+    weglot_dir = tmp_path / "weglot"
+    weglot_dir.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
+    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
+    monkeypatch.setattr(
+        llms_parser, "fetch_and_parse",
+        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
+    )
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        return [
+            batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=True,
+                content="## Englische Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
+            )
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    out = tmp_path / "out"
+    rc = cli.main([
+        "translate", "--no-dry-run", "--locale", "de",
+        "--from-run", str(prior), "--out-dir", str(out),
+    ])
+    assert rc == 0
+    status_file = weglot_dir / "translation-status.json"
+    assert status_file.exists(), "translation-status.json was not written"
+    status = json.loads(status_file.read_text(encoding="utf-8"))
+    assert status["dry_run"] is False
+    assert status["source_run"] == "prior"
+    assert status["per_locale"]["de"]["translated"] == 1
+    assert status["per_item"]["gen-0-landing"] == ["de"]
+    # dry-run must NOT write the status file (avoids clobbering the live one).
+    out2 = tmp_path / "out2"
+    weglot_dir2 = tmp_path / "weglot2"
+    weglot_dir2.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir2)
+    cli.main(["translate", "--locale", "de", "--from-run", str(prior), "--out-dir", str(out2)])
+    assert not (weglot_dir2 / "translation-status.json").exists()
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12
