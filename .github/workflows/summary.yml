@@ -65,6 +65,11 @@ on:
         required: false
         default: ""
         type: string
+      from_run:
+        description: "translate / link-blogs: repo-relative dir holding a committed en-summaries.json (e.g. data/seo-intel/summary-dryrun/<ts>). Required for a standalone translate dispatch — out-dir is fresh per run, so without this translate finds no manifest and no-ops."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -107,6 +112,7 @@ jobs:
           LOCALE_FILTER: ${{ inputs.locale_filter }}
           LIMIT: ${{ inputs.limit }}
           BATCH_ID: ${{ inputs.batch_id }}
+          FROM_RUN: ${{ inputs.from_run }}
         run: |
           set -o pipefail
           ARGS="$MODE"
@@ -135,6 +141,9 @@ jobs:
           fi
           if [ -n "$BATCH_ID" ]; then
             ARGS="$ARGS --batch-id $BATCH_ID"
+          fi
+          if [ -n "$FROM_RUN" ]; then
+            ARGS="$ARGS --from-run $FROM_RUN"
           fi
           echo "Running: python3 -m tools.summary $ARGS"
           python3 -m tools.summary $ARGS 2>&1 | tee /tmp/summary-stdout.log
