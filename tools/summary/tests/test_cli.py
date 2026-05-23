@@ -694,11 +694,21 @@ def test_link_candidate_pool_city_matched_housing_first():
 
 
 def test_is_housing_path_helper():
-    """_is_housing_path matches the /housing hub + /housing/* details, not /pb/ or others."""
+    """_is_housing_path matches the /housing hub + details in EVERY locale (localized hub
+    slugs de=unterkunft, fr=logements, es=alojamiento), not /pb/ or others."""
+    # EN
     assert cli._is_housing_path("https://www.englishcollege.com/housing")
     assert cli._is_housing_path("https://www.englishcollege.com/housing/kitsilano")
+    # Localized hubs + details (2026-05-23)
+    assert cli._is_housing_path("https://www.englishcollege.com/de/unterkunft")
+    assert cli._is_housing_path("https://www.englishcollege.com/de/unterkunft/gastfamilie-san-diego")
+    assert cli._is_housing_path("https://www.englishcollege.com/fr/logements")
+    assert cli._is_housing_path("https://www.englishcollege.com/es/alojamiento/homestay-san-diego")
+    assert cli._is_housing_path("https://www.englishcollege.com/it/housing")  # it keeps "housing"
+    # Not housing
     assert not cli._is_housing_path("https://www.englishcollege.com/pb/some-residence")
     assert not cli._is_housing_path("https://www.englishcollege.com/courses/general-english")
+    assert not cli._is_housing_path("https://www.englishcollege.com/de/kurse")
     assert not cli._is_housing_path("https://www.englishcollege.com/")
 
 
