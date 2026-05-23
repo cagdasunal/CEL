@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-23T15:28:48.036145-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-23T14:31:20.672559-07:00",
       "detail": {}
     },
@@ -48,16 +53,6 @@
       "kind": "no_change",
       "ts": "2026-05-23T04:26:47.864328-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-23T04:01:02.445996-07:00",
-      "detail": {
-        "slugs": [
-          "un-giorno-a-san-diego-come-la-tua-vita-durante-un-soggiorno-linguistico",
-          "vuoi-perfezionare-inglese-soggiorni-linguistici-cambiano-tutto"
-        ]
-      }
     }
   ]
 }
