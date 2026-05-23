@@ -89,6 +89,26 @@ python3 -m tools.summary link-blogs --no-dry-run --confirm-cost \
   `LlmsIndex.find_equivalent`; when there is **no** equivalent the link is **removed** (kept as
   plain prose), never linked cross-language. Reinforced in `build_translation_user_message`.
 
+## Translate-phase hardening + cost/safety (audit 098 fix pass, 2026-05-23)
+
+- **Link equity (T2)**: the translate phase now uses `LlmsIndex.find_equivalent_or_fallback` —
+  if no exact `/{locale}/` slug-equivalent exists, it falls back to the nearest in-index
+  same-locale ancestor, then the locale root, rather than dropping the link. Index-verified, so
+  it can never leak cross-locale.
+- **Fail-loud (T1)**: if `llms.txt` is unreachable, the translate run retries once then **ABORTS**
+  (emits no CSVs) — it never silently ships a translation with every link stripped.
+- **Link validation (T4)**: `qa.links_target_locale` rejects (skips + reports) any translated
+  summary that emits an off-locale or off-domain link. Offline only — no HTTP probing.
+- **Cost honesty (C1)**: `estimate_batch_cost_usd` now prices output per `(model, thinking)` via
+  `config.OUTPUT_TOKEN_ESTIMATE` (Pro bills thinking AS output), so the cost gate can't be fooled
+  by a thinking-heavy Pro batch. **Orphaned-batch (H1)**: a cancelled GHA run / Ctrl-C now cancels
+  the Gemini batch (in-process + a `summary.yml` cleanup step) so it stops billing.
+- **Render guard (M1)**: write-back refuses to PATCH a RichText body still containing literal
+  `](` (a MD→HTML conversion regression), so the literal-Markdown render bug can't recur silently.
+- **`link-blogs` durability (H2)**: generation prompts already require 6–8 same-locale links, but
+  Flash under-complies, so `link-blogs` is a **remediation tool — re-run it after any blog
+  regeneration** to restore links a fresh Flash pass under-produces.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.
