@@ -57,7 +57,12 @@ emit_consolidated_csv(target_locale="de",
    truncation guard, `max_tokens`, and transient-error backoff). Pass a
    `request_builder(unit, locale, glossary_slice) -> (system_blocks, user_message)`
    to override the default generic translator prompt (the summary caller does this
-   to reproduce its exact summary-translation prompt + llms.txt link swaps).
+   to reproduce its exact summary-translation prompt + llms.txt link swaps; since
+   2026-05-23 it uses `llms_parser.find_equivalent_or_fallback` — if no exact
+   slug-equivalent exists for a source URL in the target locale, it falls back to
+   the nearest same-locale ancestor in the index, then the locale root, rather than
+   removing the link entirely; this preserves link equity on pages where locales
+   use different slug conventions).
 4. **Glossary post-edit** — a **forbidden** term in the output is BLOCKING (sets
    `ok=False`); a dropped **do-not-translate** term is flagged (advisory — DNT is
    enforced via the prompt slice, not by rewriting); **preferred** is SOFT (warn

@@ -49,7 +49,17 @@ class TranslationMemory:
                 data = json.loads(path.read_text(encoding="utf-8"))
                 if isinstance(data, dict):
                     self._store = data
-            except (OSError, ValueError):
+            except (OSError, ValueError) as e:
+                # T7 (2026-05-23): a corrupt TM file silently became {} (cache loss with
+                # no signal). Warn so the loss is visible; still degrade to empty — the TM
+                # is an optimization, never load-bearing, so this must not be fatal.
+                import sys as _sys
+
+                print(
+                    f"[translator.tm] WARNING: could not load translation memory at "
+                    f"{path} ({e}); starting empty (cache is not load-bearing).",
+                    file=_sys.stderr,
+                )
                 self._store = {}
 
     def get(self, source: str, locale: str, glossary_version: str, tone: str = "") -> str | None:

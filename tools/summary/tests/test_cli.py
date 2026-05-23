@@ -276,6 +276,74 @@ def test_translate_aborts_when_llms_unavailable(tmp_path: Path, monkeypatch):
     assert any("ABORT" in w for w in phase["warnings"])
 
 
+def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
+    """I4 (tracker-099): a translation whose ok=False MUST NOT appear in the emitted CSV.
+
+    This exercises the caller-level gate in _execute_translate:
+        if not t.ok: failed_count += 1; continue
+    The engine-level ok flag is set correctly (test_engine.py covers that), but this
+    test asserts the CLI caller actually honours it — the CSV must stay empty even
+    when the batch returns a succeeded=False result for every unit.
+    """
+    from tools.summary import llms_parser, batch_runner, config
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        "gen-0-landing": {
+            "url": "https://www.englishcollege.com/learn-english-usa",
+            "markdown": "## Learn English\n\nJoin us at CEL.\n",
+            "content_type": "landing",
+            "locale": "en",
+        }
+    }), encoding="utf-8")
+
+    weglot_dir = tmp_path / "weglot"
+    weglot_dir.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
+
+    monkeypatch.setattr(
+        llms_parser, "fetch_and_parse",
+        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
+    )
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="b-fail", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        return [
+            batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=False, error="simulated_failure"
+            )
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    out = tmp_path / "out"
+    rc = cli.main([
+        "translate", "--no-dry-run", "--locale", "de",
+        "--from-run", str(prior), "--out-dir", str(out),
+    ])
+    assert rc == 0
+    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
+    de_result = phase["per_locale"]["de"]
+    assert de_result.get("failed") == 1, "expected 1 failed translation"
+    assert de_result.get("succeeded") == 0
+
+    csv_path = weglot_dir / "de.csv"
+    if csv_path.exists():
+        rows = csv_path.read_text(encoding="utf-8").strip()
+        data_rows = [r for r in rows.splitlines() if not r.startswith("id;")]
+        assert data_rows == [], f"ok=False translation leaked into CSV: {data_rows}"
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12

@@ -235,30 +235,35 @@ def main(argv: list[str] | None = None) -> int:
         "warnings": [],
     }
 
-    # 'plan' subcommand: planners only, no orchestration.
-    if args.subcommand == "plan":
-        report["phases"]["generate_english"] = _plan_generate_english(args)
-        report["phases"]["audit"] = _plan_audit(args)
-        report["phases"]["translate"] = _plan_translate(args)
-    else:
-        # All other subcommands run the orchestrator (real or dry-run).
-        if args.subcommand in ("generate-english", "all"):
-            report["phases"]["generate_english"] = _execute_generate_english(args, out_dir)
-        if args.subcommand in ("audit", "all"):
-            report["phases"]["audit"] = _execute_audit(args, out_dir)
-        if args.subcommand in ("translate", "all"):
-            report["phases"]["translate"] = _execute_translate(args, out_dir)
-        if args.subcommand in ("translate-meta", "all"):
-            report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
-        if args.subcommand == "link-blogs":
-            report["phases"]["link_blogs"] = _execute_link_blogs(args, out_dir)
-
-    # Write the report.
-    (out_dir / "report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    (out_dir / "report.md").write_text(_render_markdown_report(report), encoding="utf-8")
-    print(f"[summary] report.json + report.md → {out_dir}", file=sys.stderr)
+    # M4 (2026-05-23): write report.json in a `finally` so a partial / exception-raising
+    # run still leaves the cost_gate + counts on disk (the big run-098-full left NO
+    # report.json — its phase wrote manual-review + manifest then the process ended before
+    # the report was written). A hard SIGKILL still can't write, but the exception path now does.
+    try:
+        # 'plan' subcommand: planners only, no orchestration.
+        if args.subcommand == "plan":
+            report["phases"]["generate_english"] = _plan_generate_english(args)
+            report["phases"]["audit"] = _plan_audit(args)
+            report["phases"]["translate"] = _plan_translate(args)
+        else:
+            # All other subcommands run the orchestrator (real or dry-run).
+            if args.subcommand in ("generate-english", "all"):
+                report["phases"]["generate_english"] = _execute_generate_english(args, out_dir)
+            if args.subcommand in ("audit", "all"):
+                report["phases"]["audit"] = _execute_audit(args, out_dir)
+            if args.subcommand in ("translate", "all"):
+                report["phases"]["translate"] = _execute_translate(args, out_dir)
+            if args.subcommand in ("translate-meta", "all"):
+                report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
+            if args.subcommand == "link-blogs":
+                report["phases"]["link_blogs"] = _execute_link_blogs(args, out_dir)
+    finally:
+        report["finished_at"] = _now_iso()
+        (out_dir / "report.json").write_text(
+            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        (out_dir / "report.md").write_text(_render_markdown_report(report), encoding="utf-8")
+        print(f"[summary] report.json + report.md → {out_dir}", file=sys.stderr)
     if args.dry_run:
         print("[summary] Dry-run complete. No API calls fired, no Webflow writes performed.", file=sys.stderr)
     return 0
@@ -710,6 +715,14 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     # else group requests by model and run one Batch job per model (the Batch API
     # takes a single model per job — tracker-097 tiering).
     results, handle, batch_ids = _submit_and_wait(requests, args)
+    # M5 (2026-05-23): surface silently-failed cache creates — a cache that didn't engage
+    # means full-rate input billing with no signal (a burst contributor).
+    _cache_create_failures = getattr(handle, "cache_create_failures", 0)
+    if _cache_create_failures:
+        warnings.append(
+            f"explicit cache: {_cache_create_failures} eligible cache(s) failed to create "
+            f"— affected requests billed input at full rate (no cache discount)."
+        )
     succeeded = [r for r in results if r.succeeded]
     failed = [r for r in results if not r.succeeded]
     _first_errors = {r.custom_id: r.error for r in failed}  # tracker-092 (2.2): first-attempt errors for triage
@@ -1699,26 +1712,43 @@ def _write_back_summaries(
                 failures += 1
                 warnings.append(f"static write failed: {item.url}: {wr.error}")
         elif target == "cms" and item.cms_item_id:
-            # In dry-run, the WebflowClient already returns a mock response.
+            # tracker-098: convert Markdown → HTML before PATCH so the RichText field
+            # renders headings + links instead of literal `##` / `[](url)`.
             if item.content_type == "blog_post":
-                # Blog keeps the single-block Summary, but tracker-098: convert the
-                # Markdown to HTML before PATCH so the RichText field renders headings
-                # + links instead of literal `##` / `[](url)`.
+                bodies = {config.SUMMARY_FIELD_SLUG: summary_markdown_to_html(result.content)}
+            else:
+                # Courses / Housing → 4-part: write ONLY the two RichText bodies
+                # (Paragraphs + Content), preserving the author-owned Tagline + Title.
+                parts = parse_four_part(result.content)
+                bodies = {
+                    config.SUMMARY_PARAGRAPH_FIELD_SLUG: four_part_paragraph_html(parts.paragraph),
+                    config.SUMMARY_CONTENT_FIELD_SLUG: four_part_content_html(parts.content_md),
+                }
+            # M1 (2026-05-23): pre-write render guard. Refuse to PATCH a RichText body that
+            # still contains literal Markdown link syntax `](` — that means the MD→HTML
+            # conversion regressed and the page would show literal `[text](url)` (the
+            # historical render-corruption class that shipped undetected). Cheap (no extra
+            # CMS read); skip + warn instead of writing corrupt content.
+            corrupt_fields = [k for k, v in bodies.items() if "](" in v]
+            if corrupt_fields:
+                failures += 1
+                warnings.append(
+                    f"render guard: {item.cms_item_id} field(s) {corrupt_fields} still "
+                    f"contain literal Markdown link syntax after MD→HTML conversion; NOT written."
+                )
+                continue
+            if item.content_type == "blog_post":
                 wresult = wf.update_item_summary(
                     collection_id=_collection_id_for_content_type(item.content_type),
                     item_id=item.cms_item_id,
-                    summary_html=summary_markdown_to_html(result.content),
+                    summary_html=bodies[config.SUMMARY_FIELD_SLUG],
                 )
             else:
-                # Courses / Housing → 4-part. tracker-098: write ONLY the two RichText
-                # bodies (Paragraphs + Content), both as HTML, preserving the
-                # author-owned Tagline + Title (never regenerate-overwrite them).
-                parts = parse_four_part(result.content)
                 wresult = wf.update_item_summary_body(
                     collection_id=_collection_id_for_content_type(item.content_type),
                     item_id=item.cms_item_id,
-                    paragraph_html=four_part_paragraph_html(parts.paragraph),
-                    content_html=four_part_content_html(parts.content_md),
+                    paragraph_html=bodies[config.SUMMARY_PARAGRAPH_FIELD_SLUG],
+                    content_html=bodies[config.SUMMARY_CONTENT_FIELD_SLUG],
                 )
             if wresult.success:
                 cms_writes += 1
