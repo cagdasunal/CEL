@@ -73,7 +73,20 @@ jobs:
         if: always()
         run: python -m tools.weglot.generate_status_page
 
-      - name: Step 4e — Generate offers viewer HTML
+      - name: Step 4e — Check Weglot CSV import status
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          python3 -m tools.weglot.check_import_status \
+            --csv-dir docs/admin/weglot-imports \
+            --out docs/admin/weglot-imports/import-status.json
+          if [ -f docs/admin/weglot-imports/import-status.json ]; then
+            python3 -c "import json; s=json.load(open('docs/admin/weglot-imports/import-status.json')); print('verdicts:', {c: i['verdict'] for c, i in s['languages'].items()})"
+          fi
+          python -m tools.weglot.generate_status_page
+
+      - name: Step 4f — Generate offers viewer HTML
         if: always()
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
@@ -86,6 +99,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html 2>/dev/null || true
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/weglot-imports/import-status.json 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push || echo "push failed (will retry next run)"

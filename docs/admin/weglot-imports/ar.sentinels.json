@@ -1,0 +1,112 @@
+{
+  "candidates": [
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Small classes (avg. 7 students/class)",
+      "word_to": "فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Can be combined with other courses",
+      "word_to": "حصص شخصية يمكن دمجها مع الفئات الاخرى"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Enhance your English while working",
+      "word_to": "تعزيز لغتك الإنجليزية أثناء العمل"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "All levels from Basic to Advanced",
+      "word_to": "جميع المستويات من الأساسي الى المتقدم"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Surf in one of the top surf spots",
+      "word_to": "حصص تزحلق في الامواج"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Business, AI, Project Management",
+      "word_to": "ريادة الأعمال، الذكاء الاصطناعي، التواصل،"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "New courses start every Monday",
+      "word_to": "حصص جديدة لكل أيام الأثنين"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Available in different fields",
+      "word_to": "تطوع متاح في مختلف المجالات"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Upper Intermediate and Higher",
+      "word_to": "ابتداء من المستوى المتوسط فما فوق"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Social, or conversatory Work",
+      "word_to": "اجتماعي او علمي او موسيقي"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "4 hours of Surfing per Week",
+      "word_to": "4 ساعات لحصص اضافيه في الاسبوع"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "No surf experience required",
+      "word_to": "لا يشترط وجود خبرة في ركوب الأمواج"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Add a highlight to your CV",
+      "word_to": "التركيز والاضافه في السيرة الذاتية"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Prepare for Cambridge exam",
+      "word_to": "Prepare for Cambridge Exam"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Build career-ready skills",
+      "word_to": "اكتسب مهارات مهنية مهمة"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Full focus on your needs",
+      "word_to": "التركيز الكامل على احتياجاتك"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Gain relevant experience",
+      "word_to": "اكتساب الخبرة ذات الصلة"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Project based learning",
+      "word_to": "التعلم القائم على المشروع"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Do good, feel good!",
+      "word_to": "عمل جيد , شعور جيد"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Elective class",
+      "word_to": "دورة اختياريه"
+    },
+    {
+      "field_path": "listing.age_badge",
+      "word_from": "18 + years",
+      "word_to": "أكثر من 18 عامًا"
+    }
+  ],
+  "language_to": "ar",
+  "schema": "weglot.sentinel-pool.v1",
+  "surface": "courses"
+}

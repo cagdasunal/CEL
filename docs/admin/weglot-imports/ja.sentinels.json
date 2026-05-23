@@ -1,0 +1,122 @@
+{
+  "candidates": [
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Small classes (avg. 7 students/class)",
+      "word_to": "少人数制クラス(1クラス平均7名)"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Academic English for college success",
+      "word_to": "大学成功のためのアカデミック英語"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Preparation for College & University",
+      "word_to": "大学入学の準備"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Can be combined with other courses",
+      "word_to": "他のコースと組み合わせ可能"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Enhance your English while working",
+      "word_to": "働くことによって英語を上達させる"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "All levels from Basic to Advanced",
+      "word_to": "初級から上級まで、全レベルに対応"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Surf in one of the top surf spots",
+      "word_to": "最高のサーフスポットでサーフィン"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Business, AI, Project Management",
+      "word_to": "ビジネス、AI、プロジェクト管理"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Spring and fall session intakes",
+      "word_to": "春・秋ごとの入学"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Available in different fields",
+      "word_to": "異なる分野"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Upper Intermediate and Higher",
+      "word_to": "中上級以上"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Social, or conversatory Work",
+      "word_to": "社会、教育、または自然での仕事"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "4 hours of Surfing per Week",
+      "word_to": "サーフィン 4時間/週"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "No surf experience required",
+      "word_to": "サーフィンの経験は必要なし"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Add a highlight to your CV",
+      "word_to": "履歴書を目立たせる"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Prepare for Cambridge exam",
+      "word_to": "ケンブリッジ試験の準備"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Build career-ready skills",
+      "word_to": "キャリアに役立つスキルを身につける"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Full focus on your needs",
+      "word_to": "学生の要求を重点的に取り扱う"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Gain relevant experience",
+      "word_to": "英語上達に関する経験を積む"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Project based learning",
+      "word_to": "プロジェクト型学習 (PBL)"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Do good, feel good!",
+      "word_to": "良いことをすると、気分がいい！"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Elective class",
+      "word_to": "選択授業"
+    },
+    {
+      "field_path": "listing.age_badge",
+      "word_from": "18 + years",
+      "word_to": "18歳以上"
+    }
+  ],
+  "language_to": "ja",
+  "schema": "weglot.sentinel-pool.v1",
+  "surface": "courses"
+}
