@@ -1,0 +1,127 @@
+{
+  "candidates": [
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Small classes (avg. 7 students/class)",
+      "word_to": "소규모 수업 (평균 7명/반)"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Preparation for College & University",
+      "word_to": "대학 입학 준비를 위한 최상의 프로그램"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Can be combined with other courses",
+      "word_to": "다른 수업과 추가하여 학습 가능"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Enhance your English while working",
+      "word_to": "비즈니스 영어 습득하기"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "All levels from Basic to Advanced",
+      "word_to": "기초부터 고급까지 모든 수준의 강좌"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Surf in one of the top surf spots",
+      "word_to": "세계적인 서핑 스팟에서 서핑하기"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Business, AI, Project Management",
+      "word_to": "창업, AI, 커뮤니케이션, 프로젝트"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Spring and fall session intakes",
+      "word_to": "연 2회 개강"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "New courses start every Monday",
+      "word_to": "매주 월요일마다 새로운 강좌 준비"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Available in different fields",
+      "word_to": "다양한 분야 체험 가능"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Upper Intermediate and Higher",
+      "word_to": "Upper intermediate 이상"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Social, or conversatory Work",
+      "word_to": "소통하며 국제적 시야와 학습 늘리기"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "4 hours of Surfing per Week",
+      "word_to": "서핑수업 4시간/주"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "No surf experience required",
+      "word_to": "서핑 경험 없이도 참여 가능"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Add a highlight to your CV",
+      "word_to": "이력서에 도움되는 경험 쌓기"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Prepare for Cambridge exam",
+      "word_to": "케임브리지 시험 준비"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Build career-ready skills",
+      "word_to": "커리어에 필요한 역량 강화"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Full focus on your needs",
+      "word_to": "학생 맞춤화 교육 진행"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Gain relevant experience",
+      "word_to": "영어 실력 향상과 관련된 경험 쌓기"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Project based learning",
+      "word_to": "다양한 프로젝트 기반으로 학습진행"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Do good, feel good!",
+      "word_to": "함께 하면 기쁨이 두 배 !"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Elective class",
+      "word_to": "선택 수업 가능"
+    },
+    {
+      "field_path": "listing.age_badge",
+      "word_from": "18 + years",
+      "word_to": "18세 이상"
+    },
+    {
+      "field_path": "listing.age_badge",
+      "word_from": "16+ years",
+      "word_to": "16세 이상"
+    }
+  ],
+  "language_to": "ko",
+  "schema": "weglot.sentinel-pool.v1",
+  "surface": "courses"
+}

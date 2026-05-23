@@ -1,0 +1,122 @@
+{
+  "candidates": [
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Small classes (avg. 7 students/class)",
+      "word_to": "Turmas pequenas (média de 7 alunos)"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Preparation for College & University",
+      "word_to": "Preparação para Universidade"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Can be combined with other courses",
+      "word_to": "Reservável além do curso em grupo"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Enhance your English while working",
+      "word_to": "Melhore seu inglês no trabalho"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "All levels from Basic to Advanced",
+      "word_to": "Todos os níveis: básico - avançado"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Surf in one of the top surf spots",
+      "word_to": "Surfe nos melhores pontos do mundo"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Business, AI, Project Management",
+      "word_to": "Empreendedorismo, IA e Gestão"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Spring and fall session intakes",
+      "word_to": "2 datas de início por ano"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "New courses start every Monday",
+      "word_to": "Novos cursos toda Segunda-feira"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Available in different fields",
+      "word_to": "Disponível em diferentes áreas"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Upper Intermediate and Higher",
+      "word_to": "Intermediário superior e avançado"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Social, or conversatory Work",
+      "word_to": "Trabalho social, ou conversação"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "4 hours of Surfing per Week",
+      "word_to": "4 horas de surf por semana"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "No surf experience required",
+      "word_to": "Não é necessária experiência com surf"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Add a highlight to your CV",
+      "word_to": "Destaque seu currículo"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Prepare for Cambridge exam",
+      "word_to": "Preparação para o exame Cambridge"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Build career-ready skills",
+      "word_to": "Competências para a carreira"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Full focus on your needs",
+      "word_to": "Foco total nas suas necessidades"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Gain relevant experience",
+      "word_to": "Ganhe experiência relevante"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Project based learning",
+      "word_to": "Aprendizagem baseada em projetos"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Do good, feel good!",
+      "word_to": "Faça o bem, se sinta bem"
+    },
+    {
+      "field_path": "listing.bullets[]",
+      "word_from": "Elective class",
+      "word_to": "Aula eletiva"
+    },
+    {
+      "field_path": "listing.age_badge",
+      "word_from": "18 + years",
+      "word_to": "Mais de 18 anos"
+    }
+  ],
+  "language_to": "pt",
+  "schema": "weglot.sentinel-pool.v1",
+  "surface": "courses"
+}
