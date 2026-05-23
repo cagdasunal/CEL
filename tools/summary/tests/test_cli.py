@@ -244,6 +244,38 @@ def test_execute_translate_from_run_reads_external_manifest(tmp_path: Path):
     assert phase["per_locale"]["es"].get("request_count") == 1
 
 
+def test_translate_aborts_when_llms_unavailable(tmp_path: Path, monkeypatch):
+    """T1 (2026-05-23): if llms.txt can't be fetched, translate ABORTS (emits no CSVs)
+    rather than ship link-stripped translations. (Live mode, but it aborts BEFORE any
+    Gemini/Webflow call, so no creds are needed.)"""
+    from tools.summary import llms_parser
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        "gen-0-c": {
+            "url": "https://www.englishcollege.com/courses/general-english",
+            "markdown": "## English\n\nLearn [more](https://www.englishcollege.com/courses) today.\n",
+            "content_type": "course", "locale": "en",
+        }
+    }), encoding="utf-8")
+
+    def _raise(*a, **k):
+        raise RuntimeError("llms unreachable")
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", _raise)
+
+    out = tmp_path / "out"
+    rc = cli.main([
+        "translate", "--no-dry-run", "--locale", "de",
+        "--from-run", str(prior), "--out-dir", str(out),
+    ])
+    assert rc == 0
+    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
+    assert phase.get("aborted") is True
+    assert phase["per_locale"] == {}
+    assert any("ABORT" in w for w in phase["warnings"])
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12

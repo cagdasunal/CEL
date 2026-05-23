@@ -1279,7 +1279,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     `<out_dir>/en-summaries.json` (the path generate-english writes to in the
     same run). Closes audit-086 C-4 (tracker-087 F-2).
     """
-    from tools.summary import batch_runner, csv_emitter, llms_parser
+    from tools.summary import batch_runner, csv_emitter, llms_parser, qa
     from tools.summary.prompt_builder import (
         LinkSwap, build_translation_system_prompt, build_translation_user_message,
     )
@@ -1329,12 +1329,29 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     }
 
     # llms.txt for cross-locale link swaps (live only — dry-run skips the network).
+    # T1 (2026-05-23): llms.txt is load-bearing for same-locale internal linking. If it
+    # is unreachable, EVERY link in EVERY translated summary would be silently stripped —
+    # worse than emitting nothing. So retry once, then ABORT the whole run (emit no CSVs)
+    # with a clear reason, rather than ship link-stripped translations.
     llms_index = None
     if not args.dry_run:
         try:
-            llms_index = llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
+            llms_index = batch_runner._retry_transient(
+                lambda: llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
+            )
         except Exception as e:
-            warnings.append(f"llms.txt fetch failed: {e}; link swaps will all REMOVE")
+            warnings.append(
+                f"ABORT: llms.txt unavailable ({e}); refusing to emit link-stripped "
+                f"translations. Re-run when llms.txt is reachable."
+            )
+            return {
+                "target_locales": target_locales,
+                "per_locale": {},
+                "manifest_path": str(manifest_path),
+                "degraded": True,
+                "aborted": True,
+                "warnings": warnings,
+            }
 
     # tracker-092 Phase 3: translation runs through the dedicated engine (glossary
     # + translation-memory + translation-QA). The engine reuses batch_runner as
@@ -1373,7 +1390,10 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         def _summary_rb(unit, loc, gslice, _llms=llms_index):
             link_swaps = []
             for src_url in _extract_markdown_links(unit.text):
-                target_url = _llms.find_equivalent(src_url, loc) if _llms else None
+                # T2 (2026-05-23): prefer the exact same-locale equivalent; fall back to
+                # the nearest in-index same-locale ancestor / locale root before giving up
+                # (removing the link). Keeps link equity inside the locale subdirectory.
+                target_url = _llms.find_equivalent_or_fallback(src_url, loc) if _llms else None
                 link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
             # tracker-095 M1: inject the per-unit glossary slice (do-not-translate
             # brand/entity terms) into the summary translation prompt. The engine
@@ -1440,6 +1460,17 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             if not t.ok:
                 failed_count += 1
                 warnings.append(f"locale {locale} {t.id}: QA blocked, not shipped — {t.qa_flags}")
+                continue
+            # T4 (2026-05-23): reject a translation that emitted an off-locale or
+            # off-domain link (offline structural check; no HTTP probing). The link-swap
+            # table targets same-locale URLs, but the model can still slip an unswapped
+            # EN link through — this is the deterministic backstop.
+            links_ok, bad_links = qa.links_target_locale(t.target, locale)
+            if not links_ok:
+                failed_count += 1
+                warnings.append(
+                    f"locale {locale} {t.id}: off-locale/off-domain link(s) {bad_links}; not shipped"
+                )
                 continue
             succeeded_count += 1
             if t.qa_flags and not t.from_tm:
