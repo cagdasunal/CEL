@@ -129,6 +129,36 @@ def test_emit_escapes_internal_quotes_like_fidelo(tmp_path: Path):
     assert rows[1][3] == 'Say "hi"' and rows[1][4] == 'Sag "hallo"'
 
 
+def test_emit_warns_on_large_single_import(tmp_path: Path):
+    """T5 (tracker-098): a single run that appends an unusually large number of new
+    rows gets a heads-up warning (Weglot processes a limited element count per import).
+    Keyed on new_row_count, NOT total file size — so it fires on the run that could
+    actually hit the per-import limit, not on an accumulated file that imports fine."""
+    csv_path = tmp_path / "de.csv"
+    many = [WeglotPair(word_from=f"source string number {i}", word_to=f"ziel {i}") for i in range(460)]
+    report = emit_consolidated_csv(
+        target_locale="de", existing_csv_path=csv_path,
+        summary_pairs=many, out_path=csv_path,
+    )
+    assert report.new_row_count == 460
+    assert report.warnings, "expected a large-import warning"
+    assert any("de" in w and "460" in w for w in report.warnings)
+
+
+def test_emit_no_warning_on_normal_import(tmp_path: Path):
+    """T5: a normal-sized run (well under the threshold) emits no large-import warning,
+    so the signal stays meaningful and doesn't false-fire on every run."""
+    csv_path = tmp_path / "de.csv"
+    csv_path.write_text(_FIDELO_CSV, encoding="utf-8")  # 2 existing rows, like production
+    pairs = [WeglotPair(word_from=f"para {i}", word_to=f"absatz {i}") for i in range(120)]
+    report = emit_consolidated_csv(
+        target_locale="de", existing_csv_path=csv_path,
+        summary_pairs=pairs, out_path=csv_path,
+    )
+    assert report.new_row_count == 120
+    assert report.warnings == []
+
+
 def test_csv_emitter_reexports_still_work():
     """The summary-side csv_emitter must still expose the moved names (back-compat)."""
     from tools.summary.csv_emitter import (
