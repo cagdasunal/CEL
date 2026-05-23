@@ -29,6 +29,18 @@ _CSV_COLUMNS = ("id", "language_from", "language_to", "word_from", "word_to", "t
 _CSV_DIALECT = "weglot-semicolon"
 _SEPARATOR = ";"
 
+# Weglot's CSV importer processes a limited number of NEW elements per import
+# operation (~500 per Weglot's published guidance, 2026). The *consolidated*
+# on-disk file legitimately grows past that across many incremental imports —
+# production locale files are 538-593 rows and import fine, so a per-FILE cap is
+# falsified by ar.csv@538 importing fully (tracker-098 T5 verification). We
+# therefore do NOT guard total file size (that would false-fire on every locale,
+# every run). We DO warn when a SINGLE run appends an unusually large number of
+# new rows, because that one import is the operation that could hit the per-import
+# limit. This is a hedged heads-up keyed on new_row_count, not a hard gate — the
+# authoritative post-import check is the sentinel verifier (import-status.json).
+_IMPORT_NEW_ROW_WARN_THRESHOLD = 450
+
 
 # Register a dialect with semicolon separator (Weglot's required format).
 class _WeglotDialect(csv.Dialect):
@@ -175,6 +187,15 @@ def emit_consolidated_csv(
         if tmp_path.exists():
             tmp_path.unlink(missing_ok=True)
         raise
+
+    if report.new_row_count >= _IMPORT_NEW_ROW_WARN_THRESHOLD:
+        total = report.existing_row_count + report.new_row_count
+        report.warnings.append(
+            f"{target_locale}: this import adds {report.new_row_count} new elements "
+            f"(file now {total} rows); Weglot processes a limited number of elements "
+            f"per import (~500) — verify all rows applied via the sentinel check, or "
+            f"split this run into smaller batches"
+        )
 
     report.written_to = out_path
     return report

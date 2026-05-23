@@ -1525,6 +1525,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             summary_pairs=pairs,
             out_path=out_csv,
         )
+        warnings.extend(emission_report.warnings)  # T5: large single-import heads-up
         per_locale_results[locale] = {
             "dry_run": False,
             "engine": "translator",
@@ -1659,6 +1660,7 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
             summary_pairs=pairs,
             out_path=out_csv,
         )
+        warnings.extend(emission_report.warnings)  # T5: large single-import heads-up
         per_locale[locale] = {
             "dry_run": args.dry_run,
             "unit_count": len(units),
