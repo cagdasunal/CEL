@@ -353,6 +353,67 @@ def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
         assert data_rows == [], f"ok=False translation leaked into CSV: {data_rows}"
 
 
+def test_translate_surfaces_emit_warnings_into_report(tmp_path: Path, monkeypatch):
+    """F2 (review 103): a warning from emit_consolidated_csv (e.g. the 5 MB file-size
+    heads-up) must reach report.json — exercises the cli plumbing
+    `warnings.extend(emission_report.warnings)`. Drive the REAL emit with a tiny size
+    threshold so any written CSV produces the warning, then assert it surfaces."""
+    from tools.summary import llms_parser, batch_runner, config
+    from tools.translator import weglot
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        "gen-0-landing": {
+            "url": "https://www.englishcollege.com/learn-english-usa",
+            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
+            "content_type": "landing",
+            "locale": "en",
+        }
+    }), encoding="utf-8")
+
+    weglot_dir = tmp_path / "weglot"
+    weglot_dir.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
+    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
+    monkeypatch.setattr(weglot, "_WEGLOT_IMPORT_WARN_BYTES", 50)  # tiny: even the header trips it
+    monkeypatch.setattr(
+        llms_parser, "fetch_and_parse",
+        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
+    )
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        # Clean 2-paragraph target (heading + sentence), no number drift → ok=True → reaches emit.
+        return [
+            batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=True,
+                content="## Englische Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
+            )
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    out = tmp_path / "out"
+    rc = cli.main([
+        "translate", "--no-dry-run", "--locale", "de",
+        "--from-run", str(prior), "--out-dir", str(out),
+    ])
+    assert rc == 0
+    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
+    assert any("5 MB import limit" in w for w in phase.get("warnings", [])), \
+        f"emit size warning did not surface into report.json: {phase.get('warnings')}"
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12

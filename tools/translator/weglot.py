@@ -29,17 +29,17 @@ _CSV_COLUMNS = ("id", "language_from", "language_to", "word_from", "word_to", "t
 _CSV_DIALECT = "weglot-semicolon"
 _SEPARATOR = ";"
 
-# Weglot's CSV importer processes a limited number of NEW elements per import
-# operation (~500 per Weglot's published guidance, 2026). The *consolidated*
-# on-disk file legitimately grows past that across many incremental imports —
-# production locale files are 538-593 rows and import fine, so a per-FILE cap is
-# falsified by ar.csv@538 importing fully (tracker-098 T5 verification). We
-# therefore do NOT guard total file size (that would false-fire on every locale,
-# every run). We DO warn when a SINGLE run appends an unusually large number of
-# new rows, because that one import is the operation that could hit the per-import
-# limit. This is a hedged heads-up keyed on new_row_count, not a hard gate — the
-# authoritative post-import check is the sentinel verifier (import-status.json).
-_IMPORT_NEW_ROW_WARN_THRESHOLD = 450
+# Weglot's GENERAL translation CSV import — the word_from/word_to overrides this
+# emitter produces — has NO documented row maximum; the only limits are a 5 MB
+# file size and a UTF-8 encoding requirement (Weglot Help Center articles 432 +
+# 206, 2026). The separate 500-element cap applies to Dynamic Content / URL-slug /
+# Exclusion-rule imports, NOT this file (verified tracker-098 T5; live locale
+# files are 538-593 rows and import fine — a row-count cap on this CSV is a
+# non-applicable limit). So we guard the REAL constraint: warn if the written file
+# approaches 5 MB. The largest live file today is ~222 KB, so this is dormant
+# headroom that fires only if the consolidated CSV genuinely grows toward the cap.
+_WEGLOT_IMPORT_MAX_BYTES = 5 * 1024 * 1024  # 5 MB — Weglot CSV import hard limit
+_WEGLOT_IMPORT_WARN_BYTES = int(_WEGLOT_IMPORT_MAX_BYTES * 0.9)  # warn at 90% (≈4.5 MB)
 
 
 # Register a dialect with semicolon separator (Weglot's required format).
@@ -188,13 +188,11 @@ def emit_consolidated_csv(
             tmp_path.unlink(missing_ok=True)
         raise
 
-    if report.new_row_count >= _IMPORT_NEW_ROW_WARN_THRESHOLD:
-        total = report.existing_row_count + report.new_row_count
+    written_bytes = len(out_text.encode("utf-8"))
+    if written_bytes >= _WEGLOT_IMPORT_WARN_BYTES:
         report.warnings.append(
-            f"{target_locale}: this import adds {report.new_row_count} new elements "
-            f"(file now {total} rows); Weglot processes a limited number of elements "
-            f"per import (~500) — verify all rows applied via the sentinel check, or "
-            f"split this run into smaller batches"
+            f"{target_locale}: CSV is {written_bytes / 1_048_576:.1f} MB, approaching "
+            f"Weglot's 5 MB import limit — split the file or prune stale rows before importing"
         )
 
     report.written_to = out_path

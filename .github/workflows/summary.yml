@@ -115,38 +115,41 @@ jobs:
           FROM_RUN: ${{ inputs.from_run }}
         run: |
           set -o pipefail
-          ARGS="$MODE"
+          # Bash array, not a string: every element is passed as one quoted argv
+          # word via "${ARGS[@]}", so a dispatch input containing spaces/globs/shell
+          # metacharacters can't word-split or inject (review 103 F3).
+          ARGS=("$MODE")
           if [ "$DRY_RUN" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+            ARGS+=(--dry-run)
           else
-            ARGS="$ARGS --no-dry-run"
+            ARGS+=(--no-dry-run)
           fi
           if [ "$SYNC" = "true" ]; then
-            ARGS="$ARGS --sync"
+            ARGS+=(--sync)
           fi
           if [ "$CONFIRM_COST" = "true" ]; then
-            ARGS="$ARGS --confirm-cost"
+            ARGS+=(--confirm-cost)
           fi
           if [ "$EXCLUDE_BLOG" = "true" ]; then
-            ARGS="$ARGS --exclude-blog"
+            ARGS+=(--exclude-blog)
           fi
           if [ -n "$COLLECTION_FILTER" ]; then
-            ARGS="$ARGS --collection $COLLECTION_FILTER"
+            ARGS+=(--collection "$COLLECTION_FILTER")
           fi
           if [ -n "$LOCALE_FILTER" ]; then
-            ARGS="$ARGS --locale $LOCALE_FILTER"
+            ARGS+=(--locale "$LOCALE_FILTER")
           fi
           if [ -n "$LIMIT" ]; then
-            ARGS="$ARGS --limit $LIMIT"
+            ARGS+=(--limit "$LIMIT")
           fi
           if [ -n "$BATCH_ID" ]; then
-            ARGS="$ARGS --batch-id $BATCH_ID"
+            ARGS+=(--batch-id "$BATCH_ID")
           fi
           if [ -n "$FROM_RUN" ]; then
-            ARGS="$ARGS --from-run $FROM_RUN"
+            ARGS+=(--from-run "$FROM_RUN")
           fi
-          echo "Running: python3 -m tools.summary $ARGS"
-          python3 -m tools.summary $ARGS 2>&1 | tee /tmp/summary-stdout.log
+          echo "Running: python3 -m tools.summary ${ARGS[*]}"
+          python3 -m tools.summary "${ARGS[@]}" 2>&1 | tee /tmp/summary-stdout.log
           rc=${PIPESTATUS[0]}
           exit $rc
 

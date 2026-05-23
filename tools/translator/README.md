@@ -107,14 +107,17 @@ id;language_from;language_to;word_from;word_to;type     (semicolon, minimal-quot
   `(word_from, language_to)`**, appends the new rows, and atomic-writes. A translator
   run therefore **never clobbers Fidelo translations** — Fidelo and translator rows
   coexist in one file. Idempotent: same inputs → byte-identical output.
-- `EmissionReport.warnings` — populated when a **single import adds ≥ 450 new rows**
-  (`new_row_count`). Weglot processes a limited number of elements per import (~500);
-  the heads-up is keyed on the per-import count, **not** total file size — the
-  consolidated on-disk file legitimately grows past 500 across many incremental imports
-  (live locale files are 538–593 rows and import fine, so a per-file cap is falsified).
-  The authoritative post-import completeness check is the sentinel verifier
-  (`docs/admin/weglot-imports/import-status.json`), not this warning. Callers should
-  surface `report.warnings` to their run report (the summary CLI does).
+- `EmissionReport.warnings` — populated when the written CSV approaches Weglot's
+  **5 MB file-size import limit**. Per the Weglot Help Center ([432](https://support.weglot.com/article/432-what-can-we-export-import),
+  [206](https://support.weglot.com/article/206-can-i-export-my-translations)), a
+  **general translation CSV import** (what this emitter produces) has **no documented
+  row maximum** — only the 5 MB size cap and a UTF-8 requirement. The separate
+  **500-element cap applies to Dynamic Content / URL-slug / Exclusion-rule imports, not
+  this CSV** (live locale files are already 538–593 rows and import fine). Largest live
+  file ≈ 222 KB, so the warning is dormant headroom that fires only if the consolidated
+  CSV genuinely grows toward 5 MB. Callers should surface `report.warnings` to their run
+  report (the summary CLI does); the authoritative post-import completeness check is the
+  sentinel verifier (`docs/admin/weglot-imports/import-status.json`).
 
 The summary tool's `tools/summary/csv_emitter.py` re-exports these (keeping
 `SummaryPair` as a back-compat alias) and adds its summary-specific paragraph
