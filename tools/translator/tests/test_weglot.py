@@ -129,25 +129,31 @@ def test_emit_escapes_internal_quotes_like_fidelo(tmp_path: Path):
     assert rows[1][3] == 'Say "hi"' and rows[1][4] == 'Sag "hallo"'
 
 
-def test_emit_warns_on_large_single_import(tmp_path: Path):
-    """T5 (tracker-098): a single run that appends an unusually large number of new
-    rows gets a heads-up warning (Weglot processes a limited element count per import).
-    Keyed on new_row_count, NOT total file size — so it fires on the run that could
-    actually hit the per-import limit, not on an accumulated file that imports fine."""
+def test_emit_warns_when_csv_approaches_5mb(tmp_path: Path, monkeypatch):
+    """F1 (review 103): the file-size warning fires when the WRITTEN CSV approaches
+    Weglot's real 5 MB import limit — the ONLY documented cap for general translation
+    CSVs (Help Center 432/206; the 500-element cap is for dynamic/slug/exclusion
+    imports, not this file). Monkeypatch the threshold low so we needn't write 4.5 MB.
+    Doubles as the boundary test: just over the threshold must warn."""
+    from tools.translator import weglot
+    monkeypatch.setattr(weglot, "_WEGLOT_IMPORT_WARN_BYTES", 200)  # a few rows exceed this
     csv_path = tmp_path / "de.csv"
-    many = [WeglotPair(word_from=f"source string number {i}", word_to=f"ziel {i}") for i in range(460)]
+    pairs = [
+        WeglotPair(word_from=f"a fairly long source string number {i}",
+                   word_to=f"eine ziemlich lange deutsche zielzeichenkette {i}")
+        for i in range(10)
+    ]
     report = emit_consolidated_csv(
         target_locale="de", existing_csv_path=csv_path,
-        summary_pairs=many, out_path=csv_path,
+        summary_pairs=pairs, out_path=csv_path,
     )
-    assert report.new_row_count == 460
-    assert report.warnings, "expected a large-import warning"
-    assert any("de" in w and "460" in w for w in report.warnings)
+    assert report.warnings, "expected a 5 MB file-size warning"
+    assert any("MB" in w and "5 MB import limit" in w for w in report.warnings)
 
 
-def test_emit_no_warning_on_normal_import(tmp_path: Path):
-    """T5: a normal-sized run (well under the threshold) emits no large-import warning,
-    so the signal stays meaningful and doesn't false-fire on every run."""
+def test_emit_no_size_warning_under_threshold(tmp_path: Path):
+    """F1: a normal small file (well under 5 MB) emits no size warning, so the signal
+    stays meaningful and never false-fires at production sizes (largest live ≈222 KB)."""
     csv_path = tmp_path / "de.csv"
     csv_path.write_text(_FIDELO_CSV, encoding="utf-8")  # 2 existing rows, like production
     pairs = [WeglotPair(word_from=f"para {i}", word_to=f"absatz {i}") for i in range(120)]
