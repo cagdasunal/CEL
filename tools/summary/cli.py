@@ -1874,12 +1874,26 @@ def _build_link_candidate_pool(
     return tuple(out)
 
 
+# Localized housing-hub root slugs (2026-05-23, derived from llms.txt). The /housing
+# collection is URL-translated in some locales: de→unterkunft, fr→logements,
+# es→alojamiento; it/pt/ko/ja/ar keep `housing`. A path is "housing" if its first segment
+# (after an optional /<locale>/ prefix) is one of these.
+_HOUSING_ROOT_SLUGS = frozenset({"housing", "unterkunft", "logements", "alojamiento"})
+_LOCALE_PREFIX_SLUGS = frozenset({"de", "fr", "es", "it", "pt", "ko", "ja", "ar"})
+
+
 def _is_housing_path(url: str) -> bool:
-    """True if `url`'s path is the /housing hub or a /housing/* detail page (tracker-098)."""
+    """True if `url` is a /housing hub or detail page in ANY locale (tracker-098;
+    2026-05-23 locale-aware). Recognizes the localized hub slug (e.g. `/de/unterkunft`,
+    `/fr/logements`, `/es/alojamiento`) + their detail pages, not just the EN `/housing`."""
     import urllib.parse
 
-    segments = urllib.parse.urlparse(url).path.strip("/").split("/")
-    return bool(segments) and segments[0] == "housing"
+    segments = [s for s in urllib.parse.urlparse(url).path.strip("/").split("/") if s]
+    if not segments:
+        return False
+    if segments[0] in _LOCALE_PREFIX_SLUGS:  # skip a leading locale prefix
+        segments = segments[1:]
+    return bool(segments) and segments[0] in _HOUSING_ROOT_SLUGS
 
 
 # ---- Report rendering ----
