@@ -492,6 +492,21 @@ def _latest_summary_run_dir() -> Path | None:
     return None
 
 
+def _format_run_dir_stamp(name: str) -> str:
+    """Parse a summary-dryrun dir name ('YYYYMMDDTHHMMSSZ') into a readable UTC
+    string for display, or '' if the name isn't a recognized timestamp.
+
+    Lets the summaries page state WHEN its data is from (the source run),
+    independent of report.json — which is not committed, so the run-dir name is
+    the only always-present date source.
+    """
+    try:
+        dt = datetime.strptime(name, "%Y%m%dT%H%M%SZ")
+    except (ValueError, TypeError):
+        return ""
+    return dt.strftime("%Y-%m-%d %H:%M UTC")
+
+
 def _count_words_in_markdown(md: str) -> int:
     """Strip Markdown syntax + count whitespace-separated words. Best-effort."""
     if not md:
@@ -638,6 +653,13 @@ def render_summaries_html() -> str:
         parts.append(f'      <p class="status-label">Last updated {escape(started_human)}{dry_label}.</p>')
     else:
         parts.append(f'      <p class="status-label">{total} page summaries ready{dry_label}.</p>')
+    run_stamp = _format_run_dir_stamp(latest.name)
+    if run_stamp:
+        parts.append(
+            f'      <p>Summary data is from the run on <strong>{escape(run_stamp)}</strong>. '
+            f'This page refreshes every 15 minutes, but the summaries themselves change only '
+            f'when a new Summary-script run is committed.</p>'
+        )
     parts.append("    </section>")
 
     # Aggregate KPIs.
