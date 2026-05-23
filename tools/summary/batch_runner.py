@@ -88,6 +88,10 @@ class BatchHandle:
     # wait_for_batch deletes them once the batch reaches a terminal state (the
     # cache must outlive async batch processing, so we can't delete at submit).
     cache_names: list = field(default_factory=list)
+    # M5 (2026-05-23): count of eligible caches that FAILED to create (swallowed in
+    # _create_caches). A silent cache miss means full-price billing with no signal — a
+    # burst contributor — so surface it on the handle for the report.
+    cache_create_failures: int = 0
 
 
 @dataclass
@@ -549,8 +553,13 @@ def submit_batch(
     display_name = f"cel-summary-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
 
     cache_by_system: dict[str, str] = {}
+    cache_failures = 0
     if config.ENABLE_EXPLICIT_CACHE:
-        cache_by_system = _create_caches(client, plan_caches(requests, model))
+        _plan = plan_caches(requests, model)
+        cache_by_system = _create_caches(client, _plan)
+        # M5 (2026-05-23): surface eligible caches that silently failed to create — a
+        # cache that doesn't engage means full-price input billing with no signal.
+        cache_failures = max(0, sum(1 for e in _plan if e.eligible) - len(cache_by_system))
 
     def _src(with_cache: bool) -> list[dict]:
         out: list[dict] = []
@@ -583,6 +592,7 @@ def submit_batch(
         submitted_at=datetime.now(timezone.utc).isoformat(),
         dry_run=False,
         cache_names=list(cache_by_system.values()),
+        cache_create_failures=cache_failures,
     )
     _persist_last_batch(handle, requests, model)
     return handle
