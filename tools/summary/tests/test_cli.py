@@ -279,11 +279,16 @@ def test_translate_aborts_when_llms_unavailable(tmp_path: Path, monkeypatch):
 def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
     """I4 (tracker-099): a translation whose ok=False MUST NOT appear in the emitted CSV.
 
-    This exercises the caller-level gate in _execute_translate:
+    Exercises the caller-level gate in _execute_translate:
         if not t.ok: failed_count += 1; continue
-    The engine-level ok flag is set correctly (test_engine.py covers that), but this
-    test asserts the CLI caller actually honours it — the CSV must stay empty even
-    when the batch returns a succeeded=False result for every unit.
+
+    The failing translation here is a NON-EMPTY, paragraph-matched target that fails a
+    BLOCKING QA check (number_drift: source has "12", target has "99"). This is
+    deliberate: a succeeded=False / empty-target result would be dropped by the
+    empty/paragraph-mismatch skips regardless of the ok gate, so it would NOT prove the
+    gate works. With a non-empty paragraph-matched target, the ONLY thing stopping the
+    row from reaching the CSV is `if not t.ok: continue` — so if that gate is ever
+    removed, this test fails (the bad row leaks).
     """
     from tools.summary import llms_parser, batch_runner, config
 
@@ -292,7 +297,7 @@ def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
     (prior / "en-summaries.json").write_text(json.dumps({
         "gen-0-landing": {
             "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": "## Learn English\n\nJoin us at CEL.\n",
+            "markdown": "## Course length\n\nStudents finish in 12 weeks.\n",
             "content_type": "landing",
             "locale": "en",
         }
@@ -312,13 +317,17 @@ def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
     def fake_submit(requests, **kw):
         captured["requests"] = requests
         return batch_runner.BatchHandle(
-            batch_id="b-fail", request_count=len(requests), submitted_at="t", dry_run=False
+            batch_id="b-bad", request_count=len(requests), submitted_at="t", dry_run=False
         )
 
     def fake_wait(handle, **kw):
+        # Non-empty, 2-paragraph target that DROPS the source number (12 → 99):
+        # number_drift is BLOCKING (qa.py) and independent of check_urls, so ok=False
+        # while the target is fully formed and would otherwise pass paragraph pairing.
         return [
             batch_runner.BatchResult(
-                custom_id=r.custom_id, succeeded=False, error="simulated_failure"
+                custom_id=r.custom_id, succeeded=True,
+                content="## Kurslaenge\n\nStudierende schliessen in 99 Wochen ab.",
             )
             for r in captured["requests"]
         ]
@@ -334,7 +343,7 @@ def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
     assert rc == 0
     phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
     de_result = phase["per_locale"]["de"]
-    assert de_result.get("failed") == 1, "expected 1 failed translation"
+    assert de_result.get("failed") == 1, "expected 1 failed (number_drift) translation"
     assert de_result.get("succeeded") == 0
 
     csv_path = weglot_dir / "de.csv"
