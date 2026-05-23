@@ -791,6 +791,19 @@ def _link_internal_domain_ok(url: str) -> bool:
     return host == _INTERNAL_LINK_DOMAIN or host.endswith("." + _INTERNAL_LINK_DOMAIN)
 
 
+def links_target_locale(md: str, locale: str) -> tuple[bool, list[str]]:
+    """Validate that EVERY link in a TRANSLATED summary is an INTERNAL, SAME-(target)-
+    locale URL (2026-05-23, translate-phase T4). Returns (ok, offending_urls): a link is
+    offending if it is not on englishcollege.com (or root-relative) OR not in `locale`'s
+    path. Offline structural check only — no HTTP probing (that is why the translate path
+    historically ran with qa_check_urls disabled). Empty link set passes."""
+    bad: list[str] = []
+    for _anchor, url in _LINK_RE.findall(md or ""):
+        if not _link_internal_domain_ok(url) or not _link_locale_ok(url, locale):
+            bad.append(url)
+    return (not bad, bad)
+
+
 def _word_shingles(text: str, n: int) -> set[tuple[str, ...]]:
     """Return the set of lowercase word n-grams in `text` (for near-duplicate detection)."""
     words = re.findall(r"\b\w+\b", text.lower())

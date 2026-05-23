@@ -752,3 +752,23 @@ def test_text_preserved_rejects_rewrite():
     )
     ok, ratio = text_preserved(orig, rewrite)
     assert not ok and ratio < 0.92
+
+
+def test_links_target_locale():
+    """T4 (2026-05-23): a translated summary's links must all be internal +
+    same-(target)-locale; off-locale or off-domain links are flagged."""
+    from tools.summary.qa import links_target_locale
+
+    ok, bad = links_target_locale(
+        "see [k](https://www.englishcollege.com/de/kurse) and "
+        "[v](https://www.englishcollege.com/de/vancouver)", "de",
+    )
+    assert ok and bad == []
+    # Off-locale: an unswapped EN link in a German translation.
+    ok, bad = links_target_locale("see [k](https://www.englishcollege.com/courses)", "de")
+    assert not ok and "https://www.englishcollege.com/courses" in bad
+    # Off-domain.
+    ok, bad = links_target_locale("see [x](https://claude.ai/y)", "de")
+    assert not ok and bad == ["https://claude.ai/y"]
+    # No links → passes.
+    assert links_target_locale("no links here", "de") == (True, [])

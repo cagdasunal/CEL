@@ -92,3 +92,27 @@ def test_blog_section_extraction():
     assert any(e.locale == "en" for e in blog)
     assert any(e.locale == "de" for e in blog)
     assert any(e.locale == "fr" for e in blog)
+
+
+def test_find_equivalent_or_fallback():
+    """T2 (2026-05-23): exact same-locale equivalent → nearest in-index same-locale
+    ancestor → locale root → None. Every result is target-locale-prefixed + in-index, so
+    a fallback can never leak cross-locale."""
+    from tools.summary.llms_parser import LlmsEntry
+
+    idx = LlmsIndex(entries=[
+        LlmsEntry(url="https://www.englishcollege.com/de/kurse", title="", description="", section="", locale="de"),
+        LlmsEntry(url="https://www.englishcollege.com/de/", title="", description="", section="", locale="de"),
+    ])
+    # Exact swap: /kurse → /de/kurse.
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/kurse", "de"
+    ) == "https://www.englishcollege.com/de/kurse"
+    # Missing slug → falls back to the de hub (the only in-index ancestor).
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/post/missing-slug", "de"
+    ) == "https://www.englishcollege.com/de/"
+    # A locale with nothing in the index → None (never a cross-locale leak).
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/post/x", "fr"
+    ) is None

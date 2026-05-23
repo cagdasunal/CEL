@@ -80,6 +80,45 @@ class LlmsIndex:
             return candidate
         return None
 
+    def find_equivalent_or_fallback(
+        self, source_url: str, target_locale: str
+    ) -> Optional[str]:
+        """Same-locale link target with a SAFE fallback chain (2026-05-23):
+        exact equivalent → nearest in-index SAME-LOCALE ancestor path → the locale
+        root → None. Preserves internal-link equity instead of dropping a link when an
+        exact slug-equivalent is missing (the documented multilingual-SEO best practice
+        of keeping links within the locale subdirectory).
+
+        Every returned URL is verified present in the index AND carries the target
+        locale's prefix (it is built from `_swap_locale_prefix`, which prepends the
+        target locale), so a fallback can NEVER leak to another locale. Returns None
+        only when not even the locale root is in the index.
+        """
+        exact = self.find_equivalent(source_url, target_locale)
+        if exact:
+            return exact
+        candidate = _swap_locale_prefix(source_url, target_locale)
+        if not candidate:
+            return None
+        parsed = urllib.parse.urlparse(candidate)
+        segs = [s for s in parsed.path.strip("/").split("/") if s]
+        # For a prefixed locale the first segment IS the locale; never drop below it.
+        floor = 1 if target_locale != "en" else 0
+        while len(segs) > floor:
+            segs = segs[:-1]
+            for path in ("/" + "/".join(segs), "/" + "/".join(segs) + "/"):
+                ancestor = urllib.parse.urlunparse(parsed._replace(path=path))
+                if ancestor in self._by_url:
+                    return ancestor
+        # Last resort: the locale root itself (with/without trailing slash).
+        root_paths = ((f"/{target_locale}/", f"/{target_locale}")
+                      if target_locale != "en" else ("/",))
+        for path in root_paths:
+            root = urllib.parse.urlunparse(parsed._replace(path=path))
+            if root in self._by_url:
+                return root
+        return None
+
     def urls_in_locale_excluding(
         self,
         locale: str,
