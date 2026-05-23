@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-23T00:44:45.413393-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-22T22:09:57.339778-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-22T06:57:11.413612-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-22T04:37:05.266624-07:00",
-      "detail": {
-        "slugs": [
-          "rester-en-contact-sejour-linguistique"
-        ]
-      }
     }
   ]
 }
