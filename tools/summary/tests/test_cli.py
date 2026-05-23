@@ -483,6 +483,63 @@ def test_translate_writes_translation_status(tmp_path: Path, monkeypatch):
     assert not (weglot_dir2 / "translation-status.json").exists()
 
 
+def test_translation_status_multi_locale(tmp_path: Path, monkeypatch):
+    """F4 (review 105): a cid translated into multiple locales lands in per_item with
+    all locales (sorted), and per_locale.translated counts the CSV-paired set per
+    locale — so the dashboard Overview row and the Latest column agree (F1)."""
+    from tools.summary import llms_parser, batch_runner, config
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        "gen-0-landing": {
+            "url": "https://www.englishcollege.com/learn-english-usa",
+            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
+            "content_type": "landing",
+            "locale": "en",
+        }
+    }), encoding="utf-8")
+
+    weglot_dir = tmp_path / "weglot"
+    weglot_dir.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
+    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
+    monkeypatch.setattr(config, "TARGET_TRANSLATION_LOCALES", ["de", "fr"])  # 2 locales, no --locale
+    monkeypatch.setattr(
+        llms_parser, "fetch_and_parse",
+        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
+    )
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = requests
+        return batch_runner.BatchHandle(
+            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
+        )
+
+    def fake_wait(handle, **kw):
+        return [
+            batch_runner.BatchResult(
+                custom_id=r.custom_id, succeeded=True,
+                content="## Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
+            )
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    out = tmp_path / "out"
+    rc = cli.main(["translate", "--no-dry-run", "--from-run", str(prior), "--out-dir", str(out)])
+    assert rc == 0
+    status = json.loads((weglot_dir / "translation-status.json").read_text(encoding="utf-8"))
+    assert status["per_item"]["gen-0-landing"] == ["de", "fr"]
+    assert status["per_locale"]["de"]["translated"] == 1
+    assert status["per_locale"]["fr"]["translated"] == 1
+    assert sorted(status["target_locales"]) == ["de", "fr"]
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12
