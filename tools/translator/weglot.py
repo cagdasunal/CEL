@@ -38,8 +38,11 @@ _SEPARATOR = ";"
 # non-applicable limit). So we guard the REAL constraint: warn if the written file
 # approaches 5 MB. The largest live file today is ~222 KB, so this is dormant
 # headroom that fires only if the consolidated CSV genuinely grows toward the cap.
-_WEGLOT_IMPORT_MAX_BYTES = 5 * 1024 * 1024  # 5 MB — Weglot CSV import hard limit
-_WEGLOT_IMPORT_WARN_BYTES = int(_WEGLOT_IMPORT_MAX_BYTES * 0.9)  # warn at 90% (≈4.5 MB)
+# Decimal MB (5,000,000), not MiB: Weglot states "5 MB" and web file-size limits
+# are conventionally decimal. Using the smaller value means the warning never
+# *under*-warns relative to the real cap (review 104 M1).
+_WEGLOT_IMPORT_MAX_BYTES = 5 * 1000 * 1000  # 5 MB — Weglot CSV import hard limit
+_WEGLOT_IMPORT_WARN_BYTES = int(_WEGLOT_IMPORT_MAX_BYTES * 0.9)  # warn at 90% (4.5 MB)
 
 
 # Register a dialect with semicolon separator (Weglot's required format).
@@ -191,7 +194,7 @@ def emit_consolidated_csv(
     written_bytes = len(out_text.encode("utf-8"))
     if written_bytes >= _WEGLOT_IMPORT_WARN_BYTES:
         report.warnings.append(
-            f"{target_locale}: CSV is {written_bytes / 1_048_576:.1f} MB, approaching "
+            f"{target_locale}: CSV is {written_bytes / 1_000_000:.1f} MB, approaching "
             f"Weglot's 5 MB import limit — split the file or prune stale rows before importing"
         )
 
