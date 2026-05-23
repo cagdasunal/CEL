@@ -69,11 +69,7 @@ jobs:
         if: steps.weglot.outputs.error != ''
         run: python tools/weglot/update_log.py --event error --error "${{ steps.weglot.outputs.error }}"
 
-      - name: Step 4d — Generate HTML status page
-        if: always()
-        run: python -m tools.weglot.generate_status_page
-
-      - name: Step 4e — Check Weglot CSV import status
+      - name: Step 4d — Check Weglot CSV import status
         if: always()
         timeout-minutes: 3
         continue-on-error: true
@@ -84,7 +80,10 @@ jobs:
           if [ -f docs/admin/weglot-imports/import-status.json ]; then
             python3 -c "import json; s=json.load(open('docs/admin/weglot-imports/import-status.json')); print('verdicts:', {c: i['verdict'] for c, i in s['languages'].items()})"
           fi
-          python -m tools.weglot.generate_status_page
+
+      - name: Step 4e — Generate HTML status page
+        if: always()
+        run: python -m tools.weglot.generate_status_page
 
       - name: Step 4f — Generate offers viewer HTML
         if: always()
