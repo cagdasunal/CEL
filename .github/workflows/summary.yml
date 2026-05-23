@@ -185,6 +185,13 @@ jobs:
             data/seo-intel/summary-last-batch.json; do
             [ -f "$f" ] && git add "$f" || true
           done
+          # tracker-100: ALSO commit the freshly-generated en-summaries.json. Without this
+          # the dashboard (content-pipeline.yml -> generate_status_page) only ever sees the
+          # last MANUALLY-committed run, so /admin/#summaries was frozen at 2026-05-21 even
+          # as the page regenerated daily. Stage only the newest run's file (lexical = chrono)
+          # to keep the repo lean; the full run dir is preserved as a 14-day artifact above.
+          latest_summaries=$(ls -1 data/seo-intel/summary-dryrun/*/en-summaries.json 2>/dev/null | sort | tail -1 || true)
+          [ -n "$latest_summaries" ] && git add "$latest_summaries" || true
           if git diff --cached --quiet; then
             echo "No CSV / static-summary / state changes to commit."
             exit 0
