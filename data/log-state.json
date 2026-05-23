@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-23T14:31:20.672559-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-23T13:34:28.984766-07:00",
       "detail": {}
     },
@@ -53,11 +58,6 @@
           "vuoi-perfezionare-inglese-soggiorni-linguistici-cambiano-tutto"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-23T02:28:22.253695-07:00",
-      "detail": {}
     }
   ]
 }
