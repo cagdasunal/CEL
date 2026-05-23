@@ -213,6 +213,21 @@ AUDIT_MANUAL_REVIEW_THRESHOLD = 80
 # Translation unit — paragraph (not sentence). Matches Weglot's natural unit.
 TRANSLATION_UNIT = "paragraph"
 
+# Per-request OUTPUT-token allowance for cost estimation (2026-05-23, audit C1 fix).
+# Gemini bills THINKING tokens AS output; a Pro 4-part request spends ~3000-5000 thinking
+# + ~1500-2500 visible (the BatchRequest.max_tokens ceiling is 16000 for this reason), so
+# the old flat 800-token assumption under-projected Pro by ~6x — the root cause of the
+# ~806 TRY billing burst. Keyed by (model_family, enable_thinking). CONSERVATIVE by design:
+# over-estimating is the safe direction (it makes the cost gate stricter, not looser).
+# Flash forces thinking_budget=0, so both flash keys are visible-output only.
+OUTPUT_TOKEN_ESTIMATE = {
+    ("pro", True): 5500,    # thinking-heavy 4-part landing / courses / housing generation
+    ("pro", False): 1000,   # translation (thinking disabled) + any no-think Pro path
+    ("flash", True): 1300,  # blog single-block (Flash thinking_budget=0; margin for visible)
+    ("flash", False): 1300,
+}
+DEFAULT_OUTPUT_TOKEN_ESTIMATE = 1500
+
 # Extended thinking budget for content generation (translation passes disable thinking).
 THINKING_BUDGET_TOKENS = 1500
 

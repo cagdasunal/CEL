@@ -204,14 +204,22 @@ def estimate_batch_cost_usd(
         sys_blocks = getattr(r, "system_blocks", None)
         user_msg = getattr(r, "user_message", None)
         if sys_blocks is None and user_msg is None:
-            # Non-BatchRequest (e.g. TranslationUnit) — fall back to avg input.
+            # Non-BatchRequest (e.g. TranslationUnit) — fall back to the avg defaults.
             sys_text, sys_tok, usr_tok = "", 0, avg_input_tokens_per_request
+            out_tok = avg_output_tokens_per_request
         else:
             sys_text = _flatten_system_blocks(sys_blocks or [])
             sys_tok = _est_tokens(sys_text)
             usr_tok = _est_tokens(user_msg or "")
+            # C1 (2026-05-23): output allowance per (model family, thinking). Gemini bills
+            # thinking AS output, so a flat 800 under-projected Pro ~6x (the burst RC).
+            fam = _model_family(model)
+            thinking = bool(getattr(r, "enable_thinking", True))
+            out_tok = config.OUTPUT_TOKEN_ESTIMATE.get(
+                (fam, thinking), config.DEFAULT_OUTPUT_TOKEN_ESTIMATE
+            )
 
-        total += (avg_output_tokens_per_request / 1_000_000) * out_rate
+        total += (out_tok / 1_000_000) * out_rate
 
         if cached and sys_tok >= _cache_min_tokens(model):
             g = cache_groups.setdefault((model, sys_text), {"prefix": sys_tok, "count": 0})
@@ -667,6 +675,15 @@ def wait_for_batch(
             time.sleep(poll_interval_sec)
         else:
             raise TimeoutError(f"Batch {handle.batch_id} did not complete within {timeout_sec}s")
+    except KeyboardInterrupt:
+        # H1 (2026-05-23): a Ctrl-C / SIGTERM (e.g. a cancelled GitHub-Actions run) must
+        # STOP the batch's billing, not just exit and leave it running. Best-effort cancel,
+        # then re-raise. A submitted Gemini batch keeps processing + billing otherwise.
+        try:
+            client.batches.cancel(name=handle.batch_id)
+        except Exception:  # noqa: BLE001 — best-effort; never mask the interrupt
+            pass
+        raise
     finally:
         original_requests = _PENDING_BATCHES.pop(handle.batch_id, [])
         # tracker-097: release the explicit context caches now that the batch has
@@ -689,6 +706,13 @@ def wait_for_batch(
         )
         results.append(_parse_inline_response(inline, custom_id))
 
+    # L1 (2026-05-23): a successfully-completed batch no longer needs the recovery
+    # pointer — clear it so last-batch.json never lingers pointing at a done batch
+    # (only `cancel_batch` cleared it before, so a clean success left a stale pointer).
+    try:
+        config.LAST_BATCH_FILE.unlink(missing_ok=True)
+    except OSError:
+        pass
     return results
 
 

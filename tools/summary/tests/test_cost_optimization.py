@@ -422,3 +422,25 @@ def test_cli_cancel_batch_uses_persisted_id(monkeypatch, tmp_path):
     rc = cli.main(["cancel-batch", "--out-dir", str(tmp_path / "o")])
     assert rc == 0
     assert seen["id"] == "batches/persisted"
+
+
+def test_cost_estimate_accounts_for_pro_thinking_output():
+    """C1 (2026-05-23): Gemini bills thinking AS output, so a Pro request WITH thinking
+    must project materially higher than the same request without thinking (the old flat
+    800-token assumption under-projected Pro ~6x — the ~806 TRY burst RC). Same input,
+    same rate tier; only the output allowance differs by (family, thinking)."""
+    sys_blocks = [{"type": "text", "text": "system " * 1500}]
+    pro_think = batch_runner.BatchRequest(
+        custom_id="a", system_blocks=sys_blocks, user_message="u " * 200,
+        model="gemini-3.1-pro-preview", enable_thinking=True,
+    )
+    pro_nothink = batch_runner.BatchRequest(
+        custom_id="b", system_blocks=sys_blocks, user_message="u " * 200,
+        model="gemini-3.1-pro-preview", enable_thinking=False,
+    )
+    cost_think = batch_runner.estimate_batch_cost_usd([pro_think], mode="batch")
+    cost_nothink = batch_runner.estimate_batch_cost_usd([pro_nothink], mode="batch")
+    # Thinking output (5500 tok) dominates vs no-think (1000 tok) on the same input.
+    assert cost_think > cost_nothink * 1.5, (cost_think, cost_nothink)
+    # And the allowance is wired off config (not a hard-coded 800).
+    assert config.OUTPUT_TOKEN_ESTIMATE[("pro", True)] > config.OUTPUT_TOKEN_ESTIMATE[("pro", False)]

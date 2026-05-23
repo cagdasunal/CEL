@@ -141,6 +141,19 @@ jobs:
           rc=${PIPESTATUS[0]}
           exit $rc
 
+      - name: Cancel orphaned Gemini batch on cancel/failure (live runs only)
+        # H1 (2026-05-23): a submitted Gemini Batch keeps processing + BILLING after the
+        # GitHub-Actions run is cancelled (confirmed: a 2h33m-cancelled run left a batch
+        # that ran to completion). On cancel/failure of a live run, stop it via the
+        # persisted last-batch id. Belt-and-suspenders with the in-process KeyboardInterrupt
+        # handler in batch_runner.wait_for_batch (which the GHA grace period may cut short).
+        if: ${{ (cancelled() || failure()) && inputs.dry_run == false }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 -m tools.summary cancel-batch \
+            || echo "no orphaned batch to cancel (or already in a terminal state)"
+
       - name: Upload dry-run artifacts
         if: always()
         uses: actions/upload-artifact@v7
