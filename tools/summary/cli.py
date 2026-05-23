@@ -915,6 +915,16 @@ def _dedup_md_links(md: str) -> str:
 
 _LINK_CEILING_WORDS = 80  # mirror qa._LINK_STUFFING_WORDS_PER_LINK
 
+# Acceptance gate for the link-INSERTION pass. Because the pass preserves the prose
+# verbatim (guarded separately by qa.text_preserved), the keyword-PLACEMENT checks
+# (keyword_in_h2 / keyword_in_p1) are intentionally NOT gated here — they judge the
+# original prose, not the links, and a CMS-sourced summary may have no stored keyword_plan.
+# These are the LINK + formatting invariants that actually matter for inserting links:
+_LINK_INSERTION_CRITICAL = (
+    "no_em_dashes", "no_lists", "no_faq_schema",
+    "links_internal_domain", "links_locale_matched", "no_link_stuffing",
+)
+
 
 def _trim_links_to_ceiling(md: str) -> str:
     """Unwrap excess links (keep the FIRST N) so the link rate stays at/under 1 per ~80
@@ -1042,7 +1052,9 @@ def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, An
         if (not args.dry_run) and not cms_item_id:
             warnings.append(f"no live blog item for slug {t['slug']!r}; skipped")
             continue
-        candidates = _build_link_candidate_pool("blog_post", llms_index, t["locale"])
+        candidates = _build_link_candidate_pool(
+            "blog_post", llms_index, t["locale"], source_url=t["url"],
+        )
         user_msg = build_link_insertion_user_message(
             t["existing_md"], candidates, t["locale"], post_title=item_titles.get(t["slug"], ""),
         )
@@ -1109,14 +1121,16 @@ def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, An
         ok_preserved, ratio = text_preserved(meta["existing_md"], linked)
         rep = qa_checks(
             linked, (meta["kw"] or {}).get("primary", ""), meta["locale"],
-            _build_link_candidate_pool("blog_post", llms_index, meta["locale"]),
+            _build_link_candidate_pool("blog_post", llms_index, meta["locale"], source_url=meta["url"]),
             excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
         )
         n_links = _count_internal_md_links(linked)
-        # Accept only if the prose is preserved, no CRITICAL QA failure, and links were
-        # actually added (≥1 is a strict improvement over the current 0; the link_density
-        # score still records whether it hit the 6–8 target).
-        if ok_preserved and rep.passed and n_links >= 1:
+        # Accept only if the prose is preserved, the LINK/formatting invariants hold (NOT the
+        # keyword-placement checks — those judge the preserved prose, and CMS-sourced blogs
+        # have no stored keyword), and links were actually added (≥1 is a strict improvement
+        # over the current 0; the link_density score still records whether it hit 6–8).
+        link_ok = all(rep.checks.get(c, True) for c in _LINK_INSERTION_CRITICAL)
+        if ok_preserved and link_ok and n_links >= 1:
             wres = wf.update_item_summary(
                 collection_id=config.COLLECTIONS["blog"], item_id=meta["cms_item_id"],
                 summary_html=summary_markdown_to_html(linked),
@@ -1131,8 +1145,9 @@ def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, An
             reasons = []
             if not ok_preserved:
                 reasons.append(f"text not preserved (sim {ratio:.2f})")
-            if not rep.passed:
-                reasons.append("QA: " + "; ".join(rep.notes[:3] or ["critical fail"]))
+            if not link_ok:
+                failed_link_checks = [c for c in _LINK_INSERTION_CRITICAL if not rep.checks.get(c, True)]
+                reasons.append("QA link checks: " + ", ".join(failed_link_checks))
             if n_links < 1:
                 reasons.append("no links added")
             demoted.append({"slug": meta["slug"], "url": meta["url"], "reason": "; ".join(reasons)})
@@ -1781,10 +1796,28 @@ def _save_summary_state(state: dict[str, dict]) -> None:
         raise
 
 
+_CEL_CITIES = ("vancouver", "san-diego", "los-angeles")
+
+
+def _detect_city(text: str) -> str:
+    """Map a blog URL/title to a CEL city slug for city-matched housing ordering, or ''.
+    Canada → Vancouver (CEL's only Canadian campus). California alone is ambiguous (SD or
+    LA) → '' (let the model choose)."""
+    t = (text or "").lower()
+    if "vancouver" in t or "canada" in t:
+        return "vancouver"
+    if "san-diego" in t or "san diego" in t:
+        return "san-diego"
+    if "los-angeles" in t or "los angeles" in t:
+        return "los-angeles"
+    return ""
+
+
 def _build_link_candidate_pool(
     source_content_type: str,
     llms_index: "Optional[LlmsIndex]",
     source_locale: str = "en",
+    source_url: str = "",
 ) -> tuple[str, ...]:
     """Build the per-item link-candidate pool for `_execute_generate_english`.
 
@@ -1824,6 +1857,13 @@ def _build_link_candidate_pool(
     # new accommodation pages survive the downstream 60-candidate prompt cap.
     housing = [u for u in llms_urls if _is_housing_path(u)]
     non_housing = [u for u in llms_urls if not _is_housing_path(u)]
+    # City-matched ordering (2026-05-23): when the source post names a city, put THAT city's
+    # housing first so a Vancouver post is offered Vancouver apartments/student-houses (not
+    # just whichever homestay appears first in llms order). Stable sort preserves order
+    # within the city / non-city groups, and the hub (`/housing`, no city slug) stays high.
+    city = _detect_city(source_url)
+    if city:
+        housing.sort(key=lambda u: 0 if (city in u.lower() or u.rstrip("/").endswith("/housing")) else 1)
     seen: set[str] = set()
     out: list[str] = []
     for u in static + housing + non_housing:

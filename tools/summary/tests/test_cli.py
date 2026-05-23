@@ -658,6 +658,41 @@ def test_link_candidate_pool_omits_en_static_for_non_en_locale():
     assert "https://www.englishcollege.com/" in pool_en
 
 
+def test_detect_city():
+    assert cli._detect_city("https://www.englishcollege.com/post/living-in-vancouver") == "vancouver"
+    assert cli._detect_city("studying in Canada") == "vancouver"  # CEL's only Canadian campus
+    assert cli._detect_city("https://www.englishcollege.com/post/why-san-diego-rocks") == "san-diego"
+    assert cli._detect_city("a guide to Los Angeles") == "los-angeles"
+    assert cli._detect_city("https://www.englishcollege.com/post/grammar-tips") == ""
+    assert cli._detect_city("studying in California") == ""  # ambiguous (SD or LA)
+
+
+def test_link_candidate_pool_city_matched_housing_first():
+    """2026-05-23: a Vancouver post is offered Vancouver housing BEFORE San Diego housing,
+    so the city's apartments/student-houses surface (not just whichever appears first)."""
+    from tools.summary import llms_parser
+
+    idx = llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/homestay-san-diego",
+            title="", description="", section="Housing", locale="en"),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/student-house-vancouver",
+            title="", description="", section="Housing", locale="en"),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/shared-apartment-downtown-vancouver",
+            title="", description="", section="Housing", locale="en"),
+    ])
+    pool = cli._build_link_candidate_pool(
+        "blog_post", idx, "en",
+        source_url="https://www.englishcollege.com/post/5-surprises-living-vancouver-student",
+    )
+    details = [u for u in pool if cli._is_housing_path(u) and not u.rstrip("/").endswith("/housing")]
+    van_idx = next(i for i, u in enumerate(details) if "vancouver" in u)
+    sd_idx = next(i for i, u in enumerate(details) if "san-diego" in u)
+    assert van_idx < sd_idx, details
+
+
 def test_is_housing_path_helper():
     """_is_housing_path matches the /housing hub + /housing/* details, not /pb/ or others."""
     assert cli._is_housing_path("https://www.englishcollege.com/housing")

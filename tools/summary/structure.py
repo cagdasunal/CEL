@@ -209,6 +209,36 @@ def summary_markdown_to_html(md: str) -> str:
     return _markdown_to_html(md, allowed_heading_levels=(2, 3, 4))
 
 
+def summary_html_to_markdown(html: str) -> str:
+    """Inverse of summary_markdown_to_html for the limited tag set this module emits
+    (`<h2>/<h3>/<h4>/<h5>/<p>/<a>/<strong>/<em>`). Used (2026-05-23) to recover the
+    EXISTING summary of a blog whose Markdown isn't in a run manifest — read the staged
+    RichText `summary` HTML from the CMS and convert it back to Markdown so the
+    link-insertion pass has a faithful base to preserve. Unhandled tags are stripped;
+    HTML entities are unescaped. Returns "" for empty input."""
+    if not html:
+        return ""
+    s = html
+    # Inline first (so heading/paragraph wrapping doesn't swallow them).
+    s = re.sub(r'<a\b[^>]*\bhref=["\']([^"\']+)["\'][^>]*>(.*?)</a>', r'[\2](\1)', s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'</?(?:strong|b)\b[^>]*>', '**', s, flags=re.IGNORECASE)
+    s = re.sub(r'</?(?:em|i)\b[^>]*>', '*', s, flags=re.IGNORECASE)
+    # Block elements → Markdown, each on its own blank-line-separated block.
+    for level, hashes in ((2, "## "), (3, "### "), (4, "#### "), (5, "##### ")):
+        s = re.sub(
+            rf'<h{level}\b[^>]*>(.*?)</h{level}>',
+            lambda m, h=hashes: f"\n\n{h}{m.group(1).strip()}\n",
+            s, flags=re.IGNORECASE | re.DOTALL,
+        )
+    s = re.sub(r'<p\b[^>]*>(.*?)</p>', lambda m: f"\n\n{m.group(1).strip()}\n", s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'<br\s*/?>', "\n", s, flags=re.IGNORECASE)
+    s = re.sub(r'<[^>]+>', "", s)  # strip any remaining tags
+    s = _html.unescape(s)
+    s = re.sub(r'[ \t]+\n', "\n", s)       # trailing spaces
+    s = re.sub(r'\n{3,}', "\n\n", s)       # collapse extra blank lines
+    return s.strip()
+
+
 def _collapse_ws(s: str) -> str:
     return re.sub(r"\s+", " ", s).strip()
 

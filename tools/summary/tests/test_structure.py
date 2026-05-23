@@ -1,13 +1,38 @@
 """Tests for tools.summary.structure — 4-part parse + Markdown→HTML (tracker-096/098)."""
 
+import re
+
 from tools.summary.structure import (
     FourPartSummary,
     four_part_content_html,
     four_part_paragraph_html,
     parse_four_part,
     parts_to_markdown,
+    summary_html_to_markdown,
     summary_markdown_to_html,
 )
+
+
+def test_summary_html_to_markdown_roundtrip():
+    """md → html → md preserves headings, prose, and inline links (2026-05-23) so the
+    link-insertion pass can recover a CMS-only summary as a faithful Markdown base."""
+    md = (
+        "## How long to learn English in Vancouver\n\n"
+        "Most students reach B2 in 12 weeks at our "
+        "[Vancouver campus](https://www.englishcollege.com/vancouver) with small classes.\n\n"
+        "### What level do I need\n\n"
+        "All levels from A1 to C2, with placement on day one."
+    )
+    back = summary_html_to_markdown(summary_markdown_to_html(md))
+    assert "## How long to learn English in Vancouver" in back
+    assert "### What level do I need" in back
+    assert "[Vancouver campus](https://www.englishcollege.com/vancouver)" in back
+    assert "Most students reach B2 in 12 weeks" in re.sub(r"\s+", " ", back)
+    assert "All levels from A1 to C2" in re.sub(r"\s+", " ", back)
+
+
+def test_summary_html_to_markdown_empty():
+    assert summary_html_to_markdown("") == ""
 
 _FOUR_PART = """## English School Life
 
