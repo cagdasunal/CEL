@@ -1387,6 +1387,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
 
     per_locale_results: dict[str, dict] = {}
+    # cid → [locales it was successfully translated + emitted into the CSV]. Feeds
+    # the /admin/#summaries dashboard's per-item "Translated" coverage column.
+    translated_per_item: dict[str, list[str]] = {}
     for locale in target_locales:
         # Build TranslationUnits (one per non-skipped, non-empty EN summary).
         units = []
@@ -1513,6 +1516,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                 continue
             try:
                 pairs.extend(csv_emitter.pair_from_paragraphs(en_paragraphs, tr_paragraphs))
+                translated_per_item.setdefault(orig_cid, []).append(locale)
             except ValueError as e:
                 warnings.append(f"pair_from_paragraphs failed for {orig_cid}: {e}")
 
@@ -1539,10 +1543,38 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             "existing_rows": emission_report.existing_row_count,
         }
 
+    # Persist a translation-status artifact next to the CSVs (live runs only) so the
+    # /admin/#summaries dashboard can surface per-locale + per-item translation coverage
+    # (Overview "Translations" row + Latest "Translated" column). The summary.yml live
+    # commit step already commits docs/admin/weglot-imports/, so this ships with the CSVs.
+    status_path = None
+    if not args.dry_run:
+        status = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_run": (args.from_run.name if args.from_run else out_dir.name),
+            "dry_run": False,
+            "target_locales": target_locales,
+            "per_locale": {
+                loc: {
+                    "translated": r.get("succeeded", 0),
+                    "failed": r.get("failed", 0),
+                    "csv": Path(r["csv_path"]).name if r.get("csv_path") else None,
+                }
+                for loc, r in per_locale_results.items()
+            },
+            "per_item": {cid: sorted(locs) for cid, locs in translated_per_item.items()},
+        }
+        status_path = config.WEGLOT_IMPORTS_DIR / "translation-status.json"
+        status_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = status_path.with_name(status_path.name + ".tmp")
+        tmp.write_text(json.dumps(status, indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(status_path)  # atomic
+
     return {
         "target_locales": target_locales,
         "per_locale": per_locale_results,
         "manifest_path": str(manifest_path),
+        "translation_status_path": str(status_path) if status_path else None,
         "warnings": warnings,
     }
 

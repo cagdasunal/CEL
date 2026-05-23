@@ -72,6 +72,9 @@ PUBLIC_WEGLOT_ZIP_URL = "https://cel.englishcollege.com/admin/weglot-imports/weg
 PUBLIC_WEGLOT_MATRIX_URL = "https://cel.englishcollege.com/admin/weglot-imports/all-languages.csv"
 WEGLOT_ZIP_FILE = WEGLOT_CSV_DIR / "weglot-imports.zip"
 WEGLOT_MATRIX_FILE = WEGLOT_CSV_DIR / "all-languages.csv"
+# Written by the summary tool's translate phase (tools/summary, CEL-only) next to
+# the CSVs; surfaces per-locale + per-item translation coverage on /admin/#summaries.
+WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
 TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
@@ -565,6 +568,19 @@ def _audit_action_badge(action: str | None) -> str:
     return f'<span class="{cls}">{escape(action)}</span>'
 
 
+def _load_translation_status() -> dict:
+    """Load the translate phase's coverage artifact (per_locale + per_item), or {}.
+
+    Written by `tools/summary` (CEL-only) next to the Weglot CSVs and committed by
+    summary.yml's live step. Absent until the first live translate run — callers
+    must treat {} as 'no translations yet'."""
+    try:
+        data = json.loads(WEGLOT_TRANSLATION_STATUS_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
 def render_summaries_html() -> str:
     """Render /admin/summaries/ — SEO summary-script output surface.
 
@@ -647,6 +663,13 @@ def render_summaries_html() -> str:
     is_dry = bool(report.get("dry_run"))
     dry_label = " (dry-run)" if is_dry else ""
 
+    # Translation coverage (per-locale + per-item), written by the translate phase.
+    tstatus = _load_translation_status()
+    tper_locale = tstatus.get("per_locale") or {}
+    tper_item = tstatus.get("per_item") or {}
+    tn_targets = len(tstatus.get("target_locales") or [])
+    tshow = bool(tstatus)
+
     # Status banner.
     parts.append('    <section class="status status-ok">')
     if started_human != "—":
@@ -677,6 +700,16 @@ def render_summaries_html() -> str:
             for k, v in sorted(by_locale.items(), key=lambda kv: (-kv[1], kv[0]))
         )
         parts.append(f'        <tr><td class="k">By language</td><td class="v">{loc_pairs}</td></tr>')
+    if tper_locale:
+        tloc_pairs = " · ".join(
+            f"{escape(LANGUAGE_NAMES.get(loc, loc.upper()))} {info.get('translated', 0)}"
+            for loc, info in sorted(tper_locale.items())
+        )
+        tasof = iso_to_sd(tstatus.get("generated_at", "")) if tstatus.get("generated_at") else "—"
+        parts.append(
+            f'        <tr><td class="k">Translations</td><td class="v">{tloc_pairs} '
+            f'<span class="subtle">(as of {escape(tasof)}; courses + landing — blog stays native per locale)</span></td></tr>'
+        )
     parts.append('      </tbody>')
     parts.append('    </table>')
 
@@ -685,7 +718,10 @@ def render_summaries_html() -> str:
     if en_summaries:
         parts.append("    <table>")
         parts.append("      <thead>")
-        parts.append("        <tr><th>Page</th><th>Type</th><th>Language</th><th>Words</th><th>Keywords</th><th>Links</th></tr>")
+        _thead = "<th>Page</th><th>Type</th><th>Language</th><th>Words</th><th>Keywords</th><th>Links</th>"
+        if tshow:
+            _thead += "<th>Translated</th>"
+        parts.append(f"        <tr>{_thead}</tr>")
         parts.append("      </thead>")
         parts.append("      <tbody>")
         for cid, entry in en_summaries.items():
@@ -706,6 +742,10 @@ def render_summaries_html() -> str:
             else:
                 page_html = f'<span class="subtle">{escape(url)}</span>'
             lang_label = LANGUAGE_NAMES.get(locale, locale.upper()) if locale and locale != "—" else "—"
+            tr_cell = ""
+            if tshow:
+                _n = len(tper_item.get(cid, []))
+                tr_cell = f"<td>{_n}/{tn_targets}</td>" if _n else '<td class="subtle">—</td>'
             parts.append(
                 f"        <tr>"
                 f"<td>{page_html}</td>"
@@ -714,6 +754,7 @@ def render_summaries_html() -> str:
                 f"<td>{word_count}</td>"
                 f"<td>{kw_display}</td>"
                 f"<td>{link_count}</td>"
+                f"{tr_cell}"
                 f"</tr>"
             )
         parts.append("      </tbody>")
