@@ -473,10 +473,12 @@ def render_files_html() -> str:
 
 
 def _latest_summary_run_dir() -> Path | None:
-    """Find the most recent timestamped subdir under SUMMARY_DRYRUN_DIR.
+    """Find the most recent timestamped subdir under SUMMARY_DRYRUN_DIR that
+    contains en-summaries.json.
 
     Directory names are 'YYYYMMDDTHHMMSSZ' so lexical sort = chronological.
-    Returns None if SUMMARY_DRYRUN_DIR doesn't exist or has no subdirs.
+    Skips partial-run dirs (e.g. retrieve-batch dirs that have only
+    retrieved-batch.json). Returns None when no qualifying dir exists.
     """
     if not SUMMARY_DRYRUN_DIR.exists():
         return None
@@ -484,7 +486,10 @@ def _latest_summary_run_dir() -> Path | None:
         (p for p in SUMMARY_DRYRUN_DIR.iterdir() if p.is_dir()),
         reverse=True,
     )
-    return subdirs[0] if subdirs else None
+    for d in subdirs:
+        if (d / "en-summaries.json").exists():
+            return d
+    return None
 
 
 def _count_words_in_markdown(md: str) -> int:
