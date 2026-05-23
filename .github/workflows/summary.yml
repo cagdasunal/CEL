@@ -148,6 +148,7 @@ jobs:
         # persisted last-batch id. Belt-and-suspenders with the in-process KeyboardInterrupt
         # handler in batch_runner.wait_for_batch (which the GHA grace period may cut short).
         if: ${{ (cancelled() || failure()) && inputs.dry_run == false }}
+        timeout-minutes: 2  # bound the cleanup so a hung Gemini API call can't run unbounded during GHA teardown (mirrors retrieve-batch's timeout)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |

@@ -424,6 +424,30 @@ def test_cli_cancel_batch_uses_persisted_id(monkeypatch, tmp_path):
     assert seen["id"] == "batches/persisted"
 
 
+def test_cli_cancel_batch_clears_matching_persisted_pointer(monkeypatch, tmp_path):
+    """After cancelling the persisted batch, last-batch.json is removed so a later
+    cancel/retrieve can't re-target the dead id (review 100, finding 2)."""
+    monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "last.json")
+    (tmp_path / "last.json").write_text(json.dumps({"batch_id": "batches/persisted"}), encoding="utf-8")
+    monkeypatch.setattr(batch_runner, "cancel_batch", lambda bid, **kw: "JOB_STATE_CANCELLED")
+
+    rc = cli.main(["cancel-batch", "--out-dir", str(tmp_path / "o")])
+    assert rc == 0
+    assert not (tmp_path / "last.json").exists()
+
+
+def test_cli_cancel_batch_keeps_pointer_for_different_id(monkeypatch, tmp_path):
+    """Cancelling a DIFFERENT batch via --batch-id must not drop the pointer to the
+    actual last batch (review 100, finding 2 — match-only clear)."""
+    monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "last.json")
+    (tmp_path / "last.json").write_text(json.dumps({"batch_id": "batches/the-real-last"}), encoding="utf-8")
+    monkeypatch.setattr(batch_runner, "cancel_batch", lambda bid, **kw: "JOB_STATE_CANCELLED")
+
+    rc = cli.main(["cancel-batch", "--batch-id", "batches/some-other", "--out-dir", str(tmp_path / "o")])
+    assert rc == 0
+    assert (tmp_path / "last.json").exists()
+
+
 def test_cost_estimate_accounts_for_pro_thinking_output():
     """C1 (2026-05-23): Gemini bills thinking AS output, so a Pro request WITH thinking
     must project materially higher than the same request without thinking (the old flat

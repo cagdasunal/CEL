@@ -362,6 +362,16 @@ def _execute_batch_recovery(args: argparse.Namespace, out_dir: Path) -> int:
     if args.subcommand == "cancel-batch":
         state = batch_runner.cancel_batch(batch_id)
         print(f"[summary] cancel-batch {batch_id} -> state {state}", file=sys.stderr)
+        # A cancelled batch is terminal — drop the recovery pointer when it names
+        # THIS batch, so the next cancel/retrieve doesn't re-target a dead id (and
+        # the summary.yml `|| echo` doesn't mask it as "nothing to cancel"). Only
+        # clear on a match, never a pointer to a different in-flight batch.
+        try:
+            persisted = json.loads(config.LAST_BATCH_FILE.read_text(encoding="utf-8"))
+            if persisted.get("batch_id") == batch_id:
+                config.LAST_BATCH_FILE.unlink(missing_ok=True)
+        except (OSError, ValueError):
+            pass
         return 0
 
     # retrieve-batch: poll to terminal state, then dump results keyed by custom_id
