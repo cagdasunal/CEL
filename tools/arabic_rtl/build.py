@@ -204,13 +204,16 @@ def main() -> int:
               "auto-flipped — handle directional animations manually in arabic_static.css")
 
     static = STATIC_PATH.read_text(encoding="utf-8").strip()
+    # Minify the whole body (header is prepended after, so the source-fp banner is
+    # never touched). Safe: minify preserves order/duplicates/significant spaces.
+    body = generator.minify(static + override + fonts)
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     header = (f"/*! cel-arabic.css | generated {ts} | source-fp:{fp} "
-              f"| css-files:{len(css_urls)} | rtlcss-override+font-swap+static */")
-    out = header + "\n" + static + "\n" + override + fonts + "\n"
+              f"| css-files:{len(css_urls)} | rtlcss-override+font-swap+static (minified) */")
+    out = header + "\n" + body + "\n"
     atomic_write_text(OUT_PATH, out)
-    print(f"wrote {OUT_PATH} — {len(out)} bytes "
-          f"(static {len(static)} + override {len(override)} + font-swap {len(fonts)})")
+    print(f"wrote {OUT_PATH} — {len(out)} bytes minified "
+          f"(static {len(static)} + override {len(override)} + font-swap {len(fonts)} -> body {len(body)})")
     return 0
 
 

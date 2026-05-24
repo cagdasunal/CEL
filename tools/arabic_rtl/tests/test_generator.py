@@ -79,3 +79,21 @@ def test_font_overrides_css_variable_targets_root():
 def test_font_overrides_skips_font_face_definition():
     out = g.font_overrides(g.split_top("@font-face{font-family:'Cameraobscura';src:url(x.woff2)}"))
     assert out == ""
+
+
+def test_minify_collapses_whitespace_keeping_significant_spaces():
+    css = ("@font-face {\n  font-family: 'Cairo';\n  font-weight: 400 700;\n"
+           "  src: url(x.woff2) format('woff2');\n}\n.a {\n  margin-left: 0;\n}\n")
+    out = g.minify(css)
+    assert "\n" not in out
+    assert out == ("@font-face{font-family:'Cairo';font-weight:400 700;"
+                   "src:url(x.woff2) format('woff2')}.a{margin-left:0}")
+
+
+def test_minify_preserves_duplicate_properties():
+    assert g.minify(".a{display:-webkit-box;display:flex}") == ".a{display:-webkit-box;display:flex}"
+
+
+def test_minify_recurses_into_media_keeping_query_text():
+    assert g.minify("@media screen and (max-width: 991px){\n .a{ left: 0 }\n}") == \
+        "@media screen and (max-width: 991px){.a{left:0}}"
