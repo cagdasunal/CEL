@@ -247,6 +247,41 @@ def _strip_tags(html: str) -> str:
     return _collapse_ws(re.sub(r"<[^>]+>", " ", html or ""))
 
 
+def _html_block_texts(html: str) -> list[str]:
+    """Extract each block element's PLAIN TEXT from rendered RichText HTML, in order.
+
+    One entry per `<h2>/<h3>/<h4>/<h5>/<p>` block: inner tags removed (inline
+    `<a>/<strong>/<em>` collapse to their text), HTML entities decoded, whitespace
+    collapsed. This is the exact per-node string Weglot extracts from the live page, so a
+    translation CSV keyed on these strings matches (tracker-107, 2026-05-24)."""
+    out: list[str] = []
+    for m in re.finditer(r"<(h2|h3|h4|h5|p)\b[^>]*>(.*?)</\1>", html or "", re.DOTALL | re.IGNORECASE):
+        text = _collapse_ws(_html.unescape(_strip_tags(m.group(2))))
+        if text:
+            out.append(text)
+    return out
+
+
+def summary_page_blocks(markdown: str) -> list[str]:
+    """The summary's live-page text nodes, in order, as PLAIN TEXT — what Weglot keys on.
+
+    A 4-part summary renders as Tagline (`<h2>`), Title (`<h3>`), the Paragraphs part
+    (`<p>` blocks), then the Content part (`<h4>/<h5>/<p>` blocks). Mirroring that exactly
+    (via `parse_four_part` + `four_part_*_html`) yields `word_from`/`word_to` values that
+    equal the page's rendered text nodes, so Weglot applies the imported translation
+    instead of machine-translating. Inline links collapse to their anchor text (Weglot
+    localizes the hrefs itself). tracker-107, 2026-05-24."""
+    fp = parse_four_part(markdown)
+    blocks: list[str] = []
+    if fp.tagline:
+        blocks.append(fp.tagline)
+    if fp.title:
+        blocks.append(fp.title)
+    blocks.extend(_html_block_texts(four_part_paragraph_html(fp.paragraph)))
+    blocks.extend(_html_block_texts(four_part_content_html(fp.content_md)))
+    return [b for b in blocks if b]
+
+
 def _content_html_to_markdown(html: str) -> str:
     """Reconstruct Content Markdown from captured live-page HTML (h4/h5/p in order).
 

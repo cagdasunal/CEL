@@ -1302,7 +1302,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     `<out_dir>/en-summaries.json` (the path generate-english writes to in the
     same run). Closes audit-086 C-4 (tracker-087 F-2).
     """
-    from tools.summary import batch_runner, csv_emitter, llms_parser, qa
+    from tools.summary import batch_runner, csv_emitter, llms_parser, page_fetcher, qa, structure
     from tools.summary.prompt_builder import (
         LinkSwap, build_translation_system_prompt, build_translation_user_message,
     )
@@ -1394,6 +1394,29 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     if not loaded_url_map and not args.dry_run:
         warnings.append("url-map.json absent/empty — same-locale links fall back to slug-swap/hub only")
 
+    # tracker-107: the source text we translate must match what is DEPLOYED on the page
+    # (that is the string Weglot keys on). CMS pages (course/housing) render from the
+    # manifest markdown, so the manifest is authoritative. But STATIC landing summaries
+    # live in Designer `#summary-*` elements and DRIFT from the committed manifest — so for
+    # landing we translate the live DEPLOYED text (page_fetcher → parts_to_markdown), once,
+    # reused across locales. Fetch failure falls back to the manifest markdown (logged).
+    effective_md: dict[str, str] = {}
+    for cid, en in en_summaries.items():
+        if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
+            continue
+        md = en.get("markdown", "") or ""
+        if en.get("content_type") == "landing" and not args.dry_run:
+            try:
+                pc = page_fetcher.fetch_page(en.get("url", ""))
+                recon = structure.parts_to_markdown(pc.existing_summary_parts or {})
+                if recon.strip():
+                    md = recon
+                else:
+                    warnings.append(f"landing {cid}: no deployed #summary-* parts; using manifest markdown")
+            except Exception as e:
+                warnings.append(f"landing {cid}: live fetch failed ({e}); using manifest markdown")
+        effective_md[cid] = md
+
     per_locale_results: dict[str, dict] = {}
     # cid → [locales it was successfully translated + emitted into the CSV]. Feeds
     # the /admin/#summaries dashboard's per-item "Translated" coverage column.
@@ -1404,7 +1427,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         for cid, en in en_summaries.items():
             if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
                 continue
-            md = en.get("markdown", "") or ""
+            md = effective_md.get(cid, en.get("markdown", "") or "")  # tracker-107: deployed text for landing
             if not md.strip():
                 continue
             units.append(TranslationUnit(
@@ -1491,6 +1514,8 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         pairs: list[csv_emitter.SummaryPair] = []
         succeeded_count = 0
         failed_count = 0
+        loc_words = 0   # tracker-107: translated words shipped this locale (dashboard volume)
+        loc_links = 0   # internal links carried by translated summaries (locale-invariant)
         for t in translations:
             if not t.target.strip():
                 failed_count += 1
@@ -1520,20 +1545,33 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             if len(parts) < 3:
                 continue
             orig_cid = parts[2]
-            en_md = en_summaries.get(orig_cid, {}).get("markdown", "")
-            en_paragraphs = csv_emitter.split_summary_into_paragraphs(en_md)
-            tr_paragraphs = csv_emitter.split_summary_into_paragraphs(t.target)
-            if len(en_paragraphs) != len(tr_paragraphs):
+            # word_from comes from the SAME source we translated (deployed text for landing),
+            # so it equals the live page's text node. Link COUNT uses the manifest markdown,
+            # which keeps the `](url)` syntax the lossy landing reconstruction drops.
+            en_md = effective_md.get(orig_cid) or en_summaries.get(orig_cid, {}).get("markdown", "")
+            manifest_md = en_summaries.get(orig_cid, {}).get("markdown", "")
+            # tracker-107: pair by RENDERED page block (plain text), NOT \n\n chunks.
+            # Weglot matches each imported row against the live page's per-block text node
+            # (`<h2>/<h3>/<h4>/<h5>/<p>`, links as anchor text, no markdown). The old
+            # split kept `##`/`[](url)` markers + merged paragraphs, so word_from never
+            # matched and Weglot machine-translated instead. `summary_page_blocks` mirrors
+            # exactly how the page renders, so word_from == the page's text node.
+            en_blocks = structure.summary_page_blocks(en_md)
+            tr_blocks = structure.summary_page_blocks(t.target)
+            if not en_blocks or len(en_blocks) != len(tr_blocks):
                 warnings.append(
-                    f"locale {locale} cid {orig_cid}: paragraph count mismatch "
-                    f"(en={len(en_paragraphs)} tr={len(tr_paragraphs)}); skipping"
+                    f"locale {locale} cid {orig_cid}: block count mismatch "
+                    f"(en={len(en_blocks)} tr={len(tr_blocks)}); skipping"
                 )
                 continue
-            try:
-                pairs.extend(csv_emitter.pair_from_paragraphs(en_paragraphs, tr_paragraphs))
-                translated_per_item.setdefault(orig_cid, []).append(locale)
-            except ValueError as e:
-                warnings.append(f"pair_from_paragraphs failed for {orig_cid}: {e}")
+            pairs.extend(
+                csv_emitter.SummaryPair(word_from=e, word_to=tr)
+                for e, tr in zip(en_blocks, tr_blocks)
+                if e.strip() and tr.strip()
+            )
+            translated_per_item.setdefault(orig_cid, []).append(locale)
+            loc_words += sum(len(b.split()) for b in tr_blocks)
+            loc_links += _count_internal_md_links(manifest_md)
 
         # Emit consolidated CSV.
         existing_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
@@ -1556,6 +1594,8 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             "rows_appended": emission_report.new_row_count,
             "duplicates_skipped": emission_report.duplicates_skipped,
             "existing_rows": emission_report.existing_row_count,
+            "words": loc_words,            # tracker-107: dashboard volume
+            "internal_links": loc_links,
         }
 
     # Persist a translation-status artifact next to the CSVs (live runs only) so the
@@ -1583,6 +1623,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                     "translated": paired_per_locale.get(loc, 0),
                     "failed": r.get("failed", 0),
                     "csv": Path(r["csv_path"]).name if r.get("csv_path") else None,
+                    # tracker-107: real translated content volume for the dashboard Overview.
+                    "words": r.get("words", 0),
+                    "internal_links": r.get("internal_links", 0),
                 }
                 for loc, r in per_locale_results.items()
             },

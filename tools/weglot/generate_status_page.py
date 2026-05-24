@@ -670,6 +670,24 @@ def render_summaries_html() -> str:
     tn_targets = len(tstatus.get("target_locales") or [])
     tshow = bool(tstatus)
 
+    # tracker-107: fold translated summaries/words/links into the Overview totals + the
+    # By-language breakdown so the dashboard reflects the FULL multilingual volume (the
+    # client showcase), not just the EN/native source. `per_locale` carries `words` +
+    # `internal_links` recorded by the translate phase. The separate "Translations" row
+    # below keeps the source-vs-translated split visible.
+    src_total = total
+    tr_summaries = tr_words = tr_links = 0
+    for _loc, _info in tper_locale.items():
+        _n = _info.get("translated", 0) or 0
+        tr_summaries += _n
+        tr_words += _info.get("words", 0) or 0
+        tr_links += _info.get("internal_links", 0) or 0
+        by_locale[_loc] = by_locale.get(_loc, 0) + _n
+    total += tr_summaries
+    total_words += tr_words
+    total_links += tr_links
+    avg_words = (total_words // total) if total else 0
+
     # Status banner.
     parts.append('    <section class="status status-ok">')
     if started_human != "—":
@@ -689,7 +707,11 @@ def render_summaries_html() -> str:
     parts.append("    <h2>Overview</h2>")
     parts.append('    <table class="kv-table">')
     parts.append('      <tbody>')
-    parts.append(f'        <tr><td class="k">Total summaries</td><td class="v"><strong>{total}</strong></td></tr>')
+    _src_note = (
+        f' <span class="subtle">({src_total:,} source + {tr_summaries:,} translated)</span>'
+        if tr_summaries else ""
+    )
+    parts.append(f'        <tr><td class="k">Total summaries</td><td class="v"><strong>{total:,}</strong>{_src_note}</td></tr>')
     parts.append(f'        <tr><td class="k">Total words</td><td class="v"><strong>{total_words:,}</strong></td></tr>')
     parts.append(f'        <tr><td class="k">Average words per summary</td><td class="v">{avg_words:,}</td></tr>')
     parts.append(f'        <tr><td class="k">Total keywords</td><td class="v">{total_keywords:,}</td></tr>')
