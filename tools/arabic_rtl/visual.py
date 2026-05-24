@@ -50,6 +50,18 @@ def slug_for(url: str) -> str:
     return s or "ar-home"
 
 
+def ltr_url_for(url: str) -> str:
+    """The English (LTR) equivalent of an /ar/ URL — the reference Gemini compares against.
+    /ar/vancouver -> /vancouver ; /ar -> / (Weglot serves English at the root, Arabic at /ar/)."""
+    p = urlparse(url)
+    path = p.path
+    if "/ar/" in path:
+        path = path.replace("/ar/", "/", 1)
+    elif path.rstrip("/") == "/ar":
+        path = "/"
+    return f"{p.scheme}://{p.netloc}{path}"
+
+
 def class_inventory(html: str, limit: int = 400) -> list[str]:
     classes: set[str] = set()
     for chunk in _CLASS_ATTR.findall(html):
@@ -97,8 +109,10 @@ def is_eligible(url: str, css_hash: str, state: dict, now: datetime) -> bool:
 def build_user_text(url: str, classes: list[str]) -> str:
     return (
         f"PAGE: {url}\n"
-        "The screenshot is the Arabic (RTL) rendering of this page with mechanical rtlcss "
-        "flips, dir=rtl, and the Cairo font already applied. Find what STILL looks wrong.\n\n"
+        "IMAGE 1 = the ENGLISH (LTR) original (your reference). IMAGE 2 = the current ARABIC "
+        "(RTL) render — it already has dir=rtl, the mechanical rtlcss flip, and the Cairo font "
+        "applied. Compare them: the Arabic should be a proper MIRROR of the English (minus the "
+        "never-flip items). Audit section by section and find EVERYTHING still wrong.\n\n"
         "REAL CSS class names on this page (build selectors only from these + plain elements):\n"
         + ", ".join(classes)
     )
@@ -122,8 +136,9 @@ def _parse_json_array(text: str) -> list:
     return data if isinstance(data, list) else []
 
 
-def gemini_corrections(system_prompt: str, user_text: str, png_bytes: bytes) -> list:
-    """Call Gemini 3.1 Pro (vision) and return the raw list of correction dicts."""
+def gemini_corrections(system_prompt: str, user_text: str, images: list[bytes]) -> list:
+    """Call Gemini 3.1 Pro (vision) with one or more PNGs (English ref + Arabic render);
+    return the raw list of correction dicts."""
     from google import genai  # lazy — optional dep
     from google.genai import types
     from tools.summary import config  # MODEL_ID = "gemini-3.1-pro-preview"
@@ -132,12 +147,11 @@ def gemini_corrections(system_prompt: str, user_text: str, png_bytes: bytes) -> 
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not set (needed for the visual pass).")
     client = genai.Client(api_key=api_key)
+    parts: list = [system_prompt + "\n\n" + user_text]
+    parts += [types.Part.from_bytes(data=png, mime_type="image/png") for png in images]
     resp = client.models.generate_content(
         model=config.MODEL_ID,
-        contents=[
-            system_prompt + "\n\n" + user_text,
-            types.Part.from_bytes(data=png_bytes, mime_type="image/png"),
-        ],
+        contents=parts,
         config=types.GenerateContentConfig(response_mime_type="application/json"),
     )
     return _parse_json_array(getattr(resp, "text", "") or "")
@@ -207,8 +221,11 @@ def write_outputs(slug: str, css_rules: list[str], raw_rules: list, url: str) ->
     ]
     for r in raw_rules:
         if isinstance(r, dict):
+            sev = str(r.get("severity", "")).strip()
+            nat = " [native-review]" if r.get("needs_native_review") else ""
+            tag = (f"**[{sev}]**{nat} " if sev else (nat + " " if nat else ""))
             lines.append(
-                f"- `{str(r.get('selector', ''))[:80]}` — {str(r.get('reason', ''))[:300]}"
+                f"- {tag}`{str(r.get('selector', ''))[:80]}` — {str(r.get('reason', ''))[:300]}"
             )
     build.atomic_write_text(VISUAL_DIR / f"{slug}.report.md", "\n".join(lines) + "\n")
 
@@ -253,21 +270,24 @@ def main() -> int:
             break
         slug = slug_for(url)
         try:
-            png = screenshot.capture(url)
+            rtl_png = screenshot.capture(url, expect_rtl=True)
+            ltr_png = screenshot.capture(ltr_url_for(url), expect_rtl=False)
         except Exception as e:  # noqa: BLE001
             print(f"  skip (screenshot failed) {url}: {e}", file=sys.stderr)
             continue
         SHOTS_DIR.mkdir(parents=True, exist_ok=True)
-        (SHOTS_DIR / f"{slug}.png").write_bytes(png)  # for review (CI artifact, gitignored)
+        (SHOTS_DIR / f"{slug}.png").write_bytes(rtl_png)      # Arabic (RTL) — review
+        (SHOTS_DIR / f"{slug}-ltr.png").write_bytes(ltr_png)  # English (LTR) — reference
         classes = class_inventory(html)
         try:
-            raw = gemini_corrections(system_prompt, build_user_text(url, classes), png)
+            raw = gemini_corrections(system_prompt, build_user_text(url, classes), [ltr_png, rtl_png])
         except Exception as e:  # noqa: BLE001
             print(f"  skip (gemini failed) {url}: {e}", file=sys.stderr)
             continue
         css_rules = validate_rules(raw, set(classes))
         write_outputs(slug, css_rules, raw, url)
         state[url] = {"slug": slug, "css_hash": css_hash, "analyzed_at": now.isoformat()}
+        save_state(state)  # persist per page — an interruption keeps completed Gemini work
         analyzed += 1
         print(f"  analyzed {url} -> {slug}.css ({len(css_rules)} of {len(raw)} suggestions kept)")
 

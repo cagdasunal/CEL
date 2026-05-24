@@ -94,6 +94,16 @@ def test_minify_preserves_duplicate_properties():
     assert g.minify(".a{display:-webkit-box;display:flex}") == ".a{display:-webkit-box;display:flex}"
 
 
+def test_centering_translate_not_flipped():
+    # rtlcss flips centering translate(-50%) -> translate(50%); we keep the base (no override)
+    assert _emit(".m{transform:translate(-50%,-50%)}", ".m{transform:translate(50%,-50%)}") == ""
+
+
+def test_directional_translate_still_flips():
+    out = _emit(".h{transform:translateX(20px)}", ".h{transform:translateX(-20px)}")
+    assert out == 'html[lang="ar"] .h{transform:translateX(-20px)}'
+
+
 def test_minify_recurses_into_media_keeping_query_text():
     assert g.minify("@media screen and (max-width: 991px){\n .a{ left: 0 }\n}") == \
         "@media screen and (max-width: 991px){.a{left:0}}"
