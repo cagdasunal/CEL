@@ -203,7 +203,7 @@ Subcommands:
 | `plan` | Show what would be processed; produce report.json + report.md. Cheapest sanity check. |
 | `generate-english` | Fetch source content, derive keywords, generate EN summaries for static pages + courses + housing. Blog posts get native-language summaries. |
 | `audit` | Score existing summaries; surface REGENERATE candidates with reasons. |
-| `translate` | Translate EN summaries into the 8 locales via the **`translator`** package (glossary + translation-memory + translation-QA); append rows to the per-language Weglot CSVs, consolidated with the existing Fidelo rows. |
+| `translate` | Translate EN summaries into the 8 locales via the **`translator`** package (glossary + translation-memory + translation-QA); append rows to the per-language Weglot CSVs, consolidated with the existing Fidelo rows. **Scope = static landing pages + courses + housing** (`config.TRANSLATE_COLLECTIONS` + `landing`); **blog is native-per-locale and NOT translated** (`NATIVE_LANGUAGE_COLLECTIONS`). Housing joined the translated set 2026-05-24. |
 | `translate-meta` | Translate static-page `<title>` + `<meta name="description">` into the 8 locales via the `translator`; emit Weglot CSV rows typed `meta_title` / `meta_description` (mobile-safe char limits flagged for Latin locales). |
 | `all` | Run generate-english → audit → translate in sequence. |
 

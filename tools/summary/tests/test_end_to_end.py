@@ -225,9 +225,9 @@ def test_translate_live_mode_emits_csv_for_target_locale(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """Translate phase reads manifest, submits batch, writes CSV via csv_emitter."""
-    # Stage an EN manifest with a landing entry + a housing entry. Tracker-091
-    # M-10: housing CMS items must be filtered out of the translate phase
-    # (housing_new is in NO_TRANSLATE_COLLECTIONS).
+    # Stage an EN manifest with a landing entry + a housing entry. 2026-05-24:
+    # housing IS now translated (housing_new moved to TRANSLATE_COLLECTIONS), so
+    # BOTH entries produce a request (only blog_post stays native-skipped).
     manifest = {
         "gen-0-test": {
             "url": "https://www.englishcollege.com/learn-english-usa",
@@ -241,7 +241,7 @@ def test_translate_live_mode_emits_csv_for_target_locale(
         "gen-1-housing": {
             "url": "https://www.englishcollege.com/housing/some-residence",
             "markdown": "## Where to live\n\nKitsilano apartment with kitchenette.\n",
-            "content_type": "housing",  # M-10: must be filtered out
+            "content_type": "housing",  # now translated (was NO_TRANSLATE pre-2026-05-24)
             "locale": "en",
         },
     }
@@ -254,7 +254,8 @@ def test_translate_live_mode_emits_csv_for_target_locale(
         return _fake_batch_handle()
 
     def fake_wait(handle, *args, **kwargs):
-        # Translation result mirrors the source paragraph structure.
+        # Translation result mirrors the source paragraph structure. Both the
+        # landing and the (now-translated) housing request get a result.
         return [
             _fake_batch_result(
                 "tr-de-gen-0-test",
@@ -263,7 +264,15 @@ def test_translate_live_mode_emits_csv_for_target_locale(
                     "## Wie lange dauert es?\n\n"
                     "Zwölf Wochen für ein solides B2 an unserem Campus in Vancouver.\n"
                 ),
-            )
+            ),
+            _fake_batch_result(
+                "tr-de-gen-1-housing",
+                succeeded=True,
+                content=(
+                    "## Wo man wohnt\n\n"
+                    "Wohnung in Kitsilano mit Küchenzeile.\n"
+                ),
+            ),
         ]
 
     monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
@@ -296,11 +305,12 @@ def test_translate_live_mode_emits_csv_for_target_locale(
     csv_text = csv_path.read_text(encoding="utf-8")
     assert "Zwölf Wochen" in csv_text
     assert "en;de" in csv_text  # Weglot CSV format: language_from;language_to
-    # M-10: housing entry must have been filtered out — submit_batch saw exactly 1 request.
+    # 2026-05-24: housing now translated — submit_batch saw 2 requests (landing + housing).
     assert len(captured_submit_calls) == 1, "expected exactly 1 submit_batch call (1 locale)"
-    assert len(captured_submit_calls[0]) == 1, (
-        f"expected 1 request (landing only; housing filtered), got {len(captured_submit_calls[0])}"
+    assert len(captured_submit_calls[0]) == 2, (
+        f"expected 2 requests (landing + housing), got {len(captured_submit_calls[0])}"
     )
+    assert "Kitsilano" in csv_text or "Küchenzeile" in csv_text  # housing row emitted too
 
 
 # ---- Test 5: full `all` subcommand wires the three phases together ----
