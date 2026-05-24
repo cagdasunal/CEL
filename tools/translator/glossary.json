@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-20-t092",
+  "version": "2026-05-24-t108",
   "terms": [
     {"term": "College of English Language", "do_not_translate": true},
     {"term": "CEL", "do_not_translate": true, "case_sensitive": true},
@@ -23,8 +23,6 @@
     {"term": "San Diego", "do_not_translate": true},
     {"term": "Los Angeles", "do_not_translate": true},
     {"term": "Vancouver", "do_not_translate": true},
-    {"term": "British Columbia", "do_not_translate": true},
-    {"term": "California", "do_not_translate": true},
     {"term": "Weglot", "do_not_translate": true, "forbidden": false}
   ]
 }

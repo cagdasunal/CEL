@@ -158,6 +158,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Cap items processed (pilot batches).",
     )
     parser.add_argument(
+        "--offset", type=int, default=0,
+        help="translate: skip the first N items of the (collection-filtered) order "
+             "before --limit, for targeted pilots (audit-108 L-4).",
+    )
+    parser.add_argument(
         "--force", action="store_true", default=False,
         help=(
             "generate-english only — regenerate every item even if its source "
@@ -1285,16 +1290,6 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     }
 
 
-_MARKDOWN_LINK_RE = __import__("re").compile(r"\[[^\]]+\]\(([^)]+)\)")
-
-
-def _extract_markdown_links(md: str) -> list[str]:
-    """Extract URLs from `[anchor](url)` patterns in Markdown."""
-    if not md:
-        return []
-    return _MARKDOWN_LINK_RE.findall(md)
-
-
 def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     """Translate EN summaries into 8 locales; emit consolidated per-language CSVs.
 
@@ -1304,7 +1299,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     """
     from tools.summary import batch_runner, csv_emitter, llms_parser, page_fetcher, qa, structure
     from tools.summary.prompt_builder import (
-        LinkSwap, build_translation_system_prompt, build_translation_user_message,
+        build_translation_system_prompt, build_translation_user_message,
     )
     from tools.translator import translate_batch, TranslationUnit
     from tools.translator.glossary import load_glossary
@@ -1351,21 +1346,33 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         or slug in config.NO_TRANSLATE_COLLECTIONS
     }
 
-    # llms.txt for cross-locale link swaps (live only — dry-run skips the network).
-    # T1 (2026-05-23): llms.txt is load-bearing for same-locale internal linking. If it
-    # is unreachable, EVERY link in EVERY translated summary would be silently stripped —
-    # worse than emitting nothing. So retry once, then ABORT the whole run (emit no CSVs)
-    # with a clear reason, rather than ship link-stripped translations.
-    llms_index = None
+    # audit-108 L-4: --collection scopes the run to one collection (it was recorded in
+    # report["filters"] but never applied here). landing pages have no collection slug
+    # (_CT_TO_COLLECTION.get → None), so a --collection filter correctly excludes them.
+    def _skip_item(en: dict) -> bool:
+        ct = en.get("content_type")
+        if ct in _SKIP_TRANSLATE_TYPES:
+            return True
+        if args.collection and _CT_TO_COLLECTION.get(ct) != args.collection:
+            return True
+        return False
+
+    # audit-108 M-4 (2026-05-24): translated-summary links are localized by Weglot's
+    # URL-translation rules on the live page (the CSV carries plain anchor text — links
+    # are stripped at emit by structure.summary_page_blocks), so llms.txt is no longer
+    # used to swap links here. We keep a cheap PRE-FLIGHT REACHABILITY check (retry once,
+    # then abort before a paid run) so a translate doesn't burn spend while the content
+    # infra is down — historically the T1 abort (2026-05-23). No value is bound; the
+    # fetch succeeding-or-raising is the only signal.
     if not args.dry_run:
         try:
-            llms_index = batch_runner._retry_transient(
+            batch_runner._retry_transient(
                 lambda: llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
             )
         except Exception as e:
             warnings.append(
-                f"ABORT: llms.txt unavailable ({e}); refusing to emit link-stripped "
-                f"translations. Re-run when llms.txt is reachable."
+                f"ABORT: llms.txt unreachable ({e}); aborting before a paid translate "
+                f"(content-infra reachability guard). Re-run when the site is reachable."
             )
             return {
                 "target_locales": target_locales,
@@ -1377,22 +1384,14 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             }
 
     # tracker-092 Phase 3: translation runs through the dedicated engine (glossary
-    # + translation-memory + translation-QA). The engine reuses batch_runner as
-    # its Gemini client; this caller keeps the M-10 content-type filter, the
-    # llms.txt link-swaps (via the request_builder, for prompt parity), and the
-    # paragraph-split → Weglot-CSV emission. Dry-run keeps the original
-    # build-requests + dry_run_submit path UNCHANGED (request_count + JSONL
-    # artifact parity for the M-10 tests).
+    # + translation-memory + translation-QA). The engine reuses batch_runner as its
+    # Gemini client; this caller keeps the M-10 content-type filter and the block-level
+    # Weglot-CSV emission (tracker-107). audit-108 M-4: the llms.txt link-swap apparatus
+    # was removed from this path — links are localized by Weglot, not the CSV. Dry-run
+    # keeps the build-requests + dry_run_submit path UNCHANGED (request_count + JSONL
+    # parity for the M-10 tests).
     glossary = load_glossary()
     tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
-
-    # Authoritative EN→locale URL map (hreflang-derived) so same-locale link swaps
-    # resolve TRANSLATED slugs (e.g. /pathway-program-usa → /de/auslandsstudium-usa)
-    # instead of hub-falling-back. Built by `python3 -m tools.summary.url_map`.
-    from tools.summary import url_map as _url_map_mod
-    loaded_url_map = _url_map_mod.load_url_map(config.URL_MAP_FILE)
-    if not loaded_url_map and not args.dry_run:
-        warnings.append("url-map.json absent/empty — same-locale links fall back to slug-swap/hub only")
 
     # tracker-107: the source text we translate MUST equal what is DEPLOYED on the page
     # (the string Weglot keys on). The committed manifest snapshot can DRIFT from the live
@@ -1406,7 +1405,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # keeps the `](url)` syntax that the rendered-text reconstruction drops).
     effective_md: dict[str, str] = {}
     for cid, en in en_summaries.items():
-        if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
+        if _skip_item(en):
             continue
         md = en.get("markdown", "") or ""
         if not args.dry_run:
@@ -1429,7 +1428,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         # Build TranslationUnits (one per non-skipped, non-empty EN summary).
         units = []
         for cid, en in en_summaries.items():
-            if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
+            if _skip_item(en):
                 continue
             md = effective_md.get(cid, en.get("markdown", "") or "")  # tracker-107: deployed text (all types)
             if not md.strip():
@@ -1439,10 +1438,11 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                 content_type=en.get("content_type", "landing"),
             ))
 
-        # --limit caps the SOURCE items translated (same first-N per locale since
-        # en_summaries order is stable) — for instant pilot runs before the full batch.
-        if args.limit:
-            units = units[: args.limit]
+        # --offset/--limit window the SOURCE items translated (stable en_summaries order,
+        # so the same window per locale) — for instant pilot runs before the full batch.
+        if args.offset or args.limit:
+            end = (args.offset + args.limit) if args.limit else None
+            units = units[args.offset:end]
 
         if not units:
             per_locale_results[locale] = {
@@ -1451,16 +1451,11 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             }
             continue
 
-        # request_builder reproduces the existing summary-translation prompt
-        # (llms.txt link swaps) so behaviour + CSV structure are preserved.
-        def _summary_rb(unit, loc, gslice, _llms=llms_index, _umap=loaded_url_map):
-            link_swaps = []
-            for src_url in _extract_markdown_links(unit.text):
-                # T2: hreflang url_map (translated slugs) → blog→locale-blog-hub →
-                # exact slug-swap → same-locale ancestor → locale root → drop. Keeps
-                # every link inside the target locale; never leaks to the EN original.
-                target_url = _llms.find_equivalent_or_fallback(src_url, loc, url_map=_umap) if _llms else None
-                link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
+        # request_builder reproduces the summary-translation prompt. audit-108 M-4:
+        # no link-swap table is injected — links are localized by Weglot on the live
+        # page and stripped to anchor text at emit, so swapping them in the prompt was
+        # wasted Pro tokens. The model just translates the Markdown, preserving structure.
+        def _summary_rb(unit, loc, gslice):
             # tracker-095 M1: inject the per-unit glossary slice (do-not-translate
             # brand/entity terms) into the summary translation prompt. The engine
             # computes it; previously this builder discarded it, so brand terms
@@ -1470,7 +1465,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                 system_blocks = system_blocks + [{"type": "text", "text": gslice}]
             return (
                 system_blocks,
-                build_translation_user_message(unit.text, loc, link_swaps),
+                build_translation_user_message(unit.text, loc),
             )
 
         # Cost check (build the would-be requests once via the same builder).
@@ -1664,7 +1659,7 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
     dedicated translator; emit Weglot CSV rows typed `meta_title` /
     `meta_description`. The engine's second caller (tracker-092 Phase 3).
 
-    Scope: the 12 STATIC_PAGES (bounded, high-value). Each page contributes up to
+    Scope: the 17 STATIC_PAGES (bounded, high-value). Each page contributes up to
     two source strings (title + meta description). Weglot serves the translated
     meta on the locale URLs.
     """

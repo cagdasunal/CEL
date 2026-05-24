@@ -6,7 +6,6 @@ import pytest
 
 from tools.summary.prompt_builder import (
     KeywordPlan,
-    LinkSwap,
     SourceItem,
     build_link_insertion_system_prompt,
     build_link_insertion_user_message,
@@ -111,27 +110,19 @@ def test_user_message_caps_link_candidates():
     assert "/page-0" in msg
 
 
-def test_translation_user_message_contains_swap_table():
-    swaps = [
-        LinkSwap(
-            source_url="https://www.englishcollege.com/post/x",
-            target_url="https://www.englishcollege.com/de/post/x",
-        ),
-        LinkSwap(
-            source_url="https://www.englishcollege.com/post/y",
-            target_url=None,  # REMOVE
-        ),
-    ]
+def test_translation_user_message_translates_without_swap_table():
+    """audit-108 M-4: no link-swap table is injected — the model just translates the
+    Markdown (links are localized by Weglot + stripped to anchor text at emit)."""
     msg = build_translation_user_message(
-        en_summary_markdown="## H2\n\nSummary body.",
+        en_summary_markdown="## H2\n\nSummary body with [a link](https://www.englishcollege.com/courses).",
         target_locale="de",
-        link_swaps=swaps,
     )
-    assert "swap table" in msg.lower()
-    assert "REMOVE" in msg
-    # JSON swap-table block must be present and valid.
-    assert "/de/post/x" in msg
-    assert "null" in msg
+    assert "Translate the following English Summary into de" in msg
+    assert "Summary body with" in msg
+    # The old swap-table apparatus must be gone.
+    assert "swap table" not in msg.lower()
+    assert "```json" not in msg
+    assert "REMOVE" not in msg
 
 
 def test_translation_system_prompt_two_blocks():

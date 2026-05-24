@@ -1,16 +1,16 @@
-"""Tests for tools.summary.csv_emitter — Fidelo CSV merge, idempotency, atomic write."""
+"""Tests for tools.summary.csv_emitter — Fidelo CSV merge, idempotency, atomic write.
 
-import csv
+audit-108 L-1 (2026-05-24): the paragraph-split helper tests were removed with the
+helpers (`split_summary_into_paragraphs`, `pair_from_paragraphs`) — no production
+caller; the translate path pairs rendered page blocks (see test_structure.py).
+"""
+
 from pathlib import Path
-
-import pytest
 
 from tools.summary.csv_emitter import (
     SummaryPair,
     emit_consolidated_csv,
-    pair_from_paragraphs,
     read_existing_csv,
-    split_summary_into_paragraphs,
 )
 
 
@@ -18,33 +18,6 @@ _EXISTING_CSV = """id;language_from;language_to;word_from;word_to;type
 ;en;de;"1 teacher per student";"1 Lehrer pro Schüler";Text
 ;en;de;"10 - 20 min. by bus to CEL";"10 - 20 Minuten Busfahrt zu CEL";Text
 """
-
-
-def test_split_paragraphs_markdown():
-    text = "First paragraph here.\n\nSecond paragraph here.\n\nThird."
-    paras = split_summary_into_paragraphs(text)
-    assert paras == ["First paragraph here.", "Second paragraph here.", "Third."]
-
-
-def test_split_paragraphs_html():
-    text = "<p>First.</p><p>Second.</p>"
-    paras = split_summary_into_paragraphs(text)
-    assert paras == ["First.", "Second."]
-
-
-def test_split_paragraphs_strips_markdown_headings():
-    """tracker-096: heading markers are stripped so the Weglot word_from matches the
-    rendered page text (the heading TEXT, not '## …'). Covers H2/H3 (single-block)
-    and H4/H5 (4-part)."""
-    text = (
-        "## English School Life\n\n### What to expect\n\nLead paragraph.\n\n"
-        "#### How long\n\nContent prose.\n\n##### Beginners\n\nMore prose."
-    )
-    paras = split_summary_into_paragraphs(text)
-    assert paras == [
-        "English School Life", "What to expect", "Lead paragraph.",
-        "How long", "Content prose.", "Beginners", "More prose.",
-    ]
 
 
 def test_emit_merges_existing_and_new(tmp_path: Path):
@@ -130,17 +103,3 @@ def test_emit_utf8_for_non_latin(tmp_path: Path):
     emit_consolidated_csv("ko", existing, pairs, out)
     content = out.read_text(encoding="utf-8")
     assert "안녕하세요" in content
-
-
-def test_pair_from_paragraphs_zips_aligned():
-    en = ["Hello.", "World."]
-    tr = ["Hallo.", "Welt."]
-    pairs = pair_from_paragraphs(en, tr)
-    assert len(pairs) == 2
-    assert pairs[0].word_from == "Hello."
-    assert pairs[0].word_to == "Hallo."
-
-
-def test_pair_from_paragraphs_length_mismatch_raises():
-    with pytest.raises(ValueError):
-        pair_from_paragraphs(["a", "b"], ["x"])
