@@ -1,44 +1,49 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-05-24T14:14:00.984663-07:00",
+  "checked_at": "2026-05-24T15:13:37.900396-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-05-24T14:14:01.560839-07:00",
+      "checked_at": "2026-05-24T15:13:39.070196-07:00",
+      "sentinels_total": 3,
+      "sentinels_found": 3,
+      "missing": [],
+      "http_status": 200
+    },
+    "fr": {
+      "verdict": "partial",
+      "url": "https://www.englishcollege.com/fr/courses",
+      "checked_at": "2026-05-24T15:13:39.533418-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
         {
-          "word_from": "Academic English for college success",
-          "word_to": "Akademisches Englisch als Vorbereitung"
+          "word_from": "Preparation for College & University",
+          "word_to": "Préparation pour collège/université"
         }
       ],
       "http_status": 200
     },
-    "fr": {
-      "verdict": "imported",
-      "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-05-24T14:14:02.162883-07:00",
-      "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
-      "http_status": 200
-    },
     "es": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-05-24T14:14:02.869060-07:00",
+      "checked_at": "2026-05-24T15:13:40.086352-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 2,
+      "missing": [
+        {
+          "word_from": "Preparation for College & University",
+          "word_to": "Preparación para la universidad"
+        }
+      ],
       "http_status": 200
     },
     "it": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-05-24T14:14:03.581995-07:00",
+      "checked_at": "2026-05-24T15:13:41.203969-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -47,7 +52,7 @@
     "ja": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-05-24T14:14:03.934412-07:00",
+      "checked_at": "2026-05-24T15:13:42.006223-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -56,25 +61,34 @@
     "ko": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-05-24T14:14:04.597642-07:00",
+      "checked_at": "2026-05-24T15:13:43.109345-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
       "http_status": 200
     },
     "pt": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-05-24T14:14:05.350344-07:00",
+      "checked_at": "2026-05-24T15:13:43.733724-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 1,
+      "missing": [
+        {
+          "word_from": "Small classes (avg. 7 students/class)",
+          "word_to": "Turmas pequenas (média de 7 alunos)"
+        },
+        {
+          "word_from": "Preparation for College & University",
+          "word_to": "Preparação para Universidade"
+        }
+      ],
       "http_status": 200
     },
     "ar": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-05-24T14:14:06.222466-07:00",
+      "checked_at": "2026-05-24T15:13:44.725039-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
