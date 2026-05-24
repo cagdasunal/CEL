@@ -93,12 +93,17 @@ warnings too (e.g. `untranslated_passthrough`, `length_ratio:3.1`).
 | `glossary.json` | Seeded CEL brand/entity do-not-translate terms (CEL, CEFR, IELTS, TOEFL, DLI, PGWPP, ACCET, CEA, city names, visa codes…). Bump `version` to invalidate the TM. |
 | `tm.py` | `TranslationMemory` — JSON store keyed by `sha256(normalize(source)) + locale + glossary_version + tone`. Exact-match; FIFO-capped at 20 000 entries. |
 | `qa.py` | `check_translation(source, target, locale) -> (ok, flags)`. Blocking: placeholder/variable set, number, URL preservation. Warning: untranslated passthrough, per-locale length-ratio band. |
-| `weglot.py` | The reusable Weglot-CSV adapter (see below). |
+| `weglot.py` | Re-exports the canonical engine (`tools.weglot.csv_engine`) + the one translator-specific adapter `pairs_from_translations` (Translation→WeglotPair). See below. |
 
-## Weglot CSV output (`tools.translator.weglot`)
+## Weglot CSV output — the canonical engine (`tools.weglot.csv_engine`)
 
-Owns the Weglot import-CSV format — byte-identical to the Fidelo exporter
-`tools/weglot/csv_export.py` (monorepo):
+The Weglot import-CSV format + IO live in **`tools/weglot/csv_engine.py`** — ONE source
+of truth, vendored byte-identical across cagdasunal/CEL + cagdasunal/webflow (kept in
+lockstep by `system_inspector.check_dashboard_parity`) and shared by the translator,
+the summary tool, the monorepo's Fidelo `csv_export.py`, and `mirror_csvs.py` (the
+weglot-engine consolidation, 2026-05-24). `tools.translator.weglot` re-exports it, so
+`from tools.translator.weglot import WeglotPair, emit_consolidated_csv, …` still works;
+new tools should import `from tools.weglot.csv_engine import …` directly.
 
 ```
 id;language_from;language_to;word_from;word_to;type     (semicolon, minimal-quote, LF)
@@ -147,4 +152,6 @@ no live API calls in tests.
 ## References
 - Built in tracker-092 Phase 3; renamed + given `weglot.py` in tracker-094 (`cagdasunal/webflow/docs/reviews/`).
 - Gemini Batch API: https://ai.google.dev/gemini-api/docs/batch-api
-- Fidelo→Weglot CSV exporter (format authority): `cagdasunal/webflow/tools/weglot/csv_export.py`.
+- Canonical Weglot CSV format authority: `tools/weglot/csv_engine.py` (vendored byte-identical
+  in both repos). Consumers: this package, the summary tool, and the monorepo's
+  `tools/weglot/csv_export.py` (Fidelo) + `tools/weglot/mirror_csvs.py`.
