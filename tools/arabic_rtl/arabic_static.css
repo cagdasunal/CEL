@@ -5,3 +5,4 @@ html[lang="ar"]{direction:rtl}
 html[lang="ar"] body{font-family:'Cairo','LibreFranklin',system-ui,sans-serif}
 html[lang="ar"] :is(h1,h2,h3,h4,h5,h6){font-family:'Cairo',sans-serif;letter-spacing:normal;text-transform:none}
 html[lang="ar"] p,html[lang="ar"] li,html[lang="ar"] a,html[lang="ar"] blockquote{line-height:1.7}
+html[lang="ar"] .navbar_link .navbar_dot{left:-12px;right:auto}
