@@ -22,3 +22,7 @@ node_modules/
 # & LLMs.txt" workflow to fail with "cannot pull with rebase: You have
 # unstaged changes" — see run 24472895594, 2026-04-15).
 data/sitemap-check-report.json
+
+# Arabic visual-pass screenshots — large PNGs uploaded as a CI artifact for review,
+# not committed (the generated *.css + *.report.md + state.json ARE committed).
+data/arabic-visual/screenshots/
