@@ -83,9 +83,8 @@ def extract_css_urls(html: str) -> list[str]:
     return out
 
 
-def fingerprint(urls, extra: str = "") -> str:
-    payload = "\n".join(sorted(urls)) + "\n--gemini--\n" + extra
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+def fingerprint(urls) -> str:
+    return hashlib.sha256("\n".join(sorted(urls)).encode("utf-8")).hexdigest()
 
 
 def read_prior_fp(path: Path):
@@ -93,17 +92,6 @@ def read_prior_fp(path: Path):
         return None
     m = _FP_RE.search(path.read_text(encoding="utf-8")[:400])
     return m.group(1) if m else None
-
-
-def gemini_layer() -> str:
-    """Concatenate all committed per-page Gemini visual corrections
-    (data/arabic-visual/*.css, written by tools.arabic_rtl.visual) into the final
-    scoped layer of cel-arabic.css. Returns '' when the visual pass hasn't run yet."""
-    d = _REPO_ROOT / "data" / "arabic-visual"
-    if not d.exists():
-        return ""
-    parts = [p.read_text(encoding="utf-8").strip() for p in sorted(d.glob("*.css"))]
-    return "".join(p for p in parts if p)
 
 
 def dedupe_rules(css_text: str) -> str:
@@ -181,8 +169,7 @@ def main() -> int:
         return 1
     print(f"{len(css_urls)} unique Webflow CSS file(s)")
 
-    gemini = gemini_layer()
-    fp = fingerprint(css_urls, gemini)
+    fp = fingerprint(css_urls)
     prior = read_prior_fp(OUT_PATH)
 
     if args.check:
@@ -219,16 +206,14 @@ def main() -> int:
     static = STATIC_PATH.read_text(encoding="utf-8").strip()
     # Minify the whole body (header is prepended after, so the source-fp banner is
     # never touched). Safe: minify preserves order/duplicates/significant spaces.
-    # Gemini visual corrections go LAST so they win on same-scope ties over the
-    # mechanical base. Header prepended after minify, so the source-fp banner is untouched.
-    body = generator.minify(static + override + fonts + gemini)
+    body = generator.minify(static + override + fonts)
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     header = (f"/*! cel-arabic.css | generated {ts} | source-fp:{fp} "
-              f"| css-files:{len(css_urls)} | rtlcss-override+font-swap+gemini+static (minified) */")
+              f"| css-files:{len(css_urls)} | rtlcss-override+font-swap+static (minified) */")
     out = header + "\n" + body + "\n"
     atomic_write_text(OUT_PATH, out)
     print(f"wrote {OUT_PATH} — {len(out)} bytes minified (static {len(static)} + override "
-          f"{len(override)} + font-swap {len(fonts)} + gemini {len(gemini)} -> body {len(body)})")
+          f"{len(override)} + font-swap {len(fonts)} -> body {len(body)})")
     return 0
 
 
