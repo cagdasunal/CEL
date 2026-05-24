@@ -380,7 +380,7 @@ def test_translate_surfaces_emit_warnings_into_report(tmp_path: Path, monkeypatc
     `warnings.extend(emission_report.warnings)`. Drive the REAL emit with a tiny size
     threshold so any written CSV produces the warning, then assert it surfaces."""
     from tools.summary import llms_parser, batch_runner, config
-    from tools.translator import weglot
+    from tools.weglot import csv_engine  # the 5 MB guard constant lives in the canonical engine now
 
     prior = tmp_path / "prior"
     prior.mkdir()
@@ -397,7 +397,7 @@ def test_translate_surfaces_emit_warnings_into_report(tmp_path: Path, monkeypatc
     weglot_dir.mkdir()
     monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
     monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
-    monkeypatch.setattr(weglot, "_WEGLOT_IMPORT_WARN_BYTES", 50)  # tiny: even the header trips it
+    monkeypatch.setattr(csv_engine, "_WEGLOT_IMPORT_WARN_BYTES", 50)  # tiny: even the header trips it
     monkeypatch.setattr(
         llms_parser, "fetch_and_parse",
         lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
