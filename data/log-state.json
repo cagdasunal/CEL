@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-24T05:48:21.498525-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-24T04:43:59.041941-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-23T13:34:28.984766-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-23T12:47:58.397438-07:00",
-      "detail": {
-        "slugs": [
-          "imparare-inglese-canada-ne-vale-la-pena"
-        ]
-      }
     }
   ]
 }
