@@ -541,7 +541,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     qa_scores: dict[str, float] = {}  # tracker-092 (1.2): cid → QA score; recorded in manifest + report
 
     # tracker-091 M-13: fetch llms.txt once for the whole phase so every item's
-    # link-candidate pool can include CMS items (housing /pb/, courses, blog) —
+    # link-candidate pool can include CMS items (housing /housing/, courses, blog) —
     # not just the 12 curated STATIC_PAGES. Mirrors the translate-phase pattern
     # (cli.py _execute_translate). Dry-run skips the network; failure falls back
     # to STATIC_PAGES-only via _build_link_candidate_pool's None handling.
@@ -1978,17 +1978,19 @@ def _resolve_item_locale(field_data: dict, target_locale_mode: str) -> str:
 def _cms_item_url(content_type: str, slug: str) -> str:
     """Build the live public URL for a CMS item (tracker-092 1.5 / M-14).
 
-    URL path prefix differs by collection — verified live 2026-05-20 via llms.txt:
-      blog  → /post/<slug>   (HTTP 200)
-      course→ /courses/<slug> (HTTP 200)
-      housing→ /pb/<slug>     (HTTP 200; /post/ and /housing/ both 404)
+    URL path prefix differs by collection — verified live via the sitemap:
+      blog  → /post/<slug>     (HTTP 200)
+      course→ /courses/<slug>  (HTTP 200)
+      housing→ /housing/<slug> (HTTP 200) — the housing_new collection. NOTE: this was
+               `/pb/<slug>` until 2026-05-24, when housing_new migrated /pb/ → /housing/
+               (the slug is unchanged; old /pb/ URLs now 404 / 301). Updated then.
     The previous code hardcoded /post/ for ALL collections, producing 404 URLs
     for housing + courses in the prompt context.
     """
     prefix = {
         "blog_post": "post",
         "course": "courses",
-        "housing": "pb",
+        "housing": "housing",
     }.get(content_type, "post")
     return f"https://www.englishcollege.com/{prefix}/{slug}"
 
@@ -2066,9 +2068,10 @@ def _build_link_candidate_pool(
     """Build the per-item link-candidate pool for `_execute_generate_english`.
 
     Pool = STATIC_PAGES (curated, prepended) + llms.txt URLs in `source_locale`
-    (deduplicated), minus EXCLUDED_LINK_PATH_SEGMENTS. When the source item is
-    housing, also exclude `/pb/` so a housing summary can't link to other housing
-    items (mirrors the prompt rule in tools/summary/prompts/housing.md line 28).
+    (deduplicated), minus EXCLUDED_LINK_PATH_SEGMENTS (the legacy per-city housing
+    slugs vc/sd/sm). When the source item is housing, also drop other `/housing/`
+    DETAIL pages so a housing summary can't link to sibling accommodation pages (the
+    `/housing` hub stays linkable; mirrors the prompt rule in prompts/housing.md).
 
     Housing (2026-05-22, NO cap): the site has many new `/housing` accommodation pages
     (hub + per-city detail pages, in every locale) that need inbound internal links, so
@@ -2077,7 +2080,8 @@ def _build_link_candidate_pool(
     `build_user_message`), housing URLs are ordered FIRST after the curated STATIC_PAGES.
     The model still links housing only where contextually relevant (city-matched per the
     prompt), and the link-stuffing + 6–8-link QA caps the total — so abundance in the pool
-    does not mean spam in the output. A housing-page summary still excludes `/pb/` siblings.
+    does not mean spam in the output. A housing-page summary still excludes other `/housing/`
+    DETAIL siblings (keeping only the hub).
 
     STATIC_PAGES are prepended so the curated set survives the prompt cap in
     prompt_builder.build_user_message. Returns the FULL pool; the prompt cap is
@@ -2094,13 +2098,16 @@ def _build_link_candidate_pool(
     llms_urls: list[str] = []
     if llms_index is not None:
         excluded = list(config.EXCLUDED_LINK_PATH_SEGMENTS)
-        if source_content_type == "housing":
-            excluded.append("pb")
         llms_urls = llms_index.urls_in_locale_excluding(source_locale, excluded)
     # Housing first (right after the curated STATIC_PAGES), then everything else — so the
     # new accommodation pages survive the downstream 60-candidate prompt cap.
     housing = [u for u in llms_urls if _is_housing_path(u)]
     non_housing = [u for u in llms_urls if not _is_housing_path(u)]
+    # A housing-source summary must not link to OTHER housing DETAIL pages (housing.md);
+    # the /housing hub stays an acceptable target. Replaces the stale `/pb/` segment-exclude
+    # after the housing_new /pb/ → /housing/ migration (2026-05-24).
+    if source_content_type == "housing":
+        housing = [u for u in housing if not _is_housing_detail_path(u)]
     # City-matched ordering (2026-05-23): when the source post names a city, put THAT city's
     # housing first so a Vancouver post is offered Vancouver apartments/student-houses (not
     # just whichever homestay appears first in llms order). Stable sort preserves order
@@ -2138,6 +2145,18 @@ def _is_housing_path(url: str) -> bool:
     if segments[0] in _LOCALE_PREFIX_SLUGS:  # skip a leading locale prefix
         segments = segments[1:]
     return bool(segments) and segments[0] in _HOUSING_ROOT_SLUGS
+
+
+def _is_housing_detail_path(url: str) -> bool:
+    """True if `url` is a housing DETAIL page (e.g. `/housing/<slug>`, `/de/unterkunft/<slug>`),
+    NOT the hub (`/housing`, `/de/unterkunft`). The hub stays an acceptable link target for a
+    housing summary; sibling detail pages do not (housing.md). Locale-prefix aware."""
+    import urllib.parse
+
+    segments = [s for s in urllib.parse.urlparse(url).path.strip("/").split("/") if s]
+    if segments and segments[0] in _LOCALE_PREFIX_SLUGS:  # skip a leading locale prefix
+        segments = segments[1:]
+    return len(segments) >= 2 and segments[0] in _HOUSING_ROOT_SLUGS
 
 
 # ---- Report rendering ----
