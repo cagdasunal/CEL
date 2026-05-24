@@ -115,8 +115,13 @@ def run_rtlcss(src_text: str) -> str:
         ip, op = os.path.join(d, "in.css"), os.path.join(d, "out.css")
         Path(ip).write_text(src_text, encoding="utf-8")
         # Pinned exact version for reproducibility + supply-chain safety.
-        subprocess.run(["npx", "--yes", "rtlcss@4.3.0", ip, op],
-                       check=True, capture_output=True, text=True)
+        try:
+            subprocess.run(["npx", "--yes", "rtlcss@4.3.0", ip, op],
+                           check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"rtlcss failed (exit {e.returncode}): {(e.stderr or '').strip()[:500]}"
+            ) from e
         return Path(op).read_text(encoding="utf-8")
 
 
@@ -191,6 +196,7 @@ def main() -> int:
     src_rules = generator.split_top(combined_src)
     rtl_rules = generator.split_top(combined_rtl)
     override = generator.emit(src_rules, rtl_rules)
+    fonts = generator.font_overrides(src_rules)
 
     warn = generator.changed_atrules(src_rules, rtl_rules)
     if warn:
@@ -200,10 +206,11 @@ def main() -> int:
     static = STATIC_PATH.read_text(encoding="utf-8").strip()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     header = (f"/*! cel-arabic.css | generated {ts} | source-fp:{fp} "
-              f"| css-files:{len(css_urls)} | rtlcss-override+static */")
-    out = header + "\n" + static + "\n" + override + "\n"
+              f"| css-files:{len(css_urls)} | rtlcss-override+font-swap+static */")
+    out = header + "\n" + static + "\n" + override + fonts + "\n"
     atomic_write_text(OUT_PATH, out)
-    print(f"wrote {OUT_PATH} — {len(out)} bytes (static {len(static)} + override {len(override)})")
+    print(f"wrote {OUT_PATH} — {len(out)} bytes "
+          f"(static {len(static)} + override {len(override)} + font-swap {len(fonts)})")
     return 0
 
 

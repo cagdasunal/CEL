@@ -51,3 +51,31 @@ def test_changed_atrules_counts_keyframes():
     src = g.split_top("@keyframes slide{from{left:0}to{left:9px}}")
     rtl = g.split_top("@keyframes slide{from{right:0}to{right:9px}}")
     assert g.changed_atrules(src, rtl) == 1
+
+
+def test_split_selector_list_splits_top_level_commas_only():
+    # commas inside :is()/:where() must NOT split
+    assert g.split_selector_list(".a,.b:is(.c,.d),.e") == [".a", ".b:is(.c,.d)", ".e"]
+
+
+def test_is_selector_not_corrupted_by_scoping():
+    # regression for the scope() comma-split bug: :is(.a,.b) stays intact
+    out = _emit(".x:is(.a,.b){margin-left:5px}", ".x:is(.a,.b){margin-right:5px}")
+    assert out == 'html[lang="ar"] .x:is(.a,.b){margin-right:5px;margin-left:0}'
+
+
+def test_font_overrides_direct_usage():
+    out = g.font_overrides(g.split_top(".dur-title{font-family:Cameraobscura,serif}"))
+    assert out == ('html[lang="ar"] .dur-title{font-family:\'Cairo\',sans-serif;'
+                   'letter-spacing:normal;text-transform:none}')
+
+
+def test_font_overrides_css_variable_targets_root():
+    # `:root` must map to html[lang="ar"] (not `html[lang="ar"] :root`, which matches nothing)
+    out = g.font_overrides(g.split_top(":root{--h1--font-family:Cameraobscura,serif}"))
+    assert out == 'html[lang="ar"]{--h1--font-family:\'Cairo\',sans-serif}'
+
+
+def test_font_overrides_skips_font_face_definition():
+    out = g.font_overrides(g.split_top("@font-face{font-family:'Cameraobscura';src:url(x.woff2)}"))
+    assert out == ""
