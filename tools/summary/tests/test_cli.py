@@ -614,20 +614,25 @@ def test_translate_limit_caps_units(tmp_path: Path, monkeypatch):
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12
 # curated landing URLs) as link candidates, so the model could never suggest
-# links to CMS items (housing /pb/<slug>, courses, blog). The new helper
+# links to CMS items (housing /housing/<slug>, courses, blog). The new helper
 # _build_link_candidate_pool merges STATIC_PAGES (prepended) with the source
 # locale's llms.txt URLs (minus legacy vc/sd/sm segments), and — when the
-# source is housing — also drops /pb/ so housing summaries don't link to other
-# housing items (mirrors prompts/housing.md line 28).
+# source is housing — also drops other /housing/ DETAIL pages so housing summaries
+# don't link to sibling accommodation pages (mirrors prompts/housing.md).
 
 
 def _fake_llms_index():
-    """A small LlmsIndex with one housing /pb/, one course, and one legacy /sd/."""
+    """A small LlmsIndex: the /housing hub, one housing DETAIL (/housing/<slug>), one
+    course, and one legacy /sd/ (per-city housing, always excluded)."""
     from tools.summary import llms_parser
 
     return llms_parser.LlmsIndex(entries=[
         llms_parser.LlmsEntry(
-            url="https://www.englishcollege.com/pb/test-residence",
+            url="https://www.englishcollege.com/housing",
+            title="Housing", description="", section="Housing", locale="en",
+        ),
+        llms_parser.LlmsEntry(
+            url="https://www.englishcollege.com/housing/test-residence",
             title="Test Residence", description="", section="Housing", locale="en",
         ),
         llms_parser.LlmsEntry(
@@ -642,21 +647,22 @@ def _fake_llms_index():
 
 
 def test_link_candidate_pool_nonhousing_includes_housing_items():
-    """A landing-page source sees housing /pb/ + course URLs as link candidates,
+    """A landing-page source sees housing /housing/ + course URLs as link candidates,
     and STATIC_PAGES come first (so they survive the 30-URL prompt cap)."""
     from tools.summary import config
 
     pool = cli._build_link_candidate_pool("landing", _fake_llms_index(), "en")
-    assert "https://www.englishcollege.com/pb/test-residence" in pool
+    assert "https://www.englishcollege.com/housing/test-residence" in pool
     assert "https://www.englishcollege.com/courses/general-english" in pool
     assert pool[0] == config.STATIC_PAGES[0]  # curated entry prepended
 
 
 def test_link_candidate_pool_housing_excludes_other_housing():
-    """A housing source must NOT see other /pb/ items (housing.md rule) but
-    still sees non-housing candidates like courses."""
+    """A housing source must NOT see other /housing/ DETAIL siblings (housing.md), but
+    the /housing hub stays linkable and non-housing candidates (courses) are kept."""
     pool = cli._build_link_candidate_pool("housing", _fake_llms_index(), "en")
-    assert "https://www.englishcollege.com/pb/test-residence" not in pool
+    assert "https://www.englishcollege.com/housing/test-residence" not in pool  # detail sibling excluded
+    assert "https://www.englishcollege.com/housing" in pool  # hub stays an acceptable target
     assert "https://www.englishcollege.com/courses/general-english" in pool
 
 
@@ -928,9 +934,10 @@ def test_translate_meta_live_emits_csv_via_engine(tmp_path: Path, monkeypatch):
 
 def test_cms_item_url_per_collection_prefix():
     """tracker-092 (1.5/M-14): each collection's CMS item URL uses the right
-    live path prefix. Verified against llms.txt 2026-05-20."""
+    live path prefix. housing_new migrated /pb/ → /housing/ (2026-05-24); the old
+    /pb/ path now 404s, the slug is unchanged."""
     assert cli._cms_item_url("housing", "cel-shared-apartment-premium") == \
-        "https://www.englishcollege.com/pb/cel-shared-apartment-premium"
+        "https://www.englishcollege.com/housing/cel-shared-apartment-premium"
     assert cli._cms_item_url("course", "english-academic-skills") == \
         "https://www.englishcollege.com/courses/english-academic-skills"
     assert cli._cms_item_url("blog_post", "3-common-mistakes-english-language") == \
@@ -1078,6 +1085,21 @@ def test_is_housing_path_helper():
     assert not cli._is_housing_path("https://www.englishcollege.com/")
 
 
+def test_is_housing_detail_path_helper():
+    """_is_housing_detail_path distinguishes housing DETAIL pages (/housing/<slug>) from the
+    hub (/housing) so a housing summary excludes detail siblings but keeps the hub linkable."""
+    # Detail pages (any locale) → True
+    assert cli._is_housing_detail_path("https://www.englishcollege.com/housing/homestay-vancouver")
+    assert cli._is_housing_detail_path("https://www.englishcollege.com/de/unterkunft/gastfamilie-san-diego")
+    assert cli._is_housing_detail_path("https://www.englishcollege.com/es/alojamiento/homestay-san-diego")
+    # Hubs → False (the hub stays an acceptable link target)
+    assert not cli._is_housing_detail_path("https://www.englishcollege.com/housing")
+    assert not cli._is_housing_detail_path("https://www.englishcollege.com/de/unterkunft")
+    # Non-housing / dead-legacy → False
+    assert not cli._is_housing_detail_path("https://www.englishcollege.com/courses/general-english")
+    assert not cli._is_housing_detail_path("https://www.englishcollege.com/pb/old-residence")
+
+
 def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatch):
     """End-to-end: _execute_generate_english uses _build_link_candidate_pool's
     output as the link inventory passed to the prompt builder. Patch the helper
@@ -1097,14 +1119,14 @@ def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatc
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
     monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
-    # Inject a known pool that includes a housing /pb/ URL. This bypasses the
+    # Inject a known pool that includes a housing /housing/ URL. This bypasses the
     # dry-run network gate (which leaves llms_index None) so the integration
     # path is exercised regardless.
     monkeypatch.setattr(
         cli, "_build_link_candidate_pool",
         lambda *a, **kw: (
             "https://www.englishcollege.com/",
-            "https://www.englishcollege.com/pb/test-residence",
+            "https://www.englishcollege.com/housing/test-residence",
         ),
     )
 
@@ -1120,7 +1142,7 @@ def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatc
     assert len(lines) >= 1
     first = json.loads(lines[0])
     user_msg = first["request"]["contents"][0]["parts"][0]["text"]
-    assert "https://www.englishcollege.com/pb/test-residence" in user_msg, (
+    assert "https://www.englishcollege.com/housing/test-residence" in user_msg, (
         "housing URL from the link pool did not reach the prompt's user_message"
     )
 
@@ -1161,7 +1183,7 @@ def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
     sources = [
         (SourceItem(url="https://www.englishcollege.com/courses/x", title="C", body_excerpt="b",
                     locale="en", content_type="course", cms_item_id="c1"), KeywordPlan(primary="x"), "cms"),
-        (SourceItem(url="https://www.englishcollege.com/pb/y", title="H", body_excerpt="b",
+        (SourceItem(url="https://www.englishcollege.com/housing/y", title="H", body_excerpt="b",
                     locale="en", content_type="housing", cms_item_id="h1"), KeywordPlan(primary="x"), "cms"),
         (SourceItem(url="https://www.englishcollege.com/post/z", title="B", body_excerpt="b",
                     locale="en", content_type="blog_post", cms_item_id="b1"), KeywordPlan(primary="x"), "cms"),
