@@ -1386,6 +1386,14 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     glossary = load_glossary()
     tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
 
+    # Authoritative EN→locale URL map (hreflang-derived) so same-locale link swaps
+    # resolve TRANSLATED slugs (e.g. /pathway-program-usa → /de/auslandsstudium-usa)
+    # instead of hub-falling-back. Built by `python3 -m tools.summary.url_map`.
+    from tools.summary import url_map as _url_map_mod
+    loaded_url_map = _url_map_mod.load_url_map(config.URL_MAP_FILE)
+    if not loaded_url_map and not args.dry_run:
+        warnings.append("url-map.json absent/empty — same-locale links fall back to slug-swap/hub only")
+
     per_locale_results: dict[str, dict] = {}
     # cid → [locales it was successfully translated + emitted into the CSV]. Feeds
     # the /admin/#summaries dashboard's per-item "Translated" coverage column.
@@ -1404,6 +1412,11 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                 content_type=en.get("content_type", "landing"),
             ))
 
+        # --limit caps the SOURCE items translated (same first-N per locale since
+        # en_summaries order is stable) — for instant pilot runs before the full batch.
+        if args.limit:
+            units = units[: args.limit]
+
         if not units:
             per_locale_results[locale] = {
                 "skipped": True,
@@ -1413,13 +1426,13 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
 
         # request_builder reproduces the existing summary-translation prompt
         # (llms.txt link swaps) so behaviour + CSV structure are preserved.
-        def _summary_rb(unit, loc, gslice, _llms=llms_index):
+        def _summary_rb(unit, loc, gslice, _llms=llms_index, _umap=loaded_url_map):
             link_swaps = []
             for src_url in _extract_markdown_links(unit.text):
-                # T2 (2026-05-23): prefer the exact same-locale equivalent; fall back to
-                # the nearest in-index same-locale ancestor / locale root before giving up
-                # (removing the link). Keeps link equity inside the locale subdirectory.
-                target_url = _llms.find_equivalent_or_fallback(src_url, loc) if _llms else None
+                # T2: hreflang url_map (translated slugs) → blog→locale-blog-hub →
+                # exact slug-swap → same-locale ancestor → locale root → drop. Keeps
+                # every link inside the target locale; never leaks to the EN original.
+                target_url = _llms.find_equivalent_or_fallback(src_url, loc, url_map=_umap) if _llms else None
                 link_swaps.append(LinkSwap(source_url=src_url, target_url=target_url))
             # tracker-095 M1: inject the per-unit glossary slice (do-not-translate
             # brand/entity terms) into the summary translation prompt. The engine
@@ -1440,7 +1453,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             requests.append(batch_runner.BatchRequest(
                 custom_id=u.id, system_blocks=sb, user_message=um, enable_thinking=False,
             ))
-        cost_estimate = batch_runner.estimate_batch_cost_usd(requests)
+        cost_estimate = batch_runner.estimate_batch_cost_usd(
+            requests, mode="interactive" if args.sync else "batch",
+        )
         if cost_estimate > config.MAX_BATCH_COST_USD:
             warnings.append(
                 f"locale {locale}: cost cap exceeded "
@@ -1471,7 +1486,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         # — url_drift would false-flag every linked paragraph (tracker-095 H2).
         translations = translate_batch(
             units, locale, glossary, request_builder=_summary_rb, tm=tm,
-            qa_check_urls=False,
+            qa_check_urls=False, sync=args.sync,
         )
         pairs: list[csv_emitter.SummaryPair] = []
         succeeded_count = 0

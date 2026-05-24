@@ -95,24 +95,48 @@ def test_blog_section_extraction():
 
 
 def test_find_equivalent_or_fallback():
-    """T2 (2026-05-23): exact same-locale equivalent → nearest in-index same-locale
-    ancestor → locale root → None. Every result is target-locale-prefixed + in-index, so
-    a fallback can never leak cross-locale."""
+    """T2 ordered chain: hreflang url_map → blog→locale-blog-hub → exact slug-swap →
+    same-locale ancestor → locale root → None. Every result is target-locale-prefixed
+    + in-index, so it can never leak cross-locale or to a nonexistent page."""
     from tools.summary.llms_parser import LlmsEntry
 
     idx = LlmsIndex(entries=[
         LlmsEntry(url="https://www.englishcollege.com/de/kurse", title="", description="", section="", locale="de"),
+        LlmsEntry(url="https://www.englishcollege.com/de/auslandsstudium-usa", title="", description="", section="", locale="de"),
+        LlmsEntry(url="https://www.englishcollege.com/de/blog", title="", description="", section="", locale="de"),
         LlmsEntry(url="https://www.englishcollege.com/de/", title="", description="", section="", locale="de"),
     ])
-    # Exact swap: /kurse → /de/kurse.
+    url_map = {"https://www.englishcollege.com/pathway-program-usa":
+               {"de": "https://www.englishcollege.com/de/auslandsstudium-usa"}}
+
+    # 0. hreflang map resolves a TRANSLATED slug the locale-prefix swap can't.
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/pathway-program-usa", "de", url_map=url_map
+    ) == "https://www.englishcollege.com/de/auslandsstudium-usa"
+
+    # 0b. A map entry pointing to a NON-indexed URL is ignored (index-verified).
+    bad_map = {"https://www.englishcollege.com/kurse":
+               {"de": "https://www.englishcollege.com/de/nonexistent-xyz"}}
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/kurse", "de", url_map=bad_map
+    ) == "https://www.englishcollege.com/de/kurse"  # falls through to exact swap
+
+    # 1. Blog post → locale blog hub (original per locale; never the EN original).
+    assert idx.find_equivalent_or_fallback(
+        "https://www.englishcollege.com/post/any-english-post", "de"
+    ) == "https://www.englishcollege.com/de/blog"
+
+    # 2. Exact swap: /kurse → /de/kurse.
     assert idx.find_equivalent_or_fallback(
         "https://www.englishcollege.com/kurse", "de"
     ) == "https://www.englishcollege.com/de/kurse"
-    # Missing slug → falls back to the de hub (the only in-index ancestor).
+
+    # 3. Non-blog missing slug → falls back to the de hub (in-index ancestor).
     assert idx.find_equivalent_or_fallback(
-        "https://www.englishcollege.com/post/missing-slug", "de"
+        "https://www.englishcollege.com/some-missing-page", "de"
     ) == "https://www.englishcollege.com/de/"
-    # A locale with nothing in the index → None (never a cross-locale leak).
+
+    # 4. A locale with nothing in the index → None (never a cross-locale leak).
     assert idx.find_equivalent_or_fallback(
         "https://www.englishcollege.com/post/x", "fr"
     ) is None

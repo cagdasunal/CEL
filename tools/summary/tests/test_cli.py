@@ -540,6 +540,52 @@ def test_translation_status_multi_locale(tmp_path: Path, monkeypatch):
     assert sorted(status["target_locales"]) == ["de", "fr"]
 
 
+def test_translate_limit_caps_units(tmp_path: Path, monkeypatch):
+    """--limit caps the source items translated (instant pilot before full batch):
+    5 eligible landing summaries, --limit 2 → only 2 requests built."""
+    from tools.summary import llms_parser, batch_runner, config
+
+    prior = tmp_path / "prior"
+    prior.mkdir()
+    (prior / "en-summaries.json").write_text(json.dumps({
+        f"gen-{i}-landing": {
+            "url": f"https://www.englishcollege.com/p{i}",
+            "markdown": f"## Page {i}\n\nBody paragraph number {i} here.",
+            "content_type": "landing", "locale": "en",
+        }
+        for i in range(5)
+    }), encoding="utf-8")
+
+    weglot_dir = tmp_path / "weglot"
+    weglot_dir.mkdir()
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
+    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
+    monkeypatch.setattr(
+        llms_parser, "fetch_and_parse", lambda *a, **k: llms_parser.LlmsIndex(entries=[]))
+
+    captured: dict = {}
+
+    def fake_submit(requests, **kw):
+        captured["requests"] = list(requests)
+        return batch_runner.BatchHandle(
+            batch_id="b", request_count=len(requests), submitted_at="t", dry_run=False)
+
+    def fake_wait(handle, **kw):
+        return [
+            batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True,
+                                     content="## Seite\n\nUebersetzter Absatz hier.")
+            for r in captured["requests"]
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
+    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
+
+    rc = cli.main(["translate", "--no-dry-run", "--locale", "de", "--limit", "2",
+                   "--from-run", str(prior), "--out-dir", str(tmp_path / "out")])
+    assert rc == 0
+    assert len(captured["requests"]) == 2, "expected --limit 2 to cap to 2 requests"
+
+
 # ---- M-13: link candidate pool builder (tracker-091) ----
 #
 # _execute_generate_english previously passed only config.STATIC_PAGES (12
