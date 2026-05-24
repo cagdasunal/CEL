@@ -28,12 +28,15 @@
   </div>
   <script>
   (function () {
+    // The password is verified server-side by the cel-dashboard Worker, which
+    // returns a signed session token. We store it in a persistent, Secure,
+    // SameSite=Strict cookie so the sign-in survives reloads + restarts.
     function sha256hex(s) {
       return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
         return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
       });
     }
-    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
 
     function getReturn() {
       var m = location.search.match(/[?&]return=([^&]+)/);
@@ -46,39 +49,43 @@
       return '/admin/';
     }
 
-    // ── Sign in ───────────────────────────────────────────────────────
     var loginForm = document.getElementById('login-form');
     var emailEl = document.getElementById('login-email');
     var pwEl = document.getElementById('login-pw');
     var errEl = document.getElementById('login-err');
+    var btn = loginForm.querySelector('button[type="submit"]');
+
     loginForm.addEventListener('submit', function (ev) {
       ev.preventDefault();
       errEl.textContent = '';
       var email = emailEl.value.trim().toLowerCase();
       var pw = pwEl.value;
       if (!email || !pw) return;
-      fetch('/admin/users.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (users) {
-        return pwHashOf(pw).then(function (h) {
-          var match = null;
-          for (var i = 0; i < users.length; i++) {
-            if (String(users[i].email || '').trim().toLowerCase() === email && String(users[i].pwHash || '').toLowerCase() === h) {
-              match = users[i];
-              break;
-            }
-          }
-          if (match) {
-            try { sessionStorage.setItem('cel_unlocked', String(Date.now())); } catch (_) {}
-            try { sessionStorage.setItem('cel_user', JSON.stringify({ firstName: match.firstName || '', lastName: match.lastName || '', email: match.email })); } catch (_) {}
+      if (!DISPATCH_URL) { errEl.textContent = 'Sign-in is not configured yet.'; return; }
+      if (btn) btn.disabled = true;
+      // Send SHA256(password), never the plaintext. The Worker hashes again and
+      // compares to the stored double-hash; the public hash can't be replayed.
+      sha256hex(pw).then(function (inner) {
+        return fetch(DISPATCH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', email: email, inner: inner })
+        });
+      }).then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) {
+          if (j && j.ok && j.token) {
+            document.cookie = 'cel_session=' + j.token + '; Max-Age=1209600; Path=/; Secure; SameSite=Strict';
             location.replace(getReturn());
           } else {
             errEl.textContent = 'Wrong email or password.';
             pwEl.value = '';
             pwEl.focus();
+            if (btn) btn.disabled = false;
           }
+        }).catch(function () {
+          errEl.textContent = 'Could not sign in right now. Please try again.';
+          if (btn) btn.disabled = false;
         });
-      }).catch(function () {
-        errEl.textContent = 'Could not verify right now. Please try again.';
-      });
     });
   })();
   </script>
