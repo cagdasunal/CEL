@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-24T19:19:43.759216+00:00",
+  "generated_at": "2026-05-24T20:09:41.409222+00:00",
   "source_run": "run-098-full",
   "dry_run": false,
   "target_locales": [
@@ -14,64 +14,64 @@
   ],
   "per_locale": {
     "de": {
-      "translated": 20,
-      "failed": 12,
+      "translated": 10,
+      "failed": 0,
       "csv": "de.csv",
-      "words": 15668,
-      "internal_links": 149
+      "words": 7854,
+      "internal_links": 75
     },
     "fr": {
-      "translated": 19,
-      "failed": 13,
+      "translated": 11,
+      "failed": 0,
       "csv": "fr.csv",
-      "words": 17575,
-      "internal_links": 141
+      "words": 10097,
+      "internal_links": 82
     },
     "es": {
-      "translated": 19,
-      "failed": 12,
+      "translated": 8,
+      "failed": 3,
       "csv": "es.csv",
-      "words": 17245,
-      "internal_links": 142
+      "words": 7319,
+      "internal_links": 59
     },
     "it": {
-      "translated": 16,
-      "failed": 15,
+      "translated": 7,
+      "failed": 4,
       "csv": "it.csv",
-      "words": 14161,
-      "internal_links": 118
+      "words": 5998,
+      "internal_links": 52
     },
     "pt": {
-      "translated": 16,
-      "failed": 16,
+      "translated": 10,
+      "failed": 1,
       "csv": "pt.csv",
-      "words": 14516,
-      "internal_links": 121
+      "words": 9035,
+      "internal_links": 74
     },
     "ko": {
-      "translated": 20,
-      "failed": 12,
+      "translated": 11,
+      "failed": 0,
       "csv": "ko.csv",
-      "words": 12396,
-      "internal_links": 149
+      "words": 6662,
+      "internal_links": 82
     },
     "ja": {
-      "translated": 17,
-      "failed": 14,
+      "translated": 9,
+      "failed": 2,
       "csv": "ja.csv",
-      "words": 655,
-      "internal_links": 127
+      "words": 168,
+      "internal_links": 66
     },
     "ar": {
-      "translated": 18,
-      "failed": 14,
+      "translated": 10,
+      "failed": 0,
       "csv": "ar.csv",
-      "words": 12742,
-      "internal_links": 133
+      "words": 7266,
+      "internal_links": 75
     }
   },
   "per_item": {
-    "gen-0-https://www.englishcollege.com/": [
+    "gen-338-69efe35ee2e7ddce57717ead": [
       "ar",
       "de",
       "es",
@@ -81,7 +81,7 @@
       "ko",
       "pt"
     ],
-    "gen-1-englishcollege.com/los-angeles-ca/language-courses": [
+    "gen-339-69efe35b9ea60c8f4efad7ff": [
       "ar",
       "de",
       "es",
@@ -91,7 +91,23 @@
       "ko",
       "pt"
     ],
-    "gen-2-tps://www.englishcollege.com/summer-camp-san-diego": [
+    "gen-340-69efe359f841c8029d14b843": [
+      "ar",
+      "de",
+      "fr",
+      "ko",
+      "pt"
+    ],
+    "gen-341-69efe33eadce72009bd34fa6": [
+      "ar",
+      "de",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-342-69efe33b662607a59ea13eaf": [
       "ar",
       "de",
       "es",
@@ -101,162 +117,57 @@
       "ko",
       "pt"
     ],
-    "gen-5-https://www.englishcollege.com/housing": [
+    "gen-343-69efe338d203886c9318a68c": [
       "ar",
       "de",
       "es",
       "fr",
       "it",
       "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-345-69efe31eadce72009bd33fa0": [
+      "ar",
+      "de",
+      "fr",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-346-69efe31a0d983bc381ededcb": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-348-69efe30c6ead792a1db2dd97": [
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-349-69efe309d203886c93188943": [
+      "ar",
+      "de",
+      "es",
+      "fr",
       "ko"
     ],
-    "gen-6-https://www.englishcollege.com/pathway-program-usa": [
+    "gen-347-69efe31075b6a78fb5942c09": [
       "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-7-s://www.englishcollege.com/pathway/semester-abroad": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko"
-    ],
-    "gen-8-ww.englishcollege.com/pathway/certificate-programs": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-9-.englishcollege.com/pathway/undergraduate-programs": [
-      "ar",
-      "de",
-      "es",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-11-https://www.englishcollege.com/vancouver": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-13-ishcollege.com/vancouver/how-long-to-learn-english": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko"
-    ],
-    "gen-14-ttps://www.englishcollege.com/vancouver/vs-toronto": [
-      "de",
-      "es",
-      "fr",
-      "ko",
-      "pt"
-    ],
-    "gen-329-68d1747be9ea985b067defbb": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-330-68d17422dc3cf440da20c847": [
-      "ar",
-      "de"
-    ],
-    "gen-331-68d1733b586edac558aed90d": [
-      "ar",
-      "de",
       "es",
       "fr",
       "ja",
       "ko",
       "pt"
-    ],
-    "gen-332-68d172966702135a7e6ad385": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ko",
-      "pt"
-    ],
-    "gen-333-667453c576e8d35c454cced1": [
-      "de",
-      "es",
-      "fr",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-334-667453c576e8d35c454ccebf": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-336-667453c576e8d35c454cce9a": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-337-667453c576e8d35c454ccead": [
-      "ar",
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ja",
-      "ko",
-      "pt"
-    ],
-    "gen-335-667453c576e8d35c454cced9": [
-      "de",
-      "es",
-      "fr",
-      "it",
-      "ko",
-      "pt"
-    ],
-    "gen-3-https://www.englishcollege.com/learn-english-usa": [
-      "ar",
-      "fr",
-      "it",
-      "ja",
-      "ko"
     ]
   }
 }
