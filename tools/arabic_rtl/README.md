@@ -38,6 +38,17 @@ per subset, `font-weight: 400 700`), served from
 the font, re-download the woff2 + update the `@font-face` blocks; the files are committed
 to git and published via GitHub Pages like any other asset.
 
+**Applying the Arabic font (auto):** the site's Latin-only display font (Cameraobscura)
+would render Arabic as tofu. `generator.font_overrides()` scans the source CSS for every
+selector that uses Cameraobscura — both directly (`font-family: Cameraobscura,…`) and via
+CSS variables (`--*-font-family: Cameraobscura,…`, used by `h1–h6`) — and emits scoped
+`html[lang="ar"] …{font-family:'Cairo',…;letter-spacing:normal;text-transform:none}`
+overrides (and redefines the variables on `html[lang="ar"]`). This auto-covers current
+*and* future Cameraobscura usage, so new display classes don't silently break Arabic.
+font-family isn't directional, so rtlcss never touches it — this is where the Arabic font
+gets applied. To target a different display font, change `DISPLAY_FONT_NEEDLE` in
+`generator.py`.
+
 ## Run
 ```bash
 # from the repo root
