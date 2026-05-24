@@ -23,17 +23,7 @@
       <input type="password" id="login-pw" placeholder="Password" autocomplete="current-password" required>
       <button type="submit">Sign in</button>
       <div class="gate-error" id="login-err" role="alert" aria-live="polite"></div>
-      <button type="button" class="gate-link" id="forgot-toggle">Forgot password?</button>
       <noscript><p class="gate-hint">JavaScript is required.</p></noscript>
-    </form>
-
-    <form class="gate-card" id="forgot-form" autocomplete="off" hidden>
-      <h1>Reset password</h1>
-      <p class="gate-hint">Enter your email and we'll send a reset link.</p>
-      <input type="email" id="forgot-email" placeholder="Email" autocomplete="username">
-      <button type="submit" id="forgot-submit">Send reset link</button>
-      <div class="gate-ok" id="forgot-msg" role="status" aria-live="polite"></div>
-      <button type="button" class="gate-link" id="forgot-back">Back to sign in</button>
     </form>
   </div>
   <script>
@@ -44,7 +34,6 @@
       });
     }
     function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
-    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
 
     function getReturn() {
       var m = location.search.match(/[?&]return=([^&]+)/);
@@ -90,39 +79,6 @@
       }).catch(function () {
         errEl.textContent = 'Could not verify right now. Please try again.';
       });
-    });
-
-    // ── Forgot password (inline) ──────────────────────────────────────
-    var forgotForm = document.getElementById('forgot-form');
-    var forgotEmail = document.getElementById('forgot-email');
-    var forgotMsg = document.getElementById('forgot-msg');
-    var forgotSubmit = document.getElementById('forgot-submit');
-    function neutralMsg() { forgotMsg.textContent = 'If that email is registered, a reset link is on its way.'; }
-    document.getElementById('forgot-toggle').addEventListener('click', function () {
-      loginForm.setAttribute('hidden', '');
-      forgotForm.removeAttribute('hidden');
-      forgotEmail.value = emailEl.value;
-      forgotEmail.focus();
-    });
-    document.getElementById('forgot-back').addEventListener('click', function () {
-      forgotForm.setAttribute('hidden', '');
-      loginForm.removeAttribute('hidden');
-      forgotMsg.textContent = '';
-    });
-    forgotForm.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      var email = forgotEmail.value.trim().toLowerCase();
-      if (!email) return;
-      forgotSubmit.disabled = true;
-      forgotMsg.textContent = 'Sending…';
-      if (!DISPATCH_URL) { forgotSubmit.disabled = false; neutralMsg(); return; }
-      fetch(DISPATCH_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'dispatch', workflow: 'dashboard-forgot-password.yml', inputs: { email: email } })
-      }).then(function () { neutralMsg(); })
-        .catch(function () { neutralMsg(); })
-        .finally(function () { forgotSubmit.disabled = false; });
     });
   })();
   </script>

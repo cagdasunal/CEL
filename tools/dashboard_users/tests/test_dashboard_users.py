@@ -6,14 +6,12 @@ Run from the CEL repo root:
 import json
 import os
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
 from tools.dashboard_users import _common as c
-from tools.dashboard_users import change_password, forgot_password, reset_password
+from tools.dashboard_users import change_password
 
-KEY = "test-signing-key-0123456789"
 PWD = "test-pass-ONE"          # the user's current plaintext password
 
 
@@ -25,11 +23,7 @@ def pwhash(pw):
     return c.sha256hex(c.sha256hex(pw))
 
 
-_ENV_KEYS = (
-    "INPUT_EMAIL", "INPUT_CUR_HASH", "INPUT_NEW_PW_HASH",
-    "INPUT_EXP", "INPUT_SIG", "RESET_SIGNING_KEY",
-    "GITHUB_OUTPUT", "RESET_BASE_URL", "RESET_TTL_SECONDS",
-)
+_ENV_KEYS = ("INPUT_EMAIL", "INPUT_CUR_HASH", "INPUT_NEW_PW_HASH")
 
 
 class Base(unittest.TestCase):
@@ -118,91 +112,6 @@ class TestChangePassword(Base):
         os.environ["INPUT_CUR_HASH"] = "deadbeef"
         os.environ["INPUT_NEW_PW_HASH"] = pwhash("x")
         self.assertEqual(change_password.main(), 1)
-
-
-class TestResetSignature(Base):
-    def test_sign_verify_roundtrip(self):
-        exp = int(time.time()) + 3600
-        sig = c.reset_signature("ada@x.com", exp, self.stored_hash(), KEY)
-        self.assertTrue(c.verify_reset_signature("ada@x.com", exp, self.stored_hash(), KEY, sig))
-        self.assertFalse(c.verify_reset_signature("ada@x.com", exp, self.stored_hash(), KEY, sig[:-1] + ("0" if sig[-1] != "0" else "1")))
-
-
-class TestResetPassword(Base):
-    def _run_reset(self, exp, sig, new_pw="reset-pw"):
-        os.environ["RESET_SIGNING_KEY"] = KEY
-        os.environ["INPUT_EMAIL"] = "ada@x.com"
-        os.environ["INPUT_EXP"] = str(exp)
-        os.environ["INPUT_SIG"] = sig
-        os.environ["INPUT_NEW_PW_HASH"] = pwhash(new_pw)
-        return reset_password.main()
-
-    def test_accept_valid(self):
-        exp = int(time.time()) + 3600
-        sig = c.reset_signature("ada@x.com", exp, self.stored_hash(), KEY)
-        self.assertEqual(self._run_reset(exp, sig), 0)
-        self.assertEqual(self.stored_hash(), pwhash("reset-pw"))
-
-    def test_reject_expired(self):
-        exp = int(time.time()) - 1
-        sig = c.reset_signature("ada@x.com", exp, self.stored_hash(), KEY)
-        self.assertEqual(self._run_reset(exp, sig), 1)
-
-    def test_reject_tampered_sig(self):
-        exp = int(time.time()) + 3600
-        good = c.reset_signature("ada@x.com", exp, self.stored_hash(), KEY)
-        bad = good[:-1] + ("0" if good[-1] != "0" else "1")
-        self.assertEqual(self._run_reset(exp, bad), 1)
-
-    def test_reject_wrong_key(self):
-        exp = int(time.time()) + 3600
-        sig = c.reset_signature("ada@x.com", exp, self.stored_hash(), "different-key")
-        self.assertEqual(self._run_reset(exp, sig), 1)
-
-    def test_link_is_single_use(self):
-        # A link signed against the CURRENT pwHash stops working once the
-        # password changes (the recomputed signature no longer matches).
-        exp = int(time.time()) + 3600
-        sig = c.reset_signature("ada@x.com", exp, self.stored_hash(), KEY)
-        self.assertEqual(self._run_reset(exp, sig, new_pw="first-reset"), 0)
-        # Reusing the same (old) link now fails — pwHash has changed.
-        self.assertEqual(self._run_reset(exp, sig, new_pw="second-attempt"), 1)
-        self.assertEqual(self.stored_hash(), pwhash("first-reset"))
-
-
-class TestForgotPassword(Base):
-    def test_found_emits_usable_link(self):
-        out = Path(self.tmp) / "ghout.txt"
-        out.write_text("", encoding="utf-8")
-        os.environ["GITHUB_OUTPUT"] = str(out)
-        os.environ["RESET_SIGNING_KEY"] = KEY
-        os.environ["INPUT_EMAIL"] = "ADA@x.com"   # case-insensitive
-        self.assertEqual(forgot_password.main(), 0)
-        data = dict(line.split("=", 1) for line in out.read_text().splitlines() if "=" in line)
-        self.assertEqual(data.get("found"), "true")
-        self.assertEqual(data.get("recipient"), "ada@x.com")
-        url = data.get("reset_url", "")
-        self.assertIn("/reset/?email=", url)
-        # Feed the issued link straight into the reset workflow — must succeed.
-        exp = int(url.split("exp=")[1].split("&")[0])
-        sig = url.split("sig=")[1]
-        os.environ["INPUT_EMAIL"] = "ada@x.com"
-        os.environ["INPUT_EXP"] = str(exp)
-        os.environ["INPUT_SIG"] = sig
-        os.environ["INPUT_NEW_PW_HASH"] = pwhash("via-forgot")
-        self.assertEqual(reset_password.main(), 0)
-        self.assertEqual(self.stored_hash(), pwhash("via-forgot"))
-
-    def test_unknown_email_does_not_reveal(self):
-        out = Path(self.tmp) / "ghout2.txt"
-        out.write_text("", encoding="utf-8")
-        os.environ["GITHUB_OUTPUT"] = str(out)
-        os.environ["RESET_SIGNING_KEY"] = KEY
-        os.environ["INPUT_EMAIL"] = "nobody@x.com"
-        self.assertEqual(forgot_password.main(), 0)
-        data = dict(line.split("=", 1) for line in out.read_text().splitlines() if "=" in line)
-        self.assertEqual(data.get("found"), "false")
-        self.assertNotIn("recipient", data)
 
 
 if __name__ == "__main__":

@@ -10,18 +10,11 @@ Model (see the dashboard plan's CRYPTO SPEC):
 Storing the *double* hash lets change-password verify "you know the current
 password" even though pwHash is public: only someone who knows P can produce
 inner(P); the public pwHash does not yield inner(P) (preimage resistance).
-
-Reset links are stateless HMAC tokens — no token store:
-  sig = HMAC_SHA256(RESET_SIGNING_KEY, f"{email}|{exp}|{currentPwHash}")
-Because the signature binds the CURRENT pwHash, completing a reset changes
-pwHash and so invalidates the link (single-use, no persisted state).
 """
 from __future__ import annotations
 
 import hashlib
-import hmac
 import json
-import os
 import re
 from pathlib import Path
 
@@ -71,20 +64,3 @@ def find_user(users: list[dict], email: str) -> dict | None:
         if normalize_email(u.get("email", "")) == target:
             return u
     return None
-
-
-def reset_signing_key() -> str:
-    key = os.environ.get("RESET_SIGNING_KEY", "")
-    if not key:
-        raise RuntimeError("RESET_SIGNING_KEY is not set")
-    return key
-
-
-def reset_signature(email: str, exp: int, current_pw_hash: str, key: str) -> str:
-    msg = "%s|%d|%s" % (normalize_email(email), int(exp), current_pw_hash)
-    return hmac.new(key.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256).hexdigest()
-
-
-def verify_reset_signature(email: str, exp: int, current_pw_hash: str, key: str, sig: str) -> bool:
-    expected = reset_signature(email, exp, current_pw_hash, key)
-    return hmac.compare_digest(expected, (sig or "").strip().lower())
