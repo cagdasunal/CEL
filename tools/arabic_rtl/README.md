@@ -18,8 +18,12 @@ override for the Arabic version of englishcollege.com (Webflow + Weglot). Served
    from 4.3 MB / 11k rules to 346 KB / 2k rules), mirrors it with `npx rtlcss`, then
    post-processes into a **diff + reset** override (see `generator.py`), prepends the
    hand-authored `arabic_static.css` (self-hosted Arabic font + `direction:rtl` +
-   typography incl. headings), and writes the minified result with a fresh fingerprint
-   header.
+   typography incl. headings), appends the **Gemini visual-correction layer** (see "Visual
+   pass" below), and writes the single minified result with a fresh fingerprint header.
+
+**One served file.** Everything above is concatenated into ONE `cel-arabic.css`. The
+per-page `data/arabic-visual/*.css` files are intermediate Gemini output — they are merged
+into `cel-arabic.css`; nothing per-page is ever served.
 
 ## Why diff+reset (not the full rtlcss mirror)
 rtlcss is built to *replace* the LTR stylesheet. We can only *add* CSS on `/ar/`
@@ -49,20 +53,45 @@ font-family isn't directional, so rtlcss never touches it — this is where the 
 gets applied. To target a different display font, change `DISPLAY_FONT_NEEDLE` in
 `generator.py`.
 
+## Visual pass (Gemini 3.1 Pro vision)
+The mechanical flip + font swap gets the *bulk* right but can't judge how a page actually
+LOOKS in RTL. `tools/arabic_rtl/visual.py` adds a vision layer: it screenshots the live
+`/ar/` page (Playwright headless Chromium — RTL + Cairo already applied), sends the
+screenshot + the page's real CSS class names to **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`)
+with an Arabic-UX prompt (`prompts/visual_system.md`), and gets back corrective CSS.
+
+Every returned rule is **validated** before use: it must target a real class on the page,
+it gets `html[lang="ar"]`-scoped, and it's rejected if it contains `@import` / an external
+`url()` / `javascript:` / a `{}<>` breakout. Validated corrections are written to
+`data/arabic-visual/<slug>.css` (+ a `<slug>.report.md` explaining each); `build.py` folds
+them all into the one `cel-arabic.css`.
+
+**Smart cadence (cost control).** A page is screenshotted + sent to Gemini only when it has
+**never been analyzed, OR its CSS changed AND it hasn't been analyzed in ≥ 7 days**
+(`data/arabic-visual/state.json` tracks each page's `css_hash` + `analyzed_at`). First run
+covers all pages once; thereafter only changed pages, at most weekly. Needs `GEMINI_API_KEY`
+(env / `.env` / GitHub secret) and the `google-genai` + `playwright` deps.
+
 ## Run
 ```bash
 # from the repo root
-python -m tools.arabic_rtl.build           # regenerate iff source CSS changed
+python -m tools.arabic_rtl.build           # regenerate cel-arabic.css iff source changed
 python -m tools.arabic_rtl.build --force   # always regenerate
-python -m tools.arabic_rtl.build --check    # report only; exit 1 if a change is detected
-python -m pytest tools/arabic_rtl/tests/   # unit tests for the generator
+python -m tools.arabic_rtl.visual          # Gemini visual pass on all ELIGIBLE /ar/ pages
+python -m tools.arabic_rtl.visual --only /ar/vancouver --force --limit 1  # one page (smoke)
+python -m tools.arabic_rtl.visual --dry-run   # show eligibility only; no screenshots/Gemini
+python -m pytest tools/arabic_rtl/tests/   # unit tests
 ```
-Stdlib-only Python (urllib + xml.etree + regex). `rtlcss` runs via `npx` (pinned `rtlcss@4.3.0`).
+The build engine is stdlib-only (`rtlcss` via `npx`, pinned `rtlcss@4.3.0`); the visual pass
+adds `google-genai` + `playwright` (lazy-imported, so the build engine still runs without them).
 
 ## Automation
-`.github/workflows/arabic-css.yml` runs hourly (cron `23 * * * *`), regenerates,
-and commits/pushes `docs/scripts/cel-arabic.css` **only when it changed** (rebase-retry
-push, `push-to-main` concurrency group). GitHub Pages serves it within ~10 min.
+- `.github/workflows/arabic-css.yml` — **hourly** (`23 * * * *`): regenerates + commits
+  `cel-arabic.css` only when the source CSS or the gemini layer changed (rebase-retry push,
+  `push-to-main` group). GitHub Pages serves it within ~10 min.
+- `.github/workflows/arabic-visual.yml` — **weekly** (Mon 05:00 UTC) + manual dispatch: runs
+  the Gemini visual pass on eligible pages, reassembles, commits the corrections + state, and
+  uploads the screenshots as a CI artifact for review.
 
 ## Activating it on the live site (manual, one-time)
 The engine only produces the file. To use it, add this to **Webflow → Site Settings
@@ -88,6 +117,10 @@ Arabic pages (zero bytes on the other 8 languages):
 - **Non-flip exclusions** (`exclusions.py`) start empty. rtlcss flips everything; if live
   validation shows a rule that shouldn't have flipped (a logo, a media-play control), add
   a substring of its selector to `EXCLUDE_SUBSTRINGS`.
-- The typography layer covers font (incl. headings), direction, and line-height. Deeper
-  RTL design polish (mirroring icons, carousels, spacing nuance) should follow live `/ar/`
-  browser validation.
+- Deeper RTL polish (icon/carousel direction, spacing, bidi, alignment) is handled by the
+  **Gemini visual pass** above, refreshed weekly. LLM-authored CSS isn't infallible — review
+  the live `/ar/` pages after publishing and tune `prompts/visual_system.md` (or add a
+  selector substring to `exclusions.py`) if a correction looks wrong.
+- The visual pass produces one combined layer scoped `html[lang="ar"]`, so a correction made
+  for one page applies to all Arabic pages (fine for shared components; the prompt steers
+  Gemini toward component-level selectors).

@@ -201,8 +201,15 @@ def diff_rule(src_body: str, rtl_body: str):
         return None
     out = []
     for p, v in r.items():
-        if s.get(p) != v:
-            out.append(f"{p}:{v}")  # rtlcss preserves !important inside v
+        if s.get(p) == v:
+            continue
+        sv = s.get(p)
+        # Centering trap: rtlcss flips a centering `translate(-50%)` to `translate(50%)`,
+        # knocking the element off-center. If the ONLY change is that sign flip, keep the
+        # base value (skip the override) rather than re-breaking centering on /ar.
+        if sv and "translate" in v.lower() and sv.replace("-50%", "50%", 1) == v:
+            continue
+        out.append(f"{p}:{v}")  # rtlcss preserves !important inside v
     for p in s:
         if p not in r:
             reset = RESET.get(p, "initial")

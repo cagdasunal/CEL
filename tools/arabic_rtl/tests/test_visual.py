@@ -15,6 +15,14 @@ def test_slug_for():
         == "ar-vancouver-cost-of-studying"
 
 
+def test_ltr_url_for():
+    assert v.ltr_url_for("https://www.englishcollege.com/ar/vancouver") \
+        == "https://www.englishcollege.com/vancouver"
+    assert v.ltr_url_for("https://www.englishcollege.com/ar") == "https://www.englishcollege.com/"
+    assert v.ltr_url_for("https://www.englishcollege.com/ar/vancouver/cost") \
+        == "https://www.englishcollege.com/vancouver/cost"
+
+
 def test_class_inventory_dedupes_and_splits():
     html = '<div class="a b"></div><span class="b c"></span>'
     assert v.class_inventory(html) == ["a", "b", "c"]

@@ -11,12 +11,15 @@ _UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 
 
-def capture(url: str, viewport_width: int = 1280, timeout_ms: int = 45000) -> bytes:
-    """Return a full-page PNG of `url` after RTL + webfonts have applied.
+def capture(url: str, viewport_width: int = 1280, timeout_ms: int = 45000,
+            expect_rtl: bool = True) -> bytes:
+    """Return a full-page PNG of `url` after webfonts (and, when expect_rtl, dir=rtl) apply.
 
-    Raises on navigation failure (the caller skips that page). The dir=rtl and
-    fonts-ready waits are best-effort — on timeout we screenshot anyway rather than
-    drop the page, since a slightly-early shot still beats no data.
+    `expect_rtl=True` (Arabic page) waits for the head-loader to set dir=rtl; `False`
+    (the English LTR reference) skips that wait. Raises on navigation failure (the caller
+    skips that page). Waits are best-effort — on timeout we screenshot anyway rather than
+    drop the page, since a slightly-early shot still beats no data. Uses `load` rather than
+    `networkidle` (some pages keep a persistent connection open and never go idle).
     """
     from playwright.sync_api import sync_playwright  # lazy — optional dep
 
@@ -28,14 +31,15 @@ def capture(url: str, viewport_width: int = 1280, timeout_ms: int = 45000) -> by
                 user_agent=_UA,
                 device_scale_factor=1,
             )
-            page.goto(url, wait_until="networkidle", timeout=timeout_ms)
-            # The client head-loader sets dir=rtl after load; wait for it.
-            try:
-                page.wait_for_function(
-                    "document.documentElement.getAttribute('dir')==='rtl'", timeout=15000
-                )
-            except Exception:
-                pass
+            page.goto(url, wait_until="load", timeout=timeout_ms)
+            if expect_rtl:
+                # The client head-loader sets dir=rtl after load; wait for it.
+                try:
+                    page.wait_for_function(
+                        "document.documentElement.getAttribute('dir')==='rtl'", timeout=15000
+                    )
+                except Exception:
+                    pass
             # Wait for the Cairo webfont so Arabic isn't captured in a fallback face.
             try:
                 page.evaluate("() => (document.fonts ? document.fonts.ready : null)")
