@@ -9,6 +9,15 @@ in a given source string). Enforcement tiers (tracker-095 M2):
 Over-rigid post-edit replacement lowers quality, so `enforce()` never rewrites;
 the one hard gate (forbidden) lives in the engine.
 
+Place names (audit-108 M-6, 2026-05-24): brand/cert/visa codes (CEL, IELTS, DLI,
+I-20…) are genuinely do-not-translate. But region names with standard exonyms
+(California→Kalifornien, British Columbia→Britisch-Kolumbien) were REMOVED from
+the DNT list — forcing them verbatim contradicted the locale prompts (de.md
+"Kalifornien für California") and is wrong. City names (San Diego / Los Angeles /
+Vancouver) stay DNT because they are stable in Latin scripts; in non-Latin locales
+(ja/ko/ar) they legitimately transliterate (e.g. バンクーバー), so a
+`dnt_term_dropped` flag on those is ADVISORY (a correct localization), not a defect.
+
 The default glossary lives in `glossary.json` next to this module and is seeded
 from CEL's brand/entity terms (the same entities common.md spells out). Bump
 `version` whenever it changes — the translation memory keys on the version so a

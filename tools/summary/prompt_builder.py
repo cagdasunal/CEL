@@ -14,7 +14,6 @@ link inventory subset.
 """
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Optional
@@ -46,14 +45,6 @@ class KeywordPlan:
     primary: str
     secondaries: tuple[str, ...] = ()
     entities: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class LinkSwap:
-    """For translation: source link → equivalent in target locale, or None to REMOVE."""
-
-    source_url: str
-    target_url: Optional[str]  # None = remove the link entirely
 
 
 # ---- Loading ----
@@ -266,17 +257,16 @@ def build_translation_system_prompt(target_locale: str) -> list[dict]:
 def build_translation_user_message(
     en_summary_markdown: str,
     target_locale: str,
-    link_swaps: Iterable[LinkSwap],
 ) -> str:
-    """User message for translation: source EN summary + per-link swap table.
+    """User message for translation: translate the EN summary, preserving structure.
 
-    For each link_swap with target_url=None, the model is instructed to REMOVE
-    the link (drop the anchor text inline) — never link cross-language.
+    audit-108 M-4 (2026-05-24): NO link-swap table is injected. The translate phase
+    emits per-block PLAIN TEXT (links collapsed to their anchor text by
+    `structure.summary_page_blocks`) and Weglot's URL-translation rules localize the
+    hrefs on the live page — so swapping link URLs in the prompt was wasted Pro tokens
+    whose output was discarded at emit. The model just preserves link PLACEMENT so the
+    block structure stays aligned; the URLs it keeps are irrelevant (stripped at emit).
     """
-    swap_table = {}
-    for swap in link_swaps:
-        swap_table[swap.source_url] = swap.target_url  # None = remove
-
     lines: list[str] = []
     lines.append("## Task")
     lines.append(
@@ -285,26 +275,6 @@ def build_translation_user_message(
         f"breaks, and link placement). Apply the locale-specific tone, idiom, and "
         f"conventions from the system prompt."
     )
-    lines.append("")
-    lines.append("## Link swap rules")
-    lines.append(
-        "For each Markdown link `[text](URL)` in the source, look up the URL in the "
-        "swap table below. If the table has a target URL, use it. If the table maps "
-        "the URL to `null` (no equivalent in the target locale), REMOVE the link "
-        "entirely (drop the `[...](...)` syntax and keep the anchor text inline as "
-        "plain prose). Do NOT translate the URL itself or link cross-language."
-    )
-    lines.append(
-        f"ABSOLUTE rule: every link you output MUST be a `https://www.englishcollege.com` "
-        f"URL in the `{target_locale}` locale (a `/{target_locale}/` path) — exactly as it "
-        f"appears in the swap table. NEVER output an English (unprefixed) URL, a URL in "
-        f"another language, the bare `englishcollege.com` apex, or any other domain. When "
-        f"in doubt, REMOVE the link rather than link to the wrong locale."
-    )
-    lines.append("")
-    lines.append("```json")
-    lines.append(json.dumps(swap_table, indent=2, ensure_ascii=False))
-    lines.append("```")
     lines.append("")
     lines.append("## Source (English)")
     lines.append("")

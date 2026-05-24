@@ -166,12 +166,15 @@ def test_emit_no_size_warning_under_threshold(tmp_path: Path):
 
 
 def test_csv_emitter_reexports_still_work():
-    """The summary-side csv_emitter must still expose the moved names (back-compat)."""
+    """The summary-side csv_emitter must still expose the moved names (back-compat).
+
+    audit-108 L-1: the paragraph-split helpers were removed (no production caller);
+    the re-export shim still exposes the live emission names.
+    """
     from tools.summary.csv_emitter import (
         SummaryPair, emit_consolidated_csv as e, read_existing_csv as r,
-        pair_from_paragraphs, split_summary_into_paragraphs,
     )
     # SummaryPair is the WeglotPair alias.
     p = SummaryPair(word_from="x", word_to="y")
     assert p.as_row("de") == ["", "en", "de", "x", "y", "Text"]
-    assert split_summary_into_paragraphs("a\n\nb") == ["a", "b"]
+    assert callable(e) and callable(r)

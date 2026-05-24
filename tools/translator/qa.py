@@ -54,12 +54,13 @@ def check_translation(
 ) -> tuple[bool, list[str]]:
     """Run translation QA. Returns (ok, flags). ok=False on any BLOCKING failure.
 
-    `check_urls`: when False, skip the URL-preservation check. The summary
-    caller deliberately swaps/removes links per locale (see prompt_builder
-    `build_translation_user_message`), so source URLs are EXPECTED to be absent
-    from the target — url_drift would false-flag every linked paragraph
-    (tracker-095 H2). Meta-tag translation has no link swaps, so it keeps the
-    default True.
+    `check_urls`: when False, skip the URL-preservation check. The summary caller
+    emits per-block PLAIN TEXT (links collapsed to their anchor text by
+    `structure.summary_page_blocks`; the localized hrefs are applied by Weglot's
+    URL-translation rules on the live page, NOT carried in the CSV — audit-108 M-4,
+    2026-05-24). So source URLs are EXPECTED to be absent from the target and
+    url_drift would false-flag every linked block. Meta-tag translation has no
+    links, so it keeps the default True.
     """
     flags: list[str] = []
     ok = True
