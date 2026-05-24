@@ -88,8 +88,8 @@ def split_top(css: str):
     return res
 
 
-def split_decls(body: str):
-    """Parse a declaration block into {property: value}; paren/quote aware (url(), calc())."""
+def _split_on_semicolons(body: str):
+    """Split a declaration block on top-level `;` (paren/quote aware), preserving order."""
     parts = []
     i, n, start, q, depth = 0, len(body), 0, None, 0
     while i < n:
@@ -109,12 +109,46 @@ def split_decls(body: str):
         i += 1
     if body[start:].strip():
         parts.append(body[start:])
+    return parts
+
+
+def split_decls(body: str):
+    """Parse a declaration block into {property: value}; paren/quote aware (url(), calc())."""
     out = {}
-    for d in parts:
+    for d in _split_on_semicolons(body):
         if ":" in d:
             p, v = d.split(":", 1)
             out[p.strip().lower()] = v.strip()
     return out
+
+
+def minify(css: str) -> str:
+    """Whitespace-minify CSS — drop newlines/indentation and spaces around structural
+    punctuation — while PRESERVING declaration order, duplicate properties (e.g.
+    vendor-prefixed fallbacks `display:-webkit-box;display:flex`), and significant
+    intra-value spaces (`url(x) format('woff2')`, `font-weight:400 700`, media-query
+    text). Recurses into @media/@supports/@keyframes."""
+    out = []
+    for prelude, body in split_top(css):
+        prelude = prelude.strip()
+        if body is None:
+            out.append(prelude + ";")
+        elif prelude.startswith(("@media", "@supports", "@keyframes",
+                                 "@-webkit-keyframes", "@-moz-keyframes")):
+            out.append(prelude + "{" + minify(body) + "}")
+        else:
+            decls = []
+            for d in _split_on_semicolons(body):
+                d = d.strip()
+                if not d:
+                    continue
+                if ":" in d:
+                    p, v = d.split(":", 1)
+                    decls.append(p.strip() + ":" + v.strip())
+                else:
+                    decls.append(d)
+            out.append(prelude + "{" + ";".join(decls) + "}")
+    return "".join(out)
 
 
 def scope(sel: str) -> str:
