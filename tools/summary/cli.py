@@ -130,6 +130,13 @@ def _build_parser() -> argparse.ArgumentParser:
             # 2026-05-22: insert internal links into existing under-linked blog summaries
             # (Flash, link-only — does NOT regenerate the prose).
             "link-blogs",
+            # audit-108 H-1: FREE match-verification gate — fetch each translatable page
+            # and report how many of its live summary blocks are present as word_from in
+            # the committed CSVs (i.e. will actually apply in Weglot). No spend.
+            "verify-emit",
+            # audit-108 M-1/M-2: remove stale (markdown-laden) summary word_from rows from
+            # the locale CSVs, keeping Fidelo + meta + clean rows. No spend.
+            "purge-stale-rows",
         ],
     )
     parser.add_argument(
@@ -222,6 +229,12 @@ def main(argv: list[str] | None = None) -> int:
     # tracker-097: orphaned-batch recovery short-circuits the report pipeline.
     if args.subcommand in ("cancel-batch", "retrieve-batch"):
         return _execute_batch_recovery(args, out_dir)
+
+    # audit-108: standalone, FREE CSV utilities (no spend, no Webflow) — print + return.
+    if args.subcommand == "verify-emit":
+        return _execute_verify_emit(args, out_dir)
+    if args.subcommand == "purge-stale-rows":
+        return _execute_purge_stale_rows(args, out_dir)
 
     if args.dry_run:
         print(f"[summary] DRY RUN — artifacts → {out_dir}", file=sys.stderr)
@@ -451,6 +464,66 @@ def _submit_and_wait(requests: list, args: argparse.Namespace):
         batch_id="none", request_count=0, submitted_at=_now_iso(), dry_run=False,
     )
     return results, primary, [h.batch_id for h in handles]
+
+
+def _execute_verify_emit(args: argparse.Namespace, out_dir: Path) -> int:
+    """audit-108 H-1: FREE Weglot match-verification gate. For each translatable page,
+    fetch the live page, derive its summary blocks, and report how many appear as
+    word_from in the committed per-locale CSVs (i.e. will actually APPLY in Weglot).
+    No Gemini, no Webflow. Exit 0 if every page matches 100%, 2 otherwise."""
+    import json
+    from tools.summary import match_verify, page_fetcher
+
+    manifest_path = (
+        (args.from_run / "en-summaries.json") if args.from_run
+        else (out_dir / "en-summaries.json")
+    )
+    if not manifest_path.exists():
+        print(f"[verify-emit] no manifest at {manifest_path}; pass --from-run <dir>", file=sys.stderr)
+        return 1
+    en_summaries = json.loads(manifest_path.read_text(encoding="utf-8"))
+    locales = (
+        [args.locale] if args.locale and args.locale != "en"
+        else list(config.TARGET_TRANSLATION_LOCALES)
+    )
+    result = match_verify.verify_pages(
+        en_summaries, config.WEGLOT_IMPORTS_DIR, locales, page_fetcher.fetch_page,
+    )
+    print(match_verify.format_report(result))
+    full = match_verify.all_pages_full_match(result)
+    print(f"[verify-emit] {'PASS — every block will apply' if full else 'GAPS — some blocks will machine-translate'}",
+          file=sys.stderr)
+    return 0 if full else 2
+
+
+def _execute_purge_stale_rows(args: argparse.Namespace, out_dir: Path) -> int:
+    """audit-108 M-1/M-2: remove stale (markdown-laden) summary word_from rows from the
+    per-locale CSVs — keeping Fidelo, meta, and clean block rows. FREE; --dry-run reports
+    only. Lets a re-emit be authoritative (the dedup 'existing-wins' no longer pins a
+    superseded chunk row) and de-bloats the staged CSVs."""
+    from tools.translator import weglot
+
+    locales = (
+        [args.locale] if args.locale and args.locale != "en"
+        else list(config.TARGET_TRANSLATION_LOCALES)
+    )
+    total_dropped = 0
+    for loc in locales:
+        path = config.WEGLOT_IMPORTS_DIR / f"{loc}.csv"
+        rows = weglot.read_existing_csv(path)
+        if not rows:
+            print(f"  {loc}.csv: absent/empty — skipped", file=sys.stderr)
+            continue
+        kept, dropped = weglot.filter_out_stale_summary_rows(rows)
+        total_dropped += len(dropped)
+        action = "would drop" if args.dry_run else "dropped"
+        print(f"  {loc}.csv: {len(rows)} rows → {action} {len(dropped)} stale, kept {len(kept)}", file=sys.stderr)
+        if not args.dry_run and dropped:
+            weglot.atomic_write_text(path, weglot.format_csv_text(kept))
+    mode = "DRY-RUN (no files changed)" if args.dry_run else "written"
+    print(f"[purge-stale-rows] {mode}; {total_dropped} stale summary rows across {len(locales)} locales",
+          file=sys.stderr)
+    return 0
 
 
 def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
