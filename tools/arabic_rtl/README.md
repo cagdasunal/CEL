@@ -18,12 +18,11 @@ override for the Arabic version of englishcollege.com (Webflow + Weglot). Served
    from 4.3 MB / 11k rules to 346 KB / 2k rules), mirrors it with `npx rtlcss`, then
    post-processes into a **diff + reset** override (see `generator.py`), prepends the
    hand-authored `arabic_static.css` (self-hosted Arabic font + `direction:rtl` +
-   typography incl. headings), appends the **Gemini visual-correction layer** (see "Visual
-   pass" below), and writes the single minified result with a fresh fingerprint header.
+   typography + component RTL corrections), and writes the single minified result with a
+   fresh fingerprint header.
 
-**One served file.** Everything above is concatenated into ONE `cel-arabic.css`. The
-per-page `data/arabic-visual/*.css` files are intermediate Gemini output — they are merged
-into `cel-arabic.css`; nothing per-page is ever served.
+**One served file.** Everything above is concatenated into ONE `cel-arabic.css`; nothing
+per-page is ever served.
 
 ## Why diff+reset (not the full rtlcss mirror)
 rtlcss is built to *replace* the LTR stylesheet. We can only *add* CSS on `/ar/`
@@ -53,45 +52,37 @@ font-family isn't directional, so rtlcss never touches it — this is where the 
 gets applied. To target a different display font, change `DISPLAY_FONT_NEEDLE` in
 `generator.py`.
 
-## Visual pass (Gemini 3.1 Pro vision)
-The mechanical flip + font swap gets the *bulk* right but can't judge how a page actually
-LOOKS in RTL. `tools/arabic_rtl/visual.py` adds a vision layer: it screenshots the live
-`/ar/` page (Playwright headless Chromium — RTL + Cairo already applied), sends the
-screenshot + the page's real CSS class names to **Gemini 3.1 Pro** (`gemini-3.1-pro-preview`)
-with an Arabic-UX prompt (`prompts/visual_system.md`), and gets back corrective CSS.
+## Component corrections (hand-authored, in `arabic_static.css`)
+The mechanical flip + font swap gets the *bulk* right but can't infer from CSS alone what a
+page actually LOOKS like in RTL — icon/glyph direction, JS-driven transforms, bidi-sensitive
+numbers, and the few cases where a flipped value is semantically wrong. Those corrections are
+authored **by hand** in `arabic_static.css` and verified by inspecting the live `/ar/` pages
+locally (headless-browser computed-style + screenshot checks across the sitemap). Current set:
+- breadcrumb & inline-link arrow glyphs mirrored (`scaleX(-1)`)
+- slider arrows mirrored; slider progress-fill `transform-origin:right`
+- numbers / prices / countdowns isolated LTR (`unicode-bidi:plaintext;direction:ltr`)
+- star ratings kept LTR (international convention)
+- typography: `letter-spacing:normal` + `text-transform:none` (Arabic is cursive; uppercase
+  is meaningless) and a looser `line-height` (Cairo has tall glyphs/diacritics)
+- nav: dropdown-panel text right-aligned, offers-dot mirrored, comparison values right-aligned
 
-Every returned rule is **validated** before use: it must target a real class on the page,
-it gets `html[lang="ar"]`-scoped, and it's rejected if it contains `@import` / an external
-`url()` / `javascript:` / a `{}<>` breakout. Validated corrections are written to
-`data/arabic-visual/<slug>.css` (+ a `<slug>.report.md` explaining each); `build.py` folds
-them all into the one `cel-arabic.css`.
-
-**Smart cadence (cost control).** A page is screenshotted + sent to Gemini only when it has
-**never been analyzed, OR its CSS changed AND it hasn't been analyzed in ≥ 7 days**
-(`data/arabic-visual/state.json` tracks each page's `css_hash` + `analyzed_at`). First run
-covers all pages once; thereafter only changed pages, at most weekly. Needs `GEMINI_API_KEY`
-(env / `.env` / GitHub secret) and the `google-genai` + `playwright` deps.
+Each is scoped `html[lang="ar"]` so it wins on specificity without `!important`. When a flip is
+outright wrong (Webflow framework defaults like `.w-dropdown-toggle` padding, logos), drop it
+via `exclusions.py` instead of overriding it.
 
 ## Run
 ```bash
 # from the repo root
 python -m tools.arabic_rtl.build           # regenerate cel-arabic.css iff source changed
 python -m tools.arabic_rtl.build --force   # always regenerate
-python -m tools.arabic_rtl.visual          # Gemini visual pass on all ELIGIBLE /ar/ pages
-python -m tools.arabic_rtl.visual --only /ar/vancouver --force --limit 1  # one page (smoke)
-python -m tools.arabic_rtl.visual --dry-run   # show eligibility only; no screenshots/Gemini
 python -m pytest tools/arabic_rtl/tests/   # unit tests
 ```
-The build engine is stdlib-only (`rtlcss` via `npx`, pinned `rtlcss@4.3.0`); the visual pass
-adds `google-genai` + `playwright` (lazy-imported, so the build engine still runs without them).
+The engine is stdlib-only (`rtlcss` via `npx`, pinned `rtlcss@4.3.0`).
 
 ## Automation
 - `.github/workflows/arabic-css.yml` — **hourly** (`23 * * * *`): regenerates + commits
-  `cel-arabic.css` only when the source CSS or the gemini layer changed (rebase-retry push,
+  `cel-arabic.css` only when the source Webflow CSS changed (rebase-retry push,
   `push-to-main` group). GitHub Pages serves it within ~10 min.
-- `.github/workflows/arabic-visual.yml` — **weekly** (Mon 05:00 UTC) + manual dispatch: runs
-  the Gemini visual pass on eligible pages, reassembles, commits the corrections + state, and
-  uploads the screenshots as a CI artifact for review.
 
 ## Activating it on the live site (manual, one-time)
 The engine only produces the file. To use it, add this to **Webflow → Site Settings
@@ -100,6 +91,16 @@ Arabic pages (zero bytes on the other 8 languages):
 ```html
 <script>(function(){var a=document.documentElement.lang==='ar'||location.pathname==='/ar'||location.pathname.indexOf('/ar/')===0;if(!a)return;document.documentElement.setAttribute('dir','rtl');var l=document.createElement('link');l.rel='stylesheet';l.href='https://cel.englishcollege.com/scripts/cel-arabic.css?v=1';document.head.appendChild(l);})();</script>
 ```
+
+**Also required (one-time, critical).** The site's global Head Code contained a legacy
+scrollbar/transition snippet with `* { direction: ltr !important; }`. That `!important`
+universal rule overrode the RTL `direction` on **every** element, so the layout never flipped
+(only `text-align` did — the "half-flipped" look). It must be scoped to exclude Arabic:
+```css
+html:not([lang="ar"]) * { direction: ltr !important; }
+```
+With that scoped, `dir="rtl"` drives the full flip natively (navbar, grid columns, flex order,
+Swiper). If another RTL language is added later, extend the exclusion (`:not([lang="he"])`, …).
 
 ## Known limitations
 - **`@keyframes` are not auto-flipped** (they can't be scoped with a selector prefix).
@@ -117,10 +118,8 @@ Arabic pages (zero bytes on the other 8 languages):
 - **Non-flip exclusions** (`exclusions.py`) start empty. rtlcss flips everything; if live
   validation shows a rule that shouldn't have flipped (a logo, a media-play control), add
   a substring of its selector to `EXCLUDE_SUBSTRINGS`.
-- Deeper RTL polish (icon/carousel direction, spacing, bidi, alignment) is handled by the
-  **Gemini visual pass** above, refreshed weekly. LLM-authored CSS isn't infallible — review
-  the live `/ar/` pages after publishing and tune `prompts/visual_system.md` (or add a
-  selector substring to `exclusions.py`) if a correction looks wrong.
-- The visual pass produces one combined layer scoped `html[lang="ar"]`, so a correction made
-  for one page applies to all Arabic pages (fine for shared components; the prompt steers
-  Gemini toward component-level selectors).
+- Deeper RTL polish (icon/carousel direction, spacing, bidi, alignment) is hand-authored in
+  `arabic_static.css` and verified against the live `/ar/` pages (computed-style + screenshot
+  checks across the sitemap). After any Webflow redesign, re-inspect the affected pages and
+  update the static corrections. Corrections are component-level (scoped `html[lang="ar"]`),
+  so one rule covers every Arabic page that uses that component.

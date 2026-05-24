@@ -2,4 +2,4 @@ requests>=2.32
 lxml>=5.0
 pytest>=8.0
 google-genai>=0.3.0
-playwright>=1.40  # headless-chromium screenshots for the Arabic visual pass (tools/arabic_rtl/visual.py)
+import-linter>=2.0  # dev: enforces the tools.core dependency-direction contract (.importlinter)
