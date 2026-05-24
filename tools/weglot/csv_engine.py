@@ -30,6 +30,10 @@ from pathlib import Path
 from typing import Sequence
 
 _CSV_COLUMNS = ("id", "language_from", "language_to", "word_from", "word_to", "type")
+# Public alias (review-109 LOW-2): consumers (csv_export, mirror_csvs, future tools)
+# import the public `CSV_COLUMNS` instead of reaching into the private `_CSV_COLUMNS`.
+# `_CSV_COLUMNS` stays the primary name used internally below (same tuple object).
+CSV_COLUMNS = _CSV_COLUMNS
 _CSV_DIALECT = "weglot-semicolon"
 _SEPARATOR = ";"
 
