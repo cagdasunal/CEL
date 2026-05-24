@@ -26,3 +26,9 @@ data/sitemap-check-report.json
 # Arabic visual-pass screenshots — large PNGs uploaded as a CI artifact for review,
 # not committed (the generated *.css + *.report.md + state.json ARE committed).
 data/arabic-visual/screenshots/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
