@@ -1,26 +1,21 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-05-24T04:43:59.126465-07:00",
+  "checked_at": "2026-05-24T05:48:21.589480-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-05-24T04:43:59.684494-07:00",
+      "checked_at": "2026-05-24T05:48:23.432602-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Academic English for college success",
-          "word_to": "Akademisches Englisch als Vorbereitung"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "fr": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-05-24T04:44:00.060860-07:00",
+      "checked_at": "2026-05-24T05:48:23.971515-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -32,37 +27,27 @@
       "http_status": 200
     },
     "es": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-05-24T04:44:00.591276-07:00",
+      "checked_at": "2026-05-24T05:48:24.803581-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Preparation for College & University",
-          "word_to": "Preparación para la universidad"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "it": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-05-24T04:44:00.909214-07:00",
+      "checked_at": "2026-05-24T05:48:25.837580-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "Prenotabile con qualsiasi corso"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ja": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-05-24T04:44:01.189733-07:00",
+      "checked_at": "2026-05-24T05:48:26.157222-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
@@ -78,45 +63,27 @@
       "http_status": 200
     },
     "ko": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-05-24T04:44:01.596766-07:00",
+      "checked_at": "2026-05-24T05:48:26.929795-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "소규모 수업 (평균 7명/반)"
-        },
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "다른 수업과 추가하여 학습 가능"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "pt": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-05-24T04:44:01.915244-07:00",
+      "checked_at": "2026-05-24T05:48:27.861191-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "Turmas pequenas (média de 7 alunos)"
-        },
-        {
-          "word_from": "Preparation for College & University",
-          "word_to": "Preparação para Universidade"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ar": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-05-24T04:44:02.241245-07:00",
+      "checked_at": "2026-05-24T05:48:28.336636-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
