@@ -135,8 +135,10 @@ def test_emit_warns_when_csv_approaches_5mb(tmp_path: Path, monkeypatch):
     CSVs (Help Center 432/206; the 500-element cap is for dynamic/slug/exclusion
     imports, not this file). Monkeypatch the threshold low so we needn't write 4.5 MB.
     Doubles as the boundary test: just over the threshold must warn."""
-    from tools.translator import weglot
-    monkeypatch.setattr(weglot, "_WEGLOT_IMPORT_WARN_BYTES", 200)  # a few rows exceed this
+    # The 5 MB guard constant + emit_consolidated_csv now live in the canonical engine
+    # (tools.weglot.csv_engine), so patch it THERE (emit reads the engine's global).
+    from tools.weglot import csv_engine
+    monkeypatch.setattr(csv_engine, "_WEGLOT_IMPORT_WARN_BYTES", 200)  # a few rows exceed this
     csv_path = tmp_path / "de.csv"
     pairs = [
         WeglotPair(word_from=f"a fairly long source string number {i}",
