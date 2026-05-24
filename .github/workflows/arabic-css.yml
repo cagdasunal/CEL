@@ -1,0 +1,66 @@
+name: Arabic RTL CSS
+
+on:
+  schedule:
+    # Hourly at :23 (off-peak minute). Regenerates docs/scripts/cel-arabic.css
+    # only when the live Webflow CSS used on /ar/ pages has changed.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: push-to-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      # Node is needed only for `npx rtlcss`. The engine itself is stdlib-only,
+      # so there is no pip install step.
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Regenerate cel-arabic.css if source CSS changed
+        run: python -m tools.arabic_rtl.build
+
+      - name: Commit and push if changed
+        run: |
+          git add docs/scripts/cel-arabic.css
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(arabic-css): refresh $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # 5-attempt push retry w/ exponential backoff — guards races against the
+          # 15-min content-pipeline cron. Matches update-sitemap-llms.yml.
+          n=0
+          until [ $n -ge 5 ]; do
+            if ! git pull --rebase --autostash origin main; then
+              git rebase --abort 2>/dev/null || true
+              echo "pull/rebase failed (attempt $((n+1))) — retrying"
+              n=$((n+1))
+              sleep $((n * n))
+              continue
+            fi
+            if git push; then
+              echo "push succeeded on attempt $((n+1))"
+              exit 0
+            fi
+            n=$((n+1))
+            echo "push failed on attempt $n, sleeping $((n * n))s"
+            sleep $((n * n))
+          done
+          echo "ERROR: push failed after 5 attempts"
+          exit 1
