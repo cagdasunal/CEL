@@ -7,8 +7,15 @@ carousel internals, etc. When live `/ar/` browser validation finds a rule that
 flipped incorrectly, add a substring of its selector here and it will be excluded
 from the generated override.
 
-Seed is intentionally EMPTY — populate it from real validation findings, not
-speculation (the current generated override has no known mis-flips).
+Populate from real validation findings, not speculation.
+
+Findings:
+- `.w-dropdown-toggle`: Webflow's built-in dropdown toggle ships `padding-right:40px`
+  to reserve room for its DEFAULT arrow icon. This site uses a custom `.dropdown-chevron`
+  (a flex child), so that padding is vestigial. rtlcss flips it to `padding-left:40px`,
+  which renders as ~40px dead space on the LEFT of every RTL nav dropdown (uneven menu
+  spacing). Excluding drops the bad padding flip; the harmless `text-align:right` flip
+  for dropdown elements is restored explicitly in arabic_static.css.
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = []
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle"]
