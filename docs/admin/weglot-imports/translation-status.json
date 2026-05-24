@@ -1,0 +1,335 @@
+{
+  "generated_at": "2026-05-24T12:23:37.396863+00:00",
+  "source_run": "20260521T224800Z",
+  "dry_run": false,
+  "target_locales": [
+    "de",
+    "fr",
+    "es",
+    "it",
+    "pt",
+    "ko",
+    "ja",
+    "ar"
+  ],
+  "per_locale": {
+    "de": {
+      "translated": 26,
+      "failed": 5,
+      "csv": "de.csv"
+    },
+    "fr": {
+      "translated": 27,
+      "failed": 5,
+      "csv": "fr.csv"
+    },
+    "es": {
+      "translated": 27,
+      "failed": 5,
+      "csv": "es.csv"
+    },
+    "it": {
+      "translated": 27,
+      "failed": 6,
+      "csv": "it.csv"
+    },
+    "pt": {
+      "translated": 26,
+      "failed": 7,
+      "csv": "pt.csv"
+    },
+    "ko": {
+      "translated": 28,
+      "failed": 5,
+      "csv": "ko.csv"
+    },
+    "ja": {
+      "translated": 27,
+      "failed": 5,
+      "csv": "ja.csv"
+    },
+    "ar": {
+      "translated": 28,
+      "failed": 5,
+      "csv": "ar.csv"
+    }
+  },
+  "per_item": {
+    "gen-0-https://www.englishcollege.com/": [
+      "de",
+      "ja",
+      "ko"
+    ],
+    "gen-1-englishcollege.com/los-angeles-ca/language-courses": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-2-tps://www.englishcollege.com/summer-camp-san-diego": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-6-https://www.englishcollege.com/pathway-program-usa": [
+      "ar",
+      "de",
+      "it",
+      "ko",
+      "pt"
+    ],
+    "gen-7-s://www.englishcollege.com/pathway/semester-abroad": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-8-ww.englishcollege.com/pathway/certificate-programs": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-11-https://www.englishcollege.com/vancouver": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-13-ishcollege.com/vancouver/how-long-to-learn-english": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-329-68d1747be9ea985b067defbb": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-330-68d17422dc3cf440da20c847": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-331-68d1733b586edac558aed90d": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-332-68d172966702135a7e6ad385": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-333-667453c576e8d35c454cced1": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-334-667453c576e8d35c454ccebf": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-336-667453c576e8d35c454cce9a": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-337-667453c576e8d35c454ccead": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-338-69efe35ee2e7ddce57717ead": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-339-69efe35b9ea60c8f4efad7ff": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-340-69efe359f841c8029d14b843": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-345-69efe31eadce72009bd33fa0": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-346-69efe31a0d983bc381ededcb": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja"
+    ],
+    "gen-348-69efe30c6ead792a1db2dd97": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-349-69efe309d203886c93188943": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-3-https://www.englishcollege.com/learn-english-usa": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-335-667453c576e8d35c454cced9": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-0-https://www.englishcollege.com/courses": [
+      "ar",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ko",
+      "pt"
+    ],
+    "gen-9-.englishcollege.com/pathway/undergraduate-programs": [
+      "ar",
+      "es",
+      "fr",
+      "ja",
+      "ko"
+    ],
+    "gen-14-ttps://www.englishcollege.com/vancouver/vs-toronto": [
+      "ar",
+      "es",
+      "fr",
+      "it",
+      "pt"
+    ],
+    "gen-347-69efe31075b6a78fb5942c09": [
+      "ar",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "ko",
+      "pt"
+    ],
+    "gen-5-https://www.englishcollege.com/housing": [
+      "ja",
+      "ko"
+    ]
+  }
+}
