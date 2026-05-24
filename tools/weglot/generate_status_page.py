@@ -30,6 +30,7 @@ from tools.dashboard import (
     EXTERNAL_REPO_ROOT,
     SHARED_CSS,
     render_favicon_tag,
+    write_dashboard_config,
     write_external_css,
     write_shell_html,
 )
@@ -894,6 +895,7 @@ def render_translations_html() -> str:
 
 def write_status_page() -> None:
     write_external_css(EXTERNAL_REPO_ROOT)
+    write_dashboard_config(EXTERNAL_REPO_ROOT)
     write_shell_html(EXTERNAL_REPO_ROOT)
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(render_html(), encoding="utf-8")

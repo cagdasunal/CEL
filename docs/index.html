@@ -7,64 +7,122 @@
   <link rel="icon" type="image/png" href="/assets/img/favicon.png">
   <title>English College — Sign in</title>
   <link rel="stylesheet" href="/assets/css/dashboard.css">
+  <script src="/assets/js/dashboard-config.js"></script>
 </head>
 <body>
   <div class="gate-root">
-    <form class="gate-card" id="gate-form" autocomplete="off">
+    <form class="gate-card" id="login-form" autocomplete="on">
       <div class="brand-mark">
         <div class="brand-logo" aria-label="English College">
           <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
         </div>
       </div>
       <h1>Internal dashboard</h1>
-      <p class="gate-hint">Enter the shared password to continue.</p>
-      <input type="password" id="gate-pw" placeholder="Password" autocomplete="off" autofocus required>
-      <button type="submit">Unlock</button>
-      <div class="gate-error" id="gate-err" role="alert" aria-live="polite"></div>
+      <p class="gate-hint">Sign in with your email and password.</p>
+      <input type="email" id="login-email" placeholder="Email" autocomplete="username" autofocus required>
+      <input type="password" id="login-pw" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit">Sign in</button>
+      <div class="gate-error" id="login-err" role="alert" aria-live="polite"></div>
+      <button type="button" class="gate-link" id="forgot-toggle">Forgot password?</button>
       <noscript><p class="gate-hint">JavaScript is required.</p></noscript>
+    </form>
+
+    <form class="gate-card" id="forgot-form" autocomplete="off" hidden>
+      <h1>Reset password</h1>
+      <p class="gate-hint">Enter your email and we'll send a reset link.</p>
+      <input type="email" id="forgot-email" placeholder="Email" autocomplete="username">
+      <button type="submit" id="forgot-submit">Send reset link</button>
+      <div class="gate-ok" id="forgot-msg" role="status" aria-live="polite"></div>
+      <button type="button" class="gate-link" id="forgot-back">Back to sign in</button>
     </form>
   </div>
   <script>
   (function () {
-    const HASHES = [
-      "e8ff7132aa00ae3886b10e2608498d040462fefe392df4aebfc6ffef024236be",
-      "a737b18142ef83c4d636dd2d4ada318fb378b165adb7a56f5b5c0f2d1363435a"
-    ];
-    const form = document.getElementById('gate-form');
-    const input = document.getElementById('gate-pw');
-    const errEl = document.getElementById('gate-err');
-    function toHex(buf) {
-      return Array.from(new Uint8Array(buf)).map(function (b) {
-        return b.toString(16).padStart(2, '0');
-      }).join('');
+    function sha256hex(s) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
     }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+
     function getReturn() {
-      const m = location.search.match(/[?&]return=([^&]+)/);
+      var m = location.search.match(/[?&]return=([^&]+)/);
       if (m) {
         try {
-          const dec = decodeURIComponent(m[1]);
+          var dec = decodeURIComponent(m[1]);
           if (dec.indexOf('/') === 0 && dec.indexOf('//') !== 0) return dec;
         } catch (_) {}
       }
       return '/admin/';
     }
-    form.addEventListener('submit', function (ev) {
+
+    // ── Sign in ───────────────────────────────────────────────────────
+    var loginForm = document.getElementById('login-form');
+    var emailEl = document.getElementById('login-email');
+    var pwEl = document.getElementById('login-pw');
+    var errEl = document.getElementById('login-err');
+    loginForm.addEventListener('submit', function (ev) {
       ev.preventDefault();
       errEl.textContent = '';
-      const pw = input.value;
-      if (!pw) return;
-      crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw)).then(function (buf) {
-        if (HASHES.includes(toHex(buf))) {
-          try { sessionStorage.setItem('cel_unlocked', String(Date.now())); } catch (_) {}
-          location.replace(getReturn());
-        } else {
-          errEl.textContent = 'Wrong password.';
-          input.value = '';
-          input.focus();
-        }
+      var email = emailEl.value.trim().toLowerCase();
+      var pw = pwEl.value;
+      if (!email || !pw) return;
+      fetch('/admin/users.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (users) {
+        return pwHashOf(pw).then(function (h) {
+          var match = null;
+          for (var i = 0; i < users.length; i++) {
+            if (String(users[i].email || '').trim().toLowerCase() === email && String(users[i].pwHash || '').toLowerCase() === h) {
+              match = users[i];
+              break;
+            }
+          }
+          if (match) {
+            try { sessionStorage.setItem('cel_unlocked', String(Date.now())); } catch (_) {}
+            try { sessionStorage.setItem('cel_user', JSON.stringify({ firstName: match.firstName || '', lastName: match.lastName || '', email: match.email })); } catch (_) {}
+            location.replace(getReturn());
+          } else {
+            errEl.textContent = 'Wrong email or password.';
+            pwEl.value = '';
+            pwEl.focus();
+          }
+        });
       }).catch(function () {
-        errEl.textContent = 'Browser does not support required crypto APIs.';
+        errEl.textContent = 'Could not verify right now. Please try again.';
       });
+    });
+
+    // ── Forgot password (inline) ──────────────────────────────────────
+    var forgotForm = document.getElementById('forgot-form');
+    var forgotEmail = document.getElementById('forgot-email');
+    var forgotMsg = document.getElementById('forgot-msg');
+    var forgotSubmit = document.getElementById('forgot-submit');
+    function neutralMsg() { forgotMsg.textContent = 'If that email is registered, a reset link is on its way.'; }
+    document.getElementById('forgot-toggle').addEventListener('click', function () {
+      loginForm.setAttribute('hidden', '');
+      forgotForm.removeAttribute('hidden');
+      forgotEmail.value = emailEl.value;
+      forgotEmail.focus();
+    });
+    document.getElementById('forgot-back').addEventListener('click', function () {
+      forgotForm.setAttribute('hidden', '');
+      loginForm.removeAttribute('hidden');
+      forgotMsg.textContent = '';
+    });
+    forgotForm.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var email = forgotEmail.value.trim().toLowerCase();
+      if (!email) return;
+      forgotSubmit.disabled = true;
+      forgotMsg.textContent = 'Sending…';
+      if (!DISPATCH_URL) { forgotSubmit.disabled = false; neutralMsg(); return; }
+      fetch(DISPATCH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'dispatch', workflow: 'dashboard-forgot-password.yml', inputs: { email: email } })
+      }).then(function () { neutralMsg(); })
+        .catch(function () { neutralMsg(); })
+        .finally(function () { forgotSubmit.disabled = false; });
     });
   })();
   </script>

@@ -685,7 +685,9 @@ SHELL_CSS = """
     color: var(--muted);
     text-align: center;
   }
-  .gate-card input[type="password"] {
+  .gate-card input[type="password"],
+  .gate-card input[type="email"],
+  .gate-card input[type="text"] {
     font: inherit;
     font-size: var(--fs-base);
     padding: 10px 12px;
@@ -694,11 +696,26 @@ SHELL_CSS = """
     background: var(--bg);
     color: var(--fg);
   }
-  .gate-card input[type="password"]:focus-visible {
+  .gate-card input[type="password"]:focus-visible,
+  .gate-card input[type="email"]:focus-visible,
+  .gate-card input[type="text"]:focus-visible {
     outline: 0;
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(93,96,238,0.18);
   }
+  .gate-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    font-size: var(--fs-md);
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    text-align: center;
+  }
+  .gate-ok { font-size: var(--fs-md); color: var(--ok); text-align: center; min-height: 18px; }
+  .gate-card[hidden] { display: none; }
   .gate-card button {
     font: inherit;
     font-size: var(--fs-base);
@@ -717,6 +734,127 @@ SHELL_CSS = """
     color: var(--err);
     text-align: center;
   }
+
+  /* === Top-bar user menu (shell) === */
+  .shell-user { position: relative; margin-left: auto; flex: 0 0 auto; }
+  .shell-user > summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    font-size: var(--fs-md);
+    cursor: pointer;
+  }
+  .shell-user > summary::-webkit-details-marker { display: none; }
+  .shell-user[open] > summary { border-color: var(--accent); color: var(--accent); }
+  .shell-user-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    min-width: 240px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(55,51,44,0.12);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .shell-user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .shell-user-field { margin: 0; display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+  .shell-user-k { color: var(--faint); }
+  .shell-user-v { color: var(--fg); font-weight: 600; word-break: break-all; text-align: right; }
+  .shell-user-action {
+    font: inherit;
+    font-size: var(--fs-md);
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .shell-user-action:hover { background: var(--stripe); }
+  .shell-user-signout { color: var(--muted); }
+  .shell-user-signout:hover { color: var(--err); border-color: var(--err); }
+
+  /* === Change-password modal (shell) === */
+  .cpw-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(55,51,44,0.45);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    z-index: 50;
+  }
+  .cpw-overlay[hidden] { display: none; }
+  .cpw-modal {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 12px 40px rgba(55,51,44,0.2);
+  }
+  .cpw-title { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+  .cpw-readonly {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cpw-field { margin: 0; display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+  .cpw-k { color: var(--faint); }
+  .cpw-v { color: var(--fg); font-weight: 600; word-break: break-all; text-align: right; }
+  .cpw-label { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); color: var(--muted); }
+  .cpw-input {
+    font: inherit;
+    font-size: var(--fs-base);
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .cpw-input:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+  .cpw-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .cpw-btn {
+    font: inherit;
+    font-size: var(--fs-base);
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    cursor: pointer;
+  }
+  .cpw-cancel { background: transparent; color: var(--fg); }
+  .cpw-save { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .cpw-save:hover { background: #4e51be; }
+  .cpw-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cpw-status { min-height: 18px; font-size: var(--fs-md); color: var(--muted); }
+  .cpw-status.is-ok { color: var(--ok); }
+  .cpw-status.is-error { color: var(--err); }
 
   /* === Brand logo image === */
   .brand-logo-img { height: 36px; width: auto; display: block; }
@@ -852,6 +990,26 @@ def write_external_css(repo_root: Path) -> Path:
     return target
 
 
+def write_dashboard_config(repo_root: Path) -> Path:
+    """Write the public dispatch-proxy config to <repo_root>/assets/js/dashboard-config.js.
+
+    The Cloudflare Worker URL is a GitHub Actions Variable (DASHBOARD_DISPATCH_PROXY_URL),
+    not committed to the repo. The login, shell, and reset pages read
+    window.CEL_DISPATCH_URL from this generated file.
+
+    Defensive: when the env var is empty AND the file already exists, leave it
+    untouched so an env-less regen (e.g. the daily monorepo run) never blanks a
+    good URL. Only write when the env value is non-empty, or when the file is absent.
+    """
+    target = repo_root / "assets" / "js" / "dashboard-config.js"
+    url = os.environ.get("DASHBOARD_DISPATCH_PROXY_URL", "").strip()
+    if not url and target.exists():
+        return target
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("window.CEL_DISPATCH_URL = " + json.dumps(url) + ";\n", encoding="utf-8")
+    return target
+
+
 def render_favicon_tag() -> str:
     return f'<link rel="icon" type="image/png" href="{FAVICON_HREF}">'
 
@@ -885,6 +1043,7 @@ _SHELL_HTML = """\
 <html lang="en">
 <head>
   <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/dashboard-config.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
@@ -923,11 +1082,39 @@ _SHELL_HTML = """\
           </ul>
         </details>
       </nav>
-      <button class="shell-logout" id="shell-logout" type="button">Sign out</button>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
     </header>
     <main class="shell-content">
       <iframe id="shell-frame" title="Dashboard content" src="/admin/offers/"></iframe>
     </main>
+  </div>
+  <div class="cpw-overlay" id="cpw-overlay" hidden>
+    <form class="cpw-modal" id="cpw-form" autocomplete="off">
+      <h2 class="cpw-title">Change password</h2>
+      <div class="cpw-readonly">
+        <p class="cpw-field"><span class="cpw-k">First name</span><span class="cpw-v" id="cpw-first">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Last name</span><span class="cpw-v" id="cpw-last">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Email</span><span class="cpw-v" id="cpw-email">&mdash;</span></p>
+      </div>
+      <label class="cpw-label">Current password<input type="password" id="cpw-current" class="cpw-input" autocomplete="current-password" required></label>
+      <label class="cpw-label">New password<input type="password" id="cpw-new" class="cpw-input" autocomplete="new-password" required></label>
+      <label class="cpw-label">Confirm new password<input type="password" id="cpw-confirm" class="cpw-input" autocomplete="new-password" required></label>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="cpw-cancel">Cancel</button>
+        <button type="submit" class="cpw-btn cpw-save" id="cpw-save">Save</button>
+      </div>
+      <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
+    </form>
   </div>
   <script>
   (function () {
@@ -978,9 +1165,139 @@ _SHELL_HTML = """\
     }
     window.addEventListener('hashchange', apply);
     apply();
+
+    // ── Signed-in identity (set by the login screen) ──────────────────
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
+    var currentUser = null;
+    try { var rawUser = sessionStorage.getItem('cel_user'); if (rawUser) currentUser = JSON.parse(rawUser); } catch (_) { currentUser = null; }
+    var changePwBtn = document.getElementById('shell-change-pw');
+    if (currentUser && currentUser.email) {
+      setText('shell-user-name', currentUser.firstName || currentUser.email);
+      setText('shell-user-fullname', fullName(currentUser));
+      setText('shell-user-email', currentUser.email);
+      setText('cpw-first', currentUser.firstName || '—');
+      setText('cpw-last', currentUser.lastName || '—');
+      setText('cpw-email', currentUser.email);
+    } else if (changePwBtn) {
+      changePwBtn.style.display = 'none';
+    }
+
     document.getElementById('shell-logout').addEventListener('click', function () {
       try { sessionStorage.removeItem('cel_unlocked'); } catch (_) {}
+      try { sessionStorage.removeItem('cel_user'); } catch (_) {}
       location.replace('/');
+    });
+
+    // ── Crypto helpers (double SHA-256 hex; see CRYPTO SPEC) ──────────
+    function sha256hex(str) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    function innerHash(pw) { return sha256hex(pw); }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+
+    // ── Dispatch proxy (Cloudflare Worker holds the GitHub PAT) ───────
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+    function callProxy(payload) {
+      if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (resp) {
+          return resp.json().catch(function () { return {}; }).then(function (j) {
+            return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+          });
+        });
+    }
+    function dispatchWorkflow(workflow, inputs) {
+      return callProxy({ action: 'dispatch', workflow: workflow, inputs: inputs }).then(function (r) {
+        if (r.ok) return true;
+        var msg = 'HTTP ' + r.status;
+        if (r.body && r.body.error) msg += ': ' + r.body.error;
+        throw new Error(msg);
+      });
+    }
+    function awaitRun(workflow, statusEl) {
+      var start = Date.now();
+      function tick() {
+        return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
+          var run = (r.ok && r.body && r.body.run) ? r.body.run : null;
+          if (!run || run.status !== 'completed') {
+            statusEl.textContent = run ? (run.status + '…') : 'queueing…';
+            statusEl.className = 'cpw-status';
+            if (Date.now() - start > 90000) {
+              statusEl.textContent = 'Timed out — check again in a minute.';
+              statusEl.className = 'cpw-status is-error';
+              return null;
+            }
+            return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
+          }
+          return run;
+        });
+      }
+      return tick();
+    }
+
+    // ── Change-password modal ─────────────────────────────────────────
+    var overlay = document.getElementById('cpw-overlay');
+    var cpwForm = document.getElementById('cpw-form');
+    var cpwStatus = document.getElementById('cpw-status');
+    var cpwSave = document.getElementById('cpw-save');
+    function closeModal() {
+      overlay.setAttribute('hidden', '');
+      cpwForm.reset();
+      cpwStatus.textContent = '';
+      cpwStatus.className = 'cpw-status';
+      cpwSave.disabled = false;
+    }
+    if (changePwBtn) {
+      changePwBtn.addEventListener('click', function () {
+        var dd = document.getElementById('shell-user');
+        if (dd) dd.removeAttribute('open');
+        overlay.removeAttribute('hidden');
+        document.getElementById('cpw-current').focus();
+      });
+    }
+    document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+    overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+
+    cpwForm.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      if (!currentUser || !currentUser.email) return;
+      var cur = document.getElementById('cpw-current').value;
+      var nw = document.getElementById('cpw-new').value;
+      var cf = document.getElementById('cpw-confirm').value;
+      if (!cur || !nw) return;
+      if (nw !== cf) {
+        cpwStatus.textContent = 'New passwords do not match.';
+        cpwStatus.className = 'cpw-status is-error';
+        return;
+      }
+      cpwSave.disabled = true;
+      cpwStatus.textContent = 'Saving…';
+      cpwStatus.className = 'cpw-status';
+      Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+        return dispatchWorkflow('dashboard-change-password.yml', { email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+      }).then(function () {
+        return new Promise(function (r) { setTimeout(r, 2000); });
+      }).then(function () {
+        return awaitRun('dashboard-change-password.yml', cpwStatus);
+      }).then(function (run) {
+        if (run && run.conclusion === 'success') {
+          cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+          cpwStatus.className = 'cpw-status is-ok';
+        } else if (run) {
+          cpwStatus.textContent = '✗ ' + (run.conclusion || 'failed') + ' — check your current password.';
+          cpwStatus.className = 'cpw-status is-error';
+          cpwSave.disabled = false;
+        } else {
+          cpwSave.disabled = false;
+        }
+      }).catch(function (err) {
+        cpwStatus.textContent = '✗ ' + err.message;
+        cpwStatus.className = 'cpw-status is-error';
+        cpwSave.disabled = false;
+      });
     });
   })();
   </script>
