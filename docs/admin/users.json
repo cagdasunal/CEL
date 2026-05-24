@@ -1,0 +1,14 @@
+[
+  {
+    "firstName": "Christopher",
+    "lastName": "Thebing",
+    "email": "chris@englishcollege.com",
+    "pwHash": "728886ee668020f70c6f866e864948b0e846b6e010fd47ea31e3719e85327a47"
+  },
+  {
+    "firstName": "Çağdaş",
+    "lastName": "Ünal",
+    "email": "cagdas@cagdasunal.com",
+    "pwHash": "8b51717c76f07e6baca241565da825c34931165c59f0a05f5d596c9a0567f9d3"
+  }
+]

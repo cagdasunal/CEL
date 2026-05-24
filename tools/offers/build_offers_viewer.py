@@ -617,7 +617,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     )
     # Cloudflare Worker URL (PAT-holding proxy). Read at build time from env.
     # Empty when unset \u2192 Save buttons fail with a clear "not configured" message.
-    dispatch_proxy_url = os.environ.get("OFFERS_DISPATCH_PROXY_URL", "").strip()
+    dispatch_proxy_url = os.environ.get("DASHBOARD_DISPATCH_PROXY_URL", "").strip()
     tab_script = tab_script.replace("__DISPATCH_PROXY_URL__", json.dumps(dispatch_proxy_url))
     parts: list[str] = []
     parts.append("<!DOCTYPE html>")
