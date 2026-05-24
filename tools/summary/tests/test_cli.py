@@ -156,12 +156,12 @@ def test_generate_english_dry_run_writes_en_summaries_manifest(tmp_path: Path, m
 def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Path):
     """Translate phase reads en-summaries.json and writes per-locale batch artifacts.
 
-    Tracker-091 M-10: also verifies the content-type filter — a housing CMS
-    entry is included in the manifest but MUST be skipped (housing_new is in
-    NO_TRANSLATE_COLLECTIONS). Expected request_count == 1 (the landing
-    entry), not 2.
+    Content-type filter (2026-05-24): housing IS now translated (housing_new moved
+    to TRANSLATE_COLLECTIONS), so a landing + a housing entry both produce a request;
+    only blog_post stays skipped (NATIVE_LANGUAGE_COLLECTIONS — native per locale).
+    Expected request_count == 2 (landing + housing), with the blog entry filtered out.
     """
-    # Pre-stage a manifest with a landing entry + a housing entry (filter target).
+    # Manifest: landing + housing (both translated now) + blog (still skipped).
     manifest = {
         "gen-0-test": {
             "url": "https://www.englishcollege.com/learn-english-usa",
@@ -176,7 +176,13 @@ def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Pa
         "gen-1-housing": {
             "url": "https://www.englishcollege.com/housing/some-residence",
             "markdown": "## Where to live\n\nKitsilano apartment with kitchenette.\n",
-            "content_type": "housing",  # ← filter target (NO_TRANSLATE_COLLECTIONS)
+            "content_type": "housing",  # ← now TRANSLATED (was NO_TRANSLATE pre-2026-05-24)
+            "locale": "en",
+        },
+        "gen-2-blog": {
+            "url": "https://www.englishcollege.com/post/study-tips",
+            "markdown": "## Study tips\n\nReview vocabulary daily.\n",
+            "content_type": "blog_post",  # ← still skipped (native per locale)
             "locale": "en",
         },
     }
@@ -194,9 +200,9 @@ def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Pa
     assert phase["target_locales"] == ["de"]
     de_result = phase["per_locale"]["de"]
     assert de_result.get("dry_run") is True
-    # M-10: housing entry must be filtered out — only the landing entry produces a request.
-    assert de_result.get("request_count") == 1, (
-        f"expected 1 request (landing only; housing filtered), got {de_result.get('request_count')}"
+    # housing now translated (landing + housing = 2); blog_post still filtered out.
+    assert de_result.get("request_count") == 2, (
+        f"expected 2 requests (landing + housing; blog skipped), got {de_result.get('request_count')}"
     )
     assert "batch_id" in de_result
     # Artifact dir exists.
