@@ -159,6 +159,30 @@ the swap+ancestor chain).
 > After any url-map rebuild that changes link targets, **clear `data/seo-intel/translation-memory.json`**
 > (`echo '{}' > …`) so the next run re-resolves links. (Done 2026-05-24: 456 pre-url-map entries cleared.)
 
+## Weglot per-block matching — the translate CSV keys on rendered text nodes (tracker-107, 2026-05-24)
+
+Weglot applies an imported translation only when the CSV `word_from` **exactly equals the page's
+rendered text node** (per `<h2>/<h3>/<h4>/<h5>/<p>` block, whitespace-normalized, links as inline
+anchor text — no markdown, no `href`). The earlier translate CSV split summaries on blank lines and
+kept `##`/`[](url)` markdown, so `word_from` never matched the page and Weglot machine-translated
+instead (only ~50% of course blocks, ~0% of landing blocks applied). The fix:
+
+- **`structure.summary_page_blocks(markdown)`** renders the summary the SAME way the page does
+  (`parse_four_part` + `four_part_paragraph_html` + `four_part_content_html`) and returns each block's
+  PLAIN TEXT. The translate phase pairs EN↔translated **blocks** (not `\n\n` chunks), so each CSV row
+  is one page text node. Verified live: block-match rose to **course 86% / housing 84% / landing 88%**.
+- **Links are Weglot's job, not the CSV's.** A translated `/de/` page's link hrefs are localized by
+  Weglot's URL-translation rules (confirmed live: `/de/kurse/english-academic-skills` shows `/de/`
+  links). So `word_from`/`word_to` carry only the visible text (anchor text inline); the url-map
+  link-swap still runs in the prompt but is stripped to text on emit (harmless).
+- **Static landing pages drift from the manifest.** Their summaries live in Designer `#summary-*`
+  elements and were edited after generation, so `_execute_translate` sources landing blocks from the
+  **live deployed page** (`page_fetcher.fetch_page` → `structure.parts_to_markdown`), fetched once per
+  run. CMS pages (course/housing) render from the manifest, so they use the manifest markdown directly.
+- **Dashboard volume.** The translate phase records per-locale `words` + `internal_links` in
+  `translation-status.json`; `/admin/#summaries` Overview folds translated summaries/words/links into
+  Total summaries (`N source + M translated`), Total words, Total internal links, and By-language.
+
 ## Repository
 
 This script lives in `cagdasunal/CEL` at `tools/summary/` and runs via `.github/workflows/summary.yml` (workflow_dispatch). It is **NOT** mirrored in the monorepo (`cagdasunal/webflow`) — the source of truth is here. Operator audits, design reviews, and rule changes happen in the monorepo (canonical skill files at `.claude/skills/page-summary/`); the script is the production deployment.

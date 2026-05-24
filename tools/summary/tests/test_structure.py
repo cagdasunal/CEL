@@ -10,6 +10,7 @@ from tools.summary.structure import (
     parts_to_markdown,
     summary_html_to_markdown,
     summary_markdown_to_html,
+    summary_page_blocks,
 )
 
 
@@ -67,6 +68,31 @@ def test_parse_keeps_links_only_in_content():
     assert "](https://www.englishcollege.com/vancouver)" not in p.title
     assert "](https://www.englishcollege.com/vancouver)" not in p.paragraph
     assert "/vancouver" in p.content_md  # the link lives in Content
+
+
+def test_summary_page_blocks_matches_rendered_text_nodes():
+    """tracker-107: word_from must equal the page's rendered text nodes — one plain-text
+    block per <h2>/<h3>/<h4>/<h5>/<p>, links collapsed to anchor text, no markdown."""
+    blocks = summary_page_blocks(_FOUR_PART)
+    assert blocks == [
+        "English School Life",
+        "What to expect from an english language school",
+        "Twelve weeks is the typical timeline at an english language school like CEL, where most students reach B2.",
+        "How long does it take to reach B2",
+        "Most students reach B2 within twelve weeks. See our Vancouver campus for details.",
+        "Beginners",
+        "Absolute beginners need 24 to 36 weeks depending on weekly hours.",
+    ]
+    # No markdown markers / URLs leak into a Weglot source string.
+    assert not any("#" in b or "[" in b or "http" in b for b in blocks)
+
+
+def test_summary_page_blocks_tagline_title_first_and_empty_safe():
+    assert summary_page_blocks("")[:] == []
+    # Tagline+title lead; a content-only doc still yields its blocks.
+    blocks = summary_page_blocks("## Tag\n\n### Title\n\nLead paragraph here.")
+    assert blocks[0] == "Tag" and blocks[1] == "Title"
+    assert blocks[2] == "Lead paragraph here."
 
 
 def test_parse_tolerates_missing_parts():

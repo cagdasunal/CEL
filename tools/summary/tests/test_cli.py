@@ -8,6 +8,21 @@ import pytest
 from tools.summary import cli
 
 
+@pytest.fixture(autouse=True)
+def _offline_landing_fetch(monkeypatch):
+    """tracker-107: the translate phase fetches each live landing page to source the
+    DEPLOYED summary text (it drifts from the manifest). Stub it offline by default
+    (empty parts → manifest-markdown fallback) so translate tests stay deterministic.
+    generate-english tests set their own page_fetcher.fetch_page, which overrides this."""
+    import types
+    from tools.summary import page_fetcher
+    monkeypatch.setattr(
+        page_fetcher, "fetch_page",
+        lambda *a, **k: types.SimpleNamespace(existing_summary_parts={}),
+        raising=False,
+    )
+
+
 def test_plan_subcommand_writes_report(tmp_path: Path):
     """`plan --dry-run` writes report.json + report.md and exits 0."""
     rc = cli.main([
@@ -480,6 +495,9 @@ def test_translate_writes_translation_status(tmp_path: Path, monkeypatch):
     assert status["source_run"] == "prior"
     assert status["per_locale"]["de"]["translated"] == 1
     assert status["per_item"]["gen-0-landing"] == ["de"]
+    # tracker-107: per-locale translated volume recorded for the dashboard Overview.
+    assert status["per_locale"]["de"]["words"] > 0
+    assert "internal_links" in status["per_locale"]["de"]
     # dry-run must NOT write the status file (avoids clobbering the live one).
     out2 = tmp_path / "out2"
     weglot_dir2 = tmp_path / "weglot2"
