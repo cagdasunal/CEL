@@ -209,4 +209,16 @@ jobs:
             exit 0
           fi
           git commit -m "chore(summary): refresh CSVs + static summaries + idempotency state ($(date -u +%Y-%m-%d))"
-          git push
+          # 3-attempt rebase-retry: the content-pipeline pushes every 15 min, so a
+          # long translate run's bare push loses the race (fetch-first) and the
+          # committed CSVs never reach origin — the runner is ephemeral, so the
+          # output is LOST. Rebase on origin/main and retry (matches fidelo-sync.yml).
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed (attempt $attempt)"; exit 0
+            fi
+            echo "push rejected (attempt $attempt) — rebasing on origin/main and retrying"
+            git pull --rebase --autostash origin main || true
+          done
+          echo "ERROR: push failed after 3 attempts (output committed locally but not pushed)" >&2
+          exit 1
