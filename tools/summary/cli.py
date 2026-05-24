@@ -1394,27 +1394,31 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     if not loaded_url_map and not args.dry_run:
         warnings.append("url-map.json absent/empty — same-locale links fall back to slug-swap/hub only")
 
-    # tracker-107: the source text we translate must match what is DEPLOYED on the page
-    # (that is the string Weglot keys on). CMS pages (course/housing) render from the
-    # manifest markdown, so the manifest is authoritative. But STATIC landing summaries
-    # live in Designer `#summary-*` elements and DRIFT from the committed manifest — so for
-    # landing we translate the live DEPLOYED text (page_fetcher → parts_to_markdown), once,
-    # reused across locales. Fetch failure falls back to the manifest markdown (logged).
+    # tracker-107: the source text we translate MUST equal what is DEPLOYED on the page
+    # (the string Weglot keys on). The committed manifest snapshot can DRIFT from the live
+    # page for EVERY type — static landing summaries (Designer #summary-* edits) AND CMS
+    # course/housing summaries (regenerated/edited after the snapshot; a 2-item pilot found
+    # ~10/14 manifest↔live block match on courses, so tagline/title/intro wouldn't apply).
+    # So for every translatable item we translate the live DEPLOYED text (page_fetcher →
+    # parts_to_markdown), fetched once + reused across locales → ~100% Weglot block match.
+    # An empty deployed summary or a fetch failure falls back to the manifest markdown
+    # (logged). The manifest still supplies the item inventory + the link count below (it
+    # keeps the `](url)` syntax that the rendered-text reconstruction drops).
     effective_md: dict[str, str] = {}
     for cid, en in en_summaries.items():
         if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
             continue
         md = en.get("markdown", "") or ""
-        if en.get("content_type") == "landing" and not args.dry_run:
+        if not args.dry_run:
             try:
                 pc = page_fetcher.fetch_page(en.get("url", ""))
                 recon = structure.parts_to_markdown(pc.existing_summary_parts or {})
                 if recon.strip():
                     md = recon
                 else:
-                    warnings.append(f"landing {cid}: no deployed #summary-* parts; using manifest markdown")
+                    warnings.append(f"{cid}: no deployed summary parts on live page; using manifest markdown")
             except Exception as e:
-                warnings.append(f"landing {cid}: live fetch failed ({e}); using manifest markdown")
+                warnings.append(f"{cid}: live fetch failed ({e}); using manifest markdown")
         effective_md[cid] = md
 
     per_locale_results: dict[str, dict] = {}
@@ -1427,7 +1431,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         for cid, en in en_summaries.items():
             if en.get("content_type") in _SKIP_TRANSLATE_TYPES:
                 continue
-            md = effective_md.get(cid, en.get("markdown", "") or "")  # tracker-107: deployed text for landing
+            md = effective_md.get(cid, en.get("markdown", "") or "")  # tracker-107: deployed text (all types)
             if not md.strip():
                 continue
             units.append(TranslationUnit(

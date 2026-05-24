@@ -175,10 +175,14 @@ instead (only ~50% of course blocks, ~0% of landing blocks applied). The fix:
   Weglot's URL-translation rules (confirmed live: `/de/kurse/english-academic-skills` shows `/de/`
   links). So `word_from`/`word_to` carry only the visible text (anchor text inline); the url-map
   link-swap still runs in the prompt but is stripped to text on emit (harmless).
-- **Static landing pages drift from the manifest.** Their summaries live in Designer `#summary-*`
-  elements and were edited after generation, so `_execute_translate` sources landing blocks from the
-  **live deployed page** (`page_fetcher.fetch_page` → `structure.parts_to_markdown`), fetched once per
-  run. CMS pages (course/housing) render from the manifest, so they use the manifest markdown directly.
+- **Translate the DEPLOYED text, not the manifest.** The committed manifest snapshot can drift from
+  what's live — for static landing summaries (Designer `#summary-*` edits) **and** CMS course/housing
+  summaries (regenerated/edited after the snapshot; a pilot found ~10/14 manifest↔live block match on
+  courses, so tagline/title/intro wouldn't apply in Weglot). So `_execute_translate` sources blocks
+  from the **live deployed page** for **every** translatable type (`page_fetcher.fetch_page` →
+  `structure.parts_to_markdown`), fetched once per item + reused across locales → ~100% Weglot block
+  match. An empty deployed summary or a fetch failure falls back to the manifest markdown (logged).
+  The manifest still supplies the item inventory + the link count (it keeps the `](url)` syntax).
 - **Dashboard volume.** The translate phase records per-locale `words` + `internal_links` in
   `translation-status.json`; `/admin/#summaries` Overview folds translated summaries/words/links into
   Total summaries (`N source + M translated`), Total words, Total internal links, and By-language.
