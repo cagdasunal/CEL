@@ -1169,8 +1169,8 @@ _SHELL_HTML = """\
     // ── Signed-in identity (set by the login screen) ──────────────────
     function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
     function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
-    var currentUser = null;
-    try { var rawUser = sessionStorage.getItem('cel_user'); if (rawUser) currentUser = JSON.parse(rawUser); } catch (_) { currentUser = null; }
+    // Identity comes from the validated session token (auth.js sets this).
+    var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
     var changePwBtn = document.getElementById('shell-change-pw');
     if (currentUser && currentUser.email) {
       setText('shell-user-name', currentUser.firstName || currentUser.email);
@@ -1184,8 +1184,7 @@ _SHELL_HTML = """\
     }
 
     document.getElementById('shell-logout').addEventListener('click', function () {
-      try { sessionStorage.removeItem('cel_unlocked'); } catch (_) {}
-      try { sessionStorage.removeItem('cel_user'); } catch (_) {}
+      document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
       location.replace('/');
     });
 
