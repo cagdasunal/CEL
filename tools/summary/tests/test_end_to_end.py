@@ -300,13 +300,17 @@ def test_translate_live_mode_emits_csv_for_target_locale(
         llms_parser, "fetch_and_parse",
         lambda *a, **kw: llms_parser.LlmsIndex(entries=[]),
     )
-    # tracker-107: landing translate fetches the live page for its deployed summary;
-    # stub it offline (empty parts → manifest-markdown fallback = the 4-part fixture).
+    # tracker-107: translate fetches the live page for its DEPLOYED summary (all types,
+    # not just landing — 2026-05-24); stub it offline (empty parts → manifest-markdown
+    # fallback = the 4-part fixture) and record which URLs were fetched.
     import types
-    monkeypatch.setattr(
-        page_fetcher, "fetch_page",
-        lambda *a, **k: types.SimpleNamespace(existing_summary_parts={}),
-    )
+    fetched_urls: list[str] = []
+
+    def _rec_fetch(url, *a, **k):
+        fetched_urls.append(url)
+        return types.SimpleNamespace(existing_summary_parts={})
+
+    monkeypatch.setattr(page_fetcher, "fetch_page", _rec_fetch)
 
     # Redirect WEGLOT_IMPORTS_DIR to tmp_path so we don't pollute the real CSV dir.
     from tools.summary import config
@@ -338,6 +342,11 @@ def test_translate_live_mode_emits_csv_for_target_locale(
         f"expected 2 requests (landing + housing), got {len(captured_submit_calls[0])}"
     )
     assert "Kitsilano" in csv_text or "Küchenzeile" in csv_text  # housing row emitted too
+    # tracker-107 (2026-05-24): live-fetch now covers ALL translatable types (not just
+    # landing), so the manifest can't ship stale tagline/title for course/housing. The
+    # housing item's live page is fetched, not only the landing one.
+    assert "https://www.englishcollege.com/housing/some-residence" in fetched_urls
+    assert "https://www.englishcollege.com/learn-english-usa" in fetched_urls
 
 
 # ---- Test 5: full `all` subcommand wires the three phases together ----
