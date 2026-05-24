@@ -112,6 +112,14 @@ python3 -m tools.summary link-blogs --no-dry-run --confirm-cost \
 
 ## hreflang URL map — same-locale links across TRANSLATED slugs (tracker-106, 2026-05-24)
 
+> **SUPERSEDED for translate by audit-108 M-4 (2026-05-24).** The translate phase NO LONGER
+> swaps links in the prompt: block emission strips links to anchor text and **Weglot's
+> URL-translation rules localize the hrefs on the live page** (verified: `/de/kurse` shows
+> 17 `/de/` links). So `url_map.py` + `LlmsIndex.find_equivalent_or_fallback` are no longer
+> called by translate (they remain available; `link-blogs`/generation do their own EN link
+> insertion). The historical design below is kept for reference. The 2 EN-leak links are a
+> Weglot-dashboard slug-translation task (Weglot Help Center 286/148), not a code fix.
+
 The translate phase must rewrite every EN link in a summary to its **same-locale** target
 (`/de/…`, `/fr/…`, …). The naive locale-prefix swap (`/{locale}/{en-slug}`) only works for the
 locales that keep the English slug. But **de/es/fr translate the slug** — the EN
@@ -186,6 +194,22 @@ instead (only ~50% of course blocks, ~0% of landing blocks applied). The fix:
 - **Dashboard volume.** The translate phase records per-locale `words` + `internal_links` in
   `translation-status.json`; `/admin/#summaries` Overview folds translated summaries/words/links into
   Total summaries (`N source + M translated`), Total words, Total internal links, and By-language.
+
+## Verification & maintenance (FREE — no Gemini, no Webflow) — audit-108
+
+- **`python3 -m tools.summary verify-emit --from-run <dir> [--locale L]`** — the match gate
+  (H-1). Fetches each translatable page, derives its live summary blocks, and reports per
+  page+locale how many appear as `word_from` in the committed CSVs — i.e. **how many will
+  actually apply in Weglot** (vs machine-translate). Exits non-zero on any gap. Run this
+  BEFORE importing to know the true coverage (the check whose absence caused the earlier
+  format struggle). Weglot keys on the exact rendered text node ("read, parse, cut" — Help
+  Center 206/432), so a `word_from` that isn't a live node is silently ignored.
+- **`python3 -m tools.summary purge-stale-rows [--no-dry-run] [--locale L]`** — removes only
+  unambiguous stale summary rows (`word_from` beginning `## ` or containing `[text](url)`)
+  from the locale CSVs, keeping Fidelo + meta + clean rows. De-bloats + unblocks an
+  authoritative re-emit (`--dry-run` reports counts only).
+- **`--collection {courses|housing_new}` + `--offset N`** scope a `translate` run to one
+  collection / a window of items, for cheap targeted pilots (audit-108 L-4).
 
 ## Repository
 
