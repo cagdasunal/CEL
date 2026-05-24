@@ -47,7 +47,7 @@ emit_consolidated_csv(target_locale="de",
                       out_path=Path("docs/admin/weglot-imports/de.csv"))
 ```
 
-`translate_batch(units, target_locale, glossary, *, tone=None, tm=None, dry_run=False, request_builder=None, api_key_env="GEMINI_API_KEY")`:
+`translate_batch(units, target_locale, glossary, *, tone=None, tm=None, dry_run=False, request_builder=None, qa_check_urls=True, sync=False, api_key_env="GEMINI_API_KEY")`:
 
 1. **TM lookup** — units whose `(normalized source, locale, glossary_version, tone)`
    hash is cached are returned with `from_tm=True` and **no API call**.
@@ -58,11 +58,15 @@ emit_consolidated_csv(target_locale="de",
    `request_builder(unit, locale, glossary_slice) -> (system_blocks, user_message)`
    to override the default generic translator prompt (the summary caller does this
    to reproduce its exact summary-translation prompt + llms.txt link swaps; since
-   2026-05-23 it uses `llms_parser.find_equivalent_or_fallback` — if no exact
-   slug-equivalent exists for a source URL in the target locale, it falls back to
-   the nearest same-locale ancestor in the index, then the locale root, rather than
-   removing the link entirely; this preserves link equity on pages where locales
-   use different slug conventions).
+   2026-05-23 it uses `llms_parser.find_equivalent_or_fallback`, and since
+   2026-05-24 (tracker-106) that consults an **hreflang-derived URL map** first so
+   TRANSLATED slugs resolve correctly — `/pathway-program-usa` → `/de/auslandsstudium-usa`,
+   not the de hub. The ordered chain: hreflang map → blog→locale-hub → exact slug-swap
+   → nearest same-locale ancestor → locale root → drop. Every step is index-verified +
+   locale-prefixed, so a link can never leak cross-locale; equity is preserved instead
+   of dropped on a slug mismatch. See `tools/summary/README.md` "hreflang URL map").
+   The optional `sync=True` routes through `batch_runner.generate_sync` (one instant
+   `generateContent` per request) instead of the Batch API — for pilot/small runs.
 4. **Glossary post-edit** — a **forbidden** term in the output is BLOCKING (sets
    `ok=False`); a dropped **do-not-translate** term is flagged (advisory — DNT is
    enforced via the prompt slice, not by rewriting); **preferred** is SOFT (warn

@@ -86,8 +86,9 @@ python3 -m tools.summary link-blogs --no-dry-run --confirm-cost \
   state the rule.
 - **Cross-locale (translation)**: a translated summary links ONLY to same-locale URLs. The
   translate phase swaps each source link to its `/{locale}/` equivalent via
-  `LlmsIndex.find_equivalent`; when there is **no** equivalent the link is **removed** (kept as
-  plain prose), never linked cross-language. Reinforced in `build_translation_user_message`.
+  `LlmsIndex.find_equivalent_or_fallback` (see "hreflang URL map" below for the full
+  resolution chain). Every emitted link is index-verified + carries the target locale's
+  prefix, so it can never leak cross-language. Reinforced in `build_translation_user_message`.
 
 ## Translate-phase hardening + cost/safety (audit 098 fix pass, 2026-05-23)
 
@@ -108,6 +109,55 @@ python3 -m tools.summary link-blogs --no-dry-run --confirm-cost \
 - **`link-blogs` durability (H2)**: generation prompts already require 6–8 same-locale links, but
   Flash under-complies, so `link-blogs` is a **remediation tool — re-run it after any blog
   regeneration** to restore links a fresh Flash pass under-produces.
+
+## hreflang URL map — same-locale links across TRANSLATED slugs (tracker-106, 2026-05-24)
+
+The translate phase must rewrite every EN link in a summary to its **same-locale** target
+(`/de/…`, `/fr/…`, …). The naive locale-prefix swap (`/{locale}/{en-slug}`) only works for the
+locales that keep the English slug. But **de/es/fr translate the slug** — the EN
+`/pathway-program-usa` is `/de/auslandsstudium-usa`, `/es/programa-pathway-usa`,
+`/fr/programme-preparation-universitaire-etats-unis` — so a prefix swap misses them and the
+link would collapse to the locale hub. The authoritative EN→locale mapping lives in each EN
+page's `<link rel="alternate" hreflang="…">` tags (Weglot-injected).
+
+**`tools/summary/url_map.py`** fetches those once and caches `{en_url: {locale: localized_url}}`
+to `data/seo-intel/url-map.json`:
+
+```bash
+python3 -m tools.summary.url_map     # fetch llms.txt + sitemap, enumerate EN pages,
+                                     # read each page's hreflang, write url-map.json
+```
+
+- **Sources**: the union of EN canonical pages in `llms.txt` + `cel.englishcollege.com/sitemap.xml`.
+- **Blog posts are included as link TARGETS** but carry **no server-rendered `<link rel=alternate>`**
+  (their hreflang is JS-only, and the same-slug `/{locale}/post/<en-slug>` 301-redirects to the
+  English original). So blog posts are *not* mapped — instead the fallback chain links a translated
+  summary to the locale **blog hub** (`/{locale}/blog`), never to a cross-locale post. Full blog URLs
+  are still emitted as links (the rule "set full URLs as links in the CSV"); they're just resolved to
+  the hub rather than a translated post that doesn't exist.
+- **Throttled fetch** (~2 req/s) + retry/backoff so a ~200-page sweep doesn't trip Cloudflare/Webflow
+  rate-limits. Run it whenever pages or slugs change (it's not part of the translate run).
+
+**`LlmsIndex.find_equivalent_or_fallback(source_url, target_locale, url_map=…)`** resolves each link
+through a SAFE, ordered chain (every step index-verified + locale-prefixed, so a result can never leak
+to another locale or a nonexistent page):
+
+| Step | Resolution | Example |
+|---|---|---|
+| 0 | **hreflang url_map** (authoritative; resolves translated slugs) | `/pathway-program-usa` → `/de/auslandsstudium-usa` |
+| 1 | **blog `/post/…`** → locale blog hub (or drop) | `/post/x` → `/de/blog` |
+| 2 | exact slug-swap (EN-slug locales) | `/courses` → `/ko/courses` |
+| 3 | nearest in-index same-locale ancestor | `/de/missing/child` → `/de/missing` |
+| 4 | locale root hub → else None | `/de/orphan` → `/de/` |
+
+`url-map.json` currently maps **46 EN pages** (the de/es/fr translating set + the EN-slug locales).
+The translate phase loads it via `config.URL_MAP_FILE`; absent/corrupt → graceful (falls through to
+the swap+ancestor chain).
+
+> **Translation Memory caveat**: the TM key hashes only the SOURCE text + locale + glossary version
+> — **not** the links. So a TM entry cached before a url-map change serves the OLD link resolution.
+> After any url-map rebuild that changes link targets, **clear `data/seo-intel/translation-memory.json`**
+> (`echo '{}' > …`) so the next run re-resolves links. (Done 2026-05-24: 456 pre-url-map entries cleared.)
 
 ## Repository
 
@@ -166,7 +216,8 @@ Filters:
 | `--locale <code>` | Filter CSV emission to one locale. |
 | `--limit <n>` | Cap items processed (use during pilot batches). |
 | `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). |
-| `--sync` | `generate-english` only — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). |
+| `--sync` | `generate-english` **and `translate`** — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). On `translate` it routes through `translator.translate_batch(..., sync=True)` → `batch_runner.generate_sync`. |
+| `--from-run <dir>` | `translate` / `link-blogs` — repo-relative dir holding a committed `en-summaries.json` (the manifest). Required for a standalone `translate` dispatch (the out-dir is fresh per run, so without it translate finds no manifest and no-ops). |
 | `--exclude-blog` | Skip the blog collection (static + courses + housing only). Blog keeps its single-block summary; this just lets the 4-part scope run without regenerating the 415 blog posts. |
 | `--out-dir <path>` | Override the run artifact location. |
 
@@ -229,7 +280,8 @@ tools/summary/
 ├── config.py              # locale codes, collection IDs, model, exclusions, cost cap
 ├── page_fetcher.py        # stdlib HTML fetch + parse (title, H1, headings, summary element, body)
 ├── keyword_extractor.py   # /page-summary Phase 2.5 derivation
-├── llms_parser.py         # llms.txt → structured graph
+├── llms_parser.py         # llms.txt → structured graph; find_equivalent_or_fallback (same-locale link resolution)
+├── url_map.py             # tracker-106: hreflang-derived EN→locale URL map (translated slugs); python3 -m tools.summary.url_map
 ├── prompt_builder.py      # composes system + user messages (Gemini caches implicitly on Batch tier)
 ├── qa.py                  # locked rule checks (em-dash, lists, keyword placement, density)
 ├── audit.py               # score existing summaries → REGENERATE / KEEP / MANUAL_REVIEW
@@ -382,10 +434,10 @@ These ship as system-prompt content in `prompts/common.md`. The QA layer (`qa.py
 
 ```bash
 cd /path/to/englishcollege
-python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 209 passed
+python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 317 passed
 ```
 
-Current: **170 tests** across 13 files in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, webflow_client_dryrun, webflow_designer) plus **39 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **209 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
+Current: **275 tests** in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, url_map, webflow_client_dryrun, webflow_designer) plus **42 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **317 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 
