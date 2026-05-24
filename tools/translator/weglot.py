@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import csv
 import os
+import re
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -65,6 +66,68 @@ def _weglot_quote(s: str) -> str:
     language codes, and type bare. `csv.QUOTE_MINIMAL` omitted quotes on
     quote-free values, so the two outputs diverged; this restores parity."""
     return '"' + s.replace('"', '""') + '"'
+
+
+def _format_row(r: list[str]) -> str:
+    """One CSV row: header + id/lang/type bare; word_from/word_to ALWAYS quoted with
+    `""` escaping (Fidelo-exporter parity, tracker-095 I1)."""
+    if r == list(_CSV_COLUMNS):
+        return _SEPARATOR.join(r)  # header stays bare
+    cells = list(r)
+    cells[3] = _weglot_quote(cells[3])  # word_from
+    cells[4] = _weglot_quote(cells[4])  # word_to
+    return _SEPARATOR.join(cells)
+
+
+def format_csv_text(rows: Sequence[Sequence[str]]) -> str:
+    """Render rows to Weglot CSV text (trailing LF). Byte-identical to emit_consolidated_csv."""
+    return "\n".join(_format_row(list(r)) for r in rows) + "\n"
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    """Atomic UTF-8 write (no BOM) with LF newlines — matches emit_consolidated_csv."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_fd, tmp_path_str = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    tmp_path = Path(tmp_path_str)
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        os.replace(tmp_path, path)
+    except Exception:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        raise
+
+
+# audit-108 M-1/M-2: a `word_from` that begins with an ATX heading marker (`## …`) or
+# contains a markdown link (`[text](url)`) is an unambiguous STALE summary chunk from the
+# pre-block-level emission — it can never match a rendered page node, and Fidelo/meta rows
+# never carry this markdown. So it is safe to purge. (Clean block rows + Fidelo + meta have
+# no such markdown; a bare URL or "(ESTA)" is NOT matched — the link form needs `](`.)
+_STALE_SUMMARY_WF_RE = re.compile(r"^\s*#{1,6}\s|\[[^\]]*\]\([^)]*\)")
+
+
+def is_stale_summary_word_from(word_from: str) -> bool:
+    """True iff `word_from` is an unambiguous stale (markdown-laden) summary chunk."""
+    return bool(_STALE_SUMMARY_WF_RE.search(word_from or ""))
+
+
+def filter_out_stale_summary_rows(
+    rows: Sequence[Sequence[str]],
+) -> tuple[list[list[str]], list[list[str]]]:
+    """Split CSV rows into (kept, dropped). The header, Fidelo rows, meta rows, and clean
+    block rows are KEPT; only rows whose `word_from` is a stale summary chunk are dropped."""
+    kept: list[list[str]] = []
+    dropped: list[list[str]] = []
+    for r in rows:
+        r = list(r)
+        if len(r) >= 4 and r[0] != "id" and is_stale_summary_word_from(r[3]):
+            dropped.append(r)
+        else:
+            kept.append(r)
+    return kept, dropped
 
 
 @dataclass(frozen=True)
@@ -166,30 +229,9 @@ def emit_consolidated_csv(
 
     # Atomic write — match the Fidelo exporter byte-for-byte (tracker-095 I1):
     # header + id/language/type cells bare; word_from/word_to ALWAYS quoted with
-    # `""` escaping. (csv.writer + QUOTE_MINIMAL omits quotes on simple values,
-    # which diverged from tools/weglot/csv_export.py.)
-    def _fmt_row(r: list[str]) -> str:
-        if r == list(_CSV_COLUMNS):
-            return _SEPARATOR.join(r)  # header stays bare
-        cells = list(r)
-        cells[3] = _weglot_quote(cells[3])  # word_from
-        cells[4] = _weglot_quote(cells[4])  # word_to
-        return _SEPARATOR.join(cells)
-
-    out_text = "\n".join(_fmt_row(r) for r in rows) + "\n"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_fd, tmp_path_str = tempfile.mkstemp(
-        prefix=f".{out_path.name}.", suffix=".tmp", dir=str(out_path.parent)
-    )
-    tmp_path = Path(tmp_path_str)
-    try:
-        with os.fdopen(tmp_fd, "w", encoding="utf-8", newline="\n") as f:
-            f.write(out_text)
-        os.replace(tmp_path, out_path)
-    except Exception:
-        if tmp_path.exists():
-            tmp_path.unlink(missing_ok=True)
-        raise
+    # `""` escaping (see _format_row / format_csv_text).
+    out_text = format_csv_text(rows)
+    atomic_write_text(out_path, out_text)
 
     written_bytes = len(out_text.encode("utf-8"))
     if written_bytes >= _WEGLOT_IMPORT_WARN_BYTES:
