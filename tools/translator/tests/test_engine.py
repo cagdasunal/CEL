@@ -47,6 +47,32 @@ def test_dry_run_returns_passthrough_stubs_no_api(monkeypatch):
     assert out[0].ok
 
 
+def test_sync_routes_to_generate_sync_not_batch(monkeypatch):
+    """sync=True → instant generate_sync (pilot runs); submit_batch must NOT fire."""
+    from tools.summary import batch_runner
+
+    def boom_submit(*a, **kw):
+        raise AssertionError("submit_batch must not be called when sync=True")
+
+    captured: dict = {}
+
+    def fake_sync(requests, **kw):
+        captured["requests"] = requests
+        return [
+            batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True,
+                                     content="Willkommen bei CEL")
+            for r in requests
+        ]
+
+    monkeypatch.setattr(batch_runner, "submit_batch", boom_submit)
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
+    units = [TranslationUnit(id="u1", text="Welcome to CEL")]
+    out = translate_batch(units, "de", _GLOSSARY, sync=True)
+    assert len(out) == 1 and out[0].ok
+    assert out[0].target == "Willkommen bei CEL"
+    assert len(captured["requests"]) == 1
+
+
 def test_tm_hit_skips_api(monkeypatch, tmp_path):
     tm = TranslationMemory(tmp_path / "tm.json")
     tm.put("Welcome", "de", "v1", "Willkommen")

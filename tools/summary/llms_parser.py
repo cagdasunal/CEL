@@ -81,28 +81,51 @@ class LlmsIndex:
         return None
 
     def find_equivalent_or_fallback(
-        self, source_url: str, target_locale: str
+        self, source_url: str, target_locale: str, url_map: Optional[dict] = None
     ) -> Optional[str]:
-        """Same-locale link target with a SAFE fallback chain (2026-05-23):
-        exact equivalent → nearest in-index SAME-LOCALE ancestor path → the locale
-        root → None. Preserves internal-link equity instead of dropping a link when an
-        exact slug-equivalent is missing (the documented multilingual-SEO best practice
-        of keeping links within the locale subdirectory).
+        """Same-locale link target with a SAFE, ordered fallback chain:
 
-        Every returned URL is verified present in the index AND carries the target
-        locale's prefix (it is built from `_swap_locale_prefix`, which prepends the
-        target locale), so a fallback can NEVER leak to another locale. Returns None
-        only when not even the locale root is in the index.
+        0. **hreflang url_map** — authoritative EN→locale mapping that resolves
+           TRANSLATED slugs the locale-prefix swap can't (e.g. /pathway-program-usa
+           → /de/auslandsstudium-usa). Index-verified.
+        1. **blog posts** — ORIGINAL per locale (no per-post translation; the
+           same-slug /{locale}/post/<en-slug> redirects to the English original, a
+           cross-locale leak), so link to the locale blog hub instead, or drop.
+        2. exact slug-swap (locales that keep the EN slug).
+        3. nearest in-index same-locale ancestor path.
+        4. the locale root hub → else None.
+
+        Every returned URL is index-verified AND carries the target locale's prefix,
+        so a result can NEVER leak to another locale or to a nonexistent page.
         """
-        exact = self.find_equivalent(source_url, target_locale)
-        if exact:
-            return exact
+        # 0. Authoritative hreflang map (translated slugs).
+        if url_map:
+            mapped = (url_map.get(_norm_url(source_url)) or {}).get(target_locale)
+            if mapped and self._url_in_index(mapped):
+                return mapped
+
         candidate = _swap_locale_prefix(source_url, target_locale)
         if not candidate:
             return None
         parsed = urllib.parse.urlparse(candidate)
+
+        # 1. Blog posts → locale blog hub (or drop). See docstring.
+        if _is_post_path(candidate, target_locale):
+            blog_paths = ((f"/{target_locale}/blog", f"/{target_locale}/blog/")
+                          if target_locale != "en" else ("/blog", "/blog/"))
+            for path in blog_paths:
+                blog = urllib.parse.urlunparse(parsed._replace(path=path))
+                if blog in self._by_url:
+                    return blog
+            return None
+
+        # 2. exact slug-swap.
+        exact = self.find_equivalent(source_url, target_locale)
+        if exact:
+            return exact
+
+        # 3. nearest in-index same-locale ancestor (never drop below the locale prefix).
         segs = [s for s in parsed.path.strip("/").split("/") if s]
-        # For a prefixed locale the first segment IS the locale; never drop below it.
         floor = 1 if target_locale != "en" else 0
         while len(segs) > floor:
             segs = segs[:-1]
@@ -110,7 +133,8 @@ class LlmsIndex:
                 ancestor = urllib.parse.urlunparse(parsed._replace(path=path))
                 if ancestor in self._by_url:
                     return ancestor
-        # Last resort: the locale root itself (with/without trailing slash).
+
+        # 4. locale root hub.
         root_paths = ((f"/{target_locale}/", f"/{target_locale}")
                       if target_locale != "en" else ("/",))
         for path in root_paths:
@@ -118,6 +142,12 @@ class LlmsIndex:
             if root in self._by_url:
                 return root
         return None
+
+    def _url_in_index(self, url: str) -> bool:
+        """True if `url` (or its trailing-slash variant) is a known llms.txt URL."""
+        return (url in self._by_url
+                or _norm_url(url) in self._by_url
+                or (_norm_url(url) + "/") in self._by_url)
 
     def urls_in_locale_excluding(
         self,
@@ -234,3 +264,16 @@ def _swap_locale_prefix(url: str, target_locale: str) -> Optional[str]:
 def _path_has_segment(url: str, segment: str) -> bool:
     parts = urllib.parse.urlparse(url).path.strip("/").split("/")
     return segment in parts
+
+
+def _norm_url(url: str) -> str:
+    """Drop query/fragment + trailing slash (match the hreflang url_map key form)."""
+    return url.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+
+
+def _is_post_path(url: str, target_locale: str) -> bool:
+    """True if `url`'s path is a blog post: `/post/...` (EN) or `/{locale}/post/...`."""
+    segs = [s for s in urllib.parse.urlparse(url).path.strip("/").split("/") if s]
+    if target_locale != "en":
+        return len(segs) >= 2 and segs[1] == "post"
+    return bool(segs) and segs[0] == "post"

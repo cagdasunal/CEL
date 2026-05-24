@@ -175,6 +175,13 @@ ENABLE_EXPLICIT_CACHE = True
 # source→translation across runs so unchanged strings are never re-translated.
 TRANSLATION_MEMORY_FILE = PROJECT_ROOT / "data" / "seo-intel" / "translation-memory.json"
 
+# EN↔locale URL map (hreflang-derived) for same-locale internal linking in the
+# translate phase. Built by `python3 -m tools.summary.url_map` from each EN page's
+# hreflang alternates (llms.txt + sitemap inventory, incl. blog posts as link
+# targets). Loaded by _execute_translate so links resolve to the CORRECT translated
+# slug (e.g. /pathway-program-usa → /de/auslandsstudium-usa) instead of the hub.
+URL_MAP_FILE = PROJECT_ROOT / "data" / "seo-intel" / "url-map.json"
+
 # Field slug for the Summary field on each CMS collection. Webflow rich-text field
 # slug — if it doesn't exist on a collection, the script auto-creates it (dry-run
 # gated). The display name is "Summary". Used for the single-block blog summary AND

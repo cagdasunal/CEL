@@ -57,6 +57,7 @@ def translate_batch(
     dry_run: bool = False,
     request_builder: Optional[RequestBuilder] = None,
     qa_check_urls: bool = True,
+    sync: bool = False,
     api_key_env: str = "GEMINI_API_KEY",
 ) -> list[Translation]:
     """Translate `units` into `target_locale`. Returns Translations in input order.
@@ -70,6 +71,8 @@ def translate_batch(
     - `qa_check_urls`: pass False when the prompt swaps/removes links per locale
       (the summary caller), so URL-preservation QA doesn't false-flag the
       intentional URL changes (tracker-095 H2). Defaults True (meta caller).
+    - `sync`: True → one instant `generate_content` per request (for small pilot
+      runs); False (default) → the Batch API (~50% cheaper, ≤24h SLA).
     """
     from tools.summary import batch_runner
 
@@ -115,9 +118,14 @@ def translate_batch(
             )
         return [by_id[u.id] for u in units]
 
-    # 4. Submit + poll (reuses batch_runner's hardened client).
-    handle = batch_runner.submit_batch(requests, api_key_env=api_key_env)
-    batch_results = batch_runner.wait_for_batch(handle, api_key_env=api_key_env)
+    # 4. Generate. sync=True → instant `generate_content` per request (for pilot
+    # runs); else the Batch API (default — ~50% cheaper, ≤24h SLA). Both reuse
+    # batch_runner's hardened client and return list[BatchResult].
+    if sync:
+        batch_results = batch_runner.generate_sync(requests, api_key_env=api_key_env)
+    else:
+        handle = batch_runner.submit_batch(requests, api_key_env=api_key_env)
+        batch_results = batch_runner.wait_for_batch(handle, api_key_env=api_key_env)
     got = {r.custom_id: r for r in batch_results}
 
     # 5. Glossary post-edit + QA + TM write.
