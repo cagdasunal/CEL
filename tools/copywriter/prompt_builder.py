@@ -13,8 +13,12 @@ from tools.copywriter import config
 from tools.copywriter.brief import CopyRequest
 
 
-def build_system_prompt(locale: str, content_type: str = "marketing") -> list[dict]:
-    """Return system-prompt blocks: [copywriter common.md, locale layer]."""
+def build_system_prompt(locale: str) -> list[dict]:
+    """Return system-prompt blocks: [copywriter common.md, locale layer].
+
+    (Content type is conveyed to the model via build_user_message, not the system
+    prompt — there is no per-content-type system layer, so it isn't a parameter here.)
+    """
     common = (config.PROMPTS_DIR / "common.md").read_text(encoding="utf-8")
     blocks = [{"type": "text", "text": common}]
     locale_path = Path(config.LOCALE_LAYERS_DIR) / f"{locale}.md"
