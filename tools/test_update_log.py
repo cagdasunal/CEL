@@ -125,7 +125,7 @@ class TestRender:
         }
         output = render(entries, pending=4, weglot_last_check="2026-04-16 09:07 GMT+3")
         assert "Upload to Weglot: REQUIRED" in output
-        assert "sitemap.englishcollege.com/weglot.csv" in output
+        assert "cel.englishcollege.com/weglot.csv" in output
 
     def test_cleared_shows_not_required(self):
         entries = {
@@ -153,9 +153,9 @@ class TestRender:
     def test_each_tracked_file_has_url_line(self):
         entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
         output = render(entries, pending=0, weglot_last_check="2026-04-16 09:07 GMT+3")
-        assert "URL: https://sitemap.englishcollege.com/sitemap.xml" in output
-        assert "URL: https://sitemap.englishcollege.com/llms.txt" in output
-        assert "URL: https://sitemap.englishcollege.com/weglot.csv" in output
+        assert "URL: https://cel.englishcollege.com/sitemap.xml" in output
+        assert "URL: https://cel.englishcollege.com/llms.txt" in output
+        assert "URL: https://cel.englishcollege.com/weglot.csv" in output
 
     def test_last_weglot_check_line_present(self):
         entries = {k: "2026-04-16 17:00 GMT+3" for k in ("sitemap.xml", "llms.txt", "weglot.csv")}
