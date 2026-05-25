@@ -1,10 +1,11 @@
 name: Arabic RTL CSS
 
 on:
-  schedule:
-    # Hourly at :23 (off-peak minute). Regenerates docs/scripts/cel-arabic.css
-    # only when the live Webflow CSS used on /ar/ pages has changed.
-    - cron: '23 * * * *'
+  # Manual-only for now (no auto-schedule). Run locally with
+  # `python -m tools.arabic_rtl.build --force`, or trigger this workflow on demand
+  # from the Actions tab. To restore hourly auto-refresh, re-add the schedule below:
+  #   schedule:
+  #     - cron: '23 * * * *'
   workflow_dispatch:
 
 concurrency:

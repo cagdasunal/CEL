@@ -79,10 +79,16 @@ python -m pytest tools/arabic_rtl/tests/   # unit tests
 ```
 The engine is stdlib-only (`rtlcss` via `npx`, pinned `rtlcss@4.3.0`).
 
-## Automation
-- `.github/workflows/arabic-css.yml` — **hourly** (`23 * * * *`): regenerates + commits
-  `cel-arabic.css` only when the source Webflow CSS changed (rebase-retry push,
-  `push-to-main` group). GitHub Pages serves it within ~10 min.
+## Running it (manual — no auto-schedule)
+Regenerate on demand, two ways:
+- **Locally:** `python -m tools.arabic_rtl.build --force`, then commit + push
+  `docs/scripts/cel-arabic.css`. GitHub Pages serves it within ~10 min.
+- **GitHub Actions:** trigger `.github/workflows/arabic-css.yml` from the Actions tab
+  (`workflow_dispatch`) — it regenerates + commits `cel-arabic.css` only when the source
+  Webflow CSS changed (rebase-retry push, `push-to-main` group).
+
+The hourly cron is **disabled** for now (commented out in the workflow). To restore
+auto-refresh, re-add the `schedule:` trigger.
 
 ## Activating it on the live site (manual, one-time)
 The engine only produces the file. To use it, add this to **Webflow → Site Settings
@@ -112,9 +118,9 @@ Swiper). If another RTL language is added later, extend the exclusion (`:not([la
   contains both and the one sorted last wins on every Arabic page. Rare in practice (opt
   files seldom redefine shared selectors with conflicting directional values); the proper
   fix (per-page override files) is intentionally out of scope for one combined file.
-- **Hourly run fetches every `/ar/` page** (~46) to compute the fingerprint, even when
-  nothing changed (~1,100 lightweight GETs/day). Necessary to catch per-page CSS changes;
-  load is negligible. Could be lightened later by short-circuiting on the shared file's hash.
+- **Each run fetches every `/ar/` page** (~46) to compute the fingerprint, even when
+  nothing changed. Necessary to catch per-page CSS changes; load is negligible. (No longer
+  hourly — runs only when invoked manually.)
 - **Non-flip exclusions** (`exclusions.py`) start empty. rtlcss flips everything; if live
   validation shows a rule that shouldn't have flipped (a logo, a media-play control), add
   a substring of its selector to `EXCLUDE_SUBSTRINGS`.
