@@ -16,6 +16,7 @@ source_modules =
     tools.core.content
     tools.core.seo
     tools.core.gemini
+    tools.core.webflow
 forbidden_modules =
     tools.summary
     tools.translator
