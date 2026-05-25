@@ -16,6 +16,10 @@ Findings:
   which renders as ~40px dead space on the LEFT of every RTL nav dropdown (uneven menu
   spacing). Excluding drops the bad padding flip; the harmless `text-align:right` flip
   for dropdown elements is restored explicitly in arabic_static.css.
+- `.navbar_dropdown-list`: the open mega-menu panel's base position is `right:0`, which is
+  already correct for RTL. rtlcss flips it to `left:0;right:auto`, opening the panel on the
+  wrong side. Excluding drops the position flip so the base `right:0` right-aligns the panel
+  (Webflow's dropdown JS handles the rest).
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list"]
