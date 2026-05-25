@@ -10,7 +10,7 @@
 tools/
 ├── core/          # SHARED SERVICES (leaf — import these; never imports a consumer back)
 │   ├── gemini/    # Gemini 3.1 Pro client (Plan A): BatchRequest, submit_batch, generate_sync, wait_for_batch, cost/cache
-│   ├── webflow/   # Webflow Data API (Plan B): http (auth/retry/pagination) + cms (generic field PATCH, create/bulk, dry-run)
+│   ├── webflow/   # Webflow Data API (Plan B): http (auth/retry/backoff) + cms (generic field PATCH + paginated reads + ensure-field, dry-run)
 │   ├── web/       # page_fetcher (Plan B2): live-page fetch -> PageContent
 │   ├── content/   # structure (Plan B2): Markdown <-> Webflow RichText HTML
 │   └── seo/       # llms_parser (Plan B2): llms.txt -> LlmsIndex internal-link graph

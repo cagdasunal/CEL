@@ -17,11 +17,20 @@ import dataclasses
 import json
 import sys
 import time
+import urllib.parse
 from pathlib import Path
 
 from tools.copywriter import config, webflow_writer
 from tools.copywriter.brief import CopyRequest, CopyResult, load_brief
 from tools.copywriter.engine import improve_copy
+
+
+def _is_allowlisted_url(url: str) -> bool:
+    """Only fetch over https from englishcollege.com (defensive — the target URL is
+    operator-supplied via the brief; restrict the fetch surface to the known domain)."""
+    p = urllib.parse.urlparse(url)
+    host = (p.hostname or "").lower()
+    return p.scheme == "https" and (host == "englishcollege.com" or host.endswith(".englishcollege.com"))
 
 
 def _resolve_before(req: CopyRequest) -> CopyRequest:
@@ -30,11 +39,16 @@ def _resolve_before(req: CopyRequest) -> CopyRequest:
         return req
     tgt = req.target or {}
     if tgt.get("kind") == "static_page" and tgt.get("url"):
+        url = tgt["url"]
+        if not _is_allowlisted_url(url):
+            print(f"[copywriter] refusing to fetch non-allowlisted URL "
+                  f"(https + *.englishcollege.com only): {url}", file=sys.stderr)
+            return req
         from tools.core.web.page_fetcher import fetch_page
         try:
-            return dataclasses.replace(req, existing_copy=fetch_page(tgt["url"]).body_text_excerpt)
+            return dataclasses.replace(req, existing_copy=fetch_page(url).body_text_excerpt)
         except Exception as e:  # noqa: BLE001 — fetch failure is non-fatal; proceed with empty
-            print(f"[copywriter] could not fetch {tgt['url']}: {e}", file=sys.stderr)
+            print(f"[copywriter] could not fetch {url}: {e}", file=sys.stderr)
     return req
 
 
