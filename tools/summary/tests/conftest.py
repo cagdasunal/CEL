@@ -31,3 +31,6 @@ def _isolate_summary_state(tmp_path, monkeypatch):
     # tracker-097: the persisted last-batch id (written by submit_batch) — isolate so
     # no test writes the real data/seo-intel/summary-last-batch.json.
     monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "summary-last-batch.json")
+    # Plan A: the shared Gemini client (tools.core.gemini.client) reads LAST_BATCH_FILE
+    # from tools.core.gemini.config — patch that too so submit/wait never touch the real file.
+    monkeypatch.setattr("tools.core.gemini.config.LAST_BATCH_FILE", tmp_path / "summary-last-batch.json")
