@@ -7,7 +7,7 @@ html[lang="ar"] :is(h1,h2,h3,h4,h5,h6){font-family:'Cairo',sans-serif;letter-spa
 html[lang="ar"] p,html[lang="ar"] li,html[lang="ar"] a,html[lang="ar"] blockquote{line-height:1.7}
 html[lang="ar"] .navbar_link .navbar_dot{left:-12px;right:auto}
 html[lang="ar"] .navbar_logo-link{direction:ltr}
-html[lang="ar"] #weglot-listbox,html[lang="ar"] .wg-drop.country-selector ul{left:0;right:auto}
+html[lang="ar"] #weglot-listbox,html[lang="ar"] .wg-drop.country-selector ul{right:auto}
 html[lang="ar"] #weglot-listbox a,html[lang="ar"] .wg-drop.country-selector ul a{padding-left:0;padding-right:0}
 html[lang="ar"] .w-dropdown-btn,html[lang="ar"] .w-dropdown-toggle,html[lang="ar"] .w-dropdown-link{text-align:right}
 html[lang="ar"] .breadcrumb-sep{transform:scaleX(-1);display:inline-block}
