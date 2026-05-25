@@ -1,12 +1,12 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-05-25T08:42:59.703394-07:00",
+  "checked_at": "2026-05-25T10:25:09.734797-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-05-25T08:43:01.187497-07:00",
+      "checked_at": "2026-05-25T10:25:12.080128-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -18,18 +18,23 @@
       "http_status": 200
     },
     "fr": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-05-25T08:43:01.930013-07:00",
+      "checked_at": "2026-05-25T10:25:13.603500-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 2,
+      "missing": [
+        {
+          "word_from": "Preparation for College & University",
+          "word_to": "Préparation pour collège/université"
+        }
+      ],
       "http_status": 200
     },
     "es": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-05-25T08:43:02.733831-07:00",
+      "checked_at": "2026-05-25T10:25:13.989263-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -38,7 +43,7 @@
     "it": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-05-25T08:43:03.512954-07:00",
+      "checked_at": "2026-05-25T10:25:14.677228-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -50,18 +55,27 @@
       "http_status": 200
     },
     "ja": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-05-25T08:43:04.061807-07:00",
+      "checked_at": "2026-05-25T10:25:15.245573-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 1,
+      "missing": [
+        {
+          "word_from": "Small classes (avg. 7 students/class)",
+          "word_to": "少人数制クラス(1クラス平均7名)"
+        },
+        {
+          "word_from": "Academic English for college success",
+          "word_to": "大学成功のためのアカデミック英語"
+        }
+      ],
       "http_status": 200
     },
     "ko": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-05-25T08:43:04.766516-07:00",
+      "checked_at": "2026-05-25T10:25:16.145386-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -75,7 +89,7 @@
     "pt": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-05-25T08:43:05.579281-07:00",
+      "checked_at": "2026-05-25T10:25:16.803561-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
@@ -93,7 +107,7 @@
     "ar": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-05-25T08:43:06.200022-07:00",
+      "checked_at": "2026-05-25T10:25:18.069155-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
