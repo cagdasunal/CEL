@@ -142,6 +142,63 @@ def filter_out_stale_summary_rows(
     return kept, dropped
 
 
+# tracker-114: source<->target MIS-PAIRING guard. The 2026-05-25 incident: an ad-hoc
+# "text-node granularity" regeneration mis-zipped Weglot source nodes with their
+# translations, so short source strings ("and", ".", "In", "CEL", "blog") were paired with
+# a DIFFERENT node's long translation. Weglot applies an imported row to EVERY occurrence
+# of its word_from site-wide, so these broke all non-English pages. The maintained
+# block-level pipeline cannot produce such fragments; a row matching this guard is the
+# signature of an ad-hoc / text-node CSV that bypassed the pipeline.
+_POISON_MAX_WORD_FROM_LEN = 15  # source no longer than this...
+_POISON_MIN_WORD_TO_LEN = 30    # ...mapped to a target at least this long = mis-pairing
+_AMENITY_BULLET_PREFIX = "✓"  # Fidelo amenity bullets legitimately expand
+
+
+def is_poison_pair(
+    word_from: str,
+    word_to: str,
+    type_: str = "Text",
+    fidelo_word_from: "set[str] | None" = None,
+) -> bool:
+    """True iff a Text row is an EGREGIOUS source<->target mis-pairing: a very short source
+    string mapped to a long target. Exemptions: non-Text (meta) rows; Fidelo on-page labels
+    (`word_from` in `fidelo_word_from`); amenity bullets ("✓ …"); passthrough/expansion
+    (target STARTS WITH the source verbatim, e.g. "Studio (max. 2)" -> "Studio (max. 2) …").
+    High-precision by design — flags only the catastrophic short->long mis-pairings."""
+    if type_ not in ("Text", ""):
+        return False
+    wf = (word_from or "").strip()
+    wt = (word_to or "").strip()
+    if len(wf) > _POISON_MAX_WORD_FROM_LEN or len(wt) < _POISON_MIN_WORD_TO_LEN:
+        return False
+    if wf.startswith(_AMENITY_BULLET_PREFIX):
+        return False
+    if wt.startswith(wf):
+        return False
+    if fidelo_word_from and wf in fidelo_word_from:
+        return False
+    return True
+
+
+def detect_poison_rows(
+    rows: Sequence[Sequence[str]],
+    fidelo_word_from: "set[str] | None" = None,
+) -> list[list[str]]:
+    """Return the subset of `rows` that look like source<->target mis-pairings (see
+    `is_poison_pair`). Header and non-Text rows are never flagged. `rows` are 6-col Weglot
+    rows: [id, language_from, language_to, word_from, word_to, type]."""
+    out: list[list[str]] = []
+    for r in rows:
+        r = list(r)
+        if (
+            len(r) >= 6
+            and r[0] != "id"
+            and is_poison_pair(r[3], r[4], r[5], fidelo_word_from)
+        ):
+            out.append(r)
+    return out
+
+
 @dataclass(frozen=True)
 class WeglotPair:
     """One Weglot row: source English text → target-language translation."""
@@ -233,6 +290,17 @@ def emit_consolidated_csv(
         report.warnings.append(
             f"{target_locale}: CSV is {written_bytes / 1_000_000:.1f} MB, approaching "
             f"Weglot's 5 MB import limit — split the file or prune stale rows before importing"
+        )
+
+    # tracker-114: surface source<->target mis-pairings so the pipeline never silently
+    # ships a poison CSV. The hard gate (CI / `weglot-gate`) blocks; this is the loud signal.
+    poison = detect_poison_rows(rows)
+    if poison:
+        ex = poison[0]
+        report.warnings.append(
+            f"{target_locale}: {len(poison)} row(s) look like source<->target mis-pairings "
+            f"(e.g. {ex[3]!r} -> {ex[4][:48]!r}). DO NOT import — regenerate via the "
+            f"block-level pipeline. See rules/weglot-csv-integrity.md"
         )
 
     report.written_to = out_path

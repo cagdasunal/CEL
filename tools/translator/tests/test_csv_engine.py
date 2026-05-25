@@ -37,3 +37,52 @@ def test_emit_roundtrip(tmp_path: Path):
 def test_stale_discriminator():
     assert csv_engine.is_stale_summary_word_from("## Heading")
     assert not csv_engine.is_stale_summary_word_from("Plain (ESTA) text")
+
+
+# tracker-114: source<->target mis-pairing guard.
+
+def test_poison_pair_flags_short_source_long_target():
+    assert csv_engine.is_poison_pair("and", "Welcher Standort bietet die richtige Sichtbarkeit?")
+    assert csv_engine.is_poison_pair(".", "Überlegungen zur Unterkunft für ein langfristiges Studium")
+    assert csv_engine.is_poison_pair("CEL", "unsere TOEFL-Prüfungsvorbereitung empfiehlt sich", "Text")
+
+
+def test_poison_pair_exemptions():
+    assert not csv_engine.is_poison_pair("Learn English", "Englisch lernen — eine lange Beschreibung hier", "meta_title")
+    assert not csv_engine.is_poison_pair("USA", "Vereinigte Staaten von Amerika (Nordamerika)", "Text", {"USA"})
+    assert not csv_engine.is_poison_pair("✓ Parking", "✓ Parkplatz buchbar gegen Aufpreis verfügbar")
+    assert not csv_engine.is_poison_pair("Studio (max. 2)", "Studio (max. 2) mit eigener Küche und Bad")
+    assert not csv_engine.is_poison_pair("and", "und")
+    assert not csv_engine.is_poison_pair(
+        "Welcome to CEL, your top choice for learning English here.",
+        "Willkommen bei CEL, Ihrer ersten Wahl zum Englischlernen.",
+    )
+
+
+def test_detect_poison_rows_skips_header_and_meta():
+    rows = [
+        list(csv_engine._CSV_COLUMNS),
+        ["", "en", "de", "and", "Welcher Standort bietet die richtige Sichtbarkeit?", "Text"],
+        ["", "en", "de", "Amenities", "Ausstattung", "Text"],
+        ["", "en", "de", "Title", "Ein langer Titel mit deutlich mehr als dreißig Zeichen", "meta_title"],
+    ]
+    hits = csv_engine.detect_poison_rows(rows)
+    assert len(hits) == 1 and hits[0][3] == "and"
+
+
+def test_emit_warns_on_poison(tmp_path: Path):
+    out = tmp_path / "de.csv"
+    rep = csv_engine.emit_consolidated_csv(
+        "de", out,
+        [csv_engine.WeglotPair("and", "Welcher Standort bietet die richtige Sichtbarkeit?")],
+        out,
+    )
+    assert any("mis-pairing" in w for w in rep.warnings)
+
+
+def test_emit_no_poison_warning_when_clean(tmp_path: Path):
+    out = tmp_path / "de.csv"
+    rep = csv_engine.emit_consolidated_csv(
+        "de", out, [csv_engine.WeglotPair("Welcome to CEL and our schools here.", "Willkommen bei CEL.")], out,
+    )
+    assert not any("mis-pairing" in w for w in rep.warnings)
