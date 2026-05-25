@@ -36,6 +36,10 @@ Findings:
   logo is kept un-mirrored in RTL via `html[lang="ar"] .navbar_logo-link{direction:ltr}`
   (arabic_static.css) so the line stays between icon and text; with the logo in LTR order the
   wordmark needs its base `margin-left:.75rem`, so rtlcss's margin flip is dropped here.
+- `.course-card_badge`: source positions the badge with `left:50%` (a centering offset). rtlcss
+  flips it to `right:50%;left:auto`, which mis-positions the badge in RTL. Excluding drops the
+  override so the base `left:50%` applies. The text-transform reset for `.course-card_badge` in
+  arabic_static.css is a separate rule and is unaffected.
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev", ".faq-icon.is-open", ".logo_text"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev", ".faq-icon.is-open", ".logo_text", ".course-card_badge"]
