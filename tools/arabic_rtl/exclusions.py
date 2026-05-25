@@ -25,6 +25,10 @@ Findings:
   `text-align` is a no-op on item position anyway — `justify-content` controls it. Excluding
   drops the whole bad flip; base `text-align:right` applies and `justify-content:flex-start`
   (arabic_static.css) right-aligns the flex item.
+- `.card-slider_arrow.is-prev`: source rotates the prev arrow `180deg` (prev/next share one
+  SVG). rtlcss flips that to `-180deg` (a visual no-op). On RTL the prev arrow should be
+  un-rotated, so the override is dropped and arabic_static.css sets `rotate(0deg)` — which
+  beats both the base `rotate(180deg)` and the `scaleX(-1)` arrow-mirror group on specificity.
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev"]
