@@ -34,9 +34,7 @@ def _strip_fences(text: str) -> str:
 def improve_copy(
     req: CopyRequest,
     *,
-    glossary=None,
     dry_run: bool = False,
-    sync: bool = True,
     api_key_env: str = "GEMINI_API_KEY",
     link_candidates: Iterable[str] = (),
 ) -> CopyResult:
