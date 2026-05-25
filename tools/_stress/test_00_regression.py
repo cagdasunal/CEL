@@ -21,8 +21,8 @@ import pytest
 pytestmark = pytest.mark.stress
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-BASELINE_PASSED = 456   # legacy + copywriter non-stress subset (real count ~458; small cushion). Bump on real growth.
-KNOWN_FAILURES = 2      # pre-existing tools/test_update_log.py host asserts (cel vs sitemap subdomain).
+BASELINE_PASSED = 462   # legacy + copywriter non-stress subset (real count 464; small cushion). Bump on real growth.
+KNOWN_FAILURES = 0      # suite is fully green (the test_update_log host asserts were corrected 2026-05-25).
 
 
 def test_legacy_suite_passed_count_at_or_above_baseline(tmp_path):
