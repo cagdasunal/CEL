@@ -8,6 +8,10 @@
   <title>English College — Sign in</title>
   <link rel="stylesheet" href="/assets/css/dashboard.css">
   <script src="/assets/js/dashboard-config.js"></script>
+  <style>
+    .gate-link { background: none; border: 0; color: #5b5bd6; cursor: pointer; font: inherit; text-decoration: underline; padding: 6px; }
+    .gate-card[hidden] { display: none; }
+  </style>
 </head>
 <body>
   <div class="gate-root">
@@ -23,7 +27,22 @@
       <input type="password" id="login-pw" placeholder="Password" autocomplete="current-password" required>
       <button type="submit">Sign in</button>
       <div class="gate-error" id="login-err" role="alert" aria-live="polite"></div>
+      <button type="button" class="gate-link" id="forgot-link">Forgot password?</button>
       <noscript><p class="gate-hint">JavaScript is required.</p></noscript>
+    </form>
+
+    <form class="gate-card" id="forgot-form" autocomplete="on" hidden>
+      <div class="brand-mark">
+        <div class="brand-logo" aria-label="English College">
+          <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+        </div>
+      </div>
+      <h1>Reset password</h1>
+      <p class="gate-hint">Enter your email and we'll send you a reset link.</p>
+      <input type="email" id="forgot-email" placeholder="Email" autocomplete="username" required>
+      <button type="submit">Send reset link</button>
+      <div class="gate-error" id="forgot-msg" role="status" aria-live="polite"></div>
+      <button type="button" class="gate-link" id="forgot-back">Back to sign in</button>
     </form>
   </div>
   <script>
@@ -86,6 +105,37 @@
           errEl.textContent = 'Could not sign in right now. Please try again.';
           if (btn) btn.disabled = false;
         });
+    });
+
+    // ── Forgot password: email a reset link (Worker sends it via Mailgun) ──
+    var forgotForm = document.getElementById('forgot-form');
+    var forgotEmail = document.getElementById('forgot-email');
+    var forgotMsg = document.getElementById('forgot-msg');
+    var forgotBtn = forgotForm.querySelector('button[type="submit"]');
+    function showForgot(show) {
+      loginForm.hidden = show;
+      forgotForm.hidden = !show;
+      if (show) { forgotMsg.textContent = ''; forgotEmail.value = emailEl.value; forgotEmail.focus(); }
+      else { emailEl.focus(); }
+    }
+    document.getElementById('forgot-link').addEventListener('click', function () { showForgot(true); });
+    document.getElementById('forgot-back').addEventListener('click', function () { showForgot(false); });
+
+    forgotForm.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var email = forgotEmail.value.trim().toLowerCase();
+      if (!email) return;
+      if (!DISPATCH_URL) { forgotMsg.textContent = 'Reset is not configured yet.'; return; }
+      if (forgotBtn) forgotBtn.disabled = true;
+      // Always the same neutral message — never reveal whether the email is registered.
+      var neutral = "If that email is registered, a reset link is on its way. Check your inbox (and spam).";
+      fetch(DISPATCH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'forgot', email: email })
+      }).then(function () { forgotMsg.textContent = neutral; })
+        .catch(function () { forgotMsg.textContent = neutral; })
+        .then(function () { if (forgotBtn) forgotBtn.disabled = false; });
     });
   })();
   </script>
