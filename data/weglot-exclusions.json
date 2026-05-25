@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-25T09:24:18.922160+00:00",
+  "last_sync": "2026-05-25T15:42:59.500017+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4785,6 +4785,20 @@
       "source": "api",
       "url_path": "/post/imparare-inglese-canada-ne-vale-la-pena",
       "added_at": "2026-05-23T19:46:16.059479+00:00"
+    },
+    "erste-woche-sprachschule-ausland": {
+      "language": "de",
+      "excluded_from": [
+        "ar",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/erste-woche-sprachschule-ausland"
     }
   }
 }
