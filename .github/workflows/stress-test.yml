@@ -54,23 +54,12 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Legacy + copywriter suite (-m "not stress"), guarding the deselected known-failures
-        # The 2 deselected tests are pre-existing, OUT-OF-SCOPE failures
-        # (tools/test_update_log.py asserts the sitemap.* host; render() emits cel.*).
-        # First fail loudly if either node was renamed/removed (the --deselect would silently
-        # no-op). lint-imports is NOT run here — the stress step (run_stress.sh) lints, and
-        # its test_00 runs the FULL suite bounding failures<=2, so a NEW failure fails CI.
-        run: |
-          set -o pipefail
-          for nid in \
-            "tools/test_update_log.py::TestRender::test_pending_shows_upload_required" \
-            "tools/test_update_log.py::TestRender::test_each_tracked_file_has_url_line"; do
-            PYTHONPATH=. python3 -m pytest "$nid" --collect-only -q >/dev/null 2>&1 \
-              || { echo "::error::deselected node missing (update the workflow): $nid"; exit 1; }
-          done
-          PYTHONPATH=. python3 -m pytest tools/ -m "not stress" -p no:cacheprovider -q \
-            --deselect "tools/test_update_log.py::TestRender::test_pending_shows_upload_required" \
-            --deselect "tools/test_update_log.py::TestRender::test_each_tracked_file_has_url_line"
+      - name: Legacy + copywriter suite (-m "not stress")
+        # The full non-stress suite must be green (the test_update_log host asserts were
+        # corrected 2026-05-25, so the --deselect machinery is gone). lint-imports is NOT run
+        # here — the stress step (run_stress.sh, next) lints, and its test_00 re-runs the FULL
+        # suite bounding failures, so a NEW failure fails CI.
+        run: PYTHONPATH=. python3 -m pytest tools/ -m "not stress" -p no:cacheprovider -q
 
       - name: Stress harness (-m stress) — regression baseline + shim identity + compose + locale-native QA
         run: STRESS_PY=python3 bash tools/_stress/run_stress.sh

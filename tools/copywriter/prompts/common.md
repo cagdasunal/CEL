@@ -28,7 +28,7 @@ It sets the language's register, punctuation, number/date conventions, and a lan
 ## HARD BANS — these make copy read AI-generated. Do not use them.
 - **No em dashes (— or –).** Use commas, periods, parentheses, or restructure.
 - **No emoji. No Title-Case headings. No bold-on-every-key-term.**
-- **No AI cliché words:** delve, leverage, robust, seamless, elevate, unlock, foster, holistic, tapestry, multifaceted, cutting-edge, game-changer, transformative, furthermore, moreover, additionally, underscore, utilize, harness, nestled, vibrant, pivotal, "navigate the landscape".
+- **No AI cliché words:** delve, leverage, robust, seamless, elevate, unlock, foster, holistic, tapestry, multifaceted, cutting-edge, game-changer, transformative, furthermore, moreover, additionally, consequently, notably, underscore, utilize, harness, embark, nestled, vibrant, pivotal, "navigate the landscape".
 - **No hedging/signposting:** "it's important to note", "it's worth noting", "when it comes to", "in the realm of", "needless to say", "in conclusion".
 - **No opener clichés:** "In today's fast-paced world", "In the era of", "In a world where", "Let's dive in", "Picture this".
 - **No AI sentence templates:** "It's not just X, it's Y", "Not only X but also Y", "From X to Y" as filler, rule-of-three lists, participial tails ("…, ensuring…", "…, allowing you to…"), copula-avoidance ("serves as", "stands as", "represents a") — just say "is".

@@ -37,8 +37,26 @@ Targeted proofs (all pass): M1 `"We leverage a robust platform."` → 2 distinct
 M2 `사또한테` does NOT flag `또한`, standalone tells still fail; L4 `cat`/`category`; M4 ko
 locale-layer-in-prompt assertion.
 
-## Out of scope (noted, not done)
+## Out of scope (deferred in the first remediation PR #45)
 
-- G1: prompt (`common.md`) vs `qa.py` `_UNIVERSAL_FLAG_TERMS` banlist drift — close-but-not-identical; subjective content tuning, would churn QA fixtures.
-- The 2 pre-existing `test_update_log.py` host-assert failures (not session work).
+- G1: prompt (`common.md`) vs `qa.py` `_UNIVERSAL_FLAG_TERMS` banlist drift.
+- The 2 pre-existing `test_update_log.py` host-assert failures.
 - Wiring a real glossary feature (the inverse of M3) — removal was the decision.
+
+## Follow-up — out-of-scope items completed (2026-05-25)
+
+- **G1 — DONE.** `common.md` banned-word list synced to `qa.py`: added `consequently`, `notably`,
+  `embark` (QA flagged them; the prompt didn't warn). Prompt now warns about everything QA
+  enforces, so the model isn't blind-sided into a QA-fail retry. Prompt-only; no fixture churn.
+- **`test_update_log` — DONE (suite now fully green).** The 2 stale assertions
+  (`sitemap.englishcollege.com`) were corrected to the canonical `cel.englishcollege.com` —
+  what `update_log.render()` actually emits (the code was right per the canonical-sitemap rule;
+  the tests were stale). Cascade: `KNOWN_FAILURES 2→0`, `BASELINE_PASSED 456→462`, and the CI
+  `--deselect` machinery + its existence-guard removed (no longer needed). Full suite: **486
+  passed / 0 failed**.
+- **M2 (Korean) — intentionally deferred, not a bug.** A full fix needs a morphological analyzer
+  (KoNLPy/mecab) — a heavy dependency deferred by an earlier locked decision. The Hangul-boundary
+  heuristic + the ≥3-distinct-tell threshold is the accepted lightweight state.
+- **L5 (UA) — unverifiable by design.** The live fetch isn't exercised in tests (no-network); the
+  `cel-tools/1.0` change is safe for a self-fetch GET but can't be gate-proven without a live call.
+- Glossary feature: still intentionally NOT wired (removal stands — brand terms via `must_keep_facts`).
