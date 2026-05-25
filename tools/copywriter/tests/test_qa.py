@@ -65,3 +65,33 @@ def test_korean_clean_passes():
     txt = "대부분의 학생은 밴쿠버 캠퍼스에서 12주 풀타임 학습으로 B2 수준에 도달합니다. 주당 25시간 수업과 매일 저녁 한 시간의 자습이 전제입니다."
     r = copywriter_qa(txt, "ko")
     assert r.ok, r.summary()
+
+
+def test_overlapping_flags_count_as_one_tell():
+    # M1: 'leverage' + 'robust' are in BOTH the universal list and the en banlist, so
+    # they emit 4 flag labels but are only 2 DISTINCT tells (< 3 threshold) => passes.
+    r = copywriter_qa("We leverage a robust platform.", "en")
+    assert r.ok, r.summary()
+    assert len({f.split(":", 1)[1].lower() for f in r.flags}) == 2
+
+
+def test_korean_banlist_no_substring_false_positive():
+    # M2: '또한' is a substring of '사또한테' but must NOT flag (Hangul boundary).
+    r = copywriter_qa("사또한테 그 말을 전했어요.", "ko")
+    assert not any("또한" in f for f in r.flags), r.summary()
+    assert r.ok, r.summary()
+
+
+def test_short_fact_not_satisfied_inside_a_word():
+    # L4: 'cat' must not be considered preserved just because 'category' is present.
+    r = copywriter_qa("We run a category of courses.", "en", must_keep_facts=("cat",))
+    assert not r.ok
+    assert any(h.startswith("missing_fact") for h in r.hard_fails)
+    # but the real word IS found:
+    assert copywriter_qa("We offer a great cat program.", "en", must_keep_facts=("cat",)).ok
+
+
+def test_banlist_loads_nonempty_for_core_locales():
+    # L8: a renamed '## AI-tell banlist' heading would silently disable a locale's banlist.
+    assert len(_load_locale_banlist("en")) >= 1
+    assert len(_load_locale_banlist("ko")) >= 1
