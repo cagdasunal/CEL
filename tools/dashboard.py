@@ -1215,35 +1215,6 @@ _SHELL_HTML = """\
           });
         });
     }
-    function dispatchWorkflow(workflow, inputs) {
-      return callProxy({ action: 'dispatch', workflow: workflow, inputs: inputs }).then(function (r) {
-        if (r.ok) return true;
-        var msg = 'HTTP ' + r.status;
-        if (r.body && r.body.error) msg += ': ' + r.body.error;
-        throw new Error(msg);
-      });
-    }
-    function awaitRun(workflow, statusEl) {
-      var start = Date.now();
-      function tick() {
-        return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
-          var run = (r.ok && r.body && r.body.run) ? r.body.run : null;
-          if (!run || run.status !== 'completed') {
-            statusEl.textContent = run ? (run.status + '…') : 'queueing…';
-            statusEl.className = 'cpw-status';
-            if (Date.now() - start > 90000) {
-              statusEl.textContent = 'Timed out — check again in a minute.';
-              statusEl.className = 'cpw-status is-error';
-              return null;
-            }
-            return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
-          }
-          return run;
-        });
-      }
-      return tick();
-    }
-
     // ── Change-password modal ─────────────────────────────────────────
     var overlay = document.getElementById('cpw-overlay');
     var cpwForm = document.getElementById('cpw-form');
@@ -1282,25 +1253,21 @@ _SHELL_HTML = """\
       cpwSave.disabled = true;
       cpwStatus.textContent = 'Saving…';
       cpwStatus.className = 'cpw-status';
+      // Change-password is handled in-Worker now (KV-backed, synchronous) — no
+      // GitHub-workflow round-trip. callProxy attaches the cel_session token.
       Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
-        return dispatchWorkflow('dashboard-change-password.yml', { email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
-      }).then(function () {
-        return new Promise(function (r) { setTimeout(r, 2000); });
-      }).then(function () {
-        return awaitRun('dashboard-change-password.yml', cpwStatus);
-      }).then(function (run) {
-        if (run && run.conclusion === 'success') {
+        return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+      }).then(function (r) {
+        if (r.ok) {
           cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
           cpwStatus.className = 'cpw-status is-ok';
-        } else if (run) {
-          cpwStatus.textContent = '✗ ' + (run.conclusion || 'failed') + ' — check your current password.';
+        } else {
+          cpwStatus.textContent = '✗ Current password is incorrect.';
           cpwStatus.className = 'cpw-status is-error';
           cpwSave.disabled = false;
-        } else {
-          cpwSave.disabled = false;
         }
-      }).catch(function (err) {
-        cpwStatus.textContent = '✗ ' + err.message;
+      }).catch(function () {
+        cpwStatus.textContent = '✗ Could not save right now. Please try again.';
         cpwStatus.className = 'cpw-status is-error';
         cpwSave.disabled = false;
       });
