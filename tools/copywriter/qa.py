@@ -116,11 +116,16 @@ def copywriter_qa(text: str, locale: str, *, must_keep_facts: tuple[str, ...] = 
         elif re.search(rf"\b{re.escape(term)}\b", low):
             flags.append(f"ai_term:{term}")
 
-    # --- Per-locale banlist (substring — handles agglutinative/non-Latin scripts) ---
+    # --- Per-locale banlist ---
     for term in _load_locale_banlist(locale):
         tl = term.lower()
-        if (" " in term) or not term.isascii():
-            present = term in text  # non-Latin / phrase: exact substring
+        if " " in term:
+            present = term in text  # multi-word phrase: exact substring
+        elif not term.isascii():
+            # Hangul-aware boundary: don't match a term embedded inside a longer Hangul
+            # run (사또한테 must NOT flag 또한). Lightweight heuristic — full correctness
+            # needs a morphological analyzer (deferred). No-op for non-Hangul scripts.
+            present = re.search(rf"(?<![가-힣]){re.escape(term)}(?![가-힣])", text) is not None
         else:
             present = re.search(rf"\b{re.escape(tl)}\b", low) is not None
         if present:
@@ -129,8 +134,20 @@ def copywriter_qa(text: str, locale: str, *, must_keep_facts: tuple[str, ...] = 
     # --- Fact preservation (content requirement; a miss is a hard fail) ---
     ntext = _norm(text)
     for fact in must_keep_facts:
-        if _norm(fact) and _norm(fact) not in ntext:
+        nf = _norm(fact)
+        if not nf:
+            continue
+        if nf.isascii():
+            # alnum-boundary so a short fact ("cat") isn't "found" inside a word
+            # ("category"), while still matching symbol-flanked facts ("$1,200", "DLI #O19…").
+            present = re.search(rf"(?<![a-z0-9]){re.escape(nf)}(?![a-z0-9])", ntext) is not None
+        else:
+            present = nf in ntext  # non-Latin: substring
+        if not present:
             hard_fails.append(f"missing_fact:{fact[:40]}")
 
-    ok = not hard_fails and len(flags) < _FLAG_FAIL_THRESHOLD
+    # Threshold on DISTINCT tells: a term in BOTH the universal list and a locale banlist
+    # is ONE tell, not two (M1 — double-counting was failing copy at 2 distinct tells).
+    distinct_tells = {f.split(":", 1)[1].lower() for f in flags}
+    ok = not hard_fails and len(distinct_tells) < _FLAG_FAIL_THRESHOLD
     return CopyQaReport(ok=ok, flags=flags, hard_fails=hard_fails)

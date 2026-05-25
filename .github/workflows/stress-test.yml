@@ -8,6 +8,7 @@ name: Stress tests (modular core + copywriter + translator)
 
 on:
   push:
+    branches: [main]   # PRs from branches trigger via pull_request only — no duplicate runs
     paths:
       - "tools/**"
       - "requirements.txt"
@@ -53,15 +54,20 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Enforce dependency-direction contract (tools.core is a leaf)
-        run: PYTHONPATH=. lint-imports
-
-      - name: Legacy + copywriter suite (-m "not stress")
+      - name: Legacy + copywriter suite (-m "not stress"), guarding the deselected known-failures
         # The 2 deselected tests are pre-existing, OUT-OF-SCOPE failures
         # (tools/test_update_log.py asserts the sitemap.* host; render() emits cel.*).
-        # The stress harness's test_00 still runs the FULL suite and bounds failures<=2,
-        # so a NEW failure here OR a regression in those 2 fails CI.
+        # First fail loudly if either node was renamed/removed (the --deselect would silently
+        # no-op). lint-imports is NOT run here — the stress step (run_stress.sh) lints, and
+        # its test_00 runs the FULL suite bounding failures<=2, so a NEW failure fails CI.
         run: |
+          set -o pipefail
+          for nid in \
+            "tools/test_update_log.py::TestRender::test_pending_shows_upload_required" \
+            "tools/test_update_log.py::TestRender::test_each_tracked_file_has_url_line"; do
+            PYTHONPATH=. python3 -m pytest "$nid" --collect-only -q >/dev/null 2>&1 \
+              || { echo "::error::deselected node missing (update the workflow): $nid"; exit 1; }
+          done
           PYTHONPATH=. python3 -m pytest tools/ -m "not stress" -p no:cacheprovider -q \
             --deselect "tools/test_update_log.py::TestRender::test_pending_shows_upload_required" \
             --deselect "tools/test_update_log.py::TestRender::test_each_tracked_file_has_url_line"

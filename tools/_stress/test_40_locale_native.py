@@ -48,18 +48,27 @@ def test_improve_dry_run_never_translates(locale, _translate_spy):
     assert _translate_spy["n"] == 0      # locale-native: no translation step, ever
 
 
-def test_improve_live_path_never_translates(monkeypatch, _translate_spy):
-    """Stub the shared Gemini client so the LIVE pipeline runs offline; still no translate."""
+def test_improve_live_path_uses_locale_prompt_and_never_translates(monkeypatch, _translate_spy):
+    """The LIVE pipeline (Gemini stubbed) must call the shared client EXACTLY once with the
+    TARGET LOCALE's system prompt, return same-locale copy, and never reach the translator.
+    (M4: the old test only asserted spy==0 — vacuous, since improve_copy imports no
+    translator on any path. These positive assertions prove locale-native generation.)"""
     from tools.core.gemini import client as gemini
-    monkeypatch.setattr(
-        gemini, "generate_sync",
-        lambda reqs, **k: [gemini.BatchResult(
-            custom_id="copy-1", succeeded=True, content=_CLEAN_EN,
-            input_tokens=12, output_tokens=24)],
-    )
-    r = improve_copy(CopyRequest(brief="tighten", locale="en", existing_copy="Old draft."), dry_run=False)
-    assert r.ok is True and r.text == _CLEAN_EN
-    assert _translate_spy["n"] == 0      # the live improve path never reaches the translator
+    captured: dict = {}
+
+    def _fake_generate_sync(reqs, **k):
+        captured["reqs"] = reqs
+        return [gemini.BatchResult(custom_id="copy-1", succeeded=True, content=_CLEAN_KO,
+                                   input_tokens=12, output_tokens=24)]
+
+    monkeypatch.setattr(gemini, "generate_sync", _fake_generate_sync)
+    r = improve_copy(CopyRequest(brief="tighten", locale="ko", existing_copy="옛날 초안."), dry_run=False)
+
+    assert len(captured.get("reqs", [])) == 1          # the shared client was invoked once
+    sys_text = "\n".join(b["text"] for b in captured["reqs"][0].system_blocks)
+    assert "Locale layer (ko)" in sys_text             # ...with the KO locale layer (native)
+    assert r.ok is True and r.locale == "ko" and r.text == _CLEAN_KO  # same-locale result
+    assert _translate_spy["n"] == 0                    # translator NEVER called
 
 
 # ---------------------------------------------------------------- enforced anti-AI QA
