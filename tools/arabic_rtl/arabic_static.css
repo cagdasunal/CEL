@@ -15,5 +15,5 @@ html[lang="ar"] .text-link svg,html[lang="ar"] .course-card_link svg,html[lang="
 html[lang="ar"] .card-slider_progress-fill,html[lang="ar"] .course-slider_progress-fill,html[lang="ar"] .accom-slider_progress-fill,html[lang="ar"] .act-slider_progress-fill,html[lang="ar"] .dest-slider_progress-fill{transform-origin:right center}
 html[lang="ar"] .compare_number,html[lang="ar"] .offer-bento_price-tag,html[lang="ar"] .count_days,html[lang="ar"] .count_hours,html[lang="ar"] .count_minutes,html[lang="ar"] .count_seconds{unicode-bidi:plaintext;direction:ltr;display:inline-block}
 html[lang="ar"] .review-card_rating-stars,html[lang="ar"] .reviews-hero_stars{direction:ltr;display:inline-flex}
-html[lang="ar"] .navbar_dropdown-link,html[lang="ar"] .navbar_dropdown-link div{text-align:right}
+html[lang="ar"] .navbar_dropdown-list .navbar_dropdown-link,html[lang="ar"] .navbar_dropdown-list .navbar_dropdown-link div{text-align:right}
 html[lang="ar"] .vst_glance-value,html[lang="ar"] .vst_tag{text-align:right}
