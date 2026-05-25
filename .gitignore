@@ -38,4 +38,7 @@ data/seo-intel/run-*/
 data/seo-intel/tx-*/
 data/seo-intel/translate-dryrun-*/
 data/seo-intel/translate-live-*/
-data/seo-intel/summary-dryrun/
+# NOTE: data/seo-intel/summary-dryrun/ is intentionally NOT ignored — it holds a
+# committed reference run (20260521T224800Z/*.json). Its other timestamp dirs are
+# tiny scratch; ignoring the parent would silently hide future files in the
+# committed run, so leave it visible.
