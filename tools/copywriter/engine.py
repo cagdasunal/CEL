@@ -42,7 +42,7 @@ def improve_copy(
 ) -> CopyResult:
     """Improve `req`'s copy in `req.locale` (locale-native; never translates)."""
     before = req.existing_copy or ""
-    system_blocks = build_system_prompt(req.locale, req.content_type)
+    system_blocks = build_system_prompt(req.locale)
     user_message = build_user_message(req, before, link_candidates)
 
     if dry_run:

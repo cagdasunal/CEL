@@ -1,37 +1,13 @@
 """Config — locale codes, collection IDs, model, exclusions, paths.
 
-Single source of truth for IDs and rules. No business logic — pure constants.
-Update MODEL_ID when a more capable Gemini production model ships.
+Single source of truth for summary IDs and rules. No business logic — pure constants.
+The shared Gemini knobs (MODEL_ID, model tiering, caching, token estimates, the dry-run
++ last-batch paths) live in tools.core.gemini.config and are re-exported at the bottom of
+this module; only summary-specific constants are defined here.
 """
 from __future__ import annotations
 
 from pathlib import Path
-
-# Google Gemini 3.1 Pro Preview — top-tier production model on Artificial
-# Analysis Intelligence Index (tied with Opus 4.7 at 57). Migrated from
-# claude-opus-4-7 in tracker-091 (2026-05-19 evening).
-# Pricing reference (verified 2026-05-21 — tracker-097): interactive
-# $2.00 in / $12.00 out per 1M (≤200k ctx); Batch $1.00 / $6.00; cached read $0.20.
-# https://ai.google.dev/gemini-api/docs/pricing
-MODEL_ID = "gemini-3.1-pro-preview"
-
-# tracker-097: model tiering. The bulk blog catalog (415 posts × locales) is the
-# single-block, lower-stakes path — generate it on Gemini 2.5 Flash (~6.7× cheaper
-# input / ~4.8× cheaper output than Pro, and supports thinking_budget=0). The
-# high-value designed pages (static landing + courses + housing 4-part) stay on Pro.
-# QA gate is the quality backstop: a weak Flash summary is demoted to MANUAL_REVIEW,
-# never shipped. Reversible — change this map and bump SUMMARY_PROMPT_VERSION.
-MODEL_BLOG = "gemini-2.5-flash"
-MODEL_BY_CONTENT_TYPE = {
-    "blog_post": MODEL_BLOG,
-    # course / housing / landing default to MODEL_ID (Pro) via model_for_content_type.
-}
-
-
-def model_for_content_type(content_type: str) -> str:
-    """Resolve the Gemini model for a content type (tracker-097 tiering)."""
-    return MODEL_BY_CONTENT_TYPE.get(content_type, MODEL_ID)
-
 
 # Defensive cost cap (tracker-097: 100 → 15). A run aborts if estimated cost
 # exceeds this — a real guardrail, not the old ~$100 no-op. Tunable.
@@ -135,7 +111,6 @@ LLMS_TXT_URL = "https://cel.englishcollege.com/llms.txt"
 # Filesystem layout.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEGLOT_IMPORTS_DIR = PROJECT_ROOT / "docs" / "admin" / "weglot-imports"
-DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 
 # tracker-092 Phase 2: idempotency. summary-state.json maps a content id
@@ -150,32 +125,6 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # full regeneration under the new cheaper (tiered + cached) pipeline.
 SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
-
-# tracker-097: the last submitted Batch job's id + metadata, persisted on submit so a
-# cancelled/failed GHA run can `cancel-batch`/`retrieve-batch` it (a submitted Gemini
-# batch keeps billing even after the GHA run is cancelled — see RC5). Committed by the
-# workflow alongside summary-state.json so it survives across runs.
-LAST_BATCH_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-last-batch.json"
-
-# tracker-097: explicit context-cache lifecycle. The ~6,500-token system prefix is
-# identical across every (content_type, locale, model) group; caching it drops the
-# prefix from full input rate to the cache-read rate ($0.20/M Pro, $0.03/M Flash).
-# Only groups with >= CACHE_MIN_GROUP_SIZE items are cached (a 1-item cache adds a
-# create/delete round-trip for negligible saving).
-#
-# TTL note: a Batch job runs ASYNCHRONOUSLY (1-4h typical, capped by the GHA job's
-# 6h timeout) and the cache is looked up at PROCESSING time — so the TTL must cover
-# the whole in-job batch run, NOT just submit. Caches are deleted in wait_for_batch
-# once the batch reaches a terminal state (storage is billed for actual lifetime,
-# usually << TTL); the TTL is the backstop if the run is cancelled/crashes.
-CACHE_TTL_SECONDS = 6 * 3600  # 6h — matches the GHA job timeout (covers in-job batch processing)
-CACHE_MIN_GROUP_SIZE = 2
-
-# Safety valve: the live explicit-cache path is exercised on real Gemini Batch infra
-# only (no offline test can hit it). If a run shows cache misbehaviour, set this False
-# to fall back to full-price generation without a code change. The submit path is also
-# fallback-safe per-request (a cache create/reference failure degrades to full price).
-ENABLE_EXPLICIT_CACHE = True
 
 # tracker-092 Phase 3: dedicated translator memory. Persists
 # source→translation across runs so unchanged strings are never re-translated.
@@ -226,33 +175,15 @@ AUDIT_MANUAL_REVIEW_THRESHOLD = 80
 # Translation unit — paragraph (not sentence). Matches Weglot's natural unit.
 TRANSLATION_UNIT = "paragraph"
 
-# Per-request OUTPUT-token allowance for cost estimation (2026-05-23, audit C1 fix).
-# Gemini bills THINKING tokens AS output; a Pro 4-part request spends ~3000-5000 thinking
-# + ~1500-2500 visible (the BatchRequest.max_tokens ceiling is 16000 for this reason), so
-# the old flat 800-token assumption under-projected Pro by ~6x — the root cause of the
-# ~806 TRY billing burst. Keyed by (model_family, enable_thinking). CONSERVATIVE by design:
-# over-estimating is the safe direction (it makes the cost gate stricter, not looser).
-# Flash forces thinking_budget=0, so both flash keys are visible-output only.
-OUTPUT_TOKEN_ESTIMATE = {
-    ("pro", True): 5500,    # thinking-heavy 4-part landing / courses / housing generation
-    ("pro", False): 1000,   # translation (thinking disabled) + any no-think Pro path
-    ("flash", True): 1300,  # blog single-block (Flash thinking_budget=0; margin for visible)
-    ("flash", False): 1300,
-}
-DEFAULT_OUTPUT_TOKEN_ESTIMATE = 1500
-
-# Extended thinking budget for content generation (translation passes disable thinking).
-THINKING_BUDGET_TOKENS = 1500
-
 # Webflow API base.
 WEBFLOW_API_BASE = "https://api.webflow.com/v2"
 
-# ---- Gemini config (shared) — re-exported from tools.core.gemini.config (Plan A) ----
-# These knobs are now CANONICAL in tools/core/gemini/config.py (the home the shared
-# Gemini client reads). This trailing import shadows the local definitions above so
-# summary code keeps `config.MODEL_ID` / `config.DRYRUN_DIR` etc. working off the
-# single shared source. (MAX_BATCH_COST_USD / COST_CONFIRM_THRESHOLD_USD stay
-# summary-local — the client never reads them; cli.py's cost gate does.)
+# ---- Gemini config (shared) — imported from tools.core.gemini.config (Plan A) ----
+# These knobs are CANONICAL in tools/core/gemini/config.py (the home the shared Gemini
+# client reads); summary imports them here so `config.MODEL_ID` / `config.DRYRUN_DIR`
+# etc. resolve off the single shared source. (MAX_BATCH_COST_USD /
+# COST_CONFIRM_THRESHOLD_USD stay summary-local — the client never reads them; cli.py's
+# cost gate does.)
 from tools.core.gemini.config import (  # noqa: E402,F401
     MODEL_ID, MODEL_BLOG, MODEL_BY_CONTENT_TYPE, model_for_content_type,
     OUTPUT_TOKEN_ESTIMATE, DEFAULT_OUTPUT_TOKEN_ESTIMATE, THINKING_BUDGET_TOKENS,

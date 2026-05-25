@@ -10,7 +10,7 @@ back-import fails CI, not a code review. See [`docs/ARCHITECTURE.md`](../../docs
 | Package | Module(s) | Public surface |
 |---|---|---|
 | `core.gemini` | `client`, `config` | Gemini 3.1 Pro Batch + sync client: `BatchRequest`, `submit_batch`, `generate_sync`, `wait_for_batch`, `dry_run_submit`, `cancel_batch`, `estimate_batch_cost_usd`, `plan_caches`; knobs in `config` (`MODEL_ID`, cache/token/cost constants, `DRYRUN_DIR`, `LAST_BATCH_FILE`). |
-| `core.webflow` | `http`, `cms` | Webflow Data API: `http` = `resolve_token` + `request` (429/5xx + timeout backoff) + `paginate` + `WebflowApiError`/`NetworkError`; `cms.CmsClient` = generic staged `patch_fields`, `list_items`, `ensure_field`, dry-run default; `WriteResult`/`CmsItem`/`CollectionField`. |
+| `core.webflow` | `http`, `cms` | Webflow Data API: `http` = `resolve_token` + `request` (429/5xx + timeout backoff) + `WebflowApiError`; `cms.CmsClient` = generic staged `patch_fields`, paginated `list_items`, `ensure_field`, dry-run default; `WriteResult`/`CmsItem`/`CollectionField`. |
 | `core.web` | `page_fetcher` | `fetch_page(url) -> PageContent` (stdlib live-page fetch + extract). |
 | `core.content` | `structure` | Markdown ⇄ Webflow RichText HTML (`summary_markdown_to_html`, `summary_html_to_markdown`, `parse_four_part`, …). |
 | `core.seo` | `llms_parser` | `llms.txt` → `LlmsIndex` internal-link graph (`parse_llms_txt`, `find_equivalent`, `LlmsIndex.find_equivalent_or_fallback`). |

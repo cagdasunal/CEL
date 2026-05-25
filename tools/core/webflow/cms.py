@@ -72,7 +72,7 @@ class CmsClient:
         h = {
             "Authorization": f"Bearer {self._get_token()}",
             "Accept": "application/json",
-            "User-Agent": "cel-summary-script/1.0",
+            "User-Agent": "cel-webflow-client/1.0",
         }
         if content_type_json:
             h["Content-Type"] = "application/json"
