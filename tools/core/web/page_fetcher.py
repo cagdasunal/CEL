@@ -15,7 +15,7 @@ from html.parser import HTMLParser
 from typing import Optional
 
 
-_USER_AGENT = "cel-summary-script/1.0"
+_USER_AGENT = "cel-tools/1.0"
 _BODY_EXCERPT_MAX_CHARS = 8000
 _FETCH_TIMEOUT = 20.0
 

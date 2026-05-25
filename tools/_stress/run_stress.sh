@@ -17,9 +17,13 @@ PY="${STRESS_PY:-python3}"
 unset GEMINI_API_KEY WEBFLOW_API_TOKEN 2>/dev/null || true
 
 # import-linter ships only the `lint-imports` console script (no `python -m` entry).
-# Prefer the one beside the chosen interpreter; fall back to PATH.
-LINT="$(dirname "$PY")/lint-imports"
-[ -x "$LINT" ] || LINT="lint-imports"
+# Prefer the one beside the chosen interpreter; else resolve an absolute path from PATH
+# (never a bare name — that could pick up a stray ./lint-imports in the CWD).
+if [ -x "$(dirname "$PY")/lint-imports" ]; then
+  LINT="$(dirname "$PY")/lint-imports"
+else
+  LINT="$(command -v lint-imports)" || { echo "lint-imports not found on PATH"; exit 1; }
+fi
 
 echo "== import-linter (tools.core leaf contract) =="
 PYTHONPATH=. "$LINT"
