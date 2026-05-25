@@ -178,6 +178,15 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+      - name: Poison gate — block mis-paired CSVs before commit (live runs only)
+        # tracker-114: FAIL the job (and skip the commit below) if any per-locale Weglot CSV
+        # has a source<->target mis-pairing — the 2026-05-25 incident class (a short source
+        # mapped to a long unrelated target, which Weglot then applies site-wide on import).
+        # Uses the Fidelo word_from allowlist so legitimate short labels are not flagged.
+        # See rules/weglot-csv-integrity.md (monorepo).
+        if: ${{ inputs.dry_run == false }}
+        run: python3 -m tools.weglot.poison_gate
+
       - name: Commit CSVs + static summaries + idempotency state (live runs only)
         if: ${{ inputs.dry_run == false }}
         run: |
