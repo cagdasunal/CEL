@@ -21,9 +21,13 @@ glossary, memory, or CSV-format logic.
 It depends on the summary tool only for the shared Gemini client:
 `tools.translator.engine` imports `tools.summary.batch_runner`. Everything else
 is Python stdlib, and the Weglot CSV writer (`tools.translator.weglot`) has no
-summary dependency at all. To reuse the translator from a non-CEL project,
-vendor `tools.summary.batch_runner` (+ its `config`) alongside it, or lift the
-shared Gemini client into a neutral location.
+summary dependency at all.
+
+**Shared core (modular refactor):** the Gemini client now lives at
+`tools.core.gemini.client`; `tools.summary.batch_runner` is an identity-preserving
+re-export shim over it (the import above keeps working unchanged). New tools should
+import `tools.core.gemini` directly. To reuse the translator from a non-CEL project,
+vendor `tools/core/gemini/` (`client` + `config`) — it has no consumer-tool dependency.
 
 ## Public API
 

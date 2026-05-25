@@ -310,6 +310,7 @@ def _install_fake_genai(monkeypatch, client_cls):
 
 def test_submit_batch_persists_last_batch_and_caches(monkeypatch, tmp_path):
     monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "last.json")
+    monkeypatch.setattr("tools.core.gemini.config.LAST_BATCH_FILE", tmp_path / "last.json")  # Plan A: client reads core
     state = {"caches": [], "deleted": [], "src": None, "model": None}
 
     class _Caches:
@@ -358,6 +359,7 @@ def test_submit_batch_persists_last_batch_and_caches(monkeypatch, tmp_path):
 def test_submit_batch_falls_back_to_uncached_on_rejection(monkeypatch, tmp_path):
     """Fallback-safety: if the cached submit is rejected, rebuild + submit uncached."""
     monkeypatch.setattr(config, "LAST_BATCH_FILE", tmp_path / "last.json")
+    monkeypatch.setattr("tools.core.gemini.config.LAST_BATCH_FILE", tmp_path / "last.json")  # Plan A: client reads core
     state = {"create_calls": 0, "deleted": []}
 
     class _Caches:

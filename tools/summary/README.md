@@ -2,6 +2,14 @@
 
 Production pipeline for generating SEO summary content on englishcollege.com pages and emitting consolidated Weglot-ready translation CSVs.
 
+> **Shared core (modular refactor).** The reusable infrastructure was extracted to the
+> leaf layer `tools/core/` — Gemini client → `tools.core.gemini`, Webflow client →
+> `tools.core.webflow`, `page_fetcher`/`structure`/`llms_parser` → `tools.core.web`/
+> `content`/`seo`. The old summary paths (`batch_runner`, `webflow_client`,
+> `page_fetcher`, `structure`, `llms_parser`, and the moved `config` names) remain as
+> **identity-preserving re-export shims**, so everything here keeps working unchanged.
+> See [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
+
 ## Status
 
 **As of 2026-05-19 (tracker-087 closure)**: production-ready for workflow_dispatch. Previously "deployment-ready but execution deferred" framing was inaccurate — the audit-086 commit shipped two false-closure claims (H-1 missing `write_static_summary` function; C-4 stub `_execute_translate`). Both are now genuinely closed and exercised by the end-to-end stress test in `tests/test_end_to_end.py`. Live workflow_dispatch still requires the user to rotate API keys (see below) and trigger manually.
