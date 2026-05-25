@@ -20,6 +20,11 @@ Findings:
   already correct for RTL. rtlcss flips it to `left:0;right:auto`, opening the panel on the
   wrong side. Excluding drops the position flip so the base `right:0` right-aligns the panel
   (Webflow's dropdown JS handles the rest).
+- `.navbar_dropdown-link`: base is `text-align:right` (correct for RTL). rtlcss flips it to
+  `text-align:left` (wrong) and mirrors the padding. But this link is `display:flex`, so
+  `text-align` is a no-op on item position anyway — `justify-content` controls it. Excluding
+  drops the whole bad flip; base `text-align:right` applies and `justify-content:flex-start`
+  (arabic_static.css) right-aligns the flex item.
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link"]
