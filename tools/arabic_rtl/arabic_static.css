@@ -9,6 +9,8 @@ html[lang="ar"] .navbar_link .navbar_dot{left:-12px;right:auto}
 html[lang="ar"] .navbar_logo-link{direction:ltr}
 html[lang="ar"] #weglot-listbox,html[lang="ar"] .wg-drop.country-selector ul{right:auto}
 html[lang="ar"] #weglot-listbox a,html[lang="ar"] .wg-drop.country-selector ul a{padding-left:0;padding-right:0}
+html[lang="ar"] .testimonial_component-top,html[lang="ar"] .testimonial_loop-trigger{direction:ltr}
+html[lang="ar"] .testimonial_card{direction:rtl}
 html[lang="ar"] .w-dropdown-btn,html[lang="ar"] .w-dropdown-toggle,html[lang="ar"] .w-dropdown-link{text-align:right}
 html[lang="ar"] .breadcrumb-sep{transform:scaleX(-1);display:inline-block}
 html[lang="ar"] .text-style-allcaps,html[lang="ar"] .hero_title,html[lang="ar"] .hero_sub,html[lang="ar"] .section-title,html[lang="ar"] .small-title,html[lang="ar"] .section-tagline,html[lang="ar"] .cta,html[lang="ar"] .navbar_link,html[lang="ar"] .button_weglot,html[lang="ar"] .course-card_badge,html[lang="ar"] .accom-card_badge,html[lang="ar"] .compare_badge,html[lang="ar"] .offer-bento_title,html[lang="ar"] .faq-question-text,html[lang="ar"] .breadcrumb-link,html[lang="ar"] .stoc_label,html[lang="ar"] .stoc_offer-dot{letter-spacing:normal;text-transform:none}
