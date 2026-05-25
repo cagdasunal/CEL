@@ -948,7 +948,11 @@ SHELL_CSS = """
 """
 
 
-AUTH_SCRIPT_TAG = '<script src="/assets/js/auth.js"></script>'
+# Gate scripts for /admin/* sub-pages: dashboard-config.js MUST load before
+# auth.js (auth.js reads window.CEL_DISPATCH_URL to validate the session).
+# _SHELL_HTML inlines the same order for the main dashboard shell.
+AUTH_SCRIPT_TAG = ('<script src="/assets/js/dashboard-config.js"></script>\n'
+                   '  <script src="/assets/js/auth.js"></script>')
 
 FAVICON_HREF = "/assets/img/favicon.png"
 
@@ -1042,8 +1046,9 @@ _SHELL_HTML = """\
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/assets/js/auth.js"></script>
+  <!-- dashboard-config.js MUST load before auth.js: auth.js reads window.CEL_DISPATCH_URL to validate the session. -->
   <script src="/assets/js/dashboard-config.js"></script>
+  <script src="/assets/js/auth.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
