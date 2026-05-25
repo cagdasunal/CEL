@@ -16,11 +16,5 @@
     "lastName": "Himmelberg",
     "email": "patrick@englishcollege.com",
     "pwHash": "7185b492975cecd2f8add12bdc5b8c0597d26a648847399c2db8b6d702ee7352"
-  },
-  {
-    "firstName": "Test",
-    "lastName": "Temp",
-    "email": "test-delete-me@englishcollege.com",
-    "pwHash": "a791862f1c666cca84f25c0d147a7afd924b9af2de46d2e46f25062a5e3318ed"
   }
 ]
