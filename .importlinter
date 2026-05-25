@@ -1,0 +1,24 @@
+# Enforces the modular dependency direction for the shared-services layer:
+# tools.core.* is a LEAF — any tool may import it, but it must NEVER import a
+# consumer tool back. Run with `lint-imports` (import-linter). Satisfied today
+# (tools/core is empty) and stays green as gemini/webflow/web/content/seo land
+# under tools/core in later plans. import-linter uses static analysis (grimp), so
+# it does not execute module bodies.
+[importlinter]
+root_package = tools
+
+[importlinter:contract:core-is-a-leaf]
+name = tools.core must not import any consumer tool
+type = forbidden
+source_modules =
+    tools.core
+    tools.core.web
+    tools.core.content
+    tools.core.seo
+    tools.core.gemini
+    tools.core.webflow
+forbidden_modules =
+    tools.summary
+    tools.translator
+    tools.offers
+    tools.blog_images
