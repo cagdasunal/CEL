@@ -29,6 +29,9 @@ Findings:
   SVG). rtlcss flips that to `-180deg` (a visual no-op). On RTL the prev arrow should be
   un-rotated, so the override is dropped and arabic_static.css sets `rotate(0deg)` — which
   beats both the base `rotate(180deg)` and the `scaleX(-1)` arrow-mirror group on specificity.
+- `.faq-icon.is-open`: source rotates the FAQ toggle icon `45deg` when open (a "+" -> "x").
+  rtlcss flips that to `-45deg`. The icon should rotate the same way it does in LTR, so the
+  override is dropped and the base `rotate(45deg)` applies (the toggle still animates open).
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev", ".faq-icon.is-open"]
