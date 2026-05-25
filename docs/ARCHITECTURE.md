@@ -32,6 +32,48 @@ must **never** import a consumer tool (`summary`, `translator`, `copywriter`,
 not a comment. A future orchestrator composes `core.gemini` + `copywriter` +
 `translator` + `core.webflow` by importing each; nothing is rebuilt.
 
+## Composition example (the modular end state)
+
+A future orchestrator composes the shared surfaces by **importing each** — nothing is
+rebuilt. Every call below is dry-run safe (no spend); drop `dry_run=True` and supply the
+keys to go live. This exact hand-off is proven by `tools/_stress/test_30_compose.py`.
+
+```python
+from tools.copywriter import CopyRequest, improve_copy
+from tools.translator import TranslationUnit, translate_batch
+from tools.translator.glossary import load_glossary
+from tools.core.content.structure import summary_markdown_to_html
+from tools.core.webflow.cms import CmsClient
+
+# 1. Improve the Korean hero IN Korean (locale-native — never translated).
+res = improve_copy(
+    CopyRequest(brief="warmer hero", locale="ko", existing_copy=current_copy),
+    dry_run=True,
+)
+
+# 2. (optional) Propagate EN-source copy to other locales via the translator.
+de = translate_batch(
+    [TranslationUnit(id="hero", text=res.text)], "de", load_glossary(), dry_run=True
+)
+
+# 3. Stage the rewrite back to Webflow through the shared client (dry-run default).
+html = summary_markdown_to_html(res.text)
+CmsClient(dry_run=True).patch_fields(collection_id, item_id, {"hero": html})
+```
+
+## Adding a consumer tool
+
+1. `mkdir tools/<tool>` (no `tools/__init__.py` — `tools/` is a namespace package).
+2. Import shared infra from `tools.core.*` (and `tools.translator` for multilingual).
+   **Never** make `tools.core` import your tool back.
+3. If you add a NEW leaf under `tools/core/`, list its package in the `source_modules`
+   of the forbidden contract in `.importlinter`, then run `lint-imports`.
+4. Put tests in `tools/<tool>/tests/`; the repo-root `pyproject.toml` `pythonpath = ["."]`
+   makes `import tools.<tool>` resolve (add a `tests/conftest.py` sys.path shim only if
+   you run the file outside the configured root).
+5. If the tool participates in the orchestrator, add a dry-run check to
+   `tools/_stress/test_20_dryrun.py` and a hand-off assertion to `test_30_compose.py`.
+
 ## Extraction pattern (strangler-fig + shims)
 
 Shared modules are extracted from `tools/summary/` by MOVING the body into
