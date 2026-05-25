@@ -6,13 +6,15 @@ html[lang="ar"] body{font-family:'Cairo','LibreFranklin',system-ui,sans-serif}
 html[lang="ar"] :is(h1,h2,h3,h4,h5,h6){font-family:'Cairo',sans-serif;letter-spacing:normal;text-transform:none}
 html[lang="ar"] p,html[lang="ar"] li,html[lang="ar"] a,html[lang="ar"] blockquote{line-height:1.7}
 html[lang="ar"] .navbar_link .navbar_dot{left:-12px;right:auto}
+html[lang="ar"] .navbar_logo-link{direction:ltr}
+html[lang="ar"] #weglot-listbox,html[lang="ar"] .wg-drop.country-selector ul{left:0;right:auto}
 html[lang="ar"] .w-dropdown-btn,html[lang="ar"] .w-dropdown-toggle,html[lang="ar"] .w-dropdown-link{text-align:right}
 html[lang="ar"] .breadcrumb-sep{transform:scaleX(-1);display:inline-block}
 html[lang="ar"] .text-style-allcaps,html[lang="ar"] .hero_title,html[lang="ar"] .hero_sub,html[lang="ar"] .section-title,html[lang="ar"] .small-title,html[lang="ar"] .section-tagline,html[lang="ar"] .cta,html[lang="ar"] .navbar_link,html[lang="ar"] .button_weglot,html[lang="ar"] .course-card_badge,html[lang="ar"] .accom-card_badge,html[lang="ar"] .compare_badge,html[lang="ar"] .offer-bento_title,html[lang="ar"] .faq-question-text,html[lang="ar"] .breadcrumb-link,html[lang="ar"] .stoc_label,html[lang="ar"] .stoc_offer-dot{letter-spacing:normal;text-transform:none}
 html[lang="ar"] .hero_sub,html[lang="ar"] .faq-question-text,html[lang="ar"] .campus_bento-card-desc,html[lang="ar"] .cm-textonly_desc,html[lang="ar"] .photo-card_desc,html[lang="ar"] .review-card_quote,html[lang="ar"] .showcase_slide-desc,html[lang="ar"] .accred_accred-desc,html[lang="ar"] .act_pano-desc{line-height:1.7}
 html[lang="ar"] .course-slider_arrow,html[lang="ar"] .card-slider_arrow,html[lang="ar"] .accom-slider_arrow,html[lang="ar"] .act-slider_arrow,html[lang="ar"] .dest-slider_arrow{transform:scaleX(-1)}
 html[lang="ar"] .card-slider_arrow.is-prev{transform:rotate(0deg)}
-html[lang="ar"] .swiper-button__arrow{transform:scaleX(-1)}
+html[lang="ar"] .swiper-button__wrap{direction:ltr}
 html[lang="ar"] .text-link svg,html[lang="ar"] .course-card_link svg,html[lang="ar"] .stoc_link svg,html[lang="ar"] .stoc_link-blog svg,html[lang="ar"] .inline-cta-btn svg,html[lang="ar"] .arrow-icon{transform:scaleX(-1)}
 html[lang="ar"] .card-slider_progress-fill,html[lang="ar"] .course-slider_progress-fill,html[lang="ar"] .accom-slider_progress-fill,html[lang="ar"] .act-slider_progress-fill,html[lang="ar"] .dest-slider_progress-fill{transform-origin:right center}
 html[lang="ar"] .compare_number,html[lang="ar"] .offer-bento_price-tag,html[lang="ar"] .count_days,html[lang="ar"] .count_hours,html[lang="ar"] .count_minutes,html[lang="ar"] .count_seconds{unicode-bidi:plaintext;direction:ltr;display:inline-block}

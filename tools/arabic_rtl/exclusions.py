@@ -32,6 +32,10 @@ Findings:
 - `.faq-icon.is-open`: source rotates the FAQ toggle icon `45deg` when open (a "+" -> "x").
   rtlcss flips that to `-45deg`. The icon should rotate the same way it does in LTR, so the
   override is dropped and the base `rotate(45deg)` applies (the toggle still animates open).
+- `.logo_text`: navbar wordmark SVG (its divider line is baked into the SVG's LEFT edge). The
+  logo is kept un-mirrored in RTL via `html[lang="ar"] .navbar_logo-link{direction:ltr}`
+  (arabic_static.css) so the line stays between icon and text; with the logo in LTR order the
+  wordmark needs its base `margin-left:.75rem`, so rtlcss's margin flip is dropped here.
 """
 
-EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev", ".faq-icon.is-open"]
+EXCLUDE_SUBSTRINGS: list[str] = [".w-dropdown-toggle", ".navbar_dropdown-list", ".navbar_dropdown-link", ".card-slider_arrow.is-prev", ".faq-icon.is-open", ".logo_text"]
