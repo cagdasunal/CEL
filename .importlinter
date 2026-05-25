@@ -12,6 +12,9 @@ name = tools.core must not import any consumer tool
 type = forbidden
 source_modules =
     tools.core
+    tools.core.web
+    tools.core.content
+    tools.core.seo
 forbidden_modules =
     tools.summary
     tools.translator
