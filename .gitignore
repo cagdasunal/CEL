@@ -26,3 +26,14 @@ data/sitemap-check-report.json
 # Arabic visual-pass screenshots — large PNGs uploaded as a CI artifact for review,
 # not committed (the generated *.css + *.report.md + state.json ARE committed).
 data/arabic-visual/screenshots/
+
+# SEO-intel per-run logs + ad-hoc run output dirs (audit 112 M2, 2026-05-25).
+# Translation/internal-linking/summary scratch runs (~21 MB) that must NOT be
+# swept into a commit by an accidental `git add data/`. Committed
+# indexing-audit/*.json snapshots are .json (not matched) and stay tracked.
+data/seo-intel/*.log
+data/seo-intel/link-blogs-*/
+data/seo-intel/run-*/
+data/seo-intel/tx-*/
+data/seo-intel/translate-dryrun-*/
+data/seo-intel/translate-live-*/
