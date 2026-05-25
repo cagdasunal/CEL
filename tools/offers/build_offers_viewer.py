@@ -314,6 +314,8 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
       if (!DISPATCH_URL) {
         return Promise.reject(new Error('Editor not configured — contact the site administrator.'));
       }
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';  // dispatch/poll require a valid session
       return fetch(DISPATCH_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

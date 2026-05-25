@@ -161,6 +161,8 @@
     var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
     function callProxy(payload) {
       if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';  // dispatch/poll require a valid session
       return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         .then(function (resp) {
           return resp.json().catch(function () { return {}; }).then(function (j) {
