@@ -10,5 +10,17 @@
     "lastName": "Ünal",
     "email": "cagdas@cagdasunal.com",
     "pwHash": "e81e4ac2781c6c81fdfcb8da0ddbe21e92dd3c007509250793dcb3e446295f8b"
+  },
+  {
+    "firstName": "Patrick",
+    "lastName": "Himmelberg",
+    "email": "patrick@englishcollege.com",
+    "pwHash": "7185b492975cecd2f8add12bdc5b8c0597d26a648847399c2db8b6d702ee7352"
+  },
+  {
+    "firstName": "Test",
+    "lastName": "Temp",
+    "email": "test-delete-me@englishcollege.com",
+    "pwHash": "afe2f81c7ff6198d4085475e6d257b85e5ed29f9591abf6c96d918799fc656af"
   }
 ]
