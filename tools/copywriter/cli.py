@@ -28,6 +28,8 @@ from tools.copywriter.engine import improve_copy
 def _is_allowlisted_url(url: str) -> bool:
     """Only fetch over https from englishcollege.com (defensive — the target URL is
     operator-supplied via the brief; restrict the fetch surface to the known domain)."""
+    if not isinstance(url, str):
+        return False
     p = urllib.parse.urlparse(url)
     host = (p.hostname or "").lower()
     return p.scheme == "https" and (host == "englishcollege.com" or host.endswith(".englishcollege.com"))

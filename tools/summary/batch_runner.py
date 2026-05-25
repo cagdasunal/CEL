@@ -10,5 +10,9 @@ tools.core.gemini.client. See docs/ARCHITECTURE.md.
 from tools.core.gemini import client as _src
 from tools.core.gemini.client import *  # noqa: F401,F403
 
+# globals().update snapshots object REFERENCES once at import. Shared mutable state
+# (e.g. _PENDING_BATCHES) stays in sync only because the core module MUTATES it in place
+# and never REBINDS it. INVARIANT: core module-level names must not be reassigned at
+# runtime, or this shim's copy would silently diverge from core's. (audit-002 L8.)
 globals().update({_k: _v for _k, _v in vars(_src).items() if not _k.startswith("__")})
 del _src

@@ -1,9 +1,10 @@
 # Enforces the modular dependency direction for the shared-services layer:
 # tools.core.* is a LEAF — any tool may import it, but it must NEVER import a
-# consumer tool back. Run with `lint-imports` (import-linter). Satisfied today
-# (tools/core is empty) and stays green as gemini/webflow/web/content/seo land
-# under tools/core in later plans. import-linter uses static analysis (grimp), so
-# it does not execute module bodies.
+# consumer tool back. Run with `lint-imports` (import-linter). import-linter uses
+# static analysis (grimp), so it does not execute module bodies.
+# forbidden_modules MUST list EVERY consumer tool (incl. PEP-420 namespace packages
+# like tools.weglot that have no __init__.py); tools/_stress/test_50_contract_coverage.py
+# fails if a new consumer is added here without being forbidden.
 [importlinter]
 root_package = tools
 
@@ -22,3 +23,7 @@ forbidden_modules =
     tools.translator
     tools.offers
     tools.blog_images
+    tools.weglot
+    tools.arabic_rtl
+    tools.mailer
+    tools.copywriter

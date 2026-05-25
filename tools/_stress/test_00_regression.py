@@ -21,7 +21,7 @@ import pytest
 pytestmark = pytest.mark.stress
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-BASELINE_PASSED = 444   # legacy + copywriter (excludes the stress harness). Bump on real growth.
+BASELINE_PASSED = 456   # legacy + copywriter non-stress subset (real count ~458; small cushion). Bump on real growth.
 KNOWN_FAILURES = 2      # pre-existing tools/test_update_log.py host asserts (cel vs sitemap subdomain).
 
 

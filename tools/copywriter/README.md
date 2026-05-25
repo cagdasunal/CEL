@@ -24,9 +24,10 @@ res = improve_copy(
 # res.text / res.before / res.ok / res.qa_flags
 ```
 
-`improve_copy(req, *, glossary=None, dry_run=False, sync=True, api_key_env="GEMINI_API_KEY",
-link_candidates=())`. `dry_run=True` returns a passthrough (no spend) so wiring + the QA
-gate can be exercised offline. The live path generates → runs QA → **one** auto-retry with
+`improve_copy(req, *, dry_run=False, api_key_env="GEMINI_API_KEY", link_candidates=())`.
+`dry_run=True` returns a passthrough (no spend) so wiring + the QA gate can be exercised
+offline. (Brand/do-not-translate terms are preserved via `req.must_keep_facts`, not a
+glossary; generation is always synchronous — the copywriter is interactive, low-volume.) The live path generates → runs QA → **one** auto-retry with
 a tightened prompt on a QA fail → returns the result (a failing draft is surfaced, never
 silently written).
 
