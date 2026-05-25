@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <title>English College — Reset password</title>
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+  <script src="/assets/js/dashboard-config.js"></script>
+  <style>
+    .gate-link { background: none; border: 0; color: #5b5bd6; cursor: pointer; font: inherit; text-decoration: underline; padding: 6px; }
+    .gate-card[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="gate-root">
+    <form class="gate-card" id="reset-form" autocomplete="off">
+      <div class="brand-mark">
+        <div class="brand-logo" aria-label="English College">
+          <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+        </div>
+      </div>
+      <h1>Set a new password</h1>
+      <p class="gate-hint" id="reset-for"></p>
+      <input type="password" id="reset-new" placeholder="New password" autocomplete="new-password" minlength="8" required>
+      <input type="password" id="reset-confirm" placeholder="Confirm new password" autocomplete="new-password" minlength="8" required>
+      <button type="submit">Update password</button>
+      <div class="gate-error" id="reset-msg" role="alert" aria-live="polite"></div>
+      <noscript><p class="gate-hint">JavaScript is required.</p></noscript>
+    </form>
+
+    <div class="gate-card" id="reset-done" hidden>
+      <div class="brand-mark">
+        <div class="brand-logo" aria-label="English College">
+          <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+        </div>
+      </div>
+      <h1>Password updated</h1>
+      <p class="gate-hint">You can now sign in with your new password.</p>
+      <a class="gate-link" href="/">Go to sign in</a>
+    </div>
+  </div>
+  <script>
+  (function () {
+    function sha256hex(s) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    // pwHash = SHA256(SHA256(password)) — the stored double-hash.
+    function pwHash(p) { return sha256hex(p).then(function (inner) { return sha256hex(inner); }); }
+
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+
+    function qp(name) {
+      var m = location.search.match(new RegExp('[?&]' + name + '=([^&]*)'));
+      if (!m) return '';
+      try { return decodeURIComponent(m[1]); } catch (_) { return ''; }
+    }
+    var email = (qp('email') || '').trim().toLowerCase();
+    var exp = qp('exp');
+    var sig = (qp('sig') || '').trim().toLowerCase();
+
+    var form = document.getElementById('reset-form');
+    var newEl = document.getElementById('reset-new');
+    var confEl = document.getElementById('reset-confirm');
+    var msg = document.getElementById('reset-msg');
+    var btn = form.querySelector('button[type="submit"]');
+    var forEl = document.getElementById('reset-for');
+
+    if (!email || !exp || !/^[0-9a-f]{64}$/.test(sig)) {
+      msg.textContent = 'This reset link is invalid. Please request a new one from the sign-in page.';
+      if (btn) btn.disabled = true;
+      newEl.disabled = true; confEl.disabled = true;
+    } else {
+      forEl.textContent = 'Resetting the password for ' + email + '.';
+    }
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      msg.textContent = '';
+      var pw = newEl.value, confirm = confEl.value;
+      if (!pw || pw.length < 8) { msg.textContent = 'Use at least 8 characters.'; return; }
+      if (pw !== confirm) { msg.textContent = 'The two passwords do not match.'; return; }
+      if (!DISPATCH_URL) { msg.textContent = 'Reset is not configured yet.'; return; }
+      if (btn) btn.disabled = true;
+      pwHash(pw).then(function (h) {
+        return fetch(DISPATCH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reset', email: email, exp: exp, sig: sig, new_pw_hash: h })
+        });
+      }).then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (j) {
+          if (j && j.ok) {
+            form.hidden = true;
+            document.getElementById('reset-done').hidden = false;
+          } else {
+            msg.textContent = (j && j.error === 'expired')
+              ? 'This reset link has expired. Please request a new one.'
+              : 'This reset link is invalid or already used. Please request a new one.';
+            if (btn) btn.disabled = false;
+          }
+        }).catch(function () {
+          msg.textContent = 'Could not reset right now. Please try again.';
+          if (btn) btn.disabled = false;
+        });
+    });
+  })();
+  </script>
+</body>
+</html>
