@@ -64,11 +64,18 @@ locally (headless-browser computed-style + screenshot checks across the sitemap)
 - star ratings kept LTR (international convention)
 - typography: `letter-spacing:normal` + `text-transform:none` (Arabic is cursive; uppercase
   is meaningless) and a looser `line-height` (Cairo has tall glyphs/diacritics)
-- nav: dropdown-panel text right-aligned, offers-dot mirrored, comparison values right-aligned
+- nav: offers-dot mirrored to the top-left; dropdown-panel right-aligned and its links
+  right-aligned via `justify-content:flex-start` (the links are `display:flex` — `text-align`
+  is a no-op on flex-item position); `vs-toronto` comparison values right-aligned
 
-Each is scoped `html[lang="ar"]` so it wins on specificity without `!important`. When a flip is
-outright wrong (Webflow framework defaults like `.w-dropdown-toggle` padding, logos), drop it
-via `exclusions.py` instead of overriding it.
+Each is scoped `html[lang="ar"]` so it wins on specificity without `!important`. When rtlcss
+flips a base rule that was **already RTL-correct** (e.g. `.navbar_dropdown-list` panel position,
+`.navbar_dropdown-link` text-align, `.w-dropdown-toggle` framework padding), the wrong flip is
+dropped via `exclusions.py` rather than overridden — see that file's docstring for each finding.
+
+**Verification gotcha:** check the *rendered geometry* (element position / screenshot), not just
+the computed property — `text-align:right` can compute "right" yet do nothing on a flex container,
+and injecting test CSS as the last sheet hides cascade-order losses. Inspect the real page.
 
 ## Run
 ```bash
