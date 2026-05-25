@@ -217,7 +217,7 @@ def parse_llms_txt(text: str) -> LlmsIndex:
 
 def fetch_and_parse(url: str, timeout: float = 15.0) -> LlmsIndex:
     """Fetch llms.txt over HTTPS and parse. Raises on network or HTTP error."""
-    req = urllib.request.Request(url, headers={"User-Agent": "cel-summary-script/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "cel-tools/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         text = resp.read().decode("utf-8")
     return parse_llms_txt(text)

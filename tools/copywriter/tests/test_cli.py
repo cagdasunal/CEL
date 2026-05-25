@@ -20,6 +20,8 @@ def test_is_allowlisted_url_rejects_other():
     assert not _is_allowlisted_url("https://evil.example.com/x")             # wrong host
     assert not _is_allowlisted_url("https://englishcollege.com.evil.com/x")  # suffix trick
     assert not _is_allowlisted_url("https://evil-englishcollege.com/x")      # prefix trick
+    assert _is_allowlisted_url(None) is False                                # non-str (G4)
+    assert _is_allowlisted_url(123) is False                                 # non-str (G4)
 
 
 def test_resolve_before_refuses_non_allowlisted_url(monkeypatch):
