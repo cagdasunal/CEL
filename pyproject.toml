@@ -1,0 +1,13 @@
+# Minimal project config — pytest discovery + markers + a stable import root.
+# Deliberately NO [build-system]/packaging and NO src/ layout (see docs/ARCHITECTURE.md):
+# tools/ stays a namespace package and tests still resolve via each tests/conftest.py
+# inserting the repo root on sys.path. `pythonpath = ["."]` makes that explicit and
+# coexists with the conftest injection.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tools"]
+addopts = "-q"
+markers = [
+    "stress: deterministic mocked cross-tool tests (no API spend; safe in CI)",
+    "eval: real-model quality evals (incurs cost; opt-in, never in CI)",
+]
