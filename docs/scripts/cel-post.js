@@ -381,13 +381,7 @@
         });
       });
 
-      if (window.Webflow && window.Webflow.require) {
-        const ix2 = window.Webflow.require('ix2');
-        if (ix2) {
-          ix2.init();
-          document.dispatchEvent(new CustomEvent('IX2_AFTER_SETUP'));
-        }
-      }
+      // No IX2 re-init: ix2.init() on the just-mutated category DOM throws inside Webflow's engine ("Cannot read properties of undefined (reading 'length')") and never completes; the category links work without it.
     } catch (error) {
       console.warn('category-render failed:', error);
     }
