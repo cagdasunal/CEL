@@ -1,12 +1,12 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-05-26T01:08:36.936253-07:00",
+  "checked_at": "2026-05-26T07:22:10.156907-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-05-26T01:08:37.725700-07:00",
+      "checked_at": "2026-05-26T07:22:10.486356-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -20,7 +20,7 @@
     "fr": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-05-26T01:08:38.472444-07:00",
+      "checked_at": "2026-05-26T07:22:11.098842-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -34,34 +34,48 @@
     "es": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-05-26T01:08:39.157225-07:00",
+      "checked_at": "2026-05-26T07:22:11.605724-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
       "http_status": 200
     },
     "it": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-05-26T01:08:39.549066-07:00",
+      "checked_at": "2026-05-26T07:22:12.326709-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 2,
+      "missing": [
+        {
+          "word_from": "Can be combined with other courses",
+          "word_to": "Prenotabile con qualsiasi corso"
+        }
+      ],
       "http_status": 200
     },
     "ja": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-05-26T01:08:39.944808-07:00",
+      "checked_at": "2026-05-26T07:22:12.681886-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 1,
+      "missing": [
+        {
+          "word_from": "Small classes (avg. 7 students/class)",
+          "word_to": "少人数制クラス(1クラス平均7名)"
+        },
+        {
+          "word_from": "Academic English for college success",
+          "word_to": "大学成功のためのアカデミック英語"
+        }
+      ],
       "http_status": 200
     },
     "ko": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-05-26T01:08:40.822983-07:00",
+      "checked_at": "2026-05-26T07:22:13.034583-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -75,7 +89,7 @@
     "pt": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-05-26T01:08:41.648064-07:00",
+      "checked_at": "2026-05-26T07:22:13.450175-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
@@ -91,12 +105,17 @@
       "http_status": 200
     },
     "ar": {
-      "verdict": "imported",
+      "verdict": "partial",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-05-26T01:08:42.533190-07:00",
+      "checked_at": "2026-05-26T07:22:13.824977-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 3,
-      "missing": [],
+      "sentinels_found": 2,
+      "missing": [
+        {
+          "word_from": "Can be combined with other courses",
+          "word_to": "حصص شخصية يمكن دمجها مع الفئات الاخرى"
+        }
+      ],
       "http_status": 200
     }
   }

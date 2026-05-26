@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-26T08:08:36.763985+00:00",
+  "last_sync": "2026-05-26T14:20:57.883458+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4799,6 +4799,21 @@
       ],
       "source": "api",
       "url_path": "/post/erste-woche-sprachschule-ausland"
+    },
+    "san-diego-est-elle-sure-sejour-linguistique": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/san-diego-est-elle-sure-sejour-linguistique",
+      "added_at": "2026-05-26T14:20:57.883369+00:00"
     }
   }
 }

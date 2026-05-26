@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-05-26T07:22:10.074028-07:00",
+      "detail": {
+        "slugs": [
+          "san-diego-est-elle-sure-sejour-linguistique"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-05-26T01:08:36.848304-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-25T08:42:59.612945-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-25T02:24:19.066269-07:00",
       "detail": {}
     }
   ]
