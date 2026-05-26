@@ -137,6 +137,9 @@ def _build_parser() -> argparse.ArgumentParser:
             # audit-108 M-1/M-2: remove stale (markdown-laden) summary word_from rows from
             # the locale CSVs, keeping Fidelo + meta + clean rows. No spend.
             "purge-stale-rows",
+            # FREE: print the chronological run ledger + latest summary/translation
+            # state ("what ran when, with what result"). Read-only, no spend.
+            "status",
         ],
     )
     parser.add_argument(
@@ -168,6 +171,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--offset", type=int, default=0,
         help="translate: skip the first N items of the (collection-filtered) order "
              "before --limit, for targeted pilots (audit-108 L-4).",
+    )
+    parser.add_argument(
+        "--reuse-only", dest="reuse_only", action="store_true", default=False,
+        help="translate: emit ONLY pages whose every block is already in the block-TM "
+             "(zero Gemini). Pages with any new block are skipped (warned) — they keep "
+             "Weglot's machine translation until a normal run tops them up. Guarantees a "
+             "free, render-safe rebuild from existing translations.",
     )
     parser.add_argument(
         "--force", action="store_true", default=False,
@@ -223,6 +233,14 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
+
+    # FREE, read-only: print the run ledger + latest summary/translation state.
+    # Handled before any out_dir creation — it neither spends nor writes.
+    if args.subcommand == "status":
+        from tools.summary import run_ledger
+        print(run_ledger.format_status())
+        return 0
+
     out_dir = args.out_dir or (config.DRYRUN_DIR / _timestamp_slug())
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -282,6 +300,10 @@ def main(argv: list[str] | None = None) -> int:
         )
         (out_dir / "report.md").write_text(_render_markdown_report(report), encoding="utf-8")
         print(f"[summary] report.json + report.md → {out_dir}", file=sys.stderr)
+        # Append one compact line to the chronological run ledger (what ran, when,
+        # with what result — across summaries AND translations). Never raises.
+        from tools.summary import run_ledger
+        run_ledger.record_run(report, out_dir)
     if args.dry_run:
         print("[summary] Dry-run complete. No API calls fired, no Webflow writes performed.", file=sys.stderr)
     return 0
@@ -1465,6 +1487,11 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # parity for the M-10 tests).
     glossary = load_glossary()
     tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
+    # Block-level reuse layer (tools.summary.block_reuse): a page whose every rendered
+    # block is already translated is rebuilt for FREE; only pages with a new block hit
+    # Gemini. Live runs only. Self-fills from each run's model output.
+    from tools.summary import block_reuse
+    block_tm = None if args.dry_run else TranslationMemory(config.BLOCK_TM_FILE)
 
     # tracker-107: the source text we translate MUST equal what is DEPLOYED on the page
     # (the string Weglot keys on). The committed manifest snapshot can DRIFT from the live
@@ -1517,7 +1544,38 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             end = (args.offset + args.limit) if args.limit else None
             units = units[args.offset:end]
 
-        if not units:
+        # Block-level reuse pre-pass: pull out every page whose rendered blocks are ALL
+        # already in the block-TM — those are rebuilt for free and never sent to Gemini.
+        # Gated to full live runs (pilots with --offset/--limit keep deterministic windows).
+        reused_block_pairs: list[tuple[str, list[tuple[str, str]]]] = []
+        if block_tm is not None and not (args.offset or args.limit):
+            kept_units = []
+            for u in units:
+                u_parts = u.id.split("-", 2)
+                u_cid = u_parts[2] if len(u_parts) >= 3 else ""
+                en_blocks = structure.summary_page_blocks(u.text)
+                cached = block_reuse.lookup_page_blocks(
+                    en_blocks, locale, block_tm, glossary.version
+                )
+                if u_cid and cached is not None:
+                    reused_block_pairs.append((u_cid, list(zip(en_blocks, cached))))
+                else:
+                    kept_units.append(u)
+            units = kept_units
+
+        # --reuse-only hard guarantee: never call Gemini, whatever the pre-pass did.
+        # Drop every leftover (uncached) page — they stay on Weglot machine-translation
+        # until a normal run tops them up. Unconditional so the no-spend promise holds
+        # even if the reuse pre-pass was gated off (e.g. --offset/--limit).
+        if args.reuse_only and units:
+            skipped = [u.id.split("-", 2)[2] for u in units if u.id.count("-") >= 2]
+            warnings.append(
+                f"locale {locale}: --reuse-only skipped {len(units)} page(s) with "
+                f"new/uncached blocks (left on machine-translation): {', '.join(skipped)}"
+            )
+            units = []
+
+        if not units and not reused_block_pairs:
             per_locale_results[locale] = {
                 "skipped": True,
                 "reason": "no EN summaries had non-empty markdown",
@@ -1644,6 +1702,20 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             translated_per_item.setdefault(orig_cid, []).append(locale)
             loc_words += sum(len(b.split()) for b in tr_blocks)
             loc_links += _count_internal_md_links(manifest_md)
+            # Self-fill the block-TM so these blocks are reused (free) next run.
+            block_reuse.store_page_blocks(block_tm, en_blocks, tr_blocks, locale, glossary.version)
+
+        # Block-reused pages (every block already in the block-TM → no Gemini): emit
+        # their pairs directly. Each pair is the block's OWN stored translation, so the
+        # word_from/word_to alignment is correct by construction (no cross-page zipping).
+        for reused_cid, block_pairs in reused_block_pairs:
+            pairs.extend(
+                csv_emitter.SummaryPair(word_from=e, word_to=tr)
+                for e, tr in block_pairs
+                if e.strip() and tr.strip()
+            )
+            translated_per_item.setdefault(reused_cid, []).append(locale)
+            loc_words += sum(len(tr.split()) for _, tr in block_pairs)
 
         # Emit consolidated CSV.
         existing_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
@@ -1655,10 +1727,18 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             out_path=out_csv,
         )
         warnings.extend(emission_report.warnings)  # T5: large single-import heads-up
+        # Ledger visibility: FREE reuse (block-TM-reused pages + whole-page-TM hits)
+        # vs actual Gemini calls. from_tm hits never hit the API (engine.py:86-91);
+        # block-reused pages were pulled out before translate_batch entirely.
+        page_tm_hits = sum(1 for t in translations if getattr(t, "from_tm", False))
+        tm_hits = len(reused_block_pairs) + page_tm_hits
+        gemini_calls = max(0, len(translations) - page_tm_hits)
         per_locale_results[locale] = {
             "dry_run": False,
             "engine": "translator",
             "request_count": len(units),
+            "tm_hits": tm_hits,
+            "gemini_calls": gemini_calls,
             "succeeded": succeeded_count,
             "failed": failed_count,
             "cost_estimate_usd": round(cost_estimate, 2),
@@ -1669,6 +1749,10 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             "words": loc_words,            # tracker-107: dashboard volume
             "internal_links": loc_links,
         }
+        # Persist the block-TM after each locale so a self-filled block survives an
+        # interruption mid-batch (the engine already saves the whole-page TM per call).
+        if block_tm is not None:
+            block_tm.save()
 
     # Persist a translation-status artifact next to the CSVs (live runs only) so the
     # /admin/#summaries dashboard can surface per-locale + per-item translation coverage

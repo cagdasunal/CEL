@@ -130,6 +130,12 @@ SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 # source→translation across runs so unchanged strings are never re-translated.
 TRANSLATION_MEMORY_FILE = PROJECT_ROOT / "data" / "seo-intel" / "translation-memory.json"
 
+# BLOCK-level translation memory (tools.summary.block_reuse). Same tm_key scheme
+# as TRANSLATION_MEMORY_FILE but keyed per rendered summary BLOCK, so a page whose
+# every block is already translated is rebuilt for free (the whole-page TM misses
+# on any single changed block). Self-fills from each live translate run.
+BLOCK_TM_FILE = PROJECT_ROOT / "data" / "seo-intel" / "block-translation-memory.json"
+
 # EN↔locale URL map (hreflang-derived) for same-locale internal linking in the
 # translate phase. Built by `python3 -m tools.summary.url_map` from each EN page's
 # hreflang alternates (llms.txt + sitemap inventory, incl. blog posts as link
