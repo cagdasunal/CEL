@@ -1,0 +1,148 @@
+name: Blog summary autopilot (new posts → native-language summary, live)
+
+# AUTOPILOT for blog-post summaries. Runs daily: enumerates published blog posts,
+# generates a summary in EACH post's own language (the CMS `Language` reference →
+# config.BLOG_LANGUAGE_ID_TO_LOCALE), and publishes ONLY the items it wrote to LIVE.
+#
+# Why this is cheap to run daily: generate-english is idempotent — it skips any post
+# whose source content + prompt version are unchanged since the last successful run
+# (data/seo-intel/summary-state.json, committed below). So a day with no new/edited
+# posts does ZERO Gemini work and commits nothing. Only genuinely new or changed
+# posts are summarized. Blog uses the cheap Flash model; --sync runs them inline
+# (no Batch API wait) since per-run volume is tiny.
+#
+# Scope guarantees:
+#   - --collection blog       → never touches courses / housing / static pages.
+#   - --publish               → POST /items/publish for ONLY the blog items written
+#                               this run (offers-auto-extend pattern). NEVER publish_site.
+#   - --confirm-cost          → authorize the unattended paid run; config.MAX_BATCH_COST_USD
+#                               ($15) is the hard abort backstop.
+#
+# Requires repo secrets (same as summary.yml / fidelo-sync.yml):
+#   - WEBFLOW_API_TOKEN
+#   - GEMINI_API_KEY
+#
+# Manual backfill: trigger via workflow_dispatch (force=true regenerates every post,
+# e.g. after a SUMMARY_PROMPT_VERSION bump — costlier; leave false for new-only).
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # daily 03:30 UTC (offset from offers 02:17 / fidelo 04:17 / blog-images 11:00)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Regenerate ALL published posts (ignore idempotency). Use after a prompt-version bump; costlier."
+        required: false
+        default: false
+        type: boolean
+      limit:
+        description: "Cap items processed this run (integer). Leave blank for unlimited."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  # Share the summary-script lock: this and summary.yml both write summary-state.json.
+  group: summary-script
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60  # --sync small runs finish in minutes; generous for a backfill.
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          set -o pipefail
+          python3 -m pip install --upgrade pip
+          pip install -r tools/summary/requirements.txt
+
+      - name: Generate + publish blog summaries
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FORCE: ${{ inputs.force }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -o pipefail
+          # Bash array → each element is one quoted argv word (no word-split / injection).
+          ARGS=(generate-english --collection blog --no-dry-run --sync --confirm-cost --publish)
+          if [ "$FORCE" = "true" ]; then
+            ARGS+=(--force)
+          fi
+          if [ -n "$LIMIT" ]; then
+            ARGS+=(--limit "$LIMIT")
+          fi
+          echo "Running: python3 -m tools.summary ${ARGS[*]}"
+          python3 -m tools.summary "${ARGS[@]}" 2>&1 | tee /tmp/blog-summary-stdout.log
+          rc=${PIPESTATUS[0]}
+          exit $rc
+
+      - name: Cancel orphaned Gemini batch on cancel/failure
+        # Defensive: --sync uses no Batch API, but if a future run switches to batch a
+        # cancelled GHA job can leave a billing batch. Stop it via the persisted id.
+        if: ${{ cancelled() || failure() }}
+        timeout-minutes: 2
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 -m tools.summary cancel-batch \
+            || echo "no orphaned batch to cancel (or already terminal)"
+
+      - name: Upload run artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: blog-summary-autopilot-${{ github.run_id }}
+          path: |
+            data/seo-intel/summary-dryrun/
+            /tmp/blog-summary-stdout.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Commit idempotency state + summaries manifest
+        run: |
+          set -o pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Persist idempotency state ACROSS runs (else every run re-bills every post).
+          # Blog is native-language → writes to CMS directly, NOT to the Weglot CSVs, so
+          # this workflow does NOT touch docs/admin/weglot-imports/ and skips the poison gate.
+          for f in \
+            data/seo-intel/summary-state.json \
+            data/seo-intel/summary-last-batch.json; do
+            [ -f "$f" ] && git add "$f" || true
+          done
+          # Commit the newest en-summaries.json so /admin/#summaries reflects this run
+          # (content-pipeline.yml only re-renders from the last committed manifest).
+          latest_summaries=$(ls -1 data/seo-intel/summary-dryrun/*/en-summaries.json 2>/dev/null | sort | tail -1 || true)
+          [ -n "$latest_summaries" ] && git add "$latest_summaries" || true
+          if git diff --cached --quiet; then
+            echo "No new/changed summaries this run — nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(blog-summary): autopilot refresh ($(date -u +%Y-%m-%d))"
+          # Rebase-retry: content-pipeline pushes every 15 min, so a bare push can lose
+          # the race (the runner is ephemeral → output lost). Mirror summary.yml.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed (attempt $attempt)"; exit 0
+            fi
+            echo "push rejected (attempt $attempt) — rebasing on origin/main and retrying"
+            git pull --rebase --autostash origin main || true
+          done
+          echo "ERROR: push failed after 3 attempts (committed locally but not pushed)" >&2
+          exit 1

@@ -129,6 +129,87 @@ def test_dry_run_update_item_summary_body_writes_only_two_richtext_fields():
     assert fd["summary"] == "<h4>Who is this for</h4><p>University-bound students.</p>"
 
 
+def test_dry_run_publish_items_returns_would_publish():
+    """--publish autopilot: dry-run must NOT hit the network — it returns the would-publish
+    plan so a dry-run reveals exactly which items would go live."""
+    client = WebflowClient(dry_run=True, token_env="NON_EXISTENT_VAR_FOR_TEST")
+    result = client.publish_items("coll-1", ["a", "b"])
+    assert result.dry_run is True
+    assert result.success is True
+    assert result.method == "POST"
+    assert result.url.endswith("/collections/coll-1/items/publish")
+    assert result.payload["itemIds"] == ["a", "b"]
+    assert result.response["would_publish"] == ["a", "b"]
+
+
+def test_publish_items_empty_is_noop_success():
+    """Empty list short-circuits: success, no token needed, no network call."""
+    client = WebflowClient(dry_run=False, token_env="NON_EXISTENT_VAR_FOR_TEST")
+    result = client.publish_items("coll-1", [])
+    assert result.success is True
+    assert result.payload["itemIds"] == []
+
+
+class _PublishResp:
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return self._body
+
+
+def test_publish_items_live_chunks_over_100():
+    """Webflow caps itemIds at 100/call — 150 ids must split into 2 POSTs and the
+    published ids from both chunks are merged."""
+    import json as _json
+    from unittest import mock
+    from tools.summary import webflow_client as wc
+
+    client = wc.WebflowClient(dry_run=False)
+    client._token = "test-token"
+    calls = {"n": 0}
+
+    def fake_urlopen(req, timeout=None):
+        calls["n"] += 1
+        body = _json.loads(req.data.decode("utf-8"))
+        ids = body["itemIds"]
+        return _PublishResp(_json.dumps({"publishedItemIds": ids, "errors": []}).encode("utf-8"))
+
+    with mock.patch.object(wc.urllib.request, "urlopen", fake_urlopen), \
+            mock.patch.object(wc.time, "sleep", lambda s: None):
+        ids = [f"id-{i}" for i in range(150)]
+        out = client.publish_items("coll", ids)
+    assert out.success is True
+    assert calls["n"] == 2  # 100 + 50
+    assert len(out.response["publishedItemIds"]) == 150
+    assert out.response["errors"] == []
+
+
+def test_publish_items_live_persistent_failure_returns_failed_result():
+    """A persistent network failure on publish must return success=False (the autopilot
+    logs it and the staged summary stays for the next run) — never crash the run."""
+    from unittest import mock
+    from tools.summary import webflow_client as wc
+
+    client = wc.WebflowClient(dry_run=False)
+    client._token = "test-token"
+
+    def always_timeout(req, timeout=None):
+        raise TimeoutError("The read operation timed out")
+
+    with mock.patch.object(wc.urllib.request, "urlopen", always_timeout), \
+            mock.patch.object(wc.time, "sleep", lambda s: None):
+        out = client.publish_items("coll", ["a", "b"])
+    assert out.success is False
+    assert out.error
+
+
 def test_dry_run_ensure_summary_field_when_missing():
     # We can't easily test the "exists" branch without a real API. The missing-
     # field branch is the one we care about for dry-run safety.

@@ -205,6 +205,15 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--publish", action="store_true", default=False,
+        help=(
+            "generate-english only — after writing summaries to the staged CMS items, "
+            "publish ONLY those items to LIVE (POST /items/publish; never the whole site). "
+            "Used by the blog-summary autopilot so a new post's summary goes live without a "
+            "manual publish. No effect in dry-run."
+        ),
+    )
+    parser.add_argument(
         "--batch-id", dest="batch_id", default=None,
         help="cancel-batch / retrieve-batch — the Gemini batch resource name to act on.",
     )
@@ -1954,6 +1963,9 @@ def _write_back_summaries(
     cms_writes = 0
     static_writes = 0
     failures = 0
+    # --publish (autopilot): the item ids successfully written this run, grouped by
+    # collection, so we can publish ONLY them to LIVE after the write loop.
+    written_by_collection: dict[str, list[str]] = {}
 
     custom_id_to_source = {
         f"gen-{i}-{item.cms_item_id or item.url[-50:]}": (item, target)
@@ -2019,10 +2031,36 @@ def _write_back_summaries(
                 )
             if wresult.success:
                 cms_writes += 1
+                written_by_collection.setdefault(
+                    _collection_id_for_content_type(item.content_type), []
+                ).append(item.cms_item_id)
             else:
                 failures += 1
                 warnings.append(f"cms write failed for {item.cms_item_id}: {wresult.error}")
-    return {"cms_writes": cms_writes, "static_writes": static_writes, "failures": failures}
+
+    # --publish (autopilot): push ONLY the items written this run to LIVE, per
+    # collection (never the whole site). Mirrors the offers-auto-extend pattern.
+    publish_log: dict[str, Any] = {}
+    if getattr(args, "publish", False) and written_by_collection:
+        published_total = 0
+        publish_failures = 0
+        for coll_id, item_ids in written_by_collection.items():
+            pres = wf.publish_items(coll_id, item_ids)
+            n_pub = len(pres.response.get("publishedItemIds", []) or [])
+            published_total += n_pub
+            if not pres.success:
+                publish_failures += 1
+                warnings.append(f"publish failed for collection {coll_id}: {pres.error}")
+        publish_log = {
+            "requested": sum(len(v) for v in written_by_collection.values()),
+            "published": published_total,
+            "collection_failures": publish_failures,
+        }
+
+    return {
+        "cms_writes": cms_writes, "static_writes": static_writes, "failures": failures,
+        "publish": publish_log,
+    }
 
 
 def _collection_id_for_content_type(content_type: str) -> str:
