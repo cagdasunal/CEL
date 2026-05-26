@@ -56,6 +56,43 @@ class WebflowClient(CmsClient):
             config.SUMMARY_CONTENT_FIELD_SLUG: content_html,
         })
 
+    def publish_items(self, collection_id: str, item_ids: list[str]) -> WriteResult:
+        """Publish CMS items to LIVE (POST /collections/{id}/items/publish).
+
+        Used by the blog-summary autopilot so a freshly-written summary goes live
+        without a manual site publish. Publishes ONLY the given item ids — never the
+        whole site. Webflow caps itemIds at 100 per call, so the list is chunked.
+        Empty list → no-op success. Dry-run safe (no network).
+        """
+        url = f"{config.WEBFLOW_API_BASE}/collections/{collection_id}/items/publish"
+        if not item_ids:
+            return WriteResult(
+                dry_run=self.dry_run, success=True, method="POST", url=url,
+                payload={"itemIds": []}, response={"_noop": "no items to publish"},
+            )
+        if self.dry_run:
+            return WriteResult(
+                dry_run=True, success=True, method="POST", url=url,
+                payload={"itemIds": item_ids},
+                response={"_dry_run": True, "would_publish": item_ids},
+            )
+        published: list[str] = []
+        errors: list[str] = []
+        for start in range(0, len(item_ids), 100):
+            chunk = item_ids[start:start + 100]
+            try:
+                resp = self._request("POST", url, headers=self._headers(), payload={"itemIds": chunk})
+                published.extend(resp.get("publishedItemIds", chunk))
+                errors.extend(resp.get("errors", []) or [])
+            except WebflowApiError as e:
+                errors.append(str(e))
+        return WriteResult(
+            dry_run=False, success=(not errors), method="POST", url=url,
+            payload={"itemIds": item_ids},
+            response={"publishedItemIds": published, "errors": errors},
+            error=("; ".join(errors) if errors else None),
+        )
+
     def ensure_summary_field(self, collection_id: str) -> dict:
         """Verify the Summary RichText field exists on the collection; create if missing."""
         return self.ensure_field(

@@ -1224,6 +1224,74 @@ def test_write_back_branches_by_content_type(tmp_path, monkeypatch):
     assert (tmp_path / "weglot-out" / "static-summaries" / "vancouver.summary.md").exists()
 
 
+def test_write_back_publishes_written_items_when_publish_flag_set(tmp_path, monkeypatch):
+    """--publish (autopilot): after writing, publish_items is called ONCE PER COLLECTION
+    with exactly the item ids written this run; without the flag it is never called."""
+    from tools.summary import batch_runner, webflow_client, config
+    from tools.summary.prompt_builder import KeywordPlan, SourceItem
+
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "update_item_summary",
+        lambda self, **kw: webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x"),
+    )
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "update_item_summary_body",
+        lambda self, **kw: webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x"),
+    )
+    pub_calls = []
+
+    def rec_publish(self, collection_id, item_ids):
+        pub_calls.append((collection_id, list(item_ids)))
+        return webflow_client.WriteResult(
+            dry_run=False, success=True, method="POST", url="x",
+            response={"publishedItemIds": list(item_ids), "errors": []},
+        )
+
+    monkeypatch.setattr(webflow_client.WebflowClient, "publish_items", rec_publish)
+
+    single = "## Q\n\nAn answer paragraph.\n"
+    blog_coll = config.COLLECTIONS["blog"]
+    course_coll = config.COLLECTIONS["courses"]
+    sources = [
+        (SourceItem(url="https://www.englishcollege.com/post/a", title="A", body_excerpt="b",
+                    locale="de", content_type="blog_post", cms_item_id="b1"), KeywordPlan(primary="x"), "cms"),
+        (SourceItem(url="https://www.englishcollege.com/post/b", title="B", body_excerpt="b",
+                    locale="fr", content_type="blog_post", cms_item_id="b2"), KeywordPlan(primary="x"), "cms"),
+        (SourceItem(url="https://www.englishcollege.com/courses/c", title="C", body_excerpt="b",
+                    locale="en", content_type="course", cms_item_id="c1"), KeywordPlan(primary="x"), "cms"),
+    ]
+    results = [
+        batch_runner.BatchResult(custom_id="gen-0-b1", succeeded=True, content=single),
+        batch_runner.BatchResult(custom_id="gen-1-b2", succeeded=True, content=single),
+        batch_runner.BatchResult(custom_id="gen-2-c1", succeeded=True,
+                                 content="## T\n\n### S\n\nLead.\n\nLead two.\n\n#### D\n\nBody.\n"),
+    ]
+
+    class _ArgsNoPublish:
+        dry_run = False
+        publish = False
+
+    out = cli._write_back_summaries(results, sources, _ArgsNoPublish(), tmp_path, [])
+    assert pub_calls == [], "publish must NOT run without --publish"
+    assert out["publish"] == {}
+
+    class _ArgsPublish:
+        dry_run = False
+        publish = True
+
+    pub_calls.clear()
+    out = cli._write_back_summaries(results, sources, _ArgsPublish(), tmp_path, [])
+    # One publish call per collection, each carrying exactly its written item ids.
+    by_coll = {c: ids for c, ids in pub_calls}
+    assert set(by_coll[blog_coll]) == {"b1", "b2"}
+    assert by_coll[course_coll] == ["c1"]
+    assert out["publish"]["requested"] == 3
+    assert out["publish"]["published"] == 3
+    assert out["publish"]["collection_failures"] == 0
+
+
 def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatch):
     """tracker-096 review: --sync routes generation through batch_runner.generate_sync
     (instant) and must NOT touch the Batch API (submit_batch / wait_for_batch)."""
