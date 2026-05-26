@@ -2,6 +2,15 @@
   "events": [
     {
       "kind": "weglot_update",
+      "ts": "2026-05-26T10:41:33.416065-07:00",
+      "detail": {
+        "slugs": [
+          "perche-i-coinquilini-influenzano-il-tuo-inglese"
+        ]
+      }
+    },
+    {
+      "kind": "weglot_update",
       "ts": "2026-05-26T07:22:10.074028-07:00",
       "detail": {
         "slugs": [
@@ -47,11 +56,6 @@
     {
       "kind": "no_change",
       "ts": "2026-05-25T10:25:09.652301-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-05-25T08:42:59.612945-07:00",
       "detail": {}
     }
   ]
