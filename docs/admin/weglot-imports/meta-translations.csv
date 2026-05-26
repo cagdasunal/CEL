@@ -1,0 +1,601 @@
+id;language_from;language_to;word_from;word_to;type
+;en;de;"Learn English in San Diego, Los Angeles & Vancouver";"Englisch lernen in San Diego, Los Angeles & Vancouver";meta_title
+;en;fr;"Learn English in San Diego, Los Angeles & Vancouver";"Apprenez l'anglais à San Diego, Los Angeles & Vancouver";meta_title
+;en;es;"Learn English in San Diego, Los Angeles & Vancouver";"Aprende inglés en San Diego, Los Angeles y Vancouver";meta_title
+;en;it;"Learn English in San Diego, Los Angeles & Vancouver";"Impara l'inglese a San Diego, Los Angeles e Vancouver";meta_title
+;en;pt;"Learn English in San Diego, Los Angeles & Vancouver";"Aprenda inglês em San Diego, Los Angeles e Vancouver";meta_title
+;en;ko;"Learn English in San Diego, Los Angeles & Vancouver";"San Diego, Los Angeles 및 Vancouver에서 영어를 배워보세요.";meta_title
+;en;ja;"Learn English in San Diego, Los Angeles & Vancouver";"San Diego、Los Angeles、Vancouverで英語を学ぶ";meta_title
+;en;ar;"Learn English in San Diego, Los Angeles & Vancouver";"تعلم الإنجليزية في San Diego، وLos Angeles وVancouver";meta_title
+;en;de;"San Diego English Language School – California | CEL";"San Diego Englisch-Sprachschule – California | CEL";meta_title
+;en;fr;"San Diego English Language School – California | CEL";"École de langue anglaise de San Diego – California | CEL";meta_title
+;en;es;"San Diego English Language School – California | CEL";"Escuela de inglés en San Diego – California | CEL";meta_title
+;en;it;"San Diego English Language School – California | CEL";"Scuola di lingua inglese a San Diego – California | CEL";meta_title
+;en;pt;"San Diego English Language School – California | CEL";"Escola de Língua Inglesa de San Diego – California | CEL";meta_title
+;en;ko;"San Diego English Language School – California | CEL";"San Diego 영어 어학원 – California | CEL";meta_title
+;en;ja;"San Diego English Language School – California | CEL";"San Diego 英語学校 – California | CEL";meta_title
+;en;ar;"San Diego English Language School – California | CEL";"مدرسة اللغة الإنجليزية في San Diego – California | CEL";meta_title
+;en;de;"Los Angeles English Language School – California | CEL";"Los Angeles Englisch-Sprachschule – California | CEL";meta_title
+;en;fr;"Los Angeles English Language School – California | CEL";"École de langue anglaise de Los Angeles – California | CEL";meta_title
+;en;es;"Los Angeles English Language School – California | CEL";"Escuela de Inglés en Los Angeles – California | CEL";meta_title
+;en;it;"Los Angeles English Language School – California | CEL";"Scuola di lingua inglese a Los Angeles – California | CEL";meta_title
+;en;pt;"Los Angeles English Language School – California | CEL";"Escola de Inglês em Los Angeles – California | CEL";meta_title
+;en;ko;"Los Angeles English Language School – California | CEL";"Los Angeles 영어 어학원 – California | CEL";meta_title
+;en;ja;"Los Angeles English Language School – California | CEL";"Los Angeles 英語学校 – California | CEL";meta_title
+;en;ar;"Los Angeles English Language School – California | CEL";"مدرسة اللغة الإنجليزية في Los Angeles – California | CEL";meta_title
+;en;de;"English Summer Camp in San Diego, USA – Language Courses | CEL";"Englisch-Sommercamp in San Diego, USA – Sprachkurse | CEL";meta_title
+;en;fr;"English Summer Camp in San Diego, USA – Language Courses | CEL";"Camp d'été d'anglais à San Diego, USA – Cours de | CEL";meta_title
+;en;es;"English Summer Camp in San Diego, USA – Language Courses | CEL";"Campamento de verano de inglés en San Diego, EE. UU. | CEL";meta_title
+;en;it;"English Summer Camp in San Diego, USA – Language Courses | CEL";"Campo estivo di inglese a San Diego, USA – Corsi di | CEL";meta_title
+;en;pt;"English Summer Camp in San Diego, USA – Language Courses | CEL";"Acampamento de Verão de Inglês em San Diego, EUA | CEL";meta_title
+;en;ko;"English Summer Camp in San Diego, USA – Language Courses | CEL";"미국 San Diego 영어 여름 캠프 – 어학 코스 | CEL";meta_title
+;en;ja;"English Summer Camp in San Diego, USA – Language Courses | CEL";"アメリカ・San Diegoでの英語サマーキャンプ – 語学コース | CEL";meta_title
+;en;ar;"English Summer Camp in San Diego, USA – Language Courses | CEL";"مخيم صيفي للغة الإنجليزية في San Diego، الولايات | CEL";meta_title
+;en;de;"Learn English in the USA — Small Classes in California | CEL";"Englisch lernen in den USA — Kleine Klassen in | CEL";meta_title
+;en;fr;"Learn English in the USA — Small Classes in California | CEL";"Apprendre l'anglais aux États-Unis — Classes en | CEL";meta_title
+;en;es;"Learn English in the USA — Small Classes in California | CEL";"Aprende inglés en EE. UU. — Clases reducidas en | CEL";meta_title
+;en;it;"Learn English in the USA — Small Classes in California | CEL";"Impara l'inglese negli USA — Classi ridotte in | CEL";meta_title
+;en;pt;"Learn English in the USA — Small Classes in California | CEL";"Aprenda inglês nos EUA — Turmas pequenas na California | CEL";meta_title
+;en;ko;"Learn English in the USA — Small Classes in California | CEL";"미국에서 영어 배우기 — California 소규모 수업 | CEL";meta_title
+;en;ja;"Learn English in the USA — Small Classes in California | CEL";"アメリカで英語を学ぶ — Californiaの少人数制クラス | CEL";meta_title
+;en;ar;"Learn English in the USA — Small Classes in California | CEL";"تعلم الإنجليزية في الولايات المتحدة — فصول دراسية | CEL";meta_title
+;en;de;"Learn English in Canada — Year-Round in Vancouver | CEL";"Englisch lernen in Kanada — Ganzjährig in Vancouver | CEL";meta_title
+;en;fr;"Learn English in Canada — Year-Round in Vancouver | CEL";"Apprendre l'anglais au Canada — Toute l'année à | CEL";meta_title
+;en;es;"Learn English in Canada — Year-Round in Vancouver | CEL";"Aprende inglés en Canadá — Todo el año en Vancouver | CEL";meta_title
+;en;it;"Learn English in Canada — Year-Round in Vancouver | CEL";"Impara l'inglese in Canada — Tutto l'anno a Vancouver | CEL";meta_title
+;en;pt;"Learn English in Canada — Year-Round in Vancouver | CEL";"Aprenda inglês no Canadá — O ano todo em Vancouver | CEL";meta_title
+;en;ko;"Learn English in Canada — Year-Round in Vancouver | CEL";"캐나다에서 영어 배우기 — Vancouver에서 연중 내내 | CEL";meta_title
+;en;ja;"Learn English in Canada — Year-Round in Vancouver | CEL";"カナダで英語を学ぶ — Vancouverで年間を通して | CEL";meta_title
+;en;ar;"Learn English in Canada — Year-Round in Vancouver | CEL";"تعلم الإنجليزية في كندا — على مدار العام في Vancouver | CEL";meta_title
+;en;de;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"Studentenunterkünfte – San Diego, Los Angeles & | CEL";meta_title
+;en;fr;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"Logement étudiant – San Diego, Los Angeles et | CEL";meta_title
+;en;es;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"Alojamiento para estudiantes – San Diego, Los Angeles | CEL";meta_title
+;en;it;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"Alloggi per studenti – San Diego, Los Angeles e | CEL";meta_title
+;en;pt;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"Alojamento Estudantil – San Diego, Los Angeles e | CEL";meta_title
+;en;ko;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"학생 숙소 – San Diego, Los Angeles & Vancouver | CEL";meta_title
+;en;ja;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"学生寮 – San Diego, Los Angeles & Vancouver | CEL";meta_title
+;en;ar;"Student Housing – San Diego, Los Angeles & Vancouver | CEL";"سكن الطلاب – San Diego، Los Angeles و Vancouver | CEL";meta_title
+;en;de;"Pathway Program – Study English in the USA | CEL";"Pathway-Programm – Englisch lernen in den USA | CEL";meta_title
+;en;fr;"Pathway Program – Study English in the USA | CEL";"Programme passerelle – Étudier l'anglais aux | CEL";meta_title
+;en;es;"Pathway Program – Study English in the USA | CEL";"Programa Pathway – Estudia inglés en EE. UU. | CEL";meta_title
+;en;it;"Pathway Program – Study English in the USA | CEL";"Programma Pathway – Studia l'inglese negli USA | CEL";meta_title
+;en;pt;"Pathway Program – Study English in the USA | CEL";"Programa Pathway – Estude Inglês nos EUA | CEL";meta_title
+;en;ko;"Pathway Program – Study English in the USA | CEL";"패스웨이 프로그램 – 미국 어학연수 | CEL";meta_title
+;en;ja;"Pathway Program – Study English in the USA | CEL";"パスウェイプログラム – アメリカで英語を学ぶ | CEL";meta_title
+;en;ar;"Pathway Program – Study English in the USA | CEL";"برنامج المسار – دراسة اللغة الإنجليزية في الولايات | CEL";meta_title
+;en;de;"Semester Abroad in the USA – US Pathway Program | CEL";"Auslandssemester in den USA – US Pathway Program | CEL";meta_title
+;en;fr;"Semester Abroad in the USA – US Pathway Program | CEL";"Semestre à l'étranger aux États-Unis – Programme US | CEL";meta_title
+;en;es;"Semester Abroad in the USA – US Pathway Program | CEL";"Semestre en el extranjero en Estados Unidos | CEL";meta_title
+;en;it;"Semester Abroad in the USA – US Pathway Program | CEL";"Semestre all'estero negli USA – US Pathway Program | CEL";meta_title
+;en;pt;"Semester Abroad in the USA – US Pathway Program | CEL";"Semestre no Exterior nos EUA – US Pathway Program | CEL";meta_title
+;en;ko;"Semester Abroad in the USA – US Pathway Program | CEL";"미국 한 학기 유학 – 미국 패스웨이 프로그램 | CEL";meta_title
+;en;ja;"Semester Abroad in the USA – US Pathway Program | CEL";"アメリカでの学期留学 – USパスウェイプログラム | CEL";meta_title
+;en;ar;"Semester Abroad in the USA – US Pathway Program | CEL";"فصل دراسي في الخارج في الولايات المتحدة – برنامج | CEL";meta_title
+;en;de;"Certificate Programs in the USA – OPT Pathway | CEL";"Zertifikatsprogramme in den USA – OPT Pathway | CEL";meta_title
+;en;fr;"Certificate Programs in the USA – OPT Pathway | CEL";"Programmes de certificat aux États-Unis – Parcours OPT | CEL";meta_title
+;en;es;"Certificate Programs in the USA – OPT Pathway | CEL";"Programas de certificación en EE. UU. – Vía OPT | CEL";meta_title
+;en;it;"Certificate Programs in the USA – OPT Pathway | CEL";"Programmi di certificazione negli USA – Percorso OPT | CEL";meta_title
+;en;pt;"Certificate Programs in the USA – OPT Pathway | CEL";"Programas de Certificação nos EUA – Caminho OPT | CEL";meta_title
+;en;ko;"Certificate Programs in the USA – OPT Pathway | CEL";"미국 수료증 과정 – OPT 패스웨이 | CEL";meta_title
+;en;ja;"Certificate Programs in the USA – OPT Pathway | CEL";"アメリカのサーティフィケートプログラム – OPTパスウェイ | CEL";meta_title
+;en;ar;"Certificate Programs in the USA – OPT Pathway | CEL";"برامج الشهادات في الولايات المتحدة – مسار OPT | CEL";meta_title
+;en;de;"Undergraduate Programs in the USA – Pathway | CEL";"Bachelor-Programme in den USA – Pathway | CEL";meta_title
+;en;fr;"Undergraduate Programs in the USA – Pathway | CEL";"Programmes de premier cycle aux États-Unis – Pathway | CEL";meta_title
+;en;es;"Undergraduate Programs in the USA – Pathway | CEL";"Programas de pregrado en EE. UU. – Pathway | CEL";meta_title
+;en;it;"Undergraduate Programs in the USA – Pathway | CEL";"Corsi di laurea negli USA – Pathway | CEL";meta_title
+;en;pt;"Undergraduate Programs in the USA – Pathway | CEL";"Programas de Graduação nos EUA – Pathway | CEL";meta_title
+;en;ko;"Undergraduate Programs in the USA – Pathway | CEL";"미국 학부 과정 – 패스웨이 | CEL";meta_title
+;en;ja;"Undergraduate Programs in the USA – Pathway | CEL";"アメリカの学部課程プログラム – パスウェイ | CEL";meta_title
+;en;ar;"Undergraduate Programs in the USA – Pathway | CEL";"برامج البكالوريوس في الولايات المتحدة الأمريكية | CEL";meta_title
+;en;de;"Graduate Programs in the USA – Pathway Program | CEL";"Masterstudiengänge in den USA – Pathway-Programm | CEL";meta_title
+;en;fr;"Graduate Programs in the USA – Pathway Program | CEL";"Programmes d'études supérieures aux États-Unis | CEL";meta_title
+;en;es;"Graduate Programs in the USA – Pathway Program | CEL";"Programas de posgrado en EE. UU. – Programa Pathway | CEL";meta_title
+;en;it;"Graduate Programs in the USA – Pathway Program | CEL";"Programmi post-laurea negli USA – Programma Pathway | CEL";meta_title
+;en;pt;"Graduate Programs in the USA – Pathway Program | CEL";"Programas de Pós-graduação nos EUA – Programa Pathway | CEL";meta_title
+;en;ko;"Graduate Programs in the USA – Pathway Program | CEL";"미국 대학원 과정 – 패스웨이 프로그램 | CEL";meta_title
+;en;ja;"Graduate Programs in the USA – Pathway Program | CEL";"アメリカの大学院プログラム – パスウェイプログラム | CEL";meta_title
+;en;ar;"Graduate Programs in the USA – Pathway Program | CEL";"برامج الدراسات العليا في الولايات المتحدة – برنامج | CEL";meta_title
+;en;de;"Vancouver English Language School – Canada | CEL";"Vancouver Englisch-Sprachschule – Kanada | CEL";meta_title
+;en;fr;"Vancouver English Language School – Canada | CEL";"École de langue anglaise de Vancouver – Canada | CEL";meta_title
+;en;es;"Vancouver English Language School – Canada | CEL";"Escuela de inglés en Vancouver – Canadá | CEL";meta_title
+;en;it;"Vancouver English Language School – Canada | CEL";"Scuola di lingua inglese a Vancouver – Canada | CEL";meta_title
+;en;pt;"Vancouver English Language School – Canada | CEL";"Escola de Inglês de Vancouver – Canadá | CEL";meta_title
+;en;ko;"Vancouver English Language School – Canada | CEL";"Vancouver 영어 어학원 – 캐나다 | CEL";meta_title
+;en;ja;"Vancouver English Language School – Canada | CEL";"Vancouver 英語学校 – カナダ | CEL";meta_title
+;en;ar;"Vancouver English Language School – Canada | CEL";"مدرسة Vancouver للغة الإنجليزية – كندا | CEL";meta_title
+;en;de;"Cost of Studying English in Vancouver 2026 | CEL";"Kosten für das Englischlernen in Vancouver 2026 | CEL";meta_title
+;en;fr;"Cost of Studying English in Vancouver 2026 | CEL";"Coût des études d'anglais à Vancouver 2026 | CEL";meta_title
+;en;es;"Cost of Studying English in Vancouver 2026 | CEL";"Costo de estudiar inglés en Vancouver 2026 | CEL";meta_title
+;en;it;"Cost of Studying English in Vancouver 2026 | CEL";"Costo per studiare inglese a Vancouver 2026 | CEL";meta_title
+;en;pt;"Cost of Studying English in Vancouver 2026 | CEL";"Custo de Estudar Inglês em Vancouver 2026 | CEL";meta_title
+;en;ko;"Cost of Studying English in Vancouver 2026 | CEL";"Vancouver 영어 어학연수 비용 2026 | CEL";meta_title
+;en;ja;"Cost of Studying English in Vancouver 2026 | CEL";"Vancouverでの英語留学費用 2026 | CEL";meta_title
+;en;ar;"Cost of Studying English in Vancouver 2026 | CEL";"تكلفة دراسة اللغة الإنجليزية في Vancouver 2026 | CEL";meta_title
+;en;de;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs. Toronto: Wo sollte man in Kanada Englisch";meta_title
+;en;fr;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs Toronto : Où étudier l'anglais au Canada ?";meta_title
+;en;es;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs Toronto: ¿Dónde estudiar inglés en Canadá?";meta_title
+;en;it;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs Toronto: Dove studiare l'inglese in Canada?";meta_title
+;en;pt;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs Toronto: Onde estudar inglês no Canadá?";meta_title
+;en;ko;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs 토론토: 캐나다 어디에서 영어를 공부할까요?";meta_title
+;en;ja;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver vs トロント：カナダで英語を学ぶならどこ？";meta_title
+;en;ar;"Vancouver vs Toronto: Where to Study English in Canada?";"Vancouver مقابل تورونتو: أين تدرس اللغة الإنجليزية في كندا؟";meta_title
+;en;de;"Budget Student House – Affordable Housing in Vancouver | CEL";"Budget Student House – Preisgünstige Unterkünfte in | CEL";meta_title
+;en;fr;"Budget Student House – Affordable Housing in Vancouver | CEL";"Résidence étudiante économique – Logements abordables | CEL";meta_title
+;en;es;"Budget Student House – Affordable Housing in Vancouver | CEL";"Residencia para estudiantes económica – Alojamiento | CEL";meta_title
+;en;it;"Budget Student House – Affordable Housing in Vancouver | CEL";"Casa dello Studente Economica – Alloggi a Vancouver | CEL";meta_title
+;en;pt;"Budget Student House – Affordable Housing in Vancouver | CEL";"Casa de Estudantes Econômica – Acomodação em Vancouver | CEL";meta_title
+;en;ko;"Budget Student House – Affordable Housing in Vancouver | CEL";"버짓 스튜던트 하우스 – 유학생 숙소 밴쿠버 | CEL";meta_title
+;en;ja;"Budget Student House – Affordable Housing in Vancouver | CEL";"バジェット学生ハウス – 学生向け住まい バンクーバー | CEL";meta_title
+;en;ar;"Budget Student House – Affordable Housing in Vancouver | CEL";"منزل طلاب اقتصادي – سكن الطلاب في فانكوفر | CEL";meta_title
+;en;de;"Student House – Single Room Housing in Vancouver | CEL";"Studentenhaus – Einzelzimmer Wohnen in Vancouver | CEL";meta_title
+;en;fr;"Student House – Single Room Housing in Vancouver | CEL";"Maison Étudiante – Chambre Individuelle à Vancouver | CEL";meta_title
+;en;es;"Student House – Single Room Housing in Vancouver | CEL";"Residencia de estudiantes – Alojamiento en habitación | CEL";meta_title
+;en;it;"Student House – Single Room Housing in Vancouver | CEL";"Casa dello Studente – Camera Singola a Vancouver | CEL";meta_title
+;en;pt;"Student House – Single Room Housing in Vancouver | CEL";"Casa de Estudantes – Quarto Individual em Vancouver | CEL";meta_title
+;en;ko;"Student House – Single Room Housing in Vancouver | CEL";"스튜던트 하우스 – 1인실 유학생 숙소 밴쿠버 | CEL";meta_title
+;en;ja;"Student House – Single Room Housing in Vancouver | CEL";"スチューデントハウス – 1人部屋 学生向け住まい | CEL";meta_title
+;en;ar;"Student House – Single Room Housing in Vancouver | CEL";"منزل طلاب – غرفة فردية في فانكوفر | CEL";meta_title
+;en;de;"Shared Apartment – Silverstone – Vancouver | CEL";"Wohngemeinschaft - Silverstone - Vancouver | CEL";meta_title
+;en;fr;"Shared Apartment – Silverstone – Vancouver | CEL";"Appartement partagé - Silverstone - Vancouver | CEL";meta_title
+;en;es;"Shared Apartment – Silverstone – Vancouver | CEL";"Apartamento Compartido - Silverstone - Vancouver | CEL";meta_title
+;en;it;"Shared Apartment – Silverstone – Vancouver | CEL";"Appartamento condiviso - Silverstone - Vancouver | CEL";meta_title
+;en;pt;"Shared Apartment – Silverstone – Vancouver | CEL";"Apartamento Partilhado - Silverstone - Vancouver | CEL";meta_title
+;en;ko;"Shared Apartment – Silverstone – Vancouver | CEL";"쉐어 아파트 - 실버스톤 - 밴쿠버 | CEL";meta_title
+;en;ja;"Shared Apartment – Silverstone – Vancouver | CEL";"シェアアパート - シルバーストーン - バンクーバー｜CEL";meta_title
+;en;ar;"Shared Apartment – Silverstone – Vancouver | CEL";"شقة مشتركة - سيلفرستون - فانكوفر | CEL";meta_title
+;en;de;"Shared Apartment Downtown – Student Housing | CEL";"Wohngemeinschaft in der Innenstadt | CEL";meta_title
+;en;fr;"Shared Apartment Downtown – Student Housing | CEL";"Colocation en centre-ville – Logement étudiant | CEL";meta_title
+;en;es;"Shared Apartment Downtown – Student Housing | CEL";"Piso compartido en el centro – Alojamiento para | CEL";meta_title
+;en;it;"Shared Apartment Downtown – Student Housing | CEL";"Appartamento condiviso in centro – Alloggi per | CEL";meta_title
+;en;pt;"Shared Apartment Downtown – Student Housing | CEL";"Apartamento partilhado no centro da cidade | CEL";meta_title
+;en;ko;"Shared Apartment Downtown – Student Housing | CEL";"도심 공유 아파트 – 학생 숙소 | CEL";meta_title
+;en;ja;"Shared Apartment Downtown – Student Housing | CEL";"ダウンタウンのシェアハウス – 学生向け住宅 | CEL";meta_title
+;en;ar;"Shared Apartment Downtown – Student Housing | CEL";"شقة مشتركة في وسط المدينة – سكن طلابي | CEL";meta_title
+;en;de;"Homestay in Vancouver – Live with a Local Family | CEL";"Gastfamilie in Vancouver – Bei einer einheimischen | CEL";meta_title
+;en;fr;"Homestay in Vancouver – Live with a Local Family | CEL";"Hébergement chez l'habitant à Vancouver – Vis chez | CEL";meta_title
+;en;es;"Homestay in Vancouver – Live with a Local Family | CEL";"Alojamiento en familia en Vancouver: vive con una | CEL";meta_title
+;en;it;"Homestay in Vancouver – Live with a Local Family | CEL";"Soggiorno in famiglia a Vancouver – Vivi con una | CEL";meta_title
+;en;pt;"Homestay in Vancouver – Live with a Local Family | CEL";"Hospedagem em casa de família em Vancouver – Vive com | CEL";meta_title
+;en;ko;"Homestay in Vancouver – Live with a Local Family | CEL";"밴쿠버 홈스테이 – 현지 가정과 함께 생활하기 | CEL";meta_title
+;en;ja;"Homestay in Vancouver – Live with a Local Family | CEL";"バンクーバーでのホームステイ – 現地の家庭で暮らす | CEL";meta_title
+;en;ar;"Homestay in Vancouver – Live with a Local Family | CEL";"الإقامة مع عائلة في فانكوفر – العيش مع عائلة محلية | CEL";meta_title
+;en;de;"Economy Apartment – Student Housing in Vancouver | CEL";"Economy Apartment – Studentenunterkünfte Vancouver | CEL";meta_title
+;en;fr;"Economy Apartment – Student Housing in Vancouver | CEL";"Appartement Économique – Logement étudiant à Vancouver | CEL";meta_title
+;en;es;"Economy Apartment – Student Housing in Vancouver | CEL";"Apartamento Económico – Alojamiento en Vancouver | CEL";meta_title
+;en;it;"Economy Apartment – Student Housing in Vancouver | CEL";"Appartamento Economico – Alloggi a Vancouver | CEL";meta_title
+;en;pt;"Economy Apartment – Student Housing in Vancouver | CEL";"Apartamento Econômico – Acomodação em Vancouver | CEL";meta_title
+;en;ko;"Economy Apartment – Student Housing in Vancouver | CEL";"이코노미 아파트 – 유학생 숙소 밴쿠버 | CEL";meta_title
+;en;ja;"Economy Apartment – Student Housing in Vancouver | CEL";"エコノミーアパート – 学生向け住まい バンクーバー | CEL";meta_title
+;en;ar;"Economy Apartment – Student Housing in Vancouver | CEL";"شقة اقتصادية – سكن الطلاب في فانكوفر | CEL";meta_title
+;en;de;"Homestay – Stay with Local Families in Los Angeles | CEL";"Gastfamilie – Wohnen in Los Angeles | CEL";meta_title
+;en;fr;"Homestay – Stay with Local Families in Los Angeles | CEL";"Séjour en famille d’accueil à Los Angeles | CEL";meta_title
+;en;es;"Homestay – Stay with Local Families in Los Angeles | CEL";"Alojamiento en casa de familia en Los Ángeles | CEL";meta_title
+;en;it;"Homestay – Stay with Local Families in Los Angeles | CEL";"Homestay – Vivi con famiglie locali a Los Angeles | CEL";meta_title
+;en;pt;"Homestay – Stay with Local Families in Los Angeles | CEL";"Homestay – Fique com famílias locais em Los Angeles | CEL";meta_title
+;en;ko;"Homestay – Stay with Local Families in Los Angeles | CEL";"홈스테이 – 로스앤젤레스 현지 가족과 생활 | CEL";meta_title
+;en;ja;"Homestay – Stay with Local Families in Los Angeles | CEL";"ホームステイ – ロサンゼルスで現地家庭に滞在 | CEL";meta_title
+;en;ar;"Homestay – Stay with Local Families in Los Angeles | CEL";"الإقامة مع عائلات محلية في لوس أنجلوس | CEL";meta_title
+;en;de;"Shared Apartment Superior in San Diego | CEL";"Superior-Wohngemeinschaft in San Diego | CEL";meta_title
+;en;fr;"Shared Apartment Superior in San Diego | CEL";"Appartement partagé Supérieur à San Diego | CEL";meta_title
+;en;es;"Shared Apartment Superior in San Diego | CEL";"Piso Compartido Superior en San Diego | CEL";meta_title
+;en;it;"Shared Apartment Superior in San Diego | CEL";"Appartamento condiviso Superior a San Diego | CEL";meta_title
+;en;pt;"Shared Apartment Superior in San Diego | CEL";"Apartamento partilhado Superior em San Diego | CEL";meta_title
+;en;ko;"Shared Apartment Superior in San Diego | CEL";"샌디에이고의 공유 아파트 슈페리어 | CEL";meta_title
+;en;ja;"Shared Apartment Superior in San Diego | CEL";"サンディエゴのシェアアパートメント スーペリア｜CEL";meta_title
+;en;ar;"Shared Apartment Superior in San Diego | CEL";"شقة سوبيريور مشتركة في سان دييغو | CEL";meta_title
+;en;de;"Shared Apartment Premium in San Diego | CEL";"Premium-Wohngemeinschaft in San Diego | CEL";meta_title
+;en;fr;"Shared Apartment Premium in San Diego | CEL";"Appartement partagé Premium à San Diego | CEL";meta_title
+;en;es;"Shared Apartment Premium in San Diego | CEL";"Piso Compartido Premium en San Diego | CEL";meta_title
+;en;it;"Shared Apartment Premium in San Diego | CEL";"Appartamento condiviso Premium a San Diego | CEL";meta_title
+;en;pt;"Shared Apartment Premium in San Diego | CEL";"Apartamento partilhado Premium em San Diego | CEL";meta_title
+;en;ko;"Shared Apartment Premium in San Diego | CEL";"샌디에이고의 공유 아파트 프리미엄 | CEL";meta_title
+;en;ja;"Shared Apartment Premium in San Diego | CEL";"サンディエゴのシェアアパートメントプレミアム｜CEL";meta_title
+;en;ar;"Shared Apartment Premium in San Diego | CEL";"شقة مشتركة ممتازة في سان دييغو | CEL";meta_title
+;en;de;"Shared Apartment Standard – Housing in San Diego | CEL";"Standard für Wohngemeinschaften - Wohnen in San Diego | CEL";meta_title
+;en;fr;"Shared Apartment Standard – Housing in San Diego | CEL";"Appartement en colocation – Logement à San Diego | CEL";meta_title
+;en;es;"Shared Apartment Standard – Housing in San Diego | CEL";"Normativa sobre pisos compartidos - Housing in San | CEL";meta_title
+;en;it;"Shared Apartment Standard – Housing in San Diego | CEL";"Appartamento condiviso standard - Alloggi a San Diego | CEL";meta_title
+;en;pt;"Shared Apartment Standard – Housing in San Diego | CEL";"Apartamento partilhado Padrão - Habitação em San Diego | CEL";meta_title
+;en;ko;"Shared Apartment Standard – Housing in San Diego | CEL";"공유 아파트 표준 - 샌디에이고의 주택 | CEL";meta_title
+;en;ja;"Shared Apartment Standard – Housing in San Diego | CEL";"シェアアパートメント - サンディエゴの住まい｜CEL";meta_title
+;en;ar;"Shared Apartment Standard – Housing in San Diego | CEL";"شقة مشتركة قياسية - السكن في سان دييغو | CEL";meta_title
+;en;de;"Premium Homestay – Student Housing in San Diego | CEL";"Premium Gastfamilie – Studentenunterkünfte San Diego | CEL";meta_title
+;en;fr;"Premium Homestay – Student Housing in San Diego | CEL";"Hébergement chez l'habitant haut de gamme – Logement | CEL";meta_title
+;en;es;"Premium Homestay – Student Housing in San Diego | CEL";"Familia Anfitriona Premium – Alojamiento en San Diego | CEL";meta_title
+;en;it;"Premium Homestay – Student Housing in San Diego | CEL";"Famiglia ospitante Premium – Alloggi a San Diego | CEL";meta_title
+;en;pt;"Premium Homestay – Student Housing in San Diego | CEL";"Homestay Premium – Acomodação em San Diego | CEL";meta_title
+;en;ko;"Premium Homestay – Student Housing in San Diego | CEL";"프리미엄 홈스테이 – 유학생 숙소 샌디에이고 | CEL";meta_title
+;en;ja;"Premium Homestay – Student Housing in San Diego | CEL";"プレミアムホームステイ – 学生向け住まい サンディエゴ | CEL";meta_title
+;en;ar;"Premium Homestay – Student Housing in San Diego | CEL";"سكن عائلي مميز – سكن الطلاب في سان دييغو | CEL";meta_title
+;en;de;"Homestay – Student Housing with Families in San Diego | CEL";"Gastfamilienunterkunft – Unterkunft bei Gastfamilien | CEL";meta_title
+;en;fr;"Homestay – Student Housing with Families in San Diego | CEL";"Hébergement chez l'habitant – Logement étudiant en | CEL";meta_title
+;en;es;"Homestay – Student Housing with Families in San Diego | CEL";"Casa de familia en San Diego para estudiantes | CEL";meta_title
+;en;it;"Homestay – Student Housing with Families in San Diego | CEL";"Alloggio in famiglia – Alloggi per studenti presso | CEL";meta_title
+;en;pt;"Homestay – Student Housing with Families in San Diego | CEL";"Alojamento em casa de família – Alojamento para | CEL";meta_title
+;en;ko;"Homestay – Student Housing with Families in San Diego | CEL";"홈스테이 - 샌디에이고의 가족과 함께하는 학생 숙소 | CEL";meta_title
+;en;ja;"Homestay – Student Housing with Families in San Diego | CEL";"ホームステイ - サンディエゴのホームステイ｜CEL";meta_title
+;en;ar;"Homestay – Student Housing with Families in San Diego | CEL";"الإقامة مع عائلة - سكن الطلاب مع العائلات في سان دييغو | CEL";meta_title
+;en;de;"English Plus Career Development in USA & Canada | CEL";"Englisch plus Karriereförderung in den USA und Kanada | CEL";meta_title
+;en;fr;"English Plus Career Development in USA & Canada | CEL";"Cours d'anglais et développement de carrière aux | CEL";meta_title
+;en;es;"English Plus Career Development in USA & Canada | CEL";"Inglés y desarrollo profesional en EE. UU. y Canadá | CEL";meta_title
+;en;it;"English Plus Career Development in USA & Canada | CEL";"Inglese più sviluppo professionale negli Stati Uniti | CEL";meta_title
+;en;pt;"English Plus Career Development in USA & Canada | CEL";"Inglês + Desenvolvimento Profissional nos EUA e no | CEL";meta_title
+;en;ko;"English Plus Career Development in USA & Canada | CEL";"미국 및 캐나다 영어 및 진로 개발 과정 | CEL";meta_title
+;en;ja;"English Plus Career Development in USA & Canada | CEL";"米国・カナダでの英語学習とキャリア開発 | CEL";meta_title
+;en;ar;"English Plus Career Development in USA & Canada | CEL";"اللغة الإنجليزية بلس: التطوير الوظيفي في الولايات | CEL";meta_title
+;en;de;"English Plus Academic Skills in USA & Canada | CEL";"Englisch plus akademische Fähigkeiten in den USA und | CEL";meta_title
+;en;fr;"English Plus Academic Skills in USA & Canada | CEL";"Cours d'anglais et de compétences académiques aux | CEL";meta_title
+;en;es;"English Plus Academic Skills in USA & Canada | CEL";"Inglés y habilidades académicas en EE. UU. y Canadá | CEL";meta_title
+;en;it;"English Plus Academic Skills in USA & Canada | CEL";"Inglese e competenze accademiche negli Stati Uniti e | CEL";meta_title
+;en;pt;"English Plus Academic Skills in USA & Canada | CEL";"Inglês + Competências Académicas nos EUA e no Canadá | CEL";meta_title
+;en;ko;"English Plus Academic Skills in USA & Canada | CEL";"미국 및 캐나다의 영어 및 학업 능력 향상 과정 | CEL";meta_title
+;en;ja;"English Plus Academic Skills in USA & Canada | CEL";"米国・カナダでの英語＋アカデミックスキル | CEL";meta_title
+;en;ar;"English Plus Academic Skills in USA & Canada | CEL";"اللغة الإنجليزية بلس: المهارات الأكاديمية في الولايات | CEL";meta_title
+;en;de;"Global Pathway Preparation in San Diego & LA | CEL";"Vorbereitung auf den Global Pathway in San Diego und | CEL";meta_title
+;en;fr;"Global Pathway Preparation in San Diego & LA | CEL";"Préparation au programme Global Pathway à San Diego | CEL";meta_title
+;en;es;"Global Pathway Preparation in San Diego & LA | CEL";"Preparación para el Global Pathway en San Diego y Los | CEL";meta_title
+;en;it;"Global Pathway Preparation in San Diego & LA | CEL";"Preparazione al percorso internazionale a San Diego e | CEL";meta_title
+;en;pt;"Global Pathway Preparation in San Diego & LA | CEL";"Preparação para o Global Pathway em San Diego e Los | CEL";meta_title
+;en;ko;"Global Pathway Preparation in San Diego & LA | CEL";"샌디에이고 및 LA 글로벌 진학 준비 과정 | CEL";meta_title
+;en;ja;"Global Pathway Preparation in San Diego & LA | CEL";"サンディエゴとロサンゼルスでのグローバル・パスウェイ | CEL";meta_title
+;en;ar;"Global Pathway Preparation in San Diego & LA | CEL";"التحضير لبرنامج المسار العالمي في سان دييغو ولوس | CEL";meta_title
+;en;de;"English Plus TOEFL Prep in San Diego & LA | CEL";"Englisch plus TOEFL-Vorbereitung in San Diego und LA | CEL";meta_title
+;en;fr;"English Plus TOEFL Prep in San Diego & LA | CEL";"Cours d'anglais et préparation au TOEFL à San Diego | CEL";meta_title
+;en;es;"English Plus TOEFL Prep in San Diego & LA | CEL";"Inglés y preparación para el TOEFL en San Diego y Los | CEL";meta_title
+;en;it;"English Plus TOEFL Prep in San Diego & LA | CEL";"Corso di inglese con preparazione al TOEFL a San | CEL";meta_title
+;en;pt;"English Plus TOEFL Prep in San Diego & LA | CEL";"Inglês + Preparação para o TOEFL em San Diego e Los | CEL";meta_title
+;en;ko;"English Plus TOEFL Prep in San Diego & LA | CEL";"샌디에이고 및 LA 영어 + 토플 준비 과정 | CEL";meta_title
+;en;ja;"English Plus TOEFL Prep in San Diego & LA | CEL";"サンディエゴとロサンゼルスでの英語＋TOEFL対策コース | CEL";meta_title
+;en;ar;"English Plus TOEFL Prep in San Diego & LA | CEL";"اللغة الإنجليزية بلس: الإعداد لاختبار TOEFL في سان | CEL";meta_title
+;en;de;"English Plus Cambridge Prep in USA & Canada | CEL";"Englisch plus Cambridge-Vorbereitung in den USA und | CEL";meta_title
+;en;fr;"English Plus Cambridge Prep in USA & Canada | CEL";"Cours d'anglais et préparation aux examens de | CEL";meta_title
+;en;es;"English Plus Cambridge Prep in USA & Canada | CEL";"Inglés más preparación para los exámenes de Cambridge | CEL";meta_title
+;en;it;"English Plus Cambridge Prep in USA & Canada | CEL";"Corso di inglese con preparazione all'esame Cambridge | CEL";meta_title
+;en;pt;"English Plus Cambridge Prep in USA & Canada | CEL";"Inglês Plus Preparação para os Exames de Cambridge | CEL";meta_title
+;en;ko;"English Plus Cambridge Prep in USA & Canada | CEL";"미국 및 캐나다의 잉글리시 플러스 캠브리지 준비 과정 | CEL";meta_title
+;en;ja;"English Plus Cambridge Prep in USA & Canada | CEL";"米国・カナダでの英語＋ケンブリッジ試験対策コース | CEL";meta_title
+;en;ar;"English Plus Cambridge Prep in USA & Canada | CEL";"اللغة الإنجليزية بلس: الإعداد لامتحان كامبريدج في | CEL";meta_title
+;en;de;"Private English Lessons in USA & Canada | CEL";"Privatunterricht Englisch in den USA & Kanada | CEL";meta_title
+;en;fr;"Private English Lessons in USA & Canada | CEL";"Cours Particuliers d’Anglais aux USA & Canada | CEL";meta_title
+;en;es;"Private English Lessons in USA & Canada | CEL";"Clases Particulares de Inglés en EE. UU. y Canadá | CEL";meta_title
+;en;it;"Private English Lessons in USA & Canada | CEL";"Lezioni Private di Inglese negli USA & Canada | CEL";meta_title
+;en;pt;"Private English Lessons in USA & Canada | CEL";"Aulas Particulares de Inglês nos EUA & Canadá | CEL";meta_title
+;en;ko;"Private English Lessons in USA & Canada | CEL";"미국 & 캐나다 개인 영어 수업 | CEL";meta_title
+;en;ja;"Private English Lessons in USA & Canada | CEL";"アメリカ & カナダ 個別英語レッスン | CEL";meta_title
+;en;ar;"Private English Lessons in USA & Canada | CEL";"دروس خصوصية في اللغة الإنجليزية في أمريكا وكندا | CEL";meta_title
+;en;de;"English Plus Volunteering in San Diego & LA | CEL";"Englisch plus Freiwilligenarbeit in San Diego und LA | CEL";meta_title
+;en;fr;"English Plus Volunteering in San Diego & LA | CEL";"Cours d'anglais et bénévolat à San Diego et Los | CEL";meta_title
+;en;es;"English Plus Volunteering in San Diego & LA | CEL";"Inglés más voluntariado en San Diego y Los Ángeles | CEL";meta_title
+;en;it;"English Plus Volunteering in San Diego & LA | CEL";"Corso di inglese con volontariato a San Diego e Los | CEL";meta_title
+;en;pt;"English Plus Volunteering in San Diego & LA | CEL";"Inglês + Voluntariado em San Diego e Los Angeles | CEL";meta_title
+;en;ko;"English Plus Volunteering in San Diego & LA | CEL";"샌디에이고 및 LA 영어 + 봉사활동 | CEL";meta_title
+;en;ja;"English Plus Volunteering in San Diego & LA | CEL";"サンディエゴ＆ロサンゼルスでの英語学習とボランティア | CEL";meta_title
+;en;ar;"English Plus Volunteering in San Diego & LA | CEL";"اللغة الإنجليزية بلس: العمل التطوعي في سان دييغو ولوس | CEL";meta_title
+;en;de;"English Plus Surfing in San Diego & LA | CEL";"Englisch plus Surfen in San Diego & LA | CEL";meta_title
+;en;fr;"English Plus Surfing in San Diego & LA | CEL";"Cours d'anglais et surf à San Diego et Los Angeles | CEL";meta_title
+;en;es;"English Plus Surfing in San Diego & LA | CEL";"Inglés y surf en San Diego y Los Ángeles | CEL";meta_title
+;en;it;"English Plus Surfing in San Diego & LA | CEL";"Inglese e surf a San Diego e Los Angeles | CEL";meta_title
+;en;pt;"English Plus Surfing in San Diego & LA | CEL";"Inglês e Surf em San Diego e Los Angeles | CEL";meta_title
+;en;ko;"English Plus Surfing in San Diego & LA | CEL";"샌디에이고와 LA에서 즐기는 영어 + 서핑 | CEL";meta_title
+;en;ja;"English Plus Surfing in San Diego & LA | CEL";"サンディエゴ＆LAでの英語＋サーフィン | CEL";meta_title
+;en;ar;"English Plus Surfing in San Diego & LA | CEL";"اللغة الإنجليزية بلس: ركوب الأمواج في سان دييغو ولوس | CEL";meta_title
+;en;de;"English Plus Experience in San Diego & LA | CEL";"Englisch plus Erlebnis in San Diego & LA | CEL";meta_title
+;en;fr;"English Plus Experience in San Diego & LA | CEL";"Cours d'anglais et séjour à San Diego et Los Angeles | CEL";meta_title
+;en;es;"English Plus Experience in San Diego & LA | CEL";"Inglés y experiencias en San Diego y Los Ángeles | CEL";meta_title
+;en;it;"English Plus Experience in San Diego & LA | CEL";"Inglese Plus Esperienza a San Diego e Los Angeles | CEL";meta_title
+;en;pt;"English Plus Experience in San Diego & LA | CEL";"Inglês + Experiência em San Diego e Los Angeles | CEL";meta_title
+;en;ko;"English Plus Experience in San Diego & LA | CEL";"샌디에이고와 LA에서의 영어+체험 프로그램 | CEL";meta_title
+;en;ja;"English Plus Experience in San Diego & LA | CEL";"サンディエゴ＆LAでの英語＋体験プログラム | CEL";meta_title
+;en;ar;"English Plus Experience in San Diego & LA | CEL";"اللغة الإنجليزية بلس: الخبرة في سان دييغو ولوس أنجلوس | CEL";meta_title
+;en;de;"General English Course in USA & Canada | CEL";"Allgemeiner Englischkurs in den USA & Kanada | CEL";meta_title
+;en;fr;"General English Course in USA & Canada | CEL";"Cours d’Anglais Général aux USA & Canada | CEL";meta_title
+;en;es;"General English Course in USA & Canada | CEL";"Curso de Inglés General en EE.UU. y Canadá | CEL";meta_title
+;en;it;"General English Course in USA & Canada | CEL";"Corso di Inglese Generale negli USA & Canada | CEL";meta_title
+;en;pt;"General English Course in USA & Canada | CEL";"Curso de Inglês Geral nos EUA & Canadá | CEL";meta_title
+;en;ko;"General English Course in USA & Canada | CEL";"미국 & 캐나다 일반 영어 과정 | CEL";meta_title
+;en;ja;"General English Course in USA & Canada | CEL";"アメリカ & カナダ一般英語コース | CEL";meta_title
+;en;ar;"General English Course in USA & Canada | CEL";"دورة اللغة الإنجليزية العامة في أمريكا وكندا | CEL";meta_title
+;en;de;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"Englischkurse in San Diego, Los Angeles und Vancouver. Kleine Klassen, Unterkunftsmöglichkeiten und eine globale Studentengemeinschaft.";meta_description
+;en;fr;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"Cours d'anglais à San Diego, Los Angeles et Vancouver. Classes en petits groupes, options d'hébergement et une communauté étudiante mondiale.";meta_description
+;en;es;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"Cursos de inglés en San Diego, Los Angeles y Vancouver. Clases reducidas, opciones de alojamiento y una comunidad estudiantil global.";meta_description
+;en;it;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"Corsi di inglese a San Diego, Los Angeles e Vancouver. Classi ridotte, opzioni di alloggio e una comunità studentesca globale.";meta_description
+;en;pt;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"Cursos de inglês em San Diego, Los Angeles e Vancouver. Turmas reduzidas, opções de acomodação e uma comunidade global de estudantes.";meta_description
+;en;ko;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"San Diego, Los Angeles, 그리고 Vancouver의 영어 과정. 소규모 학급, 숙소 옵션, 그리고 글로벌 학생 커뮤니티.";meta_description
+;en;ja;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"San Diego、Los Angeles、Vancouverでの英語コース。少人数制クラス、滞在オプション、グローバルな学生コミュニティ。";meta_description
+;en;ar;"English courses in San Diego, Los Angeles, and Vancouver. Small classes, housing options, and a global student community.";"دورات اللغة الإنجليزية في San Diego، وLos Angeles، وVancouver. فصول دراسية صغيرة، وخيارات سكن، ومجتمع طلابي عالمي.";meta_description
+;en;de;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"Lerne Englisch mit CEL in San Diego. Kleine Klassen, erfahrene Lehrkräfte und Studentenunterkünfte in Strandnähe.";meta_description
+;en;fr;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"Étudiez l'anglais avec CEL à San Diego. Petites classes, professeurs expérimentés et logement étudiant près de la plage.";meta_description
+;en;es;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"Estudia inglés con CEL en San Diego. Clases reducidas, profesores con experiencia y alojamiento para estudiantes cerca de la playa.";meta_description
+;en;it;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"Studia l'inglese con CEL a San Diego. Classi piccole, insegnanti esperti e alloggi per studenti vicino alla spiaggia.";meta_description
+;en;pt;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"Estude inglês com a CEL em San Diego. Turmas pequenas, professores experientes e acomodação estudantil perto da praia.";meta_description
+;en;ko;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"San Diego의 CEL에서 영어를 공부하세요. 소규모 수업, 경험 풍부한 강사진, 해변 근처의 학생 숙소.";meta_description
+;en;ja;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"San DiegoのCELで英語を学びましょう。少人数制クラス、経験豊富な教師陣、ビーチ近くの学生寮をご用意しています。";meta_description
+;en;ar;"Study English with CEL in San Diego. Small classes, experienced teachers, and student housing near the beach.";"ادرس اللغة الإنجليزية مع CEL في San Diego. فصول دراسية صغيرة، ومعلمون ذوو خبرة، وسكن طلابي بالقرب من الشاطئ.";meta_description
+;en;de;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Lerne Englisch mit CEL in Los Angeles. Kleine Klassen, qualifizierte Lehrkräfte und Studentenunterkünfte in California in Strandnähe.";meta_description
+;en;fr;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Étudiez l'anglais avec CEL à Los Angeles. Petites classes, professeurs qualifiés et logement étudiant en California près de la plage.";meta_description
+;en;es;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Estudia inglés con CEL en Los Angeles. Clases reducidas, profesores calificados y alojamiento para estudiantes en California cerca de la playa.";meta_description
+;en;it;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Studia l'inglese con CEL a Los Angeles. Classi piccole, insegnanti qualificati e alloggi per studenti in California vicino alla spiaggia.";meta_description
+;en;pt;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Estude inglês com a CEL em Los Angeles. Turmas pequenas, professores qualificados e acomodação estudantil na California perto da praia.";meta_description
+;en;ko;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Los Angeles에서 CEL과 함께 영어를 공부하세요. 소규모 수업, 자격을 갖춘 교사진, 그리고 해변 근처 California의 학생 숙소를 제공합니다.";meta_description
+;en;ja;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"Los AngelesのCELで英語を学びましょう。少人数制クラス、有資格の講師陣、そしてビーチに近いCaliforniaの学生寮。";meta_description
+;en;ar;"Study English with CEL in Los Angeles. Small classes, qualified teachers, and student housing in California near the beach.";"ادرس اللغة الإنجليزية مع CEL في Los Angeles. فصول دراسية صغيرة، ومعلمون مؤهلون، وسكن طلابي في California بالقرب من الشاطئ.";meta_description
+;en;de;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"Englisch-Sommercamp in San Diego, USA mit CEL. Verbessere deine Sprachkenntnisse in kleinen Klassen und genieße kulturelle Aktivitäten am Strand.";meta_description
+;en;fr;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"Camp d'été d'anglais à San Diego, aux États-Unis, avec CEL. Développez vos compétences linguistiques dans de petites classes et profitez d'activités";meta_description
+;en;es;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"Campamento de verano de inglés en San Diego, EE. UU. con CEL. Mejora tus habilidades lingüísticas en clases reducidas y disfruta de actividades culturales";meta_description
+;en;it;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"Campo estivo di inglese a San Diego, USA con CEL. Migliora le tue competenze linguistiche in classi ridotte e goditi le attività culturali sulla spiaggia.";meta_description
+;en;pt;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"Acampamento de verão de inglês em San Diego, EUA com a CEL. Desenvolva suas habilidades linguísticas em turmas pequenas e aproveite atividades culturais à";meta_description
+;en;ko;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"CEL과 함께하는 미국 San Diego 영어 여름 캠프. 소규모 수업으로 어학 실력을 키우고 해변에서 문화 활동을 즐겨보세요.";meta_description
+;en;ja;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"CELによるアメリカ・San Diegoでの英語サマーキャンプ。少人数制クラスで語学力を伸ばし、ビーチでの文化的なアクティビティを楽しみましょう。";meta_description
+;en;ar;"English Summer Camp in San Diego, USA with CEL. Build your language skills in small classes and enjoy cultural activities by the beach.";"مخيم صيفي للغة الإنجليزية في San Diego، الولايات المتحدة الأمريكية مع CEL. طوّر مهاراتك اللغوية في فصول صغيرة واستمتع بالأنشطة الثقافية على الشاطئ.";meta_description
+;en;de;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"Englisch lernen in San Diego oder Los Angeles. Durchschnittlich 7 Schüler pro Klasse, Unterkunft inklusive. Programme von 1 Woche bis zu einem Jahr.";meta_description
+;en;fr;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"Étudiez l'anglais à San Diego ou à Los Angeles. Moyenne de 7 étudiants par classe, hébergement inclus. Programmes de 1 semaine à un an.";meta_description
+;en;es;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"Estudia inglés en San Diego o Los Angeles. Promedio de 7 estudiantes por clase, alojamiento incluido. Programas desde 1 semana hasta un año.";meta_description
+;en;it;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"Studia l'inglese a San Diego o Los Angeles. In media 7 studenti per classe, alloggio incluso. Programmi da 1 settimana a un anno.";meta_description
+;en;pt;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"Estude inglês em San Diego ou Los Angeles. Média de 7 alunos por turma, acomodação incluída. Programas de 1 semana a um ano.";meta_description
+;en;ko;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"San Diego 또는 Los Angeles에서 영어를 공부하세요. 학급당 평균 7명의 학생, 숙소 포함. 1주부터 1년까지의 프로그램.";meta_description
+;en;ja;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"San DiegoまたはLos Angelesで英語を学びましょう。1クラス平均7名、滞在費込み。プログラムは1週間から1年まで。";meta_description
+;en;ar;"Study English in San Diego or Los Angeles. Average 7 students per class, housing included. Programs from 1 week to a year.";"ادرس اللغة الإنجليزية في San Diego أو Los Angeles. متوسط 7 طلاب لكل فصل، السكن مشمول. برامج من 1 أسبوع إلى سنة.";meta_description
+;en;de;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Kleine Klassen, Studentenunterkünfte und eine globale Gemeinschaft in Vancouver. Lernen Sie Englisch für 1 Woche bis 12 Monate.";meta_description
+;en;fr;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Petites classes, logement étudiant et une communauté internationale à Vancouver. Étudiez l'anglais de 1 semaine à 12 mois.";meta_description
+;en;es;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Clases reducidas, alojamiento para estudiantes y una comunidad global en Vancouver. Estudia inglés de 1 semana a 12 meses.";meta_description
+;en;it;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Classi piccole, alloggi per studenti e una comunità globale a Vancouver. Studia l'inglese da 1 settimana a 12 mesi.";meta_description
+;en;pt;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Turmas pequenas, acomodação estudantil e uma comunidade global em Vancouver. Estude inglês de 1 semana a 12 meses.";meta_description
+;en;ko;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Vancouver의 소규모 수업, 학생 숙소 및 글로벌 커뮤니티. 1주에서 12개월까지 영어를 공부하세요.";meta_description
+;en;ja;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"Vancouverでの少人数制クラス、学生寮、グローバルなコミュニティ。1週間から12ヶ月まで英語を学べます。";meta_description
+;en;ar;"Small classes, student housing, and a global community in Vancouver. Study English from 1 week to 12 months.";"فصول دراسية صغيرة، وسكن طلابي، ومجتمع عالمي في Vancouver. ادرس اللغة الإنجليزية من 1 أسبوع إلى 12 شهراً.";meta_description
+;en;de;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"Finden Sie Studentenunterkünfte mit CEL in San Diego, Los Angeles und Vancouver. Gastfamilien, Wohngemeinschaften und Wohnheime verfügbar.";meta_description
+;en;fr;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"Trouvez un logement étudiant avec CEL à San Diego, Los Angeles et Vancouver. Familles d'accueil, appartements partagés et résidences disponibles.";meta_description
+;en;es;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"Encuentra alojamiento para estudiantes con CEL en San Diego, Los Angeles y Vancouver. Casas de familia, apartamentos compartidos y residencias disponibles.";meta_description
+;en;it;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"Trova alloggi per studenti con CEL a San Diego, Los Angeles e Vancouver. Alloggi in famiglia, appartamenti condivisi e residenze disponibili.";meta_description
+;en;pt;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"Encontre acomodação estudantil com a CEL em San Diego, Los Angeles e Vancouver. Casas de família, apartamentos compartilhados e residências disponíveis.";meta_description
+;en;ko;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"San Diego, Los Angeles 및 Vancouver에서 CEL과 함께 학생 숙소를 찾아보세요. 홈스테이, 쉐어 아파트 및 기숙사를 이용할 수 있습니다.";meta_description
+;en;ja;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"San Diego、Los Angeles、VancouverでのCELの学生向け滞在先を見つけましょう。ホームステイ、シェアアパート、レジデンスをご利用いただけます。";meta_description
+;en;ar;"Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.";"ابحث عن سكن طلابي مع CEL في San Diego و Los Angeles و Vancouver. تتوفر إقامة مع عائلات، وشقق مشتركة، ومساكن.";meta_description
+;en;de;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"Bereiten Sie sich mit dem Pathway-Programm von CEL in San Diego auf die Universität in den USA vor. Verbessern Sie Ihr Englisch, bauen Sie Fähigkeiten auf und";meta_description
+;en;fr;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"Préparez-vous pour l'université aux États-Unis avec le programme Pathway de CEL à San Diego. Améliorez votre anglais, développez vos compétences et étudiez à";meta_description
+;en;es;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"Prepárate para la universidad en EE. UU. con el programa Pathway de CEL en San Diego. Mejora tu inglés, desarrolla habilidades y estudia en el extranjero.";meta_description
+;en;it;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"Preparati per l'università negli USA con il Pathway Program di CEL a San Diego. Migliora l'inglese, sviluppa competenze e studia all'estero.";meta_description
+;en;pt;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"Prepare-se para a universidade nos EUA com o Programa Pathway da CEL em San Diego. Melhore o inglês, desenvolva habilidades e estude no exterior.";meta_description
+;en;ko;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"San Diego의 CEL 패스웨이 프로그램을 통해 미국 대학 진학을 준비하세요. 영어 실력을 향상시키고, 역량을 키워 해외 유학을 떠나보세요.";meta_description
+;en;ja;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"San DiegoのCELパスウェイプログラムでアメリカの大学進学に備えましょう。英語力を向上させ、スキルを身につけ、留学しましょう。";meta_description
+;en;ar;"Prepare for university in the USA with CEL's Pathway Program in San Diego. Improve English, build skills and study abroad.";"استعد للجامعة في الولايات المتحدة مع برنامج المسار من CEL في San Diego. حسّن لغتك الإنجليزية، واكتسب المهارات، وادرس في الخارج.";meta_description
+;en;de;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"Auslandssemester in den USA mit CEL. Studiere im US-Bildungssystem und nimm am College-Alltag teil.";meta_description
+;en;fr;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"Semestre à l'étranger aux États-Unis avec CEL. Étudiez dans le système éducatif américain et participez à la vie universitaire au quotidien.";meta_description
+;en;es;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"Semestre en el extranjero en Estados Unidos con CEL. Estudia en el sistema educativo estadounidense y participa en la vida universitaria cotidiana.";meta_description
+;en;it;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"Semestre all'estero negli USA con CEL. Studia nel sistema d'istruzione statunitense e partecipa alla vita quotidiana del college.";meta_description
+;en;pt;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"Semestre no exterior nos EUA com a CEL. Estude no sistema de ensino dos EUA e participe do dia a dia da vida universitária.";meta_description
+;en;ko;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"CEL과 함께하는 미국 학기제 유학. 미국 교육 시스템에서 공부하며 일상적인 대학 생활에 참여해 보세요.";meta_description
+;en;ja;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"CELで行くアメリカでのセメスター留学。アメリカの教育制度で学び、日常の大学生活に参加しましょう。";meta_description
+;en;ar;"Semester Abroad in the USA with CEL. Study in the US education system and take part in everyday college life.";"فصل دراسي في الخارج في الولايات المتحدة الأمريكية مع CEL. ادرس في نظام التعليم الأمريكي وشارك في الحياة الجامعية اليومية.";meta_description
+;en;de;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"Zertifikatsprogramme in den USA mit CEL. Zwei Semester Studium und bis zu 12 Monate bezahlte Arbeit über OPT.";meta_description
+;en;fr;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"Programmes de certificat aux États-Unis avec CEL. Deux semestres d'études et jusqu'à 12 mois de travail rémunéré grâce à l'OPT.";meta_description
+;en;es;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"Programas de certificado en EE. UU. con CEL. Dos semestres de estudio y hasta 12 meses de trabajo remunerado a través de OPT.";meta_description
+;en;it;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"Programmi di certificazione negli USA con CEL. Due semestri di studio e fino a 12 mesi di lavoro retribuito tramite OPT.";meta_description
+;en;pt;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"Programas de Certificado nos EUA com a CEL. Dois semestres de estudo e até 12 meses de trabalho remunerado através do OPT.";meta_description
+;en;ko;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"CEL과 함께하는 미국 수료증 프로그램. 2학기의 학업 및 OPT를 통한 최대 12개월의 유급 근무.";meta_description
+;en;ja;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"CELのアメリカでのサティフィケートプログラム。2学期間の就学と、OPTを利用した最長12ヶ月の有給就労。";meta_description
+;en;ar;"Certificate Programs in the USA with CEL. Two semesters of study and up to 12 months of paid work through OPT.";"برامج الشهادات في الولايات المتحدة مع CEL. فصلان دراسيان من الدراسة وما يصل إلى 12 شهرًا من العمل مدفوع الأجر من خلال OPT.";meta_description
+;en;de;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"Undergraduate-Programme in den USA mit CEL. Zwei Jahre am College, dann an eine Universität wechseln, um das Studium abzuschließen.";meta_description
+;en;fr;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"Programmes de premier cycle aux États-Unis avec CEL. Deux ans au college, puis transfert vers une université pour obtenir votre diplôme.";meta_description
+;en;es;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"Programas de pregrado en Estados Unidos con CEL. Dos años en un college, luego transfiérete a una universidad para completar tu título.";meta_description
+;en;it;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"Programmi di laurea negli USA con CEL. Due anni al college, per poi trasferirti in un'università e completare la tua laurea.";meta_description
+;en;pt;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"Programas de Graduação nos EUA com CEL. Dois anos na faculdade, depois transfira-se para uma universidade para concluir seu diploma.";meta_description
+;en;ko;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"CEL과 함께하는 미국 학부 과정. 컬리지에서 2년을 보낸 후, 대학교로 편입하여 학위를 취득하세요.";meta_description
+;en;ja;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"CELのアメリカ学部課程プログラム。カレッジで2年間学んだ後、大学へ編入して学位を取得します。";meta_description
+;en;ar;"Undergraduate Programs in the USA with CEL. Two years at college, then transfer to a university to complete your degree.";"برامج البكالوريوس في الولايات المتحدة مع CEL. سنتان في الكلية، ثم التحويل إلى جامعة لإكمال درجتك العلمية.";meta_description
+;en;de;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"Graduate-Programme in den USA mit CEL. Beginnen Sie Ihren Weg am College und wechseln Sie an eine US-Universität, um einen Masterabschluss zu erwerben.";meta_description
+;en;fr;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"Programmes d'études supérieures aux États-Unis avec CEL. Commencez votre parcours dans un college et transférez vers une université américaine pour obtenir un";meta_description
+;en;es;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"Programas de posgrado en Estados Unidos con CEL. Comienza tu camino en un college y transfiérete a una universidad estadounidense para completar una maestría.";meta_description
+;en;it;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"Programmi post-laurea negli USA con CEL. Inizia il tuo percorso al college e trasferisciti in un'università statunitense per completare un master.";meta_description
+;en;pt;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"Programas de Pós-Graduação nos EUA com CEL. Comece sua trajetória na faculdade e transfira-se para uma universidade dos EUA para concluir um mestrado.";meta_description
+;en;ko;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"CEL과 함께하는 미국 대학원 과정. 컬리지에서 학업을 시작하고 미국 대학교로 편입하여 석사 학위를 취득하세요.";meta_description
+;en;ja;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"CELのアメリカ大学院プログラム。カレッジからスタートし、アメリカの大学に編入して修士号を取得しましょう。";meta_description
+;en;ar;"Graduate Programs in the USA with CEL. Start your path at college and transfer to a US university to complete a master’s degree.";"برامج الدراسات العليا في الولايات المتحدة مع CEL. ابدأ مسارك في الكلية وانتقل إلى جامعة أمريكية لإكمال درجة الماجستير.";meta_description
+;en;de;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Lernen Sie Englisch in Vancouver an unserem Coal Harbour Campus. Kleine Klassen, zertifizierte Lehrkräfte und Studentenleben an der Küste.";meta_description
+;en;fr;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Apprenez l'anglais à Vancouver sur notre campus de Coal Harbour. Classes en petits groupes, professeurs certifiés et vie étudiante sur la côte.";meta_description
+;en;es;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Aprende inglés en Vancouver en nuestro campus de Coal Harbour. Clases reducidas, profesores certificados y vida estudiantil costera.";meta_description
+;en;it;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Impara l'inglese a Vancouver nel nostro campus di Coal Harbour. Classi ridotte, insegnanti certificati e vita studentesca sulla costa.";meta_description
+;en;pt;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Aprenda inglês em Vancouver no nosso campus de Coal Harbour. Turmas pequenas, professores certificados e vida estudantil no litoral.";meta_description
+;en;ko;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Vancouver에 위치한 저희 콜 하버 캠퍼스에서 영어를 배워보세요. 소규모 학급, 공인된 강사진, 그리고 해안가에서의 학생 생활.";meta_description
+;en;ja;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"Vancouverにある当校のコールハーバーキャンパスで英語を学びましょう。少人数制クラス、有資格の教師、海辺での学生生活。";meta_description
+;en;ar;"Learn English in Vancouver at our Coal Harbour campus. Small classes, certified teachers, and coastal student life.";"تعلم الإنجليزية في Vancouver في حرمنا الجامعي في كول هاربور. فصول دراسية صغيرة، ومعلمون معتمدون، وحياة طلابية ساحلية.";meta_description
+;en;de;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"Studiengebühren, Unterkunft, Verpflegung, Nahverkehr und Extras: die tatsächlichen Kosten für das Englischlernen in Vancouver, um Ihnen bei der Planung Ihres";meta_description
+;en;fr;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"Frais de scolarité, hébergement, nourriture, transports et extras : le coût réel pour étudier l'anglais à Vancouver afin de vous aider à planifier votre budget.";meta_description
+;en;es;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"Matrícula, alojamiento, comida, transporte y extras: el costo real de estudiar inglés en Vancouver para ayudarte a planificar tu presupuesto.";meta_description
+;en;it;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"Retta, alloggio, vitto, trasporti ed extra: il costo reale per studiare l'inglese a Vancouver per aiutarti a pianificare il tuo budget.";meta_description
+;en;pt;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"Mensalidade, acomodação, alimentação, transporte e extras: o custo real de estudar inglês em Vancouver para ajudar a planejar seu orçamento.";meta_description
+;en;ko;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"학비, 숙박비, 식비, 교통비 및 기타 비용: 예산 계획을 돕기 위한 Vancouver에서의 실제 영어 공부 비용.";meta_description
+;en;ja;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"授業料、滞在費、食費、交通費、雑費：予算計画に役立つ、Vancouverでの英語留学の実際の費用。";meta_description
+;en;ar;"Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.";"الرسوم الدراسية، والإقامة، والطعام، والمواصلات، والنفقات الإضافية: التكلفة الحقيقية لدراسة اللغة الإنجليزية في Vancouver للمساعدة في تخطيط ميزانيتك.";meta_description
+;en;de;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"Realistische Zeitpläne, um in Vancouver Englisch vom Anfänger bis fließend zu lernen, basierend auf Ihrem Niveau, der Intensität und Ihren Zielen.";meta_description
+;en;fr;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"Délais réalistes pour apprendre l'anglais à Vancouver, du niveau débutant au niveau courant, selon votre niveau, l'intensité et vos objectifs.";meta_description
+;en;es;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"Plazos realistas para aprender inglés en Vancouver de principiante a fluido, según tu nivel, intensidad y objetivos.";meta_description
+;en;it;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"Tempistiche realistiche per imparare l'inglese a Vancouver da principiante a fluente, in base al tuo livello, all'intensità e ai tuoi obiettivi.";meta_description
+;en;pt;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"Cronogramas realistas para aprender inglês em Vancouver de iniciante a fluente, com base no seu nível, intensidade e objetivos.";meta_description
+;en;ko;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"본인의 수준, 학습 강도 및 목표에 따라 Vancouver에서 초급부터 유창해질 때까지 영어를 배우는 데 걸리는 현실적인 기간.";meta_description
+;en;ja;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"レベル、学習ペース、目標に基づいた、Vancouverで英語を初心者から流暢になるまで習得するための現実的な期間。";meta_description
+;en;ar;"Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.";"جداول زمنية واقعية لتعلم اللغة الإنجليزية في Vancouver من مستوى المبتدئ إلى الطلاقة، بناءً على مستواك وكثافة دراستك وأهدافك.";meta_description
+;en;de;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver vs. Toronto im Vergleich hinsichtlich Kosten, Klima, Lebensstil und Studentenleben. Wähle die richtige Stadt für dein Englischstudium.";meta_description
+;en;fr;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver vs Toronto comparés sur le coût, le climat, le mode de vie et la vie étudiante. Choisissez la bonne ville pour vos études d'anglais.";meta_description
+;en;es;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver vs. Toronto comparados en costo, clima, estilo de vida y vida estudiantil. Elige la ciudad adecuada para tus estudios de inglés.";meta_description
+;en;it;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver vs Toronto a confronto su costi, clima, stile di vita e vita studentesca. Scegli la città giusta per i tuoi studi di inglese.";meta_description
+;en;pt;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver vs Toronto comparadas quanto a custo, clima, estilo de vida e vida estudantil. Escolha a cidade certa para os seus estudos de inglês.";meta_description
+;en;ko;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouver와 토론토의 비용, 기후, 라이프스타일, 학생 생활을 비교했습니다. 영어 공부에 알맞은 도시를 선택하세요.";meta_description
+;en;ja;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"Vancouverとトロントの費用、気候、ライフスタイル、学生生活を比較。英語学習に最適な都市を選びましょう。";meta_description
+;en;ar;"Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.";"مقارنة بين Vancouver وتورونتو من حيث التكلفة، والمناخ، ونمط الحياة، والحياة الطلابية. اختر المدينة المناسبة لدراسة اللغة الإنجليزية.";meta_description
+;en;de;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"Preiswertes Wohnen in Vancouver mit Einzelzimmern, Gemeinschaftsbädern, WLAN und Küche. Nur 35 Minuten mit dem Bus zum CEL.";meta_description
+;en;fr;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"Logement abordable à Vancouver avec chambres simples, salles de bain partagées, Wi-Fi et cuisine. À 35 minutes en bus du CEL.";meta_description
+;en;es;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"Alojamiento económico en Vancouver con habitaciones individuales, baños compartidos, Wi-Fi y cocina. A 35 minutos en bus del CEL.";meta_description
+;en;it;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"Alloggi economici a Vancouver con camere singole, bagni condivisi, Wi-Fi e cucina. A 35 minuti di autobus dal CEL.";meta_description
+;en;pt;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"Alojamento económico para estudantes em Vancouver, com quartos individuais, casas de banho partilhadas, Wi-Fi e acesso à cozinha. A 35 minutos de autocarro do";meta_description
+;en;ko;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"밴쿠버 경제적인 학생 하우스, 1인실·공용 욕실·와이파이·주방 이용 가능. CEL까지 버스로 35분 거리.";meta_description
+;en;ja;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"バンクーバーの手頃な学生ハウス。個室、共用バスルーム、Wi-Fi、キッチン付き。CELまでバスで35分。";meta_description
+;en;ar;"Affordable student housing in Vancouver with single rooms, shared bathrooms, Wi-Fi, and kitchen access. 35 minutes by bus to CEL.";"سكن طلابي ميسور في فانكوفر بغرف فردية، حمامات مشتركة، إنترنت Wi-Fi ومطبخ. يبعد 35 دقيقة بالحافلة عن CEL.";meta_description
+;en;de;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"Einzelzimmer im Studentenhaus in Vancouver mit Gemeinschaftsbad, WLAN und Küche. Nur 25 Minuten mit dem Bus zum CEL.";meta_description
+;en;fr;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"Logement étudiant à Vancouver avec chambre simple, salle de bain partagée, Wi-Fi et cuisine. À 25 minutes en bus du CEL.";meta_description
+;en;es;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"Habitación individual en Vancouver con baño compartido, Wi-Fi y cocina. A 25 minutos en bus del CEL.";meta_description
+;en;it;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"Alloggio per studenti a Vancouver con camera singola, bagno condiviso, Wi-Fi e cucina. A 25 minuti di autobus dal CEL.";meta_description
+;en;pt;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"Acomodação estudantil em Vancouver com quarto individual, banheiro compartilhado, Wi-Fi e cozinha. A 25 minutos de ônibus do CEL.";meta_description
+;en;ko;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"밴쿠버 학생 하우스, 1인실·공용 욕실·와이파이·주방 제공. CEL까지 버스로 25분 거리.";meta_description
+;en;ja;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"バンクーバーの学生ハウス。1人部屋、共用バスルーム、Wi-Fi、キッチン付き。CELまでバスで25分。";meta_description
+;en;ar;"Single room student housing in Vancouver with shared bathroom, Wi-Fi, and kitchen access. 25 minutes by bus to CEL.";"سكن طلابي في فانكوفر بغرفة فردية، حمام مشترك، إنترنت Wi-Fi ومطبخ. يبعد 25 دقيقة بالحافلة عن CEL.";meta_description
+;en;de;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"Einzel- und Doppelzimmer mit WLAN, Gemeinschaftsraum und moderner Ausstattung, nur eine kurze Busfahrt bis zum CEL.";meta_description
+;en;fr;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"Chambres simples ou doubles avec Wi-Fi, salon commun et équipements modernes, à quelques minutes en bus du CEL.";meta_description
+;en;es;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"Habitaciones individuales o dobles con Wi-Fi, sala compartida y comodidades modernas, a pocos minutos en autobús del CEL.";meta_description
+;en;it;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"Camere singole o doppie con Wi-Fi, salotto comune e servizi moderni, a pochi minuti di autobus dal CEL.";meta_description
+;en;pt;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"Quartos individuais ou duplos com Wi-Fi, sala comum e comodidades modernas, a poucos minutos de ônibus do CEL.";meta_description
+;en;ko;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"싱글·트윈룸, 와이파이, 공용 라운지와 현대식 시설 포함, CEL 밴쿠버까지 버스로 가까운 거리.";meta_description
+;en;ja;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"シングル・ツインルーム、Wi-Fi、共用ラウンジ、最新設備付き。CELまでバスですぐ。";meta_description
+;en;ar;"Single and twin rooms with Wi-Fi, shared lounge, and modern amenities, just a short bus ride to CEL Vancouver.";"غرف فردية أو مزدوجة مع إنترنت Wi-Fi، صالة مشتركة ومرافق حديثة، على بعد دقائق قليلة بالحافلة من CEL.";meta_description
+;en;de;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"Studentenunterkunft in einer Wohngemeinschaft in der Innenstadt mit Einzelzimmern, Gemeinschaftsbad, WLAN und Küchenzugang.";meta_description
+;en;fr;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"Logement étudiant en colocation en centre-ville, avec chambres individuelles, salles de bains communes, Wi-Fi et accès à la cuisine.";meta_description
+;en;es;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"Alojamiento para estudiantes en un piso compartido en el centro, con habitaciones individuales, baños compartidos, wifi y acceso a la cocina.";meta_description
+;en;it;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"Alloggi per studenti in appartamenti condivisi in centro, con camere singole, bagni in comune, Wi-Fi e accesso alla cucina.";meta_description
+;en;pt;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"Alojamento para estudantes num apartamento partilhado no centro da cidade, com quartos individuais, casas de banho partilhadas, Wi-Fi e acesso à cozinha.";meta_description
+;en;ko;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"도심에 위치한 쉐어하우스 형태의 학생 숙소로, 1인실, 공용 욕실, 와이파이, 주방 이용이 가능합니다.";meta_description
+;en;ja;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"ダウンタウンのシェアハウスにある学生向け住居。個室、共用バスルーム、Wi-Fi、キッチン利用可能。";meta_description
+;en;ar;"Student housing in Shared Apartment Downtown with single rooms, shared bathrooms, Wi-Fi, and kitchen access.";"سكن طلابي في شقة مشتركة بوسط المدينة، يضم غرفًا فردية وحمامات مشتركة وخدمة واي فاي وإمكانية استخدام المطبخ.";meta_description
+;en;de;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"Wohne bei Gastfamilien in Vancouver. Einzel- oder Doppelzimmer, WLAN und 30–70 Minuten mit dem Bus bis zum CEL.";meta_description
+;en;fr;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"Séjournez chez des familles locales à Vancouver. Chambres simples ou partagées, Wi-Fi et 30–70 minutes en bus jusqu’au CEL.";meta_description
+;en;es;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"Vive con familias locales en Vancouver. Habitaciones individuales o compartidas, Wi-Fi y a 30–70 minutos en autobús del CEL.";meta_description
+;en;it;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"Vivi con famiglie locali a Vancouver. Camere singole o condivise, Wi-Fi e 30–70 minuti di autobus per raggiungere il CEL.";meta_description
+;en;pt;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"More com famílias locais em Vancouver. Quartos individuais ou compartilhados, Wi-Fi e 30–70 minutos de ônibus até o CEL.";meta_description
+;en;ko;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"밴쿠버 현지 가정과 함께 생활하세요. 1인실·공유룸, 와이파이 제공, CEL까지 버스로 30~70분 소요.";meta_description
+;en;ja;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"バンクーバーの現地家庭で暮らそう。個室やシェアルーム、Wi-Fi付き、CELまでバスで30〜70分。";meta_description
+;en;ar;"Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.";"أقم مع عائلات محلية في فانكوفر. غرف فردية أو مشتركة، إنترنت Wi-Fi ورحلة حافلة من 30–70 دقيقة إلى CEL.";meta_description
+;en;de;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"Studio-Wohnungen und Gemeinschaftsräume im „Economy Apartment Living“ in Vancouver, mit WLAN und guter Anbindung an den öffentlichen Nahverkehr zum CEL";meta_description
+;en;fr;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"Studios et espaces communs au complexe Economy Apartment Living de Vancouver, avec Wi-Fi et accès facile aux transports en commun pour se rendre au CEL";meta_description
+;en;es;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"Estudios y espacios comunes en el complejo de apartamentos económicos de Vancouver, con wifi y fácil acceso en transporte público a CEL Vancouver.";meta_description
+;en;it;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"Monolocali e spazi comuni nel complesso residenziale Economy Apartment Living di Vancouver, con Wi-Fi e comodo accesso ai mezzi pubblici per raggiungere il CEL";meta_description
+;en;pt;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"Estúdios e espaços comuns no Economy Apartment Living, em Vancouver, com Wi-Fi e fácil acesso aos transportes públicos para o CEL Vancouver.";meta_description
+;en;ko;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"밴쿠버의 ‘이코노미 아파트먼트 리빙’에 위치한 스튜디오형 유닛과 공용 공간으로, Wi-Fi가 제공되며 CEL 밴쿠버까지 대중교통으로 편리하게 이동할 수 있습니다.";meta_description
+;en;ja;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"バンクーバーの「エコノミー・アパートメント・リビング」にあるスタジオタイプと共有スペース。Wi-Fi完備で、CELバンクーバーへのアクセスも公共交通機関で便利だ。";meta_description
+;en;ar;"Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.";"شقق استوديو ومساحات مشتركة في مجمع ""إيكونومي أبارتمنت ليفينج"" بفانكوفر، مزودة بخدمة الواي فاي ووسائل نقل عام سهلة الوصول إلى مركز CEL فانكوفر.";meta_description
+;en;de;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"Lebe bei Gastfamilien in Los Angeles. Einzel- oder Mehrbettzimmer, Mahlzeiten, WLAN und ein herzliches Zuhause.";meta_description
+;en;fr;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"Vivez avec des familles locales à Los Angeles. Chambres simples ou partagées, repas, Wi-Fi et ambiance conviviale.";meta_description
+;en;es;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"Vive con familias locales en Los Ángeles. Habitaciones individuales o compartidas, comidas, Wi-Fi y un ambiente acogedor.";meta_description
+;en;it;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"Alloggia con famiglie locali a Los Angeles. Camere singole o condivise, pasti, Wi-Fi e ambiente familiare.";meta_description
+;en;pt;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"Hospede-se com famílias locais em Los Angeles. Quartos individuais ou compartilhados, refeições, Wi-Fi e lar acolhedor.";meta_description
+;en;ko;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"로스앤젤레스 현지 가족과 함께 생활하세요. 1인실 또는 공유룸, 식사, Wi-Fi, 따뜻한 가정 분위기.";meta_description
+;en;ja;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"ロサンゼルスの現地家庭に滞在。個室またはシェアルーム、食事、Wi-Fi、温かい家庭生活。";meta_description
+;en;ar;"Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.";"أقم مع عائلات محلية في لوس أنجلوس. غرف فردية أو مشتركة، وجبات، واي فاي، وأجواء منزلية مريحة.";meta_description
+;en;de;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"Hervorragende Wohngemeinschaften in San Diego mit hellen Zimmern, Wi-Fi, Küche, Pool und Lernbereichen. Studentenwohnungen in der Nähe von CEL.";meta_description
+;en;fr;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"Des appartements en colocation haut de gamme à San Diego, avec des chambres lumineuses, le Wi-Fi, une cuisine, une piscine et des espaces d'étude. Logements";meta_description
+;en;es;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"Pisos compartidos de primera categoría en San Diego con habitaciones luminosas, wifi, cocina, piscina y zonas de estudio. Alojamiento para estudiantes cerca";meta_description
+;en;it;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"Appartamenti condivisi di alta qualità a San Diego con stanze luminose, Wi-Fi, cucina, piscina e aree studio. Alloggi per studenti vicino al CEL.";meta_description
+;en;pt;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"Apartamentos partilhados de alta qualidade em San Diego, com quartos luminosos, Wi-Fi, cozinha, piscina e áreas de estudo. Alojamento para estudantes perto do";meta_description
+;en;ko;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"밝은 객실, Wi-Fi, 주방, 수영장, 학습 공간을 갖춘 샌디에이고의 우수한 공유 아파트. CEL 근처의 학생 숙소.";meta_description
+;en;ja;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"明るい部屋、Wi-Fi、キッチン、プール、自習室完備のサンディエゴの高級シェアアパートメント。CEL近くの学生寮。";meta_description
+;en;ar;"Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.";"شقق مشتركة ممتازة في سان دييغو مع غرف مشرقة وخدمة الواي فاي ومطبخ ومسبح ومناطق للدراسة. سكن طلابي بالقرب من CEL.";meta_description
+;en;de;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"Hochwertige Wohngemeinschaften in San Diego mit modernen Zimmern, Küchen, WLAN, Pool und Fitnessraum. Komfortable Studentenunterkünfte in der Nähe des CEL.";meta_description
+;en;fr;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"Appartements en colocation haut de gamme à San Diego, avec des chambres et des cuisines modernes, le Wi-Fi, une piscine et une salle de sport. Logements";meta_description
+;en;es;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"Apartamentos compartidos de lujo en San Diego con habitaciones modernas, cocina, wifi, piscina y gimnasio. Cómodo alojamiento para estudiantes cerca del CEL.";meta_description
+;en;it;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"Appartamenti condivisi di lusso a San Diego con camere moderne, cucina, Wi-Fi, piscina e palestra. Confortevoli alloggi per studenti vicino al CEL.";meta_description
+;en;pt;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"Apartamentos partilhados de luxo em San Diego, com quartos modernos, cozinhas, Wi-Fi, piscina e ginásio. Alojamento confortável para estudantes perto do CEL.";meta_description
+;en;ko;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"현대적인 객실, 주방, Wi-Fi, 수영장, 헬스장을 갖춘 샌디에이고의 프리미엄 공유 아파트. CEL 근처의 편안한 학생 숙소.";meta_description
+;en;ja;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"モダンな部屋、キッチン、Wi-Fi、プール、ジムを備えたサンディエゴのプレミアムシェアアパートメント。CEL近くの快適な学生寮。";meta_description
+;en;ar;"Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.";"شقق مشتركة ممتازة في سان دييغو مع غرف عصرية ومطابخ وخدمة الواي فاي وحوض سباحة وصالة ألعاب رياضية. سكن طلابي مريح بالقرب من CEL.";meta_description
+;en;de;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"Möblierte Wohngemeinschaften in San Diego mit Küchen, Wi-Fi und einfachem Zugang zum CEL.";meta_description
+;en;fr;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"Appartements partagés meublés à San Diego avec cuisines, Wi-Fi et accès facile à CEL.";meta_description
+;en;es;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"Pisos compartidos amueblados en San Diego con cocina, Wi-Fi y fácil acceso al CEL.";meta_description
+;en;it;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"Appartamenti ammobiliati in condivisione a San Diego con cucina, Wi-Fi e facile accesso alla CEL.";meta_description
+;en;pt;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"Apartamentos partilhados mobilados em San Diego com cozinhas, Wi-Fi e fácil acesso ao CEL.";meta_description
+;en;ko;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"샌디에이고에 위치한 가구가 완비된 공유 아파트로 주방, Wi-Fi, CEL에 쉽게 액세스할 수 있습니다.";meta_description
+;en;ja;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"サンディエゴにある家具付きシェアアパートメントで、キッチン、Wi-Fi、CELへのアクセスが便利です。";meta_description
+;en;ar;"Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.";"شقق مشتركة مفروشة في سان دييغو مع مطابخ وخدمة الواي فاي وسهولة الوصول إلى مركز المؤتمرات.";meta_description
+;en;de;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"Erstklassige Gastfamilie in San Diego mit Einzelzimmern, Mahlzeiten, Wi-Fi und täglicher Unterstützung, nur eine kurze Fahrt vom CEL San Diego entfernt.";meta_description
+;en;fr;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"Hébergement en famille d'accueil de première qualité à San Diego avec chambres individuelles, repas, Wi-Fi et assistance quotidienne, à quelques minutes de";meta_description
+;en;es;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"Alojamiento en familia de primera categoría en San Diego con habitaciones individuales, comidas, wifi y asistencia diaria, a un paso de CEL San Diego.";meta_description
+;en;it;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"Famiglia premium a San Diego con camere singole, pasti, Wi-Fi e assistenza giornaliera, a breve distanza dal CEL di San Diego.";meta_description
+;en;pt;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"Hospedagem em casa de família premium em San Diego, com quartos individuais, refeições, Wi-Fi e apoio diário, a uma curta distância do CEL San Diego.";meta_description
+;en;ko;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"샌디에이고의 프리미엄 홈스테이로 싱글룸, 식사, 와이파이, 일일 지원을 제공하며 CEL 샌디에이고에서 차로 가까운 거리에 있습니다.";meta_description
+;en;ja;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"一人部屋、食事、Wi-Fi、毎日のサポートが付いたサンディエゴのプレミアムホームステイ。";meta_description
+;en;ar;"Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.";"إقامة منزلية ممتازة في سان دييغو مع غرف فردية ووجبات وخدمة الواي فاي ودعم يومي، على بُعد مسافة قصيرة من مركز سيل سان دييغو.";meta_description
+;en;de;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"Wohn bei Gastfamilien in San Diego. Zimmer, WLAN, Verpflegung und ein herzliches Zuhause für internationale Studierende.";meta_description
+;en;fr;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"Viens vivre chez des familles d'accueil à San Diego. Chambres, Wi-Fi, repas et un cadre familial accueillant pour les étudiants étrangers.";meta_description
+;en;es;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"Alójate con familias locales en San Diego. Habitaciones, wifi, comidas y un ambiente acogedor para estudiantes internacionales.";meta_description
+;en;it;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"Vivere con famiglie locali a San Diego. Camere, Wi-Fi, pasti e un ambiente familiare di supporto per gli studenti internazionali.";meta_description
+;en;pt;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"Viva com famílias locais em San Diego. Quartos, Wi-Fi, refeições e um ambiente familiar de apoio para estudantes internacionais.";meta_description
+;en;ko;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"샌디에이고에서 현지 가족과 함께 생활해 보세요. 객실, Wi-Fi, 식사, 유학생을 위한 지원적인 가정 환경이 제공됩니다.";meta_description
+;en;ja;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"サンディエゴで地元の家族と一緒に暮らしましょう。部屋、Wi-Fi、食事、留学生をサポートする家庭環境。";meta_description
+;en;ar;"Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.";"عِش مع عائلات محلية في سان دييغو. غرف، وخدمة واي فاي، ووجبات طعام، وبيئة منزلية داعمة للطلاب الدوليين.";meta_description
+;en;de;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"Verbessere dein Englisch für den Beruf in San Diego, Los Angeles oder Vancouver mit dem berufsorientierten Kurs von CEL zu den Themen KI, Wirtschaft und";meta_description
+;en;fr;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"Perfectionne ton anglais professionnel à San Diego, Los Angeles ou Vancouver grâce au cours de CEL axé sur la carrière, qui porte sur l'IA, le monde des";meta_description
+;en;es;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"Mejora tu inglés para el ámbito laboral en San Diego, Los Ángeles o Vancouver con el curso de CEL enfocado a la carrera profesional en inteligencia artificial";meta_description
+;en;it;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"Migliora il tuo inglese professionale a San Diego, Los Angeles o Vancouver con il corso di CEL incentrato sulla carriera nei settori dell'intelligenza";meta_description
+;en;pt;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"Aprende inglês para o ambiente de trabalho em San Diego, Los Angeles ou Vancouver com o curso da CEL focado na carreira nas áreas da IA, negócios e gestão.";meta_description
+;en;ko;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"샌디에이고, 로스앤젤레스, 또는 밴쿠버에서 CEL의 AI, 비즈니스, 경영 분야를 다루는 취업 중심 과정을 통해 실무 영어 실력을 쌓아보세요.";meta_description
+;en;ja;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"サンディエゴ、ロサンゼルス、またはバンクーバーで、CELのAI、ビジネス、マネジメントに特化したキャリア重視のコースを通じて、ビジネス英語を身につけよう。";meta_description
+;en;ar;"Build workplace English in San Diego, Los Angeles, or Vancouver with CEL's career-focused course on AI, business, and management.";"طور مهاراتك في اللغة الإنجليزية في بيئة العمل في سان دييغو أو لوس أنجلوس أو فانكوفر من خلال دورة CEL المخصصة للتطوير الوظيفي في مجالات الذكاء الاصطناعي";meta_description
+;en;de;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"Verbessere deine akademischen Englischkenntnisse in San Diego, Los Angeles oder Vancouver mit dem Wahlfach von CEL für Schüler der oberen Mittelstufe.";meta_description
+;en;fr;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"Perfectionne ton anglais académique à San Diego, Los Angeles ou Vancouver grâce au cours optionnel de CEL destiné aux étudiants de niveau intermédiaire avancé.";meta_description
+;en;es;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"Mejora tu inglés académico avanzado en San Diego, Los Ángeles o Vancouver con el curso optativo de CEL para estudiantes de nivel intermedio-alto.";meta_description
+;en;it;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"Migliora il tuo inglese accademico avanzato a San Diego, Los Angeles o Vancouver con il corso opzionale di CEL per studenti di livello intermedio-avanzato.";meta_description
+;en;pt;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"Aprimora o teu inglês académico avançado em San Diego, Los Angeles ou Vancouver com a disciplina opcional da CEL para alunos de nível intermédio-avançado.";meta_description
+;en;ko;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"CEL의 중상급 학습자 대상 선택 과정을 통해 샌디에이고, 로스앤젤레스 또는 밴쿠버에서 고급 학술 영어 실력을 쌓아보세요.";meta_description
+;en;ja;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"CELの上級中級者向け選択コースで、サンディエゴ、ロサンゼルス、またはバンクーバーにて、高度なアカデミック・イングリッシュを習得しよう。";meta_description
+;en;ar;"Build advanced academic English in San Diego, Los Angeles, or Vancouver with CEL's elective for upper-intermediate students.";"طور مهاراتك في اللغة الإنجليزية الأكاديمية المتقدمة في سان دييغو أو لوس أنجلوس أو فانكوفر من خلال المقرر الاختياري الذي تقدمه CEL للطلاب في المستوى المتوسط";meta_description
+;en;de;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"Bereite dich mit dem Englischprogramm von CEL in San Diego und Los Angeles auf das College oder die Universität in den USA vor. Mittelstufe II.";meta_description
+;en;fr;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"Prépare-toi à entrer à l'université aux États-Unis grâce au programme d'anglais du CEL à San Diego et à Los Angeles. Niveau intermédiaire avancé.";meta_description
+;en;es;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"Prepárate para la universidad en EE. UU. con el programa de inglés de CEL en San Diego y Los Ángeles. Nivel intermedio-alto.";meta_description
+;en;it;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"Preparati per il college o l'università negli Stati Uniti con il corso di inglese del CEL a San Diego e Los Angeles. Livello intermedio-avanzato.";meta_description
+;en;pt;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"Prepara-te para a faculdade ou universidade nos EUA com o programa de inglês da CEL em San Diego e Los Angeles. Nível intermédio-avançado.";meta_description
+;en;ko;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"샌디에이고와 로스앤젤레스에서 진행되는 CEL의 영어 프로그램을 통해 미국 대학 진학을 준비하세요. 중상급 수준.";meta_description
+;en;ja;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"サンディエゴとロサンゼルスにあるCELの英語プログラムで、アメリカの大学進学に向けた準備をしよう。中上級レベル。";meta_description
+;en;ar;"Prepare for college or university in the USA with CEL's English program in San Diego and Los Angeles. Upper-intermediate level.";"استعد للالتحاق بالكلية أو الجامعة في الولايات المتحدة الأمريكية من خلال برنامج اللغة الإنجليزية الذي تقدمه CEL في سان دييغو ولوس أنجلوس. المستوى المتوسط";meta_description
+;en;de;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"Bereite dich in San Diego oder Los Angeles mit dem Intensiv-Englischkurs von CEL auf den TOEFL vor. Kleine Klassen, erfahrene Prüfungscoaches.";meta_description
+;en;fr;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"Prépare-toi au TOEFL à San Diego ou à Los Angeles grâce au cours d'anglais intensif du CEL. Petites classes, formateurs spécialisés dans la préparation aux";meta_description
+;en;es;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"Prepárate para el TOEFL en San Diego o Los Ángeles con el curso intensivo de inglés de CEL. Clases reducidas y profesores expertos en la preparación de";meta_description
+;en;it;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"Preparati al TOEFL a San Diego o a Los Angeles con il corso intensivo di inglese del CEL. Classi con pochi studenti, tutor esperti in preparazione agli esami.";meta_description
+;en;pt;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"Prepara-te para o TOEFL em San Diego ou Los Angeles com o curso intensivo de inglês da CEL. Turmas pequenas, formadores especializados em exames.";meta_description
+;en;ko;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"CEL의 집중 영어 과정을 통해 샌디에이고나 로스앤젤레스에서 TOEFL 시험을 준비하세요. 소규모 수업과 전문 시험 지도 강사진이 여러분을 기다립니다.";meta_description
+;en;ja;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"サンディエゴまたはロサンゼルスで、CELの集中英語コースを利用してTOEFLの準備をしよう。少人数制のクラスと、試験対策の専門家が指導する。";meta_description
+;en;ar;"Prepare for TOEFL in San Diego or Los Angeles with CEL's intensive English course. Small classes, expert exam coaches.";"استعد لاختبار TOEFL في سان دييغو أو لوس أنجلوس من خلال دورة اللغة الإنجليزية المكثفة التي تقدمها CEL. فصول صغيرة، ومدربون خبراء في التحضير للاختبارات.";meta_description
+;en;de;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"Bereite dich in San Diego, Los Angeles oder Vancouver mit dem Prüfungsvorbereitungskurs in kleinen Gruppen von CEL auf das Cambridge FCE oder CAE vor.";meta_description
+;en;fr;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"Prépare-toi au FCE ou au CAE de Cambridge à San Diego, Los Angeles ou Vancouver grâce au cours de préparation aux examens en petits groupes proposé par CEL.";meta_description
+;en;es;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"Prepárate para el FCE o el CAE de Cambridge en San Diego, Los Ángeles o Vancouver con el curso de preparación para exámenes en grupos reducidos de CEL.";meta_description
+;en;it;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"Preparati all'esame FCE o CAE di Cambridge a San Diego, Los Angeles o Vancouver con il corso di preparazione agli esami in piccoli gruppi del CEL.";meta_description
+;en;pt;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"Prepara-te para o Cambridge FCE ou CAE em San Diego, Los Angeles ou Vancouver com o curso de preparação para exames em pequenos grupos da CEL.";meta_description
+;en;ko;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"CEL의 소규모 그룹 시험 대비 과정을 통해 샌디에이고, 로스앤젤레스 또는 밴쿠버에서 캠브리지 FCE 또는 CAE 시험을 준비하세요.";meta_description
+;en;ja;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"サンディエゴ、ロサンゼルス、またはバンクーバーで、CELの少人数制試験対策コースを利用して、ケンブリッジFCEまたはCAEの受験準備をしよう。";meta_description
+;en;ar;"Prepare for Cambridge FCE or CAE in San Diego, Los Angeles, or Vancouver with CEL's small-group exam preparation course.";"استعد لامتحانات كامبريدج FCE أو CAE في سان دييغو أو لوس أنجلوس أو فانكوفر من خلال دورة CEL للتحضير للامتحانات التي تُعقد في مجموعات صغيرة.";meta_description
+;en;de;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"Individueller Einzelunterricht in Englisch in San Diego, Los Angeles oder Vancouver. Flexible Terminvereinbarung und ganz auf deine Ziele zugeschnitten.";meta_description
+;en;fr;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"Cours particuliers d'anglais sur mesure à San Diego, Los Angeles ou Vancouver. Horaires flexibles et adaptés à tes objectifs.";meta_description
+;en;es;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"Clases particulares de inglés personalizadas en San Diego, Los Ángeles o Vancouver. Horarios flexibles y adaptados a tus objetivos.";meta_description
+;en;it;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"Lezioni individuali personalizzate di inglese a San Diego, Los Angeles o Vancouver. Orari flessibili e programmi su misura per i tuoi obiettivi.";meta_description
+;en;pt;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"Aulas particulares de inglês personalizadas em San Diego, Los Angeles ou Vancouver. Horários flexíveis e adaptados aos teus objetivos.";meta_description
+;en;ko;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"샌디에이고, 로스앤젤레스, 또는 밴쿠버에서 진행되는 맞춤형 1:1 영어 수업. 유연한 일정 조정이 가능하며, 여러분의 목표에 맞춰 진행됩니다.";meta_description
+;en;ja;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"サンディエゴ、ロサンゼルス、バンクーバーでのマンツーマン英語レッスン。スケジュールは柔軟に対応し、あなたの目標に合わせてカスタマイズする。";meta_description
+;en;ar;"Personalized one-to-one English lessons in San Diego, Los Angeles, or Vancouver. Flexible scheduling and tailored to your goals.";"دروس لغة إنجليزية فردية مخصصة في سان دييغو أو لوس أنجلوس أو فانكوفر. جداول دراسية مرنة ومصممة خصيصًا لتلبية أهدافك.";meta_description
+;en;de;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"Kombiniere deinen Englischkurs bei CEL in San Diego oder Los Angeles mit Freiwilligenarbeit bei lokalen gemeinnützigen Organisationen.";meta_description
+;en;fr;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"Combine tes cours d'anglais au CEL de San Diego ou de Los Angeles avec du bénévolat au sein d'associations locales à but non lucratif.";meta_description
+;en;es;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"Combina tus estudios de inglés en CEL San Diego o Los Ángeles con el voluntariado en organizaciones sin ánimo de lucro locales.";meta_description
+;en;it;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"Combina lo studio dell'inglese al CEL di San Diego o Los Angeles con attività di volontariato presso organizzazioni no profit locali.";meta_description
+;en;pt;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"Combina os teus estudos de inglês no CEL San Diego ou Los Angeles com trabalho voluntário em organizações sem fins lucrativos locais.";meta_description
+;en;ko;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"CEL 샌디에이고 또는 로스앤젤레스에서 영어 공부를 하며 현지 비영리 단체에서 봉사활동을 병행해 보세요.";meta_description
+;en;ja;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"CELサンディエゴまたはロサンゼルスでの英語学習と、地元の非営利団体でのボランティア活動を組み合わせる。";meta_description
+;en;ar;"Combine English study at CEL San Diego or Los Angeles with volunteer work at local non-profit organizations.";"اجمع بين دراسة اللغة الإنجليزية في مركز CEL بسان دييغو أو لوس أنجلوس والعمل التطوعي في المنظمات غير الربحية المحلية.";meta_description
+;en;de;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"Lerne Englisch bei CEL in San Diego oder Los Angeles und nimm nach dem Unterricht an Surfkursen an den besten Stränden Südkaliforniens teil.";meta_description
+;en;fr;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"Apprends l'anglais au CEL à San Diego ou à Los Angeles et profite de cours de surf après les cours sur les plus belles plages du sud de la Californie.";meta_description
+;en;es;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"Aprende inglés en CEL, en San Diego o Los Ángeles, y disfruta de clases de surf después de clase en las mejores playas del sur de California.";meta_description
+;en;it;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"Impara l'inglese al CEL di San Diego o Los Angeles con lezioni di surf dopo la scuola sulle migliori spiagge della California meridionale.";meta_description
+;en;pt;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"Aprende inglês no CEL em San Diego ou Los Angeles, com aulas de surf depois das aulas nas melhores praias do sul da Califórnia.";meta_description
+;en;ko;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"샌디에이고나 로스앤젤레스에 위치한 CEL에서 영어를 배우며, 남부 캘리포니아의 유명 해변에서 방과 후 서핑 수업을 즐겨보세요.";meta_description
+;en;ja;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"サンディエゴまたはロサンゼルスのCELで英語を学び、放課後には南カリフォルニアのトップビーチでサーフィンのレッスンを受けよう。";meta_description
+;en;ar;"Learn English at CEL in San Diego or Los Angeles with after-school surfing lessons at top Southern California beaches.";"تعلم اللغة الإنجليزية في مركز CEL في سان دييغو أو لوس أنجلوس، مع دروس تزلج على الأمواج بعد انتهاء اليوم الدراسي على أفضل شواطئ جنوب كاليفورنيا.";meta_description
+;en;de;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"Verbinde einen Intensiv-Englischkurs in San Diego oder Los Angeles mit praktischer Berufserfahrung in einem US-Unternehmen über CEL.";meta_description
+;en;fr;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"Combine des cours d'anglais intensifs à San Diego ou à Los Angeles avec une expérience professionnelle en entreprise aux États-Unis grâce à CEL.";meta_description
+;en;es;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"Combina un curso intensivo de inglés en San Diego o Los Ángeles con experiencia laboral práctica en una empresa estadounidense a través de CEL.";meta_description
+;en;it;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"Combina un corso intensivo di inglese a San Diego o Los Angeles con un'esperienza lavorativa pratica presso un'azienda statunitense grazie al programma CEL.";meta_description
+;en;pt;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"Combina um curso intensivo de inglês em San Diego ou Los Angeles com experiência profissional prática numa empresa norte-americana através do CEL.";meta_description
+;en;ko;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"CEL을 통해 샌디에이고나 로스앤젤레스에서 집중 영어 과정을 수강하며 미국 기업에서 실무 경험을 쌓아보세요.";meta_description
+;en;ja;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"CELを通じて、サンディエゴまたはロサンゼルスでの集中英語学習と、米国企業での実務経験を組み合わせることができる。";meta_description
+;en;ar;"Combine intensive English study in San Diego or Los Angeles with hands-on work experience at a US company through CEL.";"اجمع بين دراسة اللغة الإنجليزية المكثفة في سان دييغو أو لوس أنجلوس وبين اكتساب خبرة عملية في إحدى الشركات الأمريكية من خلال برنامج CEL.";meta_description
+;en;de;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"Lerne Englisch in San Diego, Los Angeles oder Vancouver mit CEL. Unterricht in kleinen Gruppen, für alle Niveaustufen, Kursbeginn jeden Montag.";meta_description
+;en;fr;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"Apprends l'anglais à San Diego, Los Angeles ou Vancouver avec CEL. Cours en petits groupes, tous niveaux, nouveaux départs tous les lundis.";meta_description
+;en;es;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"Estudia inglés en San Diego, Los Ángeles o Vancouver con CEL. Clases en grupos reducidos, para todos los niveles, con nuevos cursos cada lunes.";meta_description
+;en;it;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"Impara l'inglese a San Diego, Los Angeles o Vancouver con CEL. Lezioni in piccoli gruppi, per tutti i livelli, nuovi corsi ogni lunedì.";meta_description
+;en;pt;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"Estuda inglês em San Diego, Los Angeles ou Vancouver com a CEL. Aulas em pequenos grupos, para todos os níveis, com novas turmas a começar todas as";meta_description
+;en;ko;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"CEL과 함께 샌디에이고, 로스앤젤레스, 또는 밴쿠버에서 영어를 배우세요. 소규모 수업, 모든 레벨 가능, 매주 월요일 새 반 개강.";meta_description
+;en;ja;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"CELでサンディエゴ、ロサンゼルス、またはバンクーバーで英語を学ぼう。少人数制のクラスで、全レベルに対応し、毎週月曜日に開講する。";meta_description
+;en;ar;"Study English in San Diego, Los Angeles, or Vancouver with CEL. Small group classes, all levels, new starts every Monday.";"تعلم اللغة الإنجليزية في سان دييغو أو لوس أنجلوس أو فانكوفر مع مركز CEL. دروس في مجموعات صغيرة، لجميع المستويات، وتبدأ الدورات كل يوم اثنين.";meta_description
