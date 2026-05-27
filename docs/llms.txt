@@ -3,7 +3,7 @@
 > English language schools in San Diego, Los Angeles and Vancouver.
 
 ## Sitemaps
-- https://www.englishcollege.com/sitemap.xml
+- https://cel.englishcollege.com/sitemap.xml
 
 ---
 
@@ -36,7 +36,7 @@
 ## Housing
 
 - [Student Housing – San Diego, Los Angeles & Vancouver | CEL](https://www.englishcollege.com/housing): Find student housing with CEL in San Diego, Los Angeles and Vancouver. Homestays, shared apartments and residences available.
-- [Economy Apartment – Student Housing in Vancouver | CEL](https://www.englishcollege.com/housing/apartment-economy-apt-living-vancouver): Studio units and shared spaces in Vancouver’s Economy Apartment Living, with Wi-Fi and easy transit access to CEL Vancouver.
+- [500 - Something unexpected happened](https://www.englishcollege.com/housing/apartment-economy-apt-living-vancouver): The page you requested unexpectedly failed to load.
 - [Shared Apartment Premium in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-premium-san-diego): Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.
 - [Shared Apartment Standard – Housing in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-standard-san-diego): Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.
 - [Shared Apartment Superior in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-superior-pacific-beach-san-diego): Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.
