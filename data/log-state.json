@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-27T10:35:25.439485-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-27T07:14:04.637839-07:00",
       "detail": {}
     },
@@ -46,15 +51,6 @@
       "detail": {
         "slugs": [
           "perche-i-coinquilini-influenzano-il-tuo-inglese"
-        ]
-      }
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-26T07:22:10.074028-07:00",
-      "detail": {
-        "slugs": [
-          "san-diego-est-elle-sure-sejour-linguistique"
         ]
       }
     }
