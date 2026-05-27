@@ -35,6 +35,25 @@ LANG_PREFIXES = {
     "pt": "/pt/", "it": "/it/", "ja": "/ja/", "ar": "/ar/",
 }
 
+# Webflow blog collection + its `language` reference-field item IDs.
+# A post's native language decides its canonical sitemap URL: English posts
+# live at /post/<slug>; every other language lives at /<lang>/post/<slug>.
+# Weglot's regional sitemaps are unreliable (they omit some live locale pages),
+# so the CMS `language` field — not the regional sitemap — is the source of
+# truth for a post's locale. Keep in sync with tools/weglot/api_sync.py.
+BLOG_COLLECTION_ID = "667453c576e8d35c454ccaae"
+LANGUAGE_ID_MAP = {
+    "6876590744e1f69b128ef245": "en",
+    "6876596a3a4d6e078bebe528": "de",
+    "687659b3281d98a9803a86ae": "fr",
+    "6876591fab42b61d6b9f6a96": "es",
+    "6876597d1d2fe4f1a294fd77": "ko",
+    "687659cca45f80dbea92430c": "it",
+    "6876599de124298a6bd8cb8d": "pt",
+    "687659e4ab42b61d6b9f6a96": "ja",
+    "687659fe11c147ceed4f09cd": "ar",
+}
+
 # Configure logging for GitHub Actions visibility and persistent 'run_log.txt'
 log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 root_logger = logging.getLogger()
@@ -160,6 +179,66 @@ def get_slug_from_post_url(url):
             return slug_part.split('/')[0] # Get the immediate segment after /post/
     return None
 
+def post_url_for(lang_code, slug):
+    """Canonical sitemap URL for a blog post given its native language code.
+
+    English posts live at the root (/post/<slug>); every other language lives
+    under its locale prefix (/<lang>/post/<slug>). This mirrors how Weglot
+    serves the pages and what each post's per-item canonical tag points at.
+    """
+    if not lang_code or lang_code == "en":
+        return f"https://www.englishcollege.com/post/{slug}"
+    return f"https://www.englishcollege.com/{lang_code}/post/{slug}"
+
+def fetch_cms_posts(session, token):
+    """Fetch all blog CMS items (paginated). Returns [] on any failure so the
+    pipeline degrades to regional-sitemap-only dedup rather than crashing."""
+    if not token:
+        return []
+    headers = {"Authorization": f"Bearer {token}", "accept": "application/json"}
+    url = f"https://api.webflow.com/v2/collections/{BLOG_COLLECTION_ID}/items"
+    posts = []
+    offset = 0
+    while True:
+        try:
+            resp = session.get(url, headers=headers, params={"limit": 100, "offset": offset}, timeout=30)
+        except requests.exceptions.RequestException as e:
+            logging.warning(f"CMS API request failed ({e}); CMS-aware locale logic disabled this run.")
+            return []
+        if resp.status_code != 200:
+            logging.warning(f"CMS API returned {resp.status_code}; CMS-aware locale logic disabled this run.")
+            return []
+        data = resp.json()
+        posts.extend(data.get("items", []))
+        total = data.get("pagination", {}).get("total", len(posts))
+        if len(posts) >= total:
+            break
+        offset += 100
+    return posts
+
+def build_post_lang_map(cms_posts):
+    """Map slug -> native language code for every published, non-archived post.
+
+    Unmapped language reference IDs default to English (the Webflow root URL),
+    which is the safe fallback if a new locale is added to the CMS before this
+    script's LANGUAGE_ID_MAP is updated.
+    """
+    lang_by_slug = {}
+    for item in cms_posts:
+        if item.get("isArchived"):
+            continue
+        if not item.get("lastPublished"):
+            continue
+        fd = item.get("fieldData", {})
+        slug = fd.get("slug", "")
+        if not slug:
+            continue
+        lang_id = fd.get("language")
+        if lang_id and lang_id not in LANGUAGE_ID_MAP:
+            logging.warning(f"Unknown language id {lang_id!r} for /post/{slug} — defaulting to English root URL.")
+        lang_by_slug[slug] = LANGUAGE_ID_MAP.get(lang_id, "en")
+    return lang_by_slug
+
 def main():
     logging.info("========== STEP 1: Process Regional Sitemaps ==========")
     regional_urls = []
@@ -185,7 +264,17 @@ def main():
         logging.info(f"\nRemoved {excluded_translation_count} Weglot-excluded translated post URLs from regional sitemaps.")
     logging.info(f"\nTotal Regional URLs: {len(regional_urls)}")
     logging.info(f"Total Unique Regional Slugs from '/post/': {len(regional_slugs)}")
-    
+
+    # Fetch CMS posts once. Used by STEP 2 (drop English-root phantoms of
+    # natively-foreign posts) and STEP 2.5 (inject missing posts at the correct
+    # locale). Gated on WEBFLOW_API_TOKEN; without it post_lang_by_slug is empty
+    # and the script falls back to regional-sitemap-only dedup.
+    webflow_token = os.environ.get("WEBFLOW_API_TOKEN", "").strip()
+    cms_posts = fetch_cms_posts(session, webflow_token)
+    post_lang_by_slug = build_post_lang_map(cms_posts)
+    if post_lang_by_slug:
+        logging.info(f"Loaded native language for {len(post_lang_by_slug)} published CMS posts.")
+
     logging.info("\n========== STEP 2: Process Primary Sitemap ==========")
     primary_urls = fetch_sitemap_urls(session, PRIMARY_SITEMAP)
     logging.info(f"Total Primary URLs Before Filtering: {len(primary_urls)}")
@@ -207,6 +296,7 @@ def main():
     
     cleaned_primary_urls = []
     removed_urls = []
+    removed_foreign_root = []
     removed_category_count = 0
     for item in primary_urls:
         u = item["url"]
@@ -215,6 +305,15 @@ def main():
             continue  # Skip noindex category pages
         if '/post/' in u:
             slug = get_slug_from_post_url(u)
+            is_en_root = urlparse(u).path.startswith('/post/')
+            native = post_lang_by_slug.get(slug)
+            if is_en_root and native and native != "en":
+                # Natively-foreign post: its English-root URL is a phantom whose
+                # canonical lives at /<lang>/post/<slug>. Drop it here regardless
+                # of whether the (unreliable) regional sitemap lists the locale
+                # version — STEP 2.5 injects the correct URL if it's missing.
+                removed_foreign_root.append((native, slug))
+                continue
             if slug and slug in regional_slugs:
                 removed_urls.append((slug, u))
                 continue  # Regional version is the canonical — remove root duplicate
@@ -222,6 +321,10 @@ def main():
 
     if removed_category_count:
         logging.info(f"\nRemoved {removed_category_count} noindex category URLs from primary sitemap.")
+    if removed_foreign_root:
+        logging.info(f"Removed {len(removed_foreign_root)} English-root phantoms of non-English posts (CMS language):")
+        for native, slug in sorted(removed_foreign_root):
+            logging.info(f"  - /post/{slug}  → canonical is /{native}/post/{slug}")
     logging.info(f"\nRemoved {len(removed_urls)} duplicate English '/post/' URLs.")
     if removed_urls:
         logging.info("Removed English phantom URLs (slug → regional version exists):")
@@ -230,39 +333,14 @@ def main():
     logging.info(f"Total Primary URLs After Filtering: {len(cleaned_primary_urls)}")
 
     logging.info("\n========== STEP 2.5: Inject Missing Published Posts from CMS ==========")
-    webflow_token = os.environ.get("WEBFLOW_API_TOKEN", "").strip()
     injected_count = 0
-    if webflow_token:
+    if cms_posts:
         existing_post_slugs = set()
         for item in cleaned_primary_urls + regional_urls:
             slug = get_slug_from_post_url(item["url"])
             if slug:
                 existing_post_slugs.add(slug)
 
-        # Fetch all published posts from Webflow CMS
-        cms_headers = {"Authorization": f"Bearer {webflow_token}", "accept": "application/json"}
-        cms_offset = 0
-        cms_posts = []
-        while True:
-            resp = session.get(
-                "https://api.webflow.com/v2/collections/667453c576e8d35c454ccaae/items",
-                headers=cms_headers,
-                params={"limit": 100, "offset": cms_offset},
-                timeout=30,
-            )
-            if resp.status_code != 200:
-                logging.warning(f"CMS API returned {resp.status_code}, skipping injection")
-                break
-            data = resp.json()
-            cms_posts.extend(data.get("items", []))
-            total = data.get("pagination", {}).get("total", len(cms_posts))
-            if len(cms_posts) >= total:
-                break
-            cms_offset += 100
-
-        logging.info(f"CMS returned {len(cms_posts)} total items")
-
-        ns_sitemap = "http://www.sitemaps.org/schemas/sitemap/0.9"
         for item in cms_posts:
             if item.get("isArchived", False):
                 continue
@@ -273,8 +351,10 @@ def main():
             if not slug or slug in existing_post_slugs:
                 continue
 
-            # This post is published but missing from sitemap — inject it
-            loc_url = f"https://www.englishcollege.com/post/{slug}"
+            # Published but missing from every sitemap — inject it at its correct
+            # locale (English at the root, every other language locale-prefixed).
+            native = post_lang_by_slug.get(slug, "en")
+            loc_url = post_url_for(native, slug)
             url_el = etree.Element("url")
             loc_el = etree.SubElement(url_el, "loc")
             loc_el.text = loc_url
@@ -283,11 +363,13 @@ def main():
             cleaned_primary_urls.append({"url": loc_url, "element": url_el})
             existing_post_slugs.add(slug)
             injected_count += 1
-            logging.info(f"  Injected: /post/{slug}")
+            logging.info(f"  Injected: {loc_url}")
 
         logging.info(f"Injected {injected_count} missing published posts from CMS")
-    else:
+    elif not webflow_token:
         logging.info("WEBFLOW_API_TOKEN not set — skipping CMS injection")
+    else:
+        logging.info("No CMS posts available — skipping CMS injection")
 
     logging.info("\n========== STEP 3: Combine and Generate Master Sitemap ==========")
     all_final_urls = cleaned_primary_urls + regional_urls
