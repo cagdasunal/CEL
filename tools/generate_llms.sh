@@ -115,7 +115,7 @@ process_site() {
   local gen_err="${full_output}.genlog"
   if ! npx -y llmstxt gen "$sitemap_url" >> "$full_output" 2>"$gen_err"; then
     log_error "  llmstxt gen failed for $sitemap_url:"
-    sed 's/^/    /' "$gen_err" >&2 2>/dev/null || true
+    sed 's/^/    /' "$gen_err" >&2 || true
     rm -f "$gen_err"
     # Restore the previous good file if we backed one up
     if [[ -n "$backup" && -f "$backup" ]]; then
