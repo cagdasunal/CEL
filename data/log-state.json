@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-05-27T12:38:33.374592-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-05-27T10:35:25.439485-07:00",
       "detail": {}
     },
@@ -44,15 +49,6 @@
       "kind": "no_change",
       "ts": "2026-05-26T12:47:32.422981-07:00",
       "detail": {}
-    },
-    {
-      "kind": "weglot_update",
-      "ts": "2026-05-26T10:41:33.416065-07:00",
-      "detail": {
-        "slugs": [
-          "perche-i-coinquilini-influenzano-il-tuo-inglese"
-        ]
-      }
     }
   ]
 }
