@@ -54,29 +54,39 @@ LANGUAGE_ID_MAP = {
     "687659fe11c147ceed4f09cd": "ar",
 }
 
-# Configure logging for GitHub Actions visibility and persistent 'run_log.txt'
-log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
+# Logging is configured in _setup_logging(), invoked from main() — NOT at import
+# time — so importing this module (e.g. from tests) has no filesystem side effects
+# (rules/quality.md §12: module-level code must be side-effect-free).
+_logging_configured = False
 
-# Console Output
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(log_formatter)
-root_logger.addHandler(console_handler)
+def _setup_logging():
+    """Configure console + persistent run_log.txt logging. Idempotent."""
+    global _logging_configured
+    if _logging_configured:
+        return
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
 
-# File Output (Overwrite mode so it doesn't grow infinitely, or append if preferred)
-# We will use append mode, but truncate it if it gets too large
-file_handler = logging.FileHandler('run_log.txt', mode='a')
-file_handler.setFormatter(log_formatter)
-root_logger.addHandler(file_handler)
+    # Console output
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
 
-# Keep log file size reasonable (truncate if > 1MB)
-try:
-    if os.path.getsize('run_log.txt') > 1024 * 1024:
-        with open('run_log.txt', 'w') as f:
-            f.write("--- Log Rotated ---\n")
-except FileNotFoundError:
-    pass
+    # File output (append mode, truncated below if it grows past 1MB)
+    file_handler = logging.FileHandler('run_log.txt', mode='a')
+    file_handler.setFormatter(log_formatter)
+    root_logger.addHandler(file_handler)
+
+    # Keep log file size reasonable (truncate if > 1MB)
+    try:
+        if os.path.getsize('run_log.txt') > 1024 * 1024:
+            with open('run_log.txt', 'w') as f:
+                f.write("--- Log Rotated ---\n")
+    except FileNotFoundError:
+        pass
+
+    _logging_configured = True
 
 def load_weglot_exclusions():
     """Load the Weglot exclusion map: { "/post/slug": ["ar","de",...], ... }"""
@@ -128,12 +138,16 @@ def create_robust_session():
     session.mount("https://", adapter)
     return session
 
+# Hardened XML parser — disable external entity resolution and network access
+# (defense-in-depth; we only parse our own first-party sitemaps).
+_SITEMAP_XML_PARSER = etree.XMLParser(resolve_entities=False, no_network=True)
+
 def fetch_sitemap_urls(session, url):
     logging.info(f"Fetching {url}... ")
     try:
         response = session.get(url, timeout=15)
         response.raise_for_status()
-        root = etree.fromstring(response.content)
+        root = etree.fromstring(response.content, _SITEMAP_XML_PARSER)
         
         # Find all <url> elements to preserve metadata (lastmod, changefreq, images, etc.)
         nsmap = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
@@ -234,12 +248,15 @@ def build_post_lang_map(cms_posts):
         if not slug:
             continue
         lang_id = fd.get("language")
-        if lang_id and lang_id not in LANGUAGE_ID_MAP:
+        if not lang_id:
+            logging.warning(f"/post/{slug} has no language field — defaulting to English root URL.")
+        elif lang_id not in LANGUAGE_ID_MAP:
             logging.warning(f"Unknown language id {lang_id!r} for /post/{slug} — defaulting to English root URL.")
         lang_by_slug[slug] = LANGUAGE_ID_MAP.get(lang_id, "en")
     return lang_by_slug
 
 def main():
+    _setup_logging()
     logging.info("========== STEP 1: Process Regional Sitemaps ==========")
     regional_urls = []
     regional_slugs = set()
@@ -373,6 +390,18 @@ def main():
 
     logging.info("\n========== STEP 3: Combine and Generate Master Sitemap ==========")
     all_final_urls = cleaned_primary_urls + regional_urls
+    # Final safety dedup by loc URL — belt-and-suspenders against any overlap
+    # between the cleaned primary set, the regional sets, and CMS injections.
+    seen_urls = set()
+    deduped = []
+    for item in all_final_urls:
+        if item["url"] in seen_urls:
+            continue
+        seen_urls.add(item["url"])
+        deduped.append(item)
+    if len(deduped) != len(all_final_urls):
+        logging.info(f"Final dedup removed {len(all_final_urls) - len(deduped)} duplicate URL(s).")
+    all_final_urls = deduped
     logging.info(f"Total Combined URLs for Master Sitemap: {len(all_final_urls)}")
     
     if len(all_final_urls) == 0:

@@ -11,7 +11,7 @@
 #   ./tools/generate_llms.sh --help          # Show help
 # ==============================================================================
 
-set -eo pipefail
+set -euo pipefail
 
 # Make sure we can find npx and node
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -74,14 +74,23 @@ process_site() {
   local site_id="$1"
   local site_name="$2"
   local site_desc="$3"
-  local sitemap_url="$4"
+  local sitemap_url="$4"          # URL fed to llmstxt (may be a CI-local override)
   local output_path="$5"
+  local public_sitemap_url="$6"   # canonical public URL, advertised in the header
 
   local full_output="$REPO_ROOT/$output_path"
 
   log_info "Processing site: $site_name ($site_id)"
   log_info "  Sitemap: $sitemap_url"
   log_info "  Output:  $full_output"
+
+  # Back up the existing good file BEFORE truncating, so a failed or degraded
+  # generation can restore it (the truncate below would otherwise destroy it).
+  local backup=""
+  if [[ -f "$full_output" && -s "$full_output" ]]; then
+    backup="${full_output}.bak"
+    cp "$full_output" "$backup"
+  fi
 
   # Truncate or create output file
   > "$full_output"
@@ -93,7 +102,7 @@ process_site() {
     echo "> $site_desc"
     echo ""
     echo "## Sitemaps"
-    echo "- https://www.englishcollege.com/sitemap.xml"
+    echo "- $public_sitemap_url"
     echo ""
     echo "---"
     echo ""
@@ -101,30 +110,34 @@ process_site() {
 
   log_info "  Running llmstxt gen (this may take several minutes)..."
 
-  # Back up existing file in case generation fails
-  local backup=""
-  if [[ -f "$full_output" ]]; then
-    backup="${full_output}.bak"
-    cp "$full_output" "$backup"
-  fi
-
-  # Run generator — append output to file
-  if ! npx -y llmstxt gen "$sitemap_url" >> "$full_output" 2>/dev/null; then
-    # Restore backup if generation failed
+  # Run generator — append output to file. Capture stderr to a log (not
+  # /dev/null) so silent failures are diagnosable; removed on success.
+  local gen_err="${full_output}.genlog"
+  if ! npx -y llmstxt gen "$sitemap_url" >> "$full_output" 2>"$gen_err"; then
+    log_error "  llmstxt gen failed for $sitemap_url:"
+    sed 's/^/    /' "$gen_err" >&2 2>/dev/null || true
+    rm -f "$gen_err"
+    # Restore the previous good file if we backed one up
     if [[ -n "$backup" && -f "$backup" ]]; then
       mv "$backup" "$full_output"
-      log_warn "  Generation failed — kept existing llms.txt"
+      log_warn "  Generation failed — restored previous llms.txt"
     else
       rm -f "$full_output"
       log_error "  Failed to extract content from sitemap: $sitemap_url"
     fi
     return 1
   fi
+  rm -f "$gen_err"
 
-  # Fix Multiple H1: llmstxt tool may add its own H1 — demote to H2
-  sed -i 's/^# /## /' "$full_output"
-  # Restore OUR H1 (first line)
-  sed -i '1s/^## /# /' "$full_output"
+  # Demote any H1 the tool emitted to H2, then restore OUR H1 (the first line).
+  # Portable in-place edit — GNU and BSD sed disagree on `-i`, so use a temp file.
+  local tmp_fix
+  tmp_fix=$(mktemp)
+  if sed -e 's/^# /## /' -e '1s/^## /# /' "$full_output" > "$tmp_fix"; then
+    mv "$tmp_fix" "$full_output"
+  else
+    rm -f "$tmp_fix"
+  fi
 
   # Safety check: if output is suspiciously small (< 100 lines), the tool failed silently
   local line_count
@@ -188,20 +201,29 @@ fi
 
 log_info "Found $SITE_COUNT site(s) in config."
 
+# Validate --site up front — fail fast instead of looping over nothing.
+if [[ -n "$FILTER_SITE" ]]; then
+  FOUND=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites.some(s=>s.id==='$FILTER_SITE'))")
+  if [[ "$FOUND" != "true" ]]; then
+    die "Site '$FILTER_SITE' not found in config. Available: $(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites.map(s=>s.id).join(', '))")"
+  fi
+fi
+
 ERRORS=0
 
 for i in $(seq 0 $((SITE_COUNT - 1))); do
   SITE_ID=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].id)")
   SITE_NAME=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].name)")
   SITE_DESC=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].description)")
-  SITEMAP_URL=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].sitemap_url)")
+  PUBLIC_SITEMAP_URL=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].sitemap_url)")
   # LLMS_SITEMAP_URL is a CI-only override (e.g. http://localhost:8081/sitemap.xml)
-  # that replaces the CDN URL so llms.txt is generated from the freshly built
-  # sitemap.xml rather than a stale CDN copy.
+  # that replaces the CDN URL so llms.txt is GENERATED from the freshly built
+  # sitemap.xml rather than a stale CDN copy. It does NOT change the canonical
+  # URL advertised in the llms.txt header — that stays PUBLIC_SITEMAP_URL.
   # WARNING: this override applies to ALL sites in the loop with the same URL.
   # If a second site is added to sites.json, use per-site env vars instead
   # (e.g. LLMS_SITEMAP_URL_<SITE_ID_UPPERCASE>) to avoid cross-site contamination.
-  SITEMAP_URL="${LLMS_SITEMAP_URL:-$SITEMAP_URL}"
+  GEN_SITEMAP_URL="${LLMS_SITEMAP_URL:-$PUBLIC_SITEMAP_URL}"
   OUTPUT=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites[$i].output)")
 
   # Filter if --site was specified
@@ -209,18 +231,10 @@ for i in $(seq 0 $((SITE_COUNT - 1))); do
     continue
   fi
 
-  if ! process_site "$SITE_ID" "$SITE_NAME" "$SITE_DESC" "$SITEMAP_URL" "$OUTPUT"; then
+  if ! process_site "$SITE_ID" "$SITE_NAME" "$SITE_DESC" "$GEN_SITEMAP_URL" "$OUTPUT" "$PUBLIC_SITEMAP_URL"; then
     ERRORS=$((ERRORS + 1))
   fi
 done
-
-if [[ -n "$FILTER_SITE" ]]; then
-  # Check if site was found
-  FOUND=$(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites.some(s=>s.id==='$FILTER_SITE'))")
-  if [[ "$FOUND" != "true" ]]; then
-    die "Site '$FILTER_SITE' not found in config. Available: $(node_val "const c=require('$SITES_CONFIG'); console.log(c.sites.map(s=>s.id).join(', '))")"
-  fi
-fi
 
 if [[ "$ERRORS" -gt 0 ]]; then
   log_error "$ERRORS site(s) failed. Check logs above."
