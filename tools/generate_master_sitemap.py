@@ -138,16 +138,16 @@ def create_robust_session():
     session.mount("https://", adapter)
     return session
 
-# Hardened XML parser — disable external entity resolution and network access
-# (defense-in-depth; we only parse our own first-party sitemaps).
-_SITEMAP_XML_PARSER = etree.XMLParser(resolve_entities=False, no_network=True)
-
 def fetch_sitemap_urls(session, url):
     logging.info(f"Fetching {url}... ")
     try:
         response = session.get(url, timeout=15)
         response.raise_for_status()
-        root = etree.fromstring(response.content, _SITEMAP_XML_PARSER)
+        # Fresh hardened parser per call — disable external entity resolution and
+        # network access (defense-in-depth), and avoid sharing mutable parser
+        # state across fetches (a malformed sitemap mustn't affect later parses).
+        parser = etree.XMLParser(resolve_entities=False, no_network=True)
+        root = etree.fromstring(response.content, parser)
         
         # Find all <url> elements to preserve metadata (lastmod, changefreq, images, etc.)
         nsmap = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
