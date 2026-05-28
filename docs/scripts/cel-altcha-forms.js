@@ -10,6 +10,16 @@
  * FAIL-OPEN by design: if the widget never solves, or /verify times out/errors,
  * the form still submits. The Submit button can never be permanently dead-locked.
  *
+ * TURNSTILE COEXISTENCE: Webflow's native Cloudflare Turnstile is enabled site-wide,
+ * but its own widget never renders on this "Blocks" form — Webflow's forms bundle binds
+ * the Turnstile render to a jQuery "ready" event that doesn't fire post-load under
+ * jQuery 3.5.1 — so the cf-turnstile-response token its SERVER requires is never produced
+ * and every submit returns 422 ("Could not process the form submission"). This glue
+ * renders Turnstile itself using the form's OWN data-turnstile-sitekey, captures the
+ * token, and submits it as cf-turnstile-response (and sets data-wf-no-turnstile so
+ * Webflow's broken flow can't disable the button / hang). Turnstile stays a real second
+ * layer; ALTCHA is the first. If the form has no Turnstile sitekey, this is a no-op.
+ *
  * Worker: https://cel-altcha.max-c7e.workers.dev  (/challenge, /verify)
  * Hosting: cel.englishcollege.com/scripts/cel-altcha-forms.js
  */
@@ -142,6 +152,90 @@
     ]);
   }
 
+  // ─── Webflow native Turnstile coexistence ──────────────────────────────────
+  // The form carries a data-turnstile-sitekey and Webflow's server REQUIRES a valid
+  // cf-turnstile-response token, but Webflow's own widget never renders on this Blocks
+  // form (its bundle binds the render to a jQuery "ready" event that never fires under
+  // jQuery 3.5.1). We render Turnstile ourselves with the form's OWN sitekey, capture
+  // the token, and attach it. No sitekey on the form → these are all no-ops.
+
+  function turnstileSitekey(form) {
+    return form.getAttribute("data-turnstile-sitekey") || null;
+  }
+
+  // Render an invisible Turnstile (idempotent). Kept full-size + opacity:0 so the
+  // challenge actually executes (it won't run inside a display:none container).
+  function renderTurnstile(form) {
+    if (form.__celTsRendered) return;
+    const sitekey = turnstileSitekey(form);
+    if (!sitekey) return;
+    if (!window.turnstile || typeof window.turnstile.render !== "function") return;
+    let holder = form.querySelector(".cel-turnstile-holder");
+    if (!holder) {
+      holder = document.createElement("div");
+      holder.className = "cel-turnstile-holder";
+      holder.style.cssText = "position:fixed;right:0;bottom:0;opacity:0;pointer-events:none;z-index:-1;";
+      form.appendChild(holder);
+    }
+    try {
+      form.__celTsWidgetId = window.turnstile.render(holder, {
+        sitekey: sitekey,
+        callback: function (token) { form.__celTsToken = token; },
+        "error-callback": function () { form.__celTsToken = null; },
+        "expired-callback": function () { form.__celTsToken = null; },
+      });
+      form.__celTsRendered = true;
+    } catch (e) { /* no-op — fail open */ }
+  }
+
+  function waitForTurnstileToken(form) {
+    return new Promise(function (resolve) {
+      if (form.__celTsToken) return resolve(form.__celTsToken);
+      let n = 0;
+      const t = setInterval(function () {
+        n++;
+        if (form.__celTsToken) { clearInterval(t); resolve(form.__celTsToken); }
+        else if (n >= 80) { clearInterval(t); resolve(form.__celTsToken || null); } // ~8s cap
+      }, 100);
+    });
+  }
+
+  function attachTurnstileToken(form) {
+    if (!turnstileSitekey(form)) return Promise.resolve(); // not Turnstile-protected
+    renderTurnstile(form); // ensure the widget exists (idempotent)
+    return waitForTurnstileToken(form).then(function (token) {
+      if (!token) return; // FAIL-OPEN: submit without it (no worse than the broken default)
+      let inp = form.querySelector('input[name="cf-turnstile-response"]');
+      if (!inp) {
+        inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = "cf-turnstile-response";
+        form.appendChild(inp);
+      }
+      inp.value = token;
+    });
+  }
+
+  // Turnstile tokens are single-use; reset so any resubmit gets a fresh one.
+  function refreshTurnstile(form) {
+    form.__celTsToken = null;
+    try {
+      if (form.__celTsWidgetId != null && window.turnstile && typeof window.turnstile.reset === "function") {
+        window.turnstile.reset(form.__celTsWidgetId);
+      }
+    } catch (e) { /* no-op */ }
+  }
+
+  function prepareTurnstile(form) {
+    if (!turnstileSitekey(form)) return;
+    form.setAttribute("data-wf-no-turnstile", ""); // stop Webflow's broken native flow
+    const onFocus = function () { // pre-solve on first interaction so the token is ready by submit
+      form.removeEventListener("focusin", onFocus);
+      renderTurnstile(form);
+    };
+    form.addEventListener("focusin", onFocus);
+  }
+
   function gate(form) {
     form.addEventListener(
       "submit",
@@ -153,16 +247,20 @@
           const payload = await waitForPayload(form);
           let result = "timeout";
           if (payload) result = await verifyPayload(payload);
-          // FAIL-OPEN on no-payload / timeout / network error; only an explicit
-          // "fail" (forged/expired solution) blocks and re-arms the widget.
-          if (payload === null || result === "ok" || result === "timeout") {
-            form.__celAltchaPassed = true;
-            if (typeof form.requestSubmit === "function") form.requestSubmit(submitBtn(form));
-            else form.submit();
-          } else {
+          // Explicit ALTCHA "fail" (forged/expired solution) blocks + re-arms the widget.
+          // Everything else (ok / timeout / no-payload / network error) FAILS OPEN.
+          if (!(payload === null || result === "ok" || result === "timeout")) {
             const w = widgetOf(form);
             try { if (w && typeof w.reset === "function") w.reset(); } catch (err) { /* no-op */ }
+            return;
           }
+          // Attach a fresh Webflow Turnstile token (no-op if the form isn't Turnstile-protected).
+          try { await attachTurnstileToken(form); } catch (err) { /* fail open — never block submit */ }
+          form.__celAltchaPassed = true;
+          if (typeof form.requestSubmit === "function") form.requestSubmit(submitBtn(form));
+          else form.submit();
+          form.__celAltchaPassed = false; // re-arm: next submit re-verifies + refreshes token
+          refreshTurnstile(form); // invalidate the single-use token just sent
         })();
       },
       true, // capture: run before webflow.js's submit handler
@@ -173,6 +271,7 @@
     if (form.__celAltchaReady) return;
     form.__celAltchaReady = true;
     injectWidget(form, lang, rtl);
+    prepareTurnstile(form);
     gate(form);
   }
 
