@@ -80,22 +80,6 @@
     return null;
   }
 
-  // Neutralize ALTCHA's links to altcha.org (footer link + logo anchor) so a
-  // visitor can't accidentally click off-site. Keeps the text/logo visible but
-  // non-clickable. Re-applied on every re-render via a MutationObserver.
-  function stripAltchaLinks(root) {
-    const links = root.querySelectorAll('a[href*="altcha.org"]');
-    for (let i = 0; i < links.length; i++) {
-      const a = links[i];
-      a.removeAttribute("href");
-      a.removeAttribute("target");
-      a.style.pointerEvents = "none";
-      a.style.cursor = "default";
-      a.style.textDecoration = "none";
-      a.style.color = "inherit";
-    }
-  }
-
   // Put the widget inside .form_field-altcha (use the form's own element if the
   // designer added one; otherwise create it before the submit button).
   function placeWidget(form, w) {
@@ -114,28 +98,13 @@
     if (widgetOf(form)) return; // respect a manually-placed widget
     const w = document.createElement("altcha-widget");
     w.setAttribute("challenge", CHALLENGE_URL); // v3 attribute name (NOT the old "challengeurl")
-    w.setAttribute("auto", "onload"); // solve invisibly on load — no click needed
+    w.setAttribute("auto", "onload"); // solve the proof-of-work in the background on load
     w.setAttribute("name", "altcha"); // hidden field submitted with the form
-    w.setAttribute("language", lang); // page language (mapped to ALTCHA i18n code)
-    if (rtl) w.setAttribute("dir", "rtl"); // Arabic
+    w.setAttribute("language", lang); // for a11y text / any adaptive challenge
+    if (rtl) w.setAttribute("dir", "rtl");
     w.className = "cel-altcha";
-    // Brand background (cream); set on the host so it cascades to .altcha-main.
-    w.style.setProperty("--altcha-color-base", "#F9F1DF");
-    w.style.setProperty("--altcha-color-base-content", "#37332c"); // dark text for contrast
-    // Match the form's .form_checkbox-icon: 20px, 1px #E8DECA border, 5px radius,
-    // black fill + white check when checked (ALTCHA's checked state uses --altcha-color-success).
-    w.style.setProperty("--altcha-checkbox-size", "20px");
-    w.style.setProperty("--altcha-checkbox-border-width", "1px");
-    w.style.setProperty("--altcha-checkbox-border-color", "#E8DECA");
-    w.style.setProperty("--altcha-checkbox-border-radius", "5px");
-    w.style.setProperty("--altcha-color-success", "#000000");
-    w.style.setProperty("--altcha-color-success-content", "#FFFFFF");
+    w.style.display = "none"; // INVISIBLE captcha — no visible checkbox/widget
     placeWidget(form, w);
-    stripAltchaLinks(w);
-    const obs = new MutationObserver(function () {
-      stripAltchaLinks(w);
-    });
-    obs.observe(w, { childList: true, subtree: true });
   }
 
   function waitForPayload(form) {
