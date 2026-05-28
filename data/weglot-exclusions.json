@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-05-28T12:00:51.636776+00:00",
+  "last_sync": "2026-05-28T16:21:03.903015+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -4829,6 +4829,666 @@
       "source": "api",
       "url_path": "/post/perche-i-coinquilini-influenzano-il-tuo-inglese",
       "added_at": "2026-05-26T17:38:40.706181+00:00"
+    },
+    "impara-inglese-a-vancouver-luoghi-top": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/impara-inglese-a-vancouver-luoghi-top",
+      "added_at": "2026-05-28T16:21:03.902708+00:00"
+    },
+    "potenzia-la-tua-carriera-come-un-soggiorno-linguistico-in-california-migliora-il-tuo-profilo": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/potenzia-la-tua-carriera-come-un-soggiorno-linguistico-in-california-migliora-il-tuo-profilo",
+      "added_at": "2026-05-28T16:21:03.902732+00:00"
+    },
+    "englischlernen-sprachaufenthalt-usa-statt-onlinekurs-copy": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/englischlernen-sprachaufenthalt-usa-statt-onlinekurs-copy",
+      "added_at": "2026-05-28T16:21:03.902738+00:00"
+    },
+    "vita-locale-a-san-diego-vivere-come-un-local": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/vita-locale-a-san-diego-vivere-come-un-local",
+      "added_at": "2026-05-28T16:21:03.902742+00:00"
+    },
+    "la-verita-sui-soggiorni-linguistici": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/la-verita-sui-soggiorni-linguistici",
+      "added_at": "2026-05-28T16:21:03.902746+00:00"
+    },
+    "imparare-inglese-usa-consigli": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-usa-consigli",
+      "added_at": "2026-05-28T16:21:03.902749+00:00"
+    },
+    "san-diego-soggiorno-linguistico-guida-completa": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/san-diego-soggiorno-linguistico-guida-completa",
+      "added_at": "2026-05-28T16:21:03.902753+00:00"
+    },
+    "usa-cultura-7-cose-sorprendenti-soggiorno-linguistico": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/usa-cultura-7-cose-sorprendenti-soggiorno-linguistico",
+      "added_at": "2026-05-28T16:21:03.902756+00:00"
+    },
+    "soggiorno-linguistico-california-soft-skills": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/soggiorno-linguistico-california-soft-skills",
+      "added_at": "2026-05-28T16:21:03.902760+00:00"
+    },
+    "imparare-inglese-canada-consigli-alloggio": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-canada-consigli-alloggio",
+      "added_at": "2026-05-28T16:21:03.902763+00:00"
+    },
+    "imparare-inglese-usa-vs-corso-online": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-usa-vs-corso-online",
+      "added_at": "2026-05-28T16:21:03.902774+00:00"
+    },
+    "perche-canada-miglior-soggiorno-linguistico-fatti": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/perche-canada-miglior-soggiorno-linguistico-fatti",
+      "added_at": "2026-05-28T16:21:03.902777+00:00"
+    },
+    "quanto-costa-un-soggiorno-linguistico-negli-usa": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/quanto-costa-un-soggiorno-linguistico-negli-usa",
+      "added_at": "2026-05-28T16:21:03.902780+00:00"
+    },
+    "vita-locale-san-diego-vivere-come-local": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/vita-locale-san-diego-vivere-come-local",
+      "added_at": "2026-05-28T16:21:03.902783+00:00"
+    },
+    "come-imparare-inglese-allestero-leadership-competenze": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/come-imparare-inglese-allestero-leadership-competenze",
+      "added_at": "2026-05-28T16:21:03.902786+00:00"
+    },
+    "pacific-beach-mattine-serate-san-diego": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/pacific-beach-mattine-serate-san-diego",
+      "added_at": "2026-05-28T16:21:03.902789+00:00"
+    },
+    "guida-famiglia-ospitante-usa-canada": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/guida-famiglia-ospitante-usa-canada",
+      "added_at": "2026-05-28T16:21:03.902792+00:00"
+    },
+    "fine-settimana-vancouver-segreti-locali-nascosti": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/fine-settimana-vancouver-segreti-locali-nascosti",
+      "added_at": "2026-05-28T16:21:03.902795+00:00"
+    },
+    "cultura-allestero-come-prosperare-studente-linguistico": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/cultura-allestero-come-prosperare-studente-linguistico",
+      "added_at": "2026-05-28T16:21:03.902798+00:00"
+    },
+    "santa-monica-studio-vista-oceano": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/santa-monica-studio-vista-oceano",
+      "added_at": "2026-05-28T16:21:03.902801+00:00"
+    },
+    "percorso-inglese-san-diego": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/percorso-inglese-san-diego",
+      "added_at": "2026-05-28T16:21:03.902804+00:00"
+    },
+    "pianifica-corso-inglese-canada": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/pianifica-corso-inglese-canada",
+      "added_at": "2026-05-28T16:21:03.902839+00:00"
+    },
+    "imparare-inglese-california-avventure-weekend": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/imparare-inglese-california-avventure-weekend",
+      "added_at": "2026-05-28T16:21:03.902844+00:00"
+    },
+    "storia-beatriz-scelto-vancouver-perche-tornata": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/storia-beatriz-scelto-vancouver-perche-tornata",
+      "added_at": "2026-05-28T16:21:03.902847+00:00"
+    },
+    "impara-inglese-canada-vancouver-crescita": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/impara-inglese-canada-vancouver-crescita",
+      "added_at": "2026-05-28T16:21:03.902850+00:00"
+    },
+    "saendieigoreul-eohagyeonsu-dosiro-seontaeghaeya-halgga-dangsinyi-modeun-jilmune-dabhaedeuribnida": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/saendieigoreul-eohagyeonsu-dosiro-seontaeghaeya-halgga-dangsinyi-modeun-jilmune-dabhaedeuribnida",
+      "added_at": "2026-05-28T16:21:03.902854+00:00"
+    },
+    "dogileseo-kaelriponiaggaji-santamonika-cel-inteon-risa-lisa-reul-sogaehabnida": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/dogileseo-kaelriponiaggaji-santamonika-cel-inteon-risa-lisa-reul-sogaehabnida",
+      "added_at": "2026-05-28T16:21:03.902860+00:00"
+    },
+    "munhwawa-gihoeyi-muneul-yeoneun-bangbeob-wae-eohagweoneun-dansunhan-yeongeo-hagseubeul-neomeoseolgga": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/munhwawa-gihoeyi-muneul-yeoneun-bangbeob-wae-eohagweoneun-dansunhan-yeongeo-hagseubeul-neomeoseolgga",
+      "added_at": "2026-05-28T16:21:03.902864+00:00"
+    },
+    "ai-sidae-yeongeoreul-gajang-bbareuge-maseuteohaneun-bangbeob": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/ai-sidae-yeongeoreul-gajang-bbareuge-maseuteohaneun-bangbeob",
+      "added_at": "2026-05-28T16:21:03.902869+00:00"
+    },
+    "hangugeseo-kaelriponiaro-yeongeo-gongbuwa-haeoe-inteonsib-yeojeong": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/hangugeseo-kaelriponiaro-yeongeo-gongbuwa-haeoe-inteonsib-yeojeong",
+      "added_at": "2026-05-28T16:21:03.902872+00:00"
+    },
+    "saendiegoyi-rokeol-raipeu---hyeonjiinceoreom-salabogi": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/saendiegoyi-rokeol-raipeu---hyeonjiinceoreom-salabogi",
+      "added_at": "2026-05-28T16:21:03.902875+00:00"
+    },
+    "yeongeoreul-wanbyeoghage-hago-sipnayo-i-eohagyeonsu-peurogeuraemdeuli-dangsinyi-modeun-geoseul-baggweojul-geosibnida": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/yeongeoreul-wanbyeoghage-hago-sipnayo-i-eohagyeonsu-peurogeuraemdeuli-dangsinyi-modeun-geoseul-baggweojul-geosibnida",
+      "added_at": "2026-05-28T16:21:03.902878+00:00"
+    },
+    "kaenada-eohagyeonsu-vs-migug-eohagyeonsu-eodiga-deo-joheulgga": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/kaenada-eohagyeonsu-vs-migug-eohagyeonsu-eodiga-deo-joheulgga",
+      "added_at": "2026-05-28T16:21:03.902881+00:00"
+    },
+    "migug-eohagyeonsu-seobu-jiyeog-teughi-lawa-saendieigoga-coejeogyi-seontaegin-iyu": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/migug-eohagyeonsu-seobu-jiyeog-teughi-lawa-saendieigoga-coejeogyi-seontaegin-iyu",
+      "added_at": "2026-05-28T16:21:03.902884+00:00"
+    },
+    "beurajileseo-kaelriponiaggaji-haeoeeseo-yeongeo-baeugi": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/beurajileseo-kaelriponiaggaji-haeoeeseo-yeongeo-baeugi",
+      "added_at": "2026-05-28T16:21:03.902887+00:00"
+    },
+    "cel-saendieigo-eohagyeonsu-gyeongheom-sueob-mannam-kaelriponia-ilsangyi-modeun-geos": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/cel-saendieigo-eohagyeonsu-gyeongheom-sueob-mannam-kaelriponia-ilsangyi-modeun-geos",
+      "added_at": "2026-05-28T16:21:03.902890+00:00"
+    },
+    "kaelriponiaeseo-hamyangdoeneun-haegsim-yeogryanggwa-geu-yeogryangi-jigmu-suhaengeseo-gajneun-jungyoseong": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/kaelriponiaeseo-hamyangdoeneun-haegsim-yeogryanggwa-geu-yeogryangi-jigmu-suhaengeseo-gajneun-jungyoseong",
+      "added_at": "2026-05-28T16:21:03.902893+00:00"
+    },
+    "gyeongryeog-sangseungyi-jireumgil-kaelriponia-eohagyeonsu": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/gyeongryeog-sangseungyi-jireumgil-kaelriponia-eohagyeonsu",
+      "added_at": "2026-05-28T16:21:03.902896+00:00"
+    },
+    "hwaldong-haebyeon-saeroun-mannam-cel-saendieigoeseoyi-hagsaeng-saenghwal": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/hwaldong-haebyeon-saeroun-mannam-cel-saendieigoeseoyi-hagsaeng-saenghwal",
+      "added_at": "2026-05-28T16:21:03.902901+00:00"
+    },
+    "baenkubeoeseo-ggog-gabwaya-hal-areumdaun-myeongsodeul---eohagyeonsusaengege-ddag-majneun-yeohaeng-koseu": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/baenkubeoeseo-ggog-gabwaya-hal-areumdaun-myeongsodeul---eohagyeonsusaengege-ddag-majneun-yeohaeng-koseu",
+      "added_at": "2026-05-28T16:21:03.902904+00:00"
+    },
+    "onrain-yeongeo-gangyineun-ije-geuman-wae-migug-eohagyeonsuga-yeongeo-silryeogeul-deo-bbareugo-hyogwajeogeuro-hyangsangsikineun-coeseonyi-seontaeginji-alaboseyo": {
+      "language": "ko",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ja",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/onrain-yeongeo-gangyineun-ije-geuman-wae-migug-eohagyeonsuga-yeongeo-silryeogeul-deo-bbareugo-hyogwajeogeuro-hyangsangsikineun-coeseonyi-seontaeginji-alaboseyo",
+      "added_at": "2026-05-28T16:21:03.902907+00:00"
+    },
+    "quelles-missions-en-marketing-pour-les-stagiaires-chez-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/quelles-missions-en-marketing-pour-les-stagiaires-chez-cel",
+      "added_at": "2026-05-28T16:21:03.902910+00:00"
+    },
+    "stage-en-californie-dans-une-ecole-internationale-pourquoi-jai-choisi-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/stage-en-californie-dans-une-ecole-internationale-pourquoi-jai-choisi-cel",
+      "added_at": "2026-05-28T16:21:03.902919+00:00"
+    },
+    "faire-un-stage-aux-etats-unis-mon-experience-inoubliable-chez-cel": {
+      "language": "fr",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "it",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/faire-un-stage-aux-etats-unis-mon-experience-inoubliable-chez-cel",
+      "added_at": "2026-05-28T16:21:03.902922+00:00"
     }
   }
 }
