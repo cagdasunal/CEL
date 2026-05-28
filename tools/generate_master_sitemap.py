@@ -255,6 +255,37 @@ def build_post_lang_map(cms_posts):
         lang_by_slug[slug] = LANGUAGE_ID_MAP.get(lang_id, "en")
     return lang_by_slug
 
+def build_valid_post_slugs(cms_posts):
+    """Slugs of blog posts that are currently published AND non-archived.
+
+    A /post/ URL whose slug is absent here is a stale source-sitemap entry for
+    an archived/retired/redirected post (e.g. a consolidated post that now
+    301-redirects to its replacement). Search engines flag redirecting URLs
+    listed in a sitemap, so those entries must be dropped.
+    """
+    valid = set()
+    for item in cms_posts:
+        if item.get("isArchived"):
+            continue
+        if not item.get("lastPublished"):
+            continue
+        slug = item.get("fieldData", {}).get("slug", "")
+        if slug:
+            valid.add(slug)
+    return valid
+
+def is_retired_post_url(url, valid_post_slugs, cms_available):
+    """True if `url` is a /post/ URL whose slug is not a currently-published,
+    non-archived CMS post. Returns False when CMS data is unavailable, so a CMS
+    fetch failure degrades to pass-through rather than emptying the sitemap.
+    """
+    if not cms_available:
+        return False
+    slug = get_slug_from_post_url(url)
+    if not slug:
+        return False
+    return slug not in valid_post_slugs
+
 def main():
     _setup_logging()
     logging.info("========== STEP 1: Process Regional Sitemaps ==========")
@@ -292,6 +323,22 @@ def main():
     if post_lang_by_slug:
         logging.info(f"Loaded native language for {len(post_lang_by_slug)} published CMS posts.")
 
+    # Slugs of currently-published, non-archived posts. Any /post/ URL whose slug
+    # is absent is a stale entry for an archived/retired/redirected post and is
+    # dropped below. cms_available gates the filter so a CMS fetch failure
+    # degrades to pass-through instead of emptying the sitemap.
+    cms_available = bool(cms_posts)
+    valid_post_slugs = build_valid_post_slugs(cms_posts)
+    if cms_available:
+        retired_regional = [it["url"] for it in regional_urls
+                            if is_retired_post_url(it["url"], valid_post_slugs, cms_available)]
+        if retired_regional:
+            regional_urls = [it for it in regional_urls
+                             if not is_retired_post_url(it["url"], valid_post_slugs, cms_available)]
+            logging.info(f"Removed {len(retired_regional)} regional URL(s) for archived/retired posts:")
+            for u in sorted(retired_regional):
+                logging.info(f"  - {u}")
+
     logging.info("\n========== STEP 2: Process Primary Sitemap ==========")
     primary_urls = fetch_sitemap_urls(session, PRIMARY_SITEMAP)
     logging.info(f"Total Primary URLs Before Filtering: {len(primary_urls)}")
@@ -314,12 +361,16 @@ def main():
     cleaned_primary_urls = []
     removed_urls = []
     removed_foreign_root = []
+    removed_retired = []
     removed_category_count = 0
     for item in primary_urls:
         u = item["url"]
         if is_category_url(u):
             removed_category_count += 1
             continue  # Skip noindex category pages
+        if is_retired_post_url(u, valid_post_slugs, cms_available):
+            removed_retired.append((get_slug_from_post_url(u), u))
+            continue  # Skip archived/retired/redirected posts (stale sitemap entry)
         if '/post/' in u:
             slug = get_slug_from_post_url(u)
             is_en_root = urlparse(u).path.startswith('/post/')
@@ -342,6 +393,10 @@ def main():
         logging.info(f"Removed {len(removed_foreign_root)} English-root phantoms of non-English posts (CMS language):")
         for native, slug in sorted(removed_foreign_root):
             logging.info(f"  - /post/{slug}  → canonical is /{native}/post/{slug}")
+    if removed_retired:
+        logging.info(f"Removed {len(removed_retired)} archived/retired post URL(s) (stale source-sitemap entries):")
+        for slug, url in sorted(removed_retired):
+            logging.info(f"  - {url}")
     logging.info(f"\nRemoved {len(removed_urls)} duplicate English '/post/' URLs.")
     if removed_urls:
         logging.info("Removed English phantom URLs (slug → regional version exists):")
