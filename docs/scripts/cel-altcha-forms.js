@@ -122,6 +122,14 @@
     // Brand background (cream); set on the host so it cascades to .altcha-main.
     w.style.setProperty("--altcha-color-base", "#F9F1DF");
     w.style.setProperty("--altcha-color-base-content", "#37332c"); // dark text for contrast
+    // Match the form's .form_checkbox-icon: 20px, 1px #E8DECA border, 5px radius,
+    // black fill + white check when checked (ALTCHA's checked state uses --altcha-color-success).
+    w.style.setProperty("--altcha-checkbox-size", "20px");
+    w.style.setProperty("--altcha-checkbox-border-width", "1px");
+    w.style.setProperty("--altcha-checkbox-border-color", "#E8DECA");
+    w.style.setProperty("--altcha-checkbox-border-radius", "5px");
+    w.style.setProperty("--altcha-color-success", "#000000");
+    w.style.setProperty("--altcha-color-success-content", "#FFFFFF");
     placeWidget(form, w);
     stripAltchaLinks(w);
     const obs = new MutationObserver(function () {
