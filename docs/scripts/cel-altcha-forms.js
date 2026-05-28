@@ -3,8 +3,8 @@
  *
  * Injects an <altcha-widget> into Webflow forms, points it at the self-hosted
  * challenge endpoint, and gates the form's submit on a server-verified
- * proof-of-work. Requires the ALTCHA web component (altcha.min.js) to be loaded
- * first (separate tag).
+ * proof-of-work. Self-loads the ALTCHA web component (altcha.min.js), so the
+ * site needs only ONE script tag — this file.
  *
  * FAIL-OPEN by design: if the widget never solves, or /verify times out or
  * errors, the form is allowed to submit anyway. This guarantees the Submit
@@ -24,6 +24,7 @@
   const WORKER = "https://cel-altcha.max-c7e.workers.dev";
   const CHALLENGE_URL = WORKER + "/challenge";
   const VERIFY_URL = WORKER + "/verify";
+  const ALTCHA_LIB = "https://cel.englishcollege.com/scripts/altcha.min.js";
   const FORM_SELECTOR = ".w-form form";
   const TIMEOUT_MS = 8000;
 
@@ -142,7 +143,18 @@
     gate(form);
   }
 
+  function loadAltcha() {
+    if (window.customElements && customElements.get("altcha-widget")) return;
+    if (document.querySelector("script[data-cel-altcha-lib]")) return;
+    const s = document.createElement("script");
+    s.src = ALTCHA_LIB;
+    s.defer = true;
+    s.setAttribute("data-cel-altcha-lib", "");
+    (document.head || document.documentElement).appendChild(s);
+  }
+
   function boot() {
+    loadAltcha();
     let tries = 0;
     const timer = setInterval(function () {
       tries++;
