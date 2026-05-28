@@ -180,7 +180,7 @@
     try {
       form.__celTsWidgetId = window.turnstile.render(holder, {
         sitekey: sitekey,
-        callback: function (token) { form.__celTsToken = token; },
+        callback: function (token) { form.__celTsToken = token; enableSubmit(form, token); },
         "error-callback": function () { form.__celTsToken = null; },
         "expired-callback": function () { form.__celTsToken = null; },
       });
@@ -226,11 +226,29 @@
     } catch (e) { /* no-op */ }
   }
 
+  // Webflow's forms init DISABLES the submit button + adds w-form-loading whenever a
+  // Turnstile sitekey is present but its own (never-firing) render hasn't set a token —
+  // so on this page the button is dead on load and users can't click it. We feed
+  // Webflow's form-state object (jQuery .data) our token so its O() re-arm keeps the
+  // button enabled, and clear the stuck loading state. Best-effort + guarded.
+  function enableSubmit(form, token) {
+    try {
+      if (window.jQuery && typeof window.jQuery.data === "function") {
+        const st = window.jQuery.data(form, ".w-form");
+        if (st) st.turnstileToken = token || st.turnstileToken || true;
+      }
+    } catch (e) { /* no-op */ }
+    const btn = submitBtn(form);
+    if (btn) { btn.disabled = false; btn.classList.remove("w-form-loading"); }
+  }
+
   function prepareTurnstile(form) {
     if (!turnstileSitekey(form)) return;
     form.setAttribute("data-wf-no-turnstile", ""); // stop Webflow's broken native flow
+    enableSubmit(form); // undo Webflow's init button-disable so the user can submit
     const onFocus = function () { // pre-solve on first interaction so the token is ready by submit
       form.removeEventListener("focusin", onFocus);
+      enableSubmit(form);
       renderTurnstile(form);
     };
     form.addEventListener("focusin", onFocus);
