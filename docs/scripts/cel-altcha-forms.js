@@ -80,6 +80,36 @@
     return null;
   }
 
+  // Neutralize ALTCHA's links to altcha.org (footer link + logo anchor) so a
+  // visitor can't accidentally click off-site. Keeps the text/logo visible but
+  // non-clickable. Re-applied on every re-render via a MutationObserver.
+  function stripAltchaLinks(root) {
+    const links = root.querySelectorAll('a[href*="altcha.org"]');
+    for (let i = 0; i < links.length; i++) {
+      const a = links[i];
+      a.removeAttribute("href");
+      a.removeAttribute("target");
+      a.style.pointerEvents = "none";
+      a.style.cursor = "default";
+      a.style.textDecoration = "none";
+      a.style.color = "inherit";
+    }
+  }
+
+  // Put the widget inside .form_field-altcha (use the form's own element if the
+  // designer added one; otherwise create it before the submit button).
+  function placeWidget(form, w) {
+    let holder = form.querySelector(".form_field-altcha");
+    if (!holder) {
+      holder = document.createElement("div");
+      holder.className = "form_field-altcha";
+      const btn = submitBtn(form);
+      if (btn && btn.parentNode) btn.parentNode.insertBefore(holder, btn);
+      else form.appendChild(holder);
+    }
+    holder.appendChild(w);
+  }
+
   function injectWidget(form, lang, rtl) {
     if (widgetOf(form)) return; // respect a manually-placed widget
     const w = document.createElement("altcha-widget");
@@ -89,9 +119,15 @@
     w.setAttribute("language", lang); // page language (mapped to ALTCHA i18n code)
     if (rtl) w.setAttribute("dir", "rtl"); // Arabic
     w.className = "cel-altcha";
-    const btn = submitBtn(form);
-    if (btn && btn.parentNode) btn.parentNode.insertBefore(w, btn);
-    else form.appendChild(w);
+    // Brand background (cream); set on the host so it cascades to .altcha-main.
+    w.style.setProperty("--altcha-color-base", "#F9F1DF");
+    w.style.setProperty("--altcha-color-base-content", "#37332c"); // dark text for contrast
+    placeWidget(form, w);
+    stripAltchaLinks(w);
+    const obs = new MutationObserver(function () {
+      stripAltchaLinks(w);
+    });
+    obs.observe(w, { childList: true, subtree: true });
   }
 
   function waitForPayload(form) {
