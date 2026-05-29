@@ -79,6 +79,14 @@ WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
 TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
+# Analytics tab (client-facing showcase of what the site's tracking measures + a hub
+# into the live reports). The page is STRUCTURAL (journey map + question list) so it is
+# useful regardless of data volume; the few headline numbers come from a snapshot JSON
+# refreshed out-of-band via the GA4 Data API (the 15-min cron has no GA4 creds, so the
+# page degrades gracefully to "warming up" when the snapshot is absent).
+ANALYTICS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "index.html"
+ANALYTICS_SNAPSHOT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "snapshot.json"
+GA4_REPORTS_HOME = "https://analytics.google.com/analytics/web/#/p459514528/reports/intelligenthome"
 
 # Summary-script artifact locations (tracker-090 — SEO Summaries page)
 SUMMARY_DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
@@ -891,6 +899,129 @@ def render_translations_html() -> str:
     return "\n".join(parts) + "\n"
 
 
+def load_analytics_snapshot() -> dict:
+    """Read the GA4 headline-numbers snapshot (a few STANDARD-dimension figures
+    refreshed out-of-band via the GA4 Data API). Returns {} if the file is
+    absent or unreadable, so the page degrades to its structural view and the
+    15-min cron (which has no GA4 credentials) never crashes."""
+    try:
+        if ANALYTICS_SNAPSHOT_FILE.exists():
+            data = json.loads(ANALYTICS_SNAPSHOT_FILE.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+    except (json.JSONDecodeError, OSError):
+        pass
+    return {}
+
+
+def render_analytics_html() -> str:
+    """Render /admin/analytics/ — a client-facing, jargon-free overview of what the
+    website measures and the answers it can give the owner, plus one reliable way
+    into the live reports. Deliberately NOT a metrics dashboard: it is structural
+    (a journey map + a question list) so it is useful and impressive regardless of
+    data volume, and only shows headline numbers that are real today (standard GA4
+    dimensions) — never a "(not set)" or "0" that would read as broken."""
+    now = now_san_diego()
+    snap = load_analytics_snapshot()
+
+    parts = []
+    parts.append("<!DOCTYPE html>")
+    parts.append('<html lang="en">')
+    parts.append("<head>")
+    parts.append(f"  {AUTH_SCRIPT_TAG}")
+    parts.append('  <meta charset="utf-8">')
+    parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
+    parts.append("  <title>Your Website Analytics — English College</title>")
+    parts.append('  <meta name="description" content="A plain-English overview of what your website measures and the answers it can give you.">')
+    parts.append('  <meta name="robots" content="noindex, nofollow">')
+    parts.append(f"  {render_favicon_tag()}")
+    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
+    parts.append("</head>")
+    parts.append("<body>")
+    parts.append('  <div class="dashboard-shell">')
+
+    # --- SECTION 1: How things are going (ONLY real, standard-dimension numbers) ---
+    if snap.get("visitors_label"):
+        parts.append('    <section class="status status-ok">')
+        parts.append('      <p class="status-label">How things are going</p>')
+        if snap.get("headline"):
+            parts.append(f'      <p>{escape(snap["headline"])}</p>')
+        parts.append("    </section>")
+        parts.append('  <table class="kv-table">')
+        parts.append(f'    <tr><td class="k">Visitors (last 28 days)</td><td class="v">{escape(snap["visitors_label"])}</td></tr>')
+        if snap.get("sources_label"):
+            parts.append(f'    <tr><td class="k">How they find you</td><td class="v">{escape(snap["sources_label"])}</td></tr>')
+        parts.append('    <tr><td class="k">Languages we track</td><td class="v">All 8 of your site&rsquo;s languages</td></tr>')
+        parts.append("  </table>")
+        if snap.get("team_note"):
+            parts.append('  <section class="status status-ok">')
+            parts.append(f'    <p><strong>Note from your team:</strong> {escape(snap["team_note"])}</p>')
+            parts.append("  </section>")
+        if snap.get("as_of"):
+            parts.append(f'  <p class="empty">Snapshot as of {escape(snap["as_of"])}.</p>')
+    else:
+        parts.append('    <section class="status status-ok">')
+        parts.append('      <p class="status-label">Your visitor summary is warming up</p>')
+        parts.append('      <p>Your latest visitor numbers will appear here shortly. In the meantime, everything below shows exactly what your website is set up to measure for you.</p>')
+        parts.append("    </section>")
+
+    # --- SECTION 2: Everything we watch for you (journey map — the structural showcase) ---
+    parts.append("  <h2>Everything we watch for you</h2>")
+    parts.append("  <p>We follow each visitor&rsquo;s journey from first arrival to enquiry &mdash; every meaningful step, across all 8 of your site&rsquo;s languages &mdash; so almost any question about how people find you and become enquiries can be answered.</p>")
+    journey = [
+        ("1 &middot; Arrives on your site", "where each visitor came from (Google, a link, an ad, or direct) and which language they are using"),
+        ("2 &middot; Browses your courses", "which course and housing pages they look at &mdash; and which ones they click"),
+        ("3 &middot; Reads your FAQs &amp; guides", "how far down they read, which questions they open, which sections they jump to"),
+        ("4 &middot; Clicks &ldquo;Apply&rdquo; or &ldquo;Book&rdquo;", "every Apply and Book click &mdash; your clearest sign of booking intent"),
+        ("5 &middot; Sends an enquiry", "every contact form, call booking and newsletter sign-up &mdash; your leads"),
+    ]
+    parts.append('  <table class="kv-table">')
+    for step, caption in journey:
+        parts.append(f'    <tr><td class="k">&#10003; {step}</td><td class="v">{caption}</td></tr>')
+    parts.append("  </table>")
+
+    # --- SECTION 3: Questions you can now answer (+ one reliable way into the reports) ---
+    parts.append("  <h2>Questions you can now answer</h2>")
+    parts.append("  <p>Because every step above is measured, your analytics can now answer questions like these:</p>")
+    groups = [
+        ("Your leads &amp; enquiries", [
+            "How many enquiries did we get this month?",
+            "Which pages turn visitors into enquiries?",
+            "How many people clicked &ldquo;Apply&rdquo; or &ldquo;Book&rdquo;?",
+        ]),
+        ("Where your students come from", [
+            "How do students find us &mdash; Google, a link, or direct?",
+            "Which countries should we focus on?",
+            "Which language markets are growing?",
+        ]),
+        ("What people are interested in", [
+            "Which courses get the most attention?",
+            "Which blog posts pull readers in deepest?",
+            "How far down our pages do people actually read?",
+        ]),
+    ]
+    for title, qs in groups:
+        parts.append(f"  <h2>{title}</h2>")
+        parts.append('  <ul class="activity">')
+        for q in qs:
+            parts.append(f"    <li><span>{q}</span></li>")
+        parts.append("  </ul>")
+    parts.append(
+        f'  <p><a href="{escape(GA4_REPORTS_HOME)}" target="_blank" rel="noopener">'
+        f"Open your live reports in Google Analytics &rarr;</a></p>"
+    )
+    parts.append('  <section class="status status-ok">')
+    parts.append('    <p><strong>Good to know:</strong> a few of the most detailed breakdowns (by exact button, form and language) are still warming up &mdash; your tracking went live recently, so the richest reports fill in over the coming weeks. Everything shown above is active now.</p>')
+    parts.append("  </section>")
+
+    parts.append("  <footer>")
+    parts.append(f"    This page was generated on {escape(fmt_sd(now))}.")
+    parts.append("  </footer>")
+    parts.append("  </div>")
+    parts.append("</body>")
+    parts.append("</html>")
+    return "\n".join(parts) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -907,6 +1038,8 @@ def write_status_page() -> None:
     FILES_OUTPUT_FILE.write_text(render_files_html(), encoding="utf-8")
     SUMMARIES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     SUMMARIES_OUTPUT_FILE.write_text(render_summaries_html(), encoding="utf-8")
+    ANALYTICS_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ANALYTICS_OUTPUT_FILE.write_text(render_analytics_html(), encoding="utf-8")
 
 
 def main() -> int:
@@ -915,6 +1048,7 @@ def main() -> int:
     print(f"[status_page] Wrote {TRANSLATIONS_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {FILES_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {SUMMARIES_OUTPUT_FILE}", flush=True)
+    print(f"[status_page] Wrote {ANALYTICS_OUTPUT_FILE}", flush=True)
     return 0
 
 
