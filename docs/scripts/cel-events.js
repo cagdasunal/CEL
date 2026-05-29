@@ -190,7 +190,7 @@
     const toc = t.closest('.stoc_link, .toc_link');                    // landing TOC (.stoc_link), blog/FAQ-category TOC (.toc_link[.is-faq])
     if (toc) {
       const s = toc.getAttribute('data-target') || toc.getAttribute('data-category') || (toc.getAttribute('href') || '').replace(/^#/, '');
-      if (s) push('toc_click', { section: s, kind: toc.classList.contains('is-faq') ? 'faq_category' : 'toc' });
+      if (s) push('toc_click', { section: s });
       return;
     }
     const tab = t.closest('.w-tab-link');                              // Webflow tab
@@ -212,9 +212,9 @@
     // "From Our Blog" promo (.section_blog) -> select_content (post) or cta blog_see_all  [client need a]
     if (a.closest('.section_blog')) {
       const u = urlOf(a);
-      if (u && isPostPath(u.pathname)) push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog' });
-      else push('cta_click', { cta_id: 'blog_see_all', link_url: a.href });
-      return;
+      if (u && isPostPath(u.pathname)) { push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog' }); return; }
+      if (u && barePath(u.pathname) === '/blog') { push('cta_click', { cta_id: 'blog_see_all', link_url: a.href }); return; }
+      // any other .section_blog link falls through to normal classification below
     }
 
     // any blog-post link (blog list cards, related posts, category cards, in-content) -> select_content
