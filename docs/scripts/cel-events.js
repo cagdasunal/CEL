@@ -205,7 +205,7 @@
     if (wg) {
       const m = href.match(/\/(de|fr|es|it|pt|ko|ja|ar|en)(\/|$)/);
       const to = a.getAttribute('data-l') || (m && m[1]) || (a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 12) || 'unknown';
-      push('language_select', { from_locale: LOC, to_language: to });
+      push('language_select', { to_language: to });
       return;
     }
 
@@ -227,7 +227,14 @@
 
     // CTA intent (apply / offers / email / phone / whatsapp / directions)
     const id = classifyHref(href, a);
-    if (id) { push('cta_click', { cta_id: id, link_url: a.href }); return; }
+    if (id) {
+      // email/phone/whatsapp hrefs embed a contact identifier (CEL's own address/number);
+      // GA4 redacts emails regardless + its no-PII policy bans them, so send the scheme
+      // label, never the raw href. cta_id already says which channel was clicked.
+      const SAFE_URL = { email: 'mailto:', phone: 'tel:', whatsapp: 'whatsapp:' };
+      push('cta_click', { cta_id: id, link_url: SAFE_URL[id] || a.href });
+      return;
+    }
 
     // "Unlock Offer" influencer CTA (href=#, sits in navbar) -> offers intent (is-influencer is an English class)
     if (a.classList.contains('is-influencer')) { push('cta_click', { cta_id: 'offers', link_url: a.href }); return; }
