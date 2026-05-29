@@ -1065,7 +1065,6 @@ _SHELL_HTML = """\
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
-        <a class="shell-tab" href="#analytics" data-target="analytics" data-topbar="analytics">ANALYTICS</a>
         <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -1127,7 +1126,6 @@ _SHELL_HTML = """\
     var TARGETS = {
       log:          '/admin/log/',
       offers:       '/admin/offers/',
-      analytics:    '/admin/analytics/',
       housing:      '/admin/housing/',
       courses:      '/admin/courses/',
       translations: '/admin/translations/',
@@ -1138,7 +1136,6 @@ _SHELL_HTML = """\
     var TOPBAR_FOR = {
       log:          'weglot',
       offers:       'offers',
-      analytics:    'analytics',
       housing:      'fidelo',
       courses:      'fidelo',
       translations: 'weglot',
