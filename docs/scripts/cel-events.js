@@ -7,37 +7,38 @@
  * Wire-up:         Site Settings -> Custom Code -> Footer  <script src=... defer></script>
  *
  * Pushes GTM-format events to window.dataLayer; GTM routes them to GA4
- * (G-VZSPVZ9NDR) + future ad tags. INERT until GTM is live (GA4 gtag ignores
- * {event:...} objects). Strategy + the GA4-report map: ANALYTICS-STRATEGY.md.
+ * (G-VZSPVZ9NDR). INERT until GTM is live (GA4 gtag ignores {event:...} objects).
+ * Strategy + the GA4-report map: ANALYTICS-STRATEGY.md.
  *
  * LANGUAGE-AGNOSTIC BY DESIGN (the site is 8-locale Weglot; we control only the
  * English source; Weglot TRANSLATES URL SLUGS on some locales — e.g. de:
- * /courses->/kurse, /housing->/unterkunft, /san-diego-ca/language-school->
- * /san-diego-ca/sprachschule). So detection NEVER matches translated words:
+ * /courses->/kurse, /housing->/unterkunft, contact->contato/contacta-con-cel).
+ * So detection NEVER matches translated words:
  *   - page identity  -> `data-wf-page` (Webflow template id; identical on every locale)
- *   - course cards    -> class `.course-card_link`   (classes are not translated)
- *   - housing cards   -> class `.accom_float-card`
- *   - tabs            -> `data-w-tab` attribute (English, not translated)
- *   - TOC             -> `data-target` attribute (English anchor, not translated)
- *   - FAQ             -> position index (text is translated; index is not)
+ *   - catalog cards   -> classes `.course-card_link` / `.accom_float-card`
+ *   - blog content    -> the `/post/` path segment (structural; NOT translated by Weglot — verified)
+ *   - promo block     -> class `.section_blog` (Webflow class; not translated)
+ *   - tabs/TOC/FAQ    -> `data-w-tab` / `data-target`|`data-category` / position index
+ *   - lang switcher   -> class `.button_weglot` (+ Weglot wg-/weglot classes)
  *   - page_locale     -> URL locale prefix
- * The only path literals matched are /booking (apply) and /offers (offers) —
- * VERIFIED byte-identical across all 8 locales (Weglot does not translate these
- * utility slugs; they are constants, not translations). Translated slugs are NEVER
- * matched: contact (contato / contacta-con-cel) is identified by page_type
- * (data-wf-page) + its form's generate_lead + nav clicks. Anything not recognised
- * degrades to navigation_click / page_id, so every page in every language is tracked.
+ * The ONLY path literals matched are /booking (apply), /offers (offers), and /post/
+ * (blog content) — all VERIFIED byte-identical across all 8 locales. Everything else
+ * degrades to navigation_click (with the raw link_url) + page_id, so every link on
+ * every page in every language produces data.
  *
  * Events (all carry page_id + page_type + page_locale):
+ *   page_entry                                 acquisition source on load (need b: organic -> /post)
  *   view_item_list / select_item / view_item   courses+housing catalog (GA4 items)
+ *   select_content                             blog-post link clicks (promo, list, related, category)
  *   generate_lead                              contact|newsletter|schedule_call(HubSpot)
- *   cta_click                                  apply contact email phone whatsapp directions offers
+ *   cta_click                                  apply offers contact-via-nav email phone whatsapp directions blog_see_all
+ *   language_select                            Weglot language switch
  *   tab_select | faq_toggle | toc_click        on-page engagement
- *   navigation_click                           header mega-menu + footer
+ *   navigation_click                           header/footer nav + in_content + outbound links
  *   scroll_depth                               25/50/75/90
  *
- * Version: 1.0.0
- * Last update: 2026-05-28
+ * Version: 2.0.0
+ * Last update: 2026-05-29
  */
 (function () {
   'use strict';
@@ -56,7 +57,8 @@
     '667453c576e8d35c454cca46': 'contact', '667453c576e8d35c454cca24': 'booking',
     '691c407175e5ecd4423479eb': 'offers', '667453c576e8d35c454ccb30': 'blog_post',
     // verified live 2026-05-29 (data-wf-page identical across locales)
-    '667453c576e8d35c454cca09': 'blog_list', '667453c576e8d35c454ccc39': 'voices',
+    '667453c576e8d35c454cca09': 'blog_list', '687658b861f1ac622a2265ea': 'category',
+    '667453c576e8d35c454ccc39': 'voices',
     '68d854edf776fcec7329321f': 'faq', '68d19d7e5774a9ebbdc286c4': 'policies',
     '69a8402e762a4d4bcafee808': 'student_services',
     '667453c576e8d35c454ccbdb': 'landing', '66bb673c372cddefba5be79b': 'landing',
@@ -74,13 +76,22 @@
     return ps.length ? ps[ps.length - 1] : '';
   }
   function pageTypeFromId(id) { return PAGE_TYPES[id] || 'other'; }
+  // A blog-post link, locale-agnostically: Weglot keeps the /post/ segment on every
+  // locale (verified: /post/..., /de/post/..., /fr/post/...). Strip locale, test /post/.
+  function isPostPath(pathname) { return /^\/post\//.test(barePath(pathname || '')); }
+  // Acquisition source from referrer host + utm_source (need b). utm wins; google host
+  // -> organic/paid umbrella 'google_organic'; own host -> internal; other host -> referral.
+  function acqSource(referrerHost, utmSource) {
+    if (utmSource) return utmSource;
+    if (!referrerHost) return 'direct';
+    if (/(^|\.)google\./.test(referrerHost)) return 'google_organic';
+    if (referrerHost.indexOf('englishcollege.com') !== -1) return 'internal';
+    return 'referral';
+  }
   // CTA intent. Protocol/host signals are universal. The ONLY path literals matched
-  // are /booking and /offers — VERIFIED byte-identical across all 8 locales (Weglot
-  // does NOT translate these utility slugs: /de/booking, /fr/booking, /it/offers …).
-  // Translated slugs are NEVER matched here (courses->kurse, housing->unterkunft,
-  // contact->contato/contacta-con-cel). The contact PAGE is identified language-
-  // agnostically by page_type (data-wf-page) + its form's generate_lead + nav clicks.
-  // Anything unmatched degrades to navigation_click / page_id — so all pages, all langs.
+  // are /booking and /offers — VERIFIED byte-identical across all 8 locales. Translated
+  // slugs are NEVER matched here (courses->kurse, contact->contato). Unmatched links
+  // degrade to navigation_click (carrying the raw link_url) — so all pages, all langs.
   function classifyHref(raw, url) {
     if (!raw || raw.charAt(0) === '#') return null;
     if (/^mailto:/i.test(raw)) return 'email';
@@ -97,7 +108,10 @@
 
   // test seam — harmless in browser (module undefined)
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { classifyHref: classifyHref, lastSeg: lastSeg, barePath: barePath, pageTypeFromId: pageTypeFromId };
+    module.exports = {
+      classifyHref: classifyHref, lastSeg: lastSeg, barePath: barePath,
+      pageTypeFromId: pageTypeFromId, isPostPath: isPostPath, acqSource: acqSource
+    };
   }
 
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -140,8 +154,20 @@
     if (a.closest('footer, .footer, [class*="footer_"]')) return 'footer';
     return null;
   }
+  function linkText(a) { return (a.textContent || '').trim().slice(0, 80); }
+  function urlOf(a) { try { return new URL(a.href, location.href); } catch (_) { return null; } }
+
+  // ---- acquisition source on load (once) — client need (b): organic landings on /post ----
+  (function () {
+    let rh = '';
+    try { const r = document.referrer; if (r) rh = new URL(r).hostname; } catch (_) {}
+    let us = '';
+    try { us = new URLSearchParams(location.search).get('utm_source') || ''; } catch (_) {}
+    push('page_entry', { entry_source: acqSource(rh, us), referrer_host: rh, is_blog_post: (PT === 'blog_post') });
+  })();
 
   const CARD_SEL = 'a.course-card_link, a.accom_float-card';
+  const WEGLOT_SEL = '.button_weglot a, [class*="weglot"] a, [class*="wg-"] a, .country-selector a, a[data-l]';
 
   // ---- one delegated capture-phase click listener (specific -> generic) ----
   document.addEventListener('click', function (e) {
@@ -154,23 +180,67 @@
       return;
     }
     const hc = t.closest('a.button.course');                           // homepage course selector (href=# JS tabs)
-    if (hc) {                                                          // keyed by position (language-agnostic; no slug, text is translated)
+    if (hc) {                                                          // keyed by position (language-agnostic)
       const ix = indexAmong(hc, 'a.button.course');
       pushEcom('select_item', { item_list_name: 'home_course_selector', items: [{ item_id: 'home-course-' + ix, item_name: 'Home course ' + (ix + 1), item_category: 'courses', index: ix }] });
       return;
     }
-    const faq = t.closest('.faq-q');                                   // FAQ accordion
+    const faq = t.closest('.faq-q');                                   // FAQ accordion (open/close)
     if (faq) { push('faq_toggle', { faq_index: indexAmong(faq, '.faq-q') }); return; }
-    const toc = t.closest('.stoc_link');                               // in-page TOC
-    if (toc) { const s = toc.getAttribute('data-target'); if (s) push('toc_click', { section: s }); return; }
+    const toc = t.closest('.stoc_link, .toc_link');                    // landing TOC (.stoc_link), blog/FAQ-category TOC (.toc_link[.is-faq])
+    if (toc) {
+      const s = toc.getAttribute('data-target') || toc.getAttribute('data-category') || (toc.getAttribute('href') || '').replace(/^#/, '');
+      if (s) push('toc_click', { section: s, kind: toc.classList.contains('is-faq') ? 'faq_category' : 'toc' });
+      return;
+    }
     const tab = t.closest('.w-tab-link');                              // Webflow tab
     if (tab) { const tn = tab.getAttribute('data-w-tab'); if (tn) push('tab_select', { tab_name: tn }); return; }
-    const a = t.closest('a[href]');                                    // CTA / navigation
-    if (a) {
-      const id = classifyHref(a.getAttribute('href'), a);
-      if (id) { push('cta_click', { cta_id: id, link_url: a.href }); return; }
-      const loc = navLocation(a);
-      if (loc) push('navigation_click', { link_url: a.href, link_text: (a.textContent || '').trim().slice(0, 80), nav_location: loc });
+
+    const a = t.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+
+    // language switcher (Weglot) -> language_select  (BEFORE /post + nav: a lang link can be /de/post/..)
+    const wg = a.closest(WEGLOT_SEL) || (a.matches && a.matches(WEGLOT_SEL) ? a : null);
+    if (wg) {
+      const m = href.match(/\/(de|fr|es|it|pt|ko|ja|ar|en)(\/|$)/);
+      const to = a.getAttribute('data-l') || (m && m[1]) || (a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 12) || 'unknown';
+      push('language_select', { from_locale: LOC, to_language: to });
+      return;
+    }
+
+    // "From Our Blog" promo (.section_blog) -> select_content (post) or cta blog_see_all  [client need a]
+    if (a.closest('.section_blog')) {
+      const u = urlOf(a);
+      if (u && isPostPath(u.pathname)) push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog' });
+      else push('cta_click', { cta_id: 'blog_see_all', link_url: a.href });
+      return;
+    }
+
+    // any blog-post link (blog list cards, related posts, category cards, in-content) -> select_content
+    const au = urlOf(a);
+    if (au && isPostPath(au.pathname)) {
+      const sb = PT === 'blog_list' ? 'blog_list' : PT === 'blog_post' ? 'related_posts' : PT === 'category' ? 'category' : 'in_content';
+      push('select_content', { content_type: 'blog_post', content_id: lastSeg(au), link_url: a.href, source_block: sb });
+      return;
+    }
+
+    // CTA intent (apply / offers / email / phone / whatsapp / directions)
+    const id = classifyHref(href, a);
+    if (id) { push('cta_click', { cta_id: id, link_url: a.href }); return; }
+
+    // "Unlock Offer" influencer CTA (href=#, sits in navbar) -> offers intent (is-influencer is an English class)
+    if (a.classList.contains('is-influencer')) { push('cta_click', { cta_id: 'offers', link_url: a.href }); return; }
+
+    // header / footer navigation
+    const loc = navLocation(a);
+    if (loc) { push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: loc }); return; }
+
+    // in-content link catch-all (every other real link: same-origin internal OR outbound).
+    // Captures contact CTAs (/contact-cel etc.), cross-links, sibling landings, partners.
+    // Skips pure in-page anchors (#...) and non-navigational schemes (no hostname).
+    if (href && href.charAt(0) !== '#' && au && au.hostname) {
+      push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: (au.hostname === location.hostname) ? 'in_content' : 'outbound' });
     }
   }, true);
 
