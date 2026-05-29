@@ -86,7 +86,7 @@ SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html
 # login (no multi-account / wrong-account problem) and refreshes on its own.
 ANALYTICS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "index.html"
 LOOKER_EMBED_URL = (
-    "https://lookerstudio.google.com/embed/reporting/"
+    "https://datastudio.google.com/embed/reporting/"
     "1a0081b3-6631-46f2-84ed-25b6209200e9/page/kIV1C"
 )
 
@@ -963,7 +963,7 @@ def render_analytics_html() -> str:
     parts.append("  <p>Visitors, where they come from, your most-visited pages and which countries they&rsquo;re in &mdash; updated automatically. Use the tabs on the left inside the report to explore.</p>")
     parts.append(
         f'  <iframe title="College of English Language &mdash; website analytics" '
-        f'src="{LOOKER_EMBED_URL}" width="100%" height="1400" frameborder="0" '
+        f'src="{LOOKER_EMBED_URL}" width="100%" height="2125" frameborder="0" '
         f'style="border:0;display:block;width:100%" allowfullscreen '
         f'sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>'
     )
