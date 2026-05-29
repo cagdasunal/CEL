@@ -79,14 +79,16 @@ WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
 TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
-# Analytics tab — a client-facing, jargon-free view of REAL GA4 data (refreshed every
-# 15 min by tools/ga4/fetch_snapshot.py -> data.json) + a showcase of what we track + links
-# into the live Google Analytics reports. data.json absent -> graceful "warming up" state.
+# Analytics tab — a client-facing, jargon-free showcase of everything we track + a LIVE
+# embedded Google Analytics (Looker Studio) report that shows the real numbers in-page.
+# The report is owned by the client's own Google account (GA4 property 459514528), shared
+# "anyone with the link" + embedding enabled, so it renders for any viewer without a Google
+# login (no multi-account / wrong-account problem) and refreshes on its own.
 ANALYTICS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "index.html"
-ANALYTICS_DATA_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "data.json"
-# GA4 report deep-link base (account+property prefix is the confirmed-working form). The
-# specific report paths are VERIFIED reachable before shipping (see plan R1).
-GA4_REPORTS_BASE = "https://analytics.google.com/analytics/web/#/a329877367p459514528"
+LOOKER_EMBED_URL = (
+    "https://lookerstudio.google.com/embed/reporting/"
+    "1a0081b3-6631-46f2-84ed-25b6209200e9/page/kIV1C"
+)
 
 # Summary-script artifact locations (tracker-090 — SEO Summaries page)
 SUMMARY_DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
@@ -899,22 +901,8 @@ def render_translations_html() -> str:
     return "\n".join(parts) + "\n"
 
 
-def load_analytics_data() -> dict:
-    """Read the curated GA4 snapshot written by tools/ga4/fetch_snapshot.py.
-    Returns {} on missing/parse error so the tab degrades to a calm "warming up"
-    state and the 15-min cron (which may run before the first fetch) never crashes.
-    Mirrors load_import_status()."""
-    if not ANALYTICS_DATA_FILE.exists():
-        return {}
-    try:
-        data = json.loads(ANALYTICS_DATA_FILE.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    return data if isinstance(data, dict) else {}
-
-
 # The tracking we built, as business OUTCOMES (curated; never names a tag/event; never a count).
-# Each line maps to one of the 15 live tags but the client copy stays jargon-free.
+# Each line maps to one of the live tags but the client copy stays jargon-free.
 TRACKING_SHOWCASE = [
     "People clicking your buttons and calls-to-action",
     "People sending an enquiry (your leads)",
@@ -930,22 +918,15 @@ TRACKING_SHOWCASE = [
     "Privacy choices respected on every visit",
 ]
 
-# Client-facing buttons -> live Google Analytics reports. URLs are VERIFIED reachable
-# before shipping (plan R1); keep the set small and overview-level (most stable).
-ANALYTICS_REPORT_LINKS = [
-    ("See who's visiting and where they come from", f"{GA4_REPORTS_BASE}/reports/intelligenthome"),
-    ("See what's happening on your site right now", f"{GA4_REPORTS_BASE}/realtime/overview"),
-]
-
 
 def render_analytics_html() -> str:
-    """Render /admin/analytics/ — a client-facing, jargon-free view of REAL GA4 data
-    (from data.json) + a showcase of what we track + links into the live reports.
-    Standard metrics only; the data is pre-curated server-side (no "(not set)"/0/jargon).
-    Degrades to a calm "warming up" state when data.json is absent (clone of
-    render_summaries_html's empty-state)."""
+    """Render /admin/analytics/ — a client-facing, jargon-free Analytics tab: a showcase
+    of everything we track + a LIVE embedded Google Analytics (Looker Studio) report that
+    shows the real numbers in-page. No links to click out (so the multi-Google-account
+    problem can't happen); the report is owned by the client's Google account and refreshes
+    automatically. Embed URL = LOOKER_EMBED_URL (shared 'anyone with the link' + embedding
+    enabled by the account owner)."""
     now = now_san_diego()
-    data = load_analytics_data()
 
     parts = []
     parts.append("<!DOCTYPE html>")
@@ -963,49 +944,13 @@ def render_analytics_html() -> str:
     parts.append("<body>")
     parts.append('  <div class="dashboard-shell">')
 
-    if not data.get("visitors_28d"):
-        parts.append('    <section class="status status-ok">')
-        parts.append('      <p class="status-label">Your visitor insights are being prepared</p>')
-        parts.append('      <p>Your latest numbers refresh automatically every 15 minutes &mdash; please check back shortly. Everything we track for you is listed below.</p>')
-        parts.append("    </section>")
-    else:
-        # A. Hero
-        mom = data.get("momentum") or {}
-        arrow = {"up": "&#9650;", "down": "&#9660;", "flat": "&#8212;"}.get(mom.get("direction"), "")
-        parts.append('    <section class="status status-ok">')
-        parts.append(f'      <p class="status-label">{escape(data["visitors_phrase"])}</p>')
-        if mom.get("phrase"):
-            parts.append(f'      <p>{arrow} {escape(mom["phrase"])}</p>')
-        if data.get("insight"):
-            parts.append(f'      <p>{escape(data["insight"])}</p>')
-        parts.append("    </section>")
+    # Intro
+    parts.append('    <section class="status status-ok">')
+    parts.append('      <p class="status-label">Your website analytics &mdash; live</p>')
+    parts.append('      <p>Everything we track for you is listed below, with your real, always-up-to-date numbers shown right on this page. The figures come straight from Google Analytics and refresh on their own.</p>')
+    parts.append("    </section>")
 
-        # B. Where visitors come from
-        if data.get("channels"):
-            parts.append("  <h2>Where your visitors come from</h2>")
-            parts.append('  <table class="kv-table">')
-            for ch in data["channels"]:
-                parts.append(f'    <tr><td class="k">{escape(ch["label"])}</td><td class="v">{int(ch["pct"])}% of visitors</td></tr>')
-            parts.append("  </table>")
-
-        # C. Most-visited pages
-        if data.get("top_pages"):
-            parts.append("  <h2>Your most-visited pages</h2>")
-            parts.append('  <table class="kv-table">')
-            for pg in data["top_pages"]:
-                badge = f' &mdash; <strong>{escape(pg["badge"])}</strong>' if pg.get("badge") else ""
-                parts.append(f'    <tr><td class="k">{escape(pg["title"])}{badge}</td><td class="v">{int(pg["views"]):,} views</td></tr>')
-            parts.append("  </table>")
-
-        # D. Where visitors are
-        if data.get("countries"):
-            parts.append("  <h2>Where your visitors are</h2>")
-            parts.append('  <table class="kv-table">')
-            for co in data["countries"]:
-                parts.append(f'    <tr><td class="k">{escape(co["name"])}</td><td class="v">{int(co["pct"])}% of visitors</td></tr>')
-            parts.append("  </table>")
-
-    # E. Tracking showcase (always shown — works regardless of data volume)
+    # What we track (the showcase) — listed first, per the client's request
     parts.append("  <h2>What we keep an eye on for you</h2>")
     parts.append("  <p>We&rsquo;ve set up detailed, always-on tracking across your whole site &mdash; in every language &mdash; so we can see what&rsquo;s working and where to grow your enquiries:</p>")
     parts.append('  <ul class="activity">')
@@ -1013,17 +958,18 @@ def render_analytics_html() -> str:
         parts.append(f'    <li><span>&#10003;</span><span>{escape(item)}</span></li>')
     parts.append("  </ul>")
 
-    # F. Links into the live reports
-    parts.append("  <h2>See the full details</h2>")
-    parts.append("  <p>Open the live reports in Google Analytics (in a new tab):</p>")
-    parts.append('  <ul class="activity">')
-    for label, url in ANALYTICS_REPORT_LINKS:
-        parts.append(f'    <li><a href="{escape(url)}" target="_blank" rel="noopener">{escape(label)} &rarr;</a></li>')
-    parts.append("  </ul>")
+    # The live statistics — embedded Google Analytics report (real numbers, no click-out)
+    parts.append("  <h2>Your live statistics</h2>")
+    parts.append("  <p>Visitors, where they come from, your most-visited pages and which countries they&rsquo;re in &mdash; updated automatically. Use the tabs on the left inside the report to explore.</p>")
+    parts.append(
+        f'  <iframe title="College of English Language &mdash; website analytics" '
+        f'src="{LOOKER_EMBED_URL}" width="100%" height="1400" frameborder="0" '
+        f'style="border:0;display:block;width:100%" allowfullscreen '
+        f'sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>'
+    )
 
-    stamp = escape(data["generated_at"]) if data.get("generated_at") else escape(fmt_sd(now))
     parts.append("  <footer>")
-    parts.append(f"    Updated {stamp}. These figures refresh automatically every 15 minutes.")
+    parts.append(f"    Page last built {escape(fmt_sd(now))}. The statistics above update live from Google Analytics.")
     parts.append("  </footer>")
     parts.append("  </div>")
     parts.append("</body>")

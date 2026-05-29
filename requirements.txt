@@ -2,5 +2,4 @@ requests>=2.32
 lxml>=5.0
 pytest>=8.0
 google-genai>=0.3.0
-google-analytics-data>=0.22.0  # GA4 Data API — dashboard Analytics tab (tools/ga4/fetch_snapshot.py)
 import-linter>=2.0  # dev: enforces the tools.core dependency-direction contract (.importlinter)
