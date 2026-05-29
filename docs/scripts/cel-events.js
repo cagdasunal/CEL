@@ -185,8 +185,8 @@
       pushEcom('select_item', { item_list_name: 'home_course_selector', items: [{ item_id: 'home-course-' + ix, item_name: 'Home course ' + (ix + 1), item_category: 'courses', index: ix }] });
       return;
     }
-    const faq = t.closest('.faq-q');                                   // FAQ accordion (open/close)
-    if (faq) { push('faq_toggle', { faq_index: indexAmong(faq, '.faq-q') }); return; }
+    const faq = t.closest('.faq_question, .faq-q');                    // FAQ accordion question header (live site uses Client-First .faq_question; .faq-q kept as legacy fallback)
+    if (faq) { push('faq_toggle', { faq_index: indexAmong(faq, '.faq_question, .faq-q') }); return; }
     const toc = t.closest('.stoc_link, .toc_link');                    // landing TOC (.stoc_link), blog/FAQ-category TOC (.toc_link[.is-faq])
     if (toc) {
       const s = toc.getAttribute('data-target') || toc.getAttribute('data-category') || (toc.getAttribute('href') || '').replace(/^#/, '');
