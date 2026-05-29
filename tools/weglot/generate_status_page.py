@@ -79,6 +79,14 @@ WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
 TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
+# Analytics tab — a client-facing, jargon-free view of REAL GA4 data (refreshed every
+# 15 min by tools/ga4/fetch_snapshot.py -> data.json) + a showcase of what we track + links
+# into the live Google Analytics reports. data.json absent -> graceful "warming up" state.
+ANALYTICS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "index.html"
+ANALYTICS_DATA_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "data.json"
+# GA4 report deep-link base (account+property prefix is the confirmed-working form). The
+# specific report paths are VERIFIED reachable before shipping (see plan R1).
+GA4_REPORTS_BASE = "https://analytics.google.com/analytics/web/#/a329877367p459514528"
 
 # Summary-script artifact locations (tracker-090 — SEO Summaries page)
 SUMMARY_DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
@@ -891,6 +899,138 @@ def render_translations_html() -> str:
     return "\n".join(parts) + "\n"
 
 
+def load_analytics_data() -> dict:
+    """Read the curated GA4 snapshot written by tools/ga4/fetch_snapshot.py.
+    Returns {} on missing/parse error so the tab degrades to a calm "warming up"
+    state and the 15-min cron (which may run before the first fetch) never crashes.
+    Mirrors load_import_status()."""
+    if not ANALYTICS_DATA_FILE.exists():
+        return {}
+    try:
+        data = json.loads(ANALYTICS_DATA_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+# The tracking we built, as business OUTCOMES (curated; never names a tag/event; never a count).
+# Each line maps to one of the 15 live tags but the client copy stays jargon-free.
+TRACKING_SHOWCASE = [
+    "People clicking your buttons and calls-to-action",
+    "People sending an enquiry (your leads)",
+    "People viewing your courses",
+    "People choosing a specific course",
+    "People searching and browsing your course lists",
+    "How far people read down each page",
+    "People switching language",
+    "People opening your FAQs",
+    "People using your menus and navigation",
+    "People jumping between sections of a page",
+    "Where each visitor came from when they arrive",
+    "Privacy choices respected on every visit",
+]
+
+# Client-facing buttons -> live Google Analytics reports. URLs are VERIFIED reachable
+# before shipping (plan R1); keep the set small and overview-level (most stable).
+ANALYTICS_REPORT_LINKS = [
+    ("See who's visiting and where they come from", f"{GA4_REPORTS_BASE}/reports/intelligenthome"),
+    ("See what's happening on your site right now", f"{GA4_REPORTS_BASE}/realtime/overview"),
+]
+
+
+def render_analytics_html() -> str:
+    """Render /admin/analytics/ — a client-facing, jargon-free view of REAL GA4 data
+    (from data.json) + a showcase of what we track + links into the live reports.
+    Standard metrics only; the data is pre-curated server-side (no "(not set)"/0/jargon).
+    Degrades to a calm "warming up" state when data.json is absent (clone of
+    render_summaries_html's empty-state)."""
+    now = now_san_diego()
+    data = load_analytics_data()
+
+    parts = []
+    parts.append("<!DOCTYPE html>")
+    parts.append('<html lang="en">')
+    parts.append("<head>")
+    parts.append(f"  {AUTH_SCRIPT_TAG}")
+    parts.append('  <meta charset="utf-8">')
+    parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
+    parts.append("  <title>Your Website Analytics &mdash; English College</title>")
+    parts.append('  <meta name="description" content="A plain-English overview of how your website is doing.">')
+    parts.append('  <meta name="robots" content="noindex, nofollow">')
+    parts.append(f"  {render_favicon_tag()}")
+    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
+    parts.append("</head>")
+    parts.append("<body>")
+    parts.append('  <div class="dashboard-shell">')
+
+    if not data.get("visitors_28d"):
+        parts.append('    <section class="status status-ok">')
+        parts.append('      <p class="status-label">Your visitor insights are being prepared</p>')
+        parts.append('      <p>Your latest numbers refresh automatically every 15 minutes &mdash; please check back shortly. Everything we track for you is listed below.</p>')
+        parts.append("    </section>")
+    else:
+        # A. Hero
+        mom = data.get("momentum") or {}
+        arrow = {"up": "&#9650;", "down": "&#9660;", "flat": "&#8212;"}.get(mom.get("direction"), "")
+        parts.append('    <section class="status status-ok">')
+        parts.append(f'      <p class="status-label">{escape(data["visitors_phrase"])}</p>')
+        if mom.get("phrase"):
+            parts.append(f'      <p>{arrow} {escape(mom["phrase"])}</p>')
+        if data.get("insight"):
+            parts.append(f'      <p>{escape(data["insight"])}</p>')
+        parts.append("    </section>")
+
+        # B. Where visitors come from
+        if data.get("channels"):
+            parts.append("  <h2>Where your visitors come from</h2>")
+            parts.append('  <table class="kv-table">')
+            for ch in data["channels"]:
+                parts.append(f'    <tr><td class="k">{escape(ch["label"])}</td><td class="v">{int(ch["pct"])}% of visitors</td></tr>')
+            parts.append("  </table>")
+
+        # C. Most-visited pages
+        if data.get("top_pages"):
+            parts.append("  <h2>Your most-visited pages</h2>")
+            parts.append('  <table class="kv-table">')
+            for pg in data["top_pages"]:
+                badge = f' &mdash; <strong>{escape(pg["badge"])}</strong>' if pg.get("badge") else ""
+                parts.append(f'    <tr><td class="k">{escape(pg["title"])}{badge}</td><td class="v">{int(pg["views"]):,} views</td></tr>')
+            parts.append("  </table>")
+
+        # D. Where visitors are
+        if data.get("countries"):
+            parts.append("  <h2>Where your visitors are</h2>")
+            parts.append('  <table class="kv-table">')
+            for co in data["countries"]:
+                parts.append(f'    <tr><td class="k">{escape(co["name"])}</td><td class="v">{int(co["pct"])}% of visitors</td></tr>')
+            parts.append("  </table>")
+
+    # E. Tracking showcase (always shown — works regardless of data volume)
+    parts.append("  <h2>What we keep an eye on for you</h2>")
+    parts.append("  <p>We&rsquo;ve set up detailed, always-on tracking across your whole site &mdash; in every language &mdash; so we can see what&rsquo;s working and where to grow your enquiries:</p>")
+    parts.append('  <ul class="activity">')
+    for item in TRACKING_SHOWCASE:
+        parts.append(f'    <li><span>&#10003;</span><span>{escape(item)}</span></li>')
+    parts.append("  </ul>")
+
+    # F. Links into the live reports
+    parts.append("  <h2>See the full details</h2>")
+    parts.append("  <p>Open the live reports in Google Analytics (in a new tab):</p>")
+    parts.append('  <ul class="activity">')
+    for label, url in ANALYTICS_REPORT_LINKS:
+        parts.append(f'    <li><a href="{escape(url)}" target="_blank" rel="noopener">{escape(label)} &rarr;</a></li>')
+    parts.append("  </ul>")
+
+    stamp = escape(data["generated_at"]) if data.get("generated_at") else escape(fmt_sd(now))
+    parts.append("  <footer>")
+    parts.append(f"    Updated {stamp}. These figures refresh automatically every 15 minutes.")
+    parts.append("  </footer>")
+    parts.append("  </div>")
+    parts.append("</body>")
+    parts.append("</html>")
+    return "\n".join(parts) + "\n"
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -907,6 +1047,8 @@ def write_status_page() -> None:
     FILES_OUTPUT_FILE.write_text(render_files_html(), encoding="utf-8")
     SUMMARIES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     SUMMARIES_OUTPUT_FILE.write_text(render_summaries_html(), encoding="utf-8")
+    ANALYTICS_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    ANALYTICS_OUTPUT_FILE.write_text(render_analytics_html(), encoding="utf-8")
 
 
 def main() -> int:
@@ -915,6 +1057,7 @@ def main() -> int:
     print(f"[status_page] Wrote {TRANSLATIONS_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {FILES_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {SUMMARIES_OUTPUT_FILE}", flush=True)
+    print(f"[status_page] Wrote {ANALYTICS_OUTPUT_FILE}", flush=True)
     return 0
 
 

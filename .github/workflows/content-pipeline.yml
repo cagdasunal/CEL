@@ -81,6 +81,15 @@ jobs:
             python3 -c "import json; s=json.load(open('docs/admin/weglot-imports/import-status.json')); print('verdicts:', {c: i['verdict'] for c, i in s['languages'].items()})"
           fi
 
+      - name: Step 4g — Fetch GA4 analytics snapshot (runs before render so the Analytics tab shows fresh numbers)
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true   # a GA4 hiccup must NOT block the 15-min cycle — the tab degrades to its empty-state
+        env:
+          GA4_OAUTH_CREDENTIALS: ${{ secrets.GA4_OAUTH_CREDENTIALS }}
+          GA4_PROPERTY_ID: "459514528"
+        run: python -m tools.ga4.fetch_snapshot
+
       - name: Step 4e — Generate HTML status page
         if: always()
         env:
@@ -100,6 +109,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/weglot-imports/import-status.json 2>/dev/null || true
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/analytics/index.html docs/admin/analytics/data.json docs/admin/weglot-imports/import-status.json 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push || echo "push failed (will retry next run)"
