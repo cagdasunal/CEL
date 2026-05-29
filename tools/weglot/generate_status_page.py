@@ -79,16 +79,6 @@ WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
 TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
-# Analytics tab — a client-facing, jargon-free showcase of everything we track + a LIVE
-# embedded Google Analytics (Looker Studio) report that shows the real numbers in-page.
-# The report is owned by the client's own Google account (GA4 property 459514528), shared
-# "anyone with the link" + embedding enabled, so it renders for any viewer without a Google
-# login (no multi-account / wrong-account problem) and refreshes on its own.
-ANALYTICS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "analytics" / "index.html"
-LOOKER_EMBED_URL = (
-    "https://datastudio.google.com/embed/reporting/"
-    "1a0081b3-6631-46f2-84ed-25b6209200e9/page/kIV1C"
-)
 
 # Summary-script artifact locations (tracker-090 — SEO Summaries page)
 SUMMARY_DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
@@ -901,82 +891,6 @@ def render_translations_html() -> str:
     return "\n".join(parts) + "\n"
 
 
-# The tracking we built, as business OUTCOMES (curated; never names a tag/event; never a count).
-# Each line maps to one of the live tags but the client copy stays jargon-free.
-TRACKING_SHOWCASE = [
-    "People clicking your buttons and calls-to-action",
-    "People sending an enquiry (your leads)",
-    "People viewing your courses",
-    "People choosing a specific course",
-    "People searching and browsing your course lists",
-    "How far people read down each page",
-    "People switching language",
-    "People opening your FAQs",
-    "People using your menus and navigation",
-    "People jumping between sections of a page",
-    "Where each visitor came from when they arrive",
-    "Privacy choices respected on every visit",
-]
-
-
-def render_analytics_html() -> str:
-    """Render /admin/analytics/ — a client-facing, jargon-free Analytics tab: a showcase
-    of everything we track + a LIVE embedded Google Analytics (Looker Studio) report that
-    shows the real numbers in-page. No links to click out (so the multi-Google-account
-    problem can't happen); the report is owned by the client's Google account and refreshes
-    automatically. Embed URL = LOOKER_EMBED_URL (shared 'anyone with the link' + embedding
-    enabled by the account owner)."""
-    now = now_san_diego()
-
-    parts = []
-    parts.append("<!DOCTYPE html>")
-    parts.append('<html lang="en">')
-    parts.append("<head>")
-    parts.append(f"  {AUTH_SCRIPT_TAG}")
-    parts.append('  <meta charset="utf-8">')
-    parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
-    parts.append("  <title>Your Website Analytics &mdash; English College</title>")
-    parts.append('  <meta name="description" content="A plain-English overview of how your website is doing.">')
-    parts.append('  <meta name="robots" content="noindex, nofollow">')
-    parts.append(f"  {render_favicon_tag()}")
-    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
-    parts.append("</head>")
-    parts.append("<body>")
-    parts.append('  <div class="dashboard-shell">')
-
-    # Intro
-    parts.append('    <section class="status status-ok">')
-    parts.append('      <p class="status-label">Your website analytics &mdash; live</p>')
-    parts.append('      <p>Everything we track for you is listed below, with your real, always-up-to-date numbers shown right on this page. The figures come straight from Google Analytics and refresh on their own.</p>')
-    parts.append("    </section>")
-
-    # What we track (the showcase) — listed first, per the client's request
-    parts.append("  <h2>What we keep an eye on for you</h2>")
-    parts.append("  <p>We&rsquo;ve set up detailed, always-on tracking across your whole site &mdash; in every language &mdash; so we can see what&rsquo;s working and where to grow your enquiries:</p>")
-    parts.append('  <ul class="activity">')
-    for item in TRACKING_SHOWCASE:
-        parts.append(f'    <li><span>&#10003;</span><span>{escape(item)}</span></li>')
-    parts.append("  </ul>")
-
-    # The live statistics — embedded Google Analytics report (real numbers, no click-out)
-    parts.append("  <h2>Your live statistics</h2>")
-    parts.append("  <p>Visitors, where they come from, your most-visited pages and which countries they&rsquo;re in &mdash; updated automatically. Use the tabs on the left inside the report to explore.</p>")
-    parts.append(
-        f'  <iframe title="College of English Language &mdash; website analytics" '
-        f'src="{LOOKER_EMBED_URL}" width="100%" height="2125" frameborder="0" '
-        f'style="border:0;display:block;width:100%" allowfullscreen '
-        f'sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>'
-    )
-
-    parts.append("  <footer>")
-    parts.append(f"    Page last built {escape(fmt_sd(now))}. The statistics above update live from Google Analytics.")
-    parts.append("  </footer>")
-    parts.append("  </div>")
-    parts.append("</body>")
-    parts.append("</html>")
-    return "\n".join(parts) + "\n"
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -993,8 +907,6 @@ def write_status_page() -> None:
     FILES_OUTPUT_FILE.write_text(render_files_html(), encoding="utf-8")
     SUMMARIES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     SUMMARIES_OUTPUT_FILE.write_text(render_summaries_html(), encoding="utf-8")
-    ANALYTICS_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    ANALYTICS_OUTPUT_FILE.write_text(render_analytics_html(), encoding="utf-8")
 
 
 def main() -> int:
@@ -1003,7 +915,6 @@ def main() -> int:
     print(f"[status_page] Wrote {TRANSLATIONS_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {FILES_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {SUMMARIES_OUTPUT_FILE}", flush=True)
-    print(f"[status_page] Wrote {ANALYTICS_OUTPUT_FILE}", flush=True)
     return 0
 
 
