@@ -74,9 +74,83 @@
     "zip_file": "weglot-imports.zip"
   },
   "fidelo_run_summary": {
-    "changed": [],
+    "changed": [
+      "course::business-certificate::ar",
+      "course::business-certificate::de",
+      "course::business-certificate::en",
+      "course::business-certificate::es",
+      "course::business-certificate::fr",
+      "course::business-certificate::it",
+      "course::business-certificate::ja",
+      "course::business-certificate::ko",
+      "course::business-certificate::pt",
+      "course::english-academic-skills::ar",
+      "course::english-academic-skills::de",
+      "course::english-academic-skills::en",
+      "course::english-academic-skills::es",
+      "course::english-academic-skills::fr",
+      "course::english-academic-skills::it",
+      "course::english-academic-skills::ja",
+      "course::english-academic-skills::ko",
+      "course::english-academic-skills::pt",
+      "course::english-plus-cambridge-prep::ar",
+      "course::english-plus-cambridge-prep::de",
+      "course::english-plus-cambridge-prep::en",
+      "course::english-plus-cambridge-prep::es",
+      "course::english-plus-cambridge-prep::fr",
+      "course::english-plus-cambridge-prep::it",
+      "course::english-plus-cambridge-prep::ja",
+      "course::english-plus-cambridge-prep::ko",
+      "course::english-plus-cambridge-prep::pt",
+      "course::english-career-development::ar",
+      "course::english-career-development::de",
+      "course::english-career-development::en",
+      "course::english-career-development::es",
+      "course::english-career-development::fr",
+      "course::english-career-development::it",
+      "course::english-career-development::ja",
+      "course::english-career-development::ko",
+      "course::english-career-development::pt",
+      "course::english-plus-surfing::ar",
+      "course::english-plus-surfing::de",
+      "course::english-plus-surfing::en",
+      "course::english-plus-surfing::es",
+      "course::english-plus-surfing::fr",
+      "course::english-plus-surfing::it",
+      "course::english-plus-surfing::ja",
+      "course::english-plus-surfing::ko",
+      "course::english-plus-surfing::pt",
+      "course::english-plus-toefl-exam-preparation::ar",
+      "course::english-plus-toefl-exam-preparation::de",
+      "course::english-plus-toefl-exam-preparation::en",
+      "course::english-plus-toefl-exam-preparation::es",
+      "course::english-plus-toefl-exam-preparation::fr",
+      "course::english-plus-toefl-exam-preparation::it",
+      "course::english-plus-toefl-exam-preparation::ja",
+      "course::english-plus-toefl-exam-preparation::ko",
+      "course::english-plus-toefl-exam-preparation::pt",
+      "course::general-english::ar",
+      "course::general-english::de",
+      "course::general-english::en",
+      "course::general-english::es",
+      "course::general-english::fr",
+      "course::general-english::it",
+      "course::general-english::ja",
+      "course::general-english::ko",
+      "course::general-english::pt",
+      "course::global-pathway-preparation::ar",
+      "course::global-pathway-preparation::de",
+      "course::global-pathway-preparation::en",
+      "course::global-pathway-preparation::es",
+      "course::global-pathway-preparation::fr",
+      "course::global-pathway-preparation::it",
+      "course::global-pathway-preparation::ja",
+      "course::global-pathway-preparation::ko",
+      "course::global-pathway-preparation::pt",
+      "course::toefl-preparation::en"
+    ],
     "counts": {
-      "course_changed": 0,
+      "course_changed": 73,
       "course_fetched": 135,
       "course_skipped_empty_key": 0,
       "errors": 0,
@@ -85,19 +159,19 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-05-29T08:12:38.011941+00:00",
+      "executed_at": "2026-05-30T07:22:10.835102+00:00",
       "mode": "upsert-courses",
       "total": 15,
-      "unchanged": 15,
-      "updated": 0
+      "unchanged": 6,
+      "updated": 9
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-05-29T08:11:36Z",
+    "finished_at": "2026-05-30T07:21:15Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-05-29T08:12:37.177993+00:00",
+      "executed_at": "2026-05-30T07:22:09.844154+00:00",
       "mode": "upsert",
       "total": 22,
       "unchanged": 3,
@@ -106,7 +180,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-05-29T08:08:19Z",
+    "started_at": "2026-05-30T07:17:51Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -115,19 +189,19 @@
       "updated": 0
     }
   },
-  "generated_at": "2026-05-29T08:12:38.849787+00:00",
+  "generated_at": "2026-05-30T07:22:31.871591+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
       "language_name": "Arabic",
       "language_to": "ar",
-      "row_count": 220,
+      "row_count": 219,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 13,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 15,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 110,
@@ -200,7 +274,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "From $390/week"
+              "word_to": "From $410/week"
             },
             {
               "count": 1,
@@ -208,8 +282,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "From $390/week",
-          "word_from": "From $390/Week"
+          "winner": "From $410/week",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -307,13 +381,13 @@
       "csv_file": "de.csv",
       "language_name": "German",
       "language_to": "de",
-      "row_count": 252,
+      "row_count": 251,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 18,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 5,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 127,
@@ -390,7 +464,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "Ab $390/Woche"
+              "word_to": "Ab $410/Woche"
             },
             {
               "count": 1,
@@ -398,8 +472,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "Ab $390/Woche",
-          "word_from": "From $390/Week"
+          "winner": "Ab $410/Woche",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -452,13 +526,13 @@
       "csv_file": "es.csv",
       "language_name": "Spanish",
       "language_to": "es",
-      "row_count": 275,
+      "row_count": 274,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 9,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 18,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 4,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 148,
@@ -504,7 +578,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "De $390/Semana"
+              "word_to": "De $410/Semana"
             },
             {
               "count": 1,
@@ -512,8 +586,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "De $390/Semana",
-          "word_from": "From $390/Week"
+          "winner": "De $410/Semana",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -750,13 +824,13 @@
       "csv_file": "fr.csv",
       "language_name": "French",
       "language_to": "fr",
-      "row_count": 227,
+      "row_count": 226,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 16,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 112,
@@ -814,7 +888,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "À partir de $390/semaine"
+              "word_to": "À partir de $410/semaine"
             },
             {
               "count": 1,
@@ -822,8 +896,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "À partir de $390/semaine",
-          "word_from": "From $390/Week"
+          "winner": "À partir de $410/semaine",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -921,13 +995,13 @@
       "csv_file": "it.csv",
       "language_name": "Italian",
       "language_to": "it",
-      "row_count": 227,
+      "row_count": 226,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 17,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
@@ -985,7 +1059,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "A partire da $390/week"
+              "word_to": "A partire da $410/week"
             },
             {
               "count": 1,
@@ -993,8 +1067,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "A partire da $390/week",
-          "word_from": "From $390/Week"
+          "winner": "A partire da $410/week",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -1077,13 +1151,13 @@
       "csv_file": "ja.csv",
       "language_name": "Japanese",
       "language_to": "ja",
-      "row_count": 226,
+      "row_count": 225,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 16,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
@@ -1171,7 +1245,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "From $390/week"
+              "word_to": "From $410/week"
             },
             {
               "count": 1,
@@ -1179,8 +1253,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "From $390/week",
-          "word_from": "From $390/Week"
+          "winner": "From $410/week",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -1248,13 +1322,13 @@
       "csv_file": "ko.csv",
       "language_name": "Korean",
       "language_to": "ko",
-      "row_count": 238,
+      "row_count": 237,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 11,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 15,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 120,
@@ -1312,7 +1386,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "From $390/week"
+              "word_to": "From $410/week"
             },
             {
               "count": 1,
@@ -1320,8 +1394,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "From $390/week",
-          "word_from": "From $390/Week"
+          "winner": "From $410/week",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -1423,13 +1497,13 @@
       "csv_file": "pt.csv",
       "language_name": "Portuguese",
       "language_to": "pt",
-      "row_count": 230,
+      "row_count": 229,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 17,
-        "detail.fields.fidelo_starting_price_display": 6,
+        "detail.fields.fidelo_starting_price_display": 5,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 113,
@@ -1487,7 +1561,7 @@
           "candidates": [
             {
               "count": 4,
-              "word_to": "A partir de $390/week"
+              "word_to": "A partir de $410/week"
             },
             {
               "count": 1,
@@ -1495,8 +1569,8 @@
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "A partir de $390/week",
-          "word_from": "From $390/Week"
+          "winner": "A partir de $410/week",
+          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -1594,6 +1668,6 @@
   "schema": "weglot.csv-export.v1",
   "totals": {
     "languages": 8,
-    "rows": 1895
+    "rows": 1887
   }
 }
