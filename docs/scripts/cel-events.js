@@ -32,6 +32,8 @@
  *   select_content                             blog-post link clicks (promo, list, related, category)
  *   generate_lead                              contact|newsletter|schedule_call(HubSpot)
  *   cta_click                                  apply offers contact email phone whatsapp directions blog_see_all
+ *                                              (+ cta_location: header/footer/hero/body_top/mid/bottom, + cta_text:
+ *                                               button label — so multiple Apply/Contact buttons per page are comparable)
  *   language_select                            Weglot language switch
  *   tab_select | faq_toggle | toc_click        on-page engagement
  *   navigation_click                           header/footer nav + in_content + outbound links
@@ -166,6 +168,31 @@
   function linkText(a) { return (a.textContent || '').trim().slice(0, 80); }
   function urlOf(a) { try { return new URL(a.href, location.href); } catch (_) { return null; } }
 
+  // ---- CTA placement + label (so multiple Apply/Contact buttons on one page are distinguishable) ----
+  // cta_location: WHERE the button sits, language-agnostic (no Webflow class dependence — CTAs aren't
+  //   wrapped in stable section_* blocks). header/footer come from nav ancestry; otherwise bucket by the
+  //   element's vertical position in the document: hero (first viewport), body_top/body_mid/body_bottom.
+  function ctaLocation(a) {
+    if (a.closest('nav, .navbar, [class*="navbar"], .w-nav')) return a.closest('.w-dropdown') ? 'header_dropdown' : 'header';
+    if (a.closest('footer, .footer, [class*="footer_"]')) return 'footer';
+    if (a.closest('.w-nav-overlay, [class*="mobile-menu"], [class*="menu_overlay"]')) return 'mobile_menu';
+    let top;
+    try {
+      const r = a.getBoundingClientRect();
+      top = r.top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+    } catch (_) { return 'unknown'; }
+    const vh = window.innerHeight || 800;
+    const docH = Math.max(document.documentElement.scrollHeight || 0, vh);
+    if (top < vh) return 'hero';                         // within the first viewport
+    const frac = top / docH;                              // position through the page
+    if (frac < 0.34) return 'body_top';
+    if (frac < 0.67) return 'body_mid';
+    return 'body_bottom';
+  }
+  // cta_text: the button's own visible label, normalized (collapse whitespace, cap length). Lets you compare
+  //   wording (e.g. "Apply Now" vs "Get Started"). Language-specific by nature — that's intended for A/B of copy.
+  function ctaText(a) { return ((a.textContent || a.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim().slice(0, 60)) || '(none)'; }
+
   // ---- acquisition source on load (once) — client need (b): organic landings on /post ----
   (function () {
     let rh = '';
@@ -234,7 +261,7 @@
     if (a.closest('.section_blog')) {
       const u = urlOf(a);
       if (u && isPostPath(u.pathname)) { push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog' }); return; }
-      if (u && barePath(u.pathname) === '/blog') { push('cta_click', { cta_id: 'blog_see_all', link_url: a.href }); return; }
+      if (u && barePath(u.pathname) === '/blog') { push('cta_click', { cta_id: 'blog_see_all', link_url: a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) }); return; }
       // any other .section_blog link falls through to normal classification below
     }
 
@@ -253,12 +280,12 @@
       // GA4 redacts emails regardless + its no-PII policy bans them, so send the scheme
       // label, never the raw href. cta_id already says which channel was clicked.
       const SAFE_URL = { email: 'mailto:', phone: 'tel:', whatsapp: 'whatsapp:' };
-      push('cta_click', { cta_id: id, link_url: SAFE_URL[id] || a.href });
+      push('cta_click', { cta_id: id, link_url: SAFE_URL[id] || a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) });
       return;
     }
 
     // "Unlock Offer" influencer CTA (href=#, sits in navbar) -> offers intent (is-influencer is an English class)
-    if (a.classList.contains('is-influencer')) { push('cta_click', { cta_id: 'offers', link_url: a.href }); return; }
+    if (a.classList.contains('is-influencer')) { push('cta_click', { cta_id: 'offers', link_url: a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) }); return; }
 
     // header / footer navigation
     const loc = navLocation(a);
