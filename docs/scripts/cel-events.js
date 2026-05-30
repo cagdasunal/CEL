@@ -51,8 +51,8 @@
   // are still tracked via the raw page_id; add them here only for a friendly name.
   const PAGE_TYPES = {
     '667453c576e8d35c454cc9bc': 'home',
-    '667453c576e8d35c454ccc54': 'landing', '685a4a48f7d57ee291672413': 'landing',
-    '685a950e98870e8352d6cbae': 'landing', '69c7d70e7b6c140db0aba732': 'landing',
+    '667453c576e8d35c454ccc54': 'landing', '685a4a48f7d57ee291672413': 'landing_sandiego',
+    '685a950e98870e8352d6cbae': 'landing_vancouver', '69c7d70e7b6c140db0aba732': 'landing',
     '69ab1f80d2d74bc167e4fea1': 'landing', '69ce8a2a6612261e96d8a8c5': 'landing',
     '667453c576e8d35c454ccb11': 'course_detail', '667453c576e8d35c454cca68': 'course_list',
     '69e8ab613e1e04f22496dd5b': 'housing_detail', '667453c576e8d35c454ccbba': 'housing_list',
@@ -220,7 +220,7 @@
       if (it) pushEcom('select_item', { item_list_name: PT, items: [it] });
       return;
     }
-    const hc = t.closest('a.button.course');                           // homepage course selector (href=# JS tabs)
+    const hc = PT === 'home' ? t.closest('a.button.course') : null;    // homepage course selector (href=# JS tabs) — home-guarded (audit M2)
     if (hc) {                                                          // keyed by position (language-agnostic)
       const ix = indexAmong(hc, 'a.button.course');
       pushEcom('select_item', { item_list_name: 'home_course_selector', items: [{ item_id: 'home-course-' + ix, item_name: 'Home course ' + (ix + 1), item_category: 'courses', index: ix }] });
