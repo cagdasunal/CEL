@@ -176,7 +176,12 @@
   })();
 
   const CARD_SEL = 'a.course-card_link, a.accom_float-card';
-  const WEGLOT_SEL = '.button_weglot a, [class*="weglot"] a, [class*="wg-"] a, .country-selector a, a[data-l]';
+  // Weglot language switcher (JS-injected widget): <ul class="weglot_switcher country-select">
+  //   <li class="wg-li de wg-flags"><a aria-label="Deutsch" href="#"></a></li>. Match ONLY the real
+  //   switcher — the old broad arms [class*="weglot"] a / [class*="wg-"] a also matched <a> inside
+  //   weglot-exclude content on other pages, poisoning to_language with scraped sentence text
+  //   ("What a Langu", "why it's so…"). See audit 2026-05-30 H3/H4.
+  const WEGLOT_SEL = '.weglot_switcher a, .wg-li a, .button_weglot a, .country-selector a, a[data-l]';
 
   // ---- one delegated capture-phase click listener (specific -> generic) ----
   document.addEventListener('click', function (e) {
@@ -210,11 +215,18 @@
     const href = a.getAttribute('href') || '';
 
     // language switcher (Weglot) -> language_select  (BEFORE /post + nav: a lang link can be /de/post/..)
-    const wg = a.closest(WEGLOT_SEL) || (a.matches && a.matches(WEGLOT_SEL) ? a : null);
+    const wgLi = a.closest('.wg-li');                                  // the real switcher item carries the ISO code as a class token
+    const wg = wgLi || a.closest(WEGLOT_SEL) || (a.matches && a.matches(WEGLOT_SEL) ? a : null);
     if (wg) {
-      const m = href.match(/\/(de|fr|es|it|pt|ko|ja|ar|en)(\/|$)/);
-      const to = a.getAttribute('data-l') || (m && m[1]) || (a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 12) || 'unknown';
-      push('language_select', { to_language: to });
+      // to_language = ISO code ONLY (never scraped link text). Sources, in order: data-l (future-proof)
+      // -> the .wg-li class token (e.g. "wg-li de wg-flags" -> "de") -> first path segment of the href.
+      let to = a.getAttribute('data-l') || '';
+      if (!to && wgLi) {
+        const toks = wgLi.className.split(/\s+/);
+        for (let i = 0; i < toks.length; i++) { if (toks[i] === 'en' || LOCALES.indexOf(toks[i]) !== -1) { to = toks[i]; break; } }
+      }
+      if (!to) { const wu = urlOf(a); if (wu) { const seg = (wu.pathname.split('/')[1] || '').toLowerCase(); if (seg === 'en' || LOCALES.indexOf(seg) !== -1) to = seg; } }
+      push('language_select', { to_language: to || 'unknown' });
       return;
     }
 
