@@ -31,7 +31,7 @@
  *   view_item_list / select_item / view_item   courses+housing catalog (GA4 items)
  *   select_content                             blog-post link clicks (promo, list, related, category)
  *   generate_lead                              contact|newsletter|schedule_call(HubSpot)
- *   cta_click                                  apply offers contact-via-nav email phone whatsapp directions blog_see_all
+ *   cta_click                                  apply offers contact email phone whatsapp directions blog_see_all
  *   language_select                            Weglot language switch
  *   tab_select | faq_toggle | toc_click        on-page engagement
  *   navigation_click                           header/footer nav + in_content + outbound links
@@ -88,10 +88,18 @@
     if (referrerHost.indexOf('englishcollege.com') !== -1) return 'internal';
     return 'referral';
   }
-  // CTA intent. Protocol/host signals are universal. The ONLY path literals matched
-  // are /booking and /offers — VERIFIED byte-identical across all 8 locales. Translated
-  // slugs are NEVER matched here (courses->kurse, contact->contato). Unmatched links
-  // degrade to navigation_click (carrying the raw link_url) — so all pages, all langs.
+  // Contact-page slugs across ALL 8 locales (the contact CTA is a conversion, not nav,
+  // and appears in nav/footer/hero/body — so match the DESTINATION, not a styling class).
+  // Weglot TRANSLATES this slug, so unlike /booking & /offers it is NOT byte-identical;
+  // this is the complete verified set (curl'd is-apply hrefs across all 8 locales 2026-05-30).
+  // RE-VERIFY if Weglot changes a contact slug or a new locale is added (else it falls back to nav).
+  //   /contact-cel (en, fr, ko, ja, ar) · /contact (de) · /contacta-con-cel (es) · /contato (it, pt)
+  const CONTACT_PATHS = ['/contact-cel', '/contact', '/contacta-con-cel', '/contato'];
+
+  // CTA intent. Protocol/host signals are universal. Path literals: /booking & /offers are
+  // byte-identical across all 8 locales; the contact slug set is translated-but-enumerated
+  // (CONTACT_PATHS). Other translated slugs (courses->kurse) are NEVER matched here —
+  // unmatched links degrade to navigation_click (carrying the raw link_url).
   function classifyHref(raw, url) {
     if (!raw || raw.charAt(0) === '#') return null;
     if (/^mailto:/i.test(raw)) return 'email';
@@ -103,6 +111,7 @@
     const p = barePath(url.pathname || '');
     if (p === '/booking') return 'apply';     // invariant across all 8 locales (verified)
     if (p === '/offers') return 'offers';      // invariant across all 8 locales (verified)
+    if (CONTACT_PATHS.indexOf(p) !== -1) return 'contact';  // translated slug set (verified 2026-05-30)
     return null;
   }
 
@@ -244,8 +253,8 @@
     if (loc) { push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: loc }); return; }
 
     // in-content link catch-all (every other real link: same-origin internal OR outbound).
-    // Captures contact CTAs (/contact-cel etc.), cross-links, sibling landings, partners.
-    // Skips pure in-page anchors (#...) and non-navigational schemes (no hostname).
+    // Contact CTAs are now classified as cta_click(contact) above; this captures cross-links,
+    // sibling landings, partners. Skips pure in-page anchors (#...) and schemes w/o hostname.
     if (href && href.charAt(0) !== '#' && au && au.hostname) {
       push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: (au.hostname === location.hostname) ? 'in_content' : 'outbound' });
     }
