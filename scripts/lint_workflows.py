@@ -20,6 +20,10 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
   - notify_label_no_selfheal : `gh issue create --label X` with no `gh label create X`
                         (gh aborts atomically if the label is absent -> the failure
                         alert opens NO issue, silently; tracker 138 missing-label bug)
+  - notify_missing_cancelled : a scheduled notify step guarded by `if: failure()` with
+                        no `cancelled()` (a timeout-minutes expiry -> conclusion
+                        `cancelled`, not `failed`, so the alert misses TIMEOUTS — the
+                        blog-summary-autopilot 7-day-silent incident)
 
 Stdlib only (text/regex; no PyYAML). Designed to run locally, in pre-commit, in
 `system_inspector` (check_workflow_reliability), and as a CI job in BOTH the
@@ -96,6 +100,24 @@ def _job_blocks(text: str):
             break
         elif cur_name is not None:
             cur.append(ln)
+
+
+def _step_blocks(text: str):
+    """Yield (start_line, block_text) for each step (a `- name:`/`- uses:`/`- run:`
+    list item under `steps:`). A block runs from its leading `- <key>:` to the next
+    step's leading `- <key>:` (or EOF), so it captures the step's `if:`, `env:`, and
+    `run:` together — enough to inspect a step's guard alongside its body."""
+    lines = text.split("\n")
+    cur, start = None, None
+    for i, ln in enumerate(lines):
+        if re.match(r"^\s+-\s+(name|uses|run|id|if|with|env):", ln):
+            if cur is not None:
+                yield start, "\n".join(cur)
+            cur, start = [ln], i + 1
+        elif cur is not None:
+            cur.append(ln)
+    if cur is not None:
+        yield start, "\n".join(cur)
 
 
 def lint_workflow(path: Path):
@@ -191,6 +213,26 @@ def lint_workflow(path: Path):
                     f"opens NO issue (silent suppression)",
                     f"add `gh label create {label} --repo \"$REPO\" --color B60205 "
                     f"--description ... 2>/dev/null || true` before the issue create")
+
+    # 7. a scheduled workflow's failure-notify must cover cancelled(), not just failure().
+    #    A `timeout-minutes` expiry marks the job `cancelled`, NOT `failed`, so an
+    #    `if: failure()`-only notify NEVER fires on a TIMEOUT — exactly how
+    #    blog-summary-autopilot timed out (cancelled) unalerted for 7 days. Safe to
+    #    require broadly: none of these crons use concurrency cancel-in-progress, so a
+    #    `cancelled` status only ever means a timeout or a manual cancel — both alert-worthy.
+    if is_scheduled and "gh issue create" in text:
+        for sline, sblock in _step_blocks(text):
+            if "gh issue create" not in sblock:
+                continue
+            m = re.search(r"^\s*if:\s*(.+)$", sblock, re.M)
+            guard = m.group(1) if m else ""
+            if "failure()" in guard and "cancelled()" not in guard:
+                add("high", "notify_missing_cancelled", sline,
+                    "scheduled workflow's failure-notify uses `if: failure()` without "
+                    "`cancelled()` — a `timeout-minutes` expiry marks the job `cancelled` "
+                    "(not `failed`), so the alert never fires on a TIMEOUT (the "
+                    "blog-summary-autopilot 7-day-silent incident)",
+                    "change the notify step guard to `if: failure() || cancelled()`")
 
     return findings
 
