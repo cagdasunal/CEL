@@ -29,6 +29,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -282,11 +283,22 @@ def generate_sitemap_exclusion_data(state: dict) -> None:
 def emit_github_output(
     updated: bool, count: int, slugs: list[str], error: str = ""
 ) -> None:
+    # `error` can contain newlines (exception reprs, Weglot/CMS response bodies).
+    # A bare `error=<value>` line corrupts the GITHUB_OUTPUT block on a newline:
+    # the value truncates and any `k=v`-looking line in the body injects a spurious
+    # output variable. Use GitHub's heredoc form with a random delimiter for the
+    # error field. Single-line fields (bool/int/comma-joined slugs) stay name=value.
+    # https://docs.github.com/actions/using-workflows/workflow-commands#multiline-strings
+    delim = f"ghadelim_{uuid.uuid4().hex}"
+    while delim in error:  # astronomically unlikely; guard against collision anyway
+        delim = f"ghadelim_{uuid.uuid4().hex}"
     lines = [
         f"updated={'true' if updated else 'false'}",
         f"count={count}",
         f"slugs={','.join(slugs)}",
-        f"error={error}",
+        f"error<<{delim}",
+        error,
+        delim,
     ]
     output_file = os.environ.get("GITHUB_OUTPUT", "")
     if output_file:
