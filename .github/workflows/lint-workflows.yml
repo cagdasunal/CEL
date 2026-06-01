@@ -1,0 +1,54 @@
+name: Lint workflows
+
+# Prevention gate for CI reliability (cagdasunal/webflow tracker 138). Runs on
+# every change to a workflow file and fails if a workflow has a reliability gap —
+# missing failure-notify on a cron, missing timeout, push-race, silent `| tail`
+# pipe, masked failure — OR any actionlint/shellcheck error. Stops the "broken
+# cron nobody noticed" class from recurring. actionlint pinned (no curl|bash).
+# scripts/lint_workflows.py is vendored from cagdasunal/webflow — keep in sync.
+
+on:
+  push:
+    paths: ['.github/workflows/**']
+  pull_request:
+    paths: ['.github/workflows/**']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-workflows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install actionlint (pinned)
+        run: |
+          set -euo pipefail
+          VERSION=1.7.12
+          curl -fsSL -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz"
+          tar xzf actionlint.tar.gz actionlint
+
+      - name: actionlint (YAML + shell errors)
+        env:
+          # shellcheck STYLE nits (SC2086 quoting, SC2012 ls→find, SC2155) are
+          # info/warning — not reliability bugs, and would make this gate red on
+          # arrival. Gate on actionlint's own YAML/expression/syntax errors +
+          # shellcheck ERROR-level only. The reliability patterns (masked
+          # failure, silent pipes, missing notify) are caught by the linter step.
+          SHELLCHECK_OPTS: --severity=error
+        run: |
+          set -euo pipefail
+          ./actionlint -color
+
+      - name: Reliability linter (notify / timeout / push-race / silent pipes)
+        run: |
+          set -euo pipefail
+          python3 scripts/lint_workflows.py --strict
