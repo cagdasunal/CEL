@@ -17,6 +17,9 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
                         `set -o pipefail` / `${PIPESTATUS}` (lost exit code)
   - masked_failure    : `git push || echo ...` / `|| true` on a load-bearing cmd
   - missing_permissions: a workflow using GITHUB_TOKEN with no `permissions:` block
+  - notify_label_no_selfheal : `gh issue create --label X` with no `gh label create X`
+                        (gh aborts atomically if the label is absent -> the failure
+                        alert opens NO issue, silently; tracker 138 missing-label bug)
 
 Stdlib only (text/regex; no PyYAML). Designed to run locally, in pre-commit, in
 `system_inspector` (check_workflow_reliability), and as a CI job in BOTH the
@@ -164,6 +167,30 @@ def lint_workflow(path: Path):
                 f"load-bearing command masked with `|| {ml.group(2)}`: `{ml.group(0)[:60]}` "
                 "— a real failure is swallowed and the job stays green",
                 "remove the `|| echo/true`; let it fail, or handle the specific recoverable case explicitly")
+
+    # 6. a notify step that opens a LABELED issue without ensuring the label exists.
+    #    `gh issue create --label X` aborts ATOMICALLY if X is absent in the repo, so
+    #    the alert opens NO issue — SILENT suppression. tracker 138: the `ci-failure`
+    #    label was never created in either repo, so every notify step alerted nothing
+    #    until the bug was found by an adversarial audit (not by an alert). A notify
+    #    step must self-heal the label with `gh label create X ... || true` first.
+    for bline, block in _run_blocks(text):
+        if "gh issue create" not in block:
+            continue
+        flat = re.sub(r"\\\s*\n\s*", " ", block)  # join backslash line-continuations
+        seen = set()
+        for cm in re.finditer(r"gh issue create\b[^\n]*?--label\s+([A-Za-z0-9._-]+)", flat):
+            label = cm.group(1)
+            if label in seen:
+                continue
+            seen.add(label)
+            if not re.search(r"gh label create\s+" + re.escape(label), flat):
+                add("high", "notify_label_no_selfheal", bline,
+                    f"`gh issue create --label {label}` with no `gh label create {label}` "
+                    f"self-heal — if the label is absent in the repo, gh aborts and the alert "
+                    f"opens NO issue (silent suppression)",
+                    f"add `gh label create {label} --repo \"$REPO\" --color B60205 "
+                    f"--description ... 2>/dev/null || true` before the issue create")
 
     return findings
 
