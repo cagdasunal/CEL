@@ -204,12 +204,12 @@ class TestSitemapExclusionFiltering:
 
     def test_import_sitemap_function(self):
         """Verify we can import the filtering function."""
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
         assert callable(is_excluded_translation)
 
     def test_excluded_translation_detected(self):
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
 
         exclusion_map = {"/post/my-english-post": ["ar", "de", "es", "fr", "it", "ja", "ko", "pt"]}
@@ -218,7 +218,7 @@ class TestSitemapExclusionFiltering:
         ) is True
 
     def test_non_excluded_translation_passes(self):
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
 
         exclusion_map = {"/post/my-german-post": ["ar", "es", "fr", "it", "ja", "ko", "pt"]}
@@ -228,7 +228,7 @@ class TestSitemapExclusionFiltering:
         ) is False
 
     def test_non_post_url_passes(self):
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
 
         exclusion_map = {"/post/something": ["de"]}
@@ -237,7 +237,7 @@ class TestSitemapExclusionFiltering:
         ) is False
 
     def test_empty_exclusion_map(self):
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
 
         assert is_excluded_translation(
@@ -245,7 +245,7 @@ class TestSitemapExclusionFiltering:
         ) is False
 
     def test_slug_not_in_map(self):
-        sys.path.insert(0, str(Path(__file__).parent.parent / "sitemap"))
+        sys.path.insert(0, str(Path(__file__).parent.parent))
         from generate_master_sitemap import is_excluded_translation
 
         exclusion_map = {"/post/other-slug": ["de"]}

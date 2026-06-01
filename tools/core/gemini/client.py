@@ -369,6 +369,16 @@ _TRANSIENT_MARKERS = (
     "connection", "reset by peer", "503", "502", "500", "429", "rate limit",
 )
 
+# Per-request HTTP timeout (MILLISECONDS) applied to every genai.Client so a HUNG
+# Gemini call fails in minutes instead of riding the 60-min GitHub job cap (tracker
+# 138 deferred item: blog-summary-autopilot hung unnoticed). Generous on purpose —
+# a generate finishes in <90s and batch submit/poll/cancel in seconds, so only a
+# genuine network hang trips it. A timeout error is transient-matched ("timeout"
+# above) so _retry_transient retries it (≤3×), bounding a persistent hang near
+# ~15 min — still well under the job cap, where the job timeout + failure-notify
+# then surface it. google-genai HttpOptions.timeout is documented in ms (SDK 2.6).
+_GEMINI_HTTP_TIMEOUT_MS = 300_000  # 5 minutes
+
 
 def _is_transient(exc: Exception) -> bool:
     s = str(exc).lower()
@@ -510,7 +520,7 @@ def cancel_batch(batch_id: str, api_key_env: str = "GEMINI_API_KEY") -> str:
         raise RuntimeError(f"Environment variable {api_key_env} is not set.")
     from google import genai  # type: ignore
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
     _retry_transient(lambda: client.batches.cancel(name=batch_id))
     job = _retry_transient(lambda: client.batches.get(name=batch_id))
     return _job_state_name(job)
@@ -549,7 +559,7 @@ def submit_batch(
         ) from e
 
     model = model or (requests[0].model if requests else "") or config.MODEL_ID
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
     display_name = f"cel-summary-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
 
     cache_by_system: dict[str, str] = {}
@@ -628,7 +638,7 @@ def generate_sync(
             "or use tools/summary/requirements.txt."
         ) from e
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
     results: list[BatchResult] = []
     for r in requests:
         system_text = _flatten_system_blocks(r.system_blocks)
@@ -666,7 +676,7 @@ def wait_for_batch(
         raise RuntimeError(f"Environment variable {api_key_env} is not set.")
     from google import genai  # type: ignore
 
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
     deadline = time.time() + timeout_sec
     batch_job = None
     # tracker-091 M-12.1: pop the stashed request list in a `finally` block so
