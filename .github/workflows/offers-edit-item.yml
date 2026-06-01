@@ -91,7 +91,7 @@ jobs:
           # either repo, so every notify step opened zero issues. Self-heal so the
           # alert works in any repo and survives the label being deleted.
           gh label create ci-failure --repo "${{ github.repository }}" \
-            --color B60205 --description "Automated CI/cron failure alerts" 2>/dev/null || true
+            --color B60205 --description "Automated CI/cron failure alerts" --force >/dev/null 2>&1 || true
           TITLE="🔴 ${{ github.workflow }} failed"
           URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           NUM=$(gh issue list --repo "${{ github.repository }}" --label ci-failure --state open \
