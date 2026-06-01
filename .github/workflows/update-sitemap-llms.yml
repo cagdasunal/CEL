@@ -103,7 +103,13 @@ jobs:
           exit 1
 
       - name: Notify on failure
-        if: failure()
+        # `failure() || cancelled()` — NOT just failure(): a `timeout-minutes` expiry
+        # marks the job `cancelled`, NOT `failed`, so `if: failure()` alone would NOT
+        # fire on a timeout. blog-summary-autopilot timed out (cancelled) for 7 straight
+        # days with ZERO alerts because of exactly this — the original "hung unnoticed"
+        # incident, reopened. None of these workflows use concurrency cancel-in-progress,
+        # so `cancelled()` only ever means a timeout or a manual cancel (both worth an alert).
+        if: failure() || cancelled()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
