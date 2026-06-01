@@ -380,6 +380,17 @@ _TRANSIENT_MARKERS = (
 _GEMINI_HTTP_TIMEOUT_MS = 300_000  # 5 minutes
 
 
+def _gemini_client(genai, api_key: str):
+    """Construct genai.Client with the reliability per-request HTTP timeout (tracker
+    138). The unit tests inject a SimpleNamespace fake `genai` that has `.Client` but
+    no `.types`, so degrade to default http_options when `genai.types` is absent — the
+    timeout matters only against the LIVE API (production always has the real SDK)."""
+    http_options = None
+    if hasattr(genai, "types"):
+        http_options = genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS)
+    return genai.Client(api_key=api_key, http_options=http_options)
+
+
 def _is_transient(exc: Exception) -> bool:
     s = str(exc).lower()
     return any(m in s for m in _TRANSIENT_MARKERS)
@@ -520,7 +531,7 @@ def cancel_batch(batch_id: str, api_key_env: str = "GEMINI_API_KEY") -> str:
         raise RuntimeError(f"Environment variable {api_key_env} is not set.")
     from google import genai  # type: ignore
 
-    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
+    client = _gemini_client(genai, api_key)
     _retry_transient(lambda: client.batches.cancel(name=batch_id))
     job = _retry_transient(lambda: client.batches.get(name=batch_id))
     return _job_state_name(job)
@@ -559,7 +570,7 @@ def submit_batch(
         ) from e
 
     model = model or (requests[0].model if requests else "") or config.MODEL_ID
-    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
+    client = _gemini_client(genai, api_key)
     display_name = f"cel-summary-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
 
     cache_by_system: dict[str, str] = {}
@@ -638,7 +649,7 @@ def generate_sync(
             "or use tools/summary/requirements.txt."
         ) from e
 
-    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
+    client = _gemini_client(genai, api_key)
     results: list[BatchResult] = []
     for r in requests:
         system_text = _flatten_system_blocks(r.system_blocks)
@@ -676,7 +687,7 @@ def wait_for_batch(
         raise RuntimeError(f"Environment variable {api_key_env} is not set.")
     from google import genai  # type: ignore
 
-    client = genai.Client(api_key=api_key, http_options=genai.types.HttpOptions(timeout=_GEMINI_HTTP_TIMEOUT_MS))
+    client = _gemini_client(genai, api_key)
     deadline = time.time() + timeout_sec
     batch_job = None
     # tracker-091 M-12.1: pop the stashed request list in a `finally` block so
