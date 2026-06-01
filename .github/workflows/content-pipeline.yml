@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: content-pipeline
@@ -15,6 +16,7 @@ concurrency:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
@@ -102,4 +104,27 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/weglot-imports/import-status.json 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push || echo "push failed (will retry next run)"
+          for i in 1 2 3; do
+            if git push; then break; fi
+            [ $i -eq 3 ] && { echo "::error::push failed after 3 attempts"; exit 1; }
+            git pull --rebase --autostash origin main || { echo "::error::rebase conflict"; exit 1; }
+          done
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          TITLE="🔴 ${{ github.workflow }} failed"
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NUM=$(gh issue list --repo "${{ github.repository }}" --label ci-failure --state open \
+                  --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --repo "${{ github.repository }}" \
+              --body "Failed again at $(date -u +%FT%TZ). Run: $URL"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" \
+              --label ci-failure \
+              --body "Scheduled workflow failed. Run: $URL. Auto-updates on repeat failures; close once resolved."
+          fi
