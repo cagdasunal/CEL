@@ -12,6 +12,49 @@
   <link rel="stylesheet" href="/assets/css/dashboard.css">
 </head>
 <body>
+  <div class="shell-root">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/offers/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="/admin/offers/">OFFERS</a>
+        <a class="shell-tab" href="/admin/images/">IMAGES</a>
+        <a class="shell-tab" href="/admin/docs/">DOCS</a>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab is-active">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem is-active" href="/admin/translations/">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/log/">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/summaries/">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/files/">Files</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/housing/">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/courses/">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
+    </header>
   <div class="dashboard-shell">
     <section class="status status-ok">
       <p class="status-label">Weglot CSV downloads — Fidelo sync files.</p>
@@ -24,7 +67,7 @@
         <span class="file-name">Fidelo translations — Download all (ZIP: Fidelo/&lt;lang&gt;.csv, all 8 languages)</span>
         <a href="https://cel.englishcollege.com/admin/weglot-imports/weglot-imports.zip" download>Download ZIP</a>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT — unzip, then import each <code>Fidelo/&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>
+      <p class="subtle">Last updated on 2026-06-02 02:37 AM PDT — unzip, then import each <code>Fidelo/&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>
     </li>
   </ul>
     <h2>Per-language import status</h2>
@@ -33,54 +76,171 @@
       <div class="file-row">
         <span class="file-name">German (de)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">French (fr)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Spanish (es)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-ok">✓ Imported</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-ok">✓ Imported</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Italian (it)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Japanese (ja)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Korean (ko)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (2/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Portuguese (pt)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
     <li>
       <div class="file-row">
         <span class="file-name">Arabic (ar)</span>
       </div>
-      <p class="subtle">Last updated on 2026-06-02 08:05 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
+      <p class="subtle">Last updated on 2026-05-30 07:37 AM PDT <span class="badge-partial">⚠ Partial (1/3)</span> <span class="badge-when">(checked 2026-06-02 08:06 AM PDT)</span></p>
     </li>
   </ul>
   <footer>
-    This page was generated on 2026-06-02 08:06 AM PDT. Next check within 15 minutes.
+    This page was generated on 2026-06-02 09:16 AM PDT. Next check within 15 minutes.
   </footer>
   </div>
+  <div class="cpw-overlay" id="cpw-overlay" hidden>
+    <form class="cpw-modal" id="cpw-form" autocomplete="off">
+      <h2 class="cpw-title">Change password</h2>
+      <div class="cpw-readonly">
+        <p class="cpw-field"><span class="cpw-k">First name</span><span class="cpw-v" id="cpw-first">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Last name</span><span class="cpw-v" id="cpw-last">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Email</span><span class="cpw-v" id="cpw-email">&mdash;</span></p>
+      </div>
+      <label class="cpw-label">Current password<input type="password" id="cpw-current" class="cpw-input" autocomplete="current-password" required></label>
+      <label class="cpw-label">New password<input type="password" id="cpw-new" class="cpw-input" autocomplete="new-password" required></label>
+      <label class="cpw-label">Confirm new password<input type="password" id="cpw-confirm" class="cpw-input" autocomplete="new-password" required></label>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="cpw-cancel">Cancel</button>
+        <button type="submit" class="cpw-btn cpw-save" id="cpw-save">Save</button>
+      </div>
+      <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+  </div>
+  <script>(function () {
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
+    var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+    var changePwBtn = document.getElementById('shell-change-pw');
+    if (currentUser && currentUser.email) {
+      setText('shell-user-name', currentUser.firstName || currentUser.email);
+      setText('shell-user-fullname', fullName(currentUser));
+      setText('shell-user-email', currentUser.email);
+      setText('cpw-first', currentUser.firstName || '—');
+      setText('cpw-last', currentUser.lastName || '—');
+      setText('cpw-email', currentUser.email);
+    } else if (changePwBtn) {
+      changePwBtn.style.display = 'none';
+    }
+
+    var logoutBtn = document.getElementById('shell-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', function () {
+      document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+      location.replace('/');
+    });
+
+    function sha256hex(str) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    function innerHash(pw) { return sha256hex(pw); }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+    function callProxy(payload) {
+      if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (resp) {
+          return resp.json().catch(function () { return {}; }).then(function (j) {
+            return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+          });
+        });
+    }
+
+    var overlay = document.getElementById('cpw-overlay');
+    var cpwForm = document.getElementById('cpw-form');
+    var cpwStatus = document.getElementById('cpw-status');
+    var cpwSave = document.getElementById('cpw-save');
+    if (changePwBtn && overlay && cpwForm) {
+      function closeModal() {
+        overlay.setAttribute('hidden', '');
+        cpwForm.reset();
+        cpwStatus.textContent = '';
+        cpwStatus.className = 'cpw-status';
+        cpwSave.disabled = false;
+      }
+      changePwBtn.addEventListener('click', function () {
+        var dd = document.getElementById('shell-user');
+        if (dd) dd.removeAttribute('open');
+        overlay.removeAttribute('hidden');
+        document.getElementById('cpw-current').focus();
+      });
+      document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+      cpwForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!currentUser || !currentUser.email) return;
+        var cur = document.getElementById('cpw-current').value;
+        var nw = document.getElementById('cpw-new').value;
+        var cf = document.getElementById('cpw-confirm').value;
+        if (!cur || !nw) return;
+        if (nw !== cf) {
+          cpwStatus.textContent = 'New passwords do not match.';
+          cpwStatus.className = 'cpw-status is-error';
+          return;
+        }
+        cpwSave.disabled = true;
+        cpwStatus.textContent = 'Saving…';
+        cpwStatus.className = 'cpw-status';
+        Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+          return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+        }).then(function (r) {
+          if (r.ok) {
+            cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+            cpwStatus.className = 'cpw-status is-ok';
+          } else {
+            cpwStatus.textContent = '✗ Current password is incorrect.';
+            cpwStatus.className = 'cpw-status is-error';
+            cpwSave.disabled = false;
+          }
+        }).catch(function () {
+          cpwStatus.textContent = '✗ Could not save right now. Please try again.';
+          cpwStatus.className = 'cpw-status is-error';
+          cpwSave.disabled = false;
+        });
+      });
+    }
+})();
+</script>
 </body>
 </html>
