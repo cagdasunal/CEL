@@ -995,11 +995,12 @@ SHELL_CSS = """
     .shell-content iframe { height: calc(100vh - 140px); }
   }
 
-  /* === Client Docs (DOCS tab -> /admin/docs/, built by tools/dashboard_docs.py) === */
-  /* Direct hits to /admin/docs/ are bounced into the shell (#docs) by a frame-buster
-     in the page <head>, so the top nav is always present. These rules style both the
-     centered "Guides" index (the card list) and the single-doc reading view. */
-  .docs-page { padding: 44px 24px 80px; min-height: 100vh; }
+  /* === Client Docs: REAL pages at /admin/docs/ and /admin/docs/<slug>/
+     (built by tools/dashboard_docs.py). Each page renders the dashboard top bar
+     (render_docs_topbar) under .shell-root, so the nav is always present — no
+     iframe, no frame-buster. These rules style the centered "Guides" index
+     (the card list) and the single-doc reading view. */
+  .docs-page { padding: 44px 24px 80px; }
 
   /* Guides index (landing) */
   .docs-index { max-width: 780px; margin: 0 auto; }
@@ -1189,6 +1190,83 @@ def render_sync_status_card(label: str, last_synced: str, is_ok: bool = True) ->
     )
 
 
+# Standalone dashboard top bar for the REAL Docs pages (/admin/docs/ and
+# /admin/docs/<slug>/, built by tools/dashboard_docs.py). Reuses the shell's
+# .shell-* classes (defined in dashboard.css). Unlike the SPA shell, these tabs
+# are real links: the other sections point back into the shell (/admin/#<target>)
+# and DOCS points at the real docs index (marked active). Pairs with
+# DOCS_TOPBAR_JS below (identity + sign out; no iframe routing, no change-pw modal).
+def render_docs_topbar() -> str:
+    chevron = (
+        '<svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" '
+        'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" '
+        'stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg>'
+    )
+    return f"""\
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="/admin/#offers">OFFERS</a>
+        <a class="shell-tab" href="/admin/#images">IMAGES</a>
+        <a class="shell-tab is-active" href="/admin/docs/">DOCS</a>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">WEGLOT {chevron}</summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#translations">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#log">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">SEO {chevron}</summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#summaries">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#files">Files</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">FIDELO {chevron}</summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#housing">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#courses">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> {chevron}</summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
+    </header>"""
+
+
+# Identity + sign-out for the standalone Docs top bar. Mirrors the shell's own
+# identity/sign-out logic (window.__CEL_USER__ is set by auth.js). No crypto,
+# no dispatch proxy, no change-password — those live in the main shell only.
+DOCS_TOPBAR_JS = """\
+(function () {
+  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+  var u = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+  if (u) {
+    setText('shell-user-name', u.firstName || u.email);
+    setText('shell-user-fullname', [u.firstName || '', u.lastName || ''].join(' ').trim() || u.email);
+    setText('shell-user-email', u.email);
+  }
+  var out = document.getElementById('shell-logout');
+  if (out) out.addEventListener('click', function () {
+    document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+    location.replace('/');
+  });
+})();
+"""
+
+
 _SHELL_HTML = """\
 <!DOCTYPE html>
 <html lang="en">
@@ -1212,7 +1290,7 @@ _SHELL_HTML = """\
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#images" data-target="images" data-topbar="images">IMAGES</a>
-        <a class="shell-tab" href="#docs" data-target="docs" data-topbar="docs">DOCS</a>
+        <a class="shell-tab" href="/admin/docs/">DOCS</a>
         <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -1271,6 +1349,8 @@ _SHELL_HTML = """\
   </div>
   <script>
   (function () {
+    // DOCS is a real page now (/admin/docs/); redirect any legacy #docs link.
+    if (location.hash === '#docs') { location.replace('/admin/docs/'); return; }
     var TARGETS = {
       log:          '/admin/log/',
       offers:       '/admin/offers/',
@@ -1279,8 +1359,7 @@ _SHELL_HTML = """\
       translations: '/admin/translations/',
       images:       '/admin/images/',
       summaries:    '/admin/summaries/',
-      files:        '/admin/files/',
-      docs:         '/admin/docs/'
+      files:        '/admin/files/'
     };
     var TOPBAR_FOR = {
       log:          'weglot',
@@ -1290,8 +1369,7 @@ _SHELL_HTML = """\
       translations: 'weglot',
       images:       'images',
       summaries:    'seo',
-      files:        'seo',
-      docs:         'docs'
+      files:        'seo'
     };
     var frame = document.getElementById('shell-frame');
     var topbarEls = document.querySelectorAll('[data-topbar]');

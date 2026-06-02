@@ -931,11 +931,12 @@
     .shell-content iframe { height: calc(100vh - 140px); }
   }
 
-  /* === Client Docs (DOCS tab -> /admin/docs/, built by tools/dashboard_docs.py) === */
-  /* Direct hits to /admin/docs/ are bounced into the shell (#docs) by a frame-buster
-     in the page <head>, so the top nav is always present. These rules style both the
-     centered "Guides" index (the card list) and the single-doc reading view. */
-  .docs-page { padding: 44px 24px 80px; min-height: 100vh; }
+  /* === Client Docs: REAL pages at /admin/docs/ and /admin/docs/<slug>/
+     (built by tools/dashboard_docs.py). Each page renders the dashboard top bar
+     (render_docs_topbar) under .shell-root, so the nav is always present — no
+     iframe, no frame-buster. These rules style the centered "Guides" index
+     (the card list) and the single-doc reading view. */
+  .docs-page { padding: 44px 24px 80px; }
 
   /* Guides index (landing) */
   .docs-index { max-width: 780px; margin: 0 auto; }
