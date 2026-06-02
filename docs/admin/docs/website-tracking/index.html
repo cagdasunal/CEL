@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/assets/js/dashboard-config.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Understanding Your Website Tracking | English College</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+</head>
+<body>
+  <div class="shell-root">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="/admin/#offers">OFFERS</a>
+        <a class="shell-tab" href="/admin/#images">IMAGES</a>
+        <a class="shell-tab is-active" href="/admin/docs/">DOCS</a>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#translations">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#log">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#summaries">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#files">Files</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/#housing">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/#courses">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
+    </header>
+    <main class="docs-page">
+      <section class="doc-view"><a class="doc-back" href="/admin/docs/">← All guides</a><article class="doc-prose"><p class="doc-eyebrow">Guide</p><h1 class="doc-title">Understanding Your Website Tracking</h1><p class="doc-updated">Last updated June 2, 2026</p><p>This guide explains what we track on your website, where to find it, and what every name in your Analytics means. Everything here counts actions, never people by name.</p>
+<h2 id="your-reports">Your reports</h2>
+<p>You have four ready-made reports, saved in your <strong>Explore</strong> tab in Google Analytics. Open <strong>Explore</strong> in the left menu and pick one by name. Every report can be filtered by language.</p>
+<ol class="doc-list"><li><strong>CTA performance.</strong> Which buttons people click (Apply, Contact, WhatsApp, Offers, Email, Phone, Directions) and where each one sits on the page, so you can see which buttons, and which spots on the page, work best.</li><li><strong>Behaviour &amp; Conversions.</strong> The big picture: how many people visit, what they engage with, and how many go on to take a key action.</li><li><strong>Conversions by page.</strong> Which pages turn visitors into enquiries, so you can see where your wins happen.</li><li><strong>Apply conversions by placement.</strong> How your Apply clicks break down by where the Apply button sits on the page, so you can place it where it converts best.</li></ol>
+<p>Alongside these, Google's standard <strong>Reports</strong> (Realtime, Acquisition, Engagement) are always available, and we can save any new report you'd like.</p>
+<h2 id="your-conversions">Your conversions</h2>
+<p>A few actions matter more than the rest, because they move someone closer to becoming a student. We mark these as <strong>Key Events</strong>, which is Google's name for a conversion, so they stand out in your reports.</p>
+<ul class="doc-list"><li><strong>Apply.</strong> Someone clicked an Apply button.</li><li><strong>Contact.</strong> Someone clicked a Contact button.</li><li><strong>WhatsApp.</strong> Someone clicked to message you on WhatsApp.</li><li><strong>Form sent.</strong> Someone submitted a form or booked a call.</li></ul>
+<h2 id="every-name-explained">Every name explained</h2>
+<p>Each action has a short name in Analytics. Here is what every one means, grouped so they are easy to scan.</p>
+<p><strong>The actions that bring you students</strong></p>
+<div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>Name</th><th>What it means</th></tr></thead><tbody><tr><td><code>apply_click</code></td><td>Someone clicked an Apply button</td></tr><tr><td><code>contact_click</code></td><td>Someone clicked a Contact button</td></tr><tr><td><code>whatsapp_click</code></td><td>Someone clicked to message you on WhatsApp</td></tr><tr><td><code>generate_lead</code></td><td>Someone submitted a form or booked a call</td></tr><tr><td><code>cta_click</code></td><td>Any call-to-action button click. The exact button (Apply, Contact, WhatsApp, Offers, Email, Phone, or Directions) is recorded with it</td></tr></tbody></table></div>
+<p><strong>Interest in your courses and rooms</strong></p>
+<div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>Name</th><th>What it means</th></tr></thead><tbody><tr><td><code>view_item_list</code></td><td>Someone saw a list of your courses or accommodation</td></tr><tr><td><code>select_item</code></td><td>Someone clicked one course or room to learn more. "Item" is Google's word for a single course or accommodation listing</td></tr><tr><td><code>view_item</code></td><td>Someone opened the full page of a course or a room</td></tr><tr><td><code>select_content</code></td><td>Someone clicked through to one of your blog articles</td></tr></tbody></table></div>
+<p><strong>How people read and move around</strong></p>
+<div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>Name</th><th>What it means</th></tr></thead><tbody><tr><td><code>scroll_depth</code></td><td>How far down a page someone read</td></tr><tr><td><code>faq_toggle</code></td><td>Someone opened one of your FAQ questions</td></tr><tr><td><code>toc_click</code></td><td>Someone used the on-page menu to jump to a section</td></tr><tr><td><code>tab_select</code></td><td>Someone switched between tabs on a page</td></tr><tr><td><code>navigation_click</code></td><td>Someone used your menu or footer links</td></tr><tr><td><code>language_select</code></td><td>Someone switched the site into another language</td></tr><tr><td><code>page_entry</code></td><td>How someone arrived: by search, direct, or a link</td></tr></tbody></table></div>
+<p><strong>The basics, which Google records on its own</strong></p>
+<div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>Name</th><th>What it means</th></tr></thead><tbody><tr><td><code>page_view</code></td><td>A page was viewed</td></tr><tr><td><code>session_start</code></td><td>A new visit began</td></tr><tr><td><code>first_visit</code></td><td>A brand-new visitor, here for the first time</td></tr><tr><td><code>user_engagement</code></td><td>A sign the visit was active, not a quick bounce</td></tr><tr><td><code>scroll</code></td><td>Google's basic scroll signal. We add a more detailed <code>scroll_depth</code></td></tr><tr><td><code>click</code></td><td>A click that leads to another website</td></tr><tr><td><code>file_download</code></td><td>Someone downloaded a file, such as a course PDF</td></tr><tr><td><code>form_start</code> and <code>form_submit</code></td><td>Someone started, then finished, filling in a form</td></tr><tr><td><code>view_search_results</code></td><td>Someone used the search box on your site</td></tr></tbody></table></div>
+<h2 id="what-we-do-not-track">What we do not track</h2>
+<p>Your visitors' privacy is protected by design. We never store anyone's name, we never record payment details, and email addresses and phone numbers are hidden before they reach the reports. We also follow your cookie banner. If someone declines, Google still counts the visit in a private way that never identifies the person.</p>
+<h2 id="questions">Questions</h2>
+<p>If a report looks off, or you would like a new one built for something specific, just ask. This page will grow as we add more guides.</p></article></section>
+    </main>
+  </div>
+  <script>(function () {
+  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+  var u = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+  if (u) {
+    setText('shell-user-name', u.firstName || u.email);
+    setText('shell-user-fullname', [u.firstName || '', u.lastName || ''].join(' ').trim() || u.email);
+    setText('shell-user-email', u.email);
+  }
+  var out = document.getElementById('shell-logout');
+  if (out) out.addEventListener('click', function () {
+    document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+    location.replace('/');
+  });
+})();
+</script>
+</body>
+</html>
