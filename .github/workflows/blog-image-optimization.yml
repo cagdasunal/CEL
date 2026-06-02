@@ -65,7 +65,7 @@ jobs:
           #   • The untargeted nightly run sweeps the WHOLE CMS
           #     (--collections all) so every collection's images (Courses,
           #     Testimonials, Team, Activities, …) get AVIF-optimized and the
-          #     /admin/#blog dashboard reflects all of them.
+          #     /admin/#images dashboard reflects all of them.
           POSTS_INPUT="${{ github.event.inputs.posts }}"
           DISPATCH_SLUG="${{ github.event.client_payload.slug }}"
           if [ -n "$POSTS_INPUT" ]; then
@@ -103,10 +103,10 @@ jobs:
             --log-jsonl data/blog-optimization-log.jsonl \
             --backup-dir data/blog-richtext-backup
 
-      - name: Regenerate /admin/#blog dashboard page
+      - name: Regenerate /admin/#images dashboard page
         if: always()  # render even if the optimizer hit a non-fatal image error
         run: |
-          # Renders docs/admin/blog/index.html from the (just-appended) log,
+          # Renders docs/admin/images/index.html from the (just-appended) log,
           # grouped by collection. EXTERNAL_REPO_ROOT auto-resolves to ./docs
           # in this CEL checkout (docs/index.html marker). Run as a module so
           # `from tools.dashboard import ...` resolves against the repo root.
@@ -124,7 +124,7 @@ jobs:
           git add data/blog-optimization-log.jsonl \
                   data/blog-richtext-backup/ \
                   sites/cel/shared/uploaded_assets.json \
-                  docs/admin/blog/index.html
+                  docs/admin/images/index.html
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
