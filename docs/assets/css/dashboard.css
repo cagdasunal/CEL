@@ -1006,7 +1006,7 @@
 
   /* Reference tables (event names) */
   .doc-table-wrap { margin: 0 0 20px; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-  .doc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
+  .doc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); margin: 0; }
   .doc-table th, .doc-table td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--border); }
   .doc-table thead th {
     font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em;
