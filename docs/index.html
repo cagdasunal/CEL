@@ -11,6 +11,14 @@
   <style>
     .gate-link { background: none; border: 0; color: #5b5bd6; cursor: pointer; font: inherit; text-decoration: underline; padding: 6px; }
     .gate-card[hidden] { display: none; }
+    /* Make the sign-in error unmistakable (only when a message is present). */
+    #login-err:not(:empty) {
+      padding: 10px 12px;
+      border: 1px solid var(--err);
+      border-radius: var(--radius-sm);
+      background: rgba(160, 38, 36, 0.09);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -79,7 +87,7 @@
       errEl.textContent = '';
       var email = emailEl.value.trim().toLowerCase();
       var pw = pwEl.value;
-      if (!email || !pw) return;
+      if (!email || !pw) { errEl.textContent = 'Enter your email and password.'; return; }
       if (!DISPATCH_URL) { errEl.textContent = 'Sign-in is not configured yet.'; return; }
       if (btn) btn.disabled = true;
       // Send SHA256(password), never the plaintext. The Worker hashes again and
