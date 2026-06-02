@@ -79,6 +79,9 @@ SHARED_CSS = """
     --fs-base: 14px;
     --fs-lg: 18px;
     --fs-xl: 20px;
+    --fs-doc-body: 16px;
+    --fs-doc-h1: 30px;
+    --fs-doc-h2: 22px;
     --radius: 10px;
     --radius-sm: 6px;
   }
@@ -703,36 +706,78 @@ SHELL_CSS = """
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(93,96,238,0.18);
   }
+  /* Tertiary action (Forgot password? / Back / Go to sign in) — low-emphasis
+     text link, never a second filled CTA. (NN/g, IBM Carbon, Material 3.) */
   .gate-link {
+    align-self: center;
     background: none;
     border: 0;
-    padding: 0;
+    padding: 6px 8px;
     font: inherit;
     font-size: var(--fs-md);
+    font-weight: 500;
     color: var(--accent);
     text-decoration: underline;
+    text-underline-offset: 2px;
     cursor: pointer;
-    text-align: center;
+    border-radius: var(--radius-sm);
   }
+  .gate-link:hover { color: #4e51be; }
+  .gate-link:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
   .gate-ok { font-size: var(--fs-md); color: var(--ok); text-align: center; min-height: 18px; }
   .gate-card[hidden] { display: none; }
-  .gate-card button {
+  /* Visible field labels — placeholders never replace labels (NN/g + WCAG 3.3.2). */
+  .gate-field { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+  .gate-label { font-size: var(--fs-sm); font-weight: 600; color: var(--muted); text-align: left; }
+  /* Primary CTA — exactly ONE high-emphasis button per view (WCAG-AA indigo pill,
+     white-on-#5d60ee = 4.8:1). Full-width via the card's stretch alignment. */
+  .gate-card button[type="submit"] {
     font: inherit;
     font-size: var(--fs-base);
     font-weight: 600;
-    padding: 10px 12px;
+    padding: 13px 22px;
     border: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: var(--accent);
     color: #fff;
     cursor: pointer;
+    box-shadow: 0 1px 2px rgba(55,51,44,0.12);
+    transition: background .15s ease, transform .15s ease;
   }
-  .gate-card button:hover { background: #4e51be; }
-  .gate-error {
-    min-height: 18px;
-    font-size: var(--fs-md);
+  .gate-card button[type="submit"]:hover { background: #4e51be; transform: translateY(-1px); }
+  .gate-card button[type="submit"]:active { transform: translateY(0); }
+  .gate-card button[type="submit"]:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  .gate-card button[type="submit"]:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  /* Neutral status note (e.g. the forgot-password confirmation) — NOT an error. */
+  .gate-note { min-height: 18px; font-size: var(--fs-md); color: var(--muted); text-align: center; }
+  /* Error — color + icon + text, never color alone (WCAG 1.4.1); role=alert announces it. */
+  .gate-error { font-size: var(--fs-md); color: var(--err); text-align: center; }
+  .gate-error:not(:empty) {
+    position: relative;
+    text-align: left;
+    padding: 10px 12px 10px 38px;
+    border: 1px solid var(--err);
+    border-radius: var(--radius-sm);
+    background: rgba(160,38,36,0.09);
     color: var(--err);
-    text-align: center;
+    font-weight: 600;
+  }
+  .gate-error:not(:empty)::before {
+    content: "!";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--err);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+    line-height: 1;
   }
 
   /* === Top-bar user menu (shell) === */
@@ -843,12 +888,16 @@ SHELL_CSS = """
     font: inherit;
     font-size: var(--fs-base);
     font-weight: 600;
-    padding: 9px 16px;
-    border-radius: var(--radius-sm);
+    padding: 9px 18px;
+    border-radius: 999px;
     border: 1px solid var(--border-strong);
     cursor: pointer;
   }
+  .cpw-btn:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  /* Cancel = the paired negative action → medium-emphasis ghost (Carbon). */
   .cpw-cancel { background: transparent; color: var(--fg); }
+  .cpw-cancel:hover { background: var(--stripe); }
+  /* Save = the single primary action → filled indigo pill. */
   .cpw-save { background: var(--accent); color: #fff; border-color: var(--accent); }
   .cpw-save:hover { background: #4e51be; }
   .cpw-save:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -944,6 +993,102 @@ SHELL_CSS = """
     .dashboard-shell { padding: 12px 16px 0; }
     .shell-tab { padding: 6px 10px; font-size: var(--fs-md); }
     .shell-content iframe { height: calc(100vh - 140px); }
+  }
+
+  /* === Client Docs (DOCS tab -> /admin/docs/, built by tools/dashboard_docs.py) === */
+  .docs-page { padding: 0; }
+  .docs-layout { display: flex; align-items: flex-start; min-height: 100vh; }
+  .docs-sidebar {
+    flex: 0 0 248px;
+    position: sticky; top: 0; align-self: flex-start;
+    max-height: 100vh; overflow-y: auto;
+    padding: 28px 18px 28px 28px;
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .docs-sidebar-title {
+    margin: 0 0 12px;
+    font-size: var(--fs-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
+  }
+  .docs-nav { display: flex; flex-direction: column; gap: 2px; }
+  .docs-nav-item {
+    display: block; padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-md); font-weight: 500; line-height: 1.4;
+    color: var(--fg); text-decoration: none;
+  }
+  .docs-nav-item:hover { background: var(--stripe); }
+  .docs-nav-item.is-active { background: var(--accent); color: #fff; }
+  .docs-main {
+    flex: 1 1 auto; min-width: 0;
+    max-height: 100vh; overflow-y: auto;
+    padding: 40px 40px 80px;
+  }
+
+  /* Reading column */
+  .doc-prose { max-width: 720px; margin: 0 auto; color: var(--fg); font-size: var(--fs-doc-body); line-height: 1.7; }
+  .doc-eyebrow {
+    margin: 0 0 6px;
+    font-size: var(--fs-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+  }
+  .doc-title { margin: 0 0 6px; font-size: var(--fs-doc-h1); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
+  .doc-updated { margin: 0 0 32px; font-size: var(--fs-sm); color: var(--faint); }
+  .doc-prose h2 {
+    margin: 40px 0 12px; font-size: var(--fs-doc-h2); font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.01em; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .doc-prose h3 { margin: 28px 0 8px; font-size: var(--fs-lg); font-weight: 600; }
+  .doc-prose h4 {
+    margin: 22px 0 6px; font-size: var(--fs-base); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+  }
+  .doc-prose p { margin: 0 0 16px; }
+  .doc-prose ul, .doc-prose ol { margin: 0 0 16px; padding-left: 22px; }
+  .doc-prose li { margin: 0 0 7px; }
+  .doc-prose strong { font-weight: 600; }
+  .doc-prose a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-prose code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88em; background: var(--stripe);
+    border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; white-space: nowrap;
+  }
+  .doc-prose blockquote.doc-quote {
+    margin: 0 0 16px; padding: 4px 16px;
+    border-left: 3px solid var(--accent-warm);
+    background: var(--notice-bg); color: var(--notice-fg);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .doc-prose blockquote.doc-quote p:last-child { margin-bottom: 0; }
+  .doc-prose hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+  .doc-pre {
+    margin: 0 0 16px; padding: 14px 16px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); overflow-x: auto; font-size: var(--fs-md);
+  }
+
+  /* Reference tables (event names) */
+  .doc-table-wrap { margin: 0 0 20px; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+  .doc-table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
+  .doc-table th, .doc-table td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--border); }
+  .doc-table thead th {
+    font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--muted); font-weight: 600; background: var(--stripe);
+  }
+  .doc-table tbody tr:last-child td { border-bottom: 0; }
+  .doc-table tbody tr:nth-child(even) { background: var(--stripe); }
+  .doc-table td code { white-space: nowrap; }
+  .doc-empty { padding: 40px; color: var(--muted); }
+
+  @media (max-width: 720px) {
+    .docs-layout { display: block; }
+    .docs-sidebar {
+      position: static; max-height: none; flex-basis: auto;
+      border-right: 0; border-bottom: 1px solid var(--border); padding: 16px;
+    }
+    .docs-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .docs-main { max-height: none; padding: 24px 18px 60px; }
   }
 """
 
@@ -1065,6 +1210,7 @@ _SHELL_HTML = """\
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
+        <a class="shell-tab" href="#docs" data-target="docs" data-topbar="docs">DOCS</a>
         <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -1131,7 +1277,8 @@ _SHELL_HTML = """\
       translations: '/admin/translations/',
       blog:         '/admin/blog/',
       summaries:    '/admin/summaries/',
-      files:        '/admin/files/'
+      files:        '/admin/files/',
+      docs:         '/admin/docs/'
     };
     var TOPBAR_FOR = {
       log:          'weglot',
@@ -1141,7 +1288,8 @@ _SHELL_HTML = """\
       translations: 'weglot',
       blog:         'blog',
       summaries:    'seo',
-      files:        'seo'
+      files:        'seo',
+      docs:         'docs'
     };
     var frame = document.getElementById('shell-frame');
     var topbarEls = document.querySelectorAll('[data-topbar]');
