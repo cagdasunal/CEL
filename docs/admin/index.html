@@ -20,6 +20,7 @@
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
         <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
+        <a class="shell-tab" href="#docs" data-target="docs" data-topbar="docs">DOCS</a>
         <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
@@ -86,7 +87,8 @@
       translations: '/admin/translations/',
       blog:         '/admin/blog/',
       summaries:    '/admin/summaries/',
-      files:        '/admin/files/'
+      files:        '/admin/files/',
+      docs:         '/admin/docs/'
     };
     var TOPBAR_FOR = {
       log:          'weglot',
@@ -96,7 +98,8 @@
       translations: 'weglot',
       blog:         'blog',
       summaries:    'seo',
-      files:        'seo'
+      files:        'seo',
+      docs:         'docs'
     };
     var frame = document.getElementById('shell-frame');
     var topbarEls = document.querySelectorAll('[data-topbar]');
