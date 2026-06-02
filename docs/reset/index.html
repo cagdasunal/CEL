@@ -8,10 +8,6 @@
   <title>English College — Reset password</title>
   <link rel="stylesheet" href="/assets/css/dashboard.css">
   <script src="/assets/js/dashboard-config.js"></script>
-  <style>
-    .gate-link { background: none; border: 0; color: #5b5bd6; cursor: pointer; font: inherit; text-decoration: underline; padding: 6px; }
-    .gate-card[hidden] { display: none; }
-  </style>
 </head>
 <body>
   <div class="gate-root">
@@ -23,8 +19,14 @@
       </div>
       <h1>Set a new password</h1>
       <p class="gate-hint" id="reset-for"></p>
-      <input type="password" id="reset-new" placeholder="New password" autocomplete="new-password" minlength="8" required>
-      <input type="password" id="reset-confirm" placeholder="Confirm new password" autocomplete="new-password" minlength="8" required>
+      <div class="gate-field">
+        <label class="gate-label" for="reset-new">New password</label>
+        <input type="password" id="reset-new" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="gate-field">
+        <label class="gate-label" for="reset-confirm">Confirm new password</label>
+        <input type="password" id="reset-confirm" autocomplete="new-password" minlength="8" required>
+      </div>
       <button type="submit">Update password</button>
       <div class="gate-error" id="reset-msg" role="alert" aria-live="polite"></div>
       <noscript><p class="gate-hint">JavaScript is required.</p></noscript>
