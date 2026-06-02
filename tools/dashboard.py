@@ -1007,10 +1007,9 @@ SHELL_CSS = """
   .docs-index-eyebrow {
     margin: 0 0 6px;
     font-size: var(--fs-xs); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-warm);
   }
   .docs-index-title { margin: 0 0 10px; font-size: var(--fs-doc-h1); line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
-  .docs-index-sub { margin: 0; font-size: var(--fs-lg); color: var(--muted); line-height: 1.6; }
   .docs-cards { display: flex; flex-direction: column; gap: 14px; }
   .docs-card {
     display: block; padding: 22px 24px;
@@ -1039,7 +1038,7 @@ SHELL_CSS = """
   .doc-eyebrow {
     margin: 0 0 6px;
     font-size: var(--fs-xs); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-warm);
   }
   .doc-title { margin: 0 0 6px; font-size: var(--fs-doc-h1); line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; }
   .doc-updated { margin: 0 0 32px; font-size: var(--fs-sm); color: var(--faint); }
