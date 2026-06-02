@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>if(window.top===window.self){window.location.replace('/admin/#docs');}</script>
   <script src="/assets/js/dashboard-config.js"></script>
   <script src="/assets/js/auth.js"></script>
   <meta charset="utf-8">
@@ -12,10 +13,8 @@
 </head>
 <body>
   <div class="dashboard-shell docs-page">
-    <div class="docs-layout">
-      <aside class="docs-sidebar"><p class="docs-sidebar-title">Guides</p><nav class="docs-nav" aria-label="Documentation"><a class="docs-nav-item is-active" href="#website-tracking" data-doc="website-tracking">Understanding Your Website Tracking</a></nav></aside>
-      <main class="docs-main">
-        <article class="doc-prose" id="doc-website-tracking" data-doc="website-tracking"><p class="doc-eyebrow">Guide</p><h1 class="doc-title">Understanding Your Website Tracking</h1><p class="doc-updated">Last updated June 2, 2026</p><p>This guide explains what we track on your website, where to find it, and what every name in your Analytics means. Plain language, no technical background needed. Everything here counts actions, never people by name.</p>
+    <section class="docs-index" id="docs-index"><header class="docs-index-head"><p class="docs-index-eyebrow">Documentation</p><h1 class="docs-index-title">Guides</h1><p class="docs-index-sub">Plain-English guides to your website and analytics. Pick a guide to open it.</p></header><div class="docs-cards"><a class="docs-card" href="#website-tracking" data-doc-card="website-tracking"><h2 class="docs-card-title">Understanding Your Website Tracking</h2><p class="docs-card-sub">A plain-English guide to your reports and every name you will see in your Analytics.</p><span class="docs-card-meta"><span class="docs-card-cta">Read guide →</span><span class="docs-card-updated">Updated June 2, 2026</span></span></a></div></section>
+    <section class="doc-view" id="doc-website-tracking" data-doc="website-tracking" hidden><a class="doc-back" href="#">← All guides</a><article class="doc-prose"><p class="doc-eyebrow">Guide</p><h1 class="doc-title">Understanding Your Website Tracking</h1><p class="doc-updated">Last updated June 2, 2026</p><p>This guide explains what we track on your website, where to find it, and what every name in your Analytics means. Plain language, no technical background needed. Everything here counts actions, never people by name.</p>
 <h2 id="your-reports">Your reports</h2>
 <p>You have four ready-made reports, saved in your <strong>Explore</strong> tab in Google Analytics. Open <strong>Explore</strong> in the left menu and pick one by name. Every report can be filtered by language.</p>
 <ol class="doc-list"><li><strong>CTA performance.</strong> Which buttons people click (Apply, Contact, WhatsApp, Offers, Email, Phone, Directions) and where each one sits on the page, so you can see which buttons, and which spots on the page, work best.</li><li><strong>Behaviour &amp; Conversions.</strong> The big picture: how many people visit, what they engage with, and how many go on to take a key action.</li><li><strong>Conversions by page.</strong> Which pages turn visitors into enquiries, so you can see where your wins happen.</li><li><strong>Apply conversions by placement.</strong> How your Apply clicks break down by where the Apply button sits on the page, so you can place it where it converts best.</li></ol>
@@ -36,36 +35,24 @@
 <h2 id="what-we-do-not-track">What we do not track</h2>
 <p>Your visitors' privacy is protected by design. We never store anyone's name, we never record payment details, and email addresses and phone numbers are hidden before they reach the reports. We also follow your cookie banner. If someone declines, Google still counts the visit in a private way that never identifies the person.</p>
 <h2 id="questions">Questions</h2>
-<p>If a report looks off, or you would like a new one built for something specific, just ask. This page will grow as we add more guides.</p></article>
-      </main>
-    </div>
+<p>If a report looks off, or you would like a new one built for something specific, just ask. This page will grow as we add more guides.</p></article></section>
   </div>
   <script>(function () {
-  var items = document.querySelectorAll('.docs-nav-item');
-  var articles = document.querySelectorAll('.doc-prose');
-  function show(slug) {
-    var found = false;
-    articles.forEach(function (a) {
-      var on = a.getAttribute('data-doc') === slug;
-      if (on) found = true;
-      a.hidden = !on;
+  var index = document.getElementById('docs-index');
+  var views = document.querySelectorAll('.doc-view');
+  function show() {
+    var slug = (location.hash || '').replace(/^#/, '');
+    var matched = null;
+    views.forEach(function (v) {
+      var on = v.getAttribute('data-doc') === slug;
+      v.hidden = !on;
+      if (on) matched = v;
     });
-    if (!found && articles.length) {
-      articles[0].hidden = false;
-      slug = articles[0].getAttribute('data-doc');
-    }
-    items.forEach(function (it) {
-      it.classList.toggle('is-active', it.getAttribute('data-doc') === slug);
-    });
-    var main = document.querySelector('.docs-main');
-    if (main) main.scrollTop = 0;
+    if (index) index.hidden = !!matched;
+    window.scrollTo(0, 0);
   }
-  function pick() {
-    var h = (location.hash || '').replace(/^#/, '');
-    return h || (articles[0] && articles[0].getAttribute('data-doc')) || '';
-  }
-  window.addEventListener('hashchange', function () { show(pick()); });
-  show(pick());
+  window.addEventListener('hashchange', show);
+  show();
 })();
 </script>
 </body>

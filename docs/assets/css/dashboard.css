@@ -709,7 +709,7 @@
     border-radius: 50%;
     background: var(--err);
     color: #fff;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     font-weight: 700;
     display: grid;
     place-items: center;
@@ -932,38 +932,46 @@
   }
 
   /* === Client Docs (DOCS tab -> /admin/docs/, built by tools/dashboard_docs.py) === */
-  .docs-page { padding: 0; }
-  .docs-layout { display: flex; align-items: flex-start; min-height: 100vh; }
-  .docs-sidebar {
-    flex: 0 0 248px;
-    position: sticky; top: 0; align-self: flex-start;
-    max-height: 100vh; overflow-y: auto;
-    padding: 28px 18px 28px 28px;
-    border-right: 1px solid var(--border);
-    background: var(--panel);
-  }
-  .docs-sidebar-title {
-    margin: 0 0 12px;
-    font-size: var(--fs-xs); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted);
-  }
-  .docs-nav { display: flex; flex-direction: column; gap: 2px; }
-  .docs-nav-item {
-    display: block; padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    font-size: var(--fs-md); font-weight: 500; line-height: 1.4;
-    color: var(--fg); text-decoration: none;
-  }
-  .docs-nav-item:hover { background: var(--stripe); }
-  .docs-nav-item.is-active { background: var(--accent); color: #fff; }
-  .docs-main {
-    flex: 1 1 auto; min-width: 0;
-    max-height: 100vh; overflow-y: auto;
-    padding: 40px 40px 80px;
-  }
+  /* Direct hits to /admin/docs/ are bounced into the shell (#docs) by a frame-buster
+     in the page <head>, so the top nav is always present. These rules style both the
+     centered "Guides" index (the card list) and the single-doc reading view. */
+  .docs-page { padding: 44px 24px 80px; min-height: 100vh; }
 
-  /* Reading column */
-  .doc-prose { max-width: 720px; margin: 0 auto; color: var(--fg); font-size: var(--fs-doc-body); line-height: 1.7; }
+  /* Guides index (landing) */
+  .docs-index { max-width: 780px; margin: 0 auto; }
+  .docs-index-head { margin: 0 0 28px; }
+  .docs-index-eyebrow {
+    margin: 0 0 6px;
+    font-size: var(--fs-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent);
+  }
+  .docs-index-title { margin: 0 0 10px; font-size: var(--fs-doc-h1); line-height: 1.15; font-weight: 700; letter-spacing: -0.01em; }
+  .docs-index-sub { margin: 0; font-size: var(--fs-lg); color: var(--muted); line-height: 1.6; }
+  .docs-cards { display: flex; flex-direction: column; gap: 14px; }
+  .docs-card {
+    display: block; padding: 22px 24px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--fg); text-decoration: none;
+    transition: border-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  }
+  .docs-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07); }
+  .docs-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .docs-card-title { margin: 0 0 6px; padding: 0; border: 0; font-size: var(--fs-xl); font-weight: 600; line-height: 1.3; color: var(--fg); }
+  .docs-card-sub { margin: 0 0 16px; font-size: var(--fs-base); color: var(--muted); line-height: 1.55; }
+  .docs-card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .docs-card-cta { font-size: var(--fs-md); font-weight: 600; color: var(--accent); }
+  .docs-card-updated { font-size: var(--fs-sm); color: var(--faint); }
+
+  /* Single-doc reading view */
+  .doc-view { max-width: 720px; margin: 0 auto; }
+  .doc-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 0 0 26px; font-size: var(--fs-md); font-weight: 500;
+    color: var(--muted); text-decoration: none;
+  }
+  .doc-back:hover { color: var(--accent); }
+  .doc-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .doc-prose { color: var(--fg); font-size: var(--fs-doc-body); line-height: 1.7; }
   .doc-eyebrow {
     margin: 0 0 6px;
     font-size: var(--fs-xs); font-weight: 600;
@@ -1018,11 +1026,6 @@
   .doc-empty { padding: 40px; color: var(--muted); }
 
   @media (max-width: 720px) {
-    .docs-layout { display: block; }
-    .docs-sidebar {
-      position: static; max-height: none; flex-basis: auto;
-      border-right: 0; border-bottom: 1px solid var(--border); padding: 16px;
-    }
-    .docs-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
-    .docs-main { max-height: none; padding: 24px 18px 60px; }
+    .docs-page { padding: 28px 16px 60px; }
+    .docs-card { padding: 18px 18px; }
   }
