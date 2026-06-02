@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 """
-optimize_blog_richtext_images.py — Batch-optimize Blog Post rich-text images
+optimize_blog_richtext_images.py — Batch-optimize Webflow CMS images to AVIF
 =============================================================================
 
-Walks every Blog Post item via Webflow Data API, finds <img> tags inside the
-``post-body`` RichText field, downloads each image, re-encodes to AVIF
-(quality 50 by default, max-width 700px), uploads the AVIF back to Webflow,
-and (with --apply) PATCHes the post-body HTML so the new URLs go live.
+cagdasunal/CEL self-contained copy (inlines the AVIF encode + S3 upload +
+rate-limited Data API helpers — NO avif_optimizer.py dependency). Keep in
+lockstep with the monorepo SSOT at scripts/optimize_blog_richtext_images.py;
+only the import/helper section differs (see memory/cel-config-mirror.md).
 
-Designed to run nightly via GitHub Actions cron + ad-hoc via workflow_dispatch.
+Originally blog-only (hence the filename). As of 2026-06-02 it sweeps the
+WHOLE CMS via ``--collections all``: for each collection it discovers
+image-bearing fields (RichText <img>, Image {fileId,url}, MultiImage [...]),
+downloads each image, re-encodes to AVIF (quality 50, max-width 700px),
+uploads it back to Webflow, and (with --apply) PATCHes the field so the new
+URLs go live. Already-AVIF assets are HEAD-checked + skipped.
+
+Default ``--collections blog`` preserves the exact legacy blog-only behavior.
+Companion ``tools/blog_images/generate_blog_page.py`` renders the results to
+the /admin/#blog dashboard (grouped by collection).
 
 CLI
 ---
   python3 scripts/optimize_blog_richtext_images.py --site cel --dry-run
-  python3 scripts/optimize_blog_richtext_images.py --site cel --limit 5 --dry-run
-  python3 scripts/optimize_blog_richtext_images.py --site cel --posts SLUG1,SLUG2 --apply
-  python3 scripts/optimize_blog_richtext_images.py --site cel --apply
+  python3 scripts/optimize_blog_richtext_images.py --site cel --collections all --dry-run
+  python3 scripts/optimize_blog_richtext_images.py --site cel --collections testimonials,team --apply
+  python3 scripts/optimize_blog_richtext_images.py --site cel --collections all --apply
 
 Default mode is --dry-run. --apply is required to perform CMS PATCHes.
-See ~/.claude/plans/i-have-performance-issues-polished-bengio.md for the full plan.
 """
 from __future__ import annotations
 
@@ -227,7 +235,7 @@ def list_blog_posts(
     page_size = 100
     while True:
         url = f"{WEBFLOW_API_BASE}/collections/{COLLECTION_ID}/items?limit={page_size}&offset={offset}"
-        resp = _rate_limited_request("GET", url, token)
+        resp = rate_limited_request("GET", url, token)
         page = resp.get("items", []) if isinstance(resp, dict) else []
         if not page:
             break
@@ -252,7 +260,7 @@ def patch_blog_post(token: str, item_id: str, post_body: str, is_draft: bool, is
         "isDraft": is_draft,
         "isArchived": is_archived,
     }
-    return _rate_limited_request("PATCH", url, token, data=payload)
+    return rate_limited_request("PATCH", url, token, data=payload)
 
 
 def publish_collection_items(token: str, item_ids: list[str]) -> dict:
@@ -273,7 +281,7 @@ def publish_collection_items(token: str, item_ids: list[str]) -> dict:
         return {}
     url = f"{WEBFLOW_API_BASE}/collections/{COLLECTION_ID}/items/publish"
     payload = {"itemIds": item_ids}
-    return _rate_limited_request("POST", url, token, data=payload)
+    return rate_limited_request("POST", url, token, data=payload)
 
 
 def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) -> dict:
@@ -296,7 +304,7 @@ def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) ->
     # Step 1: register asset
     register_body = {"fileName": file_name, "fileHash": md5}
     register_url = f"{WEBFLOW_API_BASE}/sites/{site_id}/assets"
-    register_resp = _rate_limited_request("POST", register_url, token, data=register_body)
+    register_resp = rate_limited_request("POST", register_url, token, data=register_body)
     asset_id = register_resp.get("id")
     upload_url = register_resp.get("uploadUrl")
     upload_details = register_resp.get("uploadDetails", {})
@@ -327,7 +335,7 @@ def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) ->
     last_err: Exception | None = None
     for attempt in range(HOSTED_URL_POLL_TRIES):
         try:
-            asset_resp = _rate_limited_request("GET", asset_get_url, token)
+            asset_resp = rate_limited_request("GET", asset_get_url, token)
             hosted_url = asset_resp.get("hostedUrl") or ""
             if hosted_url:
                 break
@@ -343,7 +351,7 @@ def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) ->
     return {"asset_id": asset_id, "hostedUrl": hosted_url, "md5": md5, "size": size}
 
 
-def _rate_limited_request(method: str, url: str, token: str, data: dict | None = None) -> dict:
+def rate_limited_request(method: str, url: str, token: str, data: dict | None = None) -> dict:
     """Wrap api_request with sleep + 429 exponential backoff (2/4/8 then give up).
 
     Locked §5.7 — CMS plan rate limit is 120/min; 600 ms → 100/min safe margin.
@@ -482,6 +490,9 @@ def process_post(
         log: dict = {
             "ts": utc_iso(),
             "run_id": run_id,
+            "collection": "post",
+            "collection_name": "Blog - Posts",
+            "field": RICHTEXT_FIELD_SLUG,
             "post_slug": slug,
             "post_id": post_id,
             "old_url": src,
@@ -603,11 +614,451 @@ def process_post(
 
 
 # =========================================================================
+# Whole-CMS sweep — collection discovery + generic image-field handling
+# =========================================================================
+# Added 2026-06-02. The optimizer was blog-only: ``process_post`` walked the
+# Blog Posts ``post-body`` RichText field and the dashboard at /admin/#blog
+# reported blog images only. The user asked to widen the scope to the WHOLE
+# CMS. These additive helpers let ``--collections all`` sweep every CMS
+# collection's image-bearing fields:
+#   • RichText  → <img src> inside the HTML (same path as blog)
+#   • Image     → {"fileId","url","alt"} single-asset value
+#   • MultiImage→ list of {"fileId","url","alt"} values
+# The blog path (``process_post``) is left byte-for-byte; ``process_item`` is
+# the generic processor for every other collection. Both append to the SAME
+# JSONL log (now carrying a ``collection`` dimension) the dashboard reads.
+
+IMAGE_FIELD_TYPE = "Image"
+MULTI_IMAGE_FIELD_TYPE = "MultiImage"
+RICHTEXT_FIELD_TYPE = "RichText"
+
+
+def list_collections(token: str, site_id: str) -> list[dict]:
+    """GET /v2/sites/{id}/collections → list of {id, slug, displayName, ...}."""
+    url = f"{WEBFLOW_API_BASE}/sites/{site_id}/collections"
+    resp = rate_limited_request("GET", url, token)
+    return resp.get("collections", []) if isinstance(resp, dict) else []
+
+
+def get_collection_fields(token: str, collection_id: str) -> list[dict]:
+    """GET /v2/collections/{id} → field schema list."""
+    url = f"{WEBFLOW_API_BASE}/collections/{collection_id}"
+    resp = rate_limited_request("GET", url, token)
+    return resp.get("fields", []) if isinstance(resp, dict) else []
+
+
+def classify_image_fields(fields: list[dict]) -> dict[str, list[str]]:
+    """Bucket field slugs by image-bearing type.
+
+    Returns ``{"richtext": [...], "image": [...], "multiimage": [...]}``.
+    Non-image fields are ignored. Slugs preserve schema order.
+    """
+    out: dict[str, list[str]] = {"richtext": [], "image": [], "multiimage": []}
+    for f in fields:
+        ftype = f.get("type")
+        slug = f.get("slug")
+        if not slug:
+            continue
+        if ftype == RICHTEXT_FIELD_TYPE:
+            out["richtext"].append(slug)
+        elif ftype == IMAGE_FIELD_TYPE:
+            out["image"].append(slug)
+        elif ftype == MULTI_IMAGE_FIELD_TYPE:
+            out["multiimage"].append(slug)
+    return out
+
+
+def list_items(token: str, collection_id: str, limit: int | None = None) -> list[dict]:
+    """Generic paginate /v2/collections/{id}/items (max 100/page)."""
+    items: list[dict] = []
+    offset = 0
+    page_size = 100
+    while True:
+        url = f"{WEBFLOW_API_BASE}/collections/{collection_id}/items?limit={page_size}&offset={offset}"
+        resp = rate_limited_request("GET", url, token)
+        page = resp.get("items", []) if isinstance(resp, dict) else []
+        if not page:
+            break
+        items.extend(page)
+        if limit and len(items) >= limit:
+            return items[:limit]
+        if len(page) < page_size:
+            break
+        offset += page_size
+    return items
+
+
+def patch_item(
+    token: str,
+    collection_id: str,
+    item_id: str,
+    field_data: dict,
+    is_draft: bool,
+    is_archived: bool,
+) -> dict:
+    """PATCH /v2/collections/{cid}/items/{iid} with a PARTIAL fieldData.
+
+    Webflow merges partial fieldData — only the changed image fields are sent,
+    every other field on the item is preserved untouched.
+    """
+    url = f"{WEBFLOW_API_BASE}/collections/{collection_id}/items/{item_id}"
+    payload = {
+        "fieldData": field_data,
+        "isDraft": is_draft,
+        "isArchived": is_archived,
+    }
+    return rate_limited_request("PATCH", url, token, data=payload)
+
+
+def publish_items(token: str, collection_id: str, item_ids: list[str]) -> dict:
+    """POST /v2/collections/{cid}/items/publish for SPECIFIC item IDs.
+
+    Same item-level (NOT site-level) safeguard as ``publish_collection_items``:
+    callers MUST gate on ``was_published_before``. Never publishes drafts.
+    """
+    if not item_ids:
+        return {}
+    url = f"{WEBFLOW_API_BASE}/collections/{collection_id}/items/publish"
+    return rate_limited_request("POST", url, token, data={"itemIds": item_ids})
+
+
+def image_value_url(value: object) -> str:
+    """Extract the URL from an Image-field value ({fileId,url,alt}). '' if none."""
+    if isinstance(value, dict):
+        return value.get("url") or ""
+    return ""
+
+
+def optimize_one_url(
+    *,
+    src: str,
+    item_slug: str,
+    item_id: str,
+    img_idx: int,
+    collection_slug: str,
+    collection_name: str,
+    field_slug: str,
+    site_id: str,
+    token: str,
+    quality: int,
+    max_width: int,
+    min_saving_pct: float,
+    apply: bool,
+    run_id: str,
+    tracking: dict,
+) -> dict:
+    """Download → encode → (upload, when apply) a single image URL.
+
+    Shared by RichText, Image and MultiImage paths. Returns a dict::
+
+        {
+          "log":         <per-image JSONL entry>,
+          "status":      "replaced"|"skipped_avif"|"skipped_small"|"error",
+          "new_url":     <hosted url (apply) or "<would-upload>name" (dry)>,
+          "new_file_id": <asset_id (apply+replaced) else "">,
+        }
+
+    No CMS writes happen here — only the asset upload (in --apply). The caller
+    splices ``new_url``/``new_file_id`` into the field value and PATCHes.
+    """
+    log: dict = {
+        "ts": utc_iso(),
+        "run_id": run_id,
+        "collection": collection_slug,
+        "collection_name": collection_name,
+        "field": field_slug,
+        "post_slug": item_slug,   # generic item slug (key kept for dashboard compat)
+        "post_id": item_id,
+        "old_url": src,
+        "new_url": "",
+        "old_bytes": 0,
+        "new_bytes": 0,
+        "saving_pct": 0.0,
+        "action": "error",
+        "error": None,
+    }
+    result = {"log": log, "status": "error", "new_url": "", "new_file_id": ""}
+
+    try:
+        head_len, head_ctype = head_image(src)
+        log["old_bytes"] = head_len
+        if is_avif(src, head_ctype) and 0 < head_len <= ALREADY_AVIF_SKIP_SIZE:
+            log["action"] = "skipped_avif"
+            result["status"] = "skipped_avif"
+            return result
+
+        orig_bytes = download_image(src)
+        old_size = len(orig_bytes)
+        log["old_bytes"] = old_size
+
+        avif_bytes = encode_avif(orig_bytes, max_width=max_width, quality=quality)
+        new_size = len(avif_bytes)
+        log["new_bytes"] = new_size
+        saving_pct = ((old_size - new_size) / old_size * 100.0) if old_size > 0 else 0.0
+        log["saving_pct"] = round(saving_pct, 2)
+
+        if old_size > 0 and saving_pct < min_saving_pct:
+            log["action"] = "skipped_small"
+            result["status"] = "skipped_small"
+            return result
+
+        file_name = derive_avif_filename(item_slug, img_idx, src)
+
+        if apply:
+            upload_resp = upload_avif(avif_bytes, file_name, site_id, token)
+            new_url = upload_resp["hostedUrl"]
+            tracking[file_name] = {
+                "asset_id": upload_resp["asset_id"],
+                "md5": upload_resp["md5"],
+                "size": new_size,
+                "alt_text": file_name.rsplit(".", 1)[0].replace("-", " ").title(),
+            }
+            log["new_url"] = new_url
+            result["new_url"] = new_url
+            result["new_file_id"] = upload_resp["asset_id"]
+        else:
+            log["new_url"] = f"<would-upload>{file_name}"
+            result["new_url"] = log["new_url"]
+
+        log["action"] = "replaced"
+        result["status"] = "replaced"
+    except (APIError, NetworkError, ValueError, RuntimeError,
+            urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
+        log["action"] = "error"
+        log["error"] = f"{type(e).__name__}: {e}"
+        result["status"] = "error"
+
+    return result
+
+
+def process_item(
+    *,
+    item: dict,
+    collection_id: str,
+    collection_slug: str,
+    collection_name: str,
+    fields_map: dict[str, list[str]],
+    site_id: str,
+    token: str,
+    quality: int,
+    max_width: int,
+    min_saving_pct: float,
+    apply: bool,
+    auto_publish: bool,
+    log_path: Path,
+    run_id: str,
+    tracking_path: Path,
+    tracking: dict,
+    backup_dir: Path | None = None,
+) -> dict:
+    """Optimize every image-bearing field of one generic CMS item.
+
+    Atomicity mirrors ``process_post``: if ANY image in the item fails in
+    --apply mode, the item's PATCH is skipped so partial state never lands.
+    Before PATCHing, original values of any CHANGED RichText field are backed
+    up to ``backup_dir`` (the riskiest mutation — an in-place HTML rewrite).
+    """
+    item_id = item.get("id", "?")
+    field_data = item.get("fieldData", {}) or {}
+    item_slug = field_data.get("slug") or item_id
+    is_draft = bool(item.get("isDraft", False))
+    is_archived = bool(item.get("isArchived", False))
+    last_published = item.get("lastPublished")
+    was_published_before = (
+        bool(last_published) and is_draft is False and is_archived is False
+    )
+
+    summary = {
+        "collection": collection_slug,
+        "item_slug": item_slug,
+        "item_id": item_id,
+        "image_count": 0,
+        "replaced": 0,
+        "skipped_avif": 0,
+        "skipped_small": 0,
+        "errors": 0,
+        "old_bytes_total": 0,
+        "new_bytes_total": 0,
+        "patched": False,
+        "published": False,
+        "publish_skipped_reason": "",
+        "item_dirty": False,
+        "was_published_before": was_published_before,
+    }
+
+    per_image_logs: list[dict] = []
+    new_field_data: dict[str, object] = {}
+    richtext_changed: dict[str, str] = {}  # field_slug -> ORIGINAL html (for backup)
+    any_error = False
+    img_idx = 0  # running per-item counter → unique AVIF filenames across fields
+
+    def _account(res: dict) -> None:
+        nonlocal any_error
+        per_image_logs.append(res["log"])
+        summary["image_count"] += 1
+        st = res["status"]
+        if st == "replaced":
+            summary["replaced"] += 1
+            summary["old_bytes_total"] += int(res["log"].get("old_bytes") or 0)
+            summary["new_bytes_total"] += int(res["log"].get("new_bytes") or 0)
+        elif st == "skipped_avif":
+            summary["skipped_avif"] += 1
+        elif st == "skipped_small":
+            summary["skipped_small"] += 1
+        elif st == "error":
+            summary["errors"] += 1
+            any_error = True
+
+    def _optimize(src: str, field_slug: str) -> dict:
+        nonlocal img_idx
+        img_idx += 1
+        return optimize_one_url(
+            src=src, item_slug=item_slug, item_id=item_id, img_idx=img_idx,
+            collection_slug=collection_slug, collection_name=collection_name,
+            field_slug=field_slug, site_id=site_id, token=token, quality=quality,
+            max_width=max_width, min_saving_pct=min_saving_pct, apply=apply,
+            run_id=run_id, tracking=tracking,
+        )
+
+    # ── RichText fields — find <img>, rewrite src in place ──────────────────
+    for field_slug in fields_map.get("richtext", []):
+        html = field_data.get(field_slug)
+        if not isinstance(html, str) or not html:
+            continue
+        src_map: dict[str, str] = {}
+        for src in find_image_srcs(html):
+            res = _optimize(src, field_slug)
+            _account(res)
+            if res["status"] == "replaced":
+                if apply:
+                    src_map[src] = res["new_url"]
+                else:
+                    summary["item_dirty"] = True
+        if apply and src_map:
+            new_html = rewrite_image_srcs(html, src_map)
+            if new_html != html:
+                new_field_data[field_slug] = new_html
+                richtext_changed[field_slug] = html
+
+    # ── Image fields — single {fileId,url,alt} value ────────────────────────
+    for field_slug in fields_map.get("image", []):
+        val = field_data.get(field_slug)
+        url = image_value_url(val)
+        if not url:
+            continue
+        res = _optimize(url, field_slug)
+        _account(res)
+        if res["status"] == "replaced":
+            if apply:
+                new_val = dict(val)  # preserve alt + any extra keys
+                new_val["fileId"] = res["new_file_id"]
+                new_val["url"] = res["new_url"]
+                new_field_data[field_slug] = new_val
+            else:
+                summary["item_dirty"] = True
+
+    # ── MultiImage fields — list of {fileId,url,alt} values ─────────────────
+    for field_slug in fields_map.get("multiimage", []):
+        vals = field_data.get(field_slug)
+        if not isinstance(vals, list) or not vals:
+            continue
+        new_list: list[object] = []
+        changed = False
+        for val in vals:
+            url = image_value_url(val)
+            if not url:
+                new_list.append(val)
+                continue
+            res = _optimize(url, field_slug)
+            _account(res)
+            if res["status"] == "replaced" and apply:
+                new_val = dict(val)
+                new_val["fileId"] = res["new_file_id"]
+                new_val["url"] = res["new_url"]
+                new_list.append(new_val)
+                changed = True
+            else:
+                new_list.append(val)
+                if res["status"] == "replaced":
+                    summary["item_dirty"] = True
+        if apply and changed:
+            new_field_data[field_slug] = new_list
+
+    # ── PATCH (atomic) + optional item-level publish ────────────────────────
+    if apply and any_error:
+        summary["patched"] = False
+        summary["publish_skipped_reason"] = "image_errors_in_item"
+    elif apply and new_field_data:
+        # Back up ORIGINAL richtext HTML before the in-place rewrite (parity
+        # with process_post's per-post backup). Image/MultiImage swaps are
+        # non-destructive (old asset stays in Webflow) so they need no backup.
+        if backup_dir is not None and richtext_changed:
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            backup_file = backup_dir / f"{collection_slug}__{item_slug}__{utc_iso_compact()}.json"
+            backup_file.write_text(
+                json.dumps(richtext_changed, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        patch_item(token, collection_id, item_id, new_field_data, is_draft, is_archived)
+        summary["patched"] = True
+        summary["item_dirty"] = True
+        save_tracking(tracking_path, tracking)
+        if auto_publish and was_published_before:
+            try:
+                publish_items(token, collection_id, [item_id])
+                summary["published"] = True
+            except (APIError, NetworkError) as e:
+                summary["publish_skipped_reason"] = (
+                    f"publish_api_error: {type(e).__name__}: {e}"[:200]
+                )
+        elif auto_publish and not was_published_before:
+            summary["publish_skipped_reason"] = "item_was_draft_or_never_published"
+        elif not auto_publish:
+            summary["publish_skipped_reason"] = "auto_publish_disabled"
+
+    # Append per-image logs to the shared JSONL
+    if per_image_logs:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as fh:
+            for entry in per_image_logs:
+                fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    return summary
+
+
+def resolve_target_collections(
+    token: str,
+    site_id: str,
+    spec: str,
+) -> list[dict]:
+    """Resolve the ``--collections`` spec into a list of collection dicts.
+
+    spec:
+      • "blog"  → just the Blog Posts collection (default, legacy behavior)
+      • "all"   → every collection in the site
+      • "a,b,c" → collections whose slug OR id is in the comma list
+
+    Returns [{"id","slug","displayName"}, ...].
+    """
+    spec = (spec or "blog").strip().lower()
+    if spec == "blog":
+        return [{"id": COLLECTION_ID, "slug": "post", "displayName": "Blog - Posts"}]
+    all_cols = list_collections(token, site_id)
+    if spec == "all":
+        return all_cols
+    wanted = {s.strip() for s in spec.split(",") if s.strip()}
+    return [
+        c for c in all_cols
+        if (c.get("slug") or "").lower() in wanted or (c.get("id") or "") in wanted
+    ]
+
+
+# =========================================================================
 # CLI
 # =========================================================================
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        description="Optimize blog post rich-text images to AVIF and update Webflow CMS.",
+        description="Optimize Webflow CMS images (RichText/Image/MultiImage) to AVIF.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--site", required=True, help="Site nickname (registry.json key, e.g., 'cel')")
@@ -620,7 +1071,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit", type=int, default=None,
                    help="Process at most N posts (default: all)")
     p.add_argument("--posts", default="",
-                   help="Comma-separated slugs to filter to (default: all)")
+                   help="Comma-separated Blog Post slugs to filter to (blog collection only)")
+    p.add_argument("--collections", default="blog",
+                   help="Which CMS collections to sweep: 'blog' (default, legacy "
+                        "blog-only behavior), 'all' (every collection's image "
+                        "fields), or a comma-separated list of collection slugs/ids. "
+                        "RichText, Image and MultiImage fields are all optimized.")
 
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", default=True,
@@ -682,29 +1138,27 @@ def main(argv: list[str] | None = None) -> int:
     run_id = uuid.uuid4().hex[:12]
 
     print(f"\n{'=' * 70}")
-    print(f"  BLOG IMAGE OPTIMIZER — site={args.site}  mode={'APPLY' if apply else 'DRY-RUN'}")
+    print(f"  CMS IMAGE OPTIMIZER — site={args.site}  mode={'APPLY' if apply else 'DRY-RUN'}")
+    print(f"  collections={args.collections}")
     print(f"  quality={args.quality}  max-width={args.max_width}  min-saving-pct={args.min_saving_pct}")
     print(f"  auto-publish={'ON' if args.auto_publish else 'OFF'}"
           + (" (only published items, never drafts)" if args.auto_publish else ""))
     if args.limit:
-        print(f"  limit={args.limit}")
+        print(f"  limit={args.limit} (per collection)")
     if slugs_filter:
-        print(f"  posts={sorted(slugs_filter)}")
+        print(f"  posts={sorted(slugs_filter)} (blog collection only)")
     print(f"  run_id={run_id}")
     print(f"{'=' * 70}\n")
 
-    # List target posts
-    print("Listing Blog Posts...", flush=True)
-    items = list_blog_posts(token, slugs_filter=slugs_filter, limit=args.limit)
-    print(f"  Found {len(items)} post(s) to process.\n")
-
-    if not items:
-        print("No posts matched. Done.")
+    target_collections = resolve_target_collections(token, site_id, args.collections)
+    if not target_collections:
+        print(f"No collections matched '{args.collections}'. Done.")
         return 0
+    print(f"Sweeping {len(target_collections)} collection(s).\n")
 
-    # Per-post processing
     totals = {
-        "posts": len(items),
+        "collections": 0,
+        "items": 0,
         "patched": 0,
         "published": 0,
         "publish_skipped_drafts": 0,
@@ -719,25 +1173,9 @@ def main(argv: list[str] | None = None) -> int:
     }
     any_error = False
 
-    for n, item in enumerate(items, start=1):
-        slug = item.get("fieldData", {}).get("slug", "?")
-        print(f"[{n}/{len(items)}] {slug}", flush=True)
-        summary = process_post(
-            item=item,
-            site_id=site_id,
-            token=token,
-            quality=args.quality,
-            max_width=args.max_width,
-            min_saving_pct=args.min_saving_pct,
-            apply=apply,
-            auto_publish=args.auto_publish,
-            backup_dir=backup_dir,
-            log_path=log_path,
-            run_id=run_id,
-            tracking_path=tracking_path,
-            tracking=tracking,
-        )
-
+    def _accumulate(summary: dict) -> None:
+        """Fold a per-item summary (blog OR generic) into the running totals."""
+        nonlocal any_error
         totals["image_count"] += summary["image_count"]
         totals["replaced"] += summary["replaced"]
         totals["skipped_avif"] += summary["skipped_avif"]
@@ -745,66 +1183,139 @@ def main(argv: list[str] | None = None) -> int:
         totals["errors"] += summary["errors"]
         totals["old_bytes_total"] += summary["old_bytes_total"]
         totals["new_bytes_total"] += summary["new_bytes_total"]
+        dirty = summary.get("post_dirty") or summary.get("item_dirty")
         if summary["patched"]:
             totals["patched"] += 1
-        elif summary["post_dirty"] and not apply:
+        elif dirty and not apply:
             totals["would_patch"] += 1
         if summary["published"]:
             totals["published"] += 1
         elif (
             summary["patched"]
             and args.auto_publish
-            and summary["publish_skipped_reason"] == "post_was_draft_or_never_published"
+            and summary["publish_skipped_reason"] in (
+                "post_was_draft_or_never_published",
+                "item_was_draft_or_never_published",
+            )
         ):
             totals["publish_skipped_drafts"] += 1
-
         if summary["errors"]:
             any_error = True
 
-        # Per-post line
+    def _print_item_line(summary: dict, empty_msg: str) -> None:
         if summary["image_count"] == 0:
-            print(f"     no images in post-body")
+            print(f"     {empty_msg}")
+            return
+        saved_i = summary["old_bytes_total"] - summary["new_bytes_total"]
+        pct_i = (saved_i / summary["old_bytes_total"] * 100.0) if summary["old_bytes_total"] > 0 else 0.0
+        dirty = summary.get("post_dirty") or summary.get("item_dirty")
+        verb = "patched" if summary["patched"] else (
+            "would patch" if dirty and not apply else "no change"
+        )
+        pub_note = ""
+        if summary["patched"]:
+            if summary["published"]:
+                pub_note = " + PUBLISHED"
+            elif args.auto_publish and summary["publish_skipped_reason"] in (
+                "post_was_draft_or_never_published", "item_was_draft_or_never_published"
+            ):
+                pub_note = " (kept as draft — was never published)"
+            elif not args.auto_publish:
+                pub_note = " (auto-publish disabled)"
+            elif summary["publish_skipped_reason"].startswith("publish_api_error"):
+                pub_note = f" (publish FAILED: {summary['publish_skipped_reason'][:80]})"
+        print(
+            f"     {summary['image_count']} image(s): "
+            f"replaced={summary['replaced']} "
+            f"skipped_avif={summary['skipped_avif']} "
+            f"skipped_small={summary['skipped_small']} "
+            f"errors={summary['errors']} "
+            f"saved={saved_i}B ({pct_i:.1f}%) {verb}{pub_note}"
+        )
+
+    # Legacy ``--collections blog`` keeps the exact process_post path
+    # (post-body only, with HTML backup). Any other spec — including 'all' and
+    # explicit 'post' — routes the blog collection through the generic
+    # process_item so its Image fields (main-image/post-image) + summary
+    # richtext are swept too.
+    legacy_blog = (args.collections or "blog").strip().lower() == "blog"
+
+    for col in target_collections:
+        cid = col.get("id")
+        cslug = col.get("slug") or cid
+        cname = col.get("displayName") or cslug
+        use_blog_path = (cid == COLLECTION_ID) and legacy_blog
+
+        if use_blog_path:
+            print(f"── Collection: {cname} (legacy blog post-body path) ──", flush=True)
+            items = list_blog_posts(token, slugs_filter=slugs_filter, limit=args.limit)
+            print(f"   {len(items)} item(s).")
         else:
-            saved = summary["old_bytes_total"] - summary["new_bytes_total"]
-            pct = (saved / summary["old_bytes_total"] * 100.0) if summary["old_bytes_total"] > 0 else 0.0
-            verb = "patched" if summary["patched"] else (
-                "would patch" if summary["post_dirty"] and not apply else "no change"
-            )
-            pub_note = ""
-            if summary["patched"]:
-                if summary["published"]:
-                    pub_note = " + PUBLISHED"
-                elif args.auto_publish and summary["publish_skipped_reason"] == "post_was_draft_or_never_published":
-                    pub_note = " (kept as draft — was never published)"
-                elif not args.auto_publish:
-                    pub_note = " (auto-publish disabled)"
-                elif summary["publish_skipped_reason"].startswith("publish_api_error"):
-                    pub_note = f" (publish FAILED: {summary['publish_skipped_reason'][:80]})"
+            fields = get_collection_fields(token, cid)
+            fields_map = classify_image_fields(fields)
+            n_fields = sum(len(v) for v in fields_map.values())
+            if n_fields == 0:
+                print(f"── Collection: {cname} — no image-bearing fields, skipped.")
+                continue
             print(
-                f"     {summary['image_count']} image(s): "
-                f"replaced={summary['replaced']} "
-                f"skipped_avif={summary['skipped_avif']} "
-                f"skipped_small={summary['skipped_small']} "
-                f"errors={summary['errors']} "
-                f"saved={saved}B ({pct:.1f}%) {verb}{pub_note}"
+                f"── Collection: {cname} "
+                f"(richtext={fields_map['richtext']} image={fields_map['image']} "
+                f"multiimage={fields_map['multiimage']}) ──",
+                flush=True,
             )
+            items = list_items(token, cid, limit=args.limit)
+            print(f"   {len(items)} item(s).")
+
+        if not items:
+            continue
+        totals["collections"] += 1
+        totals["items"] += len(items)
+
+        for n, item in enumerate(items, start=1):
+            slug = item.get("fieldData", {}).get("slug", item.get("id", "?"))
+            print(f"[{cslug} {n}/{len(items)}] {slug}", flush=True)
+            if use_blog_path:
+                summary = process_post(
+                    item=item, site_id=site_id, token=token,
+                    quality=args.quality, max_width=args.max_width,
+                    min_saving_pct=args.min_saving_pct, apply=apply,
+                    auto_publish=args.auto_publish, backup_dir=backup_dir,
+                    log_path=log_path, run_id=run_id,
+                    tracking_path=tracking_path, tracking=tracking,
+                )
+                empty_msg = "no images in post-body"
+            else:
+                summary = process_item(
+                    item=item, collection_id=cid, collection_slug=cslug,
+                    collection_name=cname, fields_map=fields_map,
+                    site_id=site_id, token=token, quality=args.quality,
+                    max_width=args.max_width, min_saving_pct=args.min_saving_pct,
+                    apply=apply, auto_publish=args.auto_publish,
+                    log_path=log_path, run_id=run_id,
+                    tracking_path=tracking_path, tracking=tracking,
+                    backup_dir=backup_dir,
+                )
+                empty_msg = "no images in image-bearing fields"
+            _accumulate(summary)
+            _print_item_line(summary, empty_msg)
 
     # Final totals
     saved = totals["old_bytes_total"] - totals["new_bytes_total"]
     pct = (saved / totals["old_bytes_total"] * 100.0) if totals["old_bytes_total"] > 0 else 0.0
     print(f"\n{'-' * 70}")
-    print(f"  TOTAL — posts={totals['posts']}  images={totals['image_count']}")
+    print(f"  TOTAL — collections={totals['collections']}  items={totals['items']}  "
+          f"images={totals['image_count']}")
     print(f"    replaced={totals['replaced']}  skipped_avif={totals['skipped_avif']}  "
           f"skipped_small={totals['skipped_small']}  errors={totals['errors']}")
     print(f"    bytes:  {totals['old_bytes_total']:,} → {totals['new_bytes_total']:,}  "
           f"saved {saved:,} ({pct:.1f}%)")
     if apply:
-        print(f"    posts patched:    {totals['patched']}/{totals['posts']}")
+        print(f"    items patched:    {totals['patched']}/{totals['items']}")
         if args.auto_publish:
-            print(f"    posts published:  {totals['published']}/{totals['patched'] or 1}"
+            print(f"    items published:  {totals['published']}/{totals['patched'] or 1}"
                   f"  (drafts preserved as drafts: {totals['publish_skipped_drafts']})")
     else:
-        print(f"    posts that would be patched: {totals['would_patch']}/{totals['posts']}")
+        print(f"    items that would be patched: {totals['would_patch']}/{totals['items']}")
     print(f"  log: {log_path}")
     if not apply:
         print(f"  mode: DRY-RUN — to actually write, re-run with --apply")

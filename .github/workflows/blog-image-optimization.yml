@@ -32,7 +32,10 @@ concurrency:
 jobs:
   optimize:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # First whole-CMS sweep (--collections all) downloads + encodes every
+    # not-yet-AVIF image across ~19 collections, so bump from 60 → 120. Steady
+    # state is fast: subsequent nights HEAD-check and skip already-AVIF assets.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v6
 
@@ -49,25 +52,37 @@ jobs:
           # major versions — adjust if upstream breaks.
           pip install "Pillow>=12,<13" "pillow-avif-plugin>=1.5.5"
 
-      - name: Resolve --posts filter (manual dispatch or webhook payload)
+      - name: Resolve scope (collections + --posts filter)
         id: filter
         run: |
           # workflow_dispatch.inputs.posts (manual) — optional comma list
           # repository_dispatch.client_payload.slug (webhook) — single slug
+          #
+          # Scope rule:
+          #   • A targeted run (manual posts list OR single-post webhook) stays
+          #     blog-only — --collections blog honors --posts and only touches
+          #     the just-published post.
+          #   • The untargeted nightly run sweeps the WHOLE CMS
+          #     (--collections all) so every collection's images (Courses,
+          #     Testimonials, Team, Activities, …) get AVIF-optimized and the
+          #     /admin/#blog dashboard reflects all of them.
           POSTS_INPUT="${{ github.event.inputs.posts }}"
           DISPATCH_SLUG="${{ github.event.client_payload.slug }}"
           if [ -n "$POSTS_INPUT" ]; then
             echo "posts_arg=--posts $POSTS_INPUT" >> "$GITHUB_OUTPUT"
-            echo "Filter: manual posts=$POSTS_INPUT"
+            echo "collections_arg=--collections blog" >> "$GITHUB_OUTPUT"
+            echo "Filter: manual posts=$POSTS_INPUT (blog only)"
           elif [ -n "$DISPATCH_SLUG" ]; then
             echo "posts_arg=--posts $DISPATCH_SLUG" >> "$GITHUB_OUTPUT"
-            echo "Filter: webhook slug=$DISPATCH_SLUG"
+            echo "collections_arg=--collections blog" >> "$GITHUB_OUTPUT"
+            echo "Filter: webhook slug=$DISPATCH_SLUG (blog only)"
           else
             echo "posts_arg=" >> "$GITHUB_OUTPUT"
-            echo "Filter: ALL posts (no filter)"
+            echo "collections_arg=--collections all" >> "$GITHUB_OUTPUT"
+            echo "Filter: WHOLE CMS sweep (--collections all)"
           fi
 
-      - name: Run blog-image optimizer (--apply --auto-publish)
+      - name: Run CMS-image optimizer (--apply --auto-publish)
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
         run: |
@@ -77,13 +92,26 @@ jobs:
           # The optimizer enforces the safeguard internally:
           #   only items with lastPublished != null AND isDraft=False
           #   AND isArchived=False are published. Drafts are NEVER published.
+          # collections_arg = "--collections all" on the nightly run (whole-CMS
+          # sweep), "--collections blog" on targeted manual/webhook runs.
           python scripts/optimize_blog_richtext_images.py \
             --site cel \
             --apply \
             --auto-publish \
+            ${{ steps.filter.outputs.collections_arg }} \
             ${{ steps.filter.outputs.posts_arg }} \
             --log-jsonl data/blog-optimization-log.jsonl \
             --backup-dir data/blog-richtext-backup
+
+      - name: Regenerate /admin/#blog dashboard page
+        if: always()  # render even if the optimizer hit a non-fatal image error
+        run: |
+          # Renders docs/admin/blog/index.html from the (just-appended) log,
+          # grouped by collection. EXTERNAL_REPO_ROOT auto-resolves to ./docs
+          # in this CEL checkout (docs/index.html marker). Run as a module so
+          # `from tools.dashboard import ...` resolves against the repo root.
+          python -m tools.blog_images.generate_blog_page \
+            --log-file data/blog-optimization-log.jsonl
 
       - name: Commit + push state
         if: always()
@@ -95,7 +123,8 @@ jobs:
           git pull --rebase --autostash origin main || true
           git add data/blog-optimization-log.jsonl \
                   data/blog-richtext-backup/ \
-                  sites/cel/shared/uploaded_assets.json
+                  sites/cel/shared/uploaded_assets.json \
+                  docs/admin/blog/index.html
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
-generate_blog_page.py — Renders /admin/blog/index.html.
+generate_blog_page.py — Renders the /admin/#blog "CMS images" dashboard page.
 
 Reads:
   data/blog-optimization-log.jsonl  — one JSON object per image processed
+      (now carries a ``collection`` dimension; legacy entries without it are
+       treated as Blog Posts for backward compatibility)
 
 Writes (into external repo):
   <EXTERNAL_REPO_ROOT>/admin/blog/index.html
-      — served at https://cel.englishcollege.com/admin/blog/
+      — served at https://cel.englishcollege.com/admin/blog/ (route kept; the
+        shell tab is already labelled "IMAGES")
 
-Companion to scripts/optimize_blog_richtext_images.py — the optimizer
-appends to the JSONL each night; this generator renders a stable status page
-matching the styling of /admin/log/, /admin/offers/, /admin/housing/, etc.
+Companion to scripts/optimize_blog_richtext_images.py — the optimizer appends
+to the JSONL each night (now sweeping the WHOLE CMS via --collections all);
+this generator renders a stable status page grouped by collection, matching
+the styling of /admin/log/, /admin/offers/, /admin/housing/, etc.
 
 No external dependencies. Stdlib only.
 """
@@ -194,12 +198,27 @@ def filter_current_month(entries: list[dict]) -> list[dict]:
     return out
 
 
+def collection_of(entry: dict) -> str:
+    """Collection slug for an entry. Legacy blog entries (pre-2026-06-02) had no
+    ``collection`` field — they are all Blog Posts, so default to 'post'."""
+    return entry.get("collection") or "post"
+
+
+def collection_name_of(entry: dict) -> str:
+    """Human collection name. Falls back to the slug when older entries lack it."""
+    return entry.get("collection_name") or collection_of(entry)
+
+
 def aggregate(entries: list[dict]) -> dict:
-    """Sum stats + per-action counts."""
+    """Sum stats + per-action counts.
+
+    ``item_count`` counts distinct CMS items as (collection, slug) pairs so the
+    same slug appearing in two collections is not collapsed.
+    """
     actions: dict[str, int] = defaultdict(int)
     old_total = 0
     new_total = 0
-    posts: set[str] = set()
+    items: set[tuple[str, str]] = set()
     for e in entries:
         actions[e.get("action") or "unknown"] += 1
         try:
@@ -208,7 +227,7 @@ def aggregate(entries: list[dict]) -> dict:
         except (TypeError, ValueError):
             pass
         if e.get("post_slug"):
-            posts.add(e["post_slug"])
+            items.add((collection_of(e), e["post_slug"]))
     saved = old_total - new_total
     pct = (saved / old_total * 100.0) if old_total > 0 else 0.0
     return {
@@ -221,8 +240,25 @@ def aggregate(entries: list[dict]) -> dict:
         "new_bytes": new_total,
         "saved_bytes": saved,
         "saved_pct": pct,
-        "post_count": len(posts),
+        "item_count": len(items),
+        "post_count": len(items),  # legacy alias (older callers/tests)
     }
+
+
+def aggregate_by_collection(entries: list[dict]) -> list[dict]:
+    """Per-collection rollup, newest-activity first.
+
+    Returns a list of ``{"slug","name","agg"}`` sorted by bytes saved desc.
+    """
+    groups: dict[str, list[dict]] = defaultdict(list)
+    names: dict[str, str] = {}
+    for e in entries:
+        slug = collection_of(e)
+        groups[slug].append(e)
+        names.setdefault(slug, collection_name_of(e))
+    out = [{"slug": s, "name": names[s], "agg": aggregate(g)} for s, g in groups.items()]
+    out.sort(key=lambda r: r["agg"]["saved_bytes"], reverse=True)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -363,11 +399,47 @@ def render_latest_run_line(run_stats: dict, last_run_iso: str | None) -> str:
     return (
         '<p class="latest-run-line">'
         f'Latest run: <strong>{escape(lr)}</strong> &middot; '
-        f'{run_stats["post_count"]} post(s) touched &middot; '
+        f'{run_stats["item_count"]} item(s) touched &middot; '
         f'{run_stats["replaced"]} replaced &middot; '
         f'{run_stats["errors"]} error(s)'
         '</p>'
     )
+
+
+def render_collection_breakdown(entries: list[dict], *, heading: str) -> str:
+    """Per-collection table: which CMS collections were optimized + savings.
+
+    This is what makes the page 'whole CMS' rather than blog-only — one row per
+    collection (Blog Posts, Courses, Testimonials, Team, Activities, …).
+    """
+    rows = aggregate_by_collection(entries)
+    if not rows:
+        return ""
+    parts = [f"<h2>{escape(heading)}</h2>", "<table>"]
+    parts.append("<thead><tr>"
+                 "<th>Collection</th>"
+                 "<th>Items</th>"
+                 "<th>Replaced</th>"
+                 "<th>Skipped</th>"
+                 "<th>Errors</th>"
+                 "<th>Saved</th>"
+                 "</tr></thead><tbody>")
+    for r in rows:
+        a = r["agg"]
+        skipped = a["skipped_avif"] + a["skipped_small"]
+        saved = max(a["saved_bytes"], 0)
+        parts.append(
+            "<tr>"
+            f'<td class="slug">{escape(r["name"])}</td>'
+            f'<td>{a["item_count"]}</td>'
+            f'<td>{a["replaced"]}</td>'
+            f'<td>{skipped}</td>'
+            f'<td>{a["errors"]}</td>'
+            f'<td>{escape(fmt_bytes(saved))} ({escape(fmt_pct(a["saved_pct"]))})</td>'
+            "</tr>"
+        )
+    parts.append("</tbody></table>")
+    return "".join(parts)
 
 
 def render_summary_card(today_stats: dict, today_label: str, last_run_iso: str | None) -> str:
@@ -375,7 +447,7 @@ def render_summary_card(today_stats: dict, today_label: str, last_run_iso: str |
     rows = [
         render_kv("Last run", lr_str),
         render_kv("Today (San Diego)", today_label),
-        render_kv("Posts touched today", str(today_stats["post_count"])),
+        render_kv("Items touched today", str(today_stats["item_count"])),
         render_kv("Images replaced", str(today_stats["replaced"])),
         render_kv("Images skipped (already AVIF)", str(today_stats["skipped_avif"])),
         render_kv("Images skipped (savings <30%)", str(today_stats["skipped_small"])),
@@ -398,7 +470,7 @@ def render_summary_card(today_stats: dict, today_label: str, last_run_iso: str |
 
 def render_rollup_card(rollup_stats: dict) -> str:
     rows = [
-        render_kv("Posts touched", str(rollup_stats["post_count"])),
+        render_kv("Items touched", str(rollup_stats["item_count"])),
         render_kv("Images replaced", str(rollup_stats["replaced"])),
         render_kv("Errors", str(rollup_stats["errors"])),
         render_kv("Bytes before", fmt_bytes(rollup_stats["old_bytes"])),
@@ -449,7 +521,9 @@ def render_image_table(entries: list[dict]) -> str:
     parts = ['<h2>Images processed today</h2>']
     parts.append("<table>")
     parts.append("<thead><tr>"
-                 "<th>Post</th>"
+                 "<th>Collection</th>"
+                 "<th>Item</th>"
+                 "<th>Field</th>"
                  "<th>Filename</th>"
                  "<th>Action</th>"
                  "<th>Old size</th>"
@@ -459,6 +533,8 @@ def render_image_table(entries: list[dict]) -> str:
     parts.append("<tbody>")
     for e in sorted_entries:
         slug = e.get("post_slug") or "—"
+        cname = collection_name_of(e)
+        field = e.get("field") or "—"
         old_url = e.get("old_url") or ""
         new_url = e.get("new_url") or ""
         old_b = int(e.get("old_bytes") or 0)
@@ -470,7 +546,9 @@ def render_image_table(entries: list[dict]) -> str:
 
         parts.append(
             "<tr>"
+            f'<td>{escape(cname)}</td>'
             f'<td class="slug">{escape(slug)}</td>'
+            f"<td>{escape(field)}</td>"
             f"<td>{escape(filename_from_url(old_url))}</td>"
             f"<td>{render_action_badge(e.get('action') or '')}</td>"
             f"<td>{fmt_bytes(old_b)}</td>"
@@ -498,7 +576,7 @@ def render_image_table(entries: list[dict]) -> str:
             detail_html += f'<p class="subtle status-failed"><strong>Error:</strong> {escape(str(err))}</p>'
         detail_html += "</div></details>"
 
-        parts.append(f'<tr><td colspan="6">{detail_html}</td></tr>')
+        parts.append(f'<tr><td colspan="8">{detail_html}</td></tr>')
 
     parts.append("</tbody></table>")
     if len(entries) > MAX_DETAIL_ROWS:
@@ -528,8 +606,8 @@ def render_html(entries: list[dict]) -> str:
     parts.append(f"  {AUTH_SCRIPT_TAG}")
     parts.append('  <meta charset="utf-8">')
     parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
-    parts.append("  <title>Blog images — English College</title>")
-    parts.append('  <meta name="description" content="Nightly AVIF optimization for blog post rich-text images.">')
+    parts.append("  <title>CMS images — English College</title>")
+    parts.append('  <meta name="description" content="Nightly AVIF optimization across all Webflow CMS collections.">')
     parts.append('  <meta name="robots" content="noindex, nofollow">')
     parts.append(f'  {render_favicon_tag()}')
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
@@ -537,7 +615,7 @@ def render_html(entries: list[dict]) -> str:
     parts.append("<body>")
     parts.append('  <div class="dashboard-shell">')
 
-    parts.append(render_page_chrome("BLOG IMAGES", "Nightly AVIF optimization for rich-text content"))
+    parts.append(render_page_chrome("CMS IMAGES", "Nightly AVIF optimization across all CMS collections"))
 
     if not entries:
         parts.append("    " + render_empty_state())
@@ -563,6 +641,8 @@ def render_html(entries: list[dict]) -> str:
         ))
         parts.append("      " + render_stat_cards(entries))
         parts.append("      " + render_latest_run_line(run_stats, last_run_ts))
+        parts.append("      " + render_collection_breakdown(
+            entries, heading="By collection (all-time)"))
         parts.append("    </section>")
 
         # ── History tab ────────────────────────────────────────────────────
@@ -572,6 +652,8 @@ def render_html(entries: list[dict]) -> str:
         rollup_entries = filter_last_n_days(entries, LAST_N_DAYS_ROLLUP)
         rollup_stats = aggregate(rollup_entries)
         parts.append("      " + render_rollup_card(rollup_stats))
+        parts.append("      " + render_collection_breakdown(
+            run_entries, heading="By collection (this run)"))
         parts.append("      " + render_image_table(run_entries))
         parts.append("    </section>")
 
