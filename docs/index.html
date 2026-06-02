@@ -8,18 +8,6 @@
   <title>English College — Sign in</title>
   <link rel="stylesheet" href="/assets/css/dashboard.css">
   <script src="/assets/js/dashboard-config.js"></script>
-  <style>
-    .gate-link { background: none; border: 0; color: #5b5bd6; cursor: pointer; font: inherit; text-decoration: underline; padding: 6px; }
-    .gate-card[hidden] { display: none; }
-    /* Make the sign-in error unmistakable (only when a message is present). */
-    #login-err:not(:empty) {
-      padding: 10px 12px;
-      border: 1px solid var(--err);
-      border-radius: var(--radius-sm);
-      background: rgba(160, 38, 36, 0.09);
-      font-weight: 600;
-    }
-  </style>
 </head>
 <body>
   <div class="gate-root">
@@ -31,8 +19,14 @@
       </div>
       <h1>Internal dashboard</h1>
       <p class="gate-hint">Sign in with your email and password.</p>
-      <input type="email" id="login-email" placeholder="Email" autocomplete="username" autofocus required>
-      <input type="password" id="login-pw" placeholder="Password" autocomplete="current-password" required>
+      <div class="gate-field">
+        <label class="gate-label" for="login-email">Email</label>
+        <input type="email" id="login-email" autocomplete="username" autofocus required>
+      </div>
+      <div class="gate-field">
+        <label class="gate-label" for="login-pw">Password</label>
+        <input type="password" id="login-pw" autocomplete="current-password" required>
+      </div>
       <button type="submit">Sign in</button>
       <div class="gate-error" id="login-err" role="alert" aria-live="polite"></div>
       <button type="button" class="gate-link" id="forgot-link">Forgot password?</button>
@@ -47,9 +41,12 @@
       </div>
       <h1>Reset password</h1>
       <p class="gate-hint">Enter your email and we'll send you a reset link.</p>
-      <input type="email" id="forgot-email" placeholder="Email" autocomplete="username" required>
+      <div class="gate-field">
+        <label class="gate-label" for="forgot-email">Email</label>
+        <input type="email" id="forgot-email" autocomplete="username" required>
+      </div>
       <button type="submit">Send reset link</button>
-      <div class="gate-error" id="forgot-msg" role="status" aria-live="polite"></div>
+      <div class="gate-note" id="forgot-msg" role="status" aria-live="polite"></div>
       <button type="button" class="gate-link" id="forgot-back">Back to sign in</button>
     </form>
   </div>
