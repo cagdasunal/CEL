@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_blog_page.py — Renders the /admin/#blog "CMS images" dashboard page.
+generate_blog_page.py — Renders the /admin/#images "CMS images" dashboard page.
 
 Reads:
   data/blog-optimization-log.jsonl  — one JSON object per image processed
@@ -8,9 +8,9 @@ Reads:
        treated as Blog Posts for backward compatibility)
 
 Writes (into external repo):
-  <EXTERNAL_REPO_ROOT>/admin/blog/index.html
-      — served at https://cel.englishcollege.com/admin/blog/ (route kept; the
-        shell tab is already labelled "IMAGES")
+  <EXTERNAL_REPO_ROOT>/admin/images/index.html
+      — served at https://cel.englishcollege.com/admin/images/ (slug renamed
+        from 'blog' → 'images' 2026-06-02; the shell tab is labelled "IMAGES")
 
 Companion to scripts/optimize_blog_richtext_images.py — the optimizer appends
 to the JSONL each night (now sweeping the WHOLE CMS via --collections all);
@@ -50,7 +50,7 @@ SAN_DIEGO_TZ = ZoneInfo("America/Los_Angeles")
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 DEFAULT_LOG_FILE = DATA_DIR / "blog-optimization-log.jsonl"
-OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "blog" / "index.html"
+OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "images" / "index.html"
 
 LAST_N_DAYS_ROLLUP = 7
 MAX_DETAIL_ROWS = 200  # cap rendering on very long histories
@@ -688,7 +688,7 @@ def write_blog_page(log_file: Path) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
-        description="Render the /admin/blog/ dashboard page from the optimization log.",
+        description="Render the /admin/images/ dashboard page from the optimization log.",
     )
     p.add_argument(
         "--log-file",

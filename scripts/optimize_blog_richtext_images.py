@@ -17,7 +17,7 @@ URLs go live. Already-AVIF assets are HEAD-checked + skipped.
 
 Default ``--collections blog`` preserves the exact legacy blog-only behavior.
 Companion ``tools/blog_images/generate_blog_page.py`` renders the results to
-the /admin/#blog dashboard (grouped by collection).
+the /admin/#images dashboard (grouped by collection).
 
 CLI
 ---
@@ -617,7 +617,7 @@ def process_post(
 # Whole-CMS sweep — collection discovery + generic image-field handling
 # =========================================================================
 # Added 2026-06-02. The optimizer was blog-only: ``process_post`` walked the
-# Blog Posts ``post-body`` RichText field and the dashboard at /admin/#blog
+# Blog Posts ``post-body`` RichText field and the dashboard at /admin/#images
 # reported blog images only. The user asked to widen the scope to the WHOLE
 # CMS. These additive helpers let ``--collections all`` sweep every CMS
 # collection's image-bearing fields:

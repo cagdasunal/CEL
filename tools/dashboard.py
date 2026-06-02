@@ -1105,7 +1105,7 @@ TABS = (
     {"key": "log",     "label": "WEGLOT",  "href": "/admin/log/"},
     {"key": "housing", "label": "Housing", "href": "/admin/housing/"},
     {"key": "courses", "label": "Courses", "href": "/admin/courses/"},
-    {"key": "blog",    "label": "BLOG",    "href": "/admin/blog/"},
+    {"key": "images",  "label": "IMAGES",  "href": "/admin/images/"},
 )
 
 def _default_external_root() -> Path:
@@ -1209,7 +1209,7 @@ _SHELL_HTML = """\
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
-        <a class="shell-tab" href="#blog" data-target="blog" data-topbar="blog">IMAGES</a>
+        <a class="shell-tab" href="#images" data-target="images" data-topbar="images">IMAGES</a>
         <a class="shell-tab" href="#docs" data-target="docs" data-topbar="docs">DOCS</a>
         <details class="shell-tab-dropdown" data-topbar="weglot">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
@@ -1275,7 +1275,7 @@ _SHELL_HTML = """\
       housing:      '/admin/housing/',
       courses:      '/admin/courses/',
       translations: '/admin/translations/',
-      blog:         '/admin/blog/',
+      images:       '/admin/images/',
       summaries:    '/admin/summaries/',
       files:        '/admin/files/',
       docs:         '/admin/docs/'
@@ -1286,7 +1286,7 @@ _SHELL_HTML = """\
       housing:      'fidelo',
       courses:      'fidelo',
       translations: 'weglot',
-      blog:         'blog',
+      images:       'images',
       summaries:    'seo',
       files:        'seo',
       docs:         'docs'
