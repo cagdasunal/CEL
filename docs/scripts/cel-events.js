@@ -351,8 +351,20 @@
   window.addEventListener('message', function (e) {
     let oh;
     try { oh = new URL(e.origin).hostname; } catch (_) { return; }   // meetings.hubspot.com OR regional meetings-eu1 etc.
-    if (!/(^|\.)meetings(-[a-z0-9]+)?\.hubspot\.com$/.test(oh)) return;
-    if (e.data && e.data.meetingBookSucceeded === true) fireLead('schedule_call');
+    if (/(^|\.)meetings(-[a-z0-9]+)?\.hubspot\.com$/.test(oh)) {
+      if (e.data && e.data.meetingBookSucceeded === true) fireLead('schedule_call');
+      return;
+    }
+    // Fidelo booking widget: cel-fidelo.js bridge inside the cross-origin iframe.
+    // Anchored origin test (rejects fidelo.com.evil.com); validate before trusting e.data.
+    if (/(^|\.)fidelo\.com$/.test(oh)) {
+      const d = e.data || {};
+      if (d.event === 'fidelo_booking_step' && d.step_name) {
+        push('booking_step', { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' });
+      } else if (d.event === 'fidelo_application_submitted') {
+        fireLead('fidelo_booking');
+      }
+    }
   });
 
   // ---- passive: scroll depth (25/50/75/90, once each, short-page guarded) ----
