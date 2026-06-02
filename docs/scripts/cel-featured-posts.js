@@ -24,17 +24,17 @@
  *      (see rules/webflow-javascript.md §1 "Exception — external bundles").
  *   2. data-lang cleaner — removes [data-lang] elements that don't match <html lang>.
  *   3. Featured-posts renderer (Weglot-aware) — pulls .posts_collection .w-dyn-item
- *      source items into [post-type="recent-big"] (1) + [post-type="recent-small"] (4)
+ *      source items into [post-type="recent-big"] (1) + [post-type="recent-small"] (3)
  *      target slots via [data-blog-slot] mapping, then REMOVES the hidden source list
  *      so the rendered DOM (what Google indexes) holds only active-language posts.
- *      If the active language has NO posts, the whole .section_blog is REMOVED from
- *      the DOM (along with its TOC entry) so Google never sees an empty blog block.
+ *      If the active language has fewer than 2 posts, the whole .section_blog is REMOVED
+ *      from the DOM (with its TOC entry) so Google never sees a near-empty blog block.
  *
  * DOM contract (renaming any of these silently disables the section):
  *   Section: .section_blog (id="blog")           (removed entirely when no posts)
  *   Source:  .posts_collection .w-dyn-item       (CMS list; per-item data-lang)
  *   Slots:   [data-blog-slot="title|paragraph|category|url|image"]
- *   Targets: [post-type="recent-big"] (1), [post-type="recent-small"] (4)
+ *   Targets: [post-type="recent-big"] (1), [post-type="recent-small"] (3)
  *   TOC:     .stoc_link[data-target="<section id>"]  (removed with the section)
  *   CSS:     .blog-bento_hero, .blog-bento_hero-img, .blog-bento_hero-overlay,
  *            .blog-bento_item, .blog-bento_item-title, .cta-pill-cream
@@ -141,7 +141,7 @@
 
   const TARGET_MODULES = [
     { targetSelector: '[post-type="recent-big"]',   count: 1 },
-    { targetSelector: '[post-type="recent-small"]', count: 4 }
+    { targetSelector: '[post-type="recent-small"]', count: 3 }
   ];
 
   const normalizeLang = function (val) {
@@ -255,13 +255,14 @@
         return extractPostData(node, index);
       });
 
-      // No featured posts for the active language → remove the whole section so
-      // Google never indexes an empty "From Our Blog" block, and drop its matching
-      // TOC entry so no dead in-page anchor is left behind. Guarded on hasRenderTargets
-      // so a static (non-CMS) blog section is never removed. Fires whether the source
-      // list is absent entirely (no posts ever bound) or filtered to empty for the active
-      // language. A language switch reloads the page, so this re-evaluates per language.
-      if (hasRenderTargets && availablePosts.length === 0) {
+      // Fewer than 2 featured posts for the active language → remove the whole section
+      // so Google never indexes a near-empty "From Our Blog" block (the section is only
+      // worth showing with at least 2 posts), and drop its matching TOC entry so no dead
+      // in-page anchor is left behind. Guarded on hasRenderTargets so a static (non-CMS)
+      // blog section is never removed. Fires whether the source list is absent entirely
+      // (no posts ever bound) or filtered below 2 for the active language. A language
+      // switch reloads the page, so this re-evaluates per language.
+      if (hasRenderTargets && availablePosts.length < 2) {
         document.querySelectorAll(".section_blog").forEach(function (sec) {
           const secId = sec.getAttribute("id");
           sec.remove();
