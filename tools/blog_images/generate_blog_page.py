@@ -34,6 +34,8 @@ from zoneinfo import ZoneInfo
 from tools.dashboard import (
     AUTH_SCRIPT_TAG,
     EXTERNAL_REPO_ROOT,
+    render_admin_close,
+    render_admin_open,
     render_favicon_tag,
     render_page_chrome,
     render_sync_status_card,
@@ -613,6 +615,7 @@ def render_html(entries: list[dict]) -> str:
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("images"))
     parts.append('  <div class="dashboard-shell">')
 
     parts.append(render_page_chrome("CMS IMAGES", "Nightly AVIF optimization across all CMS collections"))
@@ -667,6 +670,7 @@ def render_html(entries: list[dict]) -> str:
     )
     parts.append("  </footer>")
     parts.append("  </div>")  # close .dashboard-shell
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 

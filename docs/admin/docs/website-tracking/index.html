@@ -13,32 +13,32 @@
 <body>
   <div class="shell-root">
     <header class="shell-header">
-      <a class="shell-brand" href="/admin/" aria-label="English College">
+      <a class="shell-brand" href="/admin/offers/" aria-label="English College">
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="/admin/#offers">OFFERS</a>
-        <a class="shell-tab" href="/admin/#images">IMAGES</a>
+        <a class="shell-tab" href="/admin/offers/">OFFERS</a>
+        <a class="shell-tab" href="/admin/images/">IMAGES</a>
         <a class="shell-tab is-active" href="/admin/docs/">DOCS</a>
         <details class="shell-tab-dropdown">
           <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#translations">Translations</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#log">Synced Posts</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/translations/">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/log/">Synced Posts</a></li>
           </ul>
         </details>
         <details class="shell-tab-dropdown">
           <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#summaries">Summaries</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#files">Files</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/summaries/">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/files/">Files</a></li>
           </ul>
         </details>
         <details class="shell-tab-dropdown">
           <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#housing">Housing</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#courses">Courses</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/housing/">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/courses/">Courses</a></li>
           </ul>
         </details>
       </nav>
@@ -49,6 +49,7 @@
             <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
             <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
           </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
           <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
         </div>
       </details>
@@ -73,24 +74,123 @@
 <p><strong>The basics, which Google records on its own</strong></p>
 <div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>Name</th><th>What it means</th></tr></thead><tbody><tr><td><code>page_view</code></td><td>A page was viewed</td></tr><tr><td><code>session_start</code></td><td>A new visit began</td></tr><tr><td><code>first_visit</code></td><td>A brand-new visitor, here for the first time</td></tr><tr><td><code>user_engagement</code></td><td>A sign the visit was active, not a quick bounce</td></tr><tr><td><code>scroll</code></td><td>Google's basic scroll signal. We add a more detailed <code>scroll_depth</code></td></tr><tr><td><code>click</code></td><td>A click that leads to another website</td></tr><tr><td><code>file_download</code></td><td>Someone downloaded a file, such as a course PDF</td></tr><tr><td><code>form_start</code> and <code>form_submit</code></td><td>Someone started, then finished, filling in a form</td></tr><tr><td><code>view_search_results</code></td><td>Someone used the search box on your site</td></tr></tbody></table></div>
 <h2 id="what-we-do-not-track">What we do not track</h2>
-<p>Your visitors' privacy is protected by design. We never store anyone's name, we never record payment details, and email addresses and phone numbers are hidden before they reach the reports. We also follow your cookie banner. If someone declines, Google still counts the visit in a private way that never identifies the person.</p>
-<h2 id="questions">Questions</h2>
-<p>If a report looks off, or you would like a new one built for something specific, just ask. This page will grow as we add more guides.</p></article></section>
+<p>Your visitors' privacy is protected by design. We never store anyone's name, we never record payment details, and email addresses and phone numbers are hidden before they reach the reports. We also follow your cookie banner. If someone declines, Google still counts the visit in a private way that never identifies the person.</p></article></section>
     </main>
+  <div class="cpw-overlay" id="cpw-overlay" hidden>
+    <form class="cpw-modal" id="cpw-form" autocomplete="off">
+      <h2 class="cpw-title">Change password</h2>
+      <div class="cpw-readonly">
+        <p class="cpw-field"><span class="cpw-k">First name</span><span class="cpw-v" id="cpw-first">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Last name</span><span class="cpw-v" id="cpw-last">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Email</span><span class="cpw-v" id="cpw-email">&mdash;</span></p>
+      </div>
+      <label class="cpw-label">Current password<input type="password" id="cpw-current" class="cpw-input" autocomplete="current-password" required></label>
+      <label class="cpw-label">New password<input type="password" id="cpw-new" class="cpw-input" autocomplete="new-password" required></label>
+      <label class="cpw-label">Confirm new password<input type="password" id="cpw-confirm" class="cpw-input" autocomplete="new-password" required></label>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="cpw-cancel">Cancel</button>
+        <button type="submit" class="cpw-btn cpw-save" id="cpw-save">Save</button>
+      </div>
+      <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
+    </form>
+  </div>
   </div>
   <script>(function () {
-  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
-  var u = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
-  if (u) {
-    setText('shell-user-name', u.firstName || u.email);
-    setText('shell-user-fullname', [u.firstName || '', u.lastName || ''].join(' ').trim() || u.email);
-    setText('shell-user-email', u.email);
-  }
-  var out = document.getElementById('shell-logout');
-  if (out) out.addEventListener('click', function () {
-    document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
-    location.replace('/');
-  });
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
+    var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+    var changePwBtn = document.getElementById('shell-change-pw');
+    if (currentUser && currentUser.email) {
+      setText('shell-user-name', currentUser.firstName || currentUser.email);
+      setText('shell-user-fullname', fullName(currentUser));
+      setText('shell-user-email', currentUser.email);
+      setText('cpw-first', currentUser.firstName || '—');
+      setText('cpw-last', currentUser.lastName || '—');
+      setText('cpw-email', currentUser.email);
+    } else if (changePwBtn) {
+      changePwBtn.style.display = 'none';
+    }
+
+    var logoutBtn = document.getElementById('shell-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', function () {
+      document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+      location.replace('/');
+    });
+
+    function sha256hex(str) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    function innerHash(pw) { return sha256hex(pw); }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+    function callProxy(payload) {
+      if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (resp) {
+          return resp.json().catch(function () { return {}; }).then(function (j) {
+            return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+          });
+        });
+    }
+
+    var overlay = document.getElementById('cpw-overlay');
+    var cpwForm = document.getElementById('cpw-form');
+    var cpwStatus = document.getElementById('cpw-status');
+    var cpwSave = document.getElementById('cpw-save');
+    if (changePwBtn && overlay && cpwForm) {
+      function closeModal() {
+        overlay.setAttribute('hidden', '');
+        cpwForm.reset();
+        cpwStatus.textContent = '';
+        cpwStatus.className = 'cpw-status';
+        cpwSave.disabled = false;
+      }
+      changePwBtn.addEventListener('click', function () {
+        var dd = document.getElementById('shell-user');
+        if (dd) dd.removeAttribute('open');
+        overlay.removeAttribute('hidden');
+        document.getElementById('cpw-current').focus();
+      });
+      document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+      cpwForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!currentUser || !currentUser.email) return;
+        var cur = document.getElementById('cpw-current').value;
+        var nw = document.getElementById('cpw-new').value;
+        var cf = document.getElementById('cpw-confirm').value;
+        if (!cur || !nw) return;
+        if (nw !== cf) {
+          cpwStatus.textContent = 'New passwords do not match.';
+          cpwStatus.className = 'cpw-status is-error';
+          return;
+        }
+        cpwSave.disabled = true;
+        cpwStatus.textContent = 'Saving…';
+        cpwStatus.className = 'cpw-status';
+        Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+          return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+        }).then(function (r) {
+          if (r.ok) {
+            cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+            cpwStatus.className = 'cpw-status is-ok';
+          } else {
+            cpwStatus.textContent = '✗ Current password is incorrect.';
+            cpwStatus.className = 'cpw-status is-error';
+            cpwSave.disabled = false;
+          }
+        }).catch(function () {
+          cpwStatus.textContent = '✗ Could not save right now. Please try again.';
+          cpwStatus.className = 'cpw-status is-error';
+          cpwSave.disabled = false;
+        });
+      });
+    }
 })();
 </script>
 </body>

@@ -28,6 +28,8 @@ from zoneinfo import ZoneInfo
 from tools.dashboard import (
     AUTH_SCRIPT_TAG,
     EXTERNAL_REPO_ROOT,
+    render_admin_close,
+    render_admin_open,
     SHARED_CSS,
     render_favicon_tag,
     write_dashboard_config,
@@ -329,6 +331,7 @@ def render_html(events=None, exclusions=None) -> str:
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("log"))
     parts.append('  <div class="dashboard-shell">')
 
     # Status card
@@ -382,6 +385,7 @@ def render_html(events=None, exclusions=None) -> str:
     )
     parts.append("  </footer>")
     parts.append("  </div>")  # close .dashboard-shell
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 
@@ -411,6 +415,7 @@ def render_files_html() -> str:
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("files"))
     parts.append('  <div class="dashboard-shell">')
 
     # Intro
@@ -470,6 +475,7 @@ def render_files_html() -> str:
     )
     parts.append("  </footer>")
     parts.append("  </div>")
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 
@@ -609,6 +615,7 @@ def render_summaries_html() -> str:
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("summaries"))
     parts.append('  <div class="dashboard-shell">')
 
     if latest is None:
@@ -624,6 +631,7 @@ def render_summaries_html() -> str:
         )
         parts.append("  </footer>")
         parts.append("  </div>")
+        parts.append(render_admin_close())
         parts.append("</body>")
         parts.append("</html>")
         return "\n".join(parts) + "\n"
@@ -798,6 +806,7 @@ def render_summaries_html() -> str:
     )
     parts.append("  </footer>")
     parts.append("  </div>")
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 
@@ -830,6 +839,7 @@ def render_translations_html() -> str:
     parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("translations"))
     parts.append('  <div class="dashboard-shell">')
 
     # Intro
@@ -885,6 +895,7 @@ def render_translations_html() -> str:
     )
     parts.append("  </footer>")
     parts.append("  </div>")
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 

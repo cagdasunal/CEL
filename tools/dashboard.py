@@ -1190,46 +1190,61 @@ def render_sync_status_card(label: str, last_synced: str, is_ok: bool = True) ->
     )
 
 
-# Standalone dashboard top bar for the REAL Docs pages (/admin/docs/ and
-# /admin/docs/<slug>/, built by tools/dashboard_docs.py). Reuses the shell's
-# .shell-* classes (defined in dashboard.css). Unlike the SPA shell, these tabs
-# are real links: the other sections point back into the shell (/admin/#<target>)
-# and DOCS points at the real docs index (marked active). Pairs with
-# DOCS_TOPBAR_JS below (identity + sign out; no iframe routing, no change-pw modal).
-def render_docs_topbar() -> str:
+# Section -> which top-level nav group it belongs to (drives active highlighting).
+_SECTION_GROUP = {
+    "offers": "offers", "images": "images", "docs": "docs",
+    "translations": "weglot", "log": "weglot",
+    "summaries": "seo", "files": "seo",
+    "housing": "fidelo", "courses": "fidelo",
+}
+
+
+# The dashboard top bar, rendered on EVERY admin page. The dashboard is a set of
+# REAL pages now (not an iframe SPA): every tab is a real link to /admin/<section>/
+# and `active` is highlighted. Pairs with ADMIN_CHROME_MODAL + ADMIN_CHROME_JS
+# (the account menu's change-password + sign-out). Reuses the .shell-* classes in
+# dashboard.css. Used by every section builder + tools/dashboard_docs.py.
+def render_topbar(active: str = "offers") -> str:
+    group = _SECTION_GROUP.get(active, "")
     chevron = (
         '<svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" '
         'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" '
         'stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg>'
     )
+    def tab(key):
+        return "shell-tab is-active" if active == key else "shell-tab"
+    def grp(g):
+        return "shell-tab is-active" if group == g else "shell-tab"
+    def sub(key):
+        return "shell-tab-subitem is-active" if active == key else "shell-tab-subitem"
     return f"""\
     <header class="shell-header">
-      <a class="shell-brand" href="/admin/" aria-label="English College">
+      <a class="shell-brand" href="/admin/offers/" aria-label="English College">
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="/admin/#offers">OFFERS</a>
-        <a class="shell-tab" href="/admin/#images">IMAGES</a>
-        <a class="shell-tab is-active" href="/admin/docs/">DOCS</a>
+        <a class="{tab('offers')}" href="/admin/offers/">OFFERS</a>
+        <a class="{tab('images')}" href="/admin/images/">IMAGES</a>
+        <a class="{tab('docs')}" href="/admin/docs/">DOCS</a>
         <details class="shell-tab-dropdown">
-          <summary class="shell-tab">WEGLOT {chevron}</summary>
+          <summary class="{grp('weglot')}">WEGLOT {chevron}</summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#translations">Translations</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#log">Synced Posts</a></li>
+            <li><a class="{sub('translations')}" href="/admin/translations/">Translations</a></li>
+            <li><a class="{sub('log')}" href="/admin/log/">Synced Posts</a></li>
           </ul>
         </details>
         <details class="shell-tab-dropdown">
-          <summary class="shell-tab">SEO {chevron}</summary>
+          <summary class="{grp('seo')}">SEO {chevron}</summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#summaries">Summaries</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#files">Files</a></li>
+            <li><a class="{sub('summaries')}" href="/admin/summaries/">Summaries</a></li>
+            <li><a class="{sub('files')}" href="/admin/files/">Files</a></li>
           </ul>
         </details>
         <details class="shell-tab-dropdown">
-          <summary class="shell-tab">FIDELO {chevron}</summary>
+          <summary class="{grp('fidelo')}">FIDELO {chevron}</summary>
           <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="/admin/#housing">Housing</a></li>
-            <li><a class="shell-tab-subitem" href="/admin/#courses">Courses</a></li>
+            <li><a class="{sub('housing')}" href="/admin/housing/">Housing</a></li>
+            <li><a class="{sub('courses')}" href="/admin/courses/">Courses</a></li>
           </ul>
         </details>
       </nav>
@@ -1240,95 +1255,15 @@ def render_docs_topbar() -> str:
             <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
             <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
           </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
           <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
         </div>
       </details>
     </header>"""
 
 
-# Identity + sign-out for the standalone Docs top bar. Mirrors the shell's own
-# identity/sign-out logic (window.__CEL_USER__ is set by auth.js). No crypto,
-# no dispatch proxy, no change-password — those live in the main shell only.
-DOCS_TOPBAR_JS = """\
-(function () {
-  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
-  var u = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
-  if (u) {
-    setText('shell-user-name', u.firstName || u.email);
-    setText('shell-user-fullname', [u.firstName || '', u.lastName || ''].join(' ').trim() || u.email);
-    setText('shell-user-email', u.email);
-  }
-  var out = document.getElementById('shell-logout');
-  if (out) out.addEventListener('click', function () {
-    document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
-    location.replace('/');
-  });
-})();
-"""
-
-
-_SHELL_HTML = """\
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <!-- dashboard-config.js MUST load before auth.js: auth.js reads window.CEL_DISPATCH_URL to validate the session. -->
-  <script src="/assets/js/dashboard-config.js"></script>
-  <script src="/assets/js/auth.js"></script>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
-  <title>English College \u2014 Admin Dashboard</title>
-  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
-  <link rel="stylesheet" href="/assets/css/dashboard.css">
-</head>
-<body>
-  <div class="shell-root">
-    <header class="shell-header">
-      <a class="shell-brand" href="/admin/" aria-label="English College">
-        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
-      </a>
-      <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="shell-tab" href="#offers" data-target="offers" data-topbar="offers">OFFERS</a>
-        <a class="shell-tab" href="#images" data-target="images" data-topbar="images">IMAGES</a>
-        <a class="shell-tab" href="/admin/docs/">DOCS</a>
-        <details class="shell-tab-dropdown" data-topbar="weglot">
-          <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
-          <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="#translations" data-target="translations">Translations</a></li>
-            <li><a class="shell-tab-subitem" href="#log" data-target="log">Synced Posts</a></li>
-          </ul>
-        </details>
-        <details class="shell-tab-dropdown" data-topbar="seo">
-          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
-          <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="#summaries" data-target="summaries">Summaries</a></li>
-            <li><a class="shell-tab-subitem" href="#files" data-target="files">Files</a></li>
-          </ul>
-        </details>
-        <details class="shell-tab-dropdown" data-topbar="fidelo">
-          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
-          <ul class="shell-tab-submenu">
-            <li><a class="shell-tab-subitem" href="#housing" data-target="housing">Housing</a></li>
-            <li><a class="shell-tab-subitem" href="#courses" data-target="courses">Courses</a></li>
-          </ul>
-        </details>
-      </nav>
-      <details class="shell-user" id="shell-user">
-        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
-        <div class="shell-user-menu">
-          <div class="shell-user-info">
-            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
-            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
-          </div>
-          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
-          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
-        </div>
-      </details>
-    </header>
-    <main class="shell-content">
-      <iframe id="shell-frame" title="Dashboard content" src="/admin/offers/"></iframe>
-    </main>
-  </div>
+# The change-password modal — rendered once per admin page, driven by ADMIN_CHROME_JS.
+ADMIN_CHROME_MODAL = """\
   <div class="cpw-overlay" id="cpw-overlay" hidden>
     <form class="cpw-modal" id="cpw-form" autocomplete="off">
       <h2 class="cpw-title">Change password</h2>
@@ -1346,63 +1281,19 @@ _SHELL_HTML = """\
       </div>
       <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
     </form>
-  </div>
-  <script>
-  (function () {
-    // DOCS is a real page now (/admin/docs/); redirect any legacy #docs link.
-    if (location.hash === '#docs') { location.replace('/admin/docs/'); return; }
-    var TARGETS = {
-      log:          '/admin/log/',
-      offers:       '/admin/offers/',
-      housing:      '/admin/housing/',
-      courses:      '/admin/courses/',
-      translations: '/admin/translations/',
-      images:       '/admin/images/',
-      summaries:    '/admin/summaries/',
-      files:        '/admin/files/'
-    };
-    var TOPBAR_FOR = {
-      log:          'weglot',
-      offers:       'offers',
-      housing:      'fidelo',
-      courses:      'fidelo',
-      translations: 'weglot',
-      images:       'images',
-      summaries:    'seo',
-      files:        'seo'
-    };
-    var frame = document.getElementById('shell-frame');
-    var topbarEls = document.querySelectorAll('[data-topbar]');
-    var subitemEls = document.querySelectorAll('.shell-tab-subitem');
-    function pick() {
-      var key = (location.hash || '#offers').slice(1);
-      if (!TARGETS[key]) key = 'offers';
-      return key;
-    }
-    function apply() {
-      var key = pick();
-      if (frame.dataset.key !== key) {
-        frame.dataset.key = key;
-        frame.src = TARGETS[key];
-      }
-      var topKey = TOPBAR_FOR[key] || 'seo';
-      topbarEls.forEach(function (el) {
-        el.classList.toggle('is-active', el.getAttribute('data-topbar') === topKey);
-      });
-      subitemEls.forEach(function (a) {
-        a.classList.toggle('is-active', a.getAttribute('data-target') === key);
-      });
-      document.querySelectorAll('details.shell-tab-dropdown[open]').forEach(function (d) {
-        d.removeAttribute('open');
-      });
-    }
-    window.addEventListener('hashchange', apply);
-    apply();
+  </div>"""
 
-    // ── Signed-in identity (set by the login screen) ──────────────────
+
+# Account-menu behavior for every admin page: identity (from the validated
+# session token auth.js sets via window.__CEL_USER__), sign-out, and the
+# change-password flow (double SHA-256 -> the cel-dashboard Cloudflare Worker,
+# KV-backed). Extracted verbatim from the old SPA shell so behavior is unchanged;
+# it just runs on every real page now (its own IIFE, guarded so it is inert if
+# the modal is absent).
+ADMIN_CHROME_JS = """\
+(function () {
     function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
     function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
-    // Identity comes from the validated session token (auth.js sets this).
     var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
     var changePwBtn = document.getElementById('shell-change-pw');
     if (currentUser && currentUser.email) {
@@ -1416,12 +1307,12 @@ _SHELL_HTML = """\
       changePwBtn.style.display = 'none';
     }
 
-    document.getElementById('shell-logout').addEventListener('click', function () {
+    var logoutBtn = document.getElementById('shell-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', function () {
       document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
       location.replace('/');
     });
 
-    // ── Crypto helpers (double SHA-256 hex; see CRYPTO SPEC) ──────────
     function sha256hex(str) {
       return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
         return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
@@ -1430,12 +1321,11 @@ _SHELL_HTML = """\
     function innerHash(pw) { return sha256hex(pw); }
     function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
 
-    // ── Dispatch proxy (Cloudflare Worker holds the GitHub PAT) ───────
     var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
     function callProxy(payload) {
       if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
       var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
-      payload.token = m ? m[1] : '';  // dispatch/poll require a valid session
+      payload.token = m ? m[1] : '';
       return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
         .then(function (resp) {
           return resp.json().catch(function () { return {}; }).then(function (j) {
@@ -1443,66 +1333,89 @@ _SHELL_HTML = """\
           });
         });
     }
-    // ── Change-password modal ─────────────────────────────────────────
+
     var overlay = document.getElementById('cpw-overlay');
     var cpwForm = document.getElementById('cpw-form');
     var cpwStatus = document.getElementById('cpw-status');
     var cpwSave = document.getElementById('cpw-save');
-    function closeModal() {
-      overlay.setAttribute('hidden', '');
-      cpwForm.reset();
-      cpwStatus.textContent = '';
-      cpwStatus.className = 'cpw-status';
-      cpwSave.disabled = false;
-    }
-    if (changePwBtn) {
+    if (changePwBtn && overlay && cpwForm) {
+      function closeModal() {
+        overlay.setAttribute('hidden', '');
+        cpwForm.reset();
+        cpwStatus.textContent = '';
+        cpwStatus.className = 'cpw-status';
+        cpwSave.disabled = false;
+      }
       changePwBtn.addEventListener('click', function () {
         var dd = document.getElementById('shell-user');
         if (dd) dd.removeAttribute('open');
         overlay.removeAttribute('hidden');
         document.getElementById('cpw-current').focus();
       });
-    }
-    document.getElementById('cpw-cancel').addEventListener('click', closeModal);
-    overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
-
-    cpwForm.addEventListener('submit', function (ev) {
-      ev.preventDefault();
-      if (!currentUser || !currentUser.email) return;
-      var cur = document.getElementById('cpw-current').value;
-      var nw = document.getElementById('cpw-new').value;
-      var cf = document.getElementById('cpw-confirm').value;
-      if (!cur || !nw) return;
-      if (nw !== cf) {
-        cpwStatus.textContent = 'New passwords do not match.';
-        cpwStatus.className = 'cpw-status is-error';
-        return;
-      }
-      cpwSave.disabled = true;
-      cpwStatus.textContent = 'Saving…';
-      cpwStatus.className = 'cpw-status';
-      // Change-password is handled in-Worker now (KV-backed, synchronous) — no
-      // GitHub-workflow round-trip. callProxy attaches the cel_session token.
-      Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
-        return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
-      }).then(function (r) {
-        if (r.ok) {
-          cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
-          cpwStatus.className = 'cpw-status is-ok';
-        } else {
-          cpwStatus.textContent = '✗ Current password is incorrect.';
+      document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+      cpwForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!currentUser || !currentUser.email) return;
+        var cur = document.getElementById('cpw-current').value;
+        var nw = document.getElementById('cpw-new').value;
+        var cf = document.getElementById('cpw-confirm').value;
+        if (!cur || !nw) return;
+        if (nw !== cf) {
+          cpwStatus.textContent = 'New passwords do not match.';
+          cpwStatus.className = 'cpw-status is-error';
+          return;
+        }
+        cpwSave.disabled = true;
+        cpwStatus.textContent = 'Saving…';
+        cpwStatus.className = 'cpw-status';
+        Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+          return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+        }).then(function (r) {
+          if (r.ok) {
+            cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+            cpwStatus.className = 'cpw-status is-ok';
+          } else {
+            cpwStatus.textContent = '✗ Current password is incorrect.';
+            cpwStatus.className = 'cpw-status is-error';
+            cpwSave.disabled = false;
+          }
+        }).catch(function () {
+          cpwStatus.textContent = '✗ Could not save right now. Please try again.';
           cpwStatus.className = 'cpw-status is-error';
           cpwSave.disabled = false;
-        }
-      }).catch(function () {
-        cpwStatus.textContent = '✗ Could not save right now. Please try again.';
-        cpwStatus.className = 'cpw-status is-error';
-        cpwSave.disabled = false;
+        });
       });
-    });
-  })();
-  </script>
-</body>
+    }
+})();
+"""
+
+
+# Convenience for section builders: the body-top (shell-root open + top bar) and
+# the body-tail (account modal + shell-root close + chrome script). A section page
+# is:  <body> + render_admin_open(active) + <existing content> + render_admin_close()
+#      + </body>
+def render_admin_open(active: str = "offers") -> str:
+    return '  <div class="shell-root">\n' + render_topbar(active)
+
+
+def render_admin_close() -> str:
+    return ADMIN_CHROME_MODAL + "\n  </div>\n  <script>" + ADMIN_CHROME_JS + "</script>"
+
+
+_SHELL_HTML = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="refresh" content="0; url=/admin/offers/">
+  <title>English College \u2014 Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <script>location.replace('/admin/offers/');</script>
+</head>
+<body></body>
 </html>
 """
 

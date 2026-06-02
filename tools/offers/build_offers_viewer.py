@@ -22,6 +22,8 @@ from pathlib import Path
 from tools.dashboard import (
     AUTH_SCRIPT_TAG,
     EXTERNAL_REPO_ROOT,
+    render_admin_close,
+    render_admin_open,
     render_favicon_tag,
     render_page_chrome,
     render_sync_status_card,
@@ -119,18 +121,6 @@ def _relative_phrase(end_iso: str | None, now: datetime) -> str:
         return f"expires in {days} days"
     except (ValueError, TypeError):
         return ""
-
-
-def _load_last_extend_ts() -> str | None:
-    """Return the most recent event timestamp from the auto-extend log.
-
-    Reader is backward-compatible (handles both JSONL and legacy JSON-object
-    formats). Tracker 077 M1.
-    """
-    events = read_events(LOG_FILE)
-    if events:
-        return events[-1].get("ts")
-    return None
 
 
 def _load_current_regions() -> dict[str, dict[str, str]]:
@@ -673,6 +663,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("  </style>")
     parts.append("</head>")
     parts.append("<body>")
+    parts.append(render_admin_open("offers"))
     datalist_options = "\n".join(
         f'    <option value="{escape(name)}" data-iso="{escape(code)}">'
         f'{escape(name)} ({escape(code)})</option>'
@@ -741,6 +732,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append("    </footer>")
     parts.append("  </div>")  # .dashboard-shell
     parts.append(tab_script)
+    parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
 
@@ -750,22 +742,6 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
 # ---------------------------------------------------------------------------
 # Writer
 # ---------------------------------------------------------------------------
-
-def write_offers_page(items: list[dict] | None = None) -> None:
-    """Fetch data and write the offers viewer HTML to the CEL repo."""
-    token = get_api_token()
-    if items is None:
-        if not token:
-            raise RuntimeError("WEBFLOW_API_TOKEN unset")
-        items = list_all_offers(token)
-
-    log_events: list = read_events(LOG_FILE)
-
-    write_external_css(EXTERNAL_REPO_ROOT)
-    write_shell_html(EXTERNAL_REPO_ROOT)
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(render_html(items, log_events), encoding="utf-8")
-
 
 def main() -> int:
     token = get_api_token()
