@@ -30,17 +30,25 @@
  *   page_entry                                 acquisition source on load (need b: organic -> /post)
  *   view_item_list / select_item / view_item   courses+housing catalog (GA4 items)
  *   select_content                             blog-post link clicks (promo, list, related, category)
- *   generate_lead                              contact|newsletter|schedule_call(HubSpot)
+ *   generate_lead                              contact|newsletter|schedule_call(HubSpot)|fidelo_booking
+ *   form_start                                 first focus/input on a tracked lead form (contact|newsletter) — start->submit rate
  *   cta_click                                  apply offers contact email phone whatsapp directions blog_see_all
  *                                              (+ cta_location: header/footer/hero/body_top/mid/bottom, + cta_text:
  *                                               button label — so multiple Apply/Contact buttons per page are comparable)
  *   language_select                            Weglot language switch
  *   tab_select | faq_toggle | toc_click        on-page engagement
- *   navigation_click                           header/footer nav + in_content + outbound links
+ *   navigation_click                           header/footer nav + in_content links
+ *   outbound_click                             cross-origin links (link_domain + outbound:true) — first-class, no longer a navigation_click
+ *   video_start/_progress/_complete            native HTML5 <video> engagement (25/50/75/100; inert if no <video>; YT/Vimeo handled in GTM)
+ *   search                                     site-search submit (search_term) — inert unless a type=search / [role=search] form exists
  *   scroll_depth                               25/50/75/90
+ *   --- Fidelo booking bridge (cel-fidelo.js postMessage from the cross-origin iframe) ---
+ *   widget_open                                booking widget opened (clean denominator, distinct from apply_click + step=1)
+ *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
+ *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.0.0
- * Last update: 2026-05-29
+ * Version: 2.1.0
+ * Last update: 2026-06-03
  */
 (function () {
   'use strict';
@@ -295,7 +303,13 @@
     // Contact CTAs are now classified as cta_click(contact) above; this captures cross-links,
     // sibling landings, partners. Skips pure in-page anchors (#...) and schemes w/o hostname.
     if (href && href.charAt(0) !== '#' && au && au.hostname) {
-      push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: (au.hostname === location.hostname) ? 'in_content' : 'outbound' });
+      if (au.hostname !== location.hostname) {
+        // Outbound link -> first-class GA4 `outbound_click` (GA4 recommended `click` shape).
+        // link_domain = the destination host only (never the full URL/query -> no PII leak).
+        push('outbound_click', { link_domain: au.hostname, link_url: a.href, link_text: linkText(a), outbound: true });
+      } else {
+        push('navigation_click', { link_url: a.href, link_text: linkText(a), nav_location: 'in_content' });
+      }
     }
   }, true);
 
@@ -321,10 +335,12 @@
 
   // ---- conversions: forms (contact|newsletter) + HubSpot meeting booking ----
   const leadFired = {};
-  function fireLead(name) {
+  function fireLead(name, extra) {
     if (leadFired[name]) return;
     leadFired[name] = true;
-    push('generate_lead', { form_name: name });
+    const params = { form_name: name };
+    if (extra) for (const k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) params[k] = extra[k];
+    push('generate_lead', params);
   }
   function leadName(form) {
     const n = (form.getAttribute('data-name') || form.id || '').toLowerCase();
@@ -333,9 +349,26 @@
     return null;
   }
   function visible(el) { return !!(el && (el.offsetWidth || el.offsetHeight || el.getClientRects().length)); }
+  // form_start: a once-per-form engagement signal on the first focus/input inside a tracked
+  // lead form. Pairs with generate_lead so reports can compute a start->submit completion rate.
+  const startFired = {};
+  function watchFormStart(form, name) {
+    function onFirst() {
+      if (startFired[name]) return;
+      startFired[name] = true;
+      form.removeEventListener('focusin', onFirst, true);
+      form.removeEventListener('input', onFirst, true);
+      push('form_start', { form_name: name });
+    }
+    // capture-phase + both focusin (keyboard/tab into a field) and input (typing/checkbox)
+    // so the start is caught regardless of how the visitor engages first.
+    form.addEventListener('focusin', onFirst, true);
+    form.addEventListener('input', onFirst, true);
+  }
   function watchForm(form) {
     const name = leadName(form);
     if (!name) return;
+    watchFormStart(form, name);
     const wrap = form.closest('.w-form');
     const done = wrap ? wrap.querySelector('.w-form-done') : null;
     if (!done) return;
@@ -359,10 +392,42 @@
     // Anchored origin test (rejects fidelo.com.evil.com); validate before trusting e.data.
     if (/(^|\.)fidelo\.com$/.test(oh)) {
       const d = e.data || {};
-      if (d.event === 'fidelo_booking_step' && d.step_name) {
-        push('booking_step', { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' });
+      // Booking value (GA4 ecommerce convention: 'value' + 'currency') is forwarded
+      // when cel-fidelo.js confidently parsed the displayed total. Type-guarded so a
+      // missing/garbled value never reaches GA4 as NaN or an empty currency.
+      const money = {};
+      if (typeof d.value === 'number' && isFinite(d.value) && typeof d.currency === 'string' && d.currency) {
+        money.value = d.value;
+        money.currency = d.currency;
+      }
+      // step_total is a positive integer (count of nav steps) — future-proofs a variable denominator.
+      const stepTotal = (typeof d.step_total === 'number' && isFinite(d.step_total) && d.step_total > 0) ? d.step_total : undefined;
+      if (d.event === 'fidelo_widget_open') {
+        // Clean "opened the booking widget" denominator (distinct from apply_click + step=1).
+        const params = { form_name: 'fidelo_booking' };
+        if (stepTotal !== undefined) params.step_total = stepTotal;
+        push('widget_open', params);
+      } else if (d.event === 'fidelo_booking_abandon' && d.step_name) {
+        // Explicit drop-off: the last step reached before leaving without completing.
+        const params = { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' };
+        push('booking_abandon', params);
+      } else if (d.event === 'fidelo_booking_step' && d.step_name) {
+        const params = { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' };
+        if (money.value !== undefined) { params.value = money.value; params.currency = money.currency; }
+        if (stepTotal !== undefined) params.step_total = stepTotal;
+        // step_direction (forward|back) lets reports strip back-nav from forward-funnel counts.
+        if (d.step_direction === 'forward' || d.step_direction === 'back') params.step_direction = d.step_direction;
+        // step_duration_ms = time spent on the step just left (non-negative finite ms).
+        if (typeof d.step_duration_ms === 'number' && isFinite(d.step_duration_ms) && d.step_duration_ms >= 0) params.step_duration_ms = d.step_duration_ms;
+        // selections is an ARRAY in the bridge message; GA4 params reject arrays, so join to a
+        // capped delimited string. Only strings are kept (defensive against a malformed payload).
+        if (Array.isArray(d.selections) && d.selections.length) {
+          const sel = d.selections.filter(function (x) { return typeof x === 'string' && x; }).join(' | ').slice(0, 200);
+          if (sel) params.selections = sel;
+        }
+        push('booking_step', params);
       } else if (d.event === 'fidelo_application_submitted') {
-        fireLead('fidelo_booking');
+        fireLead('fidelo_booking', money.value !== undefined ? money : null);
       }
     }
   });
@@ -388,4 +453,78 @@
     });
   }
   window.addEventListener('scroll', onScroll, { passive: true });
+
+  // ---- HTML5 <video> engagement (GA4 recommended video_start/_progress/_complete) ----
+  // Attaches ONLY to native <video> elements present at load. YouTube/Vimeo are <iframe>
+  // embeds (NOT matched here) — those are handled at the GTM layer (GTM's built-in YouTube
+  // trigger), per the GTM setup doc. So this block is fully inert on embed-only pages.
+  // video_title prefers a labelling attribute (never reads arbitrary page text); video_percent
+  // marks the 25/50/75/100 milestones once each per element.
+  (function () {
+    const videos = document.querySelectorAll('video');
+    if (!videos.length) return;
+    const MILE = [25, 50, 75];
+    function titleOf(v) {
+      const t = v.getAttribute('title') || v.getAttribute('aria-label') || v.getAttribute('data-video-title') || '';
+      return (t.replace(/\s+/g, ' ').trim().slice(0, 80)) || '(untitled)';
+    }
+    for (let i = 0; i < videos.length; i++) {
+      (function (v) {
+        const seen = {};
+        let started = false;
+        v.addEventListener('play', function () {
+          if (started) return;
+          started = true;
+          push('video_start', { video_title: titleOf(v), video_provider: 'html5', video_percent: 0 });
+        });
+        v.addEventListener('timeupdate', function () {
+          const dur = v.duration;
+          if (!isFinite(dur) || dur <= 0) return;
+          const pct = (v.currentTime / dur) * 100;
+          for (let k = 0; k < MILE.length; k++) {
+            if (pct >= MILE[k] && !seen[MILE[k]]) {
+              seen[MILE[k]] = true;
+              push('video_progress', { video_title: titleOf(v), video_provider: 'html5', video_percent: MILE[k] });
+            }
+          }
+        });
+        v.addEventListener('ended', function () {
+          if (seen[100]) return;
+          seen[100] = true;
+          push('video_complete', { video_title: titleOf(v), video_provider: 'html5', video_percent: 100 });
+        });
+      })(videos[i]);
+    }
+  })();
+
+  // ---- site search (GA4 recommended `search` with search_term) ----
+  // Conservative, structural detection: a real search input is type=search OR sits inside a
+  // [role="search"] form. NEVER matches generic lead/newsletter inputs, so this is inert on
+  // pages without a search box. search_term is the visitor's query (a search box is a query
+  // surface by design, not PII); capped + only emitted on a non-empty submit.
+  (function () {
+    function searchInput(form) {
+      return form.querySelector('input[type="search"]') ||
+        (form.getAttribute('role') === 'search' ? form.querySelector('input[type="text"], input:not([type])') : null);
+    }
+    // Collect candidate forms: role="search" forms + any form wrapping a type=search input.
+    // Built by hand (no :has() — unsupported in older engines + a bad selector throws in
+    // querySelectorAll). De-duplicated so a form isn't double-bound.
+    const set = [];
+    function add(f) { if (f && set.indexOf(f) === -1) set.push(f); }
+    const roleForms = document.querySelectorAll('form[role="search"]');
+    for (let i = 0; i < roleForms.length; i++) add(roleForms[i]);
+    const inputs = document.querySelectorAll('input[type="search"]');
+    for (let i = 0; i < inputs.length; i++) add(inputs[i].form || inputs[i].closest('form'));
+    const list = set;
+    for (let i = 0; i < list.length; i++) {
+      (function (form) {
+        form.addEventListener('submit', function () {
+          let term = '';
+          try { const inp = searchInput(form); term = inp && inp.value ? String(inp.value).replace(/\s+/g, ' ').trim() : ''; } catch (_) { return; }
+          if (term) push('search', { search_term: term.slice(0, 100) });
+        });
+      })(list[i]);
+    }
+  })();
 })();
