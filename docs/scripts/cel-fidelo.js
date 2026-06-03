@@ -307,35 +307,49 @@
     return parsePrice(el.textContent.replace(/\s+/g, ' '));  // {value,currency} | null
   }
 
-  // Returns a marker object {source, total, orderId, currency} when the booking is
-  // complete, else null.
-  // VALUE + CURRENCY both come from the FINAL "Total Amount" line (.price-list-item-total)
-  // — per the client (2026-06-03): the amount changes across earlier screens (add-ons,
-  // discounts), so ONLY the total on the final/confirmation screen is authoritative. The
-  // PostAffiliatePro line-item sum can differ from this displayed total, so it is used
-  // ONLY as a last-resort fallback for the number when the total line isn't present.
+  // The SUMMARY/review step (the 'confirmation' nav step) is PRE-payment, NOT a completed
+  // booking — it shows the final Total Amount + a unique `promotion_code` ("Voucher ID")
+  // input + a "Book now" button, and its copy says a payment is required on the NEXT page.
+  // We must NEVER treat it as a conversion (that would count unpaid/abandoned bookings). The
+  // `promotion_code` field is unique to this screen and language-independent — use it as the
+  // "this is the pre-payment summary, do not complete yet" guard. (Confirmed 2026-06-03.)
+  function onSummaryPage() {
+    return !!document.querySelector(
+      'input[name="promotion_code"], #uid-435-promotion_code, [name="promotion_code"]');
+  }
+
+  // Returns a marker object {source, total, orderId, currency} when the booking is genuinely
+  // COMPLETE (post-payment), else null.
+  // VALUE + CURRENCY come from the "Total Amount" line (.price-list-item-total) — per the
+  // client the amount settles across earlier screens (add-ons/discounts), so the final total
+  // is authoritative. The PAP line-item sum is a fallback only. The summary page also shows a
+  // total, so when present we capture it as `total` but DO NOT mark complete unless a real
+  // completion signal (PAP createSale / success element) is also present.
   function successMarker() {
-    const fromTotal = currencyFromTotalLine();           // {value,currency} from the final line
+    const fromTotal = currencyFromTotalLine();           // {value,currency} from the total line
     const cur = fromTotal ? fromTotal.currency : null;
     const total = fromTotal ? fromTotal.value : null;
+    const summary = onSummaryPage();
+
+    // Primary completion: the PostAffiliatePro createSale() block (post-payment success page).
     const pap = papSaleScript();
     if (pap) {
-      // total line is authoritative; fall back to the PAP sum only if the line was absent.
       const v = (typeof total === 'number') ? total : papTotal(pap);
       return { source: 'pap', total: v, orderId: papOrderId(pap), currency: cur };
     }
+    // Hard guard: if we're on the pre-payment SUMMARY page, do not complete — even if a
+    // populated block-static is present (the summary has several). The total is captured into
+    // lastValue/lastCurrency by the step handler regardless, so no value is lost.
+    if (summary) return null;
     if (document.querySelector(
       '[component="block-notifications"] .alert-success, ' +
       '.registration-success, [data-registration-complete]')) {
       return { source: 'selector', total: total, orderId: null, currency: cur };
     }
-    // Last-resort fallback: a POPULATED block-static (the confirmation copy block, which is
-    // empty/absent while stepping through the form and only fills in after submit). This is
-    // LANGUAGE-INDEPENDENT — it keys on the block having real rendered content, NOT on any
-    // English (or any-locale) words. The booking form runs in 9 languages, so we must never
-    // depend on a translated phrase. Guarded by a min text length so a stray whitespace/
-    // placeholder node can't false-positive mid-form. (The PAP block above is the primary,
-    // also language-independent, marker; this only fires if PAP is somehow absent.)
+    // Last-resort fallback: a POPULATED block-static (confirmation copy, empty/absent while
+    // stepping). LANGUAGE-INDEPENDENT — keys on rendered content, not English (the form runs
+    // in 9 languages). Min-length guard stops a placeholder node false-positive. Never reached
+    // on the summary page (guarded above), so it can't count a pre-payment review as a booking.
     const stat = document.querySelector('[component="block-static"]');
     if (stat && (stat.textContent || '').replace(/\s+/g, ' ').trim().length > 20) {
       return { source: 'text', total: total, orderId: null, currency: cur };
