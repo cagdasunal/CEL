@@ -86,10 +86,17 @@
 
   // ISO 4217 currency from the matched symbol. Only the three symbols the price
   // regex matches are mapped; anything else yields '' (treated as not-confident).
+  // CEL is MULTI-CURRENCY: the Fidelo "Total Amount" line prefixes the dollar sign by
+  // location — "$ 3,430" (USA = USD) vs "C$  3,565" (Canada = CAD). A bare '$' is USD;
+  // a 'C'/'CA' prefix before '$' is CAD; 'A'/'AU' is AUD. Distinguishing them is the
+  // whole point — a bare-'$'->USD map would mislabel every Canadian booking. (Confirmed
+  // against real success-screen markup 2026-06-03.)
   function currencyFromSymbol(sym) {
     if (sym === '£') return 'GBP';
-    if (sym === '$') return 'USD';
     if (sym === '€') return 'EUR';
+    if (sym === '$' || sym === 'US$' || sym === 'USD' || sym === 'US') return 'USD';
+    if (sym === 'C$' || sym === 'CA$' || sym === 'CAD' || sym === 'CA' || sym === 'CAN$') return 'CAD';
+    if (sym === 'A$' || sym === 'AU$' || sym === 'AUD' || sym === 'AU') return 'AUD';
     return '';
   }
 
@@ -113,9 +120,12 @@
   //   - Neither present: plain integer.
   function parsePrice(raw) {
     if (!raw) return null;
-    const m = String(raw).match(/([£$€])\s?([\d.,]+)/);
+    // Match an optional currency-letter prefix (C/CA/US/A/AU/CAN) glued to a $, OR a
+    // bare £/€/$, then 0+ spaces (Fidelo's Canadian total uses TWO spaces: "C$  3,565"),
+    // then the number. The captured token (e.g. "C$") is mapped to an ISO code.
+    const m = String(raw).match(/((?:CAN|CA|US|AU|C|A)?\s?[£$€])\s*([\d.,]+)/);
     if (!m) return null;
-    const currency = currencyFromSymbol(m[1]);
+    const currency = currencyFromSymbol(m[1].replace(/\s+/g, ''));
     if (!currency) return null;
     // Trim separators that aren't part of the number (leading/trailing . or ,).
     const digits = m[2].replace(/^[.,]+/, '').replace(/[.,]+$/, '');
@@ -191,11 +201,16 @@
       }
       if (labels.length) out.selections = labels.slice(0, MAX_LABELS);
 
-      const priceEl = document.querySelector('[component="block-prices"]');
+      // Prefer the "Total Amount" line (.price-list-item-total) — it carries the
+      // currency-distinguishing prefix ("$ 3,430" USD vs "C$  3,565" CAD); fall back to
+      // the whole prices block. The match keeps any C/CA/US/A prefix on the $ so USD and
+      // CAD are told apart (a bare-$ match would silently read every CAD total as USD).
+      const priceEl = document.querySelector(
+        '.price-list-item-total, [component="block-prices"]');
       if (priceEl && priceEl.textContent) {
         const text = priceEl.textContent.replace(/\s+/g, ' ');
-        const m = text.match(/[£$€]\s?[\d.,]+/);
-        if (m) out.amount_display = m[0].slice(0, 24);
+        const m = text.match(/(?:CAN|CA|US|AU|C|A)?\s?[£$€]\s*[\d.,]+/);
+        if (m) out.amount_display = m[0].trim().slice(0, 24);
         // Numeric value + ISO currency ALONGSIDE the display string (GA4 ecommerce).
         // Only set on a confident parse — ambiguous totals keep amount_display only.
         const parsed = parsePrice(m ? m[0] : text);
@@ -283,20 +298,33 @@
     return m ? m[1] : null;
   }
 
-  // Returns a marker object {source, total, orderId} when the booking is complete, else null.
+  // Read the currency (and value) from the "Total Amount" line if it's on the page right
+  // now — the PAP total is unitless, so this is how we tell USD ("$ 3,430") from CAD
+  // ("C$  3,565") AT COMPLETION, independent of whether an earlier step parsed a price.
+  function currencyFromTotalLine() {
+    const el = document.querySelector('.price-list-item-total');
+    if (!el || !el.textContent) return null;
+    return parsePrice(el.textContent.replace(/\s+/g, ' '));  // {value,currency} | null
+  }
+
+  // Returns a marker object {source, total, orderId, currency} when the booking is
+  // complete, else null. `currency` is read from the visible Total Amount line when
+  // present (authoritative USD-vs-CAD signal); null if not on the page.
   function successMarker() {
+    const fromTotal = currencyFromTotalLine();
+    const cur = fromTotal ? fromTotal.currency : null;
     const pap = papSaleScript();
-    if (pap) return { source: 'pap', total: papTotal(pap), orderId: papOrderId(pap) };
+    if (pap) return { source: 'pap', total: papTotal(pap), orderId: papOrderId(pap), currency: cur };
     if (document.querySelector(
       '[component="block-notifications"] .alert-success, ' +
       '.registration-success, [data-registration-complete]')) {
-      return { source: 'selector', total: null, orderId: null };
+      return { source: 'selector', total: fromTotal ? fromTotal.value : null, orderId: null, currency: cur };
     }
     // block-static confirmation copy appears only after submit (guarded so it can't
     // match an empty/placeholder block-static while stepping through the form).
     const stat = document.querySelector('[component="block-static"]');
     if (stat && /thank you|confirmation of your application/i.test(stat.textContent || '')) {
-      return { source: 'text', total: null, orderId: null };
+      return { source: 'text', total: fromTotal ? fromTotal.value : null, orderId: null, currency: cur };
     }
     return null;
   }
@@ -315,13 +343,16 @@
         clearInterval(iv);
         const done = { event: 'fidelo_application_submitted' };
         // Booking VALUE: prefer the authoritative PAP checkout total (reflects discounts/
-        // fees); fall back to the last confidently-parsed displayed price. Currency: PAP
-        // totals are unitless, so use the currency parsed from an earlier step. Only attach
-        // value when we also know the currency (GA4 drops value without a valid currency).
+        // fees); fall back to the last confidently-parsed displayed price.
+        // CURRENCY (USD vs CAD): prefer the currency read from the visible Total Amount
+        // line at completion ("$"=USD, "C$"=CAD) — that's the per-booking truth; fall back
+        // to the currency parsed on an earlier step. Only attach value WITH a currency
+        // (GA4 silently drops value when currency is missing/invalid).
         let v = (typeof marker.total === 'number') ? marker.total : lastValue;
-        if (typeof v === 'number' && isFinite(v) && lastCurrency) {
+        const cur = marker.currency || lastCurrency;
+        if (typeof v === 'number' && isFinite(v) && cur) {
           done.value = v;
-          done.currency = lastCurrency;
+          done.currency = cur;
         }
         // Order/booking id → transaction_id (lets GA4 de-dupe + ties to the Fidelo record).
         if (marker.orderId) done.transaction_id = marker.orderId;
