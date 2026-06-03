@@ -427,7 +427,12 @@
         }
         push('booking_step', params);
       } else if (d.event === 'fidelo_application_submitted') {
-        fireLead('fidelo_booking', money.value !== undefined ? money : null);
+        // Completion: carry booking value/currency (now sourced from the authoritative
+        // PostAffiliatePro checkout total in cel-fidelo.js) + the Fidelo order/booking id
+        // as transaction_id (GA4 de-dupes conversions on it + ties the lead to the record).
+        const extra = money.value !== undefined ? { value: money.value, currency: money.currency } : {};
+        if (typeof d.transaction_id === 'string' && d.transaction_id) extra.transaction_id = d.transaction_id;
+        fireLead('fidelo_booking', Object.keys(extra).length ? extra : null);
       }
     }
   });
