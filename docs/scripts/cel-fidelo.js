@@ -19,10 +19,18 @@
  *   - Sets no cookies, uses no storage, loads no resources, uses no eval.
  *   - Wrapped so it can never throw into the host (Fidelo) page.
  *
+ * Messages posted to the parent (the cel-events.js fidelo.com branch validates origin then
+ * forwards each to dataLayer -> GA4):
+ *   fidelo_widget_open          { step_total }                              -> widget_open (open denominator)
+ *   fidelo_booking_step         { step, step_name, step_total,
+ *                                 step_direction:forward|back, step_duration_ms,
+ *                                 selections[], amount_display, value, currency } -> booking_step
+ *   fidelo_booking_abandon      { step, step_name }                         -> booking_abandon (drop-off, last step)
+ *   fidelo_application_submitted{ value, currency }                         -> generate_lead(fidelo_booking)
+ *
  * SSOT: tools/cel-fidelo-js/cel-fidelo.js  (served minified as cel-fidelo.min.js).
- * Message contract + GA4 wiring documented in README.md. Parent receiver (PLANNED):
- * the fidelo.com origin branch to be added to tools/cel-events-js/cel-events.js
- * (spec in BOOKING-FORM-TRACKING.md §3b) — not present in cel-events.js yet.
+ * Message contract + GA4 wiring documented in README.md. Parent receiver: the fidelo.com
+ * origin branch in tools/cel-events-js/cel-events.js (anchored /(^|\.)fidelo\.com$/ test).
  */
 (function () {
   'use strict';
@@ -53,9 +61,99 @@
   let lastStep = -1;
   let leadSent = false;
   let watchingSubmit = false;
+  let widgetOpened = false;   // fidelo_widget_open posted once when the nav first renders
+  let abandonSent = false;    // fidelo_booking_abandon posted at most once on exit
+  // Wall-clock at the moment we entered the CURRENT step, so the time spent ON that
+  // step can be attached to the NEXT step transition (step_duration_ms describes the
+  // step the visitor just LEFT). performance.now() is monotonic; falls back to Date.now.
+  let stepEnteredAt = 0;
+  // Last confidently-parsed booking value, carried into the completion event so
+  // fidelo_application_submitted has a monetary value even though the price element
+  // is not re-read at success time. Both null until a step parses a price.
+  let lastValue = null;
+  let lastCurrency = null;
+
+  // Monotonic clock (performance.now when available; Date.now fallback). Wrapped so a
+  // missing performance object can never throw into the host page.
+  function now() {
+    try { if (typeof performance !== 'undefined' && performance.now) return performance.now(); } catch (e) { /* no-op */ }
+    return Date.now();
+  }
 
   function send(payload) {
     try { window.parent.postMessage(payload, PARENT_ORIGIN); } catch (e) { /* no-op */ }
+  }
+
+  // ISO 4217 currency from the matched symbol. Only the three symbols the price
+  // regex matches are mapped; anything else yields '' (treated as not-confident).
+  function currencyFromSymbol(sym) {
+    if (sym === '£') return 'GBP';
+    if (sym === '$') return 'USD';
+    if (sym === '€') return 'EUR';
+    return '';
+  }
+
+  // Parse a price string (e.g. "£1,234", "$ 1,234.56", "€1.234,56") into a
+  // { value:Number, currency:ISO } pair, or null. Callers attach value/currency ONLY
+  // on a confident parse (known symbol + finite non-negative number) — an ambiguous
+  // or garbled total degrades to amount_display, never a wrong value.
+  //
+  // Decimal disambiguation (conservative, symbol-locale-aware):
+  //   - Both '.' and ',' present -> the LAST-occurring separator is the decimal, the
+  //     other is thousands grouping ("1,234.56"=>1234.56, "1.234,56"=>1234.56).
+  //   - Only ',' present:
+  //       £/$  -> comma is ALWAYS thousands grouping ("1,234"=>1234). £/$ EU-style
+  //              comma-decimals are too rare to risk a wrong parse.
+  //       €    -> ambiguous; with exactly one comma + 1-2 trailing digits it's the
+  //              decimal ("12,50"=>12.50), otherwise thousands ("1,234"=>1234).
+  //   - Only '.' present:
+  //       £/$  -> dot is ALWAYS the decimal point (default dot-decimal locale).
+  //       €    -> with exactly one dot + exactly 3 trailing digits it's thousands
+  //              grouping ("1.234"=>1234); otherwise the decimal point.
+  //   - Neither present: plain integer.
+  function parsePrice(raw) {
+    if (!raw) return null;
+    const m = String(raw).match(/([£$€])\s?([\d.,]+)/);
+    if (!m) return null;
+    const currency = currencyFromSymbol(m[1]);
+    if (!currency) return null;
+    // Trim separators that aren't part of the number (leading/trailing . or ,).
+    const digits = m[2].replace(/^[.,]+/, '').replace(/[.,]+$/, '');
+    if (!/\d/.test(digits)) return null;
+
+    const hasDot = digits.indexOf('.') !== -1;
+    const hasComma = digits.indexOf(',') !== -1;
+    let normalized;
+
+    if (hasDot && hasComma) {
+      if (digits.lastIndexOf(',') > digits.lastIndexOf('.')) {
+        normalized = digits.replace(/\./g, '').replace(',', '.'); // "1.234,56" EU
+      } else {
+        normalized = digits.replace(/,/g, '');                    // "1,234.56" Anglo
+      }
+    } else if (hasComma) {
+      const parts = digits.split(',');
+      const after = parts[parts.length - 1];
+      if (currency === 'EUR' && parts.length === 2 && (after.length === 1 || after.length === 2)) {
+        normalized = digits.replace(',', '.');                    // "12,50" EUR decimal
+      } else {
+        normalized = digits.replace(/,/g, '');                    // thousands grouping
+      }
+    } else if (hasDot) {
+      const parts = digits.split('.');
+      const after = parts[parts.length - 1];
+      if (currency === 'EUR' && parts.length === 2 && after.length === 3) {
+        normalized = digits.replace('.', '');                     // "1.234" EUR thousands
+      } else {
+        normalized = digits;                                      // decimal point
+      }
+    } else {
+      normalized = digits;
+    }
+
+    const value = Number(normalized);
+    if (!isFinite(value) || value < 0) return null;
+    return { value: value, currency: currency };
   }
 
   function navLinks() {
@@ -95,8 +193,13 @@
 
       const priceEl = document.querySelector('[component="block-prices"]');
       if (priceEl && priceEl.textContent) {
-        const m = priceEl.textContent.replace(/\s+/g, ' ').match(/[£$€]\s?[\d.,]+/);
+        const text = priceEl.textContent.replace(/\s+/g, ' ');
+        const m = text.match(/[£$€]\s?[\d.,]+/);
         if (m) out.amount_display = m[0].slice(0, 24);
+        // Numeric value + ISO currency ALONGSIDE the display string (GA4 ecommerce).
+        // Only set on a confident parse — ambiguous totals keep amount_display only.
+        const parsed = parsePrice(m ? m[0] : text);
+        if (parsed) { out.value = parsed.value; out.currency = parsed.currency; }
       }
     } catch (e) { /* defensive: never throw into the host page */ }
     return out;
@@ -105,13 +208,33 @@
   function onStep(links) {
     const idx = activeIndex(links);
     if (idx < 0 || idx === lastStep) return;
+    // direction: forward when the index advanced, back when the visitor navigated to an
+    // earlier step. lastStep === -1 is the FIRST step seen (treated as forward / entry).
+    const direction = (lastStep === -1 || idx > lastStep) ? 'forward' : 'back';
+    // step_duration_ms = time spent on the step we just LEFT (rounded ms). Omitted on the
+    // very first step (no prior step to time). Carried on the NEXT transition's message.
+    const enteredPrev = stepEnteredAt;
+    const prevSeen = lastStep !== -1;
     lastStep = idx;
+    stepEnteredAt = now();
     const name = STEP_NAMES[idx] || ('step_' + (idx + 1));
-    const msg = { event: 'fidelo_booking_step', step: idx + 1, step_name: name, step_total: links.length };
+    const msg = { event: 'fidelo_booking_step', step: idx + 1, step_name: name, step_total: links.length, step_direction: direction };
+    if (prevSeen && enteredPrev) {
+      const dur = Math.round(stepEnteredAt - enteredPrev);
+      if (isFinite(dur) && dur >= 0) msg.step_duration_ms = dur;
+    }
     if (CAPTURE_STEPS[name]) {
       const sel = captureSelection();
       if (sel.selections) msg.selections = sel.selections;
       if (sel.amount_display) msg.amount_display = sel.amount_display;
+      if (typeof sel.value === 'number' && sel.currency) {
+        msg.value = sel.value;
+        msg.currency = sel.currency;
+        // Remember the latest confidently-parsed total so the completion event
+        // (which never re-reads the price element) can carry the booking value.
+        lastValue = sel.value;
+        lastCurrency = sel.currency;
+      }
     }
     send(msg);
     if (name === 'confirmation') startSubmitWatch();
@@ -137,17 +260,50 @@
       if (successPresent()) {
         leadSent = true;
         clearInterval(iv);
-        send({ event: 'fidelo_application_submitted' });
+        const done = { event: 'fidelo_application_submitted' };
+        // Carry the last-known booking value onto the COMPLETION event so GA4 can
+        // report monetary value on the conversion. Only attached if a price was
+        // confidently parsed on an earlier (courses/housing/extras) step.
+        if (typeof lastValue === 'number' && lastCurrency) {
+          done.value = lastValue;
+          done.currency = lastCurrency;
+        }
+        send(done);
       }
     }, SUBMIT_POLL_MS);
   }
 
+  // Booking abandonment: posted at most once when the visitor leaves the widget WITHOUT
+  // completing (pagehide / tab hidden). Carries the last step reached so GA4 can attribute
+  // the drop-off to a specific step. Suppressed once the booking is submitted (leadSent).
+  function postAbandon() {
+    if (abandonSent || leadSent || lastStep < 0) return;
+    abandonSent = true;
+    const name = STEP_NAMES[lastStep] || ('step_' + (lastStep + 1));
+    send({ event: 'fidelo_booking_abandon', step: lastStep + 1, step_name: name });
+  }
+
   function init(nav) {
+    // fidelo_widget_open: a clean "opened the widget" denominator, posted ONCE the moment
+    // the step nav first renders — BEFORE/independent of the first onStep, so it is distinct
+    // from apply_click (the parent CTA) and from step=1 (courses).
+    if (!widgetOpened) {
+      widgetOpened = true;
+      send({ event: 'fidelo_widget_open', step_total: navLinks().length });
+    }
     onStep(navLinks());
     try {
       const obs = new MutationObserver(function () { try { onStep(navLinks()); } catch (e) { /* never throw into host */ } });
       obs.observe(nav, { subtree: true, attributes: true, attributeFilter: ['class'] });
     } catch (e) { /* observer unsupported — initial step already sent */ }
+    // Abandonment hooks — pagehide is the reliable "leaving the page" signal; visibilitychange
+    // catches tab-switch/backgrounding. Both are wrapped so a missing API can't throw.
+    try {
+      window.addEventListener('pagehide', postAbandon);
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') postAbandon();
+      });
+    } catch (e) { /* listeners unsupported — abandonment simply not tracked */ }
   }
 
   // The widget renders asynchronously, so wait (bounded) for the step nav to exist.
