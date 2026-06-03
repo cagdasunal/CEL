@@ -329,10 +329,15 @@
       '.registration-success, [data-registration-complete]')) {
       return { source: 'selector', total: total, orderId: null, currency: cur };
     }
-    // block-static confirmation copy appears only after submit (guarded so it can't
-    // match an empty/placeholder block-static while stepping through the form).
+    // Last-resort fallback: a POPULATED block-static (the confirmation copy block, which is
+    // empty/absent while stepping through the form and only fills in after submit). This is
+    // LANGUAGE-INDEPENDENT — it keys on the block having real rendered content, NOT on any
+    // English (or any-locale) words. The booking form runs in 9 languages, so we must never
+    // depend on a translated phrase. Guarded by a min text length so a stray whitespace/
+    // placeholder node can't false-positive mid-form. (The PAP block above is the primary,
+    // also language-independent, marker; this only fires if PAP is somehow absent.)
     const stat = document.querySelector('[component="block-static"]');
-    if (stat && /thank you|confirmation of your application/i.test(stat.textContent || '')) {
+    if (stat && (stat.textContent || '').replace(/\s+/g, ' ').trim().length > 20) {
       return { source: 'text', total: total, orderId: null, currency: cur };
     }
     return null;
