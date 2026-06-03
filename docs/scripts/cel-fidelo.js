@@ -308,23 +308,32 @@
   }
 
   // Returns a marker object {source, total, orderId, currency} when the booking is
-  // complete, else null. `currency` is read from the visible Total Amount line when
-  // present (authoritative USD-vs-CAD signal); null if not on the page.
+  // complete, else null.
+  // VALUE + CURRENCY both come from the FINAL "Total Amount" line (.price-list-item-total)
+  // — per the client (2026-06-03): the amount changes across earlier screens (add-ons,
+  // discounts), so ONLY the total on the final/confirmation screen is authoritative. The
+  // PostAffiliatePro line-item sum can differ from this displayed total, so it is used
+  // ONLY as a last-resort fallback for the number when the total line isn't present.
   function successMarker() {
-    const fromTotal = currencyFromTotalLine();
+    const fromTotal = currencyFromTotalLine();           // {value,currency} from the final line
     const cur = fromTotal ? fromTotal.currency : null;
+    const total = fromTotal ? fromTotal.value : null;
     const pap = papSaleScript();
-    if (pap) return { source: 'pap', total: papTotal(pap), orderId: papOrderId(pap), currency: cur };
+    if (pap) {
+      // total line is authoritative; fall back to the PAP sum only if the line was absent.
+      const v = (typeof total === 'number') ? total : papTotal(pap);
+      return { source: 'pap', total: v, orderId: papOrderId(pap), currency: cur };
+    }
     if (document.querySelector(
       '[component="block-notifications"] .alert-success, ' +
       '.registration-success, [data-registration-complete]')) {
-      return { source: 'selector', total: fromTotal ? fromTotal.value : null, orderId: null, currency: cur };
+      return { source: 'selector', total: total, orderId: null, currency: cur };
     }
     // block-static confirmation copy appears only after submit (guarded so it can't
     // match an empty/placeholder block-static while stepping through the form).
     const stat = document.querySelector('[component="block-static"]');
     if (stat && /thank you|confirmation of your application/i.test(stat.textContent || '')) {
-      return { source: 'text', total: fromTotal ? fromTotal.value : null, orderId: null, currency: cur };
+      return { source: 'text', total: total, orderId: null, currency: cur };
     }
     return null;
   }
@@ -342,13 +351,13 @@
         leadSent = true;
         clearInterval(iv);
         const done = { event: 'fidelo_application_submitted' };
-        // Booking VALUE: prefer the authoritative PAP checkout total (reflects discounts/
-        // fees); fall back to the last confidently-parsed displayed price.
-        // CURRENCY (USD vs CAD): prefer the currency read from the visible Total Amount
-        // line at completion ("$"=USD, "C$"=CAD) — that's the per-booking truth; fall back
-        // to the currency parsed on an earlier step. Only attach value WITH a currency
-        // (GA4 silently drops value when currency is missing/invalid).
-        let v = (typeof marker.total === 'number') ? marker.total : lastValue;
+        // Booking VALUE + CURRENCY both come from the FINAL "Total Amount" line
+        // (marker.total / marker.currency, read from .price-list-item-total). Per the
+        // client, the amount changes across earlier screens (add-ons/discounts), so only
+        // that final total is authoritative — NOT an earlier step's price. Fall back to the
+        // earlier-step parse (lastValue/lastCurrency) only if the final line wasn't read.
+        // Attach value ONLY with a currency (GA4 drops value when currency is missing).
+        const v = (typeof marker.total === 'number') ? marker.total : lastValue;
         const cur = marker.currency || lastCurrency;
         if (typeof v === 'number' && isFinite(v) && cur) {
           done.value = v;
