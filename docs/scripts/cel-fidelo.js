@@ -240,16 +240,68 @@
     if (name === 'confirmation') startSubmitWatch();
   }
 
-  // Best-effort completion signal. Fires at most once.
-  // NOTE (README "Open item"): the precise success marker is Bootstrap-convention
-  // (.alert-success in the notifications block) but should be confirmed against a
-  // live completed booking, or replaced by a success hook Fidelo points us to.
-  function successPresent() {
-    return !!document.querySelector(
-      '[component="block-notifications"] .alert-success, ' +
-      '.registration-success, [data-registration-complete]'
-    );
+  // Completion signal — CONFIRMED against a live completed booking 2026-06-03.
+  // Fidelo's success screen renders a PostAffiliatePro sale block (present ONLY once a
+  // booking is actually submitted): an inline <script id="pap_..."> that calls
+  // PostAffTracker.createSale(), sums the line items into totalCost, and setOrderID(n).
+  // That block is the most reliable, LANGUAGE-INDEPENDENT success marker (the visible
+  // "Thank you …" text is translated per locale; the PAP block is not). The legacy
+  // selectors + the block-static thank-you text are kept as fallbacks.
+  function papSaleScript() {
+    // Prefer the inline createSale() script (it carries the totals), not the loader.
+    const tagged = document.querySelectorAll('script[id^="pap_"]');
+    for (let i = 0; i < tagged.length; i++) {
+      if (/createSale\s*\(/.test(tagged[i].textContent || '')) return tagged[i];
+    }
+    const all = document.getElementsByTagName('script');
+    for (let i = 0; i < all.length; i++) {
+      if (/PostAffTracker[\s\S]*createSale\s*\(/.test(all[i].textContent || '')) return all[i];
+    }
+    return null;
   }
+
+  // Sum the `totalCost += N;` lines in the PAP inline script → the REAL booking total
+  // (includes negative discount lines). Falls back to setTotalCost(n). Returns a finite
+  // number or null. This is more accurate than the displayed-price parse (it reflects
+  // discounts/fees applied at checkout).
+  function papTotal(scriptEl) {
+    if (!scriptEl) return null;
+    const txt = scriptEl.textContent || '';
+    const re = /totalCost\s*\+=\s*(-?\d+(?:\.\d+)?)/g;
+    let m, sum = 0, any = false;
+    while ((m = re.exec(txt))) { sum += Number(m[1]); any = true; }
+    if (!any) {
+      const direct = txt.match(/setTotalCost\s*\(\s*(-?\d+(?:\.\d+)?)\s*\)/);
+      if (direct) { sum = Number(direct[1]); any = true; }
+    }
+    return (any && isFinite(sum) && sum >= 0) ? sum : null;
+  }
+
+  function papOrderId(scriptEl) {
+    if (!scriptEl) return null;
+    const m = (scriptEl.textContent || '').match(/setOrderID\s*\(\s*['"]?([\w-]+)['"]?\s*\)/);
+    return m ? m[1] : null;
+  }
+
+  // Returns a marker object {source, total, orderId} when the booking is complete, else null.
+  function successMarker() {
+    const pap = papSaleScript();
+    if (pap) return { source: 'pap', total: papTotal(pap), orderId: papOrderId(pap) };
+    if (document.querySelector(
+      '[component="block-notifications"] .alert-success, ' +
+      '.registration-success, [data-registration-complete]')) {
+      return { source: 'selector', total: null, orderId: null };
+    }
+    // block-static confirmation copy appears only after submit (guarded so it can't
+    // match an empty/placeholder block-static while stepping through the form).
+    const stat = document.querySelector('[component="block-static"]');
+    if (stat && /thank you|confirmation of your application/i.test(stat.textContent || '')) {
+      return { source: 'text', total: null, orderId: null };
+    }
+    return null;
+  }
+
+  function successPresent() { return !!successMarker(); }
 
   function startSubmitWatch() {
     if (watchingSubmit || leadSent) return;
@@ -257,17 +309,22 @@
     let n = 0;
     const iv = setInterval(function () {
       if (leadSent || n++ > SUBMIT_POLL_MAX) { clearInterval(iv); return; }
-      if (successPresent()) {
+      const marker = successMarker();
+      if (marker) {
         leadSent = true;
         clearInterval(iv);
         const done = { event: 'fidelo_application_submitted' };
-        // Carry the last-known booking value onto the COMPLETION event so GA4 can
-        // report monetary value on the conversion. Only attached if a price was
-        // confidently parsed on an earlier (courses/housing/extras) step.
-        if (typeof lastValue === 'number' && lastCurrency) {
-          done.value = lastValue;
+        // Booking VALUE: prefer the authoritative PAP checkout total (reflects discounts/
+        // fees); fall back to the last confidently-parsed displayed price. Currency: PAP
+        // totals are unitless, so use the currency parsed from an earlier step. Only attach
+        // value when we also know the currency (GA4 drops value without a valid currency).
+        let v = (typeof marker.total === 'number') ? marker.total : lastValue;
+        if (typeof v === 'number' && isFinite(v) && lastCurrency) {
+          done.value = v;
           done.currency = lastCurrency;
         }
+        // Order/booking id → transaction_id (lets GA4 de-dupe + ties to the Fidelo record).
+        if (marker.orderId) done.transaction_id = marker.orderId;
         send(done);
       }
     }, SUBMIT_POLL_MS);
