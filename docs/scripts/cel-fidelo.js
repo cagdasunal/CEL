@@ -152,8 +152,13 @@
     } else if (hasDot) {
       const parts = digits.split('.');
       const after = parts[parts.length - 1];
-      if (currency === 'EUR' && parts.length === 2 && after.length === 3) {
-        normalized = digits.replace('.', '');                     // "1.234" EUR thousands
+      // Lone dot + exactly 3 trailing digits = thousands grouping ("1.234" -> 1234). CEL's
+      // Fidelo uses COMMA thousands for $/C$/US$ (verified: "$ 7,637", "C$ 3,565"), but some
+      // locales render the dollar total German-style ("C$ 1.410"); without this a CAD/USD
+      // total like that would mis-parse to 1.41. Restricted to EXACTLY 3 trailing digits +
+      // single dot so a real decimal ("$ 12.50", "$ 999.5") is never wrongly stripped.
+      if (parts.length === 2 && after.length === 3) {
+        normalized = digits.replace('.', '');                     // "1.234"/"1.410" -> thousands
       } else {
         normalized = digits;                                      // decimal point
       }
