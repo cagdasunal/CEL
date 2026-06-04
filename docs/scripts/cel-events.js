@@ -63,18 +63,18 @@
  *                                              -> ties OFFER -> WHICH BUTTON -> outcome (booking/contact)
  *   --- blog deep engagement (Phase 1, 2026-06-04; per-language via page_locale) ---
  *   post_read                                  genuine read of a post: 30s active time OR 50% scroll (once; trigger=dwell_30s|scroll_50)
- *   post_scroll_depth                          per-post scroll 25/50/75/100 (carries post_slug, unlike generic scroll_depth)
+ *   post_scroll_depth                          per-post scroll 25/50/75/90 (carries post_slug, unlike generic scroll_depth)
  *   post_read_complete                         reached ~90% of a post; read_seconds = active read-time
  *   category_click                             click on a /category/ link (category_slug, source_page_type) — language-agnostic
- *   blog_list_scroll                           blog homepage / category list scroll 25/50/75/100 (list_type)
+ *   blog_list_scroll                           blog homepage / category list scroll 25/50/75/90 (list_type)
  *   related_post_click                         related-post click from inside a post (from_post -> to_post, position)
  *   --- Fidelo booking bridge (cel-fidelo.js postMessage from the cross-origin iframe) ---
  *   widget_open                                booking widget opened (clean denominator, distinct from apply_click + step=1)
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.4.0
- * Last update: 2026-06-04
+ * Version: 2.4.1
+ * Last update: 2026-06-05
  */
 (function () {
   'use strict';
@@ -441,11 +441,15 @@
   // vs booking (form_name alone was too generic). Both derive from the internal name CONSTANT
   // (never DOM/Weglot text) so they're byte-identical across all 8 locales. form_name and the
   // live GTM trigger / contact_lead Create-event rule (which key on form_name) are untouched.
+  // form_name VALUES are what reach GA4 — keep them vendor-neutral ('booking', not 'fidelo_booking':
+  // it's our only booking system, so the vendor name would just leak into GA4 reports). The
+  // internal fidelo_* postMessage event names (from the iframe bridge) are NOT in this map and
+  // never reach GA4 — they're translated to the clean events below.
   const LEAD_META = {
     contact: { type: 'contact', channel: 'web_form' },
     newsletter: { type: 'newsletter', channel: 'web_form' },
     schedule_call: { type: 'sales_call', channel: 'scheduler' },
-    fidelo_booking: { type: 'booking', channel: 'booking_widget' }
+    booking: { type: 'booking', channel: 'booking_widget' }
   };
   const leadFired = {};
   function fireLead(name, extra) {
@@ -518,15 +522,15 @@
       const stepTotal = (typeof d.step_total === 'number' && isFinite(d.step_total) && d.step_total > 0) ? d.step_total : undefined;
       if (d.event === 'fidelo_widget_open') {
         // Clean "opened the booking widget" denominator (distinct from apply_click + step=1).
-        const params = { form_name: 'fidelo_booking' };
+        const params = { form_name: 'booking' };
         if (stepTotal !== undefined) params.step_total = stepTotal;
         push('widget_open', params);
       } else if (d.event === 'fidelo_booking_abandon' && d.step_name) {
         // Explicit drop-off: the last step reached before leaving without completing.
-        const params = { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' };
+        const params = { step: d.step, step_name: d.step_name, form_name: 'booking' };
         push('booking_abandon', params);
       } else if (d.event === 'fidelo_booking_step' && d.step_name) {
-        const params = { step: d.step, step_name: d.step_name, form_name: 'fidelo_booking' };
+        const params = { step: d.step, step_name: d.step_name, form_name: 'booking' };
         if (money.value !== undefined) { params.value = money.value; params.currency = money.currency; }
         if (stepTotal !== undefined) params.step_total = stepTotal;
         // step_direction (forward|back) lets reports strip back-nav from forward-funnel counts.
@@ -546,7 +550,7 @@
         // as transaction_id (GA4 de-dupes conversions on it + ties the lead to the record).
         const extra = money.value !== undefined ? { value: money.value, currency: money.currency } : {};
         if (typeof d.transaction_id === 'string' && d.transaction_id) extra.transaction_id = d.transaction_id;
-        fireLead('fidelo_booking', Object.keys(extra).length ? extra : null);
+        fireLead('booking', Object.keys(extra).length ? extra : null);
       }
     }
   });
@@ -614,7 +618,11 @@
     return o;
   }
   // Active read-time uses the site-wide ticker (tickStart/tickStop/activeMs) declared above.
-  const POST_THRESH = [25, 50, 75, 100];
+  // Same milestones as the site-wide scroll_depth (THRESH) so percent_scrolled has ONE
+  // value-space across scroll_depth / post_scroll_depth / blog_list_scroll — a cross-event
+  // report on percent_scrolled isn't ambiguous at the top bucket. 90 (not 100) matches GA4's
+  // native Enhanced-Measurement scroll milestone; 100 rarely fires on pages with footers.
+  const POST_THRESH = [25, 50, 75, 90];
   const postHit = {};
   let readFired = false, readCompleteFired = false;
   if (isPost) {
