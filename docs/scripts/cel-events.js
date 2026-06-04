@@ -51,11 +51,16 @@
  *   search                                     site-search submit (search_term) — inert unless a type=search / [role=search] form exists
  *   scroll_depth                               25/50/75/90 (site-wide)
  *   engaged_page                               ONE genuine-engagement signal/page (15s active OR 50% scroll; trigger=dwell_15s|scroll_50, engaged_seconds) — page_type+locale aware, comparable across pages
- *   --- offers engagement (GA4-standard; inert unless .offer_item cards exist) ---
+ *   --- offers/promotions engagement (GA4-standard; inert unless .offer_item cards exist;
+ *       works on /offers AND any page where promotions are embedded — same .offer_item class) ---
  *   view_promotion                             offer card VISIBLE in view (skips geo-hidden cards); promotion_id
  *                                              = language-invariant (data-offer-id | image CMS asset-id), + name/slot
- *   select_promotion                           offer card clicked (promotion_id/name, creative_slot)
+ *   select_promotion                           offer card clicked: carries promotion_id/name/creative_slot, AND
+ *                                              cta_id (apply|contact) when the click was on a card BUTTON
  *   offer_code_copy                            promo code copied (scoped to .page_code_base / [data-offer-code])
+ *   cta_click (when inside .offer_item)        the offer card's Apply Now / Contact us button: cta_id (apply|contact),
+ *                                              cta_location='offer_card', + promotion_id/promotion_name/creative_slot
+ *                                              -> ties OFFER -> WHICH BUTTON -> outcome (booking/contact)
  *   --- blog deep engagement (Phase 1, 2026-06-04; per-language via page_locale) ---
  *   post_read                                  genuine read of a post: 30s active time OR 50% scroll (once; trigger=dwell_30s|scroll_50)
  *   post_scroll_depth                          per-post scroll 25/50/75/100 (carries post_slug, unlike generic scroll_depth)
@@ -68,7 +73,7 @@
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.3.2
+ * Version: 2.4.0
  * Last update: 2026-06-04
  */
 (function () {
@@ -207,6 +212,27 @@
     const id = lastSeg(a);
     if (!id) return null;
     return { item_id: id, item_name: humanize(id), item_category: a.classList.contains('course-card_link') ? 'courses' : 'housing', index: index };
+  }
+  // ---- offer-card identity (shared by the click handler's offer-CTA enrichment AND the
+  //   offers IIFE below). promotion_id is language-invariant (data-offer-id attr, else the
+  //   offer image's Webflow CMS asset-id 24-hex prefix, else positional). promotion_name is
+  //   the visible title and IS locale-specific — join across locales via promotion_id. ----
+  function offerCardName(card) {
+    const t = card.querySelector('.offer-bento_title');
+    return ((t && (t.textContent || '')).replace(/\s+/g, ' ').trim().slice(0, 80)) || '(untitled offer)';
+  }
+  function offerCardId(card) {
+    const explicit = card.getAttribute('data-offer-id');
+    if (explicit) return explicit;
+    const img = card.querySelector('img[src]');
+    const m = img && (img.getAttribute('src') || '').match(/([0-9a-f]{24})_/);
+    if (m) return m[1];
+    const slot = card.getAttribute('data-cel-offer-i');
+    return 'offer-' + (slot != null ? slot : indexAmong(card, '.offer_item'));
+  }
+  function offerPromoParams(card) {
+    return { promotion_id: offerCardId(card), promotion_name: offerCardName(card),
+             creative_slot: indexAmong(card, '.offer_item') };
   }
   function navLocation(a) {
     if (a.closest('nav, .navbar, [class*="navbar"], .w-nav')) return a.closest('.w-dropdown') ? 'header_dropdown' : 'header';
@@ -347,7 +373,21 @@
       // GA4 redacts emails regardless + its no-PII policy bans them, so send the scheme
       // label, never the raw href. cta_id already says which channel was clicked.
       const SAFE_URL = { email: 'mailto:', phone: 'tel:', whatsapp: 'whatsapp:' };
-      push('cta_click', { cta_id: id, link_url: SAFE_URL[id] || a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) });
+      const params = { cta_id: id, link_url: SAFE_URL[id] || a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) };
+      // If this CTA lives INSIDE an offer card (the Apply Now / Contact us buttons on the
+      // /offers page AND wherever promotions are embedded on other pages), enrich it with the
+      // promotion so reports can tie offer -> which button -> outcome. cta_location becomes
+      // 'offer_card' and select_promotion (below) fires too with the same cta_id as creative.
+      const offerCard = a.closest('.offer_item');
+      if (offerCard) {
+        const pp = offerPromoParams(offerCard);
+        params.cta_location = 'offer_card';
+        params.promotion_id = pp.promotion_id;
+        params.promotion_name = pp.promotion_name;
+        params.creative_slot = pp.creative_slot;
+        push('select_promotion', { promotion_id: pp.promotion_id, promotion_name: pp.promotion_name, creative_slot: pp.creative_slot, cta_id: id });
+      }
+      push('cta_click', params);
       return;
     }
 
@@ -716,32 +756,17 @@
       const r = el.getBoundingClientRect();
       return !!(r.width || r.height);
     }
-    function offerName(card) {
-      const t = card.querySelector('.offer-bento_title');
-      return ((t && (t.textContent || '')).replace(/\s+/g, ' ').trim().slice(0, 80)) || '(untitled offer)';
-    }
-    function offerId(card, i) {
-      const explicit = card.getAttribute('data-offer-id');
-      if (explicit) return explicit;
-      // Webflow CMS asset-id prefix of the offer image filename — language-invariant.
-      const img = card.querySelector('img[src]');
-      const m = img && (img.getAttribute('src') || '').match(/([0-9a-f]{24})_/);
-      if (m) return m[1];
-      return 'offer-' + i;
-    }
-    function promoParams(card, i) {
-      return { promotion_id: offerId(card, i), promotion_name: offerName(card), creative_slot: i };
-    }
-    // Index every card up front so offer_code_copy/nearestPromo can always resolve a slot,
-    // regardless of which view_promotion path runs (the IO branch used to be the only one
-    // that set this — leaving the no-IO path with NaN -> wrong card).
+    // Uses the SHARED offer helpers (offerPromoParams/offerCardId/offerCardName) declared near
+    // cardItem — same identity the click handler's offer-CTA enrichment uses, so a card's
+    // view_promotion / select_promotion / cta_click all carry the SAME promotion_id.
+    // Index every card up front so offer_code_copy can always resolve a slot.
     for (let i = 0; i < cards.length; i++) cards[i].setAttribute('data-cel-offer-i', i);
     // view_promotion — once per card, only when the card is actually visible (post geo-filter)
     const seen = {};
     function fireView(card, i) {
       if (seen[i] || !isVisible(card)) return;
       seen[i] = true;
-      push('view_promotion', promoParams(card, i));
+      push('view_promotion', offerPromoParams(card));
     }
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(function (entries) {
@@ -757,20 +782,24 @@
         for (let i = 0; i < cards.length; i++) fireView(cards[i], i);
       }, 2000);
     }
-    // select_promotion — click anywhere on a card
+    // select_promotion — a click on the card that is NOT on a classified CTA button. The
+    // Apply Now / Contact us buttons (-> /booking, /contact-cel) are handled by the main click
+    // handler, which fires a RICHER select_promotion carrying cta_id (which button) + the
+    // cta_click. Skipping them here avoids a double select_promotion for the same click.
     for (let i = 0; i < cards.length; i++) {
-      (function (card, idx) {
-        card.addEventListener('click', function () { push('select_promotion', promoParams(card, idx)); }, { passive: true });
-      })(cards[i], i);
+      (function (card) {
+        card.addEventListener('click', function (ev) {
+          const a = ev.target && ev.target.closest && ev.target.closest('a[href]');
+          if (a && card.contains(a) && classifyHref((a.getAttribute('href') || ''), a)) return;  // CTA button -> handled upstream
+          push('select_promotion', offerPromoParams(card));
+        }, { passive: true });
+      })(cards[i]);
     }
     // offer_code_copy — when a promo code is copied. Scoped to the code element / an explicit
     //   data-offer-code (NOT a broad [class*="copy"], which would match footer_copyright etc.).
-    //   Carries the nearest card's promotion when the code sits inside one.
     function nearestPromo(el) {
       const card = el.closest && el.closest('.offer_item');
-      if (!card) return {};
-      let idx = +card.getAttribute('data-cel-offer-i'); if (isNaN(idx)) idx = 0;
-      return promoParams(card, idx);
+      return card ? offerPromoParams(card) : {};
     }
     const codeEls = document.querySelectorAll('.page_code_base, [data-offer-code]');
     for (let i = 0; i < codeEls.length; i++) {
