@@ -26,11 +26,17 @@
  * degrades to navigation_click (with the raw link_url) + page_id, so every link on
  * every page in every language produces data.
  *
- * Events (all carry page_id + page_type + page_locale):
+ * Events (all carry page_id + page_type + page_locale + content_group):
+ *   content_group                              coarse content bucket on EVERY event (home|landing|courses|
+ *                                              housing|blog|offers|contact|booking|support) — from page_type,
+ *                                              so reports cleanly separate content types per the client need
  *   page_entry                                 acquisition source on load (need b: organic -> /post)
- *   view_item_list / select_item / view_item   courses+housing catalog (GA4 items)
- *   select_content                             blog-post link clicks (promo, list, related, category)
- *   generate_lead                              contact|newsletter|schedule_call(HubSpot)|fidelo_booking
+ *   view_item_list / select_item / view_item   courses+housing catalog (GA4 items; item_category courses|housing)
+ *   select_content                             blog-post link clicks — carries content_id (target slug),
+ *                                              source_block (from_our_blog|blog_list|related_posts|category|in_content)
+ *                                              AND source_page_type (WHICH page the click came from)
+ *   generate_lead                              umbrella lead event; lead_type=contact|newsletter|sales_call|booking
+ *                                              + lead_channel=web_form|scheduler|booking_widget (form_name kept)
  *   form_start                                 first focus/input on a tracked lead form (contact|newsletter) — start->submit rate
  *   cta_click                                  apply offers contact email phone whatsapp directions blog_see_all
  *                                              (+ cta_location: header/footer/hero/body_top/mid/bottom, + cta_text:
@@ -59,7 +65,7 @@
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.2.0
+ * Version: 2.3.0
  * Last update: 2026-06-04
  */
 (function () {
@@ -98,6 +104,21 @@
     return ps.length ? ps[ps.length - 1] : '';
   }
   function pageTypeFromId(id) { return PAGE_TYPES[id] || 'other'; }
+  // content_group = the COARSE content bucket, so reports cleanly separate courses vs housing
+  // vs blog vs landing etc. on EVERY event (the user's "different type of content" need). Derived
+  // purely from page_type (data-wf-page template id) — never a slug/word — so it's identical
+  // across all 8 Weglot locales. content_group is a GA4-RESERVED page-scoped dimension (auto
+  // populates the built-in "Content group" report), so it is set on the Google-tag config too.
+  const CONTENT_GROUP = {
+    home: 'home',
+    landing: 'landing', landing_sandiego: 'landing', landing_vancouver: 'landing',
+    course_list: 'courses', course_detail: 'courses',
+    housing_list: 'housing', housing_detail: 'housing',
+    blog_post: 'blog', blog_list: 'blog', category: 'blog', voices: 'blog',
+    offers: 'offers', contact: 'contact', booking: 'booking',
+    faq: 'support', policies: 'support', student_services: 'support'
+  };
+  function contentGroup(pt) { return CONTENT_GROUP[pt] || 'other'; }
   // A blog-post link, locale-agnostically: Weglot keeps the /post/ segment on every
   // locale (verified: /post/..., /de/post/..., /fr/post/...). Strip locale, test /post/.
   function isPostPath(pathname) { return /^\/post\//.test(barePath(pathname || '')); }
@@ -154,6 +175,7 @@
 
   const PAGE_ID = (document.documentElement.getAttribute('data-wf-page') || '');
   const PT = pageTypeFromId(PAGE_ID);
+  const CG = contentGroup(PT);
   const LOC = (function () {
     const seg = (location.pathname.split('/')[1] || '').toLowerCase();
     if (LOCALES.indexOf(seg) !== -1) return seg;
@@ -162,13 +184,13 @@
 
   window.dataLayer = window.dataLayer || [];
   function push(name, params) {
-    const o = { event: name, page_id: PAGE_ID, page_type: PT, page_locale: LOC };
+    const o = { event: name, page_id: PAGE_ID, page_type: PT, page_locale: LOC, content_group: CG };
     for (const k in params) if (Object.prototype.hasOwnProperty.call(params, k)) o[k] = params[k];
     window.dataLayer.push(o);
   }
   function pushEcom(name, ecommerce) {
     window.dataLayer.push({ ecommerce: null });
-    window.dataLayer.push({ event: name, page_id: PAGE_ID, page_type: PT, page_locale: LOC, ecommerce: ecommerce });
+    window.dataLayer.push({ event: name, page_id: PAGE_ID, page_type: PT, page_locale: LOC, content_group: CG, ecommerce: ecommerce });
   }
   function humanize(slug) {
     return String(slug).replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
@@ -283,7 +305,7 @@
     // "From Our Blog" promo (.section_blog) -> select_content (post) or cta blog_see_all  [client need a]
     if (a.closest('.section_blog')) {
       const u = urlOf(a);
-      if (u && isPostPath(u.pathname)) { push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog' }); return; }
+      if (u && isPostPath(u.pathname)) { push('select_content', { content_type: 'blog_post', content_id: lastSeg(u), link_url: a.href, source_block: 'from_our_blog', source_page_type: PT }); return; }
       if (u && barePath(u.pathname) === '/blog') { push('cta_click', { cta_id: 'blog_see_all', link_url: a.href, cta_location: ctaLocation(a), cta_text: ctaText(a) }); return; }
       // any other .section_blog link falls through to normal classification below
     }
@@ -300,7 +322,7 @@
     const au = urlOf(a);
     if (au && isPostPath(au.pathname)) {
       const sb = PT === 'blog_list' ? 'blog_list' : PT === 'blog_post' ? 'related_posts' : PT === 'category' ? 'category' : 'in_content';
-      push('select_content', { content_type: 'blog_post', content_id: lastSeg(au), link_url: a.href, source_block: sb });
+      push('select_content', { content_type: 'blog_post', content_id: lastSeg(au), link_url: a.href, source_block: sb, source_page_type: PT });
       // When clicked from inside a post, this is a RELATED-POST click — emit a dedicated
       // event carrying which post we came from -> to, and the position among related cards
       // (so reports can see which related slot wins). Position = index among /post/ links in
@@ -368,11 +390,23 @@
   }
 
   // ---- conversions: forms (contact|newsletter) + HubSpot meeting booking ----
+  // generate_lead stays the GA4-recommended umbrella event, but every lead now carries a
+  // clear lead_type + lead_channel so reports distinguish contact vs newsletter vs sales call
+  // vs booking (form_name alone was too generic). Both derive from the internal name CONSTANT
+  // (never DOM/Weglot text) so they're byte-identical across all 8 locales. form_name and the
+  // live GTM trigger / contact_lead Create-event rule (which key on form_name) are untouched.
+  const LEAD_META = {
+    contact: { type: 'contact', channel: 'web_form' },
+    newsletter: { type: 'newsletter', channel: 'web_form' },
+    schedule_call: { type: 'sales_call', channel: 'scheduler' },
+    fidelo_booking: { type: 'booking', channel: 'booking_widget' }
+  };
   const leadFired = {};
   function fireLead(name, extra) {
     if (leadFired[name]) return;
     leadFired[name] = true;
-    const params = { form_name: name };
+    const meta = LEAD_META[name] || { type: name, channel: 'other' };
+    const params = { form_name: name, lead_type: meta.type, lead_channel: meta.channel };
     if (extra) for (const k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) params[k] = extra[k];
     push('generate_lead', params);
   }
@@ -501,10 +535,20 @@
   // page_locale rides every event automatically, so this is per-language with no extra work.
   const isPost = PT === 'blog_post';
   const isList = PT === 'blog_list' || PT === 'category';
-  // category_slug for posts/lists, if discoverable, so reports can group reads by topic.
+  // category for posts/lists, so reports can group reads by topic. MUST be a language-invariant
+  // token: NEVER el.textContent (Weglot translates it -> one category fragments into up to 8
+  // strings across locales). Use only (1) a data-category slug attribute, or (2) the structural
+  // /category/<slug> link segment (the path is byte-identical on every locale). Else ''.
   const blogCat = (function () {
-    const el = document.querySelector('[data-category], .blog-category, .post-category');
-    return el ? (el.getAttribute('data-category') || el.textContent || '').trim().slice(0, 60) : '';
+    const el = document.querySelector('[data-category]');
+    const ds = el && el.getAttribute('data-category');
+    if (ds) return ds.trim().slice(0, 60);
+    const links = document.querySelectorAll('a[href]');
+    for (let i = 0; i < links.length; i++) {
+      const u = urlOf(links[i]);
+      if (u && isCategoryPath(u.pathname)) return lastSeg(u).slice(0, 60);
+    }
+    return '';
   })();
   function postParams(extra) {
     const o = { post_slug: PAGE_ID, blog_category: blogCat };
