@@ -83,6 +83,9 @@
   // Webflow template ids -> friendly type. IDs are identical across all locales
   // (verified: /de/kurse == course_list, /de/unterkunft == housing_list). New pages
   // are still tracked via the raw page_id; add them here only for a friendly name.
+  // NOTE: when you add a page id here (or to CONTENT_GROUP below), ALSO add it to the GTM
+  // mirror in gtm_fix_page_context.py (JS_PAGE_TYPE / JS_CONTENT_GROUP) or that page's GA4
+  // AUTOMATIC events get page_type/content_group='other'. Guarded by test_page_context_sync.py.
   const PAGE_TYPES = {
     '667453c576e8d35c454cc9bc': 'home',
     '667453c576e8d35c454ccc54': 'landing', '685a4a48f7d57ee291672413': 'landing_sandiego',
