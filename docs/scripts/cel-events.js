@@ -41,7 +41,14 @@
  *   outbound_click                             cross-origin links (link_domain + outbound:true) — first-class, no longer a navigation_click
  *   video_start/_progress/_complete            native HTML5 <video> engagement (25/50/75/100; inert if no <video>; YT/Vimeo handled in GTM)
  *   search                                     site-search submit (search_term) — inert unless a type=search / [role=search] form exists
- *   scroll_depth                               25/50/75/90
+ *   scroll_depth                               25/50/75/90 (site-wide)
+ *   --- blog deep engagement (Phase 1, 2026-06-04; per-language via page_locale) ---
+ *   post_read                                  genuine read of a post: 30s active time OR 50% scroll (once; trigger=dwell_30s|scroll_50)
+ *   post_scroll_depth                          per-post scroll 25/50/75/100 (carries post_slug, unlike generic scroll_depth)
+ *   post_read_complete                         reached ~90% of a post; read_seconds = active read-time
+ *   category_click                             click on a /category/ link (category_slug, source_page_type) — language-agnostic
+ *   blog_list_scroll                           blog homepage / category list scroll 25/50/75/100 (list_type)
+ *   related_post_click                         related-post click from inside a post (from_post -> to_post, position)
  *   --- Fidelo booking bridge (cel-fidelo.js postMessage from the cross-origin iframe) ---
  *   widget_open                                booking widget opened (clean denominator, distinct from apply_click + step=1)
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
@@ -89,6 +96,9 @@
   // A blog-post link, locale-agnostically: Weglot keeps the /post/ segment on every
   // locale (verified: /post/..., /de/post/..., /fr/post/...). Strip locale, test /post/.
   function isPostPath(pathname) { return /^\/post\//.test(barePath(pathname || '')); }
+  // A blog-CATEGORY link, locale-agnostically (Weglot keeps /category/ on every locale,
+  // same as /post/). Used to track category navigation as a first-class blog signal.
+  function isCategoryPath(pathname) { return /^\/category\//.test(barePath(pathname || '')); }
   // Acquisition source from referrer host + utm_source (need b). utm wins; google host
   // -> organic/paid umbrella 'google_organic'; own host -> internal; other host -> referral.
   function acqSource(referrerHost, utmSource) {
@@ -273,11 +283,30 @@
       // any other .section_blog link falls through to normal classification below
     }
 
+    // blog CATEGORY link -> category_click (first-class: "do people use categories, which?")
+    // Checked BEFORE the /post/ branch so a category link never falls through as a post.
+    const cu = urlOf(a);
+    if (cu && isCategoryPath(cu.pathname)) {
+      push('category_click', { category_slug: lastSeg(cu), link_url: a.href, source_page_type: PT });
+      return;
+    }
+
     // any blog-post link (blog list cards, related posts, category cards, in-content) -> select_content
     const au = urlOf(a);
     if (au && isPostPath(au.pathname)) {
       const sb = PT === 'blog_list' ? 'blog_list' : PT === 'blog_post' ? 'related_posts' : PT === 'category' ? 'category' : 'in_content';
       push('select_content', { content_type: 'blog_post', content_id: lastSeg(au), link_url: a.href, source_block: sb });
+      // When clicked from inside a post, this is a RELATED-POST click — emit a dedicated
+      // event carrying which post we came from -> to, and the position among related cards
+      // (so reports can see which related slot wins). Position = index among /post/ links in
+      // the nearest related container, falling back to index among all /post/ links on page.
+      if (PT === 'blog_post') {
+        let pos = 0;
+        const container = a.closest('.related, .related-posts, [class*="related"]') || document;
+        const links = container.querySelectorAll('a[href*="/post/"]');
+        for (let i = 0; i < links.length; i++) { if (links[i] === a) { pos = i; break; } }
+        push('related_post_click', { from_post: PAGE_ID, to_post: lastSeg(au), position: pos, link_url: a.href });
+      }
       return;
     }
 
@@ -441,6 +470,36 @@
   const THRESH = [25, 50, 75, 90];
   const hit = {};
   let ticking = false;
+  // ---- blog engagement: read vs bounce, per-post scroll, read-time, blog-list scroll ----
+  // page_locale rides every event automatically, so this is per-language with no extra work.
+  const isPost = PT === 'blog_post';
+  const isList = PT === 'blog_list' || PT === 'category';
+  // category_slug for posts/lists, if discoverable, so reports can group reads by topic.
+  const blogCat = (function () {
+    const el = document.querySelector('[data-category], .blog-category, .post-category');
+    return el ? (el.getAttribute('data-category') || el.textContent || '').trim().slice(0, 60) : '';
+  })();
+  function postParams(extra) {
+    const o = { post_slug: PAGE_ID, blog_category: blogCat };
+    if (extra) for (const k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k];
+    return o;
+  }
+  // Active read-time: counts only while the tab is visible (background tabs don't inflate it).
+  let readMs = 0, lastTick = 0, readCounting = false;
+  function tickStart() { if (!readCounting && document.visibilityState === 'visible') { readCounting = true; lastTick = Date.now(); } }
+  function tickStop() { if (readCounting) { readMs += Date.now() - lastTick; readCounting = false; } }
+  const POST_THRESH = [25, 50, 75, 100];
+  const postHit = {};
+  let readFired = false, readCompleteFired = false;
+  if (isPost) {
+    tickStart();
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') tickStart(); else tickStop(); });
+    // post_read = a GENUINE read: 30s of active time on the post (fires once, dwell path).
+    window.setTimeout(function () {
+      tickStop(); const ms = readMs; tickStart();
+      if (!readFired && ms >= 30000) { readFired = true; push('post_read', postParams({ trigger: 'dwell_30s' })); }
+    }, 30000);
+  }
   function onScroll() {
     if (ticking) return;
     ticking = true;
@@ -453,6 +512,32 @@
         if (pct >= THRESH[k] && !hit[THRESH[k]]) {
           hit[THRESH[k]] = true;
           push('scroll_depth', { percent_scrolled: THRESH[k] });
+        }
+      }
+      // blog HOMEPAGE / category list scroll (25/50/75/100) — "do they scroll the list?"
+      if (isList) {
+        for (let k = 0; k < POST_THRESH.length; k++) {
+          if (pct >= POST_THRESH[k] && !postHit['l' + POST_THRESH[k]]) {
+            postHit['l' + POST_THRESH[k]] = true;
+            push('blog_list_scroll', { percent_scrolled: POST_THRESH[k], list_type: PT });
+          }
+        }
+      }
+      if (isPost) {
+        // per-post scroll depth (carries the post slug, unlike generic scroll_depth)
+        for (let k = 0; k < POST_THRESH.length; k++) {
+          if (pct >= POST_THRESH[k] && !postHit[POST_THRESH[k]]) {
+            postHit[POST_THRESH[k]] = true;
+            push('post_scroll_depth', postParams({ percent_scrolled: POST_THRESH[k] }));
+          }
+        }
+        // post_read via the scroll path: 50% scrolled = a genuine read (fires once).
+        if (!readFired && pct >= 50) { readFired = true; push('post_read', postParams({ trigger: 'scroll_50' })); }
+        // post_read_complete: reached the end (~90%), with active read-time in seconds.
+        if (!readCompleteFired && pct >= 90) {
+          readCompleteFired = true;
+          tickStop(); const secs = Math.round(readMs / 1000); tickStart();
+          push('post_read_complete', postParams({ read_seconds: secs }));
         }
       }
     });
