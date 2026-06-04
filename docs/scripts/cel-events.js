@@ -26,7 +26,9 @@
  * degrades to navigation_click (with the raw link_url) + page_id, so every link on
  * every page in every language produces data.
  *
- * Events (all carry page_id + page_type + page_locale + content_group):
+ * Events (all carry page_id + page_type + page_locale + content_group).
+ * >>> CANONICAL REFERENCE: tools/cel-events-js/EVENTS.md (full params, firing conditions,
+ *     multilang notes, GA4 dim + key-event status). Keep that file + this legend in sync. <<<
  *   content_group                              coarse content bucket on EVERY event (home|landing|courses|
  *                                              housing|blog|offers|contact|booking|support) — from page_type,
  *                                              so reports cleanly separate content types per the client need
@@ -66,7 +68,7 @@
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.3.1
+ * Version: 2.3.2
  * Last update: 2026-06-04
  */
 (function () {
@@ -523,34 +525,46 @@
 
   // ---- engaged_page: ONE genuine-engagement signal per page, page_type + language aware
   //   (unlike GA4's built-in engaged-session, this knows WHICH page type + locale and is
-  //   comparable across pages). Fires once on whichever comes first: 15s active time OR 50%
-  //   scroll. trigger = dwell_15s | scroll_50. Generic by design — works on every page. ----
-  let engagedFired = false;
+  //   comparable across pages). Fires once on whichever comes first: 15s of ACTIVE time
+  //   (tab visible) OR 50% scroll. trigger = dwell_15s | scroll_50. Generic — works on every
+  //   page. The dwell path gates on activeMs() (NOT wall-clock), so a never-focused/background
+  //   tab does NOT count as engaged; a poll re-checks so a tab that becomes active later still
+  //   fires once it accrues 15s of real attention. ----
+  let engagedFired = false, engagedTimer = 0;
   function fireEngaged(trigger) {
     if (engagedFired) return;
     engagedFired = true;
+    if (engagedTimer) { window.clearInterval(engagedTimer); engagedTimer = 0; }
     push('engaged_page', { trigger: trigger, engaged_seconds: Math.round(activeMs() / 1000) });
   }
-  window.setTimeout(function () { fireEngaged('dwell_15s'); }, 15000);
+  // Poll active time every 3s; fire only once it crosses 15s of visible attention.
+  engagedTimer = window.setInterval(function () {
+    if (activeMs() >= 15000) fireEngaged('dwell_15s');
+  }, 3000);
   // ---- blog engagement: read vs bounce, per-post scroll, read-time, blog-list scroll ----
   // page_locale rides every event automatically, so this is per-language with no extra work.
+  // category for posts/lists, so reports can group reads by topic. Two hard rules:
+  //   (1) NEVER el.textContent — Weglot translates the visible category label (the .blog_category
+  //       div reads "English" / "Englisch" / …), fragmenting one topic into 8 strings.
+  //   (2) NEVER a bare [data-category] selector — on this site that attribute is used by the
+  //       cookie-consent scripts (data-category="functional"/"marketing"), NOT the blog.
+  // So: prefer the structural /category/<slug> link segment (a real category nav link), then a
+  // data-category attribute ONLY if it sits inside a blog container (.blog_category / .categories_*).
+  // Computed lazily and ONLY on post/list pages (no full-DOM scan on home/courses/etc.).
+  // Note: Weglot also translates the /category/ slug per locale, so blog_category is a
+  // per-locale-stable token (join across locales via post_slug, which IS invariant).
   const isPost = PT === 'blog_post';
   const isList = PT === 'blog_list' || PT === 'category';
-  // category for posts/lists, so reports can group reads by topic. MUST be a language-invariant
-  // token: NEVER el.textContent (Weglot translates it -> one category fragments into up to 8
-  // strings across locales). Use only (1) a data-category slug attribute, or (2) the structural
-  // /category/<slug> link segment (the path is byte-identical on every locale). Else ''.
-  const blogCat = (function () {
-    const el = document.querySelector('[data-category]');
-    const ds = el && el.getAttribute('data-category');
-    if (ds) return ds.trim().slice(0, 60);
+  const blogCat = (isPost || isList) ? (function () {
     const links = document.querySelectorAll('a[href]');
     for (let i = 0; i < links.length; i++) {
       const u = urlOf(links[i]);
       if (u && isCategoryPath(u.pathname)) return lastSeg(u).slice(0, 60);
     }
-    return '';
-  })();
+    const scoped = document.querySelector('.blog_category [data-category], .categories_collection [data-category]');
+    const ds = scoped && scoped.getAttribute('data-category');
+    return ds ? ds.trim().slice(0, 60) : '';
+  })() : '';
   function postParams(extra) {
     const o = { post_slug: PAGE_ID, blog_category: blogCat };
     if (extra) for (const k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k];
@@ -718,6 +732,10 @@
     function promoParams(card, i) {
       return { promotion_id: offerId(card, i), promotion_name: offerName(card), creative_slot: i };
     }
+    // Index every card up front so offer_code_copy/nearestPromo can always resolve a slot,
+    // regardless of which view_promotion path runs (the IO branch used to be the only one
+    // that set this — leaving the no-IO path with NaN -> wrong card).
+    for (let i = 0; i < cards.length; i++) cards[i].setAttribute('data-cel-offer-i', i);
     // view_promotion — once per card, only when the card is actually visible (post geo-filter)
     const seen = {};
     function fireView(card, i) {
@@ -731,9 +749,13 @@
           if (e.isIntersecting) { const i = +e.target.getAttribute('data-cel-offer-i'); fireView(e.target, i); io.unobserve(e.target); }
         });
       }, { threshold: 0.5 });
-      for (let i = 0; i < cards.length; i++) { cards[i].setAttribute('data-cel-offer-i', i); io.observe(cards[i]); }
+      for (let i = 0; i < cards.length; i++) io.observe(cards[i]);
     } else {
-      for (let i = 0; i < cards.length; i++) fireView(cards[i], i);  // no IO: count visible cards once
+      // No IO: defer past cel-offers.js's async geo-filter so we don't count cards it's
+      // about to remove/hide for this visitor's country (isVisible re-checks at fire time).
+      window.setTimeout(function () {
+        for (let i = 0; i < cards.length; i++) fireView(cards[i], i);
+      }, 2000);
     }
     // select_promotion — click anywhere on a card
     for (let i = 0; i < cards.length; i++) {
