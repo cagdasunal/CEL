@@ -50,9 +50,10 @@
  *   scroll_depth                               25/50/75/90 (site-wide)
  *   engaged_page                               ONE genuine-engagement signal/page (15s active OR 50% scroll; trigger=dwell_15s|scroll_50, engaged_seconds) — page_type+locale aware, comparable across pages
  *   --- offers engagement (GA4-standard; inert unless .offer_item cards exist) ---
- *   view_promotion                             offer card scrolled into view (promotion_id/name, creative_slot)
+ *   view_promotion                             offer card VISIBLE in view (skips geo-hidden cards); promotion_id
+ *                                              = language-invariant (data-offer-id | image CMS asset-id), + name/slot
  *   select_promotion                           offer card clicked (promotion_id/name, creative_slot)
- *   offer_code_copy                            promo code copied / copy button clicked (carries nearest card's promotion)
+ *   offer_code_copy                            promo code copied (scoped to .page_code_base / [data-offer-code])
  *   --- blog deep engagement (Phase 1, 2026-06-04; per-language via page_locale) ---
  *   post_read                                  genuine read of a post: 30s active time OR 50% scroll (once; trigger=dwell_30s|scroll_50)
  *   post_scroll_depth                          per-post scroll 25/50/75/100 (carries post_slug, unlike generic scroll_depth)
@@ -65,7 +66,7 @@
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.3.0
+ * Version: 2.3.1
  * Last update: 2026-06-04
  */
 (function () {
@@ -685,28 +686,43 @@
   })();
 
   // ---- offers engagement (GA4-standard view_promotion / select_promotion + offer_code_copy)
-  //   Fully inert unless the page actually has offer cards (.offer_item). Card title comes from
-  //   .offer-bento_title; promotion_id from the card's data-offer-id / data-w-id when present.
-  //   view_promotion fires once per card when it scrolls into view; select_promotion on card
-  //   click; offer_code_copy when a code element/copy button is copied. GA4-standard names
-  //   auto-populate the Promotions report. ----
+  //   Fully inert unless the page actually has offer cards (.offer_item).
+  //   promotion_id is LANGUAGE-INVARIANT (Weglot doesn't translate it): a data-offer-id attr if
+  //   present, else the offer image's Webflow CMS asset-id (the 24-hex prefix of the image
+  //   filename — stable across all 8 locales), else a positional fallback. promotion_name is the
+  //   .offer-bento_title text and IS locale-specific by nature (use promotion_id to join across
+  //   languages). creative_slot = position. The offers list is GEO-FILTERED after load
+  //   (cel-offers.js removes/hides cards by visitor country), so view_promotion fires ONLY for
+  //   cards actually visible at fire time — never the hidden ones. ----
   (function () {
     const cards = document.querySelectorAll('.offer_item');
     if (!cards.length) return;
+    function isVisible(el) {
+      if (!el || el.offsetParent === null) return false;  // display:none / removed
+      const r = el.getBoundingClientRect();
+      return !!(r.width || r.height);
+    }
     function offerName(card) {
       const t = card.querySelector('.offer-bento_title');
       return ((t && (t.textContent || '')).replace(/\s+/g, ' ').trim().slice(0, 80)) || '(untitled offer)';
     }
     function offerId(card, i) {
-      return card.getAttribute('data-offer-id') || card.getAttribute('data-w-id') || ('offer-' + i);
+      const explicit = card.getAttribute('data-offer-id');
+      if (explicit) return explicit;
+      // Webflow CMS asset-id prefix of the offer image filename — language-invariant.
+      const img = card.querySelector('img[src]');
+      const m = img && (img.getAttribute('src') || '').match(/([0-9a-f]{24})_/);
+      if (m) return m[1];
+      return 'offer-' + i;
     }
     function promoParams(card, i) {
       return { promotion_id: offerId(card, i), promotion_name: offerName(card), creative_slot: i };
     }
-    // view_promotion — once per card when it becomes visible (50% in view)
+    // view_promotion — once per card, only when the card is actually visible (post geo-filter)
     const seen = {};
     function fireView(card, i) {
-      if (seen[i]) return; seen[i] = true;
+      if (seen[i] || !isVisible(card)) return;
+      seen[i] = true;
       push('view_promotion', promoParams(card, i));
     }
     if ('IntersectionObserver' in window) {
@@ -717,7 +733,7 @@
       }, { threshold: 0.5 });
       for (let i = 0; i < cards.length; i++) { cards[i].setAttribute('data-cel-offer-i', i); io.observe(cards[i]); }
     } else {
-      for (let i = 0; i < cards.length; i++) fireView(cards[i], i);  // no IO: count all once
+      for (let i = 0; i < cards.length; i++) fireView(cards[i], i);  // no IO: count visible cards once
     }
     // select_promotion — click anywhere on a card
     for (let i = 0; i < cards.length; i++) {
@@ -725,21 +741,21 @@
         card.addEventListener('click', function () { push('select_promotion', promoParams(card, idx)); }, { passive: true });
       })(cards[i], i);
     }
-    // offer_code_copy — when a code is copied (copy event on a code element, or click of a
-    //   copy button). Inert if neither exists. Carries the nearest card's promotion when found.
+    // offer_code_copy — when a promo code is copied. Scoped to the code element / an explicit
+    //   data-offer-code (NOT a broad [class*="copy"], which would match footer_copyright etc.).
+    //   Carries the nearest card's promotion when the code sits inside one.
     function nearestPromo(el) {
       const card = el.closest && el.closest('.offer_item');
       if (!card) return {};
       let idx = +card.getAttribute('data-cel-offer-i'); if (isNaN(idx)) idx = 0;
       return promoParams(card, idx);
     }
-    const codeEls = document.querySelectorAll('.page_code_base, [data-offer-code], [class*="copy"]');
+    const codeEls = document.querySelectorAll('.page_code_base, [data-offer-code]');
     for (let i = 0; i < codeEls.length; i++) {
       (function (el) {
         el.addEventListener('copy', function () { push('offer_code_copy', nearestPromo(el)); }, { passive: true });
         el.addEventListener('click', function () {
-          // only treat as a copy if the element looks like a copy affordance
-          if (/copy/i.test(el.className) || el.hasAttribute('data-offer-code')) push('offer_code_copy', nearestPromo(el));
+          if (el.hasAttribute('data-offer-code')) push('offer_code_copy', nearestPromo(el));
         }, { passive: true });
       })(codeEls[i]);
     }
