@@ -42,6 +42,11 @@
  *   video_start/_progress/_complete            native HTML5 <video> engagement (25/50/75/100; inert if no <video>; YT/Vimeo handled in GTM)
  *   search                                     site-search submit (search_term) — inert unless a type=search / [role=search] form exists
  *   scroll_depth                               25/50/75/90 (site-wide)
+ *   engaged_page                               ONE genuine-engagement signal/page (15s active OR 50% scroll; trigger=dwell_15s|scroll_50, engaged_seconds) — page_type+locale aware, comparable across pages
+ *   --- offers engagement (GA4-standard; inert unless .offer_item cards exist) ---
+ *   view_promotion                             offer card scrolled into view (promotion_id/name, creative_slot)
+ *   select_promotion                           offer card clicked (promotion_id/name, creative_slot)
+ *   offer_code_copy                            promo code copied / copy button clicked (carries nearest card's promotion)
  *   --- blog deep engagement (Phase 1, 2026-06-04; per-language via page_locale) ---
  *   post_read                                  genuine read of a post: 30s active time OR 50% scroll (once; trigger=dwell_30s|scroll_50)
  *   post_scroll_depth                          per-post scroll 25/50/75/100 (carries post_slug, unlike generic scroll_depth)
@@ -54,8 +59,8 @@
  *   booking_step                               per-step progress (+ step_total, step_direction forward|back, step_duration_ms, selections, value/currency)
  *   booking_abandon                            left the widget without completing (carries the last step reached)
  *
- * Version: 2.1.0
- * Last update: 2026-06-03
+ * Version: 2.2.0
+ * Last update: 2026-06-04
  */
 (function () {
   'use strict';
@@ -470,6 +475,28 @@
   const THRESH = [25, 50, 75, 90];
   const hit = {};
   let ticking = false;
+
+  // ---- active read-time ticker (site-wide) — counts only while the tab is visible, so
+  //   background tabs don't inflate engagement. Shared by engaged_page (any page) AND the
+  //   post_read/_complete blog timers below. ----
+  let readMs = 0, lastTick = 0, readCounting = false;
+  function tickStart() { if (!readCounting && document.visibilityState === 'visible') { readCounting = true; lastTick = Date.now(); } }
+  function tickStop() { if (readCounting) { readMs += Date.now() - lastTick; readCounting = false; } }
+  function activeMs() { if (readCounting) { readMs += Date.now() - lastTick; lastTick = Date.now(); } return readMs; }
+  tickStart();
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') tickStart(); else tickStop(); });
+
+  // ---- engaged_page: ONE genuine-engagement signal per page, page_type + language aware
+  //   (unlike GA4's built-in engaged-session, this knows WHICH page type + locale and is
+  //   comparable across pages). Fires once on whichever comes first: 15s active time OR 50%
+  //   scroll. trigger = dwell_15s | scroll_50. Generic by design — works on every page. ----
+  let engagedFired = false;
+  function fireEngaged(trigger) {
+    if (engagedFired) return;
+    engagedFired = true;
+    push('engaged_page', { trigger: trigger, engaged_seconds: Math.round(activeMs() / 1000) });
+  }
+  window.setTimeout(function () { fireEngaged('dwell_15s'); }, 15000);
   // ---- blog engagement: read vs bounce, per-post scroll, read-time, blog-list scroll ----
   // page_locale rides every event automatically, so this is per-language with no extra work.
   const isPost = PT === 'blog_post';
@@ -484,20 +511,14 @@
     if (extra) for (const k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k];
     return o;
   }
-  // Active read-time: counts only while the tab is visible (background tabs don't inflate it).
-  let readMs = 0, lastTick = 0, readCounting = false;
-  function tickStart() { if (!readCounting && document.visibilityState === 'visible') { readCounting = true; lastTick = Date.now(); } }
-  function tickStop() { if (readCounting) { readMs += Date.now() - lastTick; readCounting = false; } }
+  // Active read-time uses the site-wide ticker (tickStart/tickStop/activeMs) declared above.
   const POST_THRESH = [25, 50, 75, 100];
   const postHit = {};
   let readFired = false, readCompleteFired = false;
   if (isPost) {
-    tickStart();
-    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') tickStart(); else tickStop(); });
     // post_read = a GENUINE read: 30s of active time on the post (fires once, dwell path).
     window.setTimeout(function () {
-      tickStop(); const ms = readMs; tickStart();
-      if (!readFired && ms >= 30000) { readFired = true; push('post_read', postParams({ trigger: 'dwell_30s' })); }
+      if (!readFired && activeMs() >= 30000) { readFired = true; push('post_read', postParams({ trigger: 'dwell_30s' })); }
     }, 30000);
   }
   function onScroll() {
@@ -514,6 +535,8 @@
           push('scroll_depth', { percent_scrolled: THRESH[k] });
         }
       }
+      // engaged_page (scroll path): 50% scrolled = genuine engagement, any page (once).
+      if (!engagedFired && pct >= 50) fireEngaged('scroll_50');
       // blog HOMEPAGE / category list scroll (25/50/75/100) — "do they scroll the list?"
       if (isList) {
         for (let k = 0; k < POST_THRESH.length; k++) {
@@ -536,8 +559,7 @@
         // post_read_complete: reached the end (~90%), with active read-time in seconds.
         if (!readCompleteFired && pct >= 90) {
           readCompleteFired = true;
-          tickStop(); const secs = Math.round(readMs / 1000); tickStart();
-          push('post_read_complete', postParams({ read_seconds: secs }));
+          push('post_read_complete', postParams({ read_seconds: Math.round(activeMs() / 1000) }));
         }
       }
     });
@@ -615,6 +637,67 @@
           if (term) push('search', { search_term: term.slice(0, 100) });
         });
       })(list[i]);
+    }
+  })();
+
+  // ---- offers engagement (GA4-standard view_promotion / select_promotion + offer_code_copy)
+  //   Fully inert unless the page actually has offer cards (.offer_item). Card title comes from
+  //   .offer-bento_title; promotion_id from the card's data-offer-id / data-w-id when present.
+  //   view_promotion fires once per card when it scrolls into view; select_promotion on card
+  //   click; offer_code_copy when a code element/copy button is copied. GA4-standard names
+  //   auto-populate the Promotions report. ----
+  (function () {
+    const cards = document.querySelectorAll('.offer_item');
+    if (!cards.length) return;
+    function offerName(card) {
+      const t = card.querySelector('.offer-bento_title');
+      return ((t && (t.textContent || '')).replace(/\s+/g, ' ').trim().slice(0, 80)) || '(untitled offer)';
+    }
+    function offerId(card, i) {
+      return card.getAttribute('data-offer-id') || card.getAttribute('data-w-id') || ('offer-' + i);
+    }
+    function promoParams(card, i) {
+      return { promotion_id: offerId(card, i), promotion_name: offerName(card), creative_slot: i };
+    }
+    // view_promotion — once per card when it becomes visible (50% in view)
+    const seen = {};
+    function fireView(card, i) {
+      if (seen[i]) return; seen[i] = true;
+      push('view_promotion', promoParams(card, i));
+    }
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { const i = +e.target.getAttribute('data-cel-offer-i'); fireView(e.target, i); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.5 });
+      for (let i = 0; i < cards.length; i++) { cards[i].setAttribute('data-cel-offer-i', i); io.observe(cards[i]); }
+    } else {
+      for (let i = 0; i < cards.length; i++) fireView(cards[i], i);  // no IO: count all once
+    }
+    // select_promotion — click anywhere on a card
+    for (let i = 0; i < cards.length; i++) {
+      (function (card, idx) {
+        card.addEventListener('click', function () { push('select_promotion', promoParams(card, idx)); }, { passive: true });
+      })(cards[i], i);
+    }
+    // offer_code_copy — when a code is copied (copy event on a code element, or click of a
+    //   copy button). Inert if neither exists. Carries the nearest card's promotion when found.
+    function nearestPromo(el) {
+      const card = el.closest && el.closest('.offer_item');
+      if (!card) return {};
+      let idx = +card.getAttribute('data-cel-offer-i'); if (isNaN(idx)) idx = 0;
+      return promoParams(card, idx);
+    }
+    const codeEls = document.querySelectorAll('.page_code_base, [data-offer-code], [class*="copy"]');
+    for (let i = 0; i < codeEls.length; i++) {
+      (function (el) {
+        el.addEventListener('copy', function () { push('offer_code_copy', nearestPromo(el)); }, { passive: true });
+        el.addEventListener('click', function () {
+          // only treat as a copy if the element looks like a copy affordance
+          if (/copy/i.test(el.className) || el.hasAttribute('data-offer-code')) push('offer_code_copy', nearestPromo(el));
+        }, { passive: true });
+      })(codeEls[i]);
     }
   })();
 })();
