@@ -123,7 +123,11 @@
     // Match an optional currency-letter prefix (C/CA/US/A/AU/CAN) glued to a $, OR a
     // bare £/€/$, then 0+ spaces (Fidelo's Canadian total uses TWO spaces: "C$  3,565"),
     // then the number. The captured token (e.g. "C$") is mapped to an ISO code.
-    const m = String(raw).match(/((?:CAN|CA|US|AU|C|A)?\s?[£$€])\s*([\d.,]+)/);
+    // Require a non-letter (or string start) BEFORE the currency prefix, so a word ending in
+    // C/A/US/CA/CAN/AU immediately before the symbol (e.g. "CANADA $5,000", "ACADEMY $3,000")
+    // can't have its trailing letter mis-read as an AUD/USD prefix. The leading boundary group
+    // is non-captured via the [^A-Za-z] class; m[1] is still the currency token.
+    const m = String(raw).match(/(?:^|[^A-Za-z])((?:CAN|CA|US|AU|C|A)?\s?[£$€])\s*([\d.,]+)/);
     if (!m) return null;
     const currency = currencyFromSymbol(m[1].replace(/\s+/g, ''));
     if (!currency) return null;
@@ -206,20 +210,26 @@
       }
       if (labels.length) out.selections = labels.slice(0, MAX_LABELS);
 
-      // Prefer the "Total Amount" line (.price-list-item-total) — it carries the
-      // currency-distinguishing prefix ("$ 3,430" USD vs "C$  3,565" CAD); fall back to
-      // the whole prices block. The match keeps any C/CA/US/A prefix on the $ so USD and
-      // CAD are told apart (a bare-$ match would silently read every CAD total as USD).
-      const priceEl = document.querySelector(
-        '.price-list-item-total, [component="block-prices"]');
+      // Prefer the dedicated "Total Amount" line (.price-list-item-total) — it carries the
+      // currency-distinguishing prefix ("$ 3,430" USD vs "C$ 3,565" CAD). Else fall back to the
+      // whole prices block. EITHER WAY we take the LAST money token: in a multi-line block the
+      // total is last (taking the FIRST would grab a line item — the bug R8 fixes); in the
+      // dedicated total line / a single-total block it's the only token. The currency-prefix
+      // match requires a non-letter before the symbol so "CANADA $5,000" can't read as AUD.
+      const totalEl = document.querySelector('.price-list-item-total');
+      const priceEl = totalEl || document.querySelector('[component="block-prices"]');
       if (priceEl && priceEl.textContent) {
         const text = priceEl.textContent.replace(/\s+/g, ' ');
-        const m = text.match(/(?:CAN|CA|US|AU|C|A)?\s?[£$€]\s*[\d.,]+/);
-        if (m) out.amount_display = m[0].trim().slice(0, 24);
-        // Numeric value + ISO currency ALONGSIDE the display string (GA4 ecommerce).
-        // Only set on a confident parse — ambiguous totals keep amount_display only.
-        const parsed = parsePrice(m ? m[0] : text);
-        if (parsed) { out.value = parsed.value; out.currency = parsed.currency; }
+        const all = text.match(/(?:^|[^A-Za-z])(?:CAN|CA|US|AU|C|A)?\s?[£$€]\s*[\d.,]+/g) || [];
+        const token = all.length ? all[all.length - 1].replace(/^[^A-Za-z£$€]+/, '').trim() : '';
+        if (token) out.amount_display = token.slice(0, 24);
+        // Stamp the numeric value+currency from that LAST (=total) token. parsePrice only
+        // returns a value when a currency is confidently resolved, so an unparseable block
+        // keeps amount_display only.
+        if (token) {
+          const parsed = parsePrice(token);
+          if (parsed) { out.value = parsed.value; out.currency = parsed.currency; }
+        }
       }
     } catch (e) { /* defensive: never throw into the host page */ }
     return out;
