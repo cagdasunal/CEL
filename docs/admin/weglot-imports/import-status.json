@@ -1,12 +1,12 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-06-06T12:42:34.441127-07:00",
+  "checked_at": "2026-06-06T13:47:20.756395-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-06-06T12:42:35.349743-07:00",
+      "checked_at": "2026-06-06T13:47:21.406021-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -20,7 +20,7 @@
     "fr": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-06-06T12:42:36.067184-07:00",
+      "checked_at": "2026-06-06T13:47:21.866429-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -34,7 +34,7 @@
     "es": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-06-06T12:42:37.446061-07:00",
+      "checked_at": "2026-06-06T13:47:22.683514-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -43,7 +43,7 @@
     "it": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-06-06T12:42:37.983700-07:00",
+      "checked_at": "2026-06-06T13:47:23.138684-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -57,7 +57,7 @@
     "ja": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-06-06T12:42:38.454456-07:00",
+      "checked_at": "2026-06-06T13:47:23.904050-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
@@ -75,7 +75,7 @@
     "ko": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-06-06T12:42:39.139170-07:00",
+      "checked_at": "2026-06-06T13:47:24.563665-07:00",
       "sentinels_total": 3,
       "sentinels_found": 2,
       "missing": [
@@ -89,7 +89,7 @@
     "pt": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-06-06T12:42:39.699627-07:00",
+      "checked_at": "2026-06-06T13:47:25.275152-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
@@ -107,7 +107,7 @@
     "ar": {
       "verdict": "partial",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-06-06T12:42:40.161055-07:00",
+      "checked_at": "2026-06-06T13:47:25.825059-07:00",
       "sentinels_total": 3,
       "sentinels_found": 1,
       "missing": [
