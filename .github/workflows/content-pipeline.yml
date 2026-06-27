@@ -102,12 +102,25 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Merge driver for the deterministic build artifacts tagged
+          # `merge=keepLatest` in .gitattributes (the dashboard HTML + import
+          # status). `cp %B %A` resolves a conflict to %B = "theirs" = the
+          # commit being REPLAYED during a rebase = THIS run's fresh output, so
+          # an overlapping run's regenerated copy wins instead of dying red.
+          # (Note the rebase ours/theirs inversion: during rebase, %A is the
+          # upstream base and %B is the commit we're replaying.) Lives in
+          # .git/config, so it must be (re)registered here every run.
+          git config merge.keepLatest.driver 'cp %B %A'
           git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/weglot-imports/import-status.json 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Push with retry. On rejection, rebase onto the run that beat us; the
+          # keepLatest driver auto-resolves the generated-file conflicts that
+          # used to abort here. A conflict in any OTHER (hand-authored) path is
+          # NOT tagged, so the rebase still halts loudly and we exit non-zero.
           for i in 1 2 3; do
             if git push; then break; fi
             [ $i -eq 3 ] && { echo "::error::push failed after 3 attempts"; exit 1; }
-            git pull --rebase --autostash origin main || { echo "::error::rebase conflict"; exit 1; }
+            git pull --rebase --autostash origin main || { echo "::error::rebase conflict (non-generated file — needs a human)"; exit 1; }
           done
 
       - name: Notify on failure

@@ -6,3 +6,24 @@
 # in the monorepo for the full incident.
 data/offers-edit-log.json    merge=union
 data/offers-extend-log.json  merge=union
+
+# Deterministic build artifacts: the dashboard HTML (tools/dashboard.py) and
+# the Weglot import-status JSON are FULLY REGENERATED every Content Pipeline
+# run. When two runs overlap (a scheduled run racing a manual re-run or a
+# workflow_dispatch), the loser pulls --rebase and both sides have rewritten
+# the same generated lines with different timestamps -> rebase CONFLICT ->
+# the run dies red ("::error::rebase conflict"). These files never need a real
+# 3-way merge: the latest run's freshly-built copy is authoritative. The
+# `keepLatest` driver (registered in content-pipeline.yml) resolves any such
+# conflict to the version being replayed during the rebase (= our run's fresh
+# output). Scoped to these paths only, so a conflict in real hand-authored code
+# still halts the run loudly. Companion to Tracker 077 above; same class of
+# parallel-run fragility, different (regenerate-don't-append) resolution.
+docs/admin/index.html                          merge=keepLatest
+docs/admin/files/index.html                    merge=keepLatest
+docs/admin/log/index.html                      merge=keepLatest
+docs/admin/offers/index.html                   merge=keepLatest
+docs/admin/summaries/index.html                merge=keepLatest
+docs/admin/translations/index.html             merge=keepLatest
+docs/admin/weglot-imports/import-status.json   merge=keepLatest
+docs/admin/images/index.html                   merge=keepLatest

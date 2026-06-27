@@ -118,6 +118,11 @@ jobs:
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+          # Auto-resolve rebase conflicts on the regenerated dashboard HTML
+          # (docs/admin/images/index.html etc. tagged merge=keepLatest in
+          # .gitattributes) to THIS run's fresh copy — see content-pipeline.yml
+          # for the full rationale and the rebase ours/theirs note.
+          git config merge.keepLatest.driver 'cp %B %A'
           # Pull latest first to avoid conflicts with content-pipeline.yml
           # (every-15-min) running concurrently.
           git pull --rebase --autostash origin main || true
