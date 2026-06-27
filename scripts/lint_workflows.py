@@ -13,6 +13,11 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
                         (overlapping runs race on the same repo/CMS/state)
   - push_race         : `git push` with no `git pull --rebase` / retry nearby
                         (a concurrent push -> "failed to push some refs" -> red)
+  - generated_rebase_unsafe : a workflow that rebases AND stages a `merge=keepLatest`
+                        build artifact (regenerated dashboard HTML / import-status.json)
+                        without registering `merge.keepLatest.driver` — the conflict an
+                        overlapping run creates aborts the rebase red (2026-06-27
+                        content-pipeline incident; push_race only checks a loop EXISTS)
   - silent_pipe       : a run block piping to tail|head|grep|tee|sort WITHOUT
                         `set -o pipefail` / `${PIPESTATUS}` (lost exit code)
   - masked_failure    : `git push || echo ...` / `|| true` on a load-bearing cmd
@@ -73,6 +78,32 @@ def _run_blocks(text: str):
         if m2 and not m2.group(2).startswith(("|", ">")):
             yield i + 1, m2.group(2)
         i += 1
+
+
+def _keeplatest_paths(workflows_dir: Path) -> list[str]:
+    """Paths tagged `merge=keepLatest` in the repo's .gitattributes.
+
+    These are deterministic build artifacts (regenerated dashboard HTML, the
+    Weglot import-status JSON) that two overlapping runs rewrite with different
+    timestamps. A plain `git pull --rebase` CONFLICTS on them and aborts red
+    (the 2026-06-27 content-pipeline incident). The conflict is auto-resolved by
+    the `keepLatest` merge driver — but only if the workflow REGISTERS that
+    driver (`git config merge.keepLatest.driver ...`) before it rebases, because
+    the driver lives in .git/config, not the repo. This returns the tagged paths
+    so the `generated_rebase_unsafe` rule can flag any rebasing workflow that
+    touches one without registering the driver. Empty if no .gitattributes.
+    """
+    ga = (workflows_dir / ".." / "..").resolve() / ".gitattributes"
+    if not ga.is_file():
+        return []
+    paths = []
+    for raw in ga.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if re.search(r"\bmerge=keepLatest\b", line):
+            paths.append(line.split()[0])
+    return paths
 
 
 def _job_blocks(text: str):
@@ -172,6 +203,29 @@ def lint_workflow(path: Path):
             "`git push` with no `git pull --rebase`/retry — a concurrent push fails the job",
             "wrap push in a 3-attempt loop: `for i in 1 2 3; do git push && break; "
             "git pull --rebase --autostash origin main || exit 1; done`")
+
+    # 5b. A rebase loop survives a concurrent push ONLY if it can resolve the
+    #     conflict. Deterministic build artifacts tagged `merge=keepLatest` in
+    #     .gitattributes (regenerated dashboard HTML, import-status.json) DO
+    #     conflict on every overlapping run — and the keepLatest driver that
+    #     auto-resolves them lives in .git/config, so each rebasing workflow that
+    #     touches such a file MUST register it (`git config merge.keepLatest.driver`)
+    #     or it dies red exactly like the 2026-06-27 content-pipeline incident.
+    #     push_race (above) only checks a retry loop EXISTS; this checks the loop
+    #     can actually CLEAR the generated-file conflict it will hit.
+    if has_rebase:
+        kl_paths = _keeplatest_paths(path.parent)
+        touched = [p for p in kl_paths if p in text]
+        registers_driver = "merge.keepLatest.driver" in text
+        if touched and not registers_driver:
+            ln = next((i + 1 for i, l in enumerate(text.split("\n"))
+                       if any(p in l for p in touched)), 1)
+            add("high", "generated_rebase_unsafe", ln,
+                f"rebases + stages a `merge=keepLatest` build artifact ({touched[0]}) but never "
+                "registers the driver — a concurrent run's regenerated copy CONFLICTS and the "
+                "rebase aborts red (the 2026-06-27 content-pipeline race)",
+                "add `git config merge.keepLatest.driver 'cp %B %A'` before the pull/rebase, so "
+                "the conflict auto-resolves to this run's fresh output (see content-pipeline.yml)")
 
     for bline, block in _run_blocks(text):
         # Only flag the exit-code-LOSING filters (tail/head/tee) — these mask the
