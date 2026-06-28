@@ -74,9 +74,25 @@
     "zip_file": "weglot-imports.zip"
   },
   "fidelo_run_summary": {
-    "changed": [],
+    "changed": [
+      "course::business-certificate::en",
+      "course::cambridge-exam::en",
+      "course::english-academic-skills::en",
+      "course::english-plus-cambridge-prep::en",
+      "course::english-career-development::en",
+      "course::english-plus-experience::en",
+      "course::english-plus-surfing::en",
+      "course::english-plus-toefl-exam-preparation::en",
+      "course::english-plus-volunteering::en",
+      "course::general-english::en",
+      "course::general-english-plus-academic-skills::en",
+      "course::global-pathway-preparation::en",
+      "course::ielts-preparation::en",
+      "course::private-lessons::en",
+      "course::toefl-preparation::en"
+    ],
     "counts": {
-      "course_changed": 0,
+      "course_changed": 15,
       "course_fetched": 135,
       "course_skipped_empty_key": 0,
       "errors": 0,
@@ -85,19 +101,19 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-06-27T07:29:47.167555+00:00",
+      "executed_at": "2026-06-28T08:01:16.931754+00:00",
       "mode": "upsert-courses",
       "total": 15,
-      "unchanged": 15,
-      "updated": 0
+      "unchanged": 0,
+      "updated": 15
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-06-27T07:28:57Z",
+    "finished_at": "2026-06-28T08:00:01Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-06-27T07:29:46.015612+00:00",
+      "executed_at": "2026-06-28T08:01:15.450363+00:00",
       "mode": "upsert",
       "total": 22,
       "unchanged": 3,
@@ -106,7 +122,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-06-27T07:26:00Z",
+    "started_at": "2026-06-28T07:57:03Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -115,19 +131,19 @@
       "updated": 0
     }
   },
-  "generated_at": "2026-06-27T07:29:47.644294+00:00",
+  "generated_at": "2026-06-28T08:01:53.717466+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
       "language_name": "Arabic",
       "language_to": "ar",
-      "row_count": 219,
+      "row_count": 215,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 13,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 15,
-        "detail.fields.fidelo_starting_price_display": 5,
+        "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 110,
@@ -195,21 +211,6 @@
           "kind": "ambiguous_source",
           "winner": "التركيز الكامل على احتياجاتك",
           "word_from": "Full focus on your needs"
-        },
-        {
-          "candidates": [
-            {
-              "count": 4,
-              "word_to": "From $410/week"
-            },
-            {
-              "count": 1,
-              "word_to": "From $999,999/week"
-            }
-          ],
-          "kind": "ambiguous_source",
-          "winner": "From $410/week",
-          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -399,7 +400,7 @@
           ],
           "kind": "ambiguous_source",
           "winner": "Ab $410/Woche",
-          "word_from": "From $410/Week"
+          "word_from": "From $410/week"
         },
         {
           "candidates": [
@@ -513,7 +514,7 @@
           ],
           "kind": "ambiguous_source",
           "winner": "De $410/Semana",
-          "word_from": "From $410/Week"
+          "word_from": "From $410/week"
         },
         {
           "candidates": [
@@ -823,7 +824,7 @@
           ],
           "kind": "ambiguous_source",
           "winner": "À partir de $410/semaine",
-          "word_from": "From $410/Week"
+          "word_from": "From $410/week"
         },
         {
           "candidates": [
@@ -994,7 +995,7 @@
           ],
           "kind": "ambiguous_source",
           "winner": "A partire da $410/week",
-          "word_from": "From $410/Week"
+          "word_from": "From $410/week"
         },
         {
           "candidates": [
@@ -1077,13 +1078,13 @@
       "csv_file": "ja.csv",
       "language_name": "Japanese",
       "language_to": "ja",
-      "row_count": 225,
+      "row_count": 221,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 16,
-        "detail.fields.fidelo_starting_price_display": 5,
+        "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
@@ -1170,21 +1171,6 @@
         {
           "candidates": [
             {
-              "count": 4,
-              "word_to": "From $410/week"
-            },
-            {
-              "count": 1,
-              "word_to": "From $999,999/week"
-            }
-          ],
-          "kind": "ambiguous_source",
-          "winner": "From $410/week",
-          "word_from": "From $410/Week"
-        },
-        {
-          "candidates": [
-            {
               "count": 1,
               "word_to": "English Plus TOEFL Exam"
             },
@@ -1248,13 +1234,13 @@
       "csv_file": "ko.csv",
       "language_name": "Korean",
       "language_to": "ko",
-      "row_count": 237,
+      "row_count": 233,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 11,
         "detail.fields.fidelo_intensity_rows[].visa_type": 0,
         "detail.fields.fidelo_main_facts[]": 15,
-        "detail.fields.fidelo_starting_price_display": 5,
+        "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
         "housing_detail.fields.fidelo_accordion_sections[].items[]": 120,
@@ -1307,21 +1293,6 @@
           "kind": "ambiguous_source",
           "winner": "학생 맞춤화 교육 진행",
           "word_from": "Full focus on your needs"
-        },
-        {
-          "candidates": [
-            {
-              "count": 4,
-              "word_to": "From $410/week"
-            },
-            {
-              "count": 1,
-              "word_to": "From $999,999/week"
-            }
-          ],
-          "kind": "ambiguous_source",
-          "winner": "From $410/week",
-          "word_from": "From $410/Week"
         },
         {
           "candidates": [
@@ -1496,7 +1467,7 @@
           ],
           "kind": "ambiguous_source",
           "winner": "A partir de $410/week",
-          "word_from": "From $410/Week"
+          "word_from": "From $410/week"
         },
         {
           "candidates": [
@@ -1594,6 +1565,6 @@
   "schema": "weglot.csv-export.v1",
   "totals": {
     "languages": 8,
-    "rows": 1887
+    "rows": 1875
   }
 }

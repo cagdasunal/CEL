@@ -48,11 +48,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;fr;"Free Wi-Fi";"Wi-Fi gratuit";Text
 ;en;fr;"Free Wi-Fi, Rooftop terrace with BBQ area";"Wi-Fi gratuit, terrasse sur le toit avec espace barbecue";Text
 ;en;fr;"From $330 per week";"À partir de 330$ par semaine";Text
-;en;fr;"From $370/Week";"À partir de $370/semaine";Text
-;en;fr;"From $410/Week";"À partir de $410/semaine";Text
-;en;fr;"From $430/Week";"À partir de $430/semaine";Text
-;en;fr;"From $460/Week";"À partir de $460/semaine";Text
-;en;fr;"From $999,999/Week";"À partir de $999,999/semaine";Text
+;en;fr;"From $370/week";"À partir de $370/semaine";Text
+;en;fr;"From $410/week";"À partir de $410/semaine";Text
+;en;fr;"From $430/week";"À partir de $430/semaine";Text
+;en;fr;"From $460/week";"À partir de $460/semaine";Text
+;en;fr;"From $999,999/week";"À partir de $999,999/semaine";Text
 ;en;fr;"From CA$240 per week";"À partir de 240 CA$ par semaine";Text
 ;en;fr;"From CA$350 per week";"À partir de 350 CA$ par semaine";Text
 ;en;fr;"From CA$430 per week";"À partir de 430 CA$ par semaine";Text
@@ -225,6 +225,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;fr;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Les chambres jumelles ont deux lits séparés et peuvent être réservées par une personne. Ils partageront la chambre avec une deuxième personne (du même sexe).";Text
 ;en;fr;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Les chambres jumelles ont deux lits séparés et peuvent être réservées par une personne. Ils partageront la chambre avec une deuxième personne (du même sexe).";Text
 ;en;fr;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ À distance de marche de l'épicerie, de la 3rd Street Promenade, de la ligne de métro, de la bibliothèque publique, et plus encore";Text
+;en;fr;"From $370/Week";"À partir de $370/semaine";Text
+;en;fr;"From $410/Week";"À partir de $410/semaine";Text
+;en;fr;"From $430/Week";"À partir de $430/semaine";Text
+;en;fr;"From $460/Week";"À partir de $460/semaine";Text
+;en;fr;"From $999,999/Week";"À partir de $999,999/semaine";Text
 ;en;fr;"From $350/Week";"À partir de $350/semaine";Text
 ;en;fr;"From $390/Week";"À partir de $390/semaine";Text
 ;en;fr;"From $400/Week";"À partir de $400/semaine";Text

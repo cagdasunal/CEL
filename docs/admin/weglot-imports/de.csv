@@ -53,11 +53,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;de;"Free Wi-Fi, Rooftop terrace with BBQ area";"Kostenloses WLAN, Dachterrasse mit Grillbereich";Text
 ;en;de;"Free Wi-Fi, TV per bedroom, full kitchen with dishwasher, no common space";"Fernseher pro Schlafzimmer, Küche, kein Gemeinschaftsraum";Text
 ;en;de;"Free Wi-Fi, full kitchen with dishwasher";"Kostenloses WLAN, vollausgestattete Küche mit Spülmaschine";Text
-;en;de;"From $370/Week";"Ab $370/Woche";Text
-;en;de;"From $410/Week";"Ab $410/Woche";Text
-;en;de;"From $430/Week";"Ab $430/Woche";Text
-;en;de;"From $460/Week";"Ab $460/Woche";Text
-;en;de;"From $999,999/Week";"Ab $999,999/Woche";Text
+;en;de;"From $370/week";"Ab $370/Woche";Text
+;en;de;"From $410/week";"Ab $410/Woche";Text
+;en;de;"From $430/week";"Ab $430/Woche";Text
+;en;de;"From $460/week";"Ab $460/Woche";Text
+;en;de;"From $999,999/week";"Ab $999,999/Woche";Text
 ;en;de;"From CA$350 per week";"Ab CA$350pro Woche";Text
 ;en;de;"From CA$430 per week";"Ab CA$430 pro Woche";Text
 ;en;de;"From CA$440 per week";"Ab CA$440 pro Woche";Text
@@ -250,6 +250,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;de;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Zweibettzimmer mit 2 getrennten Betten können alleine gebucht werden – ihr teilt euch das Zimmer dann mit Schülern des gleichen Geschlechts";Text
 ;en;de;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ Fußläufig zu Supermarkt, 3rd Street Promenade (Fußgängerzone), Strassenbahn, Stadtbücherei und mehr";Text
 ;en;de;"✓ Washer and dryer in the apartment (free for charge)";"✓ Waschmaschine und Trockner im Apartment (kostenlose Nutzung)";Text
+;en;de;"From $370/Week";"Ab $370/Woche";Text
+;en;de;"From $410/Week";"Ab $410/Woche";Text
+;en;de;"From $430/Week";"Ab $430/Woche";Text
+;en;de;"From $460/Week";"Ab $460/Woche";Text
+;en;de;"From $999,999/Week";"Ab $999,999/Woche";Text
 ;en;de;"From $350/Week";"Ab $350/Woche";Text
 ;en;de;"From $390/Week";"Ab $390/Woche";Text
 ;en;de;"From $400/Week";"Ab $400/Woche";Text
