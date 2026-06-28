@@ -47,11 +47,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"Enhance your English while working";"働くことによって英語を上達させる";Text
 ;en;ja;"Free Wi-Fi, Rooftop terrace with BBQ area";"無料Wi-Fi、屋上テラスとバーベキューエリア";Text
 ;en;ja;"From $330 per week";"$330/週 から";Text
-;en;ja;"From $370/Week";"From $370/week";Text
-;en;ja;"From $410/Week";"From $410/week";Text
-;en;ja;"From $430/Week";"From $430/week";Text
-;en;ja;"From $460/Week";"From $460/week";Text
-;en;ja;"From $999,999/Week";"From $999,999/week";Text
+;en;ja;"From $410/week";"From $999,999/week";Text
 ;en;ja;"From CA$240 per week";"CA$240 /週 から";Text
 ;en;ja;"From CA$350 per week";"CA$350 /週 から";Text
 ;en;ja;"From CA$430 per week";"CA$430 /週 から";Text
@@ -224,6 +220,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
 ;en;ja;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
 ;en;ja;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 徒歩圏内に食料品店、3rd Street Promenade、メトロライン、公共図書館　等";Text
+;en;ja;"From $370/Week";"From $370/week";Text
+;en;ja;"From $410/Week";"From $410/week";Text
+;en;ja;"From $430/Week";"From $430/week";Text
+;en;ja;"From $460/Week";"From $460/week";Text
+;en;ja;"From $999,999/Week";"From $999,999/week";Text
 ;en;ja;"From $350/Week";"From $350/week";Text
 ;en;ja;"From $390/Week";"From $390/week";Text
 ;en;ja;"From $400/Week";"From $400/week";Text

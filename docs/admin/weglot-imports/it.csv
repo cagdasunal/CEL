@@ -48,11 +48,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;it;"Free Wi-Fi";"Wi-Fi gratuito";Text
 ;en;it;"Free Wi-Fi, Rooftop terrace with BBQ area";"Wi-Fi gratuito, terrazza sul tetto con area barbecue";Text
 ;en;it;"From $330 per week";"A partire da $330/settimana";Text
-;en;it;"From $370/Week";"A partire da $370/week";Text
-;en;it;"From $410/Week";"A partire da $410/week";Text
-;en;it;"From $430/Week";"A partire da $430/week";Text
-;en;it;"From $460/Week";"A partire da $460/week";Text
-;en;it;"From $999,999/Week";"A partire da $999,999/week";Text
+;en;it;"From $370/week";"A partire da $370/week";Text
+;en;it;"From $410/week";"A partire da $410/week";Text
+;en;it;"From $430/week";"A partire da $430/week";Text
+;en;it;"From $460/week";"A partire da $460/week";Text
+;en;it;"From $999,999/week";"A partire da $999,999/week";Text
 ;en;it;"From CA$240 per week";"A partire da CA$240 /settimana";Text
 ;en;it;"From CA$350 per week";"A partire da CA$350 /settimana";Text
 ;en;it;"From CA$430 per week";"A partire da CA$430 /settimana";Text
@@ -225,6 +225,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;it;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Le camere doppie possono essere prenotate da una persona che condividerà la stanza con un altro studente (dello stesso sesso)";Text
 ;en;it;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Le camere doppie possono essere prenotate da una persona che condividerà la stanza con un altro studente (dello stesso sesso)";Text
 ;en;it;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ A pochi passi da negozio di alimentari, 3rd Street Promenade, Metroline, biblioteca pubblica e altro ancora";Text
+;en;it;"From $370/Week";"A partire da $370/week";Text
+;en;it;"From $410/Week";"A partire da $410/week";Text
+;en;it;"From $430/Week";"A partire da $430/week";Text
+;en;it;"From $460/Week";"A partire da $460/week";Text
+;en;it;"From $999,999/Week";"A partire da $999,999/week";Text
 ;en;it;"From $350/Week";"A partire da $350/week";Text
 ;en;it;"From $390/Week";"A partire da $390/week";Text
 ;en;it;"From $400/Week";"A partire da $400/week";Text

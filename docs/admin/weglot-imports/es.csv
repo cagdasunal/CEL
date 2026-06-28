@@ -54,11 +54,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;es;"Free Wi-Fi, Rooftop terrace with BBQ area";"Wi-Fi gratis, terraza en la azotea con área de barbacoa";Text
 ;en;es;"Free Wi-Fi, TV per bedroom, full kitchen with dishwasher, no common space";"Wi-Fi gratis, TV por habitación, cocina totalmente equipada con lavavajillas, sin espacio común";Text
 ;en;es;"Free Wi-Fi, full kitchen with dishwasher";"Wi-Fi gratis, cocina totalmente equipada con lavavajillas";Text
-;en;es;"From $370/Week";"De $370/Semana";Text
-;en;es;"From $410/Week";"De $410/Semana";Text
-;en;es;"From $430/Week";"De $430/Semana";Text
-;en;es;"From $460/Week";"De $460/Semana";Text
-;en;es;"From $999,999/Week";"De $999,999/Semana";Text
+;en;es;"From $370/week";"De $370/Semana";Text
+;en;es;"From $410/week";"De $410/Semana";Text
+;en;es;"From $430/week";"De $430/Semana";Text
+;en;es;"From $460/week";"De $460/Semana";Text
+;en;es;"From $999,999/week";"De $999,999/Semana";Text
 ;en;es;"From CA$350 per week";"A partir de CA$350 por semana";Text
 ;en;es;"From CA$430 per week";"A partir de CA$430 por semana";Text
 ;en;es;"From CA$440 per week";"A partir de CA$440 por semana";Text
@@ -273,6 +273,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;es;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ A distancia andando de la tienda de comestibles, 3rd street Promenade, línea de metro, tranvía, biblioteca y más";Text
 ;en;es;"✓ Washer and dryer in the apartment (free for charge)";"✓ Lavadora y secadora en el apartamento (gratis)";Text
 ;en;es;"✓ Yoga room";"✓ Sala de yoga";Text
+;en;es;"From $370/Week";"De $370/Semana";Text
+;en;es;"From $410/Week";"De $410/Semana";Text
+;en;es;"From $430/Week";"De $430/Semana";Text
+;en;es;"From $460/Week";"De $460/Semana";Text
+;en;es;"From $999,999/Week";"De $999,999/Semana";Text
 ;en;es;"From $350/Week";"De $350/Semana";Text
 ;en;es;"From $390/Week";"De $390/Semana";Text
 ;en;es;"From $400/Week";"De $400/Semana";Text

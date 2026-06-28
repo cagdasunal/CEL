@@ -50,11 +50,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"Free Wi-Fi, TV per bedroom, full kitchen with dishwasher, no common space";"무료 Wi-Fi, 침실 당 TV, 식기 세척기가 구비된 풀 주방, 공용 공간 없음";Text
 ;en;ko;"Free Wi-Fi, full kitchen with dishwasher";"무료 Wi-Fi, 식기 세척기가 구비된 풀 주방";Text
 ;en;ko;"From $330 per week";"$330/주 부터";Text
-;en;ko;"From $370/Week";"From $370/week";Text
-;en;ko;"From $410/Week";"From $410/week";Text
-;en;ko;"From $430/Week";"From $430/week";Text
-;en;ko;"From $460/Week";"From $460/week";Text
-;en;ko;"From $999,999/Week";"From $999,999/week";Text
+;en;ko;"From $410/week";"From $999,999/week";Text
 ;en;ko;"From CA$240 per week";"CA$240 /주 부터";Text
 ;en;ko;"From CA$350 per week";"CA$350 /주 부터";Text
 ;en;ko;"From CA$430 per week";"CA$430 /주 부터";Text
@@ -236,6 +232,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ 트윈 객실은 한명이 예약 가능. 트윈 객실을 예약한 학생은 다른 학생(같은 성별)과 객실을 공유";Text
 ;en;ko;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 도보 거리에 위치한 식료품점, 3rd Street Promenade, 메트로라인, 공공 도서관 등";Text
 ;en;ko;"✓ Washer and dryer in the apartment (free for charge)";"✓ 아파트 내 세탁기 및 건조기(무료)";Text
+;en;ko;"From $370/Week";"From $370/week";Text
+;en;ko;"From $410/Week";"From $410/week";Text
+;en;ko;"From $430/Week";"From $430/week";Text
+;en;ko;"From $460/Week";"From $460/week";Text
+;en;ko;"From $999,999/Week";"From $999,999/week";Text
 ;en;ko;"From $350/Week";"From $350/week";Text
 ;en;ko;"From $390/Week";"From $390/week";Text
 ;en;ko;"From $400/Week";"From $400/week";Text

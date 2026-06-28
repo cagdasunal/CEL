@@ -47,11 +47,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"Free Wi-Fi";"English";Text
 ;en;ar;"Free Wi-Fi, Rooftop terrace with BBQ area";"واي فاي مجاني، تراس على السطح مع منطقة شواء";Text
 ;en;ar;"From $330 per week";"يبدا من 330 الاسبوع";Text
-;en;ar;"From $370/Week";"From $370/week";Text
-;en;ar;"From $410/Week";"From $410/week";Text
-;en;ar;"From $430/Week";"From $430/week";Text
-;en;ar;"From $460/Week";"From $460/week";Text
-;en;ar;"From $999,999/Week";"From $999,999/week";Text
+;en;ar;"From $410/week";"From $999,999/week";Text
 ;en;ar;"From CA$240 per week";"يبدا من 240الاسبوع";Text
 ;en;ar;"From CA$350 per week";"يبدا من 350الاسبوع";Text
 ;en;ar;"From CA$430 per week";"يبدا من 430الاسبوع";Text
@@ -218,6 +214,11 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
 ;en;ar;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
 ;en;ar;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ على مسافة قريبة من متجر البقالة ومنتزه الشارع الثالث وميترولاين والمكتبة العامة والمزيد";Text
+;en;ar;"From $370/Week";"From $370/week";Text
+;en;ar;"From $410/Week";"From $410/week";Text
+;en;ar;"From $430/Week";"From $430/week";Text
+;en;ar;"From $460/Week";"From $460/week";Text
+;en;ar;"From $999,999/Week";"From $999,999/week";Text
 ;en;ar;"From $350/Week";"From $350/week";Text
 ;en;ar;"From $390/Week";"From $390/week";Text
 ;en;ar;"From $400/Week";"From $400/week";Text
