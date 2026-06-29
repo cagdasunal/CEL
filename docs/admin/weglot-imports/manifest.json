@@ -74,25 +74,9 @@
     "zip_file": "weglot-imports.zip"
   },
   "fidelo_run_summary": {
-    "changed": [
-      "course::business-certificate::en",
-      "course::cambridge-exam::en",
-      "course::english-academic-skills::en",
-      "course::english-plus-cambridge-prep::en",
-      "course::english-career-development::en",
-      "course::english-plus-experience::en",
-      "course::english-plus-surfing::en",
-      "course::english-plus-toefl-exam-preparation::en",
-      "course::english-plus-volunteering::en",
-      "course::general-english::en",
-      "course::general-english-plus-academic-skills::en",
-      "course::global-pathway-preparation::en",
-      "course::ielts-preparation::en",
-      "course::private-lessons::en",
-      "course::toefl-preparation::en"
-    ],
+    "changed": [],
     "counts": {
-      "course_changed": 15,
+      "course_changed": 0,
       "course_fetched": 135,
       "course_skipped_empty_key": 0,
       "errors": 0,
@@ -101,19 +85,19 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-06-28T08:01:16.931754+00:00",
+      "executed_at": "2026-06-29T09:09:28.906232+00:00",
       "mode": "upsert-courses",
       "total": 15,
-      "unchanged": 0,
-      "updated": 15
+      "unchanged": 15,
+      "updated": 0
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-06-28T08:00:01Z",
+    "finished_at": "2026-06-29T09:08:29Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-06-28T08:01:15.450363+00:00",
+      "executed_at": "2026-06-29T09:09:27.741821+00:00",
       "mode": "upsert",
       "total": 22,
       "unchanged": 3,
@@ -122,7 +106,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-06-28T07:57:03Z",
+    "started_at": "2026-06-29T09:05:33Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -131,7 +115,7 @@
       "updated": 0
     }
   },
-  "generated_at": "2026-06-28T08:01:53.717466+00:00",
+  "generated_at": "2026-06-29T09:09:29.986118+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
