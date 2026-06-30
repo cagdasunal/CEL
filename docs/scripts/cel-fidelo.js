@@ -31,6 +31,12 @@
  * SSOT: tools/cel-fidelo-js/cel-fidelo.js  (served minified as cel-fidelo.min.js).
  * Message contract + GA4 wiring documented in README.md. Parent receiver: the fidelo.com
  * origin branch in tools/cel-events-js/cel-events.js (anchored /(^|\.)fidelo\.com$/ test).
+ *
+ * SKIN (Stage 2 — DORMANT): a SEPARATE IIFE appended at the BOTTOM of this file injects a
+ * staging-gated CSS skin into the widget. It is currently a NO-OP (empty SKIN_CSS = zero DOM
+ * writes) and is designed to fire ONLY when document.referrer matches the /booking-new staging
+ * slug — so the analytics bridge below stays strictly read-only and the LIVE /booking page is
+ * never restyled. Full rationale: sites/cel/docs/booking/ + the block's own header comment.
  */
 (function () {
   'use strict';
@@ -447,4 +453,73 @@
     if (nav) { init(nav); return; }
     if (tries++ < WAIT_TRIES) setTimeout(waitForNav, WAIT_MS);
   })();
+})();
+
+/* =============================================================================
+ * cel-fidelo SKIN — STAGING GATE configured, INJECTION DEFERRED (no CSS yet)
+ * -----------------------------------------------------------------------------
+ * Stage 2 of the booking-widget restyle. Docs: sites/cel/docs/booking/.
+ * This block is intentionally SEPARATE from the analytics IIFE above and must
+ * stay that way — the analytics bridge is read-only and must not be coupled to
+ * styling. Adding the skin here keeps the one Fidelo integration point (a single
+ * <script src> in Fidelo's "Application form V3" template); no second tag/CSP/SRI.
+ *
+ * WHY A REFERRER GATE: this script runs INSIDE the cross-origin Fidelo iframe,
+ * which is embedded IDENTICALLY on the live page (/booking) and the staging
+ * duplicate (/booking-new) — same iframe URL — so the script cannot read the
+ * parent path directly (cross-origin throws). The one signal available with NO
+ * parent-page change is document.referrer: Fidelo's loader (widget.js) builds the
+ * iframe with referrerPolicy="no-referrer-when-downgrade" (and even errors if the
+ * host sets a no-referrer / same-origin meta), so document.referrer here is the
+ * FULL parent URL incl. the slug, e.g. https://www.englishcollege.com/booking-new.
+ *
+ * FAIL-CLOSED — the live page can never be restyled by staging work:
+ *   • Skin applies ONLY when referrer is the CEL origin AND the path is /booking-new.
+ *   • "/booking" does NOT contain "booking-new" → it can NEVER match.
+ *   • Missing / origin-only referrer → no match → nothing applied anywhere.
+ *
+ * STATE TODAY: SKIN_CSS is empty AND the actual <style> injection is deferred
+ * (see applySkin) — so this block writes NOTHING to the DOM and the read-only
+ * contract is preserved exactly as today ("no css injection now"). The GATE is
+ * fully wired and ready. Stage 2 = fill SKIN_CSS + add the injection line
+ * (sites/cel/docs/booking/implementation-plan.md). PRODUCTION ROLLOUT later =
+ * widen ALLOWED_PATH (e.g. also match /booking) — that single line is the switch.
+ * ============================================================================= */
+(function () {
+  'use strict';
+
+  // Which parent slugs receive the skin. Staging-only today; widen for production.
+  const ALLOWED_ORIGIN = /^https?:\/\/(www\.)?englishcollege\.com\//;
+  const ALLOWED_PATH = /(?:\/[a-z]{2})?\/booking-new(?:[\/?#]|$)/;   // ← widen for production
+
+  // The CEL skin CSS. EMPTY = dormant. Stage-2 TEST value (2026-06-30): a minimal
+  // background-color change to validate the staging gate end-to-end on /booking-new.
+  // Replace with the full CEL skin (sites/cel/docs/booking/design-target.md) once confirmed.
+  const SKIN_CSS = 'html,body{background-color:#e9deca}';
+
+  // True ONLY when the widget is embedded on an allowed (staging) parent page.
+  // Reads the parent slug from document.referrer (a URL, never PII / never an input value).
+  function envAllowsSkin() {
+    try {
+      const ref = document.referrer || '';
+      return ALLOWED_ORIGIN.test(ref) && ALLOWED_PATH.test(ref);
+    } catch (e) { return false; }
+  }
+
+  function applySkin() {
+    if (!SKIN_CSS) return;            // empty SKIN_CSS = no-op
+    if (!envAllowsSkin()) return;     // gate: staging slug only — live /booking never matches
+    // Inject exactly ONE <style id="cel-fidelo-skin"> — idempotent + try/catch-wrapped
+    // so a CSP style-src block or a missing <head> can never throw into Fidelo's page.
+    // This is the ONLY DOM write this file makes (the analytics IIFE above stays read-only).
+    try {
+      if (document.getElementById('cel-fidelo-skin')) return;  // idempotent
+      const style = document.createElement('style');
+      style.id = 'cel-fidelo-skin';
+      style.textContent = SKIN_CSS;
+      (document.head || document.documentElement).appendChild(style);
+    } catch (e) { /* never throw into the host (Fidelo) page */ }
+  }
+
+  applySkin();
 })();
