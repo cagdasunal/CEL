@@ -39,8 +39,8 @@
   if (seg !== "pt" && lang !== "pt") return; // not Portuguese -> do nothing
 
   // --- The number to enforce on Portuguese pages (single source of truth) ---
-  const PHONE = "16192434426"; // digits only (api.whatsapp.com ?phone=)
-  const DISPLAY = "+1 619 243 4426"; // visible text
+  const PHONE = "5598933007034"; // digits only (api.whatsapp.com ?phone=) — PT/Brazil number
+  const DISPLAY = "+5598933007034"; // visible text
   const WA_URL = "https://api.whatsapp.com/send?phone=" + PHONE;
 
   function apply() {
