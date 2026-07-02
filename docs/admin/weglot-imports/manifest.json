@@ -74,11 +74,9 @@
     "zip_file": "weglot-imports.zip"
   },
   "fidelo_run_summary": {
-    "changed": [
-      "course::general-english::en"
-    ],
+    "changed": [],
     "counts": {
-      "course_changed": 1,
+      "course_changed": 0,
       "course_fetched": 135,
       "course_skipped_empty_key": 0,
       "errors": 0,
@@ -87,7 +85,7 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-07-01T08:24:31.911735+00:00",
+      "executed_at": "2026-07-02T07:46:28.851043+00:00",
       "mode": "upsert-courses",
       "total": 15,
       "unchanged": 15,
@@ -95,11 +93,11 @@
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-07-01T08:23:35Z",
+    "finished_at": "2026-07-02T07:45:32Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-07-01T08:24:29.625840+00:00",
+      "executed_at": "2026-07-02T07:46:28.002960+00:00",
       "mode": "upsert",
       "total": 22,
       "unchanged": 3,
@@ -108,7 +106,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-07-01T08:20:19Z",
+    "started_at": "2026-07-02T07:42:39Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -117,7 +115,7 @@
       "updated": 0
     }
   },
-  "generated_at": "2026-07-01T08:24:32.763449+00:00",
+  "generated_at": "2026-07-02T07:46:29.224139+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
