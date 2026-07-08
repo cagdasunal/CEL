@@ -46,8 +46,45 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.4.1
- * Last update: 2026-05-01
+ * Version: 1.5.0
+ * Last update: 2026-07-08
+ *
+ * v1.5.0 (2026-07-08): Section 0 added — consent-free geo resolver — plus a
+ *                      Section 2 cache-parity fix. Three defects addressed:
+ *
+ *                      (1) FAIL-CLOSED CONSENT GATE. Geotargetly is gated as
+ *                          `type="text/plain" data-category="functional"`, so for
+ *                          any visitor who has not accepted cookies it never runs,
+ *                          `geotargetly_country_code()` stays undefined, Section 1's
+ *                          poll times out, `markGeoReady()` — which lives INSIDE
+ *                          `runFilter()`, after the `!userGeo` early-return — never
+ *                          fires, and the FOUC CSS keeps every `[data-geo]` block at
+ *                          `visibility:hidden` forever. All 34 offer cards rendered
+ *                          into the DOM and stayed permanently invisible, along with
+ *                          the navbar "Offers" link. Section 0 now resolves the
+ *                          country without consent, so offers show.
+ *
+ *                      (2) DEAD POLL. The 5s `clearInterval` had no re-arm and no
+ *                          `cc:onConsent` listener, while the consent config sets no
+ *                          `reloadPage`. Accepting the banner after ~5s (i.e. anyone
+ *                          who reads it) loaded Geotargetly with nothing left
+ *                          listening — offers stayed hidden for the rest of that
+ *                          pageview, appearing only on the next navigation. Section 0
+ *                          resolves in ~50ms regardless, and re-resolves on
+ *                          `cc:onConsent` / `cc:onChange` if the first attempt failed.
+ *
+ *                      (3) CACHE/FILTER ASYMMETRY (over-exposure). Section 1 read the
+ *                          `cel_geo_cc` cache at init; Section 2 did NOT — it learned
+ *                          geo only from the live poll. On the cached path (or with
+ *                          `g792337341.co` ad-blocked) Section 1 revealed the wrapper
+ *                          while Section 2 had nothing to filter with, rendering EVERY
+ *                          market's card — CN-only, JP-only, KR-only, 10%..40% — to
+ *                          EVERY visitor. Section 2 now reads the same cache and the
+ *                          same `cel:geo` event.
+ *
+ *                      Targeting rules are UNCHANGED: the region→country map and the
+ *                      per-item `data-country` lists are untouched. Visitors in
+ *                      countries outside a region's list still see nothing, as before.
  *
  * v1.4.1 (2026-05-01): Section 1 — `action: 'show'` matched branch now
  *                      sets `el.style.display = ''` (revert to CSS) instead
@@ -74,7 +111,7 @@
  *                          expiry, per-second tick, isConnected guard) but
  *                          the dayjs guard early-return is gone — Section 3
  *                          now also runs on the previously nav-only pages
- *                          (adults-16, how-long-to-study, costs, vs-toronto)
+ *                          (adults-16, how-long-to-learn-english, costs, vs-toronto)
  *                          which don't ship dayjs. Pages without offer cards
  *                          remain a no-op (querySelectorAll returns empty).
  *
@@ -116,6 +153,106 @@
  *
  * Maintenance rules: rules/cel-offers-deploy.md
  */
+
+/* ============================================================
+ * Section 0 — consent-free geo resolver (v1.5.0)
+ * ============================================================
+ * THE SOURCE
+ *   www.englishcollege.com is proxied by Cloudflare, which serves
+ *   `/cdn-cgi/trace` on every proxied hostname. It is same-origin, sets no
+ *   cookie, reads no storage, is on no blocklist, and returns `loc=<ISO2>` in
+ *   ~50ms. It needs no consent because it stores nothing — it is an ordinary
+ *   same-origin request whose response the visitor's own browser reads.
+ *
+ *   Root-relative `/cdn-cgi/trace` is REQUIRED. A bare relative `cdn-cgi/trace`
+ *   would resolve to `/tr/cdn-cgi/trace` on Weglot locale paths, which 404s
+ *   (verified 2026-07-08).
+ *
+ * STORAGE / CONSENT BOUNDARY
+ *   The resolved country is persisted to localStorage ONLY when functional
+ *   consent is granted. A 7-day country cache is itself ePrivacy "storage";
+ *   without consent we simply re-resolve each pageview (one ~50ms same-origin
+ *   fetch). Section 1 keeps writing the cache on its own Geotargetly path,
+ *   which by definition already implies consent.
+ *
+ * HANDOFF
+ *   Announces the result on a `cel:geo` CustomEvent; Sections 1 and 2 listen.
+ *   It only ever fires asynchronously (after the synchronous IIFE parse below),
+ *   so those listeners are always attached in time. First source to resolve
+ *   wins — a country already read from cache or Geotargetly is never
+ *   overridden, and `publish()` is idempotent.
+ *
+ * FALLBACK
+ *   Non-Cloudflare origins (englishcollege.webflow.io staging) 404 → silent
+ *   no-op, and the pre-existing Geotargetly poll remains the fallback. If geo
+ *   cannot be resolved by ANY source, behavior is exactly as before this
+ *   version: `geo-ready` is not set and [data-geo] blocks stay hidden. We do
+ *   not blind-reveal, because with no country there is no correct subset of
+ *   offers to show — none of the 34 cards is tagged `ALL`.
+ * ============================================================ */
+
+(function() {
+  const TRACE_URL = '/cdn-cgi/trace';
+  const GEO_CACHE_KEY = 'cel_geo_cc';
+  // Cloudflare returns loc=XX when the country is unknown and loc=T1 for Tor
+  // exit nodes. Both are non-countries — treating them as ISO2 would match no
+  // region and silently filter every offer away.
+  const NOT_A_COUNTRY = ['XX', 'T1'];
+
+  let published = false;
+
+  function functionalConsentGranted() {
+    try {
+      return !!(window.CookieConsent &&
+                typeof CookieConsent.acceptedCategory === 'function' &&
+                CookieConsent.acceptedCategory('functional'));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function cacheIfConsented(cc) {
+    if (!functionalConsentGranted()) return;
+    try {
+      localStorage.setItem(GEO_CACHE_KEY, JSON.stringify({ cc: cc, t: Date.now() }));
+    } catch (e) {}
+  }
+
+  function publish(raw) {
+    if (published) return;
+    const cc = String(raw || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(cc)) return;
+    if (NOT_A_COUNTRY.indexOf(cc) !== -1) return;
+    published = true;
+    cacheIfConsented(cc);
+    try {
+      window.dispatchEvent(new CustomEvent('cel:geo', { detail: { cc: cc } }));
+    } catch (e) {}
+  }
+
+  function resolve() {
+    try {
+      fetch(TRACE_URL, { cache: 'no-store' })
+        .then(function(r) { return r && r.ok ? r.text() : null; })
+        .then(function(txt) {
+          if (!txt) return;
+          const m = txt.match(/^loc=([A-Z0-9]{2})$/m);
+          if (m) publish(m[1]);
+        })
+        .catch(function() { /* staging/offline → Geotargetly poll remains */ });
+    } catch (e) { /* no fetch() → Geotargetly poll remains */ }
+  }
+
+  resolve();
+
+  // If the trace call failed but the visitor later accepts cookies, Geotargetly
+  // executes in place (CookieConsent sets no `reloadPage`). Re-resolve then, so
+  // the offers are not stranded behind an already-expired 5s poll (defect 2).
+  function retry() { if (!published) resolve(); }
+  window.addEventListener('cc:onConsent', retry);
+  window.addEventListener('cc:onChange', retry);
+
+})();
 
 /* ============================================================
  * Section 1 — data-geo handler (was inline_7606ee7d)
@@ -305,6 +442,16 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  // v1.5.0: Section 0 resolves the country without consent and announces it
+  // here. Whichever source lands first wins; a country already resolved from
+  // cache or Geotargetly is never overridden.
+  window.addEventListener('cel:geo', function(e) {
+    const cc = e && e.detail && e.detail.cc;
+    if (!cc || userGeo === cc) return;
+    userGeo = cc;
+    runFilter();
+  });
+
   // Run init immediately (CDN-safe). The MutationObserver catches any items
   // added after this point.
   initObserver();
@@ -329,7 +476,29 @@
     attrName: 'data-country'
   };
 
-  let userGeo = null;
+  // v1.5.0 (defect 3): Section 1 has always read the shared `cel_geo_cc` cache
+  // at init, but Section 2 did not — it learned geo ONLY from the Geotargetly
+  // poll. On the cached path (or when Geotargetly is ad-blocked) Section 1
+  // revealed the wrapper while Section 2 still had `userGeo === null`, so
+  // `runFilter()` early-returned and EVERY market's offer card rendered to
+  // EVERY visitor. Read the same cache, with the same key and TTL as Section 1.
+  const GEO_CACHE_KEY = 'cel_geo_cc';
+  const GEO_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days — matches Section 1
+
+  function readCachedGeo() {
+    try {
+      const raw = localStorage.getItem(GEO_CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !data.cc || !data.t) return null;
+      if (Date.now() - data.t > GEO_CACHE_TTL_MS) return null;
+      return String(data.cc).toUpperCase();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  let userGeo = readCachedGeo();
 
   function runFilter() {
     if (!userGeo) return;
@@ -391,9 +560,18 @@
     }, 5000);
   }
 
+  // v1.5.0: same `cel:geo` handoff as Section 1.
+  window.addEventListener('cel:geo', function(e) {
+    const cc = e && e.detail && e.detail.cc;
+    if (!cc || userGeo === cc) return;
+    userGeo = cc;
+    runFilter();
+  });
+
   // Run init immediately (CDN-safe). The MutationObserver (when its wrapper
   // exists) catches any .offer_item elements added after this point.
   initObserver();
+  if (userGeo) runFilter();   // v1.5.0: cached path — filter before first paint
   initGeo();
 
 })();
@@ -406,7 +584,7 @@
  *   Init runs immediately inside the IIFE (CDN-safe), same pattern as
  *       Sections 1 and 2.
  *   v1.4.0: vanilla Date instead of dayjs (no dayjs guard needed → runs
- *       on adults-16/how-long-to-study/costs/vs-toronto), and dual
+ *       on adults-16/how-long-to-learn-english/costs/vs-toronto), and dual
  *       item/date selectors covering legacy `.offer_item`+`.offer_date`
  *       and new offer-bento `.offer-item` + `[data-wg-notranslate]`
  *       date markup. UTC end-of-day expiry semantics preserved.
@@ -497,7 +675,7 @@
  * Ticks the standalone navbar countdown against the soonest-expiring
  * .offer_item .offer_date on the page. Vanilla Date — no dayjs needed.
  * Exits cleanly when there's no .offer_item on the page (the 4 nav-only
- * pages /adults-16, /how-long-to-study, /costs, /vs-toronto — navbar counter
+ * pages /adults-16, /how-long-to-learn-english, /costs, /vs-toronto — navbar counter
  * stays at its CMS-rendered "00" placeholder, current behavior unchanged).
  * Whole section is try/catch wrapped — any error → leave navbar alone.
  * ============================================================ */
