@@ -35,6 +35,18 @@ on:
     # "Content Pipeline" is deliberately EXCLUDED: it runs every 15 min, so a single
     # runner-acquisition miss self-heals on the very next tick. Watching it would add
     # ~96 skipped watchdog runs/day for effectively zero recovery benefit.
+    #
+    # "pages-build-deployment" (GitHub's legacy Pages "deploy from a branch" build) is
+    # EXCLUDED for a STRONGER reason than frequency: recovery would `gh run rerun` the
+    # failed run, which rebuilds + redeploys its OLD triggering commit — clobbering the
+    # newer content a later push already deployed. It's a GitHub-managed workflow we
+    # don't control, it rebuilds on every push to main (~24/day — docs/ regenerates
+    # constantly: sitemap, llms.txt, scripts, admin), and a transient miss self-heals on
+    # the very next push (minutes away, so Pages is never meaningfully stale). A single
+    # blip is benign; a SUSTAINED Pages outage would surface via the crons above (same
+    # runner pool). So it gets no recovery and no alert — by design. (2026-07-09 run
+    # 29018943547: the 12:41 build got no runner; the 13:38/13:56/13:59 pushes redeployed
+    # fine and the live site was current within the hour.)
     workflows:
       - "Blog Image Optimization"
       - "Blog summary autopilot (new posts → native-language summary, live)"
