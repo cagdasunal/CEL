@@ -27,13 +27,17 @@ name: Runner acquisition watchdog
 
 on:
   workflow_run:
-    # The unattended, cron-driven workflows only. A failed manual dispatch is seen
-    # immediately by the operator, so auto-recovery matters far less there. Names must
-    # match each workflow's `name:` exactly (workflow_run has no wildcard).
+    # The unattended, LOW-FREQUENCY crons — the ones where a missed run leaves a
+    # multi-hour to full-day gap. A failed manual dispatch is seen immediately by the
+    # operator, so it is not watched. Names must match each workflow's `name:` exactly
+    # (workflow_run has no wildcard).
+    #
+    # "Content Pipeline" is deliberately EXCLUDED: it runs every 15 min, so a single
+    # runner-acquisition miss self-heals on the very next tick. Watching it would add
+    # ~96 skipped watchdog runs/day for effectively zero recovery benefit.
     workflows:
       - "Blog Image Optimization"
       - "Blog summary autopilot (new posts → native-language summary, live)"
-      - "Content Pipeline"
       - "Offers Auto-Extend"
       - "Update Sitemap & LLMs.txt"
       - "Weglot Daily Report"
