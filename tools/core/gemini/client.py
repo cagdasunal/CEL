@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -379,6 +381,16 @@ _TRANSIENT_MARKERS = (
 # then surface it. google-genai HttpOptions.timeout is documented in ms (SDK 2.6).
 _GEMINI_HTTP_TIMEOUT_MS = 300_000  # 5 minutes
 
+# Caller-side HARD wall-clock bound per generate_content call, enforced in a daemon
+# thread — INDEPENDENT of the SDK honoring HttpOptions.timeout above. tracker-138
+# reopened: blog-summary-autopilot rode the 60-min GHA cap for ~6 weeks despite the
+# HttpOptions timeout (the sync generate_content path never tripped it on CI's
+# google-genai 2.10.0). A stuck call is abandoned to a daemon thread (killed at
+# interpreter exit, so it can't hang shutdown either) and surfaces as a "hard timeout"
+# — _is_transient matches the word, so generate_sync isolates it as a failed
+# BatchResult. Generous: a Flash/Pro generate finishes in <90s.
+_GEMINI_CALL_HARD_TIMEOUT_SEC = 240  # 4 minutes
+
 
 def _gemini_client(genai, api_key: str):
     """Construct genai.Client with the reliability per-request HTTP timeout (tracker
@@ -409,6 +421,38 @@ def _retry_transient(fn, *, attempts: int = 3, base_delay: float = 2.0):
                 raise
             time.sleep(base_delay * (2 ** i))
     raise RuntimeError("unreachable")  # pragma: no cover
+
+
+def _run_with_hard_timeout(fn, timeout_sec):
+    """Run ``fn()`` under a HARD wall-clock timeout; return its value or raise.
+
+    Runs ``fn`` on a daemon thread and joins for ``timeout_sec`` seconds. If it has
+    not finished, raise ``TimeoutError`` and ABANDON the thread — a daemon thread is
+    killed at interpreter exit, so a library call that ignores its own timeout can
+    neither ride an outer job cap nor hang process shutdown. Any exception ``fn``
+    raises is re-raised on the calling thread. ``timeout_sec`` of ``None`` or ``<= 0``
+    runs ``fn`` inline (unbounded), so a caller can opt out.
+    """
+    if not timeout_sec or timeout_sec <= 0:
+        return fn()
+    box: dict[str, Any] = {}
+
+    def _target() -> None:
+        try:
+            box["result"] = fn()
+        except BaseException as exc:  # noqa: BLE001 — ferry any error to the caller thread
+            box["error"] = exc
+
+    worker = threading.Thread(target=_target, name="gemini-call", daemon=True)
+    worker.start()
+    worker.join(timeout_sec)
+    if worker.is_alive():
+        raise TimeoutError(
+            f"generate_content exceeded hard timeout of {timeout_sec:.0f}s"
+        )
+    if "error" in box:
+        raise box["error"]
+    return box.get("result")
 
 
 # ---- Explicit context caching (tracker-097 Phase 1) ----
@@ -620,7 +664,10 @@ def submit_batch(
 
 
 def generate_sync(
-    requests: list[BatchRequest], api_key_env: str = "GEMINI_API_KEY"
+    requests: list[BatchRequest],
+    api_key_env: str = "GEMINI_API_KEY",
+    run_deadline_sec: Optional[float] = None,
+    call_timeout_sec: Optional[float] = _GEMINI_CALL_HARD_TIMEOUT_SEC,
 ) -> list[BatchResult]:
     """Synchronous generation — one `models.generate_content` call per request,
     results returned immediately (no Batch API queue / ≤24h SLA).
@@ -633,6 +680,17 @@ def generate_sync(
     Gemini 3.x still applies implicit prefix caching automatically). Each request is
     independent: a per-request failure becomes a failed BatchResult and never aborts
     the rest. Imports the google-genai SDK lazily so dry-run + import work without it.
+
+    Reliability (tracker-138 reopened). Two caller-side wall-clock bounds so a large
+    backlog can never ride an outer job cap (blog-summary-autopilot hung 6 weeks):
+      * ``call_timeout_sec`` — HARD per-request bound (via ``_run_with_hard_timeout``),
+        independent of the SDK honoring its own timeout. A stuck call becomes a failed
+        BatchResult; the rest proceed.
+      * ``run_deadline_sec`` — when set, STOP starting new calls once that many seconds
+        have elapsed and return the results gathered so far. Unprocessed requests are
+        simply absent (neither succeeded nor failed), so an idempotent caller retries
+        them next run — draining a backlog across several bounded runs instead of one
+        run that never finishes and never checkpoints.
     """
     if not requests:
         return []
@@ -651,15 +709,33 @@ def generate_sync(
 
     client = _gemini_client(genai, api_key)
     results: list[BatchResult] = []
-    for r in requests:
+    started = time.monotonic()
+    for idx, r in enumerate(requests):
+        # Per-run budget: stop starting new calls past the deadline so the process
+        # EXITS cleanly (letting the caller checkpoint state + the CI job commit it)
+        # instead of being SIGKILLed at the cap with nothing persisted.
+        if run_deadline_sec is not None and (time.monotonic() - started) >= run_deadline_sec:
+            deferred = len(requests) - idx
+            print(
+                f"[gemini] sync run budget of {run_deadline_sec:.0f}s reached: processed "
+                f"{idx}/{len(requests)} request(s), deferring {deferred} to a later run.",
+                file=sys.stderr, flush=True,
+            )
+            break
         system_text = _flatten_system_blocks(r.system_blocks)
         model = r.model or config.MODEL_ID
         cfg = _build_generation_config(r, system_text, model)
         try:
-            resp = _retry_transient(
-                lambda r=r, cfg=cfg, model=model: client.models.generate_content(
-                    model=model, contents=r.user_message, config=cfg
-                )
+            # Hard timeout wraps the WHOLE retry sequence, so one request is bounded to
+            # ``call_timeout_sec`` total (retries/backoff included) and can't overshoot
+            # the run budget by more than that.
+            resp = _run_with_hard_timeout(
+                lambda r=r, cfg=cfg, model=model: _retry_transient(
+                    lambda: client.models.generate_content(
+                        model=model, contents=r.user_message, config=cfg
+                    )
+                ),
+                call_timeout_sec,
             )
             results.append(_result_from_response(resp, r.custom_id))
         except Exception as e:  # noqa: BLE001 — isolate per-request failure

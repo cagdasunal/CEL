@@ -20,6 +20,18 @@ MAX_BATCH_COST_USD = 15
 # go-ahead" is the human layer; this is the code-level backstop.
 COST_CONFIRM_THRESHOLD_USD = 1.00
 
+# Per-run wall-clock budget for the --sync generate path (seconds). The blog-summary
+# autopilot runs under a 60-min GitHub Actions cap; --sync summarizes the whole blog
+# back-catalog one call at a time on the FIRST run (idempotency has nothing to skip
+# yet). Without a budget the job was SIGKILLed at 60 min BEFORE it could checkpoint
+# summary-state.json — so every run restarted from zero and it never once succeeded
+# (tracker-138 reopened). generate_sync stops starting new calls past this budget and
+# returns partial; the caller checkpoints what finished + the CI job commits it, so the
+# backlog drains across a few bounded runs, then daily runs are true no-ops. 40 min
+# leaves headroom for one in-flight call (≤ _GEMINI_CALL_HARD_TIMEOUT_SEC) plus the
+# commit/notify steps, under the 60-min cap.
+SYNC_RUN_DEADLINE_SEC = 2400
+
 # Locales. EN is the source language; the other 8 are translation targets.
 LOCALES = ("en", "de", "fr", "es", "it", "pt", "ko", "ja", "ar")
 TARGET_TRANSLATION_LOCALES = LOCALES[1:]

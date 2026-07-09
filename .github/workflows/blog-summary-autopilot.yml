@@ -9,7 +9,16 @@ name: Blog summary autopilot (new posts → native-language summary, live)
 # (data/seo-intel/summary-state.json, committed below). So a day with no new/edited
 # posts does ZERO Gemini work and commits nothing. Only genuinely new or changed
 # posts are summarized. Blog uses the cheap Flash model; --sync runs them inline
-# (no Batch API wait) since per-run volume is tiny.
+# (no Batch API wait).
+#
+# First-run BACKFILL is bounded (tracker-138, 2026-07-09): the state file starts with
+# no blog entries, so run #1 has the whole back-catalog (~142 posts) to summarize.
+# generate_sync bounds each call (hard 4-min timeout) AND stops at a per-run budget
+# (config.SYNC_RUN_DEADLINE_SEC, 40 min — under the 60-min cap), then returns partial.
+# The commit step below checkpoints summary-state.json, so the NEXT run resumes on the
+# remainder. The backlog drains over a few daily runs; steady state is a fast no-op.
+# (Before this fix run #1 tried all ~142 sequentially, was SIGKILLed at the 60-min cap
+# before it could checkpoint, and the autopilot never once succeeded.)
 #
 # Scope guarantees:
 #   - --collection blog       → never touches courses / housing / static pages.
@@ -53,7 +62,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # --sync small runs finish in minutes; generous for a backfill.
+    timeout-minutes: 60  # BACKSTOP only — generate_sync self-limits to config.SYNC_RUN_DEADLINE_SEC (40m); tracker-138.
     steps:
       - uses: actions/checkout@v6
         with:
