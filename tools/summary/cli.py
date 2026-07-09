@@ -474,7 +474,13 @@ def _submit_and_wait(requests: list, args: argparse.Namespace):
             batch_id=f"sync-{_timestamp_slug()}", request_count=len(requests),
             submitted_at=_now_iso(), dry_run=False,
         )
-        return batch_runner.generate_sync(requests), handle, [handle.batch_id]
+        return (
+            batch_runner.generate_sync(
+                requests, run_deadline_sec=config.SYNC_RUN_DEADLINE_SEC
+            ),
+            handle,
+            [handle.batch_id],
+        )
 
     groups: dict[str, list] = {}
     order: list[str] = []
