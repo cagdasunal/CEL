@@ -1,0 +1,128 @@
+name: Runner acquisition watchdog
+
+# WHY THIS EXISTS — 2026-07-09 hosted-runner outage.
+# Two scheduled runs failed the same morning with:
+#   "The job was not acquired by Runner of type hosted even after multiple attempts"
+#   - Update Sitemap & LLMs.txt   run 29008037623 (09:23 UTC)
+#   - Blog summary autopilot      run 29000293440 (07:01 UTC)
+# GitHub's hosted-runner pool could not allocate a VM to the queued job within its
+# ~15-min window, so the JOB was marked `cancelled` (runner_id=0, 0 steps EVER ran)
+# and the RUN `failure`. Nothing in our code can prevent it — no machine is assigned.
+# 2 failures in 100 runs, both clustered in one 2.5h window = a transient GitHub blip.
+#
+# It exposed two real gaps, both closed here:
+#   1. NO RECOVERY — a blip permanently skipped that scheduled run until the next cron
+#      tick (a full day for the daily blog summary).
+#   2. NO ALERT — every workflow's "Notify on failure" step lives INSIDE the job, so
+#      when the job never starts, the alert never fires. Both 07-09 failures were 100%
+#      silent (no ci-failure issue opened).
+#
+# This watchdog runs AFTER a watched workflow finishes as `failure`, detects the
+# runner-acquisition signature (a job with runner_id==0 that ran 0 steps), and:
+#   - re-runs the run, bounded by run_attempt < MAX_ATTEMPTS, to ride out the blip;
+#   - once attempts are exhausted, opens/updates a ci-failure issue so a SUSTAINED
+#     GitHub outage is not silent (the in-job notify still cannot run).
+# A genuine script failure (a runner DID run steps) is left alone — the workflow's own
+# in-job notify already alerts, and blind reruns would only mask real bugs.
+
+on:
+  workflow_run:
+    # The unattended, cron-driven workflows only. A failed manual dispatch is seen
+    # immediately by the operator, so auto-recovery matters far less there. Names must
+    # match each workflow's `name:` exactly (workflow_run has no wildcard).
+    workflows:
+      - "Blog Image Optimization"
+      - "Blog summary autopilot (new posts → native-language summary, live)"
+      - "Content Pipeline"
+      - "Offers Auto-Extend"
+      - "Update Sitemap & LLMs.txt"
+      - "Weglot Daily Report"
+    types: [completed]
+
+permissions:
+  actions: write   # gh run rerun
+  issues: write    # ci-failure alert when attempts are exhausted
+  contents: read
+
+concurrency:
+  # One watchdog per failed run; never cancel an in-flight recovery decision.
+  group: watchdog-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  recover:
+    # Only outright failures. Skip success / cancelled (manual) / skipped / etc.
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+      WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      MAX_ATTEMPTS: "3"   # the original run + up to 2 automatic reruns
+    steps:
+      - name: Recover from runner-acquisition failure (or alert if sustained)
+        run: |
+          set -euo pipefail
+
+          # Infra signature: a hosted-runner acquisition failure leaves at least one job
+          # with NO runner assigned (runner_id == 0) that ran ZERO steps. A real script
+          # failure or a step-level timeout always has runner_id != 0 and steps > 0, so
+          # this cleanly separates "GitHub never gave us a machine" from "our code failed".
+          # `skipped` jobs also have 0 steps but conclusion `skipped`, so they're excluded.
+          jobs_json="$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate)"
+          infra_failure="$(printf '%s' "$jobs_json" | jq -r '
+            [ .jobs[]
+              | select((.conclusion == "cancelled" or .conclusion == "failure")
+                       and ((.runner_id // 0) == 0)
+                       and (((.steps // []) | length) == 0)) ] | length > 0')"
+
+          echo "workflow      : $WORKFLOW_NAME"
+          echo "run           : $RUN_URL"
+          echo "run_attempt   : $RUN_ATTEMPT (max $MAX_ATTEMPTS)"
+          echo "infra_failure : $infra_failure"
+
+          if [ "$infra_failure" != "true" ]; then
+            echo "A runner ran steps — this is a real failure the workflow's own in-job"
+            echo "notify step already alerts on. Watchdog takes no action."
+            exit 0
+          fi
+
+          if [ "$RUN_ATTEMPT" -lt "$MAX_ATTEMPTS" ]; then
+            # A short pause lets a brief GitHub capacity blip clear before we re-queue.
+            # The re-queued run acquires its own runner and, if it fails again, re-fires
+            # this watchdog with an incremented run_attempt (bounded by MAX_ATTEMPTS).
+            sleep "$((RUN_ATTEMPT * 60))"
+            echo "Re-running (attempt $RUN_ATTEMPT of $MAX_ATTEMPTS)..."
+            n=0
+            until [ "$n" -ge 3 ]; do
+              if gh run rerun "$RUN_ID" --repo "$REPO"; then
+                echo "Re-run requested for run $RUN_ID."
+                exit 0
+              fi
+              n=$((n + 1))
+              echo "rerun API call failed (try $n) — retrying"
+              sleep "$((n * 5))"
+            done
+            echo "::error::could not request a re-run after 3 tries"
+            exit 1
+          fi
+
+          # Attempts exhausted → sustained outage, not a blip. Alert loudly, because the
+          # workflow's in-job notify never got a runner to run on.
+          echo "Exhausted $MAX_ATTEMPTS attempts — opening/updating a ci-failure alert."
+          gh label create ci-failure --repo "$REPO" \
+            --color B60205 --description "Automated CI/cron failure alerts" --force >/dev/null 2>&1 || true
+          TITLE="🔴 $WORKFLOW_NAME — hosted runner never acquired"
+          NUM="$(gh issue list --repo "$REPO" --label ci-failure --state open \
+                   --search "$TITLE in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --repo "$REPO" \
+              --body "Still failing to acquire a hosted runner at $(date -u +%FT%TZ) after $MAX_ATTEMPTS attempts. Run: $RUN_URL"
+          else
+            gh issue create --repo "$REPO" --title "$TITLE" --label ci-failure --body \
+              "GitHub could not acquire a hosted runner for **$WORKFLOW_NAME** after $MAX_ATTEMPTS attempts (latest: $RUN_URL). No runner was ever assigned, so the workflow's own failure notice could not fire. This is a GitHub-side hosted-runner outage — see https://www.githubstatus.com. The next scheduled run self-heals once capacity recovers; close this issue then."
+          fi
