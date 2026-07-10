@@ -6,9 +6,12 @@
  * Public URL:      https://cel.englishcollege.com/scripts/cel-offers.js
  *
  * Sections currently bundled:
+ *   0. Consent-free geo resolver               (since v1.5.0)
  *   1. Section-level data-geo handler          (was inline_7606ee7d, since v1.0.0)
  *   2. Per-item .offer_item data-country filter (was inline_9d54ce87, since v1.1.0)
  *   3. Per-card .offer_date countdown          (was inline_6c6f5f54, since v1.2.0)
+ *   4. Navbar .offers_counter ticker           (since v1.3.0)
+ *   5. Campus display-order sort               (since v1.6.0)
  *
  * Each section is wrapped in its own IIFE — they run independently and only
  * cooperate via DOM mutation. Section 1 toggles wrapping [data-geo] blocks by
@@ -46,8 +49,28 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.5.0
- * Last update: 2026-07-08
+ * Version: 1.6.0
+ * Last update: 2026-07-10
+ *
+ * v1.6.0 (2026-07-10): Section 5 added — campus display-order sort. Renders the
+ *                      offer grid in a fixed campus sequence Vancouver, San Diego,
+ *                      Los Angeles (client spec). Absent campuses are skipped, so
+ *                      the sequence degrades cleanly to any subset. Ranking reads
+ *                      the new `data-campus` CMS attribute first (added 2026-07-10;
+ *                      Weglot does NOT translate data-* attrs, so it is locale-
+ *                      stable — verified ko/ja/ar/es/de), then falls back to the
+ *                      Weglot-translated `.offer-bento_location` badge, then the
+ *                      card image URL. The fallback chain is why it also works on
+ *                      pages whose cards predate `data-campus` (e.g. /vancouver).
+ *                      Scope is discovered from the cards, not a hardcoded grid
+ *                      class; single-campus lists resolve to one rank and hit the
+ *                      `moved === false` early-return (zero DOM mutation), and any
+ *                      list inside a Swiper/slider is skipped so carousel slide
+ *                      order is never disturbed.
+ *                      Verified: node test-bundle.mjs — 27/27, full bundle + min.js
+ *                      against live /offers HTML in en/de/es/ko/ja/ar (data-campus
+ *                      present + absent) and /vancouver single-campus no-mutation;
+ *                      plus a live-browser geo smoke test (BR/KR=3, DE=2, FR=1).
  *
  * v1.5.0 (2026-07-08): Section 0 added — consent-free geo resolver — plus a
  *                      Section 2 cache-parity fix. Three defects addressed:
@@ -757,5 +780,205 @@
     loop = setInterval(tick, 1000);
   } catch (e) {
     /* Any error → navbar counter stays at its CMS placeholder. Current behavior. */
+  }
+})();
+
+/* ============================================================
+ * Section 5 — campus display-order sort (v1.6.0)
+ * ============================================================
+ * Renders the offer grid in the fixed campus sequence Vancouver, San Diego,
+ * Los Angeles. Any campus with no cards on the page is skipped, so the sequence
+ * degrades cleanly to any subset (Vancouver -> Los Angeles, San Diego alone,
+ * none). Cards of an unrecognised campus keep their CMS order and sort after
+ * every known campus, so a fourth school can be added to the CMS without this
+ * section breaking.
+ *
+ * SIGNAL PRIORITY (per card):
+ *   1. `data-campus` attribute — added to the Offers CMS collection 2026-07-10.
+ *      Webflow renders it verbatim and Weglot does NOT translate data-* attrs,
+ *      so it stays "Los Angeles"/"San Diego"/"Vancouver" on every locale
+ *      (verified ko/ja/ar/es/de). The robust, locale-stable primary signal.
+ *   2. The visible `.offer-bento_location` badge — Weglot-translated, but every
+ *      localised string is in the alias table below. This is the SOLE signal on
+ *      cards that predate `data-campus` (e.g. /vancouver's list) — i.e. the
+ *      "works when data-campus is not added, on other pages" path the client
+ *      asked for. Absence of the attribute silently falls through to here.
+ *   3. The card image URL — Weglot never rewrites CDN paths.
+ *
+ * SCOPE: every list that DIRECTLY holds >=2 offer cards, discovered from the
+ * cards themselves (`.offer_item, .offer-item`) rather than a hardcoded grid
+ * class — so it covers /offers (`.offer-list`) and any other page's CMS offer
+ * list (`.w-dyn-items`) without naming each. Single-campus lists (e.g.
+ * /vancouver's 10 Vancouver cards) resolve to one rank, sort stably, and hit the
+ * `moved === false` early-return: ZERO DOM mutation. Any list inside a
+ * Swiper/slider is skipped outright, so carousel slide order is never disturbed.
+ *
+ * COEXISTENCE: runs synchronously at bundle-eval time (the bundle is deferred),
+ * in the SAME task as Sections 0-4, so the browser paints once and the reorder
+ * is never visible; `[data-geo="offers"]` also stays visibility:hidden until
+ * Section 1 adds `.geo-ready` in this same task. Sections 1/2 only ever REMOVE
+ * cards (geo + expiry) and removal preserves the order of survivors, so ordering
+ * and filtering are independent regardless of which runs first.
+ * ============================================================ */
+
+(function () {
+  if (window.__celOfferOrderV1) return;
+  window.__celOfferOrderV1 = true;
+
+  /* The spec. Reorder this array, drop a campus, or append one, and the grid
+   * follows — no other change needed. */
+  const ORDER = ['vancouver', 'sandiego', 'losangeles'];
+
+  /* Every string a live locale can render for each campus badge. "Pacific
+   * Beach" is CEL's San Diego campus name and appears in some image filenames. */
+  const ALIASES = {
+    vancouver:  ['Vancouver', '밴쿠버', 'バンクーバー', 'فانكوفر'],
+    sandiego:   ['San Diego', 'Pacific Beach', '샌디에이고', 'サンディエゴ', 'سان دييغو'],
+    losangeles: ['Los Angeles', 'Los Ángeles', '로스앤젤레스', 'ロサンゼルス', 'لوس أنجلوس']
+  };
+
+  const ITEM_SELECTOR  = '.offer_item, .offer-item';
+  const BADGE_SELECTOR = '.offer-bento_location';
+  const CAMPUS_ATTRS   = ['data-campus'];
+  const SWIPER_SKIP    = '.swiper, .swiper-wrapper, .w-slider, .w-slider-mask';
+
+  /* Fold a label to bare lowercase letters/digits so "Los Ángeles",
+   * "LOS ANGELES" and "CEL%20Los%20Angeles.avif" all contain `losangeles`.
+   * NFKD + combining-mark removal also strips the Arabic hamza (أ -> ا) and the
+   * Japanese dakuten (ゼ -> セ); aliases go through the same function, so both
+   * sides always agree. */
+  let STRIP_MARKS;
+  let STRIP_PUNCT;
+  try {
+    STRIP_MARKS = new RegExp('\\p{M}', 'gu');
+    STRIP_PUNCT = new RegExp('[^\\p{L}\\p{N}]', 'gu');
+  } catch (e) {
+    /* No Unicode property escapes (pre-2018 browsers): Latin locales still sort;
+     * CJK/Arabic fall through to the image-URL signal. */
+    STRIP_MARKS = /[̀-ًͯ-ٰٟ]/g;
+    STRIP_PUNCT = /[^a-zA-Z0-9]/g;
+  }
+  const TATWEEL = /ـ/g;   /* Arabic stretch glyph — carries no meaning */
+
+  function norm(value) {
+    if (!value) return '';
+    let out = String(value);
+    try { out = out.normalize('NFKD'); } catch (e) { /* pre-ES6 engine */ }
+    return out
+      .replace(STRIP_MARKS, '')
+      .replace(TATWEEL, '')
+      .replace(STRIP_PUNCT, '')
+      .toLowerCase();
+  }
+
+  /* Webflow double-encodes some asset filenames (%2520). Decode until stable,
+   * at most twice, and never let a stray `%` throw. */
+  function decodeUrl(value) {
+    let out = String(value || '');
+    for (let i = 0; i < 2; i++) {
+      if (out.indexOf('%') === -1) break;
+      try {
+        const next = decodeURIComponent(out);
+        if (next === out) break;
+        out = next;
+      } catch (e) { break; }
+    }
+    return out;
+  }
+
+  /* Longest token first, so no alias can match inside another. */
+  const TOKENS = ORDER
+    .reduce(function (acc, campus, rank) {
+      (ALIASES[campus] || []).concat(campus).forEach(function (alias) {
+        const token = norm(alias);
+        if (token) acc.push({ token: token, rank: rank });
+      });
+      return acc;
+    }, [])
+    .sort(function (a, b) { return b.token.length - a.token.length; });
+
+  const UNKNOWN = ORDER.length;   /* unrecognised campuses sort after every known one */
+
+  function rankOfText(text) {
+    const needle = norm(text);
+    if (!needle) return -1;
+    for (let i = 0; i < TOKENS.length; i++) {
+      if (needle.indexOf(TOKENS[i].token) !== -1) return TOKENS[i].rank;
+    }
+    return -1;
+  }
+
+  function rankOfItem(item) {
+    let rank;
+
+    /* 1. The CMS attribute — cannot be translated, cannot drift. Always wins. */
+    for (let i = 0; i < CAMPUS_ATTRS.length; i++) {
+      rank = rankOfText(item.getAttribute(CAMPUS_ATTRS[i]));
+      if (rank !== -1) return rank;
+    }
+
+    /* 2. The visible badge (correct on every locale CEL ships today). */
+    const badge = item.querySelector(BADGE_SELECTOR);
+    if (badge) {
+      rank = rankOfText(badge.textContent);
+      if (rank !== -1) return rank;
+    }
+
+    /* 3. The card image URL (Weglot never rewrites CDN paths). */
+    const img = item.querySelector('img');
+    if (img) {
+      rank = rankOfText(decodeUrl(img.getAttribute('src')));
+      if (rank !== -1) return rank;
+      rank = rankOfText(decodeUrl(img.getAttribute('srcset')));
+      if (rank !== -1) return rank;
+    }
+
+    return UNKNOWN;
+  }
+
+  function sortList(list) {
+    /* Never reorder cards that live inside a carousel — Swiper tracks its own
+     * slide order and cloning, and moving slides under it corrupts the widget. */
+    if (list.closest && list.closest(SWIPER_SKIP)) return;
+
+    const items = Array.prototype.filter.call(list.children, function (el) {
+      return el.matches && el.matches(ITEM_SELECTOR);
+    });
+    if (items.length < 2) return;
+
+    const ranked = items.map(function (item, index) {
+      return { item: item, rank: rankOfItem(item), index: index };
+    });
+
+    /* Explicit index tiebreak: cards of one campus keep their CMS order
+     * regardless of the engine's sort stability. */
+    ranked.sort(function (a, b) {
+      return (a.rank - b.rank) || (a.index - b.index);
+    });
+
+    const moved = ranked.some(function (entry, position) {
+      return entry.index !== position;
+    });
+    if (!moved) return;   /* already in sequence — leave the DOM untouched */
+
+    /* Re-seat the block in place. `anchor` is whatever followed the last card,
+     * so any non-card sibling keeps its position, and insertBefore(el, null)
+     * degrades to appendChild. */
+    const anchor = items[items.length - 1].nextSibling;
+    ranked.forEach(function (entry) {
+      list.insertBefore(entry.item, anchor);
+    });
+  }
+
+  try {
+    /* Discover each distinct list that directly contains an offer card. */
+    const parents = [];
+    Array.prototype.forEach.call(document.querySelectorAll(ITEM_SELECTOR), function (item) {
+      const parent = item.parentElement;
+      if (parent && parents.indexOf(parent) === -1) parents.push(parent);
+    });
+    parents.forEach(sortList);
+  } catch (e) {
+    /* Any failure leaves the CMS order intact — the grid still renders. */
   }
 })();
