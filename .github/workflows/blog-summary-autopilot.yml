@@ -11,14 +11,17 @@ name: Blog summary autopilot (new posts → native-language summary, live)
 # posts are summarized. Blog uses the cheap Flash model; --sync runs them inline
 # (no Batch API wait).
 #
-# First-run BACKFILL is bounded (tracker-138, 2026-07-09): the state file starts with
-# no blog entries, so run #1 has the whole back-catalog (~142 posts) to summarize.
-# generate_sync bounds each call (hard 4-min timeout) AND stops at a per-run budget
-# (config.SYNC_RUN_DEADLINE_SEC, 40 min — under the 60-min cap), then returns partial.
-# The commit step below checkpoints summary-state.json, so the NEXT run resumes on the
-# remainder. The backlog drains over a few daily runs; steady state is a fast no-op.
-# (Before this fix run #1 tried all ~142 sequentially, was SIGKILLed at the 60-min cap
-# before it could checkpoint, and the autopilot never once succeeded.)
+# First-run BACKFILL is bounded (tracker-138, PERMANENT fix 2026-07-13): the state file starts
+# with no blog entries, so run #1 has the whole back-catalog (~142 posts) to summarize. The WHOLE
+# run is bounded by TWO shared wall-clock deadlines (config.GENERATE_DEADLINE_SEC 35m for both
+# generate passes, config.RUN_DEADLINE_SEC 45m for write-back — generation stops earlier so it can't
+# starve write-back) plus a hard watchdog (config.RUN_WATCHDOG_HARD_SEC 52m) that force-exits before
+# the 60-min cap. Write-back checkpoints summary-state.json INCREMENTALLY (per written item), and the
+# commit step below runs on always(), so the NEXT run resumes on the remainder. The backlog drains
+# over a few daily runs; steady state is a fast no-op. (The 2026-07-09 first cut bounded only ONE
+# generate_sync call — the retry pass got a fresh budget and write-back was unbounded — so run #1
+# still rode past the 60-min cap, was SIGKILLed before it could checkpoint, and the autopilot timed
+# out EVERY day for 6+ weeks and never once succeeded.)
 #
 # Scope guarantees:
 #   - --collection blog       → never touches courses / housing / static pages.
@@ -62,7 +65,8 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # BACKSTOP only — generate_sync self-limits to config.SYNC_RUN_DEADLINE_SEC (40m); tracker-138.
+    timeout-minutes: 60  # OUTER cap only — the run self-limits cooperatively (config.RUN_DEADLINE_SEC 45m) with a
+                         # hard in-process watchdog (config.RUN_WATCHDOG_HARD_SEC 52m) below it; tracker-138.
     steps:
       - uses: actions/checkout@v6
         with:
@@ -124,6 +128,13 @@ jobs:
           if-no-files-found: ignore
 
       - name: Commit idempotency state + summaries manifest
+        # tracker-138 (2026-07-13): `always()` so a PARTIAL run still checkpoints. The generate step
+        # writes summary-state.json INCREMENTALLY (per item written), and the in-process watchdog force-exits
+        # 0 before the 60-min cap — but if a run is still somehow cancelled/killed, this step must STILL commit
+        # whatever progress reached disk, or the backlog never drains (the 6-week daily-timeout root cause: the
+        # end-only save + a non-`always` commit meant every timeout discarded all progress). Atomic writes make
+        # a mid-run snapshot safe to commit; "nothing to commit" is a clean no-op.
+        if: ${{ always() }}
         run: |
           set -o pipefail
           git config user.name "github-actions[bot]"

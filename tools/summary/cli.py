@@ -17,8 +17,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -459,13 +462,19 @@ def _execute_batch_recovery(args: argparse.Namespace, out_dir: Path) -> int:
 # without the google-genai SDK installed.
 
 
-def _submit_and_wait(requests: list, args: argparse.Namespace):
+def _submit_and_wait(requests: list, args: argparse.Namespace, run_deadline: Optional[float] = None):
     """Run a batch of requests and collect results (tracker-097).
 
     --sync: one synchronous generate_sync over all requests (per-request model).
     Batch (default): group requests by resolved model and run one Batch job per
     model — the Batch API accepts a single model per job, so tiering (blog → Flash,
     rest → Pro) requires per-model jobs. Returns (results, primary_handle, batch_ids).
+
+    tracker-138 (2026-07-13): `run_deadline` is an ABSOLUTE time.monotonic() timestamp shared
+    across the WHOLE run. Every generate_sync pass (the main pass AND the retry pass) is bounded
+    by the REMAINING budget to that one deadline — so the retry can no longer get a fresh 40-min
+    budget and ride the run past the 60-min job cap. Falls back to the legacy per-call budget only
+    when no run-deadline is threaded (e.g. a unit test calling this directly).
     """
     from tools.summary import batch_runner
 
@@ -474,10 +483,12 @@ def _submit_and_wait(requests: list, args: argparse.Namespace):
             batch_id=f"sync-{_timestamp_slug()}", request_count=len(requests),
             submitted_at=_now_iso(), dry_run=False,
         )
+        remaining = (
+            max(1.0, run_deadline - time.monotonic())
+            if run_deadline is not None else config.SYNC_RUN_DEADLINE_SEC
+        )
         return (
-            batch_runner.generate_sync(
-                requests, run_deadline_sec=config.SYNC_RUN_DEADLINE_SEC
-            ),
+            batch_runner.generate_sync(requests, run_deadline_sec=remaining),
             handle,
             [handle.batch_id],
         )
@@ -563,6 +574,35 @@ def _execute_purge_stale_rows(args: argparse.Namespace, out_dir: Path) -> int:
     return 0
 
 
+_WATCHDOG_EXIT_CODE = 2  # non-zero: a watchdog fire is an ABNORMAL hang worth alerting (see _start_run_watchdog).
+
+
+def _start_run_watchdog(hard_sec: float) -> "threading.Timer":
+    """Defense-in-depth backstop (tracker-138): if the whole run hangs past ``hard_sec`` — a stuck
+    network read, an unforeseen loop — a daemon timer force-exits the process rather than let it ride the
+    job cap to a SIGKILL. The NORMAL bounded run stops COOPERATIVELY at the generate/run deadlines and exits
+    0 on its own well before this, so the watchdog only ever fires on a genuine hang the cooperative stops
+    did NOT catch. That is an abnormal condition, so it exits NON-ZERO (``_WATCHDOG_EXIT_CODE``) — which is
+    what makes the workflow's "Notify on failure" step fire; exiting 0 here (the first cut of this fix) would
+    have re-created the exact silent-hang the alert exists to prevent. Durability does NOT depend on the exit
+    code: write-back has already checkpointed summary-state.json INCREMENTALLY, and the commit step runs on
+    ``always()``, so the backlog still drains AND the owner is told a run hung. Daemon so it never blocks a
+    normal exit (a run that finishes first discards it at interpreter shutdown). Returns the started Timer.
+    """
+    def _fire() -> None:
+        print(
+            f"[summary] run watchdog: exceeded {hard_sec:.0f}s hard budget — a phase HUNG past the cooperative "
+            f"deadlines. Exiting {_WATCHDOG_EXIT_CODE} (alert) with progress already checkpointed; investigate.",
+            file=sys.stderr, flush=True,
+        )
+        os._exit(_WATCHDOG_EXIT_CODE)  # immediate; the incremental checkpoint is already on disk (+ always()-commit).
+
+    t = threading.Timer(hard_sec, _fire)
+    t.daemon = True
+    t.start()
+    return t
+
+
 def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     """Execute generate-english phase. Returns metadata for the report."""
     from tools.summary import batch_runner, llms_parser
@@ -571,6 +611,22 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     from tools.summary.prompt_builder import (
         KeywordPlan, SourceItem, build_system_prompt, build_user_message,
     )
+
+    # tracker-138 (2026-07-13): TWO shared wall-clock deadlines for the whole live run, plus a hard watchdog.
+    # generate_deadline (both generate passes) fires EARLIER than run_deadline (write-back) so a large first-run
+    # backlog cannot consume the whole budget and STARVE write-back — the failure that left items generated but
+    # never written or checkpointed. The reserved gap lets write-back persist what this run generated.
+    # SCOPE: only the --sync path (the interactive autopilot, which runs under a ~60-min CI cap) is bounded.
+    # A DEFAULT (Batch API) run legitimately takes up to the 24h batch SLA, so bounding it — or the watchdog
+    # force-exiting it at 52 min — would be wrong; batch runs stay unbounded. Dry-run also opts out (no network,
+    # no cap). When they opt out the deadlines stay None → every phase runs unbounded, exactly as today.
+    generate_deadline: Optional[float] = None
+    run_deadline: Optional[float] = None
+    if not args.dry_run and getattr(args, "sync", False):
+        _now = time.monotonic()
+        generate_deadline = _now + config.GENERATE_DEADLINE_SEC
+        run_deadline = _now + config.RUN_DEADLINE_SEC
+        _start_run_watchdog(config.RUN_WATCHDOG_HARD_SEC)
 
     plan = _plan_generate_english(args)
     items_to_process: list[dict[str, Any]] = []
@@ -839,7 +895,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     # Live run. _submit_and_wait: --sync = instant generate_sync (per-request model);
     # else group requests by model and run one Batch job per model (the Batch API
     # takes a single model per job — tracker-097 tiering).
-    results, handle, batch_ids = _submit_and_wait(requests, args)
+    results, handle, batch_ids = _submit_and_wait(requests, args, run_deadline=generate_deadline)
     # M5 (2026-05-23): surface silently-failed cache creates — a cache that didn't engage
     # means full-rate input billing with no signal (a burst contributor).
     _cache_create_failures = getattr(handle, "cache_create_failures", 0)
@@ -868,7 +924,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     )
                 )
         if retry_requests:
-            retry_results, _retry_handle, _retry_ids = _submit_and_wait(retry_requests, args)
+            retry_results, _retry_handle, _retry_ids = _submit_and_wait(retry_requests, args, run_deadline=generate_deadline)
             for rr in retry_results:
                 if rr.succeeded:
                     succeeded.append(rr)
@@ -972,26 +1028,32 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     )
     # Write the EN-summaries manifest for the translate phase to read.
     mpath, mcount = _write_en_summaries_manifest(succeeded, sources)
-    # Write back. Static pages → JSON. CMS items → Webflow API.
-    write_log = _write_back_summaries(succeeded, sources, args, out_dir, warnings)
-
-    # tracker-092 (2.1): persist idempotency state for successfully written items
-    # so the next run skips them while their source content is unchanged.
-    if not args.dry_run:
-        for r in succeeded:
-            base = r.custom_id[len("retry-"):] if r.custom_id.startswith("retry-") else r.custom_id
-            mapped = _src_by_cid.get(base)
-            if mapped:
-                sitem = mapped[0]
-                cid_key = sitem.cms_item_id or sitem.url
-                summary_state[cid_key] = {
-                    "source_hash": _source_hash(
-                        sitem.body_excerpt, cid_key,
-                        config.model_for_content_type(sitem.content_type),
-                    ),
-                    "generated_at": _now_iso(),
-                }
+    # tracker-092 (2.1) + tracker-138 (2026-07-13): persist idempotency state per item AS IT IS WRITTEN,
+    # not once at the end. Two reasons: (1) DURABILITY — the run is bounded by a wall-clock deadline, so it
+    # can stop partway; an end-only save meant a SIGKILL (or the watchdog) lost EVERYTHING and the backlog
+    # never drained (the 6-week incident). Incremental + atomic saves mean progress up to the last written
+    # item always survives and the CI commit step persists it. (2) CORRECTNESS — checkpoint ONLY items whose
+    # Webflow write actually SUCCEEDED (the old end-loop marked every generated item done, so an item that
+    # FAILED to write was skipped forever). The callback fires from inside the write loop on each success.
+    def _checkpoint_written(sitem) -> None:
+        if args.dry_run:
+            return
+        cid_key = sitem.cms_item_id or sitem.url
+        summary_state[cid_key] = {
+            "source_hash": _source_hash(
+                sitem.body_excerpt, cid_key,
+                config.model_for_content_type(sitem.content_type),
+            ),
+            "generated_at": _now_iso(),
+        }
         _save_summary_state(summary_state)
+
+    # Write back. Static pages → JSON. CMS items → Webflow API. Bounded by the shared run deadline (stops
+    # STARTING new writes past it and publishes what it already wrote) and checkpoints each written item.
+    write_log = _write_back_summaries(
+        succeeded, sources, args, out_dir, warnings,
+        run_deadline=run_deadline, on_written=_checkpoint_written,
+    )
 
     # tracker-092 (2.4): observability — flag the run as degraded when a critical
     # input failed (llms.txt unreachable, or a source page/collection fetch failed),
@@ -1953,8 +2015,15 @@ def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str
 
 def _write_back_summaries(
     succeeded: list, sources: list, args: argparse.Namespace, out_dir: Path, warnings: list[str],
+    run_deadline: Optional[float] = None, on_written=None,
 ) -> dict[str, Any]:
-    """Write generated summaries to Webflow CMS (CMS items) or to JSON files (static pages)."""
+    """Write generated summaries to Webflow CMS (CMS items) or to JSON files (static pages).
+
+    tracker-138 (2026-07-13): ``run_deadline`` (an absolute time.monotonic() timestamp) bounds the write
+    loop — past it we STOP starting new writes and fall through to publish + return whatever was written,
+    so the whole run stays under the job cap. ``on_written(item)`` is invoked after each SUCCESSFUL write
+    so the caller can checkpoint idempotency state incrementally (durable across an early stop).
+    """
     from tools.summary.structure import (
         four_part_content_html,
         four_part_paragraph_html,
@@ -1969,6 +2038,7 @@ def _write_back_summaries(
     cms_writes = 0
     static_writes = 0
     failures = 0
+    deferred = 0
     # --publish (autopilot): the item ids successfully written this run, grouped by
     # collection, so we can publish ONLY them to LIVE after the write loop.
     written_by_collection: dict[str, list[str]] = {}
@@ -1978,6 +2048,16 @@ def _write_back_summaries(
         for i, (item, _kw, target) in enumerate(sources)
     }
     for result in succeeded:
+        # tracker-138: stop STARTING new writes past the shared run deadline. The items already written
+        # this pass still get published + checkpointed below; the rest are deferred to the next run (their
+        # idempotency state was never set, so they are simply re-picked-up — no loss, no double-write).
+        if run_deadline is not None and time.monotonic() >= run_deadline:
+            deferred = len(succeeded) - (cms_writes + static_writes + failures)
+            warnings.append(
+                f"run deadline reached during write-back: wrote {cms_writes + static_writes}, "
+                f"deferred {deferred} to the next run."
+            )
+            break
         cid = result.custom_id
         if cid.startswith("retry-"):
             cid = cid[len("retry-"):]
@@ -1993,6 +2073,8 @@ def _write_back_summaries(
             wr = write_static_summary_parts(item.url, parts, static_dir, dry_run=args.dry_run)
             if wr.success:
                 static_writes += 1
+                if on_written is not None:
+                    on_written(item)
             else:
                 failures += 1
                 warnings.append(f"static write failed: {item.url}: {wr.error}")
@@ -2040,6 +2122,8 @@ def _write_back_summaries(
                 written_by_collection.setdefault(
                     _collection_id_for_content_type(item.content_type), []
                 ).append(item.cms_item_id)
+                if on_written is not None:
+                    on_written(item)
             else:
                 failures += 1
                 warnings.append(f"cms write failed for {item.cms_item_id}: {wresult.error}")
@@ -2065,7 +2149,7 @@ def _write_back_summaries(
 
     return {
         "cms_writes": cms_writes, "static_writes": static_writes, "failures": failures,
-        "publish": publish_log,
+        "deferred": deferred, "publish": publish_log,
     }
 
 

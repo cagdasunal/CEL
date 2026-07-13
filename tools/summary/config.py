@@ -20,16 +20,31 @@ MAX_BATCH_COST_USD = 15
 # go-ahead" is the human layer; this is the code-level backstop.
 COST_CONFIRM_THRESHOLD_USD = 1.00
 
-# Per-run wall-clock budget for the --sync generate path (seconds). The blog-summary
-# autopilot runs under a 60-min GitHub Actions cap; --sync summarizes the whole blog
-# back-catalog one call at a time on the FIRST run (idempotency has nothing to skip
-# yet). Without a budget the job was SIGKILLed at 60 min BEFORE it could checkpoint
-# summary-state.json — so every run restarted from zero and it never once succeeded
-# (tracker-138 reopened). generate_sync stops starting new calls past this budget and
-# returns partial; the caller checkpoints what finished + the CI job commits it, so the
-# backlog drains across a few bounded runs, then daily runs are true no-ops. 40 min
-# leaves headroom for one in-flight call (≤ _GEMINI_CALL_HARD_TIMEOUT_SEC) plus the
-# commit/notify steps, under the 60-min cap.
+# ── Whole-run wall-clock budget (tracker-138, PERMANENT fix 2026-07-13) ───────────────────────────────
+# The blog-summary autopilot timed out at the 60-min GitHub Actions cap EVERY day for 6+ weeks and never
+# once succeeded. Root cause: the budget below (SYNC_RUN_DEADLINE_SEC) bounded ONLY a single generate_sync
+# CALL — but the pipeline calls generate_sync TWICE (main pass + a retry pass that got a FRESH 40-min
+# budget) and then ran an UNBOUNDED Webflow write-back. On the first-run/stale backlog (~142 posts) the
+# TOTAL rode past the 60-min cap, the job was SIGKILLed BEFORE _save_summary_state (which ran only at the
+# very end), so nothing checkpointed, the idempotency state stayed stale, and it re-did the whole backlog
+# and timed out again — forever. The fix is a SINGLE run-wide deadline shared by every phase (both
+# generate passes + the write-back loop) so the process returns partial and cleanly, plus a hard watchdog
+# backstop (below) and incremental per-item checkpointing so progress is never lost. Both sit under 60 min.
+GENERATE_DEADLINE_SEC = 2100     # 35 min: generation (both passes) stops STARTING new calls here and defers the
+                                 # rest. It MUST stop earlier than RUN_DEADLINE_SEC so a big first-run backlog
+                                 # cannot eat the whole budget and STARVE write-back — leaving items generated
+                                 # (and billed) but never written or checkpointed. The ~10-min gap to
+                                 # RUN_DEADLINE_SEC is reserved to WRITE what this run generated.
+RUN_DEADLINE_SEC = 2700          # 45 min: write-back stops STARTING new writes here; whatever was written is
+                                 # published + checkpointed, the rest defers to the next run. ~15 min of headroom
+                                 # under the 60-min cap for the publish/report/commit tail.
+RUN_WATCHDOG_HARD_SEC = 3120     # 52 min: defense-in-depth backstop — a daemon timer force-exits the process
+                                 # with status 0 (a CLEAN exit, not a SIGKILL) if ANYTHING hangs past this, so
+                                 # the incrementally-checkpointed state still commits and the backlog drains.
+
+# Legacy per-CALL generate_sync budget. SUPERSEDED by RUN_DEADLINE_SEC (which is shared across passes);
+# retained only as the fallback when the summary CLI runs without a computed run-deadline (e.g. a unit test
+# that calls _submit_and_wait directly). Do not use for new work — thread the shared run-deadline instead.
 SYNC_RUN_DEADLINE_SEC = 2400
 
 # Locales. EN is the source language; the other 8 are translation targets.
