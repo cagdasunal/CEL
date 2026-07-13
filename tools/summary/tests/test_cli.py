@@ -1292,6 +1292,256 @@ def test_write_back_publishes_written_items_when_publish_flag_set(tmp_path, monk
     assert out["publish"]["collection_failures"] == 0
 
 
+def test_generate_english_blog_run_is_bounded_and_checkpoints_incrementally(tmp_path, monkeypatch):
+    """tracker-138 WIRING regression (the 6-week daily-timeout incident): drive the WHOLE live blog pipeline
+    end-to-end and prove (1) _execute_generate_english threads ONE shared run-deadline into generate_sync
+    (bounded, NOT the legacy 2400s per-call budget) and (2) it checkpoints summary-state.json INCREMENTALLY
+    as each item is written — so a run that ends early still drains the backlog. A green unit test of each
+    piece is necessary but not sufficient; this proves the pieces are actually wired together."""
+    import types as _types
+    from tools.summary import batch_runner, webflow_client, config, llms_parser
+    from tools.summary import qa as _qa
+
+    state_file = tmp_path / "summary-state.json"
+    monkeypatch.setattr(config, "SUMMARY_STATE_FILE", state_file)
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    monkeypatch.setattr(config, "GENERATE_DEADLINE_SEC", 200.0)     # generation budget (< run budget)
+    monkeypatch.setattr(config, "RUN_DEADLINE_SEC", 300.0)          # bounded, positive → a real shared deadline
+    monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)  # isolate: no real timer in the test
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+    # QA is not under test here — force pass so all three items reach write-back.
+    monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
+    monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
+
+    blog_cid = config.COLLECTIONS["blog"]
+    items = [
+        webflow_client.CmsItem(
+            id=f"b{i}", collection_id=blog_cid,
+            field_data={"name": f"Post {i}", "slug": f"post-{i}", "post-body": "Some blog body text about studying."},
+            is_archived=False, is_draft=False,
+        )
+        for i in range(3)
+    ]
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(webflow_client.WebflowClient, "list_items", lambda self, cid, **kw: iter(items))
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "update_item_summary",
+        lambda self, **kw: webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x"),
+    )
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "publish_items",
+        lambda self, collection_id, item_ids: webflow_client.WriteResult(
+            dry_run=False, success=True, method="POST", url="x",
+            response={"publishedItemIds": item_ids},
+        ),
+    )
+
+    captured_deadline: list = []
+
+    def fake_sync(requests, run_deadline_sec=None, **kw):
+        captured_deadline.append(run_deadline_sec)
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True,
+                                         content="## A blog question\n\nA clear answer paragraph.\n")
+                for r in requests]
+
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
+
+    rc = cli.main([
+        "generate-english", "--collection", "blog", "--no-dry-run", "--sync",
+        "--confirm-cost", "--publish", "--out-dir", str(tmp_path / "run"),
+    ])
+
+    assert rc == 0
+    # (1) generate_sync got a BOUNDED, shared generation deadline — derived from GENERATE_DEADLINE_SEC (which
+    #     is reserved to fire EARLIER than the run deadline so write-back never starves), never the legacy
+    #     per-call 2400s. (This is the wiring the tracker-138 "fix" silently lacked.)
+    assert captured_deadline and captured_deadline[0] is not None
+    assert 0 < captured_deadline[0] <= 200.0, captured_deadline
+    assert captured_deadline[0] != config.SYNC_RUN_DEADLINE_SEC
+    # (2) state was checkpointed INCREMENTALLY through the real run — all three written items are persisted,
+    #     so a SIGKILL/watchdog exit after this point would still let the backlog drain next run.
+    assert state_file.exists(), "summary-state.json was never written — the backlog can never drain"
+    persisted = json.loads(state_file.read_text())
+    assert set(persisted) == {"b0", "b1", "b2"}, persisted
+    phase = json.loads((tmp_path / "run" / "report.json").read_text())["phases"]["generate_english"]
+    assert phase["write_log"]["cms_writes"] == 3
+    assert phase["write_log"]["deferred"] == 0
+
+
+def test_generate_english_retry_pass_is_also_bounded_by_the_shared_deadline(tmp_path, monkeypatch):
+    """tracker-138 ROOT-CAUSE regression: the failure that ran for 6 weeks was a RETRY pass that got a FRESH
+    budget. Drive a full run where the FIRST generate pass fails an item (triggering the retry at cli.py:919)
+    and assert the retry pass ALSO receives a bounded, shared generation deadline — not None, not the legacy
+    2400s, and no larger than the first pass. A green suite that never exercises the retry pass is exactly why
+    the original 'fix' silently didn't work."""
+    import types as _types
+    from tools.summary import batch_runner, webflow_client, config, llms_parser
+    from tools.summary import qa as _qa
+
+    monkeypatch.setattr(config, "SUMMARY_STATE_FILE", tmp_path / "summary-state.json")
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    monkeypatch.setattr(config, "GENERATE_DEADLINE_SEC", 200.0)
+    monkeypatch.setattr(config, "RUN_DEADLINE_SEC", 300.0)
+    monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
+    monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
+    monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
+
+    blog_cid = config.COLLECTIONS["blog"]
+    items = [webflow_client.CmsItem(
+        id="b0", collection_id=blog_cid,
+        field_data={"name": "Post 0", "slug": "post-0", "post-body": "Some blog body text about studying."},
+        is_archived=False, is_draft=False)]
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(webflow_client.WebflowClient, "list_items", lambda self, cid, **kw: iter(items))
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "update_item_summary",
+        lambda self, **kw: webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x"))
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "publish_items",
+        lambda self, collection_id, item_ids: webflow_client.WriteResult(
+            dry_run=False, success=True, method="POST", url="x", response={"publishedItemIds": item_ids}))
+
+    calls: list = []
+
+    def fake_sync(requests, run_deadline_sec=None, **kw):
+        calls.append(run_deadline_sec)
+        succeeded = len(calls) > 1                      # first pass FAILS the item → forces the retry pass
+        return [batch_runner.BatchResult(
+            custom_id=r.custom_id, succeeded=succeeded,
+            content=("## A blog question\n\nA clear answer.\n" if succeeded else ""),
+            error=(None if succeeded else "transient boom")) for r in requests]
+
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
+
+    rc = cli.main([
+        "generate-english", "--collection", "blog", "--no-dry-run", "--sync",
+        "--confirm-cost", "--publish", "--out-dir", str(tmp_path / "run"),
+    ])
+
+    assert rc == 0
+    assert len(calls) == 2, f"retry pass did not run (calls={calls})"
+    assert calls[0] is not None and calls[1] is not None
+    # The RETRY pass got a bounded, shared generation budget — never None, never the legacy 2400s per-call
+    # budget, and no larger than the first pass (they share one shrinking deadline).
+    assert 0 < calls[1] <= 200.0, calls
+    assert calls[1] != config.SYNC_RUN_DEADLINE_SEC
+    assert calls[1] <= calls[0]
+
+
+def test_submit_and_wait_shares_one_run_deadline_across_passes(monkeypatch):
+    """tracker-138 ROOT CAUSE: the retry pass used to get a FRESH per-call budget, so the main pass AND
+    the retry pass could each run ~40 min and ride the run past the 60-min GitHub Actions cap (SIGKILL
+    before any checkpoint → the blog autopilot timed out every day for 6+ weeks). Both passes must now be
+    bounded by the REMAINING budget to ONE shared absolute deadline, so the retry gets only what's left."""
+    import argparse
+    from tools.summary import batch_runner
+
+    captured: list = []
+
+    def fake_gs(requests, run_deadline_sec=None, **kw):
+        captured.append(run_deadline_sec)
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content="x") for r in requests]
+
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_gs)
+    clock = [1000.0]
+    monkeypatch.setattr(cli.time, "monotonic", lambda: clock[0])
+
+    args = argparse.Namespace(sync=True)
+    reqs = [batch_runner.BatchRequest(custom_id="a", system_blocks=[], user_message="m")]
+    deadline = clock[0] + 100.0                                # 100s whole-run budget
+    cli._submit_and_wait(reqs, args, run_deadline=deadline)     # main pass → remaining 100
+    clock[0] += 30.0                                            # 30s elapses before the retry
+    cli._submit_and_wait(reqs, args, run_deadline=deadline)     # retry pass → remaining 70
+
+    assert captured == [100.0, 70.0]
+    assert captured[1] < captured[0], "retry must share the run budget, not get a fresh one"
+
+
+def test_write_back_stops_at_run_deadline_and_checkpoints_each_write(tmp_path, monkeypatch):
+    """tracker-138: write-back must (a) STOP starting new writes past the shared run deadline (returning the
+    rest as `deferred`, so the run stays under the cap) and (b) fire on_written per SUCCESSFUL write so the
+    caller checkpoints idempotency state incrementally — the two properties that make a partial run DRAIN
+    instead of losing everything when the process ends early."""
+    from tools.summary import batch_runner, webflow_client, config
+    from tools.summary.prompt_builder import KeywordPlan, SourceItem
+
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(
+        webflow_client.WebflowClient, "update_item_summary",
+        lambda self, **kw: webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x"),
+    )
+    sources = [
+        (SourceItem(url=f"https://www.englishcollege.com/post/{i}", title="B", body_excerpt="b",
+                    locale="en", content_type="blog_post", cms_item_id=f"b{i}"), KeywordPlan(primary="x"), "cms")
+        for i in range(3)
+    ]
+    results = [
+        batch_runner.BatchResult(custom_id=f"gen-{i}-b{i}", succeeded=True, content="## Q\n\nAn answer.\n")
+        for i in range(3)
+    ]
+
+    class _Args:
+        dry_run = False
+
+    clock = [5000.0]
+    monkeypatch.setattr(cli.time, "monotonic", lambda: clock[0])
+
+    # (a) deadline already in the past → nothing written, ALL deferred.
+    written: list = []
+    log = cli._write_back_summaries(
+        results, sources, _Args(), tmp_path, [],
+        run_deadline=clock[0] - 1.0, on_written=lambda it: written.append(it.cms_item_id),
+    )
+    assert log["cms_writes"] == 0 and log["deferred"] == 3 and written == []
+
+    # (b) generous deadline → all written AND on_written fires exactly once per item, in order.
+    written.clear()
+    log2 = cli._write_back_summaries(
+        results, sources, _Args(), tmp_path, [],
+        run_deadline=clock[0] + 10_000.0, on_written=lambda it: written.append(it.cms_item_id),
+    )
+    assert log2["cms_writes"] == 3 and log2["deferred"] == 0
+    assert written == ["b0", "b1", "b2"]
+
+
+def test_run_watchdog_force_exits_nonzero_to_alert(monkeypatch):
+    """tracker-138 backstop: the normal bounded run stops COOPERATIVELY at the generate/run deadlines and
+    exits 0 on its own, so the watchdog only ever fires on a genuine HANG the cooperative stops did not
+    catch. That is abnormal, so it must exit NON-ZERO — that is what makes the workflow's 'Notify on failure'
+    step fire (an earlier cut exited 0 and re-created the exact silent-hang the alert exists to prevent).
+    Durability is independent of the exit code (incremental checkpoint + always()-commit), so exiting
+    non-zero drains AND alerts. Verifies it fires with a non-zero code (os._exit is stubbed so the test
+    process survives)."""
+    import threading as _threading
+
+    fired = _threading.Event()
+    codes: list = []
+    monkeypatch.setattr(cli.os, "_exit", lambda code: (codes.append(code), fired.set()) and None)
+
+    timer = cli._start_run_watchdog(0.05)
+    assert timer.daemon is True, "watchdog must be a daemon so it never blocks a normal exit"
+    assert fired.wait(2.0), "watchdog did not fire within its hard budget"
+    assert codes == [cli._WATCHDOG_EXIT_CODE], codes
+    assert cli._WATCHDOG_EXIT_CODE != 0, "watchdog must exit NON-ZERO so the failure alert fires"
+
+
+def test_run_deadline_ordering_reserves_writeback_and_stays_under_the_job_cap():
+    """tracker-138 STARVATION + cap guard: generation must stop before write-back's deadline (else a big
+    backlog eats the whole budget and starves write-back → nothing written or checkpointed → never drains),
+    write-back must stop before the hard watchdog, and the watchdog must fire before the 60-min GitHub
+    Actions job cap SIGKILLs the process. This ordering is the whole fix; lock it so it can't silently drift."""
+    from tools.summary import config
+    assert config.GENERATE_DEADLINE_SEC < config.RUN_DEADLINE_SEC, "generation must reserve write-back headroom"
+    assert config.RUN_DEADLINE_SEC < config.RUN_WATCHDOG_HARD_SEC, "write-back must finish before the hard backstop"
+    assert config.RUN_WATCHDOG_HARD_SEC < 60 * 60, "the watchdog must exit cleanly BEFORE the 60-min job cap"
+
+
 def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatch):
     """tracker-096 review: --sync routes generation through batch_runner.generate_sync
     (instant) and must NOT touch the Batch API (submit_batch / wait_for_batch)."""
