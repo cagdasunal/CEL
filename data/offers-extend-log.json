@@ -95,3 +95,4 @@
 {"ts":"2026-07-30T05:18:06.847121+00:00","kind":"no_change","patched":[],"errors":[],"publish_errors":[]}
 {"ts":"2026-07-31T05:45:10.124591+00:00","kind":"no_change","patched":[],"errors":[],"publish_errors":[]}
 {"ts":"2026-08-01T05:35:39.601461+00:00","kind":"no_change","patched":[],"errors":[],"publish_errors":[]}
+{"ts":"2026-08-02T05:36:17.667224+00:00","kind":"extend_run","patched":[{"id":"69c4fd3b18767c32d417facb","internal_title":"SD Japan 04/26","old_end":"2026-08-02T00:00:00.000Z","new_end":"2026-08-18T00:00:00.000Z","extend_days":16}],"errors":[],"publish_errors":[]}
