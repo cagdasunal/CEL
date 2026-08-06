@@ -24,6 +24,14 @@ name: Runner acquisition watchdog
 #     GitHub outage is not silent (the in-job notify still cannot run).
 # A genuine script failure (a runner DID run steps) is left alone — the workflow's own
 # in-job notify already alerts, and blind reruns would only mask real bugs.
+#
+# KNOWN LIMIT — this watchdog needs a hosted runner too. During a MAJOR Actions outage
+# (githubstatus.com incident 2026-08-06 15:22 UTC: Actions + Pages "major outage",
+# "jobs may remain queued for an extended period before starting or may time out") the
+# watchdog can itself fail to acquire a runner, in which case it neither reruns nor
+# alerts. It converts the common case — a brief capacity blip — from silent to handled;
+# it cannot cover a total Actions outage. Nothing runner-based can. Do not read a green
+# watchdog history as proof that every acquisition failure was caught.
 
 on:
   workflow_run:
@@ -32,24 +40,47 @@ on:
     # operator, so it is not watched. Names must match each workflow's `name:` exactly
     # (workflow_run has no wildcard).
     #
-    # "Content Pipeline" is deliberately EXCLUDED: it runs every 15 min, so a single
-    # runner-acquisition miss self-heals on the very next tick. Watching it would add
-    # ~96 skipped watchdog runs/day for effectively zero recovery benefit.
+    # "Content Pipeline" WAS excluded on the theory that its `7,22,37,52 * * * *` cron
+    # means a miss self-heals within 15 min. That theory was derived from the DECLARED
+    # cron and never checked against delivery. Measured 2026-08-06 over the last 40 runs
+    # (2026-08-03 → 08-06): gaps min 53m, median 107m, max 204m — ZERO of 39 gaps were
+    # under 20 min. GitHub drops scheduled ticks under load, so the real cadence is ~7x
+    # slower than declared and Content Pipeline squarely meets this list's own criterion
+    # ("a missed run leaves a multi-hour gap"). Run 31119936789 (08-06 16:28 UTC) failed
+    # acquisition and was 100% silent: the next run had still not fired 73 min later.
+    # Cost of watching is ~13 watchdog runs/day (it fires per completion, not per cron
+    # tick), not the ~96 previously assumed.
+    # LESSON: never infer a schedule's real cadence from its cron expression — measure it
+    #   gh run list --workflow "<name>" --limit 40 --json createdAt
     #
-    # "pages-build-deployment" (GitHub's legacy Pages "deploy from a branch" build) is
-    # EXCLUDED for a STRONGER reason than frequency: recovery would `gh run rerun` the
-    # failed run, which rebuilds + redeploys its OLD triggering commit — clobbering the
-    # newer content a later push already deployed. It's a GitHub-managed workflow we
-    # don't control, it rebuilds on every push to main (~24/day — docs/ regenerates
-    # constantly: sitemap, llms.txt, scripts, admin), and a transient miss self-heals on
-    # the very next push (minutes away, so Pages is never meaningfully stale). A single
-    # blip is benign; a SUSTAINED Pages outage would surface via the crons above (same
-    # runner pool). So it gets no recovery and no alert — by design. (2026-07-09 run
-    # 29018943547: the 12:41 build got no runner; the 13:38/13:56/13:59 pushes redeployed
-    # fine and the live site was current within the hour.)
+    # "pages-build-deployment" (GitHub's legacy Pages "deploy from a branch" build) gets
+    # NO RECOVERY, and that part is still right: `gh run rerun` would rebuild + redeploy
+    # its OLD triggering commit, clobbering newer content a later push already deployed.
+    # Never rerun Pages. It's GitHub-managed, rebuilds on every push to main (~24/day —
+    # docs/ regenerates constantly: sitemap, llms.txt, scripts, admin), and a single
+    # transient self-heals on the next push. (2026-07-09 run 29018943547: the 12:41 build
+    # got no runner; the 13:38/13:56/13:59 pushes redeployed fine.)
+    #
+    # ⚠ But this block USED to also claim "a SUSTAINED Pages outage would surface via the
+    # crons above (same runner pool)", i.e. the crons are the canary. 2026-08-06 FALSIFIED
+    # that: pages-build-deployment failed 4x in a row (12:09, 12:58, 13:48, 14:38 UTC) with
+    # `##[error]Timeout reached, aborting!` — the deploy step polling GitHub's Pages
+    # deployment API until it gave up — while "Update Sitemap & LLMs.txt" (13:44) and
+    # "Content Pipeline" (14:37) SUCCEEDED in the same window. It is a different failure
+    # mode (Pages deployment backend, not the runner pool), so the crons cannot see it.
+    # Those 4 failures were completely silent.
+    # NOT fixed here on purpose: `workflow_run` is only documented to fire for workflows
+    # defined IN the repo, and pages-build-deployment is GitHub-generated. On 2026-08-06
+    # the two watchdog runs (31103778381, 31107654950) were both triggered by watched
+    # workflows completing (Blog Image Optimization 12:58:42, Update Sitemap 13:48:06) —
+    # NO watchdog run followed either Pages failure (13:09:08, 13:58:43). So a Pages
+    # alerting job here would be unverifiable-until-it-matters, i.e. exactly the kind of
+    # check that silently never fires. Alerting on repeated Pages failures needs a
+    # mechanism that does not depend on workflow_run seeing a GitHub-managed workflow.
     workflows:
       - "Blog Image Optimization"
       - "Blog summary autopilot (new posts → native-language summary, live)"
+      - "Content Pipeline"
       - "Offers Auto-Extend"
       - "Update Sitemap & LLMs.txt"
       - "Weglot Daily Report"
