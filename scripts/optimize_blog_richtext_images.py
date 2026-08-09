@@ -417,6 +417,96 @@ def utc_iso_compact() -> str:
     return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
+# --- JSONL log writing: roll up `skipped_avif` no-ops -----------------------
+#
+# `skipped_avif` means "this image is already AVIF, nothing was done". It is
+# the SAME ~2,400 images on every run, so writing one record per image per run
+# made data/blog-optimization-log.jsonl grow ~1.3 MB/day. On 2026-08-09 it hit
+# 100.37 MB and GitHub's pre-receive hook rejected the push (hard 100 MB file
+# limit), failing the workflow's "Commit + push state" step — and no retry can
+# help, because it is not transient. 172,388 of the 183,466 records (94%) were
+# these no-ops.
+#
+# They are now COUNTED, not enumerated: one roll-up record per run, carrying
+# `rollup_count` and the summed bytes. The dashboard weights action counts by
+# `rollup_count`, so its numbers are unchanged. The file stays strictly
+# append-only, which keeps git's delta compression efficient — rotating it
+# instead would rewrite the whole blob on every run.
+# Keyed by (collection, collection_name) — NOT one roll-up per run. The
+# /admin/#images dashboard breaks every stat down "By collection", so collapsing
+# the collection dimension would attribute all skips to one collection and make
+# skip-only collections (e.g. Courses) vanish from the table entirely.
+_SKIPPED_ROLLUP: dict[tuple[str, str], dict] = {}
+
+
+def _write_jsonl(log_path, entries: list[dict]) -> None:
+    if not entries:
+        return
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as fh:
+        for entry in entries:
+            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def append_image_logs(log_path, per_image_logs: list[dict]) -> None:
+    """Append per-image log entries, accumulating `skipped_avif` into roll-ups."""
+    keep: list[dict] = []
+    for e in per_image_logs:
+        if e.get("action") == "skipped_avif":
+            # Mirror the dashboard's own fallbacks so the roll-up lands in the
+            # same bucket the per-image records would have.
+            col = e.get("collection") or "post"
+            key = (col, e.get("collection_name") or col)
+            acc = _SKIPPED_ROLLUP.setdefault(key, {"count": 0, "old_bytes": 0})
+            acc["count"] += 1
+            try:
+                acc["old_bytes"] += int(e.get("old_bytes") or 0)
+            except (TypeError, ValueError):
+                pass
+        else:
+            keep.append(e)
+    _write_jsonl(log_path, keep)
+
+
+# GitHub rejects any file >100 MB at the pre-receive hook, which is what broke
+# this workflow's push on 2026-08-09. Warn far enough ahead that there is time to
+# act, instead of discovering it as a hard push failure.
+LOG_SIZE_WARN_BYTES = 50 * 1024 * 1024
+
+
+def warn_if_log_oversized(log_path) -> None:
+    try:
+        size = log_path.stat().st_size
+    except OSError:
+        return
+    if size >= LOG_SIZE_WARN_BYTES:
+        print(
+            f"::warning::{log_path.name} is {size / 1048576:.1f} MB — GitHub rejects "
+            f"any file over 100 MB at push time. Compact it (roll up historical "
+            f"`skipped_avif` records per run+collection) before it blocks the workflow.",
+            flush=True,
+        )
+
+
+def flush_skipped_rollup(log_path, run_id: str) -> None:
+    """Write one `skipped_avif` roll-up per collection for this run, then reset."""
+    if not _SKIPPED_ROLLUP:
+        return
+    _write_jsonl(log_path, [{
+        "ts": utc_iso(),
+        "run_id": run_id,
+        "collection": col,
+        "collection_name": cname,
+        "action": "skipped_avif",
+        "rollup_count": acc["count"],
+        "old_bytes": acc["old_bytes"],
+        "new_bytes": 0,
+        "saving_pct": 0.0,
+        "error": None,
+    } for (col, cname), acc in sorted(_SKIPPED_ROLLUP.items())])
+    _SKIPPED_ROLLUP.clear()
+
+
 def process_post(
     *,
     item: dict,
@@ -604,11 +694,8 @@ def process_post(
             log["action"] == "replaced" for log in per_image_logs
         )
 
-    # Append per-image logs to JSONL log file
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    with log_path.open("a", encoding="utf-8") as fh:
-        for entry in per_image_logs:
-            fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    # Append per-image logs to JSONL log file (skipped_avif rolled up per run)
+    append_image_logs(log_path, per_image_logs)
 
     return summary
 
@@ -1016,12 +1103,8 @@ def process_item(
         elif not auto_publish:
             summary["publish_skipped_reason"] = "auto_publish_disabled"
 
-    # Append per-image logs to the shared JSONL
-    if per_image_logs:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        with log_path.open("a", encoding="utf-8") as fh:
-            for entry in per_image_logs:
-                fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    # Append per-image logs to the shared JSONL (skipped_avif rolled up per run)
+    append_image_logs(log_path, per_image_logs)
 
     return summary
 
@@ -1298,6 +1381,12 @@ def main(argv: list[str] | None = None) -> int:
                 empty_msg = "no images in image-bearing fields"
             _accumulate(summary)
             _print_item_line(summary, empty_msg)
+
+    # One roll-up record for every `skipped_avif` no-op this run (see
+    # append_image_logs). Must run before the totals print so the log is
+    # complete by the time the dashboard step reads it.
+    flush_skipped_rollup(log_path, run_id)
+    warn_if_log_oversized(log_path)
 
     # Final totals
     saved = totals["old_bytes_total"] - totals["new_bytes_total"]

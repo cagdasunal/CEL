@@ -211,6 +211,15 @@ def collection_name_of(entry: dict) -> str:
     return entry.get("collection_name") or collection_of(entry)
 
 
+def _weight(entry: dict) -> int:
+    """How many per-image events this record represents (1 unless a roll-up)."""
+    try:
+        n = int(entry.get("rollup_count") or 1)
+    except (TypeError, ValueError):
+        return 1
+    return n if n > 0 else 1
+
+
 def aggregate(entries: list[dict]) -> dict:
     """Sum stats + per-action counts.
 
@@ -222,7 +231,12 @@ def aggregate(entries: list[dict]) -> dict:
     new_total = 0
     items: set[tuple[str, str]] = set()
     for e in entries:
-        actions[e.get("action") or "unknown"] += 1
+        # A roll-up record stands in for N per-image records of the same action.
+        # `skipped_avif` no-ops are written one-per-run rather than one-per-image
+        # since 2026-08-09 (the log hit GitHub's 100 MB file limit and blocked the
+        # workflow push). Weighting by `rollup_count` keeps these counts identical
+        # to the pre-roll-up numbers. Legacy records have no `rollup_count` → 1.
+        actions[e.get("action") or "unknown"] += _weight(e)
         try:
             old_total += int(e.get("old_bytes") or 0)
             new_total += int(e.get("new_bytes") or 0)
@@ -233,7 +247,8 @@ def aggregate(entries: list[dict]) -> dict:
     saved = old_total - new_total
     pct = (saved / old_total * 100.0) if old_total > 0 else 0.0
     return {
-        "image_total": len(entries),
+        # Images PROCESSED, not records stored — a roll-up record represents many.
+        "image_total": sum(_weight(e) for e in entries),
         "replaced": actions.get("replaced", 0),
         "skipped_avif": actions.get("skipped_avif", 0),
         "skipped_small": actions.get("skipped_small", 0),
