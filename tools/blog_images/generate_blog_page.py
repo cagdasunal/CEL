@@ -230,6 +230,13 @@ def aggregate(entries: list[dict]) -> dict:
     old_total = 0
     new_total = 0
     items: set[tuple[str, str]] = set()
+    # Roll-up records carry an item COUNT, not the slugs (storing ~1,100 slugs
+    # per run would recreate the 100 MB problem the roll-up exists to solve), so
+    # distinct items cannot be unioned across runs. The skipped set is
+    # effectively static run-to-run, so the largest single run's count is the
+    # best available estimate — taken per collection, then summed, so a global
+    # aggregate isn't reduced to one collection's maximum.
+    rollup_items_max: dict[str, int] = defaultdict(int)
     for e in entries:
         # A roll-up record stands in for N per-image records of the same action.
         # `skipped_avif` no-ops are written one-per-run rather than one-per-image
@@ -244,6 +251,19 @@ def aggregate(entries: list[dict]) -> dict:
             pass
         if e.get("post_slug"):
             items.add((collection_of(e), e["post_slug"]))
+        if e.get("rollup_items"):
+            try:
+                col = collection_of(e)
+                rollup_items_max[col] = max(rollup_items_max[col], int(e["rollup_items"]))
+            except (TypeError, ValueError):
+                pass
+    per_col_items: dict[str, int] = defaultdict(int)
+    for col, _slug in items:
+        per_col_items[col] += 1
+    item_count = sum(
+        max(per_col_items.get(c, 0), rollup_items_max.get(c, 0))
+        for c in set(per_col_items) | set(rollup_items_max)
+    )
     saved = old_total - new_total
     pct = (saved / old_total * 100.0) if old_total > 0 else 0.0
     return {
@@ -257,8 +277,8 @@ def aggregate(entries: list[dict]) -> dict:
         "new_bytes": new_total,
         "saved_bytes": saved,
         "saved_pct": pct,
-        "item_count": len(items),
-        "post_count": len(items),  # legacy alias (older callers/tests)
+        "item_count": item_count,
+        "post_count": item_count,  # legacy alias (older callers/tests)
     }
 
 

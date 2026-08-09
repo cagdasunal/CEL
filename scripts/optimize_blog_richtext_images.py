@@ -457,8 +457,15 @@ def append_image_logs(log_path, per_image_logs: list[dict]) -> None:
             # same bucket the per-image records would have.
             col = e.get("collection") or "post"
             key = (col, e.get("collection_name") or col)
-            acc = _SKIPPED_ROLLUP.setdefault(key, {"count": 0, "old_bytes": 0})
+            acc = _SKIPPED_ROLLUP.setdefault(
+                key, {"count": 0, "old_bytes": 0, "slugs": set()},
+            )
             acc["count"] += 1
+            if e.get("post_slug"):
+                # Only the COUNT is persisted (`rollup_items`). Persisting the
+                # slugs themselves would be ~1,100 strings per run (~24 MB/yr),
+                # which recreates the size problem this roll-up exists to fix.
+                acc["slugs"].add(e["post_slug"])
             try:
                 acc["old_bytes"] += int(e.get("old_bytes") or 0)
             except (TypeError, ValueError):
@@ -499,6 +506,7 @@ def flush_skipped_rollup(log_path, run_id: str) -> None:
         "collection_name": cname,
         "action": "skipped_avif",
         "rollup_count": acc["count"],
+        "rollup_items": len(acc["slugs"]),
         "old_bytes": acc["old_bytes"],
         "new_bytes": 0,
         "saving_pct": 0.0,
