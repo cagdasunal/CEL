@@ -1409,7 +1409,8 @@ _SHELL_HTML = """\
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta http-equiv="refresh" content="0; url=/admin/offers/">
   <title>English College \u2014 Admin Dashboard</title>
   <link rel="icon" type="image/png" href="/assets/img/favicon.png">
