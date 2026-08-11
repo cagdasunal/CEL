@@ -647,7 +647,7 @@
       }
       // engaged_page (scroll path): 50% scrolled = genuine engagement, any page (once).
       if (!engagedFired && pct >= 50) fireEngaged('scroll_50');
-      // blog HOMEPAGE / category list scroll (25/50/75/100) — "do they scroll the list?"
+      // blog HOMEPAGE / category list scroll (25/50/75/90) — "do they scroll the list?"
       if (isList) {
         for (let k = 0; k < POST_THRESH.length; k++) {
           if (pct >= POST_THRESH[k] && !postHit['l' + POST_THRESH[k]]) {
