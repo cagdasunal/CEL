@@ -471,15 +471,35 @@
  * parent path directly (cross-origin throws). The one signal available with NO
  * parent-page change is document.referrer: Fidelo's loader (widget.js) builds the
  * iframe with referrerPolicy="no-referrer-when-downgrade" (and even errors if the
- * host sets a no-referrer / same-origin meta), so document.referrer here is the
- * FULL parent URL incl. the slug, e.g. https://www.englishcollege.com/booking.
+ * host sets a no-referrer / same-origin meta).
  *
- * FAIL-CLOSED — the skin only ever reaches an explicitly allowed CEL slug:
- *   • Skin applies ONLY when referrer is the CEL origin AND the path is /booking
- *     (optionally locale-prefixed, e.g. /de/booking, /ar/booking).
+ * ⚠ THE PATH IS NOT RELIABLE — WEBKIT STRIPS IT (fixed 2026-08-11):
+ * referrerPolicy is a REQUEST, not a guarantee. WebKit (Safari on macOS/iOS/iPadOS,
+ * and EVERY browser on iOS since they all wrap WebKit) trims cross-site referrers
+ * down to the bare origin no matter what policy the embedder sets. Measured on
+ * iOS Safari 26.2 against an identical no-referrer-when-downgrade iframe:
+ *     Chrome  → "http://127.0.0.1:8899/booking.html"   (full path)
+ *     Safari  → "http://127.0.0.1:8899/"               (origin only, path GONE)
+ * So an "AND the path is /booking" test can NEVER pass on Safari. It didn't: the
+ * skin silently stopped injecting for every Safari visitor, Fidelo's own admin CSS
+ * (written for a dark indigo card: `label,h4,h3,h2,p{color:#f9f0df}`) then rendered
+ * cream text over the transparent iframe on CEL's cream page, and from step 2 on the
+ * form was a column of unlabelled blank boxes. Client-reported 2026-08-11:
+ * "not accessible on iPhone after the first screen"; fine on Android.
+ * DO NOT re-introduce a required path test here. If the slug must be known one day,
+ * pass it IN (a parent postMessage handshake), never infer it from the referrer.
+ *
+ * FAIL-CLOSED — the skin only ever reaches the CEL origin:
+ *   • Skin applies ONLY when the referrer is the CEL origin, AND EITHER the path is
+ *     /booking (optionally locale-prefixed, e.g. /de/booking, /ar/booking) — the
+ *     Chromium/Firefox case — OR the referrer carries no path at all: the WebKit case.
  *   • The trailing (?:[\/?#]|$) means "/booking-new" does NOT match — the old
- *     staging duplicate no longer receives the skin.
- *   • Missing / origin-only referrer → no match → nothing applied anywhere.
+ *     staging duplicate no longer receives the skin ON CHROMIUM. On WebKit the path
+ *     is unknowable, so any englishcollege.com parent embedding this widget is
+ *     skinned. That is the accepted trade-off: /booking is the only page that embeds
+ *     it, and a skinned widget is strictly better than an unreadable one.
+ *   • A missing / non-CEL / third-party referrer still matches nothing — a foreign
+ *     host embedding the Fidelo widget never receives CEL branding.
  *
  * STATE TODAY: PRODUCTION — ALLOWED_PATH is the live /booking slug, SKIN_CSS is
  * populated, and applySkin injects it. To retarget the gate, edit ALLOWED_PATH
@@ -492,6 +512,9 @@
   // (plus its locale prefixes, e.g. /de/booking, /ar/booking).
   const ALLOWED_ORIGIN = /^https?:\/\/(www\.)?englishcollege\.com\//;
   const ALLOWED_PATH = /(?:\/[a-z]{2})?\/booking(?:[\/?#]|$)/;
+  // WebKit hands us the bare CEL origin with the path stripped (see the ⚠ note above).
+  // Matching that is what keeps Safari/iOS skinned; it is still origin-locked to CEL.
+  const ORIGIN_ONLY = /^https?:\/\/(www\.)?englishcollege\.com\/?$/;
 
   // The CEL skin CSS. EMPTY = dormant. Built from
   // sites/cel/booking-widget-design/widget.css via apply_skin.py — never hand-edit here.
@@ -506,7 +529,9 @@
   function envAllowsSkin() {
     try {
       const ref = document.referrer || '';
-      return ALLOWED_ORIGIN.test(ref) && ALLOWED_PATH.test(ref);
+      if (!ALLOWED_ORIGIN.test(ref)) return false;   // origin lock — never skin a foreign host
+      // Chromium/Firefox give the full path; WebKit gives the origin alone. Accept both.
+      return ALLOWED_PATH.test(ref) || ORIGIN_ONLY.test(ref);
     } catch (e) { return false; }
   }
 
