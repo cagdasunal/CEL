@@ -1,19 +1,79 @@
+# =============================================================================
+# cel.englishcollege.com — the ENTIRE subdomain is NO-INDEX.
+#
+# Mechanism: every HTML page here carries
+#   <meta name="robots"   content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+#   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+# GitHub Pages cannot send an X-Robots-Tag header, so that meta tag is the only
+# lever available for HTML — and it only works while Googlebot can still FETCH
+# the page and read it.
+#
+# ⚠ DO NOT ADD `Disallow: /`. It would:
+#   1. stop Googlebot ever reading those noindex tags — and a blocked URL can
+#      still be indexed as a bare link, which is the exact opposite of intent; and
+#   2. break www.englishcollege.com, because this host serves
+#        /sitemap.xml  — the MASTER sitemap for the main site (746 www URLs,
+#                        submitted in Search Console, cited by llms.txt), and
+#        /scripts/     — the production JS bundles Googlebot fetches when it
+#                        renders englishcollege.com pages.
+#      Those two paths must stay crawlable. /llms.txt is published deliberately.
+#
+# Non-HTML files cannot carry a meta tag, so the internal ones are Disallow'd
+# below — that is the only mechanism they have.
+# =============================================================================
+
 User-agent: *
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
 Allow: /sitemap.xml
 Allow: /llms.txt
 
+# A crawler that matches a specific User-agent group ignores the `*` group
+# entirely, so each block below repeats the full Disallow list.
+
 User-agent: GPTBot
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
+
 User-agent: ClaudeBot
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
+
 User-agent: PerplexityBot
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
+
 User-agent: Google-Extended
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
+
 User-agent: CCBot
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
+
 User-agent: anthropic-ai
 Disallow: /admin/
+Disallow: /reviews/
+Disallow: /log.txt
+Disallow: /ARCHITECTURE.md
+Disallow: /blog-image-optimization-setup.md
 
 Sitemap: https://cel.englishcollege.com/sitemap.xml
