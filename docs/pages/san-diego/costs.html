@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<!--
+  CEL San Diego — Cost of Studying English  (page B of the SD money-page set)
+  Target: englishcollege.com/san-diego-ca/cost-of-studying-english
+  Shell A · cloned from pages/cost-of-studying-english/ · copy SSOT: pages/san-diego/costs.md
+  Build brief: pages/san-diego/COSTS-BRIEF.md · class contract: CLASS-CONTRACT.md §3 (Page B)
+  Class names reused VERBATIM from the reference. New classes (contract-approved B1-B6):
+  hero_meta · soft-cta_wrap/_text/_btn · is-excluded · price-table_head/_badge ·
+  inline-cta-copy/-trust/is-secondary · sticky-cta_bar/_actions  -> costs.css
+  §12 blog grid REUSES nextread_* from pages/san-diego/landing.css (supersedes B7).
+  IMAGES: no SD photography exists yet — reference CDN URLs stand in with SD alt text;
+  every content photo is marked TODO: replace with SD asset.
+-->
+<html lang="en" class="geo-ready">
+<head>
+  <!-- ============================================================
+       STAGING PREVIEW — MUST NOT BE INDEXED
+       Served from cel.englishcollege.com for review only. The production
+       page lives on englishcollege.com. Copy still carries unresolved
+       [CONFIRM: ...] markers and placeholder imagery.
+
+       noindex is the authoritative signal and REQUIRES the page to stay
+       crawlable — robots.txt deliberately does NOT Disallow /pages/,
+       because a blocked URL can still be indexed as a bare link while
+       Google never sees this tag. Do not "harden" it by blocking crawl.
+       ============================================================ -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cost of Studying English in San Diego 2026: Tuition &amp; Fees | CEL</title>
+  <meta name="description" content="Tuition from US$300/week, accommodation from US$270/week. Real 2026 prices for studying English in Pacific Beach, San Diego — tuition, housing, fees, visa costs.">
+  <!-- ================= CASCADE CONTRACT — do not change =================
+       COSTS-BRIEF.md §2. The four live published sheets, in this order.
+       The .opt sheet is THIS page's own (page-cost-of-studying-english), not
+       page-vancouver's: it carries the :root block with 118 custom properties.
+       Without the right :root every var() dies — body background, all heading
+       font-family / size / text-transform, every brand colour.
+       Never merge the four .opt sheets (tree-shaken + per-page tuned).
+       Never link client-first.css or pages/*/styles.css — they are a partial
+       hand reconstruction with no top-level .section_hero / .section_page /
+       .breadcrumb rule.  See AUDIT-san-diego-2026-07-21.md.
+       ==================================================================== -->
+  <link rel="stylesheet" href="../../_live/englishcollege.webflow.shared.54a3c3338.min.css">
+  <link rel="stylesheet" href="../../_live/page-cost-of-studying-english.opt.min.css">
+  <link rel="stylesheet" href="../../_live/site-custom-code.css">
+  <link rel="stylesheet" href="../../_live/swiper-bundle.min.css">
+<link rel="stylesheet" href="../../shared/hero-clearance.css">
+<link rel="stylesheet" href="../../shared/hero-layout.css">
+  <!-- page-scoped: the contract-approved new classes + the post-snapshot rename bridge -->
+  <link rel="stylesheet" href="costs.css">
+</head>
+<body>
+<div class="page-wrapper">
+<div class="page_code_wrap"><div class="page_code_base w-embed">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"BreadcrumbList","itemListElement":[
+{"@type":"ListItem","position":1,"name":"USA","item":"https://www.englishcollege.com/learn-english-usa"},
+{"@type":"ListItem","position":2,"name":"San Diego","item":"https://www.englishcollege.com/san-diego-ca/language-school"},
+{"@type":"ListItem","position":3,"name":"Cost of Studying English","item":"https://www.englishcollege.com/san-diego-ca/cost-of-studying-english"}]},
+{"@type":"WebPage","@id":"https://www.englishcollege.com/san-diego-ca/cost-of-studying-english#webpage","url":"https://www.englishcollege.com/san-diego-ca/cost-of-studying-english","name":"Cost of Studying English in San Diego 2026: Tuition & Fees | CEL","dateModified":"2026-08-03","isPartOf":{"@id":"https://www.englishcollege.com/#organization"},"about":{"@id":"https://www.englishcollege.com/san-diego-ca/language-school#school"}}]}
+</script>
+</div></div>
+
+<!-- ===== NAVBAR (site template) — components/navbar.html ===== -->
+<div data-animation="default" class="navbar_component w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-nav" data-wf--navbar--variant="transparent" data-easing2="ease" fs-scrolldisable-element="smart-nav" data-easing="ease" data-collapse="medium" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187faa5" role="banner" data-duration="400"><div class="container is-navbar"><a href="/" class="navbar_logo-link w-nav-brand"><div class="logo_icon-wrapper"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454ccd01_CEL-Lettermark-Logo-OneColor-Light-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-white"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-color"></div><div class="logo_text w-embed"><svg height="100%" viewBox="0 0 758 289" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M175.353 53.6001C175.578 55.4008 175.803 57.2015 175.803 58.8897C175.803 75.7714 163.423 86.1254 144.178 86.1254C117.618 86.1254 104.338 66.6553 104.338 46.1722C104.338 25.5766 117.73 2.84258 145.867 2.84258C162.636 2.84258 171.864 10.8332 171.864 18.8239C171.864 25.3515 165.562 31.9916 152.844 34.4676C151.719 20.7371 142.715 8.24471 136.188 8.24471C130.898 8.24471 129.435 16.6855 129.435 26.8145C129.435 44.1464 139.114 63.8417 153.52 63.8417C161.735 63.8417 170.289 60.1277 175.353 53.6001ZM217.486 2.84258C244.047 2.84258 257.327 21.1873 257.327 41.6704C257.327 62.8288 243.934 86.1254 217.486 86.1254C190.926 86.1254 177.645 67.218 177.645 46.1722C177.645 25.5766 191.038 2.84258 217.486 2.84258ZM225.477 80.7233C230.316 80.7233 232.229 74.871 232.229 66.5427C232.229 45.4969 219.737 8.24471 209.495 8.24471C204.656 8.24471 202.743 13.8719 202.743 22.0877C202.743 43.1335 215.573 80.7233 225.477 80.7233ZM262.572 3.96803H289.808V81.0609C300.838 78.8101 310.404 72.0574 317.607 59.1148C317.607 67.5556 318.057 74.4208 318.957 85H262.572V3.96803ZM324.12 3.96803H351.356V81.0609C362.385 78.8101 371.952 72.0574 379.154 59.1148C379.154 67.5556 379.605 74.4208 380.505 85H324.12V3.96803ZM444.304 85H385.668V3.96803H441.602C441.602 12.859 442.39 21.2999 442.953 29.8532C433.949 19.6117 424.383 10.9458 412.904 6.78163V42.008C418.531 39.9822 423.595 36.2683 428.322 31.4289V55.0632C423.483 50.2238 418.306 46.7349 412.904 44.5966V81.0609C424.833 78.8101 435.187 72.0574 442.953 59.1148C442.953 67.5556 443.403 74.4208 444.304 85ZM486.077 42.9084H517.139V85H500.595L496.431 82.524C492.829 84.8875 488.215 86.1254 482.588 86.1254C460.417 86.1254 447.136 66.6553 447.136 46.1722C447.136 25.5766 460.529 2.84258 488.665 2.84258C505.434 2.84258 514.663 10.8332 514.663 18.8239C514.663 25.3515 508.361 31.9916 495.643 34.4676C494.518 20.7371 485.514 8.24471 478.987 8.24471C473.697 8.24471 472.234 16.6855 472.234 26.8145C472.234 49.2109 480.225 74.4208 491.029 78.9226V75.9964C491.029 64.9671 490.804 53.9377 486.077 42.9084ZM582.676 85H524.04V3.96803H579.975C579.975 12.859 580.763 21.2999 581.325 29.8532C572.322 19.6117 562.756 10.9458 551.276 6.78163V42.008C556.903 39.9822 561.968 36.2683 566.695 31.4289V55.0632C561.855 50.2238 556.678 46.7349 551.276 44.5966V81.0609C563.206 78.8101 573.56 72.0574 581.325 59.1148C581.325 67.5556 581.776 74.4208 582.676 85ZM654.585 2.84258C681.145 2.84258 694.426 21.1873 694.426 41.6704C694.426 62.8288 681.033 86.1254 654.585 86.1254C628.024 86.1254 614.744 67.218 614.744 46.1722C614.744 25.5766 628.137 2.84258 654.585 2.84258ZM662.575 80.7233C667.415 80.7233 669.328 74.871 669.328 66.5427C669.328 45.4969 656.836 8.24471 646.594 8.24471C641.755 8.24471 639.841 13.8719 639.841 22.0877C639.841 43.1335 652.672 80.7233 662.575 80.7233ZM726.907 6.78163V42.008C732.534 39.9822 737.599 36.2683 742.325 31.4289V55.0632C737.486 50.2238 732.309 46.7349 726.907 44.5966V85H699.671V3.96803H754.48C754.48 12.859 755.268 21.2999 755.831 29.8532C747.165 19.6117 737.936 10.9458 726.907 6.78163ZM166.35 186H107.714V104.968H163.649C163.649 113.859 164.436 122.3 164.999 130.853C155.996 120.612 146.429 111.946 134.95 107.782V143.008C140.577 140.982 145.641 137.268 150.368 132.429V156.063C145.529 151.224 140.352 147.735 134.95 145.597V182.061C146.879 179.81 157.234 173.057 164.999 160.115C164.999 168.556 165.449 175.421 166.35 186ZM178.186 116.11V120.387C178.186 143.121 179.537 166.755 199.682 186H172.559V104.968H202.608L237.835 174.858V170.581C237.835 147.847 236.484 124.213 216.339 104.968H243.462V186H213.525L178.186 116.11ZM287.036 143.908H318.098V186H301.554L297.39 183.524C293.789 185.887 289.174 187.125 283.547 187.125C261.376 187.125 248.096 167.655 248.096 147.172C248.096 126.577 261.488 103.843 289.624 103.843C306.394 103.843 315.622 111.833 315.622 119.824C315.622 126.351 309.32 132.992 296.602 135.468C295.477 121.737 286.473 109.245 279.946 109.245C274.656 109.245 273.193 117.686 273.193 127.815C273.193 150.211 281.184 175.421 291.988 179.923V176.996C291.988 165.967 291.763 154.938 287.036 143.908ZM324.999 104.968H352.235V182.061C363.264 179.81 372.831 173.057 380.034 160.115C380.034 168.556 380.484 175.421 381.384 186H324.999V104.968ZM386.547 104.968H413.783V186H386.547V104.968ZM420.477 130.516C420.477 119.261 432.519 103.843 455.478 103.843C473.935 103.843 479.788 111.833 479.788 119.824C479.788 124.888 473.935 130.178 462.118 132.091C460.88 120.162 454.578 109.245 447.487 109.245C443.998 109.245 442.198 114.309 442.198 119.486C442.198 135.242 482.038 139.407 482.038 160.565C482.038 171.819 469.996 187.125 447.037 187.125C428.58 187.125 419.351 179.135 419.351 171.144C419.351 166.08 425.203 160.903 437.021 158.989C438.259 170.919 447.937 181.723 455.028 181.723C458.517 181.723 460.317 176.771 460.317 171.594C460.317 155.726 420.477 151.561 420.477 130.516ZM487.332 104.968H514.567V144.584H530.549V104.968H557.784V186H530.549V149.311H514.567V186H487.332V104.968ZM107.714 205.968H134.95V283.061C145.979 280.81 155.545 274.057 162.748 261.115C162.748 269.556 163.198 276.421 164.099 287H107.714V205.968ZM190.307 213.508C186.931 227.577 183.667 243.558 183.667 257.738C183.667 258.526 183.78 259.427 183.78 260.214H204.15L190.307 213.508ZM188.057 205.968H215.292L239.377 287H212.141L205.501 264.716H184.005C184.905 273.495 187.494 281.26 193.009 287H163.522L188.057 205.968ZM248.307 217.11V221.387C248.307 244.121 249.657 267.755 269.803 287H242.679V205.968H272.729L307.955 275.858V271.581C307.955 248.847 306.605 225.213 286.459 205.968H313.582V287H283.645L248.307 217.11ZM357.156 244.908H388.219V287H371.675L367.51 284.524C363.909 286.887 359.295 288.125 353.667 288.125C331.496 288.125 318.216 268.655 318.216 248.172C318.216 227.577 331.609 204.843 359.745 204.843C376.514 204.843 385.743 212.833 385.743 220.824C385.743 227.351 379.44 233.992 366.723 236.468C365.597 222.737 356.594 210.245 350.066 210.245C344.776 210.245 343.313 218.686 343.313 228.815C343.313 251.211 351.304 276.421 362.108 280.923V277.996C362.108 266.967 361.883 255.938 357.156 244.908ZM394.557 259.314V205.968H421.793V272.819C421.793 280.247 425.844 283.624 429.784 283.624C433.723 283.624 437.774 280.247 437.774 272.819V205.968H465.01V259.314C465.01 283.061 447.453 288.125 429.896 288.125C412.227 288.125 394.557 282.948 394.557 259.314ZM493.65 213.508C490.274 227.577 487.01 243.558 487.01 257.738C487.01 258.526 487.122 259.427 487.122 260.214H507.493L493.65 213.508ZM491.399 205.968H518.635L542.719 287H515.483L508.843 264.716H487.347C488.248 273.495 490.836 281.26 496.351 287H466.864L491.399 205.968ZM581.586 244.908H612.648V287H596.104L591.94 284.524C588.338 286.887 583.724 288.125 578.097 288.125C555.926 288.125 542.645 268.655 542.645 248.172C542.645 227.577 556.038 204.843 584.174 204.843C600.943 204.843 610.172 212.833 610.172 220.824C610.172 227.351 603.87 233.992 591.152 236.468C590.027 222.737 581.023 210.245 574.495 210.245C569.206 210.245 567.743 218.686 567.743 228.815C567.743 251.211 575.733 276.421 586.538 280.923V277.996C586.538 266.967 586.313 255.938 581.586 244.908ZM678.185 287H619.549V205.968H675.484C675.484 214.859 676.272 223.3 676.834 231.853C667.831 221.612 658.264 212.946 646.785 208.782V244.008C652.412 241.982 657.477 238.268 662.204 233.429V257.063C657.364 252.224 652.187 248.735 646.785 246.597V283.061C658.715 280.81 669.069 274.057 676.834 261.115C676.834 269.556 677.284 276.421 678.185 287Z" fill="currentcolor"></path>
+<line x1="3.14183" y1="9" x2="3.14182" y2="287" stroke="currentcolor" stroke-width="6.28366"></line>
+</svg></div></a><nav role="navigation" class="navbar_menu w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-nav-menu"><a id="schema_sandiego" href="/san-diego-ca/language-school" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>San Diego</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a id="schema_losangeles" href="/los-angeles-ca/language-courses" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Los Angeles</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><div data-delay="200" data-hover="false" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187fab7" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle is-vancouver w-dropdown-toggle"><div>Vancouver</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list is-vancouver w-dropdown-list"><a href="/vancouver" class="navbar_dropdown-link is-first w-inline-block"><div>Vancouver Language School</div></a><a id="link_pathway" href="/vancouver/cost-of-studying-english" class="navbar_dropdown-link w-inline-block"><div>Cost of Studying English</div></a><a id="link_courses" href="/vancouver/how-long-to-learn-english" class="navbar_dropdown-link w-inline-block"><div>How Long to Learn English</div></a><a href="/vancouver/vs-toronto" class="navbar_dropdown-link is-last w-inline-block"><div>Vancouver vs Toronto</div></a></nav></div><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a data-geo="offers" href="/offers" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div data-w-id="b8cd39b7-7e77-0eb8-1fba-1d93c04f1c03" class="navbar_dot"></div><div>Offers</div></a><div data-geo="offers" class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a href="/booking" class="navbar_link is-contact w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Apply Now</div></a><div data-delay="200" data-hover="false" data-w-id="be190588-2bc4-6b64-cd10-57ff63314947" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle w-dropdown-toggle"><div>More</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list w-dropdown-list"><a href="/summer-camp-san-diego" class="navbar_dropdown-link w-inline-block"><div>Summer Camp</div></a><a id="link_pathway-2" href="/pathway-program-usa" class="navbar_dropdown-link w-inline-block"><div>Pathway</div></a><a id="link_courses-2" href="/courses" class="navbar_dropdown-link w-inline-block"><div>Courses</div></a><a id="link_housing" href="/housing" class="navbar_dropdown-link w-inline-block"><div>Housing</div></a><a href="/voices" class="navbar_dropdown-link w-inline-block"><div>Voices</div></a><a id="link_blog_top" href="/blog" class="navbar_dropdown-link w-inline-block"><div>Blog</div></a><a href="/faq" class="navbar_dropdown-link is-last w-inline-block"><div>FAQs</div></a></nav></div><a href="/contact-cel" class="navbar_link is-apply w-inline-block"><div>Contact us</div></a></nav><div id="w-node-dcc14621-e4cd-a4c8-518c-d15fb187fad5-b187faa5" class="navbar_button-wrapper"><div class="navbar_buttons"><div class="offers_counter w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-nav"><div class="counter_item is-top"><div class="count_days">00</div></div><div class="counter_item is-top"><div class="count_hours is-top">00</div></div><div class="counter_item is-top"><div class="count_minutes">00</div></div><div class="counter_item is-top"><div class="count_seconds">00</div></div></div><a href="/booking" class="navbar_button is-light is-mobile w-inline-block"><div>Apply Now</div></a><a href="/contact-cel" class="navbar_button is-mobile w-inline-block"><div>Contact us</div></a><a href="#" class="navbar_button is-mobile is-influencer w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-inline-block"><div>Unlock Offer</div></a><div class="button_weglot w-variant-0947456c-11ec-2419-24b4-dab16b38388d"></div></div><div class="navbar_menu-button w-nav-button"><div class="menu-icon"><div class="menu-icon_line-top"></div><div class="menu-icon_line-middle"><div class="menu-icon_line-middle-inner"></div></div><div class="menu-icon_line-bottom"></div></div></div></div></div></div>
+
+  <div class="main-wrapper is-subpage">
+
+    <!-- ============================ HERO (§1) ============================ -->
+    <section class="section_hero">
+      <!-- TODO: replace with SD asset -->
+      <img class="hero_bg-image" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c8094dc653ddbe1f48ea63_costs-hero.avif" alt="Students outside the CEL San Diego school in Pacific Beach" loading="eager" fetchpriority="high">
+      <div class="hero_overlay is-costs"></div>
+      <div class="hero_wrapper is-subpage">
+        <div class="breadcrumb">
+          <a class="breadcrumb-link" href="/learn-english-usa">USA</a>
+          <img class="breadcrumb-sep" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69beeef66d387cb04dca12b1_adults-16-breadcrumb-chevron.svg" loading="lazy" alt="Arrow">
+          <a class="breadcrumb-link" href="/san-diego-ca/language-school">San Diego</a>
+          <img class="breadcrumb-sep" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69beeef66d387cb04dca12b1_adults-16-breadcrumb-chevron.svg" loading="lazy" alt="Arrow">
+          <p class="breadcrumb-current">Cost of Studying English</p>
+        </div>
+        <div class="hero_content">
+          <div class="hero_content-left">
+            <h1 class="hero_title">Cost of Studying English in San Diego</h1>
+            <p class="hero_sub text-size-large text-weight-medium">Tuition from US$300 per week for long stays — most 12-week students pay US$360 per week. Transparent fees, no hidden costs.</p>
+            <!-- B1 hero_meta — Annex A ties WebPage dateModified to this exact string -->
+            <p class="hero_meta">Last updated: August 3, 2026</p>
+          </div>
+          <div class="hero_content-right">
+<!-- D6 REVERSED AGAIN (client, 3 Aug, later call): single-line tiles, descriptors removed.
+                 NOTE FOR THE COPY OWNER — this drops four lines that appear NOWHERE else on the
+                 page: "long-stay tuition rate", "every cost listed on this page" and "year-round
+                 course starts" ("capped at 12" survives only because costs.md §3 states it
+                 independently). B7 (is-stacked + hero_highlight-note) is withdrawn with them; the
+                 rule is gone from costs.css, so restoring the descriptors means re-minting it. -->
+            <div class="hero_highlights">
+              <div class="hero_highlight">
+                <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c96acc2881d1b77702b014_costs-icon-price-v4.svg" loading="lazy" alt="Price tag icon">
+                <p class="hero_highlight-text text-style-allcaps">From US$300/week</p>
+              </div>
+              <div class="hero_highlight">
+                <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c96ad3ff16a82639f724f6_costs-icon-students-v4.svg" loading="lazy" alt="Students icon">
+                <p class="hero_highlight-text text-style-allcaps">Avg. 7 students per class</p>
+              </div>
+              <div class="hero_highlight">
+                <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c96ad42320c111e17bfe8e_costs-icon-nofees-v4.svg" loading="lazy" alt="No hidden fees icon">
+                <p class="hero_highlight-text text-style-allcaps">No hidden fees</p>
+              </div>
+              <div class="hero_highlight">
+                <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c96ad64777f03f621c763a_costs-icon-calendar-v4.svg" loading="lazy" alt="Calendar icon">
+                <p class="hero_highlight-text text-style-allcaps">Start any Monday</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero_actions">
+          <a class="hero_cta-primary" href="/contact-cel">Get a Quote</a>
+          <a class="hero_cta-ghost" href="/contact-cel">Contact Us</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ BODY ============================ -->
+    <div class="padding-global">
+      <div class="container">
+        <div class="page_body-layout">
+
+          <!-- ===== TOC (§2) — 9 links, document order. #cta gets no entry (contract §3).
+               Every stoc_link carries href="#<id>" AND data-target="<id>", identical values.
+               Only the first link ships is-active; the rest are set by the scroll-spy. ===== -->
+          <aside class="stoc_component" id="tocSidebar">
+            <p class="stoc_label">On this page</p>
+            <nav class="stoc_nav" aria-label="On this page">
+            <a class="stoc_link is-active" href="#quick-answer" data-target="quick-answer"><div class="stoc_dot"></div><p class="stoc_text">Quick Answer</p></a>
+            <a class="stoc_link" href="#budget-planner" data-target="budget-planner"><div class="stoc_dot"></div><p class="stoc_text">Budget Planner</p></a>
+            <a class="stoc_link" href="#included" data-target="included"><div class="stoc_dot"></div><p class="stoc_text">Included &amp; Not Included</p></a>
+            <a class="stoc_link" href="#tuition" data-target="tuition"><div class="stoc_dot"></div><p class="stoc_text">Tuition</p></a>
+            <a class="stoc_link" href="#accommodation" data-target="accommodation"><div class="stoc_dot"></div><p class="stoc_text">Accommodation</p></a>
+            <a class="stoc_link" href="#living-costs" data-target="living-costs"><div class="stoc_dot"></div><p class="stoc_text">Living Costs</p></a>
+            <a class="stoc_link" href="#visa-costs" data-target="visa-costs"><div class="stoc_dot"></div><p class="stoc_text">Visa Costs</p></a>
+            <a class="stoc_link" href="#faq" data-target="faq"><div class="stoc_dot"></div><p class="stoc_text">FAQ</p></a>
+            <a class="stoc_link" href="#blog" data-target="blog"><div class="stoc_dot"></div><p class="stoc_text">Blog</p></a>
+            </nav>
+            <a class="stoc_cta-btn" href="/contact-cel">Get a Quote</a>
+          </aside>
+
+          <!-- ===== CONTENT ===== -->
+          <main class="page_content" id="main-content">
+            <!-- ==================== QUICK COST ANSWER (§3) ====================
+                 Reference: #overview. FIRST content section -> no is-consecutive.
+                 body-intro #1 is the AEO extraction target: ONE unbroken paragraph. -->
+            <section class="section_page" id="quick-answer">
+              <h2 class="section-tagline"><div class="section-tagline-dash"></div>Quick Answer</h2>
+              <h3 class="section-title">What Does It Cost to Study English in San Diego?</h3>
+              <p class="body-intro text-size-medium">Studying English at CEL San Diego costs US$300–$410 per week in tuition, depending on course intensity and duration. A typical 12-week stay including accommodation totals US$8,050–$9,490 — before flights, personal expenses, visa fees, and insurance.</p>
+              <p class="body-intro text-size-medium">Every figure on this page is a real, bookable 2026 price at our <a class="text-link" href="/san-diego-ca/language-school">English school in San Diego</a>, five minutes from the ocean in Pacific Beach. No brochure requests, no “contact us for pricing” — the numbers are all here, and they are the numbers you pay.</p>
+              <div class="overview_layout">
+                <div class="overview_card">
+                  <img class="overview_col-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5472b1cb7992f567c5_costs-icon-allinclusive-v3.svg" loading="lazy" alt="Total budget icon">
+                  <h4 class="overview_col-title">Plan the Total Budget</h4>
+                  <p class="body-text">See the complete 12-week calculation in the <a class="text-link" href="#budget-planner">budget planner</a> below.</p>
+                </div>
+                <div class="overview_card">
+                  <img class="overview_col-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd61fc68557ead166762_costs-icon-students-v3.svg" loading="lazy" alt="Small class icon">
+                  <h4 class="overview_col-title">Small-Group Classes</h4>
+                  <p class="body-text">Average of 7 students per class, capped at 12.</p>
+                </div>
+                <div class="overview_card">
+                  <img class="overview_col-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd58253806b0b27a97bc_costs-icon-intensity-v2.svg" loading="lazy" alt="Course content icon">
+                  <h4 class="overview_col-title">Choose Your Course First</h4>
+                  <p class="body-text">Your course and length of stay decide your visa route. See <a class="text-link" href="/san-diego-ca/language-school#courses">the courses in San Diego</a>.</p>
+                </div>
+              </div>
+            </section>
+            <!-- ==================== §4 BUDGET PLANNER — 12 WEEKS ====================
+                 Reference: #budget. Grid is 5 cols x 6 rows = 30 cells, flow order.
+                 Wrapper is div.callout (NOT div.price-note): the reference ships
+                 .callout and it is the only one of the two that exists in the live
+                 cascade — brief §4.3 says match the reference's usage.
+                 budget-wrap ships BARE for the same reason: is-scrollable is not live. -->
+            <section id="budget-planner" class="section_page is-consecutive">
+              <h2 class="section-tagline"><div class="section-tagline-dash"></div>Budget Planner</h2>
+              <h3 class="section-title">How Much Does It Cost to Study English in San Diego for 12 Weeks?</h3>
+              <p class="body-intro text-size-medium">A 12-week stay including accommodation totals between US$8,050 and $9,490 &mdash; before flights, personal expenses, visa fees, and insurance. The table below shows the full calculation for a typical booking: 12 weeks of General English 20 at US$360 per week &mdash; bookable on ESTA (for eligible nationalities) or a B1/B2 visitor visa, with no student visa required.</p>
+              <!-- C2 `calc_*` — §4 cost calculator, replacing the static 4-column budget grid.
+                   Same component vocabulary as the SD landing planner (plan_* on
+                   pages/san-diego/landing.css §16): cream sheet, inputs left, live ledger right,
+                   radio tiles, chunky slider, dashed total, visa chip. Indigo and orange stay
+                   ACCENTS (focus ring, checked dot, total, warning) — never surface fills.
+                   The ledger is a semantic <table> (copy [CMS] note for §4 requires a real table,
+                   and it keeps the itemised 12-week calculation quotable: at the default state it
+                   reproduces the published example exactly — 12 weeks GE20 + Shared Standard =
+                   US$8,050).  EVERY rate here is published in costs.md §4/§6/§7/§9; nothing is
+                   interpolated. Short stays under 12 weeks pay slightly higher housing rates that
+                   the copy does not publish per residence, so the total is labelled "from" and the
+                   note says the quote confirms it.
+                   Logic: the SHARED engine shared/calculator.js + this page's config
+                   pages/san-diego/calculator-sandiego-costs.js (rates and copy only). The markup
+                   is bound by data-calc-* hooks, not by class names, so the engine drives plan_*
+                   on the SD landing page and calc_* here from the same code. -->
+              <div class="calc_sheet" id="calcTool">
+                <div class="calc_col">
+                  <div class="calc_field">
+                    <div class="calc_field-head">
+                      <label class="calc_key" for="calcWeeks">How many weeks</label>
+                    </div>
+                    <!-- Same slider vocabulary as the landing planner (plan_slider / plan_weeks /
+                         plan_tick in landing.css §16): the readout rides the thumb and the 12-week
+                         ESTA tick appears once the stay passes it, both driven by --calc-fill from
+                         the shared engine.
+                         Reading order top to bottom (client, 4 Aug): readout, track, the 1/12/24/36
+                         scale, then the ESTA caption in its own band under the scale. The scale and
+                         the caption live INSIDE .calc_slider so both can be positioned against the
+                         same track width — the caption sits at the tick's 31.43% and never lands in
+                         the scale's row. -->
+                    <div class="calc_slider">
+                      <p class="calc_weeks" aria-hidden="true"><span data-calc-out="weeks">12</span><span class="calc_weeks-unit" data-calc-out="weeksUnit">weeks</span></p>
+                      <input class="calc_range" id="calcWeeks" data-calc-range="weeks" data-calc-fill=".calc_slider" type="range" min="1" max="36" step="1" value="12" aria-describedby="calcWeeksScale" aria-valuetext="12 weeks">
+                      <div class="calc_tick" aria-hidden="true"></div>
+                      <div class="calc_scale" id="calcWeeksScale"><span>1</span><span>12</span><span>24</span><span>36</span></div>
+                      <div class="calc_esta" aria-hidden="true"><span class="calc_tick-label">ESTA limit</span></div>
+                    </div>
+                  </div>
+                  <!-- Selects, not tiles (client, 3 Aug): seven residences as tiles owned most of
+                       the column. Field styling is the DS form field from the live /contact-cel
+                       form documented in booking/widget.css §Inputs — cream fill, 3px cream-medium
+                       edge, 7px radius, 3rem min-height, indigo focus ring. Each option carries its
+                       own per-week rate, so the price is visible before the choice is made. -->
+                  <div class="calc_field">
+                    <label class="calc_key" for="calcCourse">Course</label>
+                    <div class="calc_control">
+                      <select class="calc_select" id="calcCourse" data-calc-select="course">
+                        <option value="ge20" selected>General English 20</option>
+                        <option value="ge24">General English 24 &middot; or GE23</option>
+                      </select>
+                    </div>
+                    <p class="calc_field-note"><span data-calc-out="courseRate">US$360/wk</span> for <span data-calc-out="weeksAria">12 weeks</span></p>
+                  </div>
+                  <div class="calc_field">
+                    <label class="calc_key" for="calcRoom">Accommodation</label>
+                    <div class="calc_control">
+                      <select class="calc_select" id="calcRoom" data-calc-select="room">
+                        <option value="std" selected>Shared apartment Standard</option>
+                        <option value="prm">Shared apartment Premium</option>
+                        <option value="sup">Shared apartment Superior</option>
+                        <option value="hss">Homestay &middot; single room</option>
+                        <option value="hsd">Homestay &middot; double room</option>
+                        <option value="hpr">Premium homestay</option>
+                        <option value="none">I arrange my own</option>
+                      </select>
+                    </div>
+                    <p class="calc_field-note" data-calc-out="roomNote">US$280/wk + US$100 placement fee</p>
+                  </div>
+                  <div class="calc_field is-last">
+                    <p class="calc_key">Add if you need it</p>
+                    <div class="calc_adds">
+                      <button class="calc_add" type="button" aria-pressed="false" data-calc-toggle="insurance"><span class="calc_add-mark"></span>Health insurance<span class="calc_add-hint">US$4/day</span></button>
+                      <button class="calc_add" type="button" aria-pressed="false" data-calc-toggle="visa"><span class="calc_add-mark"></span>Visa &amp; entry fees<span class="calc_add-hint" data-calc-out="visaHint">US$40.27</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="calc_col is-result">
+                  <p class="calc_col-label">Your estimate</p>
+                  <table class="calc_ledger">
+                    <caption class="calc_caption">Itemised cost for the options you chose, standard-season rates, in US dollars</caption>
+                    <tbody>
+                      <tr><th scope="row">Tuition<span class="calc_row-sub" data-calc-out="tuitionSub">12 weeks &times; US$360</span></th><td data-calc-out="tuition">US$4,320</td></tr>
+                      <tr><th scope="row">Registration fee<span class="calc_row-sub">One-time</span></th><td>US$150</td></tr>
+                      <tr><th scope="row">Learning materials<span class="calc_row-sub" data-calc-out="materialsSub">12 weeks &times; US$10</span></th><td data-calc-out="materials">US$120</td></tr>
+                      <tr data-calc-row="room"><th scope="row">Accommodation<span class="calc_row-sub" data-calc-out="roomSub">Shared apt Standard &middot; US$280/wk + US$100 placement</span></th><td data-calc-out="room">US$3,460</td></tr>
+                      <tr data-calc-row="insurance" hidden><th scope="row">Health insurance<span class="calc_row-sub" data-calc-out="insuranceSub">84 days &times; US$4</span></th><td data-calc-out="insurance">US$336</td></tr>
+                      <tr data-calc-row="visa" hidden><th scope="row">Visa &amp; entry fees<span class="calc_row-sub" data-calc-out="visaSub">ESTA travel authorization</span></th><td data-calc-out="visa">US$40</td></tr>
+                    </tbody>
+                    <tfoot>
+                      <!-- One full-width cell so the dashed rule spans the column (a tfoot, tr or
+                           cell taken out of table display shrinks to its content instead). Inside
+                           the cell the label and figure are a plain INLINE run — flex inside a
+                           table cell put this table into a sizing loop that hung the page. -->
+                      <!-- The currency lives INSIDE the total: flag + a select that shows only the
+                           symbol, then the amount. Clicking the symbol opens the currency list and the
+                           figure converts in place. Rates come from window.CELFxRates (§3 publishes one
+                           table per page); on US$ nothing is converted and no rate line prints. -->
+                      <tr><th class="calc_total-cell" scope="row" colspan="2"><span class="calc_total-k">Total</span><span class="calc_total-v"><span class="calc_total-from" data-calc-out="totalPrefix">from</span><span class="calc_fx">
+                        <button class="fx_pick" id="calcFxPick" type="button" data-calc-menu-toggle="fx" aria-haspopup="listbox" aria-expanded="false" aria-label="Currency for the total">
+                          <img class="fx_flag" data-calc-img="fxFlag" src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" width="20" height="20" alt="">
+                          <span data-calc-out="fxCode">USD</span>
+                          <span class="fx_pick-caret" aria-hidden="true"></span>
+                        </button>
+                        <div class="fx_menu calc_fx-menu" data-calc-menu="fx" role="listbox" aria-label="Currency for the total" hidden>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="AED"><img class="fx_flag" src="https://flagcdn.com/w40/ae.png" srcset="https://flagcdn.com/w80/ae.png 2x" width="20" height="20" loading="lazy" alt="">AED<span class="fx_option-name">UAE dirham</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="ARS"><img class="fx_flag" src="https://flagcdn.com/w40/ar.png" srcset="https://flagcdn.com/w80/ar.png 2x" width="20" height="20" loading="lazy" alt="">ARS<span class="fx_option-name">Argentine peso</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="AUD"><img class="fx_flag" src="https://flagcdn.com/w40/au.png" srcset="https://flagcdn.com/w80/au.png 2x" width="20" height="20" loading="lazy" alt="">AUD<span class="fx_option-name">Australian dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="BRL"><img class="fx_flag" src="https://flagcdn.com/w40/br.png" srcset="https://flagcdn.com/w80/br.png 2x" width="20" height="20" loading="lazy" alt="">BRL<span class="fx_option-name">Brazilian real</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="CAD"><img class="fx_flag" src="https://flagcdn.com/w40/ca.png" srcset="https://flagcdn.com/w80/ca.png 2x" width="20" height="20" loading="lazy" alt="">CAD<span class="fx_option-name">Canadian dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="CHF"><img class="fx_flag" src="https://flagcdn.com/w40/ch.png" srcset="https://flagcdn.com/w80/ch.png 2x" width="20" height="20" loading="lazy" alt="">CHF<span class="fx_option-name">Swiss franc</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="CLP"><img class="fx_flag" src="https://flagcdn.com/w40/cl.png" srcset="https://flagcdn.com/w80/cl.png 2x" width="20" height="20" loading="lazy" alt="">CLP<span class="fx_option-name">Chilean peso</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="CNY"><img class="fx_flag" src="https://flagcdn.com/w40/cn.png" srcset="https://flagcdn.com/w80/cn.png 2x" width="20" height="20" loading="lazy" alt="">CNY<span class="fx_option-name">Chinese yuan</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="COP"><img class="fx_flag" src="https://flagcdn.com/w40/co.png" srcset="https://flagcdn.com/w80/co.png 2x" width="20" height="20" loading="lazy" alt="">COP<span class="fx_option-name">Colombian peso</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="CZK"><img class="fx_flag" src="https://flagcdn.com/w40/cz.png" srcset="https://flagcdn.com/w80/cz.png 2x" width="20" height="20" loading="lazy" alt="">CZK<span class="fx_option-name">Czech koruna</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="DKK"><img class="fx_flag" src="https://flagcdn.com/w40/dk.png" srcset="https://flagcdn.com/w80/dk.png 2x" width="20" height="20" loading="lazy" alt="">DKK<span class="fx_option-name">Danish krone</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="EGP"><img class="fx_flag" src="https://flagcdn.com/w40/eg.png" srcset="https://flagcdn.com/w80/eg.png 2x" width="20" height="20" loading="lazy" alt="">EGP<span class="fx_option-name">Egyptian pound</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="EUR"><img class="fx_flag" src="https://flagcdn.com/w40/eu.png" srcset="https://flagcdn.com/w80/eu.png 2x" width="20" height="20" loading="lazy" alt="">EUR<span class="fx_option-name">Euro</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="GBP"><img class="fx_flag" src="https://flagcdn.com/w40/gb.png" srcset="https://flagcdn.com/w80/gb.png 2x" width="20" height="20" loading="lazy" alt="">GBP<span class="fx_option-name">Pound sterling</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="HKD"><img class="fx_flag" src="https://flagcdn.com/w40/hk.png" srcset="https://flagcdn.com/w80/hk.png 2x" width="20" height="20" loading="lazy" alt="">HKD<span class="fx_option-name">Hong Kong dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="HUF"><img class="fx_flag" src="https://flagcdn.com/w40/hu.png" srcset="https://flagcdn.com/w80/hu.png 2x" width="20" height="20" loading="lazy" alt="">HUF<span class="fx_option-name">Hungarian forint</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="IDR"><img class="fx_flag" src="https://flagcdn.com/w40/id.png" srcset="https://flagcdn.com/w80/id.png 2x" width="20" height="20" loading="lazy" alt="">IDR<span class="fx_option-name">Indonesian rupiah</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="ILS"><img class="fx_flag" src="https://flagcdn.com/w40/il.png" srcset="https://flagcdn.com/w80/il.png 2x" width="20" height="20" loading="lazy" alt="">ILS<span class="fx_option-name">Israeli shekel</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="INR"><img class="fx_flag" src="https://flagcdn.com/w40/in.png" srcset="https://flagcdn.com/w80/in.png 2x" width="20" height="20" loading="lazy" alt="">INR<span class="fx_option-name">Indian rupee</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="JPY"><img class="fx_flag" src="https://flagcdn.com/w40/jp.png" srcset="https://flagcdn.com/w80/jp.png 2x" width="20" height="20" loading="lazy" alt="">JPY<span class="fx_option-name">Japanese yen</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="KRW"><img class="fx_flag" src="https://flagcdn.com/w40/kr.png" srcset="https://flagcdn.com/w80/kr.png 2x" width="20" height="20" loading="lazy" alt="">KRW<span class="fx_option-name">South Korean won</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="KWD"><img class="fx_flag" src="https://flagcdn.com/w40/kw.png" srcset="https://flagcdn.com/w80/kw.png 2x" width="20" height="20" loading="lazy" alt="">KWD<span class="fx_option-name">Kuwaiti dinar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="MAD"><img class="fx_flag" src="https://flagcdn.com/w40/ma.png" srcset="https://flagcdn.com/w80/ma.png 2x" width="20" height="20" loading="lazy" alt="">MAD<span class="fx_option-name">Moroccan dirham</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="MXN"><img class="fx_flag" src="https://flagcdn.com/w40/mx.png" srcset="https://flagcdn.com/w80/mx.png 2x" width="20" height="20" loading="lazy" alt="">MXN<span class="fx_option-name">Mexican peso</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="MYR"><img class="fx_flag" src="https://flagcdn.com/w40/my.png" srcset="https://flagcdn.com/w80/my.png 2x" width="20" height="20" loading="lazy" alt="">MYR<span class="fx_option-name">Malaysian ringgit</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="NOK"><img class="fx_flag" src="https://flagcdn.com/w40/no.png" srcset="https://flagcdn.com/w80/no.png 2x" width="20" height="20" loading="lazy" alt="">NOK<span class="fx_option-name">Norwegian krone</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="NZD"><img class="fx_flag" src="https://flagcdn.com/w40/nz.png" srcset="https://flagcdn.com/w80/nz.png 2x" width="20" height="20" loading="lazy" alt="">NZD<span class="fx_option-name">New Zealand dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="PEN"><img class="fx_flag" src="https://flagcdn.com/w40/pe.png" srcset="https://flagcdn.com/w80/pe.png 2x" width="20" height="20" loading="lazy" alt="">PEN<span class="fx_option-name">Peruvian sol</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="PHP"><img class="fx_flag" src="https://flagcdn.com/w40/ph.png" srcset="https://flagcdn.com/w80/ph.png 2x" width="20" height="20" loading="lazy" alt="">PHP<span class="fx_option-name">Philippine peso</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="PLN"><img class="fx_flag" src="https://flagcdn.com/w40/pl.png" srcset="https://flagcdn.com/w80/pl.png 2x" width="20" height="20" loading="lazy" alt="">PLN<span class="fx_option-name">Polish zloty</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="QAR"><img class="fx_flag" src="https://flagcdn.com/w40/qa.png" srcset="https://flagcdn.com/w80/qa.png 2x" width="20" height="20" loading="lazy" alt="">QAR<span class="fx_option-name">Qatari riyal</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="RON"><img class="fx_flag" src="https://flagcdn.com/w40/ro.png" srcset="https://flagcdn.com/w80/ro.png 2x" width="20" height="20" loading="lazy" alt="">RON<span class="fx_option-name">Romanian leu</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="RUB"><img class="fx_flag" src="https://flagcdn.com/w40/ru.png" srcset="https://flagcdn.com/w80/ru.png 2x" width="20" height="20" loading="lazy" alt="">RUB<span class="fx_option-name">Russian ruble</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="SAR"><img class="fx_flag" src="https://flagcdn.com/w40/sa.png" srcset="https://flagcdn.com/w80/sa.png 2x" width="20" height="20" loading="lazy" alt="">SAR<span class="fx_option-name">Saudi riyal</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="SEK"><img class="fx_flag" src="https://flagcdn.com/w40/se.png" srcset="https://flagcdn.com/w80/se.png 2x" width="20" height="20" loading="lazy" alt="">SEK<span class="fx_option-name">Swedish krona</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="SGD"><img class="fx_flag" src="https://flagcdn.com/w40/sg.png" srcset="https://flagcdn.com/w80/sg.png 2x" width="20" height="20" loading="lazy" alt="">SGD<span class="fx_option-name">Singapore dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="THB"><img class="fx_flag" src="https://flagcdn.com/w40/th.png" srcset="https://flagcdn.com/w80/th.png 2x" width="20" height="20" loading="lazy" alt="">THB<span class="fx_option-name">Thai baht</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="TRY"><img class="fx_flag" src="https://flagcdn.com/w40/tr.png" srcset="https://flagcdn.com/w80/tr.png 2x" width="20" height="20" loading="lazy" alt="">TRY<span class="fx_option-name">Turkish lira</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="TWD"><img class="fx_flag" src="https://flagcdn.com/w40/tw.png" srcset="https://flagcdn.com/w80/tw.png 2x" width="20" height="20" loading="lazy" alt="">TWD<span class="fx_option-name">Taiwan dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="UAH"><img class="fx_flag" src="https://flagcdn.com/w40/ua.png" srcset="https://flagcdn.com/w80/ua.png 2x" width="20" height="20" loading="lazy" alt="">UAH<span class="fx_option-name">Ukrainian hryvnia</span></button>
+                          <button class="fx_option is-active" type="button" role="option" aria-selected="true" data-calc-radio="fx" data-calc-value="USD"><img class="fx_flag" src="https://flagcdn.com/w40/us.png" srcset="https://flagcdn.com/w80/us.png 2x" width="20" height="20" loading="lazy" alt="">USD<span class="fx_option-name">US dollar</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="VND"><img class="fx_flag" src="https://flagcdn.com/w40/vn.png" srcset="https://flagcdn.com/w80/vn.png 2x" width="20" height="20" loading="lazy" alt="">VND<span class="fx_option-name">Vietnamese dong</span></button>
+                          <button class="fx_option" type="button" role="option" aria-selected="false" data-calc-radio="fx" data-calc-value="ZAR"><img class="fx_flag" src="https://flagcdn.com/w40/za.png" srcset="https://flagcdn.com/w80/za.png 2x" width="20" height="20" loading="lazy" alt="">ZAR<span class="fx_option-name">South African rand</span></button>
+                        </div>
+                      </span><span class="calc_total-num" data-calc-out="totalAmount" data-calc-tween>8,050</span></span></th></tr>
+                    </tfoot>
+                  </table>
+                  <p class="calc_fx-note" data-calc-out="fxNote"></p>
+                  <div class="calc_meta">
+                    <p class="calc_month">About <span data-calc-out="month">US$2,900</span> per month</p>
+                  </div>
+                  <p class="calc_note" data-calc-out="note">Standard-season rates. Flights, food outside homestay and personal spending are not included.</p>
+                  <!-- Visa block, bottom of the estimate column (client, 3 Aug). The chip moved here
+                       from the month row: the route is a consequence of the choices, so it belongs
+                       with its own explanation rather than beside the monthly figure. Route, reason
+                       and government fees all follow the course and length of stay (§6 + §9); the
+                       fee line is informational — the fees only enter the total when the visitor
+                       adds them with the "Visa & entry fees" chip. -->
+                  <div class="calc_visa">
+                    <p class="calc_col-label">Visa route</p>
+                    <p class="calc_chip is-esta" data-calc-chip="visa" aria-live="polite">ESTA or B1/B2</p>
+                    <p class="calc_visa-why" data-calc-out="visaWhy">Up to about 12 weeks you can study on ESTA or a B1/B2 visitor visa; no student visa is needed.</p>
+                    <p class="calc_visa-fees">Government fees: <span data-calc-out="visaFees">ESTA US$40.27</span> &middot; <a class="text-link" href="#visa-costs">see all visa &amp; arrival costs</a></p>
+                  </div>
+                </div>
+              </div>
+              <!-- B9 calc_details — §4's supporting content folded into ONE native disclosure
+                   (client, 3 Aug: "keep it clean and tidy, no clutter"). The calculator answers the
+                   question; the published totals, rate brackets, season note, monthly range, the
+                   "Why 12 weeks?" explanation and the one-time-fee panel are the evidence behind it.
+                   Nothing is cut — every word of the §4 copy still ships, and <details> keeps it in
+                   the DOM for extraction and for print, with no JS and no FAQ-schema entanglement
+                   (the .faq-* family is bound to the live single-open accordion AND to the page's
+                   FAQPage JSON-LD, so it must not be reused for non-FAQ content). -->
+              <details class="calc_details">
+                <summary class="calc_details-toggle"><span class="calc_details-label">See the details</span><span class="calc_details-hint">Published totals, rate brackets, season rules and the one-time fees</span><span class="calc_details-caret" aria-hidden="true"></span></summary>
+                <div class="calc_details-body">
+                <!-- The four PUBLISHED 12-week totals (costs.md §4) stay on the page as static text.
+                     The calculator reaches each of them by interaction, but an interaction-only figure
+                     is not extractable and would leave the lead sentence's US$8,050–$9,490 range
+                     unsupported. Reproduced exactly as written in the copy. -->
+                <h4 class="section-subtitle is-first">12-Week Totals, Standard Season</h4>
+                <p class="body-text">Each total includes tuition (General English 20), the US$150 registration fee, learning materials, and accommodation with its placement fee.</p>
+                <table class="feetable">
+                  <caption class="feetable_caption">Published 12-week totals by accommodation type, in US dollars</caption>
+                  <thead>
+                    <tr><th scope="col" class="is-inset-l">Accommodation</th><th scope="col">Weekly rate used</th><th scope="col" class="is-inset-r">12-week total</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Standard</th><td>US$280/week</td><td class="is-inset-r">US$8,050</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Homestay, single room</th><td>US$320/week</td><td class="is-inset-r">US$8,630</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Premium</th><td>US$350/week</td><td class="is-inset-r">US$8,890</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Superior</th><td>US$400/week</td><td class="is-inset-r">US$9,490</td></tr>
+                  </tbody>
+                </table>
+                <h4 class="section-subtitle">Weekly Accommodation Rates by Length of Stay</h4>
+                <p class="body-text">The longer you stay, the less you pay per week. Shared-apartment rates drop at 12 and at 24 weeks; homestay rates drop at 5 and at 12 weeks. The from-prices quoted elsewhere on this page are the long-stay rates.</p>
+                <table class="feetable">
+                  <caption class="feetable_caption">Published weekly accommodation rates by duration bracket, in US dollars</caption>
+                  <thead>
+                    <tr><th scope="col" class="is-inset-l">Residence</th><th scope="col">1&ndash;11 weeks</th><th scope="col">12&ndash;23 weeks</th><th scope="col" class="is-inset-r">24+ weeks</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Standard</th><td>US$290</td><td>US$280</td><td class="is-inset-r">US$270</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Premium</th><td>&mdash;</td><td>US$350</td><td class="is-inset-r">US$320</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Shared Apt Superior</th><td>&mdash;</td><td>US$400</td><td class="is-inset-r">US$380</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Homestay, single room</th><td>&mdash;</td><td colspan="2" class="is-inset-r">US$320 from 12 weeks</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Homestay, double room</th><td>&mdash;</td><td colspan="2" class="is-inset-r">US$290 from 12 weeks</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Premium homestay</th><td>&mdash;</td><td colspan="2" class="is-inset-r">US$420</td></tr>
+                  </tbody>
+                </table>
+                <p class="body-text">Rates marked &mdash; are not published per residence for short stays; they are slightly higher than the 12&ndash;23-week rate and your written quote confirms the exact figure.</p>
+                <div class="callout">
+                  <p class="price-note-text">All figures are standard-season accommodation rates. During high season (May 30 &ndash; September 26, 2026) accommodation carries a supplement; tuition stays the same all year.</p>
+                </div>
+                <p class="body-text">For a 12-week stay, plan on roughly US$2,700&ndash;$3,200 per month including tuition and accommodation. Personal expenses &mdash; food for apartment students, leisure, any transport &mdash; come on top.</p>
+                <h4 class="section-subtitle">Why 12 weeks?</h4>
+                <p class="body-text">Most students complete one CEFR level in about 10 weeks. Twelve weeks gives you a full level with time to consolidate it &mdash; and it is also the maximum stay on ESTA, which makes it a very typical booking at CEL San Diego.</p>
+                <!-- B10 feetable_* — the one-time fees as a real pricing TABLE (client, 3 Aug).
+                     Replaces the icon-banner panel: inside a disclosure the banners were three
+                     stacked cards saying four numbers. Every figure and every wording is from
+                     costs.md §4 (registration, materials) and the §4/§7 placement-fee rule.
+                     DESIGN-RULES §1 (Tables) is honoured: no coloured header bar, no zebra rows,
+                     no box-shadow, no Cameraobscura caption, and ONE font size in every cell. -->
+                <h4 class="section-subtitle">One-Time Fees</h4>
+                <p class="body-text">No textbook package to buy up front, no rental deposit, nothing to return on your last day.</p>
+                <table class="feetable">
+                  <caption class="feetable_caption">CEL fees outside tuition, in US dollars</caption>
+                  <thead>
+                    <tr><th scope="col" class="is-inset-l">Fee</th><th scope="col">When it applies</th><th scope="col" class="is-inset-r">Amount</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row" class="is-inset-l">Registration fee</th><td>One-time, on booking</td><td class="is-inset-r">US$150</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Learning materials</th><td>Per week you study</td><td class="is-inset-r">US$10/week</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Accommodation placement &mdash; shared apartment</th><td>One-time, included in the totals above</td><td class="is-inset-r">US$100</td></tr>
+                    <tr><th scope="row" class="is-inset-l">Accommodation placement &mdash; homestay</th><td>One-time, included in the totals above</td><td class="is-inset-r">US$200</td></tr>
+                  </tbody>
+                </table>
+                <p class="body-text">No amenities fees. Every accommodation total on this page already includes the placement fee &mdash; the calculator above shows the complete price.</p>
+                </div>
+              </details>
+              <!-- B2 soft CTA. The SSOT sentence ships verbatim; the button was removed (client,
+                   3 Aug) and the copy's own bolded phrase now carries the link, so the section
+                   ends on a sentence rather than a second CTA — §11 is the page's CTA. -->
+              <div class="soft-cta_wrap">
+                <p class="soft-cta_text">Want the exact price for your dates, course and housing? <a class="text-link" href="/contact-cel"><strong>Get a personalized quote</strong></a> with tuition, accommodation and fees itemized &mdash; reply within 1 business day.</p>
+              </div>
+            </section>
+
+<!-- ==================== §5 WHAT IS INCLUDED ====================
+<!-- ==================== §5 WHAT IS INCLUDED ====================
+     REDESIGNED (client, 4 Aug): the two overview_cards read as a comparison table, which
+     they are not — the sides are not row-for-row equivalents, and 14 repeated icons
+     (7 checkmarks + 7 stand-in utensils SVGs mislabelled alt="Info icon") carried no
+     information. Replaced by ONE ledger panel, B11 `incl_*`: a single hairline splits
+     the two columns, each column head states its money consequence, and the right column
+     carries a per-row status — the actual difference between its items (must-budget vs
+     optional vs depends-on-housing vs bookable through CEL). No icons in this section.
+     B3 `is-excluded` survives as the standalone combo, now on incl_col / incl_row.
+     COPY OWNER: the 7 status words are the only new copy here; each is derived from the
+     item's own sentence (costs.md §5). Confirm the wording before publication. -->
+<section id="included" class="section_page is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>What&rsquo;s Included</h2>
+<h3 class="section-title">What&rsquo;s Included in Your Tuition &mdash; and What Isn&rsquo;t</h3>
+<p class="body-intro text-size-medium">&ldquo;No hidden fees&rdquo; only means something if you can check it. Here is exactly what your tuition covers &mdash; and every cost that sits outside it.</p>
+<div class="incl_ledger">
+<div class="incl_col">
+<div class="incl_col-head"><p class="incl_col-badge">In the price</p><h4 class="incl_col-title">Included in your tuition</h4><p class="incl_col-note">Already in the weekly rate you are quoted.</p></div>
+<div class="incl_list">
+<div class="incl_row"><p class="incl_row-text"><strong>20 General English lessons per week</strong> &mdash; electives included on longer courses</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Placement test</strong> &mdash; on your first day</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Progress monitoring</strong> &mdash; a certificate for every level you complete</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Weekly activities program</strong> &mdash; free ones marked free, paid ones priced up front</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Wi-Fi</strong> &mdash; throughout the school</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Student lounge</strong></p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>CEL Student App</strong></p></div>
+</div>
+</div>
+<div class="incl_col is-excluded">
+<div class="incl_col-head"><p class="incl_col-badge is-excluded">Extra</p><h4 class="incl_col-title">Not included</h4><p class="incl_col-note">Budget these separately, on top of the quote.</p></div>
+<div class="incl_list">
+<div class="incl_row"><p class="incl_row-text"><strong>Flights</strong></p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Food</strong> &mdash; in shared apartments; homestay includes meals</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Personal spending</strong></p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Visa or ESTA fees</strong> &mdash; itemized in <a class="text-link" href="#visa-costs">Visa Costs</a> below</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Health insurance</strong> &mdash; US$4 per day through CEL, or bring your own</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Paid activities &amp; excursions</strong> &mdash; optional</p></div>
+<div class="incl_row"><p class="incl_row-text"><strong>Airport transfer</strong> &mdash; if you book one</p></div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ==================== §6 TUITION ====================
+     D1 RESOLVED (handoff review) — BOTH tables have bars. The reason Table 2 shipped
+     without them was that the live VC script (../cost-of-studying-english/scripts.js:117)
+     animates querySelector('.price-table'), singular, so a second table's bars would sit
+     at their scaleX(0) default as permanently empty tracks. That file is the Vancouver
+     page's and must never be edited, so the fix is two-part:
+       1. this markup — every row in BOTH tables now carries price-bar-wrap > price-bar,
+          the structure copied verbatim from Table 1;
+       2. costs.js — a page-scoped sweep animates every .price-table on the page.
+     data-tier/data-w are set on all 9 rows: data-tier colours the bar, data-w is the
+     width the JS animates to.
+     LEGAL: the banned GE23 adjective (see COSTS-BRIEF.md §4) appears nowhere on this page. -->
+<section id="tuition" class="section_page is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>Tuition</h2>
+<h3 class="section-title">How Much Does an English Course in San Diego Cost Per Week?</h3>
+<p class="body-intro text-size-medium">Tuition at CEL San Diego ranges from US$300 to $410 per week, depending on course intensity and program length. The longer you book, the less you pay per week &mdash; rates drop at 7, 13, 20 and 30 weeks.</p>
+<p class="body-intro text-size-medium">One thing is different about studying in the USA: your course determines your visa, and your visa determines your realistic course choice. Courses of 24 or more lessons per week require an F-1 visa; General English 20 can be studied on ESTA for up to 12 weeks. That is why every tier below carries a visa badge &mdash; so you budget for a course you can actually book.</p>
+<!-- B4 price-table_head + price-table_badge, B14 price-table_wrap — head and table are ONE
+     panel (client, 4 Aug): the head stacks its label over its heading (one column) and sits
+     inside the same wrapper as the table it titles, so the visa condition can no longer be
+     read as belonging to the table above it. Both tables get the same treatment. -->
+<div class="price-table_wrap">
+<div class="price-table_head"><p class="price-table_badge">ESTA-eligible up to 12 weeks</p><h4 class="section-subtitle">General English 20 &mdash; 20 lessons per week</h4></div>
+<div class="price-table"><div class="price-row" data-tier="t1" data-w="0.08"><p class="price-tier-code">1&ndash;6 weeks</p><div class="price-tier-info"><p class="price-tier-name">ESTA or B1/B2</p><p class="price-tier-desc">Short stay, maximum flexibility</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$370/week</p></div><div class="price-row" data-tier="t2" data-w="0.21"><p class="price-tier-code">7&ndash;12 weeks</p><div class="price-tier-info"><p class="price-tier-name">ESTA or B1/B2</p><p class="price-tier-desc">ESTA covers up to ~12 weeks (90 days) &mdash; a very typical GE20 booking</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$360/week</p></div><div class="price-row is-highlighted" data-tier="t3" data-w="0.47"><p class="price-tier-code">13&ndash;19 weeks</p><div class="price-tier-info"><p class="price-tier-name">B1/B2</p><p class="price-tier-desc">Beyond ESTA&rsquo;s 90 days</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$340/week</p></div><div class="price-row is-highlighted" data-tier="t4" data-w="0.90"><p class="price-tier-code">20&ndash;29 weeks</p><div class="price-tier-info"><p class="price-tier-name">B1/B2</p><p class="price-tier-desc">B1/B2 is typically granted for 3&ndash;6 months</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$300/week</p></div></div>
+</div>
+<div class="price-table_wrap">
+<div class="price-table_head"><p class="price-table_badge">F-1 visa required</p><h4 class="section-subtitle">General English 24 &mdash; 24 lessons per week</h4></div>
+<div class="price-table"><div class="price-row" data-tier="t1" data-w="0.06"><p class="price-tier-code">1&ndash;6 weeks</p><div class="price-tier-info"><p class="price-tier-name">F-1</p><p class="price-tier-desc">Possible but uncommon &mdash; F-1 students typically stay longer</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$410/week</p></div><div class="price-row" data-tier="t2" data-w="0.14"><p class="price-tier-code">7&ndash;12 weeks</p><div class="price-tier-info"><p class="price-tier-name">F-1</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$400/week</p></div><div class="price-row" data-tier="t3" data-w="0.36"><p class="price-tier-code">13&ndash;19 weeks</p><div class="price-tier-info"><p class="price-tier-name">F-1</p><p class="price-tier-desc">The typical F-1 booking window starts here</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$380/week</p></div><div class="price-row is-highlighted" data-tier="t4" data-w="0.72"><p class="price-tier-code">20&ndash;29 weeks</p><div class="price-tier-info"><p class="price-tier-name">F-1</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$340/week</p></div><div class="price-row is-highlighted" data-tier="t5" data-w="0.95"><p class="price-tier-code">30+ weeks</p><div class="price-tier-info"><p class="price-tier-name">F-1</p><p class="price-tier-desc">Long-term and academic-year stays</p></div><div class="price-bar-wrap"><div class="price-bar"></div></div><p class="price-amount">US$320/week</p></div></div>
+</div>
+<!-- required cross-link (copy [CMS] note: "/san-diego-ca/how-long-to-learn-english
+     from the tier tables"). The copy supplies no sentence to carry it, so this one
+     line is build-side — flagged in the handoff notes. -->
+<div class="callout"><p class="price-note-text">Not sure how many weeks to book? See <a class="text-link" href="/san-diego-ca/how-long-to-learn-english">how long it takes to learn English in San Diego</a>.</p></div>
+<h4 class="section-subtitle">More Lessons Per Week &mdash; Without an F-1 Visa</h4>
+<p class="body-text">CEL&rsquo;s General English 23 (GE23, 23.75 lessons per week) stays below the 24-lesson F-1 visa threshold; many students take it on ESTA for stays up to 12 weeks. Eligibility depends on nationality and U.S. entry rules.</p>
+<p class="body-text">GE23 combines the 20 General English lessons with one elective and is priced the same as General English 24. If you want to study more each week but stay on ESTA or a B1/B2 visitor visa, this is the course to budget for.</p>
+<!-- Was three overview_cards, then a stacked panel (client, 4 Aug): now a table, because every
+     card answered the same four questions — how long, which visa, which course, what it costs.
+     As columns those answers are comparable at a glance; as cards they had to be read three
+     times. Same panel + band + .feetable recipe as §7 and §9. The two conditions that are not
+     row data (the GE23 alternative, the B1/B2 six-month limit) sit in the footnote. -->
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Course choice</p><h4 class="brackets_title">Which Course Should You Budget For?</h4></div>
+<table class="feetable is-rates">
+<caption class="feetable_caption">Course and visa route by length of stay, with weekly tuition in US dollars</caption>
+<colgroup><col class="feetable_col-stay"><col><col><col></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Length of stay</th><th scope="col">Visa route</th><th scope="col">Course</th><th scope="col" class="is-inset-r">Weekly tuition</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">Up to 12 weeks</th><td>ESTA or B1/B2</td><td>General English 20</td><td class="is-inset-r">US$360&ndash;370</td></tr>
+<tr><th scope="row" class="is-inset-l">3&ndash;6 months</th><td>B1/B2</td><td>General English 20</td><td class="is-inset-r">US$300&ndash;340</td></tr>
+<tr><th scope="row" class="is-inset-l">20+ weeks / academic year</th><td>F-1</td><td>General English 24</td><td class="is-inset-r">US$320&ndash;340</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout"><p class="price-note-text">Want more lessons per week without an F-1 visa? <a class="text-link" href="#faq">GE23 &mdash; 23.75 lessons, at GE24 prices</a> &mdash; replaces General English 20 in the first two rows. Beyond six months the route is normally an <a class="text-link" href="/san-diego-ca/f1-visa-english-school">F-1 visa</a>, since B1/B2 stays rarely extend that far.</p></div>
+<div class="callout">
+<p class="price-note-text">Tuition is the same all year &mdash; there is no high-season supplement on courses. (Accommodation does have a summer supplement &mdash; see the <a class="text-link" href="#accommodation">accommodation section</a> below.)</p>
+<p class="price-note-text">Visa validity is decided by U.S. consular officers, not by any school &mdash; the durations above are typical, not guaranteed. Official information: <a class="text-link" href="https://travel.state.gov/" target="_blank" rel="noopener">travel.state.gov</a>.</p>
+</div>
+</section>
+
+<!-- ==================== §7 ACCOMMODATION ====================
+     5 accom_float-cards (the reference ships 4 — the node is repeated, not restructured).
+     the "Most Popular" badge class is intentionally NOT used: the reference labels one card
+     "Most Popular"; this brief names no recommended option, so the element is dropped
+     rather than inventing a claim.
+     Claim hygiene: the real walk/bus times ship verbatim. Never "steps from campus". -->
+<section id="accommodation" class="section_page is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>Accommodation</h2>
+<h3 class="section-title">Accommodation Costs in Pacific Beach, San Diego</h3>
+<p class="body-intro text-size-medium">Accommodation in Pacific Beach starts at US$270 per week for a shared apartment. For homestay, a single room starts at US$320 per week; a double room &mdash; bookable by two students traveling together &mdash; from US$290 per week. All from-prices are long-stay rates; shorter stays pay slightly higher weekly rates (bracket details below the cards). All five options are arranged by CEL &mdash; you book your course and your room in one step.</p>
+<div class="accom_component">
+<div class="card-slider_clip accom-slider_clip">
+<div class="card-slider swiper w-dyn-list" id="accomSlider">
+<div class="swiper-wrapper w-dyn-items" role="list"><div class="swiper-slide is-accom w-dyn-item" role="listitem"><a class="accom_float-card" href="/housing/shared-apartment-standard-san-diego"><div class="accom_float-photo"><!-- TODO: replace with SD asset --><img class="accom_float-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/68d2cbee9a1e3b1a490bf063_Shared%20Apartment%20Vancouver%20House%20-%20Rooms%20(5)_compressed.avif" loading="lazy" alt="Shared apartment bedroom for CEL San Diego students in Pacific Beach"></div><div class="accom_float-panel"><p class="accom_float-price">From US$270/week</p><h4 class="accom_float-title">Shared Apartment Standard</h4><div class="accom_float-details"><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69efb47dc93cceb4e531051d_adults-16-icon-bed.svg" loading="lazy" alt="Bed icon"><p class="accom_detail-text">Shared apartment living at the lowest weekly rate</p></div><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5e81209eb1cdfcb9b8_adults-16-icon-mappin.svg" loading="lazy" alt="Map pin icon"><p class="accom_detail-text">10&ndash;20 minutes to school by bus</p></div></div></div></a></div><div class="swiper-slide is-accom w-dyn-item" role="listitem"><a class="accom_float-card" href="/housing/shared-apartment-premium-san-diego"><div class="accom_float-photo"><!-- TODO: replace with SD asset --><img class="accom_float-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a114dacac4066512d9f41b9_68d2cc089acd31a1125d9def_Kitchen%25201_compressed.avif" loading="lazy" alt="Kitchen in a premium shared apartment near CEL San Diego"></div><div class="accom_float-panel"><p class="accom_float-price">From US$320/week</p><h4 class="accom_float-title">Shared Apartment Premium</h4><div class="accom_float-details"><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5e81209eb1cdfcb9b8_adults-16-icon-mappin.svg" loading="lazy" alt="Map pin icon"><p class="accom_detail-text">20 minutes to school by bus</p></div><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5d4aa6c1c8ba9d547b_adults-16-icon-home.svg" loading="lazy" alt="Home icon"><p class="accom_detail-text">Pool, jacuzzi, BBQ area and a small fitness room</p></div></div></div></a></div><div class="swiper-slide is-accom w-dyn-item" role="listitem"><a class="accom_float-card" href="/housing/shared-apartment-superior-san-diego"><div class="accom_float-photo"><!-- TODO: replace with SD asset --><img class="accom_float-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/69458813e0743b0f82223f8c_CEL%20San%20Diego%20-%20CEL%20Shared%20Apartment%20Superior.avif" loading="lazy" alt="CEL San Diego Shared Apartment Superior in Pacific Beach"></div><div class="accom_float-panel"><p class="accom_float-price">From US$380/week</p><h4 class="accom_float-title">Shared Apartment Superior</h4><div class="accom_float-details"><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5e81209eb1cdfcb9b8_adults-16-icon-mappin.svg" loading="lazy" alt="Map pin icon"><p class="accom_detail-text">A 25-minute walk to school &mdash; 5 minutes to the bay, 20 minutes to the Pacific Beach surf</p></div><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5d4aa6c1c8ba9d547b_adults-16-icon-home.svg" loading="lazy" alt="Home icon"><p class="accom_detail-text">Pool, BBQ, tennis, basketball, beach volleyball and fitness facilities</p></div></div></div></a></div><div class="swiper-slide is-accom w-dyn-item" role="listitem"><a class="accom_float-card" href="/housing/homestay-san-diego"><div class="accom_float-photo"><!-- TODO: replace with SD asset --><img class="accom_float-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a114da00985c8b9757dfd23_68da5b144d9dd19c0860f2a4_Homestay%2520Bedroom.avif" loading="lazy" alt="Homestay bedroom with a San Diego host family"></div><div class="accom_float-panel"><p class="accom_float-price">Single from US$320/week</p><h4 class="accom_float-title">Homestay</h4><div class="accom_float-details"><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69efb47dc93cceb4e531051d_adults-16-icon-bed.svg" loading="lazy" alt="Bed icon"><p class="accom_detail-text">Double room from US$290/week &mdash; double rooms can be booked by two students traveling together</p></div><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd366aa6673d06d051ddab_489397f36c0c347dbba3864dd0c18d90_adults-16-icon-utensils.svg" loading="lazy" alt="Info icon"><p class="accom_detail-text">Breakfast or half board included; private bathroom available for +US$100/week</p></div><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5e81209eb1cdfcb9b8_adults-16-icon-mappin.svg" loading="lazy" alt="Map pin icon"><p class="accom_detail-text">Live with a San Diego host family, 30&ndash;75 minutes to school by bus depending on the family&rsquo;s location</p></div></div></div></a></div><div class="swiper-slide is-accom w-dyn-item" role="listitem"><a class="accom_float-card" href="/housing/premium-homestay-san-diego"><div class="accom_float-photo"><!-- TODO: replace with SD asset --><img class="accom_float-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a114d9e0ed57edeb2a6ccf8_66be84d7287e1333f5027627_APT0817_RRkJrlUdSLCNkGmfiI40-1800x1200-277h.avif" loading="lazy" alt="Premium homestay room for CEL San Diego students"></div><div class="accom_float-panel"><p class="accom_float-price">From US$420/week</p><h4 class="accom_float-title">Premium Homestay</h4><div class="accom_float-details"><div class="accom_float-detail"><img class="accom_detail-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5d4aa6c1c8ba9d547b_adults-16-icon-home.svg" loading="lazy" alt="Home icon"><p class="accom_detail-text">Upgraded host-family living with higher-comfort rooms and locations</p></div></div></div></a></div></div>
+</div>
+</div>
+<div class="card-slider_nav accom-slider_nav" id="accomSliderNav"><div class="card-slider_arrow accom-slider_arrow is-prev" role="button" tabindex="0" aria-label="Previous"><img class="slider-arrow-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3666c4e2a4d5bcb0c45d_adults-16-icon-slider-arrow.svg" loading="lazy" alt="Previous"></div><div class="card-slider_progress accom-slider_progress"><div class="card-slider_progress-fill accom-slider_progress-fill"></div></div><div class="card-slider_arrow accom-slider_arrow is-next" role="button" tabindex="0" aria-label="Next"><img class="slider-arrow-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3666c4e2a4d5bcb0c45d_adults-16-icon-slider-arrow.svg" loading="lazy" alt="Next"></div></div>
+</div>
+<!-- §7 duration brackets — REDESIGNED (client, 4 Aug). Was 4 priorities_item tiles:
+     an icon plus a sentence each, with the actual bracket figures buried in a parenthesis
+     and two of the four tiles carrying notes rather than data. B12 `brackets_*` puts the
+     thresholds themselves on the page as ONE full-width rate table (client, 4 Aug: one column,
+     no side-by-side panels), and demotes the two notes to the footnote they always were.
+     Rows are grouped by housing type with a group row, so the two different bracket ladders
+     share one table without pretending their brackets line up.
+     COPY OWNER: homestay bracket FIGURES do not exist in costs.md §7 — it states only that
+     rates drop at 5 and at 12 weeks, and that the from-prices are the 12+ rates. The
+     relative wording ("Highest rate" / "Lower rate") is the honest stand-in; replace it
+     with the real US$ figures when housing supplies them. -->
+<!-- The rate-bracket table folded into §4's disclosure component (client, 4 Aug: "create an
+     accordion button (See The Details) as you did with the Costs page, use the same styling").
+     Same <details class="calc_details"> object, same .calc_details-toggle / -label / -hint / -caret
+     parts, same body wrapper — nothing new is minted, so the two disclosures cannot drift.
+     NOT .faq-item: that family is bound to the live single-open accordion AND to this page's FAQPage
+     JSON-LD, so reusing it for non-FAQ content would put a rate table into the FAQ rich result.
+     The bracket table is evidence for the "the longer you stay, the less you pay" callout above it,
+     so it reads better on demand than as a fourth table in the scroll.
+     EVERYTHING below it moved inside too (client, 4 Aug): the three qualifying paragraphs and the
+     placement-fee footnote all qualify the rates in this table, so leaving them outside split one
+     argument across a disclosure boundary — the table was hidden while its own footnotes stayed
+     visible, which read as orphaned copy. The summary hint names all three parts. -->
+<details class="calc_details">
+<summary class="calc_details-toggle"><span class="calc_details-label">See the details</span><span class="calc_details-hint">Rate brackets, season rules and the placement fee</span><span class="calc_details-caret" aria-hidden="true"></span></summary>
+<div class="calc_details-body">
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Weekly rate by length of stay</p><h4 class="brackets_title">Accommodation Rate Brackets</h4></div>
+<table class="feetable is-rates">
+<caption class="feetable_caption">Weekly accommodation rates by duration bracket, in US dollars</caption>
+<colgroup><col class="feetable_col-key"><col><col class="feetable_col-amount"></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Housing</th><th scope="col">Length of stay</th><th scope="col" class="is-inset-r">Weekly rate</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">Shared apartment</th><td>1&ndash;11 weeks</td><td class="is-inset-r">US$290</td></tr>
+<tr><th scope="row" class="is-inset-l">Shared apartment</th><td>12&ndash;23 weeks</td><td class="is-inset-r">US$280</td></tr>
+<tr><th scope="row" class="is-inset-l">Shared apartment</th><td>24+ weeks</td><td class="is-inset-r">US$270</td></tr>
+<tr><th scope="row" class="is-inset-l">Homestay</th><td>1&ndash;4 weeks</td><td class="is-inset-r">&mdash;</td></tr>
+<tr><th scope="row" class="is-inset-l">Homestay</th><td>5&ndash;11 weeks</td><td class="is-inset-r">&mdash;</td></tr>
+<tr><th scope="row" class="is-inset-l">Homestay</th><td>12+ weeks</td><td class="is-inset-r">US$320</td></tr>
+</tbody>
+</table>
+<p class="brackets_foot">Shared-apartment rates are the Standard room, shown as the example; every shared apartment drops at the same two thresholds. Homestay rates are per week with meals included, for a single room &mdash; a double room, for two students traveling together, is US$290 from 12 weeks. Rates marked &mdash; are not published for short homestay stays; they are slightly higher than the 12-week rate and your written quote confirms the exact figure. The from-prices in the cards above are the longest bracket in each group: 24+ weeks for shared apartments, 12+ weeks for homestay.</p>
+</div>
+<p class="body-text">The from-prices in the cards above are these long-stay rates &mdash; 24+ weeks for shared apartments, 12+ weeks for homestay. The <a class="text-link" href="#budget-planner">12-week budget planner</a> above already uses the correct 12-week rates.</p>
+<p class="body-text">High season runs May 30 &ndash; September 26, 2026. Accommodation carries a seasonal supplement that varies by residence and room type. The supplement is shown before you book and included in your personalized quote. Tuition has no seasonal supplement.</p>
+<p class="body-text">Compare what the weekly rate includes: at US$320&ndash;380 per week, our Premium and Superior apartments come with pool, jacuzzi, gym and courts.</p>
+<!-- Placement-fee callout closes the section (client, 4 Aug): it qualifies EVERY accommodation
+     figure above it, so it reads as the section's footnote rather than interrupting the
+     high-season paragraph mid-argument. -->
+<div class="callout">
+<p class="price-note-text">The one-time placement fee (US$100 shared apartments / US$200 homestay) is already included in every accommodation total on this page.</p>
+</div>
+</div>
+</details>
+<div class="callout"><p class="price-note-text">Accommodation rates depend on your length of stay &mdash; the longer you stay, the less you pay per week, on housing and on tuition.</p></div>
+</section>
+
+<!-- ==================== §8 LIVING COSTS ====================
+     Own bento shell: living_bento-text (the hero photo was removed, client 4 Aug).
+     The living slider IS built — this supersedes CLASS-CONTRACT.md §3 blocker 5
+     ("omit the living slider, no copy supplied"), which described an earlier draft.
+     v4 §8 supplies three tiles that map 1:1 onto living_card_cost + costs_act_pano-tag
+     + -title + -desc, so #livingSlider / #livingSliderNav ARE required ids here.
+     Both Food figures are CEL internal student-budget estimates — the on-page framing
+     ("As a practical student-budget estimate") ships word-for-word. -->
+<section id="living-costs" class="section_page section_living is-consecutive">
+<div class="living_bento-text">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>Living Costs</h2>
+<h3 class="section-title">Is San Diego Expensive?</h3>
+<p class="body-intro text-size-medium">Plan on roughly US$2,700&ndash;$3,200 per month for tuition and accommodation on a 12-week stay, plus your personal expenses on top. San Diego is a major US coastal city, but studying here comes with two built-in savings: Pacific Beach is walkable, and the best recreation is free.</p>
+<div class="card-slider_clip living-slider_clip">
+<div class="card-slider living-slider swiper" id="livingSlider">
+<div class="swiper-wrapper"><div class="swiper-slide is-activity"><div class="costs_act_pano-card"><div class="costs_act_pano-photo"><!-- TODO: replace with SD asset --><img class="costs_act_pano-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f086af0aae68a8c3689246_costs-living-transport.avif" loading="lazy" alt="MTS bus in Pacific Beach, San Diego"></div><div class="costs_act_pano-body"><p class="living_card_cost">US$72/month</p><p class="costs_act_pano-tag">Transport</p><h4 class="costs_act_pano-title">Most Students Walk</h4><p class="costs_act_pano-desc">An MTS monthly transit pass costs US$72 &mdash; but in Pacific Beach, most students walk or bike. School, beach, caf&eacute;s and nightlife sit in the same neighborhood, so many students spend close to nothing on transport.</p></div></div></div><div class="swiper-slide is-activity"><div class="costs_act_pano-card"><div class="costs_act_pano-photo"><!-- TODO: replace with SD asset --><img class="costs_act_pano-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f086b5c1ba83cd2d2f8aa8_costs-living-food.avif" loading="lazy" alt="Groceries for a shared apartment in San Diego"></div><div class="costs_act_pano-body"><p class="living_card_cost">&asymp;US$450/month</p><p class="costs_act_pano-tag">Food &amp; connectivity</p><h4 class="costs_act_pano-title">Groceries and Your Phone</h4><p class="costs_act_pano-desc">As a practical student-budget estimate, plan around US$450 per month for groceries in a shared apartment; homestay prices include meals. Basic mobile plans start around US$25 per month.</p></div></div></div><div class="swiper-slide is-activity"><div class="costs_act_pano-card"><div class="costs_act_pano-photo"><!-- TODO: replace with SD asset --><img class="costs_act_pano-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f086b1f1a1f32fec8c1649_costs-living-recreation.avif" loading="lazy" alt="Beach volleyball on Pacific Beach, San Diego"></div><div class="costs_act_pano-body"><p class="living_card_cost">Free</p><p class="costs_act_pano-tag">Free recreation</p><h4 class="costs_act_pano-title">The Beach Costs Nothing</h4><p class="costs_act_pano-desc">The beach costs nothing, and neither does most of what students do here: surfing (once you rent or buy a board), Balboa Park&rsquo;s grounds, and beach volleyball. If you stay in a Superior apartment, tennis, basketball and beach volleyball courts are included.</p></div></div></div></div>
+</div>
+</div>
+<div class="card-slider_nav living-slider_nav" id="livingSliderNav"><div class="card-slider_arrow living-slider_arrow is-prev" role="button" tabindex="0" aria-label="Previous"><img class="slider-arrow-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c9134cf0b5f70a4f64c236_costs-slider-chevron.svg" loading="lazy" alt="Previous"></div><div class="card-slider_progress living-slider_progress"><div class="card-slider_progress-fill living-slider_progress-fill"></div></div><div class="card-slider_arrow living-slider_arrow is-next" role="button" tabindex="0" aria-label="Next"><img class="slider-arrow-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c9134cf0b5f70a4f64c236_costs-slider-chevron.svg" loading="lazy" alt="Next"></div></div>
+<!-- Heading moved INTO the panel as its band, tiles become a 2-up list (client, 4 Aug): six
+     one-word cards were six boxes carrying two words each. Same panel + band recipe as §6/§7/§9. -->
+<!-- §8 cost drivers — REBUILT from six icon+label tiles into the page's banded table (client, 4 Aug:
+     "looks so simple and boring"). It was boring because it carried no information: six one-word
+     labels named the drivers and said nothing about them, so the panel's own title — "what moves your
+     total up or down" — was the one thing the content did not answer. Each row now states WHAT the
+     driver changes and WHICH WAY, and every figure in it is already published elsewhere on this page
+     (the 7/13/20/30 tuition brackets, the 12/24 and 5/12 accommodation brackets, the US$300-410
+     range, the May 30 - Sep 26 high season, the US$100/200 placement fee, the US$2,700-3,200 month).
+     Nothing here is new copy. Same .feetable shape and banded head as §3, §6 and §9, and the six
+     existing icons carry across verbatim. -->
+<div class="brackets_panel is-factors">
+<div class="brackets_head"><p class="brackets_note">Cost drivers</p><h4 class="brackets_title">What Moves Your Total Up or Down</h4></div>
+<table class="feetable is-drivers">
+<caption class="feetable_caption">What raises or lowers the total cost of studying English in San Diego</caption>
+<colgroup><col class="feetable_col-key"><col class="feetable_col-dir"></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Cost driver</th><th scope="col" class="is-inset-r">Effect</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd55b0cc82fe98859904_costs-icon-duration.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Duration</p><p class="feetable_note">Tuition drops at 7, 13, 20 and 30 weeks; shared-apartment rates at 12 and 24, homestay at 5 and 12.</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-down"><span class="driver_dir-glyph">&darr;</span>Lowers</span></td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd59b0cc82fe98859bdc_costs-icon-intensity.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Course intensity</p><p class="feetable_note">More lessons per week, a higher weekly rate &mdash; tuition runs US$300&ndash;$410 depending on the course.</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-up"><span class="driver_dir-glyph">&uarr;</span>Raises</span></td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5e253806b0b27a9c6f_costs-icon-season.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Season</p><p class="feetable_note">Tuition is the same all year. Accommodation carries a supplement in high season (May 30 &ndash; September 26, 2026).</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-up"><span class="driver_dir-glyph">&uarr;</span>Raises</span></td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5309a93182ac2dbfb9_costs-icon-accommodation.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Accommodation type</p><p class="feetable_note">Homestay with meals, or a shared apartment &mdash; and a one-time placement fee of US$200 or US$100.</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-either"><span class="driver_dir-glyph">&updownarrow;</span>Either way</span></td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5a22548a7706d1606a_costs-icon-lifestyle.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Lifestyle</p><p class="feetable_note">Food outside homestay, leisure and travel. Plan roughly US$2,700&ndash;$3,200 per month all-in for a 12-week stay.</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-outside"><span class="driver_dir-glyph">&mdash;</span>Not in our fees</span></td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd569c13488aa4f9e090_costs-icon-flights.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Flights</p><p class="feetable_note">Vary too much by season and departure city for a useful estimate; check current fares for your dates.</p></div></div></th><td class="is-inset-r"><span class="driver_dir is-outside"><span class="driver_dir-glyph">&mdash;</span>Not in our fees</span></td></tr>
+</tbody>
+</table></div>
+</div>
+</section>
+
+<!-- ==================== §9 VISA &amp; ARRIVAL COSTS ====================
+     No reference section: #budget's fees panel lifted into its own section.
+     REDESIGNED (client, 4 Aug): the five fee-banners are now ONE pricing table, B13
+     `.feetable.is-visa` — the B10 table family (already on this page for the 12-week
+     totals) plus an icon cell, so the five amounts line up in a tabular column instead of
+     being read one banner at a time. The five existing fee icons carry across verbatim.
+     The budget-fees-panel wrapper stays (it owns the panel chrome); `is-vd` and the
+     fee-banner / price-amount.is-alternate set are retired with the banners.
+     Figures verified July 2026. Re-verify SEVIS / MRV / ESTA on publication day:
+     a June 2026 Federal Register consular fee-schedule change is in motion for MRV. -->
+<section id="visa-costs" class="section_page is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>Visa Costs</h2>
+<h3 class="section-title">US Visa &amp; Arrival Costs &mdash; the Fees Most School Websites Don&rsquo;t List</h3>
+<p class="body-intro text-size-medium">Government fees are a real part of your budget, so here they are, listed openly. All figures verified July 2026 &mdash; always check the official source before you apply, as government fees change.</p>
+<div class="budget-fees-panel">
+<div class="budget-fees-panel_header">
+<p class="price-table_badge">Official fees</p>
+<h4 class="budget_sub-heading">Government &amp; Arrival Fees</h4>
+<p class="body-intro text-size-medium">Every fee below links to its official source. None of them is paid to CEL, except health insurance if you choose it.</p>
+</div>
+<table class="feetable is-visa">
+<caption class="feetable_caption">US visa and arrival fees for studying English in San Diego, in US dollars, verified July 2026</caption>
+<colgroup><col class="feetable_col-fee"><col class="feetable_col-amount"></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Fee</th><th scope="col" class="is-inset-r">Amount</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ebcebbbd48331b55bbabd5_duration-guide-icon-doc-check.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">SEVIS I-901 fee</p><p class="feetable_note">One-time, F-1 visa only. Paid online before your visa interview at <a class="text-link" href="https://www.fmjfee.com/" target="_blank" rel="noopener">fmjfee.com</a> (<a class="text-link" href="https://www.ice.gov/sevis" target="_blank" rel="noopener">ice.gov</a>).</p></div></div></th><td class="is-inset-r">US$350</td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5781424056a4a75bd4_adults-16-icon-idcard.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Visa application (MRV) fee</p><p class="feetable_note">Applies to both F-1 and B1/B2 applications. Official source: <a class="text-link" href="https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/fees.html" target="_blank" rel="noopener">travel.state.gov</a>.</p></div></div></th><td class="is-inset-r">US$185</td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69efb475f2a8eea4dba3ba91_adults-16-icon-globe.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">ESTA</p><p class="feetable_note">For Visa Waiver Program nationalities: US$4 processing + US$36.27 authorization. Official source: <a class="text-link" href="https://esta.cbp.dhs.gov/" target="_blank" rel="noopener">cbp.gov</a>.</p></div></div></th><td class="is-inset-r">US$40.27</td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5472b1cb7992f567c5_costs-icon-allinclusive-v3.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Health insurance</p><p class="feetable_note">Available through CEL &mdash; about US$340 for 12 weeks &mdash; or you can bring your own policy. The only fee here that CEL can bill.</p></div></div></th><td class="is-inset-r">US$4 per day</td></tr>
+<tr><th scope="row" class="is-inset-l"><div class="feetable_cell"><img class="feetable_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd569c13488aa4f9e090_costs-icon-flights.svg" loading="lazy" alt=""><div class="feetable_stack"><p class="feetable_label">Flights</p><p class="feetable_note">Prices vary too much by season and departure city for a useful estimate; check current fares for your dates.</p></div></div></th><td class="is-inset-r">Not included</td></tr>
+</tbody>
+</table>
+</div>
+<div class="callout">
+<p class="price-note-text">CEL provides cost guidance, not visa advice &mdash; visa eligibility and duration are decided by U.S. authorities. Official sources: <a class="text-link" href="https://travel.state.gov/" target="_blank" rel="noopener">travel.state.gov</a> and <a class="text-link" href="https://www.fmjfee.com/" target="_blank" rel="noopener">fmjfee.com</a>.</p>
+<p class="price-note-text">Applying for an F-1 visa? Our step-by-step guide walks you through the process: <a class="text-link" href="/san-diego-ca/f1-visa-english-school">F-1 visa for English school in San Diego</a>.</p>
+</div>
+</section>
+
+<!-- ==================== §10 FAQ ====================
+     9 items (the reference ships 8 — node repeated).
+     STRUCTURE.md §4 bans <button>, so faq-q is div[role=button][tabindex=0]; the live
+     page uses an empty-fragment anchor, which is a self-check failure in its own right.
+     Schema-identical either way.
+     FAQ DOM IS A SCHEMA CONTRACT (rules/faq-schema-contract.md): the runtime JSON-LD
+     extractor reads .faq-question-text p and .faq-body-inner. Renaming .faq-item /
+     .faq-question-text / .faq-body-inner silently kills FAQ rich results.
+     No hand-authored FAQPage block — the extractor owns it. -->
+<section id="faq" class="section_page section_faq is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>FAQ</h2>
+<h3 class="section-title">Frequently Asked Questions About Costs</h3>
+<div class="faq-list"><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>How much does it cost to study English in San Diego?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>US$300&ndash;$410 per week in tuition, depending on course and duration. A typical 12-week stay including accommodation totals US$8,050&ndash;$9,490 &mdash; before flights, personal expenses, visa fees, and insurance.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Is it cheaper to study English for a longer period?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Yes. Weekly tuition drops at 7, 13, 20 and 30 weeks &mdash; General English 20 falls from US$370 per week (1&ndash;6 weeks) to US$300 per week (20&ndash;29 weeks). Accommodation works the same way: shared-apartment rates drop at 12 and 24 weeks, homestay rates at 5 and 12 weeks.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Are there additional fees besides tuition?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Three, all listed here: a one-time registration fee of US$150, learning materials at US$10 per week, and a one-time accommodation placement fee of US$100 (shared apartments) or US$200 (homestay). There are no amenities fees.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>How much should I budget per month in San Diego?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Roughly US$2,700&ndash;$3,200 per month including tuition and accommodation. On top of that, shared-apartment students spend about US$450 per month on groceries; homestay includes meals.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Do I need an F-1 visa, and what does it cost?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Only for courses of 24 or more lessons per week (General English 24). F-1 students pay a one-time SEVIS I-901 fee of US$350 plus the US$185 visa application fee. For General English 20 or GE23 up to 12 weeks, many nationalities can travel on ESTA (US$40.27) instead. Full guide: <a class="text-link" href="/san-diego-ca/f1-visa-english-school">F-1 visa for English school in San Diego</a>.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Is health insurance included?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>No. Health insurance is available through CEL for US$4 per day &mdash; about US$340 for a 12-week stay &mdash; or you can bring your own policy.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Is San Diego more expensive than Los Angeles or Vancouver?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>As a rule of thumb: San Diego is cheaper than Los Angeles, and Vancouver is slightly cheaper than San Diego &mdash; though the Vancouver comparison shifts with the CAD exchange rate, and your accommodation choice, visa route and length of stay move the total more than the city does. One structural advantage in San Diego: most Pacific Beach students walk or bike, so transport can cost close to zero. Compare in detail: <a class="text-link" href="/san-diego-ca/vs-los-angeles">San Diego vs Los Angeles</a> &middot; <a class="text-link" href="/vancouver/cost-of-studying-english">cost of studying English in Vancouver</a>.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>When is the cheapest time to study in San Diego?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Tuition is the same all year &mdash; there is no high-season supplement on courses. Accommodation costs more during the summer high season (May 30 &ndash; September 26, 2026), so stays from autumn to spring are cheaper overall.</p></div></div></div><div class="faq-item"><div class="faq-q" role="button" tabindex="0" aria-expanded="false"><div class="faq-question-text"><p>Can I get a personalized cost estimate?</p></div><div class="faq-icon"><p>+</p></div></div><div class="faq-body"><div class="faq-body-inner"><p>Yes &mdash; free, and with every fee included. Tell us your course, dates and housing choice, and you will have a complete quote within 1 business day. <a class="text-link" href="/contact-cel">Get a Quote</a>.</p></div></div></div></div>
+</section>
+
+<!-- ==================== §11 PERSONALIZED ESTIMATE CTA ====================
+     D3 default kept: the copy places §11 before §12, so #cta is NOT the page's last
+     element (on the reference it is). Moving it after #blog is a user call.
+     INHERITED VIOLATION FIXED: on the reference, .inline-cta-a8a1 wraps h3+p in an
+     unclassed <div> — the only bare div in main-wrapper. Here it carries
+     inline-cta-copy (B5). Do not clone the violation.
+     is-secondary turned out to ALREADY EXIST in the live cascade — not a new class.
+     D4: sticky bar built, <=991px only, z-index 880 (below the stoc drawer at 900).
+     It is REVEALED ONLY ONCE hero_actions has scrolled out of view (costs.js), so it
+     never occludes the hero CTA row — DESIGN-RULES.md §6.6 requires all hero content
+     visible without scrolling. The footer gets matching bottom clearance in costs.css.
+     No price is gated behind the form.
+     WhatsApp is +1 619 243 4426 (CEL's WhatsApp line, matching the footer's
+     api.whatsapp.com/send?phone=16192434426). NOT +1 858 412 6888 — that is the San
+     Diego school's telephone line, used by the tel: link in the footer only. -->
+<section id="cta" class="section_inline-cta">
+<div class="inline-cta-a8a1">
+<div class="inline-cta_trust">
+<span class="inline-cta_trust-disc"><img class="inline-cta_trust-logo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd2e7d6daef797a73fd2e5_adults-16-icon-google-logo.svg" loading="lazy" alt="Google"></span>
+<p class="inline-cta_trust-score">4.8</p>
+<!-- 4.8 of 5 as ONE clipped overlay, not five separate part-filled glyphs: the same star asset
+     is laid down twice, the top copy clipped to 96% width, so the fifth star is 80% full to the
+     pixel and the row would still be true if the score changed. Real CEL star artwork (the
+     reviews-hero star), never a hand-drawn path. --stars-fill is the only number to edit. -->
+<span class="cta_stars" role="img" aria-label="4.8 out of 5 stars">
+<span class="cta_stars-row is-empty"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+<span class="cta_stars-row is-full"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+</span>
+<div class="inline-cta_trust-rule"></div>
+<p class="inline-cta-trust">195 reviews</p>
+</div>
+<div class="inline-cta-copy">
+<h3 class="inline-cta-h2">Get Your Personalized Cost Estimate</h3>
+<p class="inline-cta-body">Tell us your course, dates and housing choice &mdash; we will send a complete quote with every fee included. Reply within 1 business day &mdash; no auto-reply.</p>
+
+</div>
+<div class="inline-cta-actions"><a class="inline-cta-btn is-primary" href="/contact-cel">Get a Quote</a><a class="inline-cta-btn is-whatsapp" href="https://wa.me/16192434426" target="_blank" rel="noopener"><img class="inline-cta-btn-icon" src="../../assets/icons/whatsapp.svg" width="18" height="18" alt="">WhatsApp</a></div>
+</div>
+<div class="sticky-cta_bar">
+<div class="sticky-cta_actions"><a class="inline-cta-btn is-primary" href="/contact-cel">Get a Quote</a><a class="inline-cta-btn is-whatsapp" href="https://wa.me/16192434426" target="_blank" rel="noopener"><img class="inline-cta-btn-icon" src="../../assets/icons/whatsapp.svg" width="18" height="18" alt="">WhatsApp</a></div>
+</div>
+</section>
+
+<!-- ==================== §12 LONG-FORM + BLOG GRID ====================
+     Blog grid REUSES the nextread_* family minted on pages/san-diego/san-diego.html
+     (#blog) — this supersedes contract B7 (the retired card family), which would have
+     created a second Webflow style object for a component that already exists.
+     The nextread_* grid expects exactly 4 cards: is-feature (col 1, rows 1-2),
+     two plain cards (col 2), one is-wide (full-width row 3).
+     Complementary depth only: no tuition figure and no 12-week example is restated
+     here, and no cost-themed teaser card exists — this page is the canonical cost
+     resource. No empty cards, no dead "Continue reading" links. -->
+<section id="blog" class="section_page is-consecutive">
+<h2 class="section-tagline"><div class="section-tagline-dash"></div>From Our Blog</h2>
+<h3 class="section-title">More on Studying English in San Diego</h3>
+<h4 class="section-subtitle">How can you lower the total cost of studying in San Diego?</h4>
+<!-- The four cost levers, in the page's STANDARD PANEL (client, 4 Aug: "put it in a column with the
+     title as the heading above, we have a standard look and feel for that").
+     They arrived as one 1,000-character paragraph carrying four numbered arguments plus a closing
+     aside, so the structure the copy already had — "First... Second... Third... Fourth..." — was
+     invisible. Every word below is the original copy, re-broken at the joints it was written with;
+     nothing is added and no figure changes.
+     Same .brackets_panel / .brackets_head / .brackets_foot object as §3, §6, §7 and §8 — but with the
+     band's own title REMOVED (client, 4 Aug: "remove its title"). The section already carries the h3
+     and the h4 question directly above this panel, so a third title in the band said the same thing a
+     third time. The eyebrow stays, because it counts the rows. ONE column, each lever's title as the heading
+     above its text — the numeral column is gone, since the row order carries the sequence and the
+     titles are what a reader scans. The closing sentence qualifies all four levers, so it is the
+     panel's foot rather than a fifth row. -->
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Four levers</p></div>
+<div class="levers">
+<div class="levers_item"><img class="levers_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd55b0cc82fe98859904_costs-icon-duration.svg" loading="lazy" alt=""><div class="levers_body"><p class="levers_title">Duration brackets</p><p class="levers_text">Tuition rates drop at 7, 13, 20 and 30 weeks, shared-apartment rates at 12 and 24, homestay at 5 and 12. Booking 13 weeks instead of 12 often adds little to the total, because the weekly tuition rate falls at 13.</p></div></div>
+<div class="levers_item"><img class="levers_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5e253806b0b27a9c6f_costs-icon-season.svg" loading="lazy" alt=""><div class="levers_body"><p class="levers_title">Season</p><p class="levers_text">Tuition never changes. Accommodation carries a supplement from May 30 to September 26, 2026, so an autumn-to-spring start avoids it.</p></div></div>
+<div class="levers_item"><img class="levers_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd5309a93182ac2dbfb9_costs-icon-accommodation.svg" loading="lazy" alt=""><div class="levers_body"><p class="levers_title">Housing choice</p><p class="levers_text">The Standard shared apartment, or a homestay double room for two traveling together, keeps weekly costs lowest &mdash; and homestay includes meals, which removes the grocery budget.</p></div></div>
+<div class="levers_item"><img class="levers_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f0bd59b0cc82fe98859bdc_costs-icon-intensity.svg" loading="lazy" alt=""><div class="levers_body"><p class="levers_title">The course itself</p><p class="levers_text">General English 20 covers most goals at US$300&ndash;370 per week. Budget for GE23 or GE24 only if you want more lessons each week.</p></div></div>
+</div>
+<p class="brackets_foot">And wherever you land: in Pacific Beach most students walk or bike, so transport can cost close to nothing.</p>
+</div>
+<h4 class="section-subtitle">How do payment and refunds work?</h4>
+<p class="body-intro text-size-medium">You receive a complete written quote before you pay anything, with every fee itemized &mdash; the same numbers published on this page. Payment schedules and refund conditions are set out in CEL&rsquo;s policies.</p>
+<!-- HANDOFF — CLIENT INPUT NEEDED: this sentence shipped unlinked on purpose. /policies
+     is a 404 (not in the sitemap, not in the repo) and the only real policies page is
+     /vancouver/policies, which is the wrong city for an SD page. Ask the client for the
+     San Diego policies URL, then wrap "CEL's policies" in <a class="text-link">. -->
+<div class="nextread_grid">
+<a class="nextread_card is-feature" href="/san-diego-ca/pacific-beach">
+<div class="nextread_media"><!-- TODO: replace with SD asset --><img class="nextread_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/69f3198a6dbf64f35e00e4c6_CEL%20San%20Diego%20-%20Group%20discussion.avif" loading="lazy" alt="CEL San Diego students in a group discussion in Pacific Beach"></div>
+<div class="nextread_body">
+<p class="nextread_cat">Neighborhood</p>
+<h3 class="nextread_title">Why Learn English in Pacific Beach</h3>
+<p class="nextread_excerpt">What it is actually like to study five minutes from the ocean &mdash; the neighborhood, the walk to school, the day-to-day.</p>
+<span class="cta-pill-indigo">View Guide</span>
+</div>
+</a>
+<a class="nextread_card" href="/san-diego-ca/f1-visa-english-school">
+<p class="nextread_cat">Visas</p>
+<h3 class="nextread_title">F-1 Visa Guide</h3>
+<p class="nextread_excerpt">What the F-1 student visa involves, step by step.</p>
+<span class="cta-pill-indigo">View Guide</span>
+</a>
+<a class="nextread_card" href="/san-diego-ca/how-long-to-learn-english">
+<p class="nextread_cat">Progress</p>
+<h3 class="nextread_title">How Long to Learn English</h3>
+<p class="nextread_excerpt">How many weeks a CEFR level really takes, and how to pick your length of stay.</p>
+<span class="cta-pill-indigo">View Guide</span>
+</a>
+<a class="nextread_card is-wide" href="/housing">
+<p class="nextread_cat">Housing</p>
+<h3 class="nextread_title">Where You&rsquo;ll Live in Pacific Beach</h3>
+<p class="nextread_excerpt">A closer look at the five CEL-arranged options &mdash; rooms, amenities and how each one gets you to school.</p>
+<span class="cta-pill-indigo">View Guide</span>
+</a>
+</div>
+</section>
+
+          </main>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<!-- ===== FOOTER (site template) — components/footer.html ===== -->
+<footer data-wf--footer--variant="base" class="section_footer"><div class="padding-global"><div class="container"><div class="footer_logo-row"><a href="/" class="footer_logo-link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" loading="lazy" alt="College of English Language" class="footer_logo-mark"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdb169f37f0fff7fd21_footer-logo-wordmark.svg" loading="lazy" alt="College of English Language" class="footer_logo-wordmark"></a></div><div class="footer_row"><p class="footer_label">Schools</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">CEL San Diego</p><p class="footer_address">945 Hornblend Street, Suite G,<br>2nd floor, San Diego, CA 92109 USA</p><div class="footer_list"><a href="tel:+18584126888" class="footer_list-link">+1 858 412 6888</a><a rel="noopener" href="https://maps.app.goo.gl/LioLhFM1asPBk9ge8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Los Angeles</p><p class="footer_address">401 Wilshire Boulevard #200,<br>Santa Monica, CA 90401 USA</p><div class="footer_list"><a href="tel:+13109333419" class="footer_list-link">+1 310 933 3419</a><a rel="noopener" href="https://maps.app.goo.gl/65CBJckYFSMR7bRk8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Vancouver</p><p class="footer_address">1190 Melville St, #300,<br>Vancouver, BC V6E 3W1, Canada</p><div class="footer_list"><a href="tel:+16046850291" class="footer_list-link">+1 604 685 0291</a><a rel="noopener" href="https://maps.app.goo.gl/NQ3ubGTWy4E5NJE8A" target="_blank" class="footer_directions">Get Directions</a></div></div></div></div><div class="footer_row"><p class="footer_label">Contact</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">WhatsApp</p><div class="footer_list"><a whatsap="url" href="https://api.whatsapp.com/send?phone=16192434426" target="_blank" rel="noopener" whatsapp="number" class="footer_list-link">+1 619 243 4426</a></div></div><div class="footer_col"><p class="footer_group-label">Email</p><div class="footer_list"><a href="mailto:info@englishcollege.com" class="footer_list-link">info@englishcollege.com</a></div></div><div class="footer_col"><p class="footer_group-label">Phone</p><div class="footer_list"><a href="tel:+16192347466" class="footer_list-link">+1 619 234 7466</a></div></div></div></div><div class="footer_row"><div class="footer_title"><p class="footer_label">Courses</p></div><div class="footer_content"><div class="footer_col"><p class="footer_group-label">General</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/general-english" class="footer_list-link">General English</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-academic-skills" class="footer_list-link">English + Academic Skills</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/global-pathway-preparation" class="footer_list-link">Global Pathway</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-toefl-exam-preparation" class="footer_list-link">English Plus TOEFL Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/private-lessons" class="footer_list-link">Private lessons</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">English Plus</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/english-career-development" class="footer_list-link">English Plus Career Development</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-cambridge-prep" class="footer_list-link">English Plus Cambridge Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-experience" class="footer_list-link">English Plus Experience</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-volunteering" class="footer_list-link">English Plus Volunteering</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-surfing" class="footer_list-link">English Plus Surfing</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">Pathway</p><div class="footer_list"><a href="/pathway-program-usa" class="footer_list-link">Pathway Program</a><a href="/pathway/certificate-programs" class="footer_list-link">Certificate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Undergraduate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Graduate Programs</a><a href="/pathway/us-education-system" class="footer_list-link">US Education System</a><a href="/pathway/semester-abroad" class="footer_list-link">Semester Abroad</a></div></div></div></div><div class="footer_row"><p class="footer_label">Housing</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">San Diego</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-san-diego" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/premium-homestay-san-diego" class="footer_list-link">Premium Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-standard-san-diego" class="footer_list-link">CEL Shared Apartment Standard</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-premium-san-diego" class="footer_list-link">CEL Shared Apartment Premium</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-superior-pacific-beach-san-diego" class="footer_list-link">CEL Shared Apartment Superior Pacific Beach</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Los Angeles</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-los-angeles" class="footer_list-link">Homestay</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Vancouver</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-vancouver" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-budget-vancouver" class="footer_list-link">Student House Budget</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-vancouver" class="footer_list-link">Student House</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-silverstone-vancouver" class="footer_list-link">Shared Apartment Silverstone</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-downtown-vancouver" class="footer_list-link">Shared Apartment Downtown</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/apartment-economy-apt-living-vancouver" class="footer_list-link">Apartment Economy APT Living</a></div></div></div></div></div></div><div class="footer_row"><p class="footer_label">Vancouver</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Study in Vancouver</p><div class="footer_list"><a href="/vancouver" class="footer_list-link">Vancouver Language School</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/vancouver/student-services" class="footer_list-link">Student Services</a><a href="/vancouver/policies" class="footer_list-link">School Policies</a></div></div><div class="footer_col"><p class="footer_group-label">Useful Guides</p><div class="footer_list"><a href="/vancouver/cost-of-studying-english" class="footer_list-link">Cost of Studying English</a><a href="/vancouver/how-long-to-learn-english" class="footer_list-link">How Long to Learn English</a><a href="/vancouver/vs-toronto" class="footer_list-link">Vancouver vs Toronto</a></div></div><div class="footer_col"></div></div></div><div class="footer_row"><p class="footer_label">Explore</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Destinations</p><div class="footer_list"><a href="/learn-english-usa" class="footer_list-link">Learn English in the USA</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/san-diego-ca/language-school" class="footer_list-link">San Diego Language School</a><a href="/los-angeles-ca/language-courses" class="footer_list-link">Los Angeles Language School</a></div></div><div class="footer_col"><p class="footer_group-label">Study at CEL</p><div class="footer_list"><a href="/courses" class="footer_list-link">All Courses</a><a href="/housing" class="footer_list-link">All Housing</a><a href="/summer-camp-san-diego" class="footer_list-link">Summer Camp </a><a href="/booking" class="footer_list-link">Apply Now</a></div></div><div class="footer_col"><p class="footer_group-label">About CEL</p><div class="footer_list"><a href="/voices" class="footer_list-link">Student Voices</a><a href="/blog" class="footer_list-link">Blog</a><a href="/faq" class="footer_list-link">FAQs</a><a href="/contact-cel" class="footer_list-link">Contact Us</a></div></div></div></div><div class="footer_legal"><div class="footer_legal-left"><p class="footer_copyright">© 2026 <a href="/" class="footer_copyright-link">College of English Language</a>. All rights reserved.</p><div class="w-dyn-list"><div role="list" class="footer_legal-links w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/page/privacy-policy" class="footer_list-link">Privacy Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cookie-policy" class="footer_list-link">Cookie Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/terms-conditions" class="footer_list-link">Terms &amp; Conditions</a></div><div role="listitem" class="w-dyn-item"><a href="/page/bppe" class="footer_list-link">BPPE Compliance Statement</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cel-affiliate-program" class="footer_list-link">Affiliate Program</a></div></div></div></div><div class="footer_social"><a aria-label="Instagram" href="https://www.instagram.com/cel_usa/" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd7762899cb7e32485e_footer-icon-instagram.svg" alt="Instagram" width="20" height="20"></a><a aria-label="TikTok" href="https://www.tiktok.com/@cel_usa" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd8ba967271e3015dd1_footer-icon-tiktok.svg" alt="TikTok" width="18" height="20"></a><a aria-label="YouTube" href="https://www.youtube.com/@collegeofenglishlanguage" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdae04fb1af8c919b6a_footer-icon-youtube.svg" alt="YouTube" width="22" height="16"></a></div></div></div></div></footer>
+</div>
+
+<script src="../../_live/swiper-bundle.min.js"></script>
+<script src="../cost-of-studying-english/scripts.js"></script>
+<!-- page-scoped; never edit ../cost-of-studying-english/scripts.js, the live VC page ships it.
+     DEPLOY: folds into the CEL page-script bundle (tools/cel-page-scripts/src/) via
+     /deploy-page-scripts — one of the 15 Webflow script slots. Not an inline script. -->
+<script src="currency.js" defer></script>
+<!-- shared calculator engine + this page's config (rates and copy only) -->
+<script src="../../shared/calculator.js" defer></script>
+<script src="calculator-sandiego-costs.js" defer></script>
+<script src="costs.js" defer></script>
+<!-- FIX-BRIEF §8.1 — NAVBAR RUNTIME. Resolved, and not by adding a script tag.
+     The defect is real: without jQuery + webflow.js the pasted Navbar markup is inert (at <=991px
+     .w-nav-menu is display:none, the hamburger is unwired, and both dropdowns need .w--open, which only
+     webflow.js adds).
+     It cannot be fixed by loading a bundle here, and two attempts proved it:
+       1. assets-global.website-files.com/<site-id>/js/webflow.schunk.js — not a real asset path. 404,
+          window.Webflow stayed undefined, the navbar stayed inert, and every page gained a console error.
+       2. The real content-hashed filenames from the live snapshot
+          (_live/webflow.cb53894d.ee0df61b176939bc.js) — that file IS vendored, but it is a CODE-SPLIT
+          ENTRY: it immediately requests 14 webflow.achunk.*.js siblings that were never vendored, so it
+          throws ChunkLoadError and 14 more resource errors.
+     The correct resolution: DO NOT hand-author these tags. Webflow injects jQuery and its own bundle
+     into every published page automatically, so on the deploy target the navbar works with no tag in the
+     source — and a hand-authored tag would be a duplicate. The inertness is therefore a LOCAL PREVIEW
+     limitation only. To exercise the navbar locally, vendor the 14 webflow.achunk.*.js files alongside
+     the entry; that is a project-asset task, not a page edit.
+     jQuery IS loaded below, from the vendored copy the live snapshot itself references, because it loads
+     cleanly and several live page scripts assume it. -->
+<script src="../../shared/utils.js"></script>
+<script src="../../_live/jquery-3.5.1.min.dc5e7f18c8.js" type="text/javascript"></script>
+<!-- PUBLISHING: the unpack splash and no-JS fallback for a published artifact. Simple mark on the
+     page's own cream ground; no external references, so it renders before anything else loads. -->
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" data-bg-color="#faf3e8">
+    <rect width="240" height="160" fill="#faf3e8"></rect>
+    <rect x="72" y="50" width="96" height="60" rx="14" fill="#5d60ee"></rect>
+    <text x="120" y="90" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="600" fill="#faf3e8">CEL</text>
+    <text x="120" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#9a8f80">COSTS</text>
+  </svg>
+</template>
+</body>
+</html>

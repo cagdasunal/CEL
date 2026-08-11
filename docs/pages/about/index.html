@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<!-- class="geo-ready" — the site's OWN reveal mechanism. site-custom-code.css hides every
+     [data-geo] element (the navbar "Offers" link included) until the live geo script adds
+     .geo-ready to <html>; a static preview has no such script, so Offers silently vanished.
+     Same preview-only fix as the four San Diego pages (DECISIONS.md).
+     ⚠ Remove this class when deploying — live, cel-offers.min.js must control it. -->
+<html class="geo-ready">
+<head>
+  <!-- ============================================================
+       STAGING PREVIEW — MUST NOT BE INDEXED
+       Served from cel.englishcollege.com for review only. The production
+       page lives on englishcollege.com. Copy still carries unresolved
+       [CONFIRM: ...] markers and placeholder imagery.
+
+       noindex is the authoritative signal and REQUIRES the page to stay
+       crawlable — robots.txt deliberately does NOT Disallow /pages/,
+       because a blocked URL can still be indexed as a bare link while
+       Google never sees this tag. Do not "harden" it by blocking crawl.
+       ============================================================ -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <title>About CEL | College of English Language</title>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- PUBLISHING: resources referenced only from JS — the team module and its 24 portraits — cannot
+     be discovered by reading markup, so each is declared here. The page prefers
+     window.__resources[id] (a blob URL for the inlined bytes) and falls back to the URL when it is
+     running from the project. -->
+<meta name="ext-resource-dependency" content="./team-data.js" data-resource-id="teamData">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/667453c576e8d35c454cce88_Chris.avif" data-resource-id="team01">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/667453c576e8d35c454ccf32_Patrick.avif" data-resource-id="team02">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed0e0f4fc42c943ce9b1_6a1eed0c94eca433de255a53_laura-1-Laura%252520profile%252520picture(3.4m.avif" data-resource-id="team03">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed3364ff1c263c50f854_6a1eed31eab018f34a6b3370_aaron-1-Aaron.avif" data-resource-id="team04">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed0a409372b5e98954bd_6a1eed08eab018f34a6b2881_corinne-1-Corrine%252520profile%252520picture(3..avif" data-resource-id="team05">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed597079a56e29d971bc_6a1eed57fb1b4aa8e954a244_max-1-Max.avif" data-resource-id="team06">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed130f4fc42c943ced2f_6a1eed110f4fc42c943ceb72_eva-1-Eva%252520profile%252520picture(4.0mb).avif" data-resource-id="team07">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed4835298475e04e0d0f_6a1eed460a2d5ca1f77381d6_kim-1-Kim.avif" data-resource-id="team08">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed0618e79d493bfb14f5_6a1eed040f4fc42c943cdee3_marni-1-Marni%252520profile%252520picture(3.2m.avif" data-resource-id="team09">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed4d7cbf2f66c45ed8d1_6a1eed4c5e7790b000a244e8_george-1-George.avif" data-resource-id="team10">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed010f4fc42c943cdbae_6a1eecff7901bcb46ceb6a30_soomeen-1-Sumin%252520profile%252520picture(3.7m.avif" data-resource-id="team11">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed176184a9b38624374b_6a1eed16bedfa74434e00e28_jenna-1-Jenna%252520profile%252520picture(3.4m.avif" data-resource-id="team12">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed5594eca433de2580e2_6a1eed5355fa03ef35336d94_renata-1-Renata.avif" data-resource-id="team13">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed274a3fbd80abd46b1b_6a1eed2678ec3029cbf36d41_rosalia-1-1.avif" data-resource-id="team14">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed1c78ec3029cbf36668_6a1eed190f4fc42c943cf254_kazu-1-Japanese%252520man%252520profile%252520pic.avif" data-resource-id="team15">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed204653e1b057e4a5da_6a1eed1e6184a9b386243ca0_kaori-1-Japanese%252520women(1)%252520profile%2525.avif" data-resource-id="team16">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed2464ff1c263c50f269_6a1eed2235298475e04dee2c_rei-1-Japanese%252520women(2)%252520profile%2525.avif" data-resource-id="team17">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed5118e79d493bfb4d73_6a1eed4f244816344cbc2b97_andrea-1-Andrea.avif" data-resource-id="team18">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed40809ef916acd96c54_6a1eed3f78ec3029cbf37a05_andrew-1-Andrew.avif" data-resource-id="team19">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed2fd09434a8aa0d7e5d_6a1eed2d55fa03ef353358b4_christina-1-Christina.avif" data-resource-id="team20">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed3609e7cc277658a3a9_6a1eed3535298475e04dfc75_david-1-David.avif" data-resource-id="team21">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed2beab018f34a6b322d_6a1eed2978ec3029cbf3705e_mitch-1-Mitch.avif" data-resource-id="team22">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed3b18e79d493bfb4094_6a1eed387cbf2f66c45ed0be_lydia-1-Lydia.avif" data-resource-id="team23">
+<meta name="ext-resource-dependency" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eed447cbf2f66c45ed53f_6a1eed4235298475e04e04e4_lee-1-Lee.avif" data-resource-id="team24">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="../../_live/englishcollege.webflow.shared.54a3c3338.min.css">
+  <link rel="stylesheet" href="../../_live/page-vancouver.opt.min.css">
+  <link rel="stylesheet" href="../../_live/site-custom-code.css">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <link rel="stylesheet" href="../../client-first.css">
+  <link rel="stylesheet" href="../../shared/hero-clearance.css">
+  <link rel="stylesheet" href="../../shared/panel-standard.css">
+  <link rel="stylesheet" href="../../shared/inline-cta.css">
+  <link rel="stylesheet" href="about.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script src="../../_ds_bundle.js"></script>
+  <style>
+    html, body { margin: 0; padding: 0; }
+  </style>
+</helmet>
+
+<div class="page-wrapper">
+<div data-animation="default" class="navbar_component w-nav" data-wf--navbar--variant="base" data-easing2="ease" fs-scrolldisable-element="smart-nav" data-easing="ease" data-collapse="medium" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187faa5" role="banner" data-duration="400"><div class="container is-navbar"><a href="/" class="navbar_logo-link w-nav-brand"><div class="logo_icon-wrapper"><img loading="eager" fetchpriority="high" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454ccd01_CEL-Lettermark-Logo-OneColor-Light-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon is-white"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon is-color"></div><div class="logo_text w-embed"><svg height="100%" viewBox="0 0 758 289" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M175.353 53.6001C175.578 55.4008 175.803 57.2015 175.803 58.8897C175.803 75.7714 163.423 86.1254 144.178 86.1254C117.618 86.1254 104.338 66.6553 104.338 46.1722C104.338 25.5766 117.73 2.84258 145.867 2.84258C162.636 2.84258 171.864 10.8332 171.864 18.8239C171.864 25.3515 165.562 31.9916 152.844 34.4676C151.719 20.7371 142.715 8.24471 136.188 8.24471C130.898 8.24471 129.435 16.6855 129.435 26.8145C129.435 44.1464 139.114 63.8417 153.52 63.8417C161.735 63.8417 170.289 60.1277 175.353 53.6001ZM217.486 2.84258C244.047 2.84258 257.327 21.1873 257.327 41.6704C257.327 62.8288 243.934 86.1254 217.486 86.1254C190.926 86.1254 177.645 67.218 177.645 46.1722C177.645 25.5766 191.038 2.84258 217.486 2.84258ZM225.477 80.7233C230.316 80.7233 232.229 74.871 232.229 66.5427C232.229 45.4969 219.737 8.24471 209.495 8.24471C204.656 8.24471 202.743 13.8719 202.743 22.0877C202.743 43.1335 215.573 80.7233 225.477 80.7233ZM262.572 3.96803H289.808V81.0609C300.838 78.8101 310.404 72.0574 317.607 59.1148C317.607 67.5556 318.057 74.4208 318.957 85H262.572V3.96803ZM324.12 3.96803H351.356V81.0609C362.385 78.8101 371.952 72.0574 379.154 59.1148C379.154 67.5556 379.605 74.4208 380.505 85H324.12V3.96803ZM444.304 85H385.668V3.96803H441.602C441.602 12.859 442.39 21.2999 442.953 29.8532C433.949 19.6117 424.383 10.9458 412.904 6.78163V42.008C418.531 39.9822 423.595 36.2683 428.322 31.4289V55.0632C423.483 50.2238 418.306 46.7349 412.904 44.5966V81.0609C424.833 78.8101 435.187 72.0574 442.953 59.1148C442.953 67.5556 443.403 74.4208 444.304 85ZM486.077 42.9084H517.139V85H500.595L496.431 82.524C492.829 84.8875 488.215 86.1254 482.588 86.1254C460.417 86.1254 447.136 66.6553 447.136 46.1722C447.136 25.5766 460.529 2.84258 488.665 2.84258C505.434 2.84258 514.663 10.8332 514.663 18.8239C514.663 25.3515 508.361 31.9916 495.643 34.4676C494.518 20.7371 485.514 8.24471 478.987 8.24471C473.697 8.24471 472.234 16.6855 472.234 26.8145C472.234 49.2109 480.225 74.4208 491.029 78.9226V75.9964C491.029 64.9671 490.804 53.9377 486.077 42.9084ZM582.676 85H524.04V3.96803H579.975C579.975 12.859 580.763 21.2999 581.325 29.8532C572.322 19.6117 562.756 10.9458 551.276 6.78163V42.008C556.903 39.9822 561.968 36.2683 566.695 31.4289V55.0632C561.855 50.2238 556.678 46.7349 551.276 44.5966V81.0609C563.206 78.8101 573.56 72.0574 581.325 59.1148C581.325 67.5556 581.776 74.4208 582.676 85ZM654.585 2.84258C681.145 2.84258 694.426 21.1873 694.426 41.6704C694.426 62.8288 681.033 86.1254 654.585 86.1254C628.024 86.1254 614.744 67.218 614.744 46.1722C614.744 25.5766 628.137 2.84258 654.585 2.84258ZM662.575 80.7233C667.415 80.7233 669.328 74.871 669.328 66.5427C669.328 45.4969 656.836 8.24471 646.594 8.24471C641.755 8.24471 639.841 13.8719 639.841 22.0877C639.841 43.1335 652.672 80.7233 662.575 80.7233ZM726.907 6.78163V42.008C732.534 39.9822 737.599 36.2683 742.325 31.4289V55.0632C737.486 50.2238 732.309 46.7349 726.907 44.5966V85H699.671V3.96803H754.48C754.48 12.859 755.268 21.2999 755.831 29.8532C747.165 19.6117 737.936 10.9458 726.907 6.78163ZM166.35 186H107.714V104.968H163.649C163.649 113.859 164.436 122.3 164.999 130.853C155.996 120.612 146.429 111.946 134.95 107.782V143.008C140.577 140.982 145.641 137.268 150.368 132.429V156.063C145.529 151.224 140.352 147.735 134.95 145.597V182.061C146.879 179.81 157.234 173.057 164.999 160.115C164.999 168.556 165.449 175.421 166.35 186ZM178.186 116.11V120.387C178.186 143.121 179.537 166.755 199.682 186H172.559V104.968H202.608L237.835 174.858V170.581C237.835 147.847 236.484 124.213 216.339 104.968H243.462V186H213.525L178.186 116.11ZM287.036 143.908H318.098V186H301.554L297.39 183.524C293.789 185.887 289.174 187.125 283.547 187.125C261.376 187.125 248.096 167.655 248.096 147.172C248.096 126.577 261.488 103.843 289.624 103.843C306.394 103.843 315.622 111.833 315.622 119.824C315.622 126.351 309.32 132.992 296.602 135.468C295.477 121.737 286.473 109.245 279.946 109.245C274.656 109.245 273.193 117.686 273.193 127.815C273.193 150.211 281.184 175.421 291.988 179.923V176.996C291.988 165.967 291.763 154.938 287.036 143.908ZM324.999 104.968H352.235V182.061C363.264 179.81 372.831 173.057 380.034 160.115C380.034 168.556 380.484 175.421 381.384 186H324.999V104.968ZM386.547 104.968H413.783V186H386.547V104.968ZM420.477 130.516C420.477 119.261 432.519 103.843 455.478 103.843C473.935 103.843 479.788 111.833 479.788 119.824C479.788 124.888 473.935 130.178 462.118 132.091C460.88 120.162 454.578 109.245 447.487 109.245C443.998 109.245 442.198 114.309 442.198 119.486C442.198 135.242 482.038 139.407 482.038 160.565C482.038 171.819 469.996 187.125 447.037 187.125C428.58 187.125 419.351 179.135 419.351 171.144C419.351 166.08 425.203 160.903 437.021 158.989C438.259 170.919 447.937 181.723 455.028 181.723C458.517 181.723 460.317 176.771 460.317 171.594C460.317 155.726 420.477 151.561 420.477 130.516ZM487.332 104.968H514.567V144.584H530.549V104.968H557.784V186H530.549V149.311H514.567V186H487.332V104.968ZM107.714 205.968H134.95V283.061C145.979 280.81 155.545 274.057 162.748 261.115C162.748 269.556 163.198 276.421 164.099 287H107.714V205.968ZM190.307 213.508C186.931 227.577 183.667 243.558 183.667 257.738C183.667 258.526 183.78 259.427 183.78 260.214H204.15L190.307 213.508ZM188.057 205.968H215.292L239.377 287H212.141L205.501 264.716H184.005C184.905 273.495 187.494 281.26 193.009 287H163.522L188.057 205.968ZM248.307 217.11V221.387C248.307 244.121 249.657 267.755 269.803 287H242.679V205.968H272.729L307.955 275.858V271.581C307.955 248.847 306.605 225.213 286.459 205.968H313.582V287H283.645L248.307 217.11ZM357.156 244.908H388.219V287H371.675L367.51 284.524C363.909 286.887 359.295 288.125 353.667 288.125C331.496 288.125 318.216 268.655 318.216 248.172C318.216 227.577 331.609 204.843 359.745 204.843C376.514 204.843 385.743 212.833 385.743 220.824C385.743 227.351 379.44 233.992 366.723 236.468C365.597 222.737 356.594 210.245 350.066 210.245C344.776 210.245 343.313 218.686 343.313 228.815C343.313 251.211 351.304 276.421 362.108 280.923V277.996C362.108 266.967 361.883 255.938 357.156 244.908ZM394.557 259.314V205.968H421.793V272.819C421.793 280.247 425.844 283.624 429.784 283.624C433.723 283.624 437.774 280.247 437.774 272.819V205.968H465.01V259.314C465.01 283.061 447.453 288.125 429.896 288.125C412.227 288.125 394.557 282.948 394.557 259.314ZM493.65 213.508C490.274 227.577 487.01 243.558 487.01 257.738C487.01 258.526 487.122 259.427 487.122 260.214H507.493L493.65 213.508ZM491.399 205.968H518.635L542.719 287H515.483L508.843 264.716H487.347C488.248 273.495 490.836 281.26 496.351 287H466.864L491.399 205.968ZM581.586 244.908H612.648V287H596.104L591.94 284.524C588.338 286.887 583.724 288.125 578.097 288.125C555.926 288.125 542.645 268.655 542.645 248.172C542.645 227.577 556.038 204.843 584.174 204.843C600.943 204.843 610.172 212.833 610.172 220.824C610.172 227.351 603.87 233.992 591.152 236.468C590.027 222.737 581.023 210.245 574.495 210.245C569.206 210.245 567.743 218.686 567.743 228.815C567.743 251.211 575.733 276.421 586.538 280.923V277.996C586.538 266.967 586.313 255.938 581.586 244.908ZM678.185 287H619.549V205.968H675.484C675.484 214.859 676.272 223.3 676.834 231.853C667.831 221.612 658.264 212.946 646.785 208.782V244.008C652.412 241.982 657.477 238.268 662.204 233.429V257.063C657.364 252.224 652.187 248.735 646.785 246.597V283.061C658.715 280.81 669.069 274.057 676.834 261.115C676.834 269.556 677.284 276.421 678.185 287Z" fill="currentcolor"></path>
+<line x1="3.14183" y1="9" x2="3.14182" y2="287" stroke="currentcolor" stroke-width="6.28366"></line>
+</svg></div></a><nav role="navigation" class="navbar_menu w-nav-menu"><a id="schema_sandiego" href="/san-diego-ca/language-school" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>San Diego</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a id="schema_losangeles" href="/los-angeles-ca/language-courses" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Los Angeles</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><div data-delay="200" data-hover="false" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187fab7" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle is-vancouver w-dropdown-toggle"><div>Vancouver</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list is-vancouver w-dropdown-list"><a href="/vancouver" aria-current="page" class="navbar_dropdown-link is-first w-inline-block w--current"><div>Vancouver Language School</div></a><a id="link_pathway" href="/vancouver/cost-of-studying-english" class="navbar_dropdown-link w-inline-block"><div>Cost of Studying English</div></a><a id="link_courses" href="/vancouver/how-long-to-learn-english" class="navbar_dropdown-link w-inline-block"><div>How Long to Learn English</div></a><a href="/vancouver/vs-toronto" class="navbar_dropdown-link is-last w-inline-block"><div>Vancouver vs Toronto</div></a></nav></div><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a data-geo="offers" href="/offers" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div data-w-id="b8cd39b7-7e77-0eb8-1fba-1d93c04f1c03" class="navbar_dot"></div><div>Offers</div></a><div data-geo="offers" class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a href="/booking" class="navbar_link is-contact w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Apply Now</div></a><div data-delay="200" data-hover="false" data-w-id="be190588-2bc4-6b64-cd10-57ff63314947" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle w-dropdown-toggle"><div>More</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list w-dropdown-list"><a href="/summer-camp-san-diego" class="navbar_dropdown-link w-inline-block"><div>Summer Camp</div></a><a id="link_pathway" href="/pathway-program-usa" class="navbar_dropdown-link w-inline-block"><div>Pathway</div></a><a id="link_courses" href="/courses" class="navbar_dropdown-link w-inline-block"><div>Courses</div></a><a id="link_housing" href="/housing" class="navbar_dropdown-link w-inline-block"><div>Housing</div></a><a href="/voices" class="navbar_dropdown-link w-inline-block"><div>Voices</div></a><a id="link_blog_top" href="/blog" class="navbar_dropdown-link w-inline-block"><div>Blog</div></a><a href="/faq" class="navbar_dropdown-link is-last w-inline-block"><div>FAQs</div></a></nav></div><a href="/contact-cel" class="navbar_link is-apply w-inline-block"><div>Contact us</div></a></nav><div id="w-node-dcc14621-e4cd-a4c8-518c-d15fb187fad5-b187faa5" class="navbar_button-wrapper"><div class="navbar_buttons"><div class="offers_counter is-nav"><div class="counter_item is-top"><div class="count_days">00</div></div><div class="counter_item is-top"><div class="count_hours is-top">00</div></div><div class="counter_item is-top"><div class="count_minutes">00</div></div><div class="counter_item is-top"><div class="count_seconds">00</div></div></div><a href="/booking" class="navbar_button is-light is-mobile w-inline-block"><div>Apply Now</div></a><a href="/contact-cel" class="navbar_button is-mobile w-inline-block"><div>Contact us</div></a><a href="#" class="navbar_button is-mobile is-influencer w-inline-block"><div>Unlock Offer</div></a><div class="button_weglot"></div></div><div class="navbar_menu-button w-nav-button"><div class="menu-icon"><div class="menu-icon_line-top"></div><div class="menu-icon_line-middle"><div class="menu-icon_line-middle-inner"></div></div><div class="menu-icon_line-bottom"></div></div></div></div></div></div>
+  <div class="main-wrapper is-subpage">
+
+    <header class="abouthero" data-screen-label="Hero">
+      <div class="padding-global"><div class="container">
+        <div class="abouthero_head">
+          <p class="abouthero_eyebrow">About CEL</p>
+          <h1 class="abouthero_title">Crossing borders,<br>connecting hearts</h1>
+          <p class="abouthero_sub">Since 1981 we have taught English by the Pacific — small classes, inspiring teachers, and three cities that quickly start to feel like home.</p>
+          <div class="abouthero_meta">
+            <div class="abouthero_chip">
+              <span class="abouthero_chip-num">1981</span><span class="abouthero_chip-label">Founded</span>
+              <span class="abouthero_chip-dot"></span>
+              <span class="abouthero_chip-num">3</span><span class="abouthero_chip-label">Campuses</span>
+              <span class="abouthero_chip-dot"></span>
+              <span class="abouthero_chip-num">60+</span><span class="abouthero_chip-label">Nationalities</span>
+            </div>
+          </div>
+      </div>
+        <div class="abouthero_gallery">
+          <div class="abouthero_tile">
+            <div class="abouthero_frame">
+              <img class="abouthero_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='2'%3E%3Crect width='3' height='2' fill='%23c9a978'/%3E%3C/svg%3E" alt="A small class in session at the Pacific Beach campus" loading="lazy">
+            </div>
+          </div>
+          <div class="abouthero_tile">
+            <div class="abouthero_frame">
+              <img class="abouthero_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='2'%3E%3Crect width='3' height='2' fill='%23b3946c'/%3E%3C/svg%3E" alt="Students on the beach after class in San Diego" loading="lazy">
+            </div>
+          </div>
+          <div class="abouthero_tile">
+            <div class="abouthero_frame">
+              <img class="abouthero_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='5'%3E%3Crect width='4' height='5' fill='%23b8a78a'/%3E%3C/svg%3E" alt="A teacher helping a student one to one" loading="lazy">
+            </div>
+          </div>
+          <div class="abouthero_tile">
+            <div class="abouthero_frame">
+              <img class="abouthero_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='2'%3E%3Crect width='3' height='2' fill='%23a9a284'/%3E%3C/svg%3E" alt="Students exploring downtown Vancouver together" loading="lazy">
+            </div>
+          </div>
+          <div class="abouthero_tile">
+            <div class="abouthero_frame">
+              <img class="abouthero_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='2'%3E%3Crect width='3' height='2' fill='%23c2a276'/%3E%3C/svg%3E" alt="Friends celebrating on graduation day at CEL" loading="lazy">
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </header>
+
+    <div class="padding-global"><div class="container">
+    <div class="page_body-layout is-about">
+
+      <aside class="stoc_component {{ tocCompCls }}" id="tocSidebar">
+        <p class="stoc_label {{ tocMenuCls }}" role="button" tabindex="0" onClick="{{ toggleToc }}">{{ tocLabel }}</p>
+        <nav class="stoc_nav {{ tocMenuCls }}" aria-label="On this page">
+          <a class="stoc_link {{ toc.mission }}" href="#mission" data-target="mission" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Our mission</p></a>
+          <a class="stoc_link {{ toc.story }}" href="#story" data-target="story" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Our story</p></a>
+          <a class="stoc_link {{ toc.philosophy }}" href="#philosophy" data-target="philosophy" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Our philosophy</p></a>
+          <a class="stoc_link {{ toc.different }}" href="#different" data-target="different" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Why CEL</p></a>
+          <a class="stoc_link {{ toc.ceo }}" href="#ceo" data-target="ceo" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">From our CEO</p></a>
+          <a class="stoc_link {{ toc.team }}" href="#team" data-target="team" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Meet the team</p></a>
+          <a class="stoc_link {{ toc.campuses }}" href="#campuses" data-target="campuses" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Campuses</p></a>
+          <a class="stoc_link {{ toc.students }}" href="#students" data-target="students" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Our students</p></a>
+          <a class="stoc_link {{ toc.accreditations }}" href="#accreditations" data-target="accreditations" onClick="{{ closeToc }}"><div class="stoc_dot"></div><p class="stoc_text">Accreditations</p></a>
+        </nav>
+        <a class="stoc_cta-btn inline-cta-btn is-primary" href="/contact-cel">Contact us</a>
+      </aside>
+
+    <main class="about_flow" id="main-content">
+
+          <section class="section_flow is-panel is-media-bleed is-first" id="mission" data-screen-label="Mission">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Our mission</h2>
+            <h3 class="about_statement">A welcoming, boutique school where you feel at home — and make real progress in English.</h3>
+            <p class="body-intro">CEL opened in San Diego in 1981 with that one clear vision. Today you can study in three cities by the Pacific: San Diego, Los Angeles, and Vancouver.</p>
+            <sc-if value="{{ showMissionPhotos }}" hint-placeholder-val="{{ true }}">
+              <div class="media-bento">
+                <div class="media-bento_item is-hero">
+                  <img class="media-bento_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23c9a978'/%3E%3C/svg%3E" alt="A small class of six students in session at the Pacific Beach campus" loading="lazy">
+                  <div class="media-bento_overlay"><p class="media-bento_text">A small class at the Pacific Beach campus.</p></div>
+                </div>
+                <div class="media-bento_item">
+                  <img class="media-bento_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23bfa47e'/%3E%3C/svg%3E" alt="Students carrying surfboards to the beach after class" loading="lazy">
+                  <div class="media-bento_overlay"><p class="media-bento_text">After class, the beach is a five-minute walk.</p></div>
+                </div>
+                <div class="media-bento_item">
+                  <img class="media-bento_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23b8a78a'/%3E%3C/svg%3E" alt="Friends from five countries at one table in the student lounge" loading="lazy">
+                  <div class="media-bento_overlay"><p class="media-bento_text">Friends from five countries, one table.</p></div>
+                </div>
+                <div class="media-bento_item">
+                  <img class="media-bento_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23cbb07f'/%3E%3C/svg%3E" alt="Students on a weekend excursion in the mountains near Vancouver" loading="lazy">
+                  <div class="media-bento_overlay"><p class="media-bento_text">Weekend excursions — hikes, tours, and trips.</p></div>
+                </div>
+              </div>
+            </sc-if>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel" id="story" data-screen-label="Our story">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Our story</h2>
+            <h3 class="section-title">More than 40 years in the making</h3>
+            <p class="body-intro">Our passion for quality and community has let CEL grow slowly and carefully — school by school, never losing the boutique feeling.</p>
+            <div class="timeline_wrap is-panel-standard">
+              <div class="timeline_track">
+                <div class="timeline_item {{ a0 }}" data-year="1981">
+                  <div class="timeline_dot"></div>
+                  <div class="timeline_year">1981</div>
+                  <h4 class="timeline_title">San Diego</h4>
+                  <div class="timeline_desc-box"><p class="timeline_desc">CEL opens with one clear vision: a school where students feel at home.</p></div>
+                </div>
+                <div class="timeline_item {{ a1 }}" data-year="2009">
+                  <div class="timeline_dot"></div>
+                  <div class="timeline_year">2009</div>
+                  <h4 class="timeline_title">Los Angeles</h4>
+                  <div class="timeline_desc-box"><p class="timeline_desc">A second school opens in Santa Monica, right by the Pacific Ocean.</p></div>
+                </div>
+                <div class="timeline_item {{ a2 }}" data-year="2015">
+                  <div class="timeline_dot"></div>
+                  <div class="timeline_year">2015</div>
+                  <h4 class="timeline_title">Pacific Beach</h4>
+                  <div class="timeline_desc-box"><p class="timeline_desc">A second San Diego campus opens in the Pacific Beach neighborhood.</p></div>
+                </div>
+                <div class="timeline_item {{ a3 }}" data-year="2024">
+                  <div class="timeline_dot"></div>
+                  <div class="timeline_year">2024</div>
+                  <h4 class="timeline_title">Vancouver</h4>
+                  <div class="timeline_desc-box"><p class="timeline_desc">Vancouver joins the CEL family — one of Canada's most international cities.</p></div>
+                </div>
+                <div class="timeline_item is-now {{ a4 }}" data-year="2025">
+                  <div class="timeline_dot"></div>
+                  <div class="timeline_year">2025</div>
+                  <h4 class="timeline_title">Flagship campus</h4>
+                  <div class="timeline_desc-box"><p class="timeline_desc">Both San Diego locations unite in a brand-new campus, minutes from the beach.</p></div>
+                </div>
+              </div>
+            </div>
+            <div class="about_callout">
+              <p class="about_callout-text">CEL remains independently owned and managed. The focus is always on what matters most: quality teaching, personal attention, and student satisfaction.</p>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel" id="philosophy" data-screen-label="Philosophy">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Our philosophy</h2>
+            <h3 class="section-title">Every student's journey is unique</h3>
+            <p class="body-intro">That is why the CEL approach rests on three principles.</p>
+            <div class="principle_grid">
+              <div class="principle_item is-t1">
+                <h4 class="principle_title">Small classes, big progress</h4>
+                <p class="principle_desc">An average of 6–7 students per class (maximum 12) means personal attention in every lesson.</p>
+              </div>
+              <div class="principle_media is-a">
+                <img class="principle_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23c9a978'/%3E%3C/svg%3E" alt="A teacher giving personal feedback in a class of six students" loading="lazy">
+              </div>
+              <div class="principle_media is-b">
+                <img class="principle_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23bfa47e'/%3E%3C/svg%3E" alt="Students from different countries talking together between classes" loading="lazy">
+              </div>
+              <div class="principle_media is-c">
+                <img class="principle_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Crect width='4' height='3' fill='%23a9a284'/%3E%3C/svg%3E" alt="Students hiking a mountain trail near Vancouver on a weekend excursion" loading="lazy">
+              </div>
+              <div class="principle_item is-t2">
+                <h4 class="principle_title">International mix</h4>
+                <p class="principle_desc">Students from 50+ countries every year create a truly global classroom.</p>
+              </div>
+              <div class="principle_item is-t3">
+                <h4 class="principle_title">Immersive experience</h4>
+                <p class="principle_desc">English is more than grammar. Live the language — surf in San Diego, explore Los Angeles, hike in Vancouver.</p>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel" id="different" data-screen-label="What makes CEL different">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Why CEL</h2>
+            <h3 class="section-title">What makes CEL different?</h3>
+            <p class="body-intro">More than English lessons — a complete experience.</p>
+            <div class="feature_grid is-panel-standard">
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-globe"></use></svg>
+                <h4 class="feature_title">Global community</h4>
+                <p class="feature_desc">Students from 50+ countries every year — one big international family.</p>
+              </div>
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-users"></use></svg>
+                <h4 class="feature_title">Personalized teaching</h4>
+                <p class="feature_desc">Small groups and interactive lessons, shaped around your goals.</p>
+              </div>
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-pin"></use></svg>
+                <h4 class="feature_title">Top locations</h4>
+                <p class="feature_desc">Minutes from the beach or right in the city center.</p>
+              </div>
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-home"></use></svg>
+                <h4 class="feature_title">Housing for every lifestyle</h4>
+                <p class="feature_desc">Homestays, shared apartments, and residences — many with pool and fitness options, in walking distance to school.</p>
+              </div>
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-graduation"></use></svg>
+                <h4 class="feature_title">Academic quality</h4>
+                <p class="feature_desc">General English, career and academic skills, pathway programs, and Cambridge, TOEFL, and IELTS preparation.</p>
+              </div>
+              <div class="feature_cell">
+                <svg class="feature_icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><use href="../../assets/icons/sprite.svg#i-heart"></use></svg>
+                <h4 class="feature_title">Family atmosphere</h4>
+                <p class="feature_desc">A boutique school with a welcoming spirit.</p>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel is-media-bleed" id="ceo" data-screen-label="A word from our CEO">
+            <div class="padding-global"><div class="container">
+            <div class="ceo_card">
+              <div class="ceo_layout">
+                <div class="ceo_media">
+                  <img class="ceo_photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/667453c576e8d35c454cce88_Chris.avif" alt="Portrait of Chris Thebing, CEO and Managing Partner of CEL" loading="lazy">
+                </div>
+                <div class="ceo_body">
+                  <div class="ceo_mark">&#8220;</div>
+                  <h2 class="section-tagline">A word from our CEO</h2>
+                  <p class="ceo_quote">"As someone who started my own language journey abroad, I know how life-changing it can be. At CEL, we want to give every student that same opportunity — to learn English, to grow as a person, and to connect with the world."</p>
+                  <div class="ceo_attrib">
+                    <div class="quote_name">Chris Thebing</div>
+                    <div class="ceo_attrib-dot"></div>
+                    <div class="quote_role">CEO &amp; Managing Partner</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel" id="team" data-screen-label="Meet the team">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Meet the team</h2>
+            <h3 class="section-title">The people behind CEL</h3>
+            <p class="body-intro">A passionate team of educators and staff who care about every student. From your first question until the day you graduate, someone is here to support you.</p>
+            <div class="team_tabs">
+              <a class="team_tab {{ tabMgmtCls }}" role="button" tabindex="0" onClick="{{ tabMgmt }}">Management</a>
+              <a class="team_tab {{ tabAdmCls }}" role="button" tabindex="0" onClick="{{ tabAdm }}">Admission</a>
+              <a class="team_tab {{ tabTeachCls }}" role="button" tabindex="0" onClick="{{ tabTeach }}">Teachers</a>
+            </div>
+            <div class="card-slider_clip">
+              <div class="card-slider swiper team-slider_el">
+                <div class="swiper-wrapper card-slider_row">
+                  <sc-for list="{{ teamList }}" as="p" hint-placeholder-count="5">
+                    <div class="swiper-slide is-team">
+                      <div class="team-card">
+                        <div class="team-card_media"><img class="team-card_img" src="{{ p.img }}" alt="{{ p.alt }}" loading="lazy"></div>
+                        <div class="team-card_info">
+                          <h4 class="team-card_name">{{ p.name }}</h4>
+                          <div class="team-card_role">{{ p.role }}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div class="card-slider_nav">
+                <a class="card-slider_arrow is-prev {{ prevCls }}" role="button" tabindex="0" aria-label="Previous team members" onClick="{{ slidePrev }}">
+                  <svg class="card-slider_arrow-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="../../assets/icons/sprite.svg#i-chevron-right"></use></svg>
+                </a>
+                <div class="card-slider_progress"><div class="card-slider_progress-fill team-slider_fill"></div></div>
+                <a class="card-slider_arrow is-next {{ nextCls }}" role="button" tabindex="0" aria-label="Next team members" onClick="{{ slideNext }}">
+                  <svg class="card-slider_arrow-icon" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><use href="../../assets/icons/sprite.svg#i-chevron-right"></use></svg>
+                </a>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel is-media-bleed" id="campuses" data-screen-label="Campuses and student life">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Campuses &amp; student life</h2>
+            <h3 class="section-title">Three cities, one experience</h3>
+            <p class="body-intro">Each campus has its own character — and the same CEL spirit. Every week there are activities and excursions to help you practice English naturally, make friends, and explore your new home.</p>
+            <div class="citylist_rows">
+              <a class="citylist_row" href="/san-diego-ca/language-school">
+                <img class="citylist_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23d0b285'/%3E%3C/svg%3E" loading="lazy" alt="Surfers and students on the boardwalk in Pacific Beach, San Diego">
+                <div class="citylist_veil"></div>
+                <div class="citylist_body">
+                  <div class="citylist_text">
+                    <p class="citylist_meta">California · Pacific Beach</p>
+                    <p class="citylist_name">San Diego</p>
+                    <p class="citylist_desc">Study just steps from the ocean, in a neighborhood famous for surf culture, cafes, and sunsets.</p>
+                    <div class="campus_chips"><div class="campus_chip">Beach volleyball</div><div class="campus_chip">Surfing</div><div class="campus_chip">Old Town San Diego</div></div>
+                  </div>
+                  <div class="citylist_actions">
+                    <span class="cta-pill-cream">View campus</span>
+                    <img class="citylist_logo-mark" src="../../assets/logos/cel-lettermark-onecolor-light.svg" loading="lazy" alt="">
+                  </div>
+                </div>
+              </a>
+              <a class="citylist_row" href="/vancouver">
+                <img class="citylist_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23a9a284'/%3E%3C/svg%3E" loading="lazy" alt="Students on a downtown Vancouver street with mountains in the distance">
+                <div class="citylist_veil"></div>
+                <div class="citylist_body">
+                  <div class="citylist_text">
+                    <p class="citylist_meta">Canada · Downtown</p>
+                    <p class="citylist_name">Vancouver</p>
+                    <p class="citylist_desc">Mountains, ocean, and city energy — the perfect setting to learn English in Canada.</p>
+                    <div class="campus_chips"><div class="campus_chip">Ski weekends</div><div class="campus_chip">Mountain hikes</div><div class="campus_chip">Trips to Whistler</div></div>
+                  </div>
+                  <div class="citylist_actions">
+                    <span class="cta-pill-cream">View campus</span>
+                    <img class="citylist_logo-mark" src="../../assets/logos/cel-lettermark-onecolor-light.svg" loading="lazy" alt="">
+                  </div>
+                </div>
+              </a>
+              <a class="citylist_row" href="/los-angeles-ca/language-courses">
+                <img class="citylist_img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9'%3E%3Crect width='16' height='9' fill='%23cbb07f'/%3E%3C/svg%3E" loading="lazy" alt="A palm-lined street near the Santa Monica campus in Los Angeles">
+                <div class="citylist_veil"></div>
+                <div class="citylist_body">
+                  <div class="citylist_text">
+                    <p class="citylist_meta">California · Santa Monica</p>
+                    <p class="citylist_name">Los Angeles</p>
+                    <p class="citylist_desc">Palm-lined streets, the Santa Monica Pier, and endless sunshine.</p>
+                    <div class="campus_chips"><div class="campus_chip">Hollywood tours</div><div class="campus_chip">Art walks</div><div class="campus_chip">Venice Beach</div></div>
+                  </div>
+                  <div class="citylist_actions">
+                    <span class="cta-pill-cream">View campus</span>
+                    <img class="citylist_logo-mark" src="../../assets/logos/cel-lettermark-onecolor-light.svg" loading="lazy" alt="">
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel is-media-bleed" id="students" data-screen-label="Our students">
+            <div class="padding-global"><div class="container">
+            <h2 class="section-tagline">Our students</h2>
+            <h3 class="section-title">Lifelong friendships across the world</h3>
+            <p class="body-intro">Every year CEL welcomes students aged 16–35 (sometimes older) who share one goal: improve your English while having the adventure of a lifetime.</p>
+            <div class="students_layout">
+              <div class="students_media">
+                <div class="students_media-item">
+                  <img class="students_photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='4'%3E%3Crect width='3' height='4' fill='%23c2a276'/%3E%3C/svg%3E" alt="Two students hugging on graduation day at CEL" loading="lazy">
+                </div>
+              </div>
+              <div class="students_stats">
+                <div class="students_stat">
+                  <div class="students_stat-num">55+</div>
+                  <div class="stat_label">Nationalities each year</div>
+                </div>
+                <div class="students_stat">
+                  <div class="students_stat-num">6–7</div>
+                  <div class="stat_label">Average class size, max 12</div>
+                </div>
+                <div class="students_stat">
+                  <div class="students_stat-num">1+</div>
+                  <div class="stat_label">Activities every week, minimum</div>
+                </div>
+                <div class="students_stat">
+                  <div class="students_stat-num">45+</div>
+                  <div class="stat_label">Years teaching English</div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <section class="section_flow is-panel" id="accreditations" data-screen-label="Accreditations">
+            <div class="padding-global"><div class="container">
+            <div class="accred_layout">
+              <div class="accred_intro">
+                <h2 class="section-tagline">Quality you can trust</h2>
+                <h3 class="section-title">Accreditations and partnerships</h3>
+                <p class="body-intro">CEL meets the highest standards of English language education. Accreditations and partnerships mean you can trust the quality of every course, teacher, and support service.</p>
+              </div>
+              <div class="accred_panel is-panel-standard">
+                <div class="accred_row">
+                  <div class="accred_label">USA &amp; Canada</div>
+                  <div class="accred_ring"></div>
+                  <div class="accred_title">Accredited by CEA and Languages Canada</div>
+                  <p class="accred_desc">Recognized quality standards in both the USA and Canada.</p>
+                </div>
+                <div class="accred_row">
+                  <div class="accred_label">Pathways</div>
+                  <div class="accred_ring"></div>
+                  <div class="accred_title">Agreements with 150+ colleges and universities</div>
+                  <p class="accred_desc">Continue to higher education across North America.</p>
+                </div>
+                <div class="accred_row">
+                  <div class="accred_label">Membership</div>
+                  <div class="accred_ring"></div>
+                  <div class="accred_title">Member of leading international education associations</div>
+                  <p class="accred_desc">Active in the global language-travel community.</p>
+                </div>
+                <div class="accred_row is-award">
+                  <div class="accred_label">Award 2024</div>
+                  <div class="accred_ring"></div>
+                  <div class="accred_title">ST Star Award North America — winner</div>
+                  <p class="accred_desc">Finalist in 2023 and 2025.</p>
+                </div>
+              </div>
+            </div>
+          </div></div>
+          </section>
+
+          <!-- STANDARD CLOSING CTA — shared/inline-cta.css. Same markup, same order, same class
+               chain as pages/san-diego/costs.html §11 and landing §19. Do not restyle here. -->
+          <section class="section_flow section_inline-cta" id="join" data-screen-label="Join CEL">
+            <div class="padding-global"><div class="container">
+            <div class="inline-cta-a8a1">
+              <div class="inline-cta_trust">
+                <span class="inline-cta_trust-disc"><img class="inline-cta_trust-logo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd2e7d6daef797a73fd2e5_adults-16-icon-google-logo.svg" loading="lazy" alt="Google"></span>
+                <p class="inline-cta_trust-score">4.8</p>
+                <span class="cta_stars" role="img" aria-label="4.8 out of 5 stars">
+                <span class="cta_stars-row is-empty"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+                <span class="cta_stars-row is-full"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+                </span>
+                <div class="inline-cta_trust-rule"></div>
+                <p class="inline-cta-trust">195 reviews</p>
+              </div>
+              <div class="inline-cta-copy">
+                <h3 class="inline-cta-h2">Ready to start your journey?</h3>
+                <p class="inline-cta-body">Choose San Diego, Los Angeles, or Vancouver — and turn English into an adventure and an investment in your future.</p>
+              </div>
+              <div class="inline-cta-actions"><a class="inline-cta-btn is-primary" href="/courses">Discover our courses</a><a class="inline-cta-btn is-whatsapp" href="https://wa.me/16192434426" target="_blank" rel="noopener"><img class="inline-cta-btn-icon" src="../../assets/icons/whatsapp.svg" width="18" height="18" alt="">WhatsApp</a></div>
+            </div>
+          </div></div>
+          </section>
+
+        </main>
+
+    </div>
+    </div></div>
+    <div class="stoc_backdrop {{ tocBdCls }}" onClick="{{ closeToc }}"></div>
+
+  </div>
+<footer data-wf--footer--variant="base" class="section_footer"><div class="padding-global"><div class="container"><div class="footer_logo-row"><a href="/" class="footer_logo-link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" loading="lazy" alt="College of English Language" class="footer_logo-mark"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdb169f37f0fff7fd21_footer-logo-wordmark.svg" loading="lazy" alt="College of English Language" class="footer_logo-wordmark"></a></div><div class="footer_row"><p class="footer_label">Schools</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">CEL San Diego</p><p class="footer_address">945 Hornblend Street, Suite G,<!--$--><br><!--/$-->2nd floor, San Diego, CA 92109 USA</p><div class="footer_list"><a href="tel:+18584126888" class="footer_list-link">+1 858 412 6888</a><a rel="noopener" href="https://maps.app.goo.gl/LioLhFM1asPBk9ge8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Los Angeles</p><p class="footer_address">401 Wilshire Boulevard #200,<!--$--><br><!--/$-->Santa Monica, CA 90401 USA</p><div class="footer_list"><a href="tel:+13109333419" class="footer_list-link">+1 310 933 3419</a><a rel="noopener" href="https://maps.app.goo.gl/65CBJckYFSMR7bRk8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Vancouver</p><p class="footer_address">1190 Melville St, #300,<!--$--><br><!--/$-->Vancouver, BC V6E 3W1, Canada</p><div class="footer_list"><a href="tel:+16046850291" class="footer_list-link">+1 604 685 0291</a><a rel="noopener" href="https://maps.app.goo.gl/NQ3ubGTWy4E5NJE8A" target="_blank" class="footer_directions">Get Directions</a></div></div></div></div><div class="footer_row"><p class="footer_label">Contact</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">WhatsApp</p><div class="footer_list"><a whatsap="url" href="https://api.whatsapp.com/send?phone=16192434426" target="_blank" rel="noopener" whatsapp="number" class="footer_list-link">+1 619 243 4426</a></div></div><div class="footer_col"><p class="footer_group-label">Email</p><div class="footer_list"><a href="mailto:info@englishcollege.com" class="footer_list-link">info@englishcollege.com</a></div></div><div class="footer_col"><p class="footer_group-label">Phone</p><div class="footer_list"><a href="tel:+16192347466" class="footer_list-link">+1 619 234 7466</a></div></div></div></div><div class="footer_row"><div class="footer_title"><p class="footer_label">Courses</p></div><div class="footer_content"><div class="footer_col"><p class="footer_group-label">General</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/general-english" class="footer_list-link">General English</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-academic-skills" class="footer_list-link">English + Academic Skills</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/global-pathway-preparation" class="footer_list-link">Global Pathway</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-toefl-exam-preparation" class="footer_list-link">English Plus TOEFL Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/private-lessons" class="footer_list-link">Private lessons</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">English Plus</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/english-career-development" class="footer_list-link">English Plus Career Development</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-cambridge-prep" class="footer_list-link">English Plus Cambridge Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-experience" class="footer_list-link">English Plus Experience</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-volunteering" class="footer_list-link">English Plus Volunteering</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-surfing" class="footer_list-link">English Plus Surfing</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">Pathway</p><div class="footer_list"><a href="/pathway-program-usa" class="footer_list-link">Pathway Program</a><a href="/pathway/certificate-programs" class="footer_list-link">Certificate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Undergraduate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Graduate Programs</a><a href="/pathway/us-education-system" class="footer_list-link">US Education System</a><a href="/pathway/semester-abroad" class="footer_list-link">Semester Abroad</a></div></div></div></div><div class="footer_row"><p class="footer_label">Housing</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">San Diego</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-san-diego" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/premium-homestay-san-diego" class="footer_list-link">Premium Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-standard-san-diego" class="footer_list-link">CEL Shared Apartment Standard</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-premium-san-diego" class="footer_list-link">CEL Shared Apartment Premium</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-superior-pacific-beach-san-diego" class="footer_list-link">CEL Shared Apartment Superior Pacific Beach</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Los Angeles</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-los-angeles" class="footer_list-link">Homestay</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Vancouver</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-vancouver" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-budget-vancouver" class="footer_list-link">Student House Budget</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-vancouver" class="footer_list-link">Student House</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-silverstone-vancouver" class="footer_list-link">Shared Apartment Silverstone</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-downtown-vancouver" class="footer_list-link">Shared Apartment Downtown</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/apartment-economy-apt-living-vancouver" class="footer_list-link">Apartment Economy APT Living</a></div></div></div></div></div></div><div class="footer_row"><p class="footer_label">Vancouver</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Study in Vancouver</p><div class="footer_list"><a href="/vancouver" aria-current="page" class="footer_list-link w--current">Vancouver Language School</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/vancouver/student-services" class="footer_list-link">Student Services</a><a href="/vancouver/policies" class="footer_list-link">School Policies</a></div></div><div class="footer_col"><p class="footer_group-label">Useful Guides</p><div class="footer_list"><a href="/vancouver/cost-of-studying-english" class="footer_list-link">Cost of Studying English</a><a href="/vancouver/how-long-to-learn-english" class="footer_list-link">How Long to Learn English</a><a href="/vancouver/vs-toronto" class="footer_list-link">Vancouver vs Toronto</a></div></div><div class="footer_col"></div></div></div><div class="footer_row"><p class="footer_label">Explore</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Destinations</p><div class="footer_list"><a href="/learn-english-usa" class="footer_list-link">Learn English in the USA</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/san-diego-ca/language-school" class="footer_list-link">San Diego Language School</a><a href="/los-angeles-ca/language-courses" class="footer_list-link">Los Angeles Language School</a></div></div><div class="footer_col"><p class="footer_group-label">Study at CEL</p><div class="footer_list"><a href="/courses" class="footer_list-link">All Courses</a><a href="/housing" class="footer_list-link">All Housing</a><a href="/summer-camp-san-diego" class="footer_list-link">Summer Camp </a><a href="/booking" class="footer_list-link">Apply Now</a></div></div><div class="footer_col"><p class="footer_group-label">About CEL</p><div class="footer_list"><a href="/voices" class="footer_list-link">Student Voices</a><a href="/blog" class="footer_list-link">Blog</a><a href="/faq" class="footer_list-link">FAQs</a><a href="/contact-cel" class="footer_list-link">Contact Us</a></div></div></div></div><div class="footer_legal"><div class="footer_legal-left"><p class="footer_copyright">© 2026 <a href="/" class="footer_copyright-link">College of English Language</a>. All rights reserved.</p><div class="w-dyn-list"><div role="list" class="footer_legal-links w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/page/privacy-policy" class="footer_list-link">Privacy Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cookie-policy" class="footer_list-link">Cookie Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/terms-conditions" class="footer_list-link">Terms &amp; Conditions</a></div><div role="listitem" class="w-dyn-item"><a href="/page/bppe" class="footer_list-link">BPPE Compliance Statement</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cel-affiliate-program" class="footer_list-link">Affiliate Program</a></div></div></div></div><div class="footer_social"><a aria-label="Instagram" href="https://www.instagram.com/cel_usa/" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd7762899cb7e32485e_footer-icon-instagram.svg" alt="Instagram" width="20" height="20"></imgraw><!--/$--></a><a aria-label="TikTok" href="https://www.tiktok.com/@cel_usa" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd8ba967271e3015dd1_footer-icon-tiktok.svg" alt="TikTok" width="18" height="20"></imgraw><!--/$--></a><a aria-label="YouTube" href="https://www.youtube.com/@collegeofenglishlanguage" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdae04fb1af8c919b6a_footer-icon-youtube.svg" alt="YouTube" width="22" height="16"></imgraw><!--/$--></a></div></div></div></div></footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultTeamTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;management&quot;,&quot;admission&quot;,&quot;teachers&quot;],&quot;default&quot;:&quot;management&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Team&quot;},&quot;showMissionPhotos&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mission&quot;}}">
+class Component extends DCLogic {
+  state = { team: [], tab: 'management', canPrev: false, canNext: true, tlActive: 0, statsIn: true, tocActive: 'mission', tocOpen: false, tocVisible: false };
+
+  componentDidMount() {
+    /* window.__resources.teamData is a blob URL for the inlined module when this page runs as a
+       published artifact; from the project it is undefined and the relative path is used. */
+    const teamSrc = (window.__resources && window.__resources.teamData) || './team-data.js';
+    import(teamSrc).then((m) => {
+      const res = window.__resources || {};
+      const team = m.TEAM.map((p) => (res[p.imgId] ? Object.assign({}, p, { img: res[p.imgId] }) : p));
+      this.setState({ team: team, tab: this.props.defaultTeamTab ?? 'management' });
+    }).catch(() => {});
+    this.swiperTimer = setInterval(() => this.tryInitSwiper(), 150);
+    this.swiperTimeout = setTimeout(() => clearInterval(this.swiperTimer), 15000);
+    this.onTlScroll = () => {
+      /* spyToc runs OUTSIDE the rAF gate on purpose: a hidden frame never ticks rAF, and
+         the rail's current-row + drawer visibility must not depend on a callback that
+         may never arrive. It is nine getBoundingClientRect reads, no writes. */
+      this.spyToc();
+      /* Same reason: five getBoundingClientRect reads, colour-only decoration, and a figure
+         that only changes when rAF ticks is a figure that never changes in a frame that does
+         not tick. */
+      this.scrubTimeline();
+      this.scrubHeroParallax();
+      if (this.scrollRaf) return;
+      this.scrollRaf = requestAnimationFrame(() => {
+        this.scrollRaf = null;
+        if (this.swiper) this.syncNav();
+      });
+    };
+    window.addEventListener('scroll', this.onTlScroll, { passive: true });
+    window.addEventListener('resize', this.onTlScroll, { passive: true });
+    this.onTlScroll();
+    requestAnimationFrame(() => this.onTlScroll());
+  }
+
+  /* Hero parallax. Writes a 0→1 progress onto <html> as --hero-par; each plate multiplies it by
+     its own --par offset in CSS. Written on the DOCUMENT, not into state: this DC re-renders on
+     every scroll frame, so a style written into the tree would be thrown away — and this way the
+     value never participates in rendering at all. DEFAULT 0 means the composition at rest IS the
+     design (CLAUDE.md — a frame that never reports scroll is not a broken frame). */
+  scrubHeroParallax() {
+    const gallery = document.querySelector('.abouthero_gallery');
+    if (!gallery) return;
+    const vh = window.innerHeight || 800;
+    const p = Math.max(0, Math.min(1, (vh - gallery.getBoundingClientRect().top) / (vh * 1.35)));
+    document.documentElement.style.setProperty('--hero-par', p.toFixed(3));
+  }
+
+  /* Which STORY row is current. DECORATION ONLY: it swaps the ghost figure in the right gutter
+     and lights the row, and both default to index 0 in the first render — so a frame that never
+     reports scroll (CLAUDE.md — a hidden preview frame dispatches no scroll or rAF) still shows
+     a complete, lit ledger with the 1981 figure up. */
+  scrubTimeline() {
+    const items = document.querySelectorAll('.timeline_item');
+    if (!items.length) return;
+    const line = (window.innerHeight || 800) * 0.46;
+    let idx = 0;
+    items.forEach((el, i) => { if (el.getBoundingClientRect().top <= line) idx = i; });
+    if (idx !== this.state.tlActive) this.setState({ tlActive: idx });
+  }
+
+  /* Scroll-spy for the left rail. Lives in the logic class rather than shared/utils.js:
+     this page re-renders on every scroll frame, so a class an external script wrote onto
+     .stoc_link would be thrown away by the next render. The active id is state, the
+     is-active class is a template hole, and the two can never disagree. */
+  spyToc() {
+    const ids = Component.TOC_IDS;
+    let cur = ids[0];
+    for (let i = 0; i < ids.length; i++) {
+      const el = document.getElementById(ids[i]);
+      if (el && el.getBoundingClientRect().top <= 160) cur = ids[i];
+    }
+    const doc = document.documentElement;
+    if (window.pageYOffset + window.innerHeight >= doc.scrollHeight - 8) cur = ids[ids.length - 1];
+    const vis = window.pageYOffset > 280;
+    if (cur !== this.state.tocActive || vis !== this.state.tocVisible) {
+      this.setState({ tocActive: cur, tocVisible: vis });
+    }
+  }
+
+
+
+
+
+  componentWillUnmount() {
+    clearInterval(this.swiperTimer);
+    clearTimeout(this.swiperTimeout);
+    if (this.onTlScroll) {
+      window.removeEventListener('scroll', this.onTlScroll);
+      window.removeEventListener('resize', this.onTlScroll);
+    }
+    if (this.scrollRaf) cancelAnimationFrame(this.scrollRaf);
+    if (this.swiper) { try { this.swiper.destroy(true, false); } catch (e) {} }
+  }
+
+  tryInitSwiper() {
+    if (this.swiper || !window.Swiper) return;
+    if (!this.state.team.length) return;
+    const el = document.querySelector('.team-slider_el');
+    if (!el || el.querySelectorAll('.swiper-slide').length < 2 || !el.querySelector('.team-card_img')) return;
+    this.swiper = new window.Swiper(el, {
+      slidesPerView: 'auto',
+      spaceBetween: 16,
+      grabCursor: true,
+      watchOverflow: true,
+      observer: true,
+      observeSlideChildren: true
+    });
+    this.swiper.on('progress', () => this.syncNav());
+    this.swiper.on('slideChange', () => this.syncNav());
+    this.swiper.on('observerUpdate', () => this.syncNav());
+    clearInterval(this.swiperTimer);
+    requestAnimationFrame(() => {
+      if (this.swiper && !this.swiper.destroyed) { this.swiper.update(); this.syncNav(); }
+    });
+  }
+
+  syncNav() {
+    const s = this.swiper;
+    if (!s || s.destroyed) return;
+    if (s.slides.length === 0 && document.querySelectorAll('.team-slider_el .swiper-slide').length > 0) {
+      s.update();
+      s.slideTo(0, 0);
+    }
+    const total = s.slides.length;
+    const fill = document.querySelector('.team-slider_fill');
+    if (fill) fill.style.width = total ? (8 + 92 * Math.max(0, Math.min(1, s.progress || 0))) + '%' : '0%';
+    const canPrev = !s.isBeginning;
+    const canNext = !s.isEnd;
+    if (canPrev !== this.state.canPrev || canNext !== this.state.canNext) {
+      this.setState({ canPrev, canNext });
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!this.swiper) return;
+    const changed = this._lastTab !== this.state.tab || this._lastTeam !== this.state.team;
+    this._lastTab = this.state.tab;
+    this._lastTeam = this.state.team;
+    if (changed) {
+      requestAnimationFrame(() => {
+        if (!this.swiper || this.swiper.destroyed) return;
+        this.swiper.update();
+        this.swiper.slideTo(0, 0);
+        this.syncNav();
+      });
+    }
+  }
+
+  setTab(t) { this.setState({ tab: t }); }
+
+  renderVals() {
+    const tab = this.state.tab;
+    const team = this.state.team;
+    const list = tab === 'all' ? team : team.filter((p) => p.cat === tab);
+    const cls = (t) => (tab === t ? 'is-active' : '');
+    const aCls = (i) => (i === this.state.tlActive ? 'is-active' : '');
+    const toc = {};
+    Component.TOC_IDS.forEach((id) => { toc[id] = id === this.state.tocActive ? 'is-active' : ''; });
+    return {
+      toc,
+      tocLabel: Component.TOC_LABELS[this.state.tocActive] || 'On this page',
+      tocCompCls: this.state.tocVisible ? 'is-visible' : '',
+      tocMenuCls: this.state.tocOpen ? 'is-menu-open' : '',
+      tocBdCls: this.state.tocOpen ? 'is-visible' : '',
+      toggleToc: () => this.setState((s) => ({ tocOpen: !s.tocOpen })),
+      closeToc: () => { if (this.state.tocOpen) this.setState({ tocOpen: false }); },
+      a0: aCls(0), a1: aCls(1), a2: aCls(2), a3: aCls(3), a4: aCls(4),
+      ringCls: this.state.statsIn ? 'is-in' : '',
+
+      teamList: list,
+      tabMgmt: () => this.setTab('management'),
+      tabAdm: () => this.setTab('admission'),
+      tabTeach: () => this.setTab('teachers'),
+      tabMgmtCls: cls('management'),
+      tabAdmCls: cls('admission'),
+      tabTeachCls: cls('teachers'),
+      prevCls: this.state.canPrev ? '' : 'is-disabled',
+      nextCls: this.state.canNext ? '' : 'is-disabled',
+      slidePrev: () => { if (this.swiper) this.swiper.slidePrev(); },
+      slideNext: () => { if (this.swiper) this.swiper.slideNext(); },
+      showMissionPhotos: this.props.showMissionPhotos ?? true
+    };
+  }
+}
+Component.TOC_IDS = ['mission', 'story', 'philosophy', 'different', 'ceo', 'team', 'campuses', 'students', 'accreditations'];
+Component.TOC_LABELS = { mission: 'Our mission', story: 'Our story', philosophy: 'Our philosophy', different: 'Why CEL', ceo: 'From our CEO', team: 'Meet the team', campuses: 'Campuses', students: 'Our students', accreditations: 'Accreditations' };
+</script>
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" data-bg-color="#faf3e8">
+    <rect width="240" height="160" fill="#faf3e8"></rect>
+    <rect x="72" y="50" width="96" height="60" rx="14" fill="#5d60ee"></rect>
+    <text x="120" y="90" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="600" fill="#faf3e8">CEL</text>
+  </svg>
+</template>
+</body>
+</html>

@@ -1,0 +1,28 @@
+/* ============================================================
+   CEL PANEL STANDARD — one recipe for every bordered panel that holds a table, a ledger or a
+   row list. Lifted from pages/san-diego/costs.css (.price-table_wrap / .brackets_panel /
+   .incl_ledger share exactly these tokens), generalised into one combo so new pages stop
+   re-deriving the values.
+
+     <div class="<page-class> is-panel-standard">     <- cream-soft, 1px cream-medium, 16px, clips
+       <div class="<row-class>">…</div>               <- page maps its rows onto --panel-x/-y
+     </div>
+
+   The panel is CREAM-SOFT (#F9F1DF) on the cream (#F3E7D3) page ground — one step lighter, so it
+   reads as a surface, not as a coloured band. DESIGN-RULES.md "Tables": no coloured header bar,
+   no zebra rows, no box-shadow, no Cameraobscura caption inside the panel. Rows are separated by
+   the SAME hairline as the panel edge, never by a fill.
+
+   --panel-x / --panel-y / --panel-gap are the panel's own inset tokens: rows read them so one
+   value change re-insets every cell at every breakpoint. Never hard-code a row padding.
+   ============================================================ */
+.is-panel-standard{--panel-x:32px;--panel-y:26px;--panel-gap:12px;background:var(--cream-soft,#f9f1df);border:1px solid var(--cream-medium,#e9deca);border-radius:16px;overflow:hidden}
+@media (max-width:991px){.is-panel-standard{--panel-x:26px;--panel-y:22px;--panel-gap:10px}}
+@media (max-width:479px){.is-panel-standard{--panel-x:20px;--panel-y:20px;--panel-gap:8px}}
+/* CSS Grid does not collapse borders (DESIGN-RULES.md): rows carry border-TOP only and the first
+   row drops it — a border-bottom on the row above plus a border-top here is a 2px double line. */
+.is-panel-row{padding:var(--panel-y) var(--panel-x);border-top:1px solid var(--cream-medium,#e9deca)}
+.is-panel-row:first-child{border-top:none}
+/* A panel that holds one continuous block (a rail, a chart) rather than discrete rows takes the
+   inset itself. */
+.is-panel-standard.is-panel-solid{padding:var(--panel-y) var(--panel-x)}

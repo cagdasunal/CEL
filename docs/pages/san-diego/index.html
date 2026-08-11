@@ -4,7 +4,7 @@
   Target: englishcollege.com/san-diego-ca/language-school
   Shell A · cloned from pages/vancouver/ · copy SSOT: landing-page-copy.md
   Class names reused VERBATIM from the reference (CLASS-CONTRACT.md §2).
-  New classes (contract-approved): chooser_* · timeline_* · timeline_num · course-card_cat · campus_bento-specs  → landing.css
+  New classes (contract-approved): quickfacts_* · chooser_* · timeline_* · timeline_num · fit_list/fit_row/fit_index/fit_label/fit_text · plan_* · course-card_cat · campus_bento-specs · citylist_* · nextread_*  → landing.css
   IMAGES: no SD photography exists yet — reference CDN URLs stand in with the
   copy-doc alt text; every content photo is marked TODO: replace with SD asset.
 -->
@@ -19,18 +19,18 @@
 <head>
   <!-- ============================================================
        STAGING PREVIEW — MUST NOT BE INDEXED
-       This page is a design preview served from cel.englishcollege.com,
-       NOT the production page (that lives at
-       englishcollege.com/san-diego-ca/language-school).
-       It still contains unresolved [CONFIRM: ...] copy markers.
+       Served from cel.englishcollege.com for review only. The production
+       page lives on englishcollege.com. Copy still carries unresolved
+       [CONFIRM: ...] markers and placeholder imagery.
 
-       noindex is the authoritative signal and REQUIRES the page to be
+       noindex is the authoritative signal and REQUIRES the page to stay
        crawlable — robots.txt deliberately does NOT Disallow /pages/,
        because a blocked URL can still be indexed as a bare link while
        Google never sees this tag. Do not "harden" it by blocking crawl.
        ============================================================ -->
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Learn English in San Diego | English Language School | CEL</title>
@@ -55,6 +55,8 @@
   <link rel="stylesheet" href="../../_live/page-vancouver.opt.min.css">
   <link rel="stylesheet" href="../../_live/site-custom-code.css">
   <link rel="stylesheet" href="../../_live/swiper-bundle.min.css">
+<link rel="stylesheet" href="../../shared/hero-clearance.css">
+<link rel="stylesheet" href="../../shared/hero-layout.css">
   <!-- page-scoped: ONLY the contract-approved new classes -->
   <link rel="stylesheet" href="landing.css">
 </head>
@@ -67,9 +69,9 @@
 <line x1="3.14183" y1="9" x2="3.14182" y2="287" stroke="currentcolor" stroke-width="6.28366"></line>
 </svg></div></a><nav role="navigation" class="navbar_menu w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-nav-menu"><a id="schema_sandiego" href="/san-diego-ca/language-school" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>San Diego</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a id="schema_losangeles" href="/los-angeles-ca/language-courses" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Los Angeles</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><div data-delay="200" data-hover="false" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187fab7" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle is-vancouver w-dropdown-toggle"><div>Vancouver</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
-</svg></div></div><nav class="navbar_dropdown-list is-vancouver w-dropdown-list"><a href="/vancouver" aria-current="page" class="navbar_dropdown-link is-first w-inline-block w--current"><div>Vancouver Language School</div></a><a id="link_pathway" href="/vancouver/cost-of-studying-english" class="navbar_dropdown-link w-inline-block"><div>Cost of Studying English</div></a><a id="link_courses" href="/vancouver/how-long-to-learn-english" class="navbar_dropdown-link w-inline-block"><div>How Long to Learn English</div></a><a href="/vancouver/vs-toronto" class="navbar_dropdown-link is-last w-inline-block"><div>Vancouver vs Toronto</div></a></nav></div><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a data-geo="offers" href="/offers" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div data-w-id="b8cd39b7-7e77-0eb8-1fba-1d93c04f1c03" class="navbar_dot"></div><div>Offers</div></a><div data-geo="offers" class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a href="/booking" class="navbar_link is-contact w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Apply Now</div></a><div data-delay="200" data-hover="false" data-w-id="be190588-2bc4-6b64-cd10-57ff63314947" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle w-dropdown-toggle"><div>More</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+</svg></div></div><nav class="navbar_dropdown-list is-vancouver w-dropdown-list"><a href="/vancouver" class="navbar_dropdown-link is-first w-inline-block"><div>Vancouver Language School</div></a><a id="link_pathway" href="/vancouver/cost-of-studying-english" class="navbar_dropdown-link w-inline-block"><div>Cost of Studying English</div></a><a id="link_courses" href="/vancouver/how-long-to-learn-english" class="navbar_dropdown-link w-inline-block"><div>How Long to Learn English</div></a><a href="/vancouver/vs-toronto" class="navbar_dropdown-link is-last w-inline-block"><div>Vancouver vs Toronto</div></a></nav></div><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a data-geo="offers" href="/offers" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div data-w-id="b8cd39b7-7e77-0eb8-1fba-1d93c04f1c03" class="navbar_dot"></div><div>Offers</div></a><div data-geo="offers" class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a href="/booking" class="navbar_link is-contact w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Apply Now</div></a><div data-delay="200" data-hover="false" data-w-id="be190588-2bc4-6b64-cd10-57ff63314947" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle w-dropdown-toggle"><div>More</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
-</svg></div></div><nav class="navbar_dropdown-list w-dropdown-list"><a href="/summer-camp-san-diego" class="navbar_dropdown-link w-inline-block"><div>Summer Camp</div></a><a id="link_pathway" href="/pathway-program-usa" class="navbar_dropdown-link w-inline-block"><div>Pathway</div></a><a id="link_courses" href="/courses" class="navbar_dropdown-link w-inline-block"><div>Courses</div></a><a id="link_housing" href="/housing" class="navbar_dropdown-link w-inline-block"><div>Housing</div></a><a href="/voices" class="navbar_dropdown-link w-inline-block"><div>Voices</div></a><a id="link_blog_top" href="/blog" class="navbar_dropdown-link w-inline-block"><div>Blog</div></a><a href="/faq" class="navbar_dropdown-link is-last w-inline-block"><div>FAQs</div></a></nav></div><a href="/contact-cel" class="navbar_link is-apply w-inline-block"><div>Contact us</div></a></nav><div id="w-node-dcc14621-e4cd-a4c8-518c-d15fb187fad5-b187faa5" class="navbar_button-wrapper"><div class="navbar_buttons"><div class="offers_counter w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-nav"><div class="counter_item is-top"><div class="count_days">00</div></div><div class="counter_item is-top"><div class="count_hours is-top">00</div></div><div class="counter_item is-top"><div class="count_minutes">00</div></div><div class="counter_item is-top"><div class="count_seconds">00</div></div></div><a href="/booking" class="navbar_button is-light is-mobile w-inline-block"><div>Apply Now</div></a><a href="/contact-cel" class="navbar_button is-mobile w-inline-block"><div>Contact us</div></a><a href="#" class="navbar_button is-mobile is-influencer w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-inline-block"><div>Unlock Offer</div></a><div class="button_weglot w-variant-0947456c-11ec-2419-24b4-dab16b38388d"></div></div><div class="navbar_menu-button w-nav-button"><div class="menu-icon"><div class="menu-icon_line-top"></div><div class="menu-icon_line-middle"><div class="menu-icon_line-middle-inner"></div></div><div class="menu-icon_line-bottom"></div></div></div></div></div></div>
+</svg></div></div><nav class="navbar_dropdown-list w-dropdown-list"><a href="/summer-camp-san-diego" class="navbar_dropdown-link w-inline-block"><div>Summer Camp</div></a><a id="link_pathway-2" href="/pathway-program-usa" class="navbar_dropdown-link w-inline-block"><div>Pathway</div></a><a id="link_courses-2" href="/courses" class="navbar_dropdown-link w-inline-block"><div>Courses</div></a><a id="link_housing" href="/housing" class="navbar_dropdown-link w-inline-block"><div>Housing</div></a><a href="/voices" class="navbar_dropdown-link w-inline-block"><div>Voices</div></a><a id="link_blog_top" href="/blog" class="navbar_dropdown-link w-inline-block"><div>Blog</div></a><a href="/faq" class="navbar_dropdown-link is-last w-inline-block"><div>FAQs</div></a></nav></div><a href="/contact-cel" class="navbar_link is-apply w-inline-block"><div>Contact us</div></a></nav><div id="w-node-dcc14621-e4cd-a4c8-518c-d15fb187fad5-b187faa5" class="navbar_button-wrapper"><div class="navbar_buttons"><div class="offers_counter w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-nav"><div class="counter_item is-top"><div class="count_days">00</div></div><div class="counter_item is-top"><div class="count_hours is-top">00</div></div><div class="counter_item is-top"><div class="count_minutes">00</div></div><div class="counter_item is-top"><div class="count_seconds">00</div></div></div><a href="/booking" class="navbar_button is-light is-mobile w-inline-block"><div>Apply Now</div></a><a href="/contact-cel" class="navbar_button is-mobile w-inline-block"><div>Contact us</div></a><a href="#" class="navbar_button is-mobile is-influencer w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-inline-block"><div>Unlock Offer</div></a><div class="button_weglot w-variant-0947456c-11ec-2419-24b4-dab16b38388d"></div></div><div class="navbar_menu-button w-nav-button"><div class="menu-icon"><div class="menu-icon_line-top"></div><div class="menu-icon_line-middle"><div class="menu-icon_line-middle-inner"></div></div><div class="menu-icon_line-bottom"></div></div></div></div></div></div>
 
   <div class="main-wrapper is-subpage">
 
@@ -78,7 +80,7 @@
       <!-- TODO: replace with SD asset -->
       <img class="hero_bg-image" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ed38f3532ddd9a655715d5_286d61987aefdd3720b6659d28c61994_adults-16-hero.avif" alt="Students on a Pacific Beach street near the CEL San Diego school" loading="eager" fetchpriority="high">
       <div class="hero_overlay"></div>
-      <div class="hero_wrapper">
+      <div class="hero_wrapper is-subpage">
         <div class="breadcrumb">
           <a class="breadcrumb-link" href="/san-diego-ca">San Diego</a>
           <img class="breadcrumb-sep" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69beeef66d387cb04dca12b1_adults-16-breadcrumb-chevron.svg" loading="lazy" alt="Arrow">
@@ -93,19 +95,19 @@
             <div class="hero_highlights">
               <div class="hero_highlight">
                 <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c217fe3e58ecc762806_adults-16-icon-hero-person.svg" loading="lazy" alt="Person Icon">
-                <p class="text-style-allcaps">Avg 7 Students per Class</p>
+                <p class="hero_highlight-text text-style-allcaps">Avg 7 Students per Class</p>
               </div>
               <div class="hero_highlight">
                 <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c22c4e2a4d5bcb486af_adults-16-icon-hero-calendar.svg" loading="lazy" alt="Calendar Icon">
-                <p class="text-style-allcaps">Start Every Monday</p>
+                <p class="hero_highlight-text text-style-allcaps">Start Every Monday</p>
               </div>
               <div class="hero_highlight">
                 <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c23c5c6ba315a2441a6_adults-16-icon-hero-clock.svg" loading="lazy" alt="Icon Clock">
-                <p class="text-style-allcaps">Programs from 1 Week to 1 Year+</p>
+                <p class="hero_highlight-text text-style-allcaps">Programs from 1 Week to 1 Year+</p>
               </div>
               <div class="hero_highlight">
                 <img class="hero_highlight-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c24bcf407a3c102b6ca_adults-16-icon-hero-star.svg" loading="lazy" alt="Icon Star">
-                <p class="text-style-allcaps">In San Diego Since 1981</p>
+                <p class="hero_highlight-text text-style-allcaps">In San Diego Since 1981</p>
               </div>
             </div>
           </div>
@@ -122,38 +124,86 @@
       <div class="container">
         <div class="page_body-layout">
 
-          <!-- ===== TOC (§2 — one anchor per content section, named by section tagline) ===== -->
+          <!-- ===== TOC (§2 — the client's seven anchor labels plus Overview, in DOCUMENT order:
+     Overview · Location · Courses · Campus · Reviews · Accommodation · Visa · FAQ.
+     Location → #city, Reviews → #testimonials, Visa → #budget (§16 Budget & Visa).
+     Keep this list in the order the sections appear in the page. ===== -->
           <aside class="stoc_component" id="tocSidebar">
             <p class="stoc_label">On this page</p>
             <nav class="stoc_nav" aria-label="On this page">
-            <a class="stoc_link is-active" href="#overview" data-target="overview"><div class="stoc_dot"></div><p class="stoc_text">Program Overview</p></a>
-            <a class="stoc_link" href="#fit" data-target="fit"><div class="stoc_dot"></div><p class="stoc_text">Who It's For</p></a>
-            <a class="stoc_link" href="#city" data-target="city"><div class="stoc_dot"></div><p class="stoc_text">Why Pacific Beach</p></a>
-            <a class="stoc_link" href="#courses" data-target="courses"><div class="stoc_dot"></div><p class="stoc_text">English Courses</p></a>
-            <a class="stoc_link" href="#campus" data-target="campus"><div class="stoc_dot"></div><p class="stoc_text">Our Campus</p></a>
+            <a class="stoc_link is-active" href="#quick-answer" data-target="quick-answer"><div class="stoc_dot"></div><p class="stoc_text">Quick answer</p></a>
+            <a class="stoc_link" href="#overview" data-target="overview"><div class="stoc_dot"></div><p class="stoc_text">Overview</p></a>
+            <a class="stoc_link" href="#city" data-target="city"><div class="stoc_dot"></div><p class="stoc_text">Location</p></a>
+            <a class="stoc_link" href="#courses" data-target="courses"><div class="stoc_dot"></div><p class="stoc_text">Courses</p></a>
+            <a class="stoc_link" href="#campus" data-target="campus"><div class="stoc_dot"></div><p class="stoc_text">Campus</p></a>
             <a class="stoc_link" href="#typical-day" data-target="typical-day"><div class="stoc_dot"></div><p class="stoc_text">Student Life</p></a>
             <a class="stoc_link" href="#offers" data-target="offers" data-geo="sandiego"><div class="stoc_dot"></div><p class="stoc_text">Special Offer</p><div class="stoc_offer-dot"></div></a>
             <a class="stoc_link" href="#testimonials" data-target="testimonials"><div class="stoc_dot"></div><p class="stoc_text">Reviews</p></a>
-            <a class="stoc_link" href="#about" data-target="about"><div class="stoc_dot"></div><p class="stoc_text">Look Inside</p></a>
-            <a class="stoc_link" href="#book-with-confidence" data-target="book-with-confidence"><div class="stoc_dot"></div><p class="stoc_text">Book With Confidence</p></a>
+            <a class="stoc_link" href="#about" data-target="about"><div class="stoc_dot"></div><p class="stoc_text">Our School</p></a>
             <a class="stoc_link" href="#accommodation" data-target="accommodation"><div class="stoc_dot"></div><p class="stoc_text">Accommodation</p></a>
-            <a class="stoc_link" href="#activities" data-target="activities"><div class="stoc_dot"></div><p class="stoc_text">Activities</p></a>
-            <a class="stoc_link" href="#budget" data-target="budget"><div class="stoc_dot"></div><p class="stoc_text">Planning</p></a>
+            <a class="stoc_link" href="#budget" data-target="budget"><div class="stoc_dot"></div><p class="stoc_text">Visa</p></a>
             <a class="stoc_link" href="#faq" data-target="faq"><div class="stoc_dot"></div><p class="stoc_text">FAQ</p></a>
-            <a class="stoc_link" href="#support-options" data-target="support-options"><div class="stoc_dot"></div><p class="stoc_text">More Options</p></a>
-</nav>
+            </nav>
             <a class="stoc_cta-btn inline-cta-btn is-primary" href="/contact-cel">Get a Quote</a>
           </aside>
 
           <!-- ===== CONTENT ===== -->
           <main class="page_content" id="main-content">
 
-            <!-- ==================== OVERVIEW (§3 · merges §1a) ==================== -->
-            <section class="section_page section_overview" id="overview">
+            <!-- ==================== QUICK ANSWER + QUICK FACTS (§1a) ==================== -->
+            <section class="section_page section_quick-answer" id="quick-answer">
+              <h2 class="section-tagline">Quick Answer</h2>
+              <h3 class="section-title">What Is CEL San Diego?</h3>
+              <p class="body-intro text-size-medium">CEL San Diego is a boutique English language school at 945 Hornblend Street in Pacific Beach — the only English school in the neighborhood, teaching English in San Diego since 1981. Choose from 10 English programs with an average of 7 students per class (maximum 12), start dates every Monday, and CEL shared apartments or homestay options.</p>
+              <div class="quickfacts_panel">
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">School</p>
+                  <p class="quickfacts_val">CEL San Diego (College of English Language)</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Location</p>
+                  <p class="quickfacts_val">945 Hornblend Street, Pacific Beach, San Diego, CA 92109</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Type</p>
+                  <p class="quickfacts_val">English language school / ESL school</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Founded</p>
+                  <p class="quickfacts_val">1981</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Students</p>
+                  <p class="quickfacts_val">International students aged 16+</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Class size</p>
+                  <p class="quickfacts_val">Average 7, maximum 12</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Programs</p>
+                  <p class="quickfacts_val">10 English courses, 1–52+ weeks</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Start dates</p>
+                  <p class="quickfacts_val">Every Monday</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Visa support</p>
+                  <p class="quickfacts_val">F-1 / I-20 for eligible students</p>
+                </div>
+                <div class="quickfacts_row">
+                  <p class="quickfacts_key">Accreditation</p>
+                  <p class="quickfacts_val">CEA-accredited; member of English USA</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- ==================== OVERVIEW (§3) ==================== -->
+            <section class="section_page section_overview is-consecutive" id="overview">
               <h2 class="section-tagline">Program Overview</h2>
               <h3 class="section-title">Adult English Programs in Pacific Beach (16+) — Small Classes, Real Progress</h3>
-              <p class="body-intro text-size-medium">CEL San Diego is a boutique English language school at 945 Hornblend Street in Pacific Beach — the only English school in the neighborhood, teaching English in San Diego since 1981. Choose from 10 English programs with an average of 7 students per class (maximum 12), start dates every Monday, and CEL shared apartments or homestay options.</p>
-              <p class="body-intro text-size-medium">We keep the school boutique on purpose: an average of 7 students per class, capped at 12, so every lesson includes real speaking time and direct feedback — not a lecture hall.</p>
+              <p class="body-intro text-size-medium">CEL has been teaching English in San Diego since 1981 — today from our campus in Pacific Beach. We keep the school boutique on purpose: an average of 7 students per class, capped at 12, so every lesson includes real speaking time and direct feedback — not a lecture hall.</p>
               <p class="body-intro text-size-medium">Most of our students stay between 4 and 24 weeks, though this varies significantly by nationality — some join for a short 1–2 week trip, others for a full academic year of 48+ weeks.</p>
               <div class="overview_tiles">
                 <div class="info-tile is-wide">
@@ -162,13 +212,6 @@
                     <div class="info-card-label">Ideal for</div>
                   </div>
                   <p class="info-card-figure">Adults &amp; young adults 16+</p>
-                  <div class="info-card-list">
-                    <div class="info-card-list_item">Gap-year students</div>
-                    <div class="info-card-list_item">University preparation</div>
-                    <div class="info-card-list_item">Career-focused learners</div>
-                    <div class="info-card-list_item">F-1 long-term students</div>
-                    <div class="info-card-list_item">Surf-lifestyle learners</div>
-                  </div>
                 </div>
                 <div class="info-tile is-after-wide">
                   <div class="info-card-header">
@@ -198,26 +241,19 @@
                   </div>
                   <div class="info-card-figure">7 students<p class="info-card-note">maximum 12</p></div>
                 </div>
-                <div class="info-tile">
+                <div class="info-tile is-wide">
                   <div class="info-card-header">
                     <img class="info-card-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5d4aa6c1c8ba9d547b_adults-16-icon-home.svg" loading="lazy" alt="Home icon">
                     <div class="info-card-label">Accommodation</div>
                   </div>
-                  <div class="info-card-figure">Shared apartments or homestay</div>
+                  <div class="info-card-figure">Optional — shared apartments or homestay</div>
                 </div>
-                <div class="info-tile">
-                  <div class="info-card-header">
-                    <img class="info-card-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5781424056a4a75bd4_adults-16-icon-idcard.svg" loading="lazy" alt="ID card icon">
-                    <div class="info-card-label">Visa support</div>
-                  </div>
-                  <div class="info-card-figure">F-1 / I-20 for eligible students</div>
-                </div>
-                <div class="info-tile">
+                <div class="info-tile is-after-wide">
                   <div class="info-card-header">
                     <img class="info-card-icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5e81209eb1cdfcb9b8_adults-16-icon-mappin.svg" loading="lazy" alt="Map pin icon">
                     <div class="info-card-label">Location</div>
                   </div>
-                  <div class="info-card-figure">Pacific Beach, San Diego</div>
+                  <div class="info-card-figure">Pacific Beach, San Diego<p class="info-card-note">not Downtown</p></div>
                 </div>
               </div>
               <div class="callout">
@@ -235,35 +271,38 @@
               </div>
               <h2 class="section-tagline">Who It's For</h2>
               <h3 class="section-title">Is CEL San Diego the Right Fit for You?</h3>
-              <p class="body-intro text-size-medium">CEL San Diego is the right fit if:</p>
-              <!-- "Right fit" — same timeline_* recipe + .is-inview reveal as §9 Typical Day; tick icon in the 48px marker. -->
-              <div class="timeline_list">
+              <!-- "Right fit" — the §9 Student Life timeline recipe (rail + 48px cream marker,
+     20px stroke i-check from assets/icons/sprite.svg) with the lead-in sentence as the panel's
+     header band. One qualifying sentence per row: no numbers, no sub-labels, no hover.
+     Reveal is the shared #fit .timeline_row observer at the foot of the page. -->
+              <div class="timeline_list is-fit">
+                <h4 class="fit_list-title">CEL San Diego is the right fit if</h4>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ee8dc255acea7569078501_adults-16-icon-checkmark.svg" loading="lazy" alt="Tick Icon"></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_text">You're planning a gap year — before, during, or after university — and comparing San Diego with Vancouver, Sydney, and Malta</p>
                   </div>
                 </div>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ee8dc255acea7569078501_adults-16-icon-checkmark.svg" loading="lazy" alt="Tick Icon"></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_text">You're preparing for university and need English for academic admission or a pathway program</p>
                   </div>
                 </div>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ee8dc255acea7569078501_adults-16-icon-checkmark.svg" loading="lazy" alt="Tick Icon"></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_text">You're investing 4–24 weeks in your English to move your career forward</p>
                   </div>
                 </div>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ee8dc255acea7569078501_adults-16-icon-checkmark.svg" loading="lazy" alt="Tick Icon"></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_text">You're coming long-term on an F-1 visa — a full academic year abroad, or longer</p>
                   </div>
                 </div>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ee8dc255acea7569078501_adults-16-icon-checkmark.svg" loading="lazy" alt="Tick Icon"></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_text">You want to live somewhere you can actually learn to surf — as part of your daily routine, not a weekend excursion</p>
                   </div>
@@ -390,27 +429,28 @@
               <h2 class="section-tagline">English Courses</h2>
               <h3 class="section-title">Our 10 English (ESL) Programs in San Diego</h3>
               <p class="body-intro text-size-medium">Ten programs, grouped by goal — from General English to English combined with surfing, volunteering, or exam prep.</p>
-              <p class="body-intro text-size-medium"><strong>Which English course is right for you?</strong></p>
               <div class="chooser_component">
-                <!-- Course finder — interactive goal→course recommender (replaces the static
-                     chooser table AND the course swiper). One shared cream wrapper, two columns; the matching
-                     course-card animates onto the stage. chooser_* classes scoped in landing.css. -->
+                <!-- Course finder — goal → recommended course. One cream panel: the question as a
+                     full-width title band, then two symmetrical columns (goal list | recommendation)
+                     sharing one hairline divider. Selection is carried by the radio dot and the cream
+                     fill — no numbering, no left-border accent. chooser_* scoped in landing.css. -->
                 <div class="chooser_finder">
+                  <h4 class="chooser_title">Which English course is right for you?</h4>
+                  <p class="chooser_goals-label">Select your goal</p>
+                  <p class="chooser_stage-label">Our Recommendation</p>
                   <div class="chooser_goals" role="tablist" aria-label="Choose your goal">
-                    <p class="chooser_goals-label">Select your goal</p>
-                    <button class="chooser_goal is-active" type="button" role="tab" aria-selected="true" data-course="general-english"><span class="chooser_goal-text">Speak English with confidence</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-career-development"><span class="chooser_goal-text">Boost your career</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-experience"><span class="chooser_goal-text">Work experience in California</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-volunteering"><span class="chooser_goal-text">Volunteer while you learn</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-cambridge-prep"><span class="chooser_goal-text">Pass the Cambridge exam</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-toefl-prep"><span class="chooser_goal-text">Get your TOEFL score</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-academic-skills"><span class="chooser_goal-text">Master academic English</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="global-pathway"><span class="chooser_goal-text">Enter a US university</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-surfing"><span class="chooser_goal-text">Learn to surf after class</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
-                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="private-lessons"><span class="chooser_goal-text">One-on-one lessons</span><span class="chooser_goal-arrow w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 5l7 7-7 7"></path></svg></span></button>
+                    <button class="chooser_goal is-active" type="button" role="tab" aria-selected="true" data-course="general-english"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Speak English with confidence</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-career-development"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Boost your career</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-experience"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Work experience in California</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-volunteering"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Volunteer while you learn</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-cambridge-prep"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Pass the Cambridge exam</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-toefl-prep"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Get your TOEFL score</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-academic-skills"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Master academic English</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="global-pathway"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Enter a US university</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="english-surfing"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">Learn to surf after class</span></button>
+                    <button class="chooser_goal" type="button" role="tab" aria-selected="false" data-course="private-lessons"><span class="chooser_goal-dot" aria-hidden="true"></span><span class="chooser_goal-text">One-on-one lessons</span></button>
                   </div>
                   <div class="chooser_stage">
-                    <p class="chooser_stage-label">Our Recommendation</p>
                     <div class="chooser_cards" aria-live="polite">
                       <div class="chooser_card is-active" data-course="general-english">
                         <div class="course-card">
@@ -561,35 +601,41 @@
                     <div>
                       <h2 class="section-tagline">Our Campus</h2>
                       <h3 class="section-title">A Boutique English School in the Heart of Pacific Beach</h3>
-                      <p class="body-intro text-size-medium">Our campus sits on Hornblend Street in Pacific Beach, not in Downtown San Diego. After class, students can walk to Garnet Avenue, cafés, shops, and the beach instead of planning the day around a long commute.</p>
                     </div>
-                    <p class="body-intro text-size-medium is-consecutive">A beach-adjacent campus doesn't mean a lighter curriculum. CEL San Diego holds CEA accreditation for the maximum 10-year term, is authorized under SEVIS to issue F-1 student visas, and is a member of English USA — the same academic standards you'd expect from any accredited school, delivered from a genuinely walkable neighborhood instead of a downtown high-rise.</p>
-                    <p class="body-intro text-size-medium is-consecutive">More than 50 nationalities study with us each year. Address: 945 Hornblend Street, San Diego, CA 92109.</p>
-                  </div>
+                    <dl class="campus_bento-points">
+                      <div class="campus_bento-point">
+                        <dt class="campus_bento-point-label">Pacific Beach, Not Downtown</dt>
+                        <dd class="campus_bento-point-body">Our campus sits on Hornblend Street in Pacific Beach, not in Downtown San Diego. After class, students can walk to Garnet Avenue, cafés, shops, and the beach instead of planning the day around a long commute.</dd>
+                      </div>
+                      <div class="campus_bento-point">
+                        <dt class="campus_bento-point-label">Accredited Academic Standards, Not Just a Beach Location</dt>
+                        <dd class="campus_bento-point-body">A beach-adjacent campus doesn't mean a lighter curriculum. CEL San Diego holds CEA accreditation for the maximum 10-year term, is authorized under SEVIS to issue F-1 student visas, and is a member of English USA — the same academic standards you'd expect from any accredited school, delivered from a genuinely walkable neighborhood instead of a downtown high-rise.</dd>
+                      </div>
+                      <div class="campus_bento-point">
+                        <dt class="campus_bento-point-label">Internationally Diverse</dt>
+                        <dd class="campus_bento-point-body">More than 50 nationalities study with us each year.</dd>
+                      </div>
+                      <div class="campus_bento-point">
+                        <dt class="campus_bento-point-label">Address</dt>
+                        <dd class="campus_bento-point-body">945 Hornblend Street, San Diego, CA 92109</dd>
+                      </div>
+                    </dl>
                 </div>
                 <div class="campus_bento-footer">
                   <div class="campus_bento-tile is-first">
                     <!-- TODO: replace with SD asset -->
-                    <img class="campus_bento-card-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4c5166bad917d46d73_adults-16-campus-heritage-building.avif" loading="lazy" alt="Modern classroom with smart TV at CEL San Diego">
-                    <div class="campus_bento-card-overlay">
-                      <h4 class="campus_bento-card-title">Pacific Beach, Not Downtown</h4>
-                      <p class="campus_bento-card-desc">Walk to Garnet Avenue, cafés, shops, and the beach after class — no long commute.</p>
-                    </div>
+                    <img class="campus_bento-card-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4c5166bad917d46d73_adults-16-campus-heritage-building.avif" loading="lazy" alt="CEL San Diego campus building on Hornblend Street, Pacific Beach">
                   </div>
                   <div class="campus_bento-tile is-second">
                     <!-- TODO: replace with SD asset -->
-                    <img class="campus_bento-card-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4e9d3d853f8bab4b43_adults-16-campus-false-creek-seawall.avif" loading="lazy" alt="International students in the CEL San Diego student lounge">
-                    <div class="campus_bento-card-overlay">
-                      <h4 class="campus_bento-card-title">Internationally Diverse</h4>
-                      <p class="campus_bento-card-desc">More than 50 nationalities study with us each year.</p>
-                    </div>
+                    <img class="campus_bento-card-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4e9d3d853f8bab4b43_adults-16-campus-false-creek-seawall.avif" loading="lazy" alt="Students from more than 50 nationalities at CEL San Diego">
                   </div>
                 </div>
                 <div class="campus_bento-specs">
                 <div class="info-tile">
                   <div class="info-card-header">
                     <div class="info-card-icon">
-                      <img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d562abb31d4e280412b_adults-16-icon-levels.svg" loading="lazy" alt="Classroom icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="3.5"></circle><path d="M3 19c0-3 2.5-5 6-5s6 2 6 5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17 14c2.5 0 4 1.4 4 4"></path></svg>
                     </div>
                     <div class="info-card-label">Classrooms</div>
                   </div>
@@ -598,7 +644,7 @@
                 <div class="info-tile">
                   <div class="info-card-header">
                     <div class="info-card-icon">
-                      <img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5d4aa6c1c8ba9d547b_adults-16-icon-home.svg" loading="lazy" alt="Lounge icon">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V6l9-3v18"></path><path d="M13 11h6a1 1 0 011 1v9"></path><path d="M2.5 21h19"></path><path d="M7.5 8.5h2M7.5 12.5h2M7.5 16.5h2M16 15h1.5"></path></svg>
                     </div>
                     <div class="info-card-label">On site</div>
                   </div>
@@ -618,16 +664,14 @@
               <div class="campus_method">
                 <h2 class="section-tagline">The CEL Method</h2>
                 <h3 class="section-title">How We Teach English at Our Pacific Beach Language School</h3>
-                <p class="body-intro is-section text-size-medium">Classes are built around speaking, doing, and using English actively — connected to real situations students experience in San Diego, from daily conversations to academic and professional communication.</p>
-                <p class="body-intro is-section text-size-medium is-consecutive is-last">All CEL teachers hold at least a bachelor's degree and recognized ESL qualifications such as TESOL, CELTA, or DELTA. Our academic program is overseen by Aaron Kilmer, Academic Director, who holds a master's in Teaching English as a Second Language and has 13+ years of experience in English language education.</p>
                 <div class="photo-cards">
                   <div class="photo-card is-1">
                     <div class="photo-card_visual">
                       <div class="campus_bento-card-overlay">
                         <img class="photo-card_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69efb477facf539481017c06_adults-16-icon-chat.svg" loading="lazy" alt="Chat icon">
                         <div class="photo-card_info">
-                          <h4 class="photo-card_title">Interactive, Real-World Lessons</h4>
-                          <p class="photo-card_desc">Classes built around speaking, doing, and using English actively — connected to real situations in San Diego.</p>
+                          <h4 class="photo-card_title">Small Classes, More Speaking Time</h4>
+                          <p class="photo-card_desc">CEL San Diego classes average 7 students and are capped at 12. That means more time to speak, more individual feedback, and a group small enough that teachers and classmates actually get to know each other.</p>
                         </div>
                       </div>
                     </div>
@@ -635,11 +679,11 @@
                   <div class="photo-card is-2">
                     <div class="photo-card_visual">
                       <!-- TODO: replace with SD asset -->
-                      <img class="photo-card_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4f9d3d853f8bab4ca8_adults-16-method-realworld-coffee.avif" loading="lazy" alt="Small English class practising conversation at CEL San Diego">
+                      <img class="photo-card_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e4f9d3d853f8bab4ca8_adults-16-method-realworld-coffee.avif" loading="lazy" alt="Small English class practising real-world conversation at CEL San Diego">
                       <div class="campus_bento-card-overlay">
                         <div class="photo-card_info">
-                          <h4 class="photo-card_title">Small Classes, More Speaking Time</h4>
-                          <p class="photo-card_desc">Classes average 7 students and are capped at 12 — more time to speak, more individual feedback, a group small enough to know each other.</p>
+                          <h4 class="photo-card_title">Interactive, Real-World Lessons</h4>
+                          <p class="photo-card_desc">Classes are built around speaking, doing, and using English actively. Lessons connect to real situations students experience in San Diego, from daily conversations to academic and professional communication.</p>
                         </div>
                       </div>
                     </div>
@@ -651,7 +695,7 @@
                       <div class="campus_bento-card-overlay">
                         <div class="photo-card_info">
                           <h4 class="photo-card_title">Continuous Teacher Feedback</h4>
-                          <p class="photo-card_desc">Teachers correct specific mistakes and give regular feedback on speaking, writing, pronunciation, fluency, and accuracy.</p>
+                          <p class="photo-card_desc">In small classes, teachers can correct specific mistakes, answer individual questions, and give regular feedback on speaking, writing, pronunciation, fluency, and accuracy.</p>
                         </div>
                       </div>
                     </div>
@@ -659,10 +703,32 @@
                   <div class="photo-card is-4">
                     <div class="photo-card_visual">
                       <div class="campus_bento-card-overlay">
-                        <img class="photo-card_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69efb47bc93cceb4e53102eb_adults-16-icon-levels-light.svg" loading="lazy" alt="Progress icon">
+                        <img class="photo-card_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d562abb31d4e280412b_adults-16-icon-levels.svg" loading="lazy" alt="Progress icon">
                         <div class="photo-card_info">
                           <h4 class="photo-card_title">Progress Monitoring</h4>
-                          <p class="photo-card_desc">Structured check-ins help you see what you've improved, what level you're working toward, and what to focus on next.</p>
+                          <p class="photo-card_desc">Structured check-ins help students understand what they have improved, what level they are working toward, and what to focus on next.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="photo-card is-5">
+                    <div class="photo-card_visual">
+                      <div class="campus_bento-card-overlay">
+                        <img class="photo-card_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5c9fddf9b17e8a7f38_adults-16-icon-group.svg" loading="lazy" alt="Teachers icon">
+                        <div class="photo-card_info">
+                          <h4 class="photo-card_title">Qualified, Experienced ESL Teachers</h4>
+                          <p class="photo-card_desc">All CEL teachers hold at least a bachelor's degree and recognized ESL teaching qualifications such as TESOL, CELTA, DELTA, or equivalent credentials. They bring experience with international students, clear pronunciation, strong English proficiency, and the small-group teaching skills needed to support learners in ESL classes.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="photo-card is-6">
+                    <div class="photo-card_visual">
+                      <div class="campus_bento-card-overlay">
+                        <img class="photo-card_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5449b525ca82f60164_adults-16-icon-checkmark.svg" loading="lazy" alt="Checkmark icon">
+                        <div class="photo-card_info">
+                          <h4 class="photo-card_title">Academic Oversight</h4>
+                          <p class="photo-card_desc">CEL San Diego's academic program is overseen by Aaron Kilmer, Academic Director, who holds a master's degree in Teaching English as a Second Language and has 13+ years of experience in English language education. He oversees teacher development, curriculum quality, level placement, and student progress monitoring.</p>
                         </div>
                       </div>
                     </div>
@@ -802,7 +868,7 @@
                   </div>
                 </div>
                 <div class="timeline_row">
-                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7 7-12a7 7 0 10-14 0c0 5 7 12 7 12z"></path><circle cx="12" cy="9" r="2.5"></circle></svg></div></div>
+                  <div class="timeline_marker"><div class="timeline_icon w-embed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></div></div>
                   <div class="timeline_body">
                     <p class="timeline_label">Weekend</p>
                     <p class="timeline_text">La Jolla, Coronado, a Padres game — or a CEL trip to LA, Las Vegas, or Yosemite.</p>
@@ -869,6 +935,18 @@
   </div>
 </section>
 
+<!-- ============================================================================
+     DO NOT PUBLISH THIS SECTION AS IT STANDS — FIX-BRIEF §7, content integrity.
+     Six cards previously attributed real, named CEL VANCOUVER students' photographs to invented
+     people. The asset filenames carry the real students' names and all contain "-vancouver-";
+     the visible bylines read Mirella / Leonardo / Kenji / Sofía / Lena / Ji-woo. Five of the six
+     were fabricated identities.
+     Every fabricated name and every mismatched photograph has been removed. The quotes are left
+     unattributed on purpose: re-attributing them to the real Vancouver students would swap one
+     falsehood for another by placing those students in San Diego.
+     NEEDED BEFORE PUBLISH: six real CEL San Diego testimonials — the student's own words, their own
+     name, their own photograph, with consent on file. Until then this section must stay unpublished.
+     ============================================================================ -->
 <section class="section_page section_testimonials is-consecutive" id="testimonials">
               <div class="card-slider_clip testimonial-slider_clip">
                 <div class="swiper-slide is-testimonial-hero" id="testimonial-hero">
@@ -914,9 +992,9 @@
                           <p class="review-card_quote">I will never forget my time in San Diego. The teachers truly cared about my progress and I finally feel confident speaking English every day.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedcc875642ea78038bef_6a1eedcb7916156f3be8bd60_debora-guerra-de-santana-vancouver-1-69ee11943f074eeb1277d048_adult.avif" loading="lazy" alt="Mirella">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Mirella</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1ef4876ec7086e117adaa1_6a1ef485b677b82206c818c8_brazil-1-brazil.avif" loading="lazy" alt="Brazil flag">
                                 <p>Brazil</p>
@@ -943,9 +1021,9 @@
                           <p class="review-card_quote">Classes here are small — around seven of us — so you actually speak every day and the teacher knows exactly what to fix. My fluency jumped in just a few weeks.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedc5bedfa74434e048d8_6a1eedc4d24964ab499cad6d_leonardo-niccolai-vancouver-1-69ee11999c4de5bf596a436e_adult.avif" loading="lazy" alt="Leonardo">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Leonardo</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/68d7d9c5041c593b05cc8bb3_italy.avif" loading="lazy" alt="Italy flag">
                                 <p>Italy</p>
@@ -972,9 +1050,9 @@
                           <p class="review-card_quote">The CEL shared apartment made everything easy. I lived a short walk from school with students from all over, and we cooked and studied together every night.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedbe35298475e04e6d7e_6a1eedbd1634006127f096ba_kazu-bui-vancouver-1-69ee1198f2f86aebe3097ea4_adult.avif" loading="lazy" alt="Kenji">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Kenji</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1ef48369f8008b0e4e7c12_6a1ef48299e9928324013f1e_japan-1-japan.avif" loading="lazy" alt="Japan flag">
                                 <p>Japan</p>
@@ -1001,9 +1079,9 @@
                           <p class="review-card_quote">The activities are what made it unforgettable. Taco Tuesdays, surf lessons, a weekend in Yosemite — I made close friends from ten different countries.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedb3eb95b42317d29c42_6a1eedb178ec3029cbf3b3da_adriano-brandao-vancouver-1-69ee1190c6f9bbe8ccca6894_adult.avif" loading="lazy" alt="Sofía">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Sofía</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1ef4876ec7086e117adaa1_6a1ef485b677b82206c818c8_brazil-1-brazil.avif" loading="lazy" alt="Colombia flag">
                                 <p>Colombia</p>
@@ -1030,9 +1108,9 @@
                           <p class="review-card_quote">Studying three blocks from the ocean in Pacific Beach is exactly the California life I hoped for — surf before class, study, then sunset at the pier.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedb77916156f3be8b2aa_6a1eedb51d58acce5f1ac8d4_claire-chuang-vancouver-1-69ee1193f2f86aebe3097bcb_adult.avif" loading="lazy" alt="Lena">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Lena</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/69442160908f79f2ce70f2e4_france.avif" loading="lazy" alt="Germany flag">
                                 <p>Germany</p>
@@ -1059,9 +1137,9 @@
                           <p class="review-card_quote">I came to prepare for the TOEFL and the teachers kept me on track the whole way. I hit the score I needed and felt genuinely ready for university.</p>
                           <div class="review-card_author">
                             <!-- TODO: replace with SD asset -->
-                            <img class="review-card_author-photo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1eedba515d3e6358cc426f_6a1eedb85bfe69403969f5f9_duhee-kong-vancouver-1-69ee119536a618a255134ce0_adult.avif" loading="lazy" alt="Ji-woo">
+                            <!-- TODO: real San Diego testimonial — photograph removed (it showed a named CEL Vancouver student). -->
                             <div class="review-card_author-info">
-                              <p class="review-card_author-name">Ji-woo</p>
+                              <p class="review-card_author-name"><!-- TODO: real San Diego testimonial — name pending -->Attribution pending</p>
                               <div class="review-card_author-country">
                                 <img class="review-card_author-flag" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9df/6a1ef480bc8c18ae03dabf8d_6a1ef47ea7399a57bd20df27_south-korea-1-south-korea.avif" loading="lazy" alt="South Korea flag">
                                 <p>South Korea</p>
@@ -1104,8 +1182,15 @@
                   <div class="video-showcase_highlights">
                     <div class="info-tile is-small">
                       <div class="info-card-header">
+                        <!-- Light-background icon set (69ef5d5*), same batch as the group and map-pin
+                             icons in the sibling tiles, so stroke weight and colour match. NOT
+                             adults-16-icon-hero-star.svg: that is the HERO variant, baked in the
+                             light cream for dark photo backgrounds (see hero_highlight-icon above),
+                             and an <img>-rendered SVG cannot be recoloured by CSS — on a cream tile
+                             it simply reads wrong. A clock also states "Since 1981" more plainly
+                             than a star did. -->
                         <div class="info-card-icon">
-                          <img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c24bcf407a3c102b6ca_adults-16-icon-hero-star.svg" loading="lazy" alt="Star icon">
+                          <img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ef5d5a67894002b6704ddd_adults-16-icon-clock.svg" loading="lazy" alt="Clock icon">
                         </div>
                         <p class="info-card-label">In San Diego</p>
                       </div>
@@ -1140,56 +1225,49 @@
                   <div class="accred_grid">
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b94693b7257fcd4bd32ad5_adults-16-accred-languages-canada.avif" loading="lazy" alt="CEA Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/cea.png" loading="lazy" alt="CEA Logo">
                       </div>
                       <h4 class="accred_accred-name">CEA</h4>
                       <p class="accred_accred-desc">Accredited by the Commission on English Language Program Accreditation for the maximum 10-year period.</p>
                     </div>
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b9469458a4811a61b08fcf_adults-16-accred-ptiru.avif" loading="lazy" alt="English USA Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/english-usa.png" loading="lazy" alt="English US - The American Association of Intensive English Programs">
                       </div>
                       <h4 class="accred_accred-name">English USA (AAIEP)</h4>
                       <p class="accred_accred-desc">Member of English USA, the trade association for English language programs in the United States.</p>
                     </div>
                     <div class="accred_accred-card is-dli">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b946910903221833f074dc_adults-16-accred-dli.svg" loading="lazy" alt="SEVIS Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/sevis.png" loading="lazy" alt="S.E.V.I.S - Student and Exchange Visitor Information System Logo">
                       </div>
                       <h4 class="accred_accred-name">SEVIS</h4>
                       <p class="accred_accred-desc"><strong>Authorized under federal law via SEVIS to issue I-20 forms for F-1 student visas.</strong></p>
                     </div>
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b9468f8ee819d19659264e_adults-16-accred-alto.avif" loading="lazy" alt="ALTO Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/alto.png" loading="lazy" alt="ALTO Logo">
                       </div>
                       <h4 class="accred_accred-name">ALTO</h4>
                       <p class="accred_accred-desc">Recognized by ALTO, the Association of Language Travel Organizations.</p>
                     </div>
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b94692138f4ff76682697c_adults-16-accred-eqa.avif" loading="lazy" alt="TOEFL ITP Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/toefl-itp.png" loading="lazy" alt="TOEFL ITP Logo">
                       </div>
                       <h4 class="accred_accred-name">TOEFL ITP</h4>
                       <p class="accred_accred-desc">Authorized TOEFL ITP testing center.</p>
                     </div>
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b94690bee0f193ff96b32b_adults-16-accred-csn.avif" loading="lazy" alt="CSN Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/csn.png" loading="lazy" alt="CSN Logo">
                       </div>
                       <h4 class="accred_accred-name">CSN</h4>
                       <p class="accred_accred-desc">Approved by CSN, the Swedish Board of Student Finance — Swedish students can use CSN study funding for their CEL course.</p>
                     </div>
                     <div class="accred_accred-card">
                       <div class="accred_accred-logo">
-                        <!-- TODO: replace with SD asset -->
-                        <img class="accred_accred-logo-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69b9468f8ee819d19659264e_adults-16-accred-alto.avif" loading="lazy" alt="ST Star Awards Logo">
+                        <img class="accred_accred-logo-img" src="../../assets/accreditations/st-star.png" loading="lazy" alt="ST Star Awards Winner 2024 Logo">
                       </div>
                       <h4 class="accred_accred-name">ST Star Awards</h4>
                       <p class="accred_accred-desc">2024 Winner ST Star Language School North America; Finalist in 2023 and 2025.</p>
@@ -1479,15 +1557,92 @@
 
             <!-- ==================== PLANNING YOUR STAY (§16 · #budget) ==================== -->
             <section class="section_page section_budget is-consecutive" id="budget">
-              <h2 class="section-tagline">Planning</h2>
+              <h2 class="section-tagline">Visa</h2>
               <h3 class="section-title">Plan Your San Diego Study Budget &amp; Visa</h3>
-              <p class="body-intro text-size-medium">Courses from US$300/week, accommodation from US$270/week. See the full cost breakdown for a detailed weekly and monthly estimate. <a class="text-link" href="/san-diego-ca/cost-of-studying-english">See the full cost breakdown</a>.</p>
-              <div class="budget_divider-img">
-                <!-- TODO: replace with SD asset -->
-                <img class="budget_divider-img_el" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f9dc82e465d1b097a86d16_adults-16-budget-classroom.avif" loading="lazy" alt="Adult students in a classroom lesson at CEL San Diego">
+              <!-- Interactive planner (plan_* in landing.css · driven by the SHARED calculator engine,
+                   shared/calculator.js + pages/san-diego/calculator-sandiego.js — the markup below is
+                   bound by data-calc-* hooks, not by class names, so the same engine also drives the
+                   §4 cost calculator on /san-diego-ca/cost-of-studying-english):
+                   ONE flat cream sheet styled after booking/widget.css — radio tiles, uppercase
+                   field labels, indigo/orange as accents only. 1 col small screens, 2 cols ≥992px.
+                   Weeks slider + lessons/week + housing drive the ledger and visa verdict.
+                   Under 24 lessons/wk → ESTA (max 90 days ≈ 12 weeks, tick on the slider) ·
+                   24+ → F-1/I-20 · part-time past 12 weeks → cap state with one-click fixes.
+                   Starting prices only: courses US$300/wk, CEL housing US$270/wk. -->
+              <div class="plan_sheet" id="plan-tool">
+                <div class="plan_col is-controls">
+                  <p class="plan_col-label">Your plan</p>
+                  <div class="plan_field">
+                    <div class="plan_field-head">
+                      <label class="plan_field-key" for="plan-weeks">How long will you study?</label>
+                    </div>
+                    <div class="plan_slider">
+                      <p class="plan_weeks" aria-hidden="true"><span data-calc-out="weeks">12</span><span class="plan_weeks-unit" data-calc-out="weeksUnit">weeks</span></p>
+                      <input class="plan_range" type="range" id="plan-weeks" data-calc-range="weeks" data-calc-fill=".plan_slider" min="1" max="52" step="1" value="12" aria-valuetext="12 weeks">
+                      <div class="plan_tick" aria-hidden="true"><span class="plan_tick-label">ESTA limit</span></div>
+                    </div>
+                    <div class="plan_scale" aria-hidden="true"><span>1 week</span><span>52 weeks</span></div>
+                  </div>
+                  <div class="plan_fields">
+                  <!-- Selects, not tiles (client, 3 Aug — same call as the §4 calculator): the DS
+                       form field from the live /contact-cel form. Compact at every width, and the
+                       one shared vocabulary across both calculators. -->
+                  <div class="plan_field">
+                    <label class="plan_field-key" for="plan-pace">Lessons per week</label>
+                    <div class="plan_control">
+                      <select class="plan_select" id="plan-pace" data-calc-select="pace">
+                        <option value="full" selected>24 or more &mdash; full-time</option>
+                        <option value="part">Fewer than 24 &mdash; part-time</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="plan_field">
+                    <label class="plan_field-key" for="plan-home">Housing</label>
+                    <div class="plan_control">
+                      <select class="plan_select" id="plan-home" data-calc-select="home">
+                        <option value="cel" selected>CEL Apartments</option>
+                        <option value="own">I&rsquo;ll arrange my own</option>
+                      </select>
+                    </div>
+                  </div>
+                  </div>
+                </div>
+                <div class="plan_col is-result">
+                  <p class="plan_col-label">Your estimate</p>
+                  <div class="plan_line">
+                    <p class="plan_line-key">Tuition<span class="plan_line-sub" data-calc-out="tuitionMath">12 weeks × from US$300</span></p>
+                    <p class="plan_line-val"><span class="plan_val-cur">US$</span><span data-calc-out="tuition" data-calc-tween>3,600</span></p>
+                  </div>
+                  <div class="plan_line" data-calc-row="housing" data-calc-off="is-off">
+                    <p class="plan_line-key">Housing<span class="plan_line-sub" data-calc-out="housingMath">12 weeks × from US$270</span></p>
+                    <p class="plan_line-val"><span class="plan_val-cur">US$</span><span data-calc-out="housing" data-calc-tween>3,240</span></p>
+                  </div>
+                  <div class="plan_line is-total">
+                    <p class="plan_line-key">Estimated total<span class="plan_line-sub">starting price for your plan</span></p>
+                    <p class="plan_total-val"><span class="plan_total-from">from</span><span class="plan_val-cur">US$</span><span data-calc-out="total" data-calc-tween>6,840</span></p>
+                  </div>
+                  <div class="plan_visa">
+                    <div class="plan_visa-head">
+                      <p class="plan_group-label">Visa Check</p>
+                      <p class="plan_chip is-f1" data-calc-chip="visa" aria-live="polite">F-1 Student Visa</p>
+                    </div>
+                    <div class="plan_visa-state is-on" data-calc-state="visa" data-calc-state-value="f1">
+                      <p class="plan_visa-verdict">24+ lessons a week is full-time study — you'll need an F-1 student visa, whatever your course length.<span class="plan_visa-path">Enroll → CEL issues your I-20 through SEVIS → pay the SEVIS fee &amp; book your embassy interview → enter the US up to 30 days before your course.</span></p>
+                    </div>
+                    <div class="plan_visa-state" data-calc-state="visa" data-calc-state-value="esta">
+                      <p class="plan_visa-verdict">Part-time for 12 weeks or less needs no student visa — ESTA / visa-waiver entry is typically sufficient for most nationalities.<span class="plan_visa-path">Apply for ESTA online before you fly — your stay fits inside the 90-day visa-waiver window.</span></p>
+                    </div>
+                    <div class="plan_visa-state" data-calc-state="visa" data-calc-state-value="cap">
+                      <p class="plan_visa-verdict">ESTA / visa-waiver stays cap at 90 days — about 12 weeks, so <span data-calc-out="capWeeks">13</span> part-time weeks won't fit.<span class="plan_visa-path">Either <button type="button" class="plan_fix" data-calc-set="pace:full">switch to full-time</button> on an F-1 visa (any length), or <button type="button" class="plan_fix" data-calc-set="weeks:12">set 12 weeks</button> to stay within the window.</span></p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h4 class="budget_subhead">Visa</h4>
-              <p class="body-intro text-size-medium">24 or more lessons per week (18 clock hours — the federal full-time threshold) requires an F-1 student visa, with an I-20 issued through SEVIS. Fewer than 24 lessons per week, ESTA / visa-waiver entry is typically sufficient — confirm with your advisor based on your nationality and course length. <a class="text-link" href="/san-diego-ca/f1-visa-english-school">Full visa guide</a>.</p>
+              <div class="callout">
+                <div class="callout-inner">
+                  <p>Starting prices — see the <a class="text-link" href="/san-diego-ca/cost-of-studying-english">full cost breakdown</a> or <a class="text-link" href="/contact-cel">get an exact quote</a>. 24 lessons per week is 18 clock hours, the federal full-time threshold — confirm with your advisor. <a class="text-link" href="/san-diego-ca/f1-visa-english-school">Full visa guide</a>.</p>
+                </div>
+              </div>
               <div class="callout is-orange">
                 <div class="callout-inner">
                   <p>Tell us your goals, dates, and budget — we'll map out the right combination of tuition, accommodation, and start date for you. <a class="text-link" href="/contact-cel">Get a personalized study plan</a></p>
@@ -1580,80 +1735,111 @@
               </div>
             </section>
 
-            <!-- ==================== BLOG CLUSTER (§19) ==================== -->
-            <section class="section_blog" id="blog">
-              <div class="blog-bento_grid">
-                <a class="blog-bento_hero" href="/san-diego-ca/cost-of-studying-english">
-                  <div class="blog-bento_hero-media">
+            <!-- ==================== RELATED GUIDES (§19 · nextread_*) ==================== -->
+            <section class="section_page is-consecutive" id="blog">
+              <h2 class="section-tagline">Keep Exploring</h2>
+              <h3 class="section-title">Related Guides for San Diego</h3>
+              <div class="nextread_grid">
+                <a class="nextread_card is-feature" href="/san-diego-ca/cost-of-studying-english">
+                  <div class="nextread_media">
                     <!-- TODO: replace with SD asset -->
-                    <img class="blog-bento_hero-img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f9dc82e465d1b097a86d16_adults-16-budget-classroom.avif" loading="lazy" alt="Planning the cost of studying English in San Diego">
+                    <img class="nextread_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f9dc82e465d1b097a86d16_adults-16-budget-classroom.avif" loading="lazy" alt="Planning the cost of studying English in San Diego">
                   </div>
-                  <div class="blog-bento_hero-overlay"></div>
-                  <div class="blog-bento_hero-body">
-                    <p class="blog-bento_hero-cat">Plan Your Stay</p>
-                    <h2 class="blog-bento_hero-title">Cost of Studying English in San Diego</h2>
-                    <p class="blog-bento_hero-excerpt">Budget planning: tuition, accommodation, and living costs, broken down by week and month.</p>
-                    <div class="blog-bento_hero-cta-wrap">
-                      <div class="cta-pill-cream">Continue reading</div>
-                    </div>
+                  <div class="nextread_body">
+                    <p class="nextread_cat">Plan Your Stay</p>
+                    <h3 class="nextread_title">Cost of Studying English in San Diego</h3>
+                    <p class="nextread_excerpt">Budget planning: tuition, accommodation, and living costs, broken down by week and month.</p>
+                    <span class="cta-pill-indigo">View Guide</span>
                   </div>
                 </a>
-                <div class="blog-bento_list">
-                  <a class="blog-bento_item" href="/san-diego-ca/f1-visa-english-school">
-                    <p class="blog-bento_item-cat">Visas</p>
-                    <h3 class="blog-bento_item-title">F-1 Visa Guide</h3>
-                  </a>
-                  <a class="blog-bento_item" href="/san-diego-ca/pacific-beach">
-                    <p class="blog-bento_item-cat">Neighborhood</p>
-                    <h3 class="blog-bento_item-title">Pacific Beach vs Downtown</h3>
-                  </a>
-                  <a class="blog-bento_item is-last-article" href="/los-angeles-ca/language-courses">
-                    <p class="blog-bento_item-cat">Compare Cities</p>
-                    <h3 class="blog-bento_item-title">San Diego vs Los Angeles</h3>
-                  </a>
-                  <div class="blog-bento_cta-row">
-                    <a class="cta-pill-indigo" href="/blog">See all guides</a>
-                  </div>
-                </div>
+                <a class="nextread_card" href="/san-diego-ca/f1-visa-english-school">
+                  <p class="nextread_cat">Visas</p>
+                  <h3 class="nextread_title">F-1 Visa Guide</h3>
+                  <p class="nextread_excerpt">What the F-1 student visa involves, step by step.</p>
+                  <span class="cta-pill-indigo">View Guide</span>
+                </a>
+                <a class="nextread_card" href="/san-diego-ca/pacific-beach">
+                  <p class="nextread_cat">Neighborhood</p>
+                  <h3 class="nextread_title">Pacific Beach vs Downtown</h3>
+                  <p class="nextread_excerpt">Which San Diego neighborhood suits your stay — beach or city.</p>
+                  <span class="cta-pill-indigo">View Guide</span>
+                </a>
+                <a class="nextread_card is-wide" href="/los-angeles-ca/language-courses">
+                  <p class="nextread_cat">Compare Cities</p>
+                  <h3 class="nextread_title">San Diego vs Los Angeles</h3>
+                  <p class="nextread_excerpt">How the two California campuses compare for study and life.</p>
+                  <span class="cta-pill-indigo">View Guide</span>
+                </a>
               </div>
             </section>
 
-            <!-- ==================== MORE OPTIONS (§18 · #support-options) ==================== -->
-            <section class="section_page section_support is-consecutive" id="support-options">
-              <h2 class="section-tagline">More Options</h2>
-              <h3 class="section-title">Additional Support Options</h3>
-    <div class="photo-cards">
-      <div class="photo-card">
-        <div class="photo-card_visual">
-          <!-- TODO: replace with SD asset -->
-          <img class="photo-card_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e44b20d0275584e6428_adults-16-showcase-coal-harbour.avif" loading="lazy" alt="CEL Vancouver campus">
-        </div>
-        <div class="photo-card_info">
-          <h4 class="photo-card_title">Vancouver</h4>
-          <p class="photo-card_desc">Small classes in the heart of a bilingual Canadian city. Explore CEL Vancouver <a class="text-link" href="/vancouver">Explore CEL Vancouver</a></p>
-        </div>
-      </div>
-      <div class="photo-card">
-        <div class="photo-card_visual">
-          <!-- TODO: replace with SD asset -->
-          <img class="photo-card_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e496e2aa01fdae05906_adults-16-showcase-market.avif" loading="lazy" alt="CEL Los Angeles campus">
-        </div>
-        <div class="photo-card_info">
-          <h4 class="photo-card_title">Los Angeles</h4>
-          <p class="photo-card_desc">English in the entertainment capital of the world. Explore CEL Los Angeles <a class="text-link" href="/los-angeles-ca/language-courses">Explore CEL Los Angeles</a></p>
-        </div>
-      </div>
-    </div>
-  </section>
+            <!-- ==================== MORE OPTIONS (§18 · #support-options · citylist_*) ==================== -->
+            <section class="section_citylist" id="support-options">
+              <div class="citylist_rows">
+                <a class="citylist_row" href="/vancouver">
+                  <!-- TODO: replace with SD asset -->
+                  <img class="citylist_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e44b20d0275584e6428_adults-16-showcase-coal-harbour.avif" loading="lazy" alt="CEL Vancouver campus">
+                  <div class="citylist_veil"></div>
+                  <div class="citylist_body">
+                    <div class="citylist_text">
+                      <p class="citylist_meta">Canada</p>
+                      <p class="citylist_name">Vancouver</p>
+                    </div>
+                    <div class="citylist_actions">
+                      <span class="cta-pill-cream">View Campus</span>
+                      <img class="citylist_logo-mark" src="../../assets/logos/cel-lettermark-onecolor-light.svg" loading="lazy" alt="">
+                    </div>
+                  </div>
+                </a>
+                <a class="citylist_row" href="/los-angeles-ca/language-courses">
+                  <!-- TODO: replace with SD asset -->
+                  <img class="citylist_img" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f11e496e2aa01fdae05906_adults-16-showcase-market.avif" loading="lazy" alt="CEL Los Angeles campus">
+                  <div class="citylist_veil"></div>
+                  <div class="citylist_body">
+                    <div class="citylist_text">
+                      <p class="citylist_meta">California</p>
+                      <p class="citylist_name">Los Angeles</p>
+                    </div>
+                    <div class="citylist_actions">
+                      <span class="cta-pill-cream">View Campus</span>
+                      <img class="citylist_logo-mark" src="../../assets/logos/cel-lettermark-onecolor-light.svg" loading="lazy" alt="">
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </section>
 
-            <!-- ==================== FINAL CTA (§19) ==================== -->
+            <!-- ==================== FINAL CTA (§19) ====================
+                 SAME STRUCTURE AS THE COSTS PAGE §11 (client, 3 Aug): .inline-cta-a8a1 is a
+                 `1fr auto` grid, so the copy goes in .inline-cta-copy (column 1) and the buttons
+                 in .inline-cta-actions (column 2) — the reference's unclassed <div> is not cloned.
+                 The trust line and the WhatsApp secondary come across too; WhatsApp is CEL's line
+                 +1 619 243 4426, never the school's telephone number. B5 (.inline-cta-copy /
+                 .inline-cta-trust) is ONE style object shared with the costs page — the rule sits
+                 in both preview stylesheets, but on deploy it is bound once, not forked. -->
             <section class="section_inline-cta" id="final-cta">
               <div class="inline-cta-a8a1">
-                <h3 class="inline-cta-h2">Let's Plan Your English Experience in San Diego</h3>
-                <p class="inline-cta-body">If you're ready to improve your English three blocks from the ocean in Pacific Beach, our advisors are here to guide you step by step.</p>
+<div class="inline-cta_trust">
+<span class="inline-cta_trust-disc"><img class="inline-cta_trust-logo" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd2e7d6daef797a73fd2e5_adults-16-icon-google-logo.svg" loading="lazy" alt="Google"></span>
+<p class="inline-cta_trust-score">4.8</p>
+<!-- 4.8 of 5 as ONE clipped overlay, not five part-filled glyphs: the same star asset laid down
+     twice, the top copy clipped to 96%, so the fifth star is 80% full to the pixel. --stars-fill is
+     the only number to edit. Same markup as costs.html §11. -->
+<span class="cta_stars" role="img" aria-label="4.8 out of 5 stars">
+<span class="cta_stars-row is-empty"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+<span class="cta_stars-row is-full"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+</span>
+<div class="inline-cta_trust-rule"></div>
+<p class="inline-cta-trust">195 reviews</p>
+</div>
+                <div class="inline-cta-copy">
+                  <h3 class="inline-cta-h2">Let's Plan Your English Experience in San Diego</h3>
+                  <p class="inline-cta-body">If you're ready to improve your English three blocks from the ocean in Pacific Beach, our advisors are here to guide you step by step.</p>
+                  
+                </div>
                 <div class="inline-cta-actions">
                   <a class="inline-cta-btn is-primary" href="/contact-cel">Get a Quote</a>
-                  <a class="inline-cta-btn is-secondary" href="/contact-cel">Contact Us</a>
+                  <a class="inline-cta-btn is-whatsapp" href="https://wa.me/16192434426" target="_blank" rel="noopener"><img class="inline-cta-btn-icon" src="../../assets/icons/whatsapp.svg" width="18" height="18" alt="">WhatsApp</a>
                 </div>
               </div>
             </section>
@@ -1666,59 +1852,104 @@
   </div>
 
 <!-- ===== FOOTER (site template) — components/footer.html ===== -->
-<footer data-wf--footer--variant="base" class="section_footer"><div class="padding-global"><div class="container"><div class="footer_logo-row"><a href="/" class="footer_logo-link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" loading="lazy" alt="College of English Language" class="footer_logo-mark"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdb169f37f0fff7fd21_footer-logo-wordmark.svg" loading="lazy" alt="College of English Language" class="footer_logo-wordmark"></a></div><div class="footer_row"><p class="footer_label">Schools</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">CEL San Diego</p><p class="footer_address">945 Hornblend Street, Suite G,<!--$--><br><!--/$-->2nd floor, San Diego, CA 92109 USA</p><div class="footer_list"><a href="tel:+18584126888" class="footer_list-link">+1 858 412 6888</a><a rel="noopener" href="https://maps.app.goo.gl/LioLhFM1asPBk9ge8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Los Angeles</p><p class="footer_address">401 Wilshire Boulevard #200,<!--$--><br><!--/$-->Santa Monica, CA 90401 USA</p><div class="footer_list"><a href="tel:+13109333419" class="footer_list-link">+1 310 933 3419</a><a rel="noopener" href="https://maps.app.goo.gl/65CBJckYFSMR7bRk8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Vancouver</p><p class="footer_address">1190 Melville St, #300,<!--$--><br><!--/$-->Vancouver, BC V6E 3W1, Canada</p><div class="footer_list"><a href="tel:+16046850291" class="footer_list-link">+1 604 685 0291</a><a rel="noopener" href="https://maps.app.goo.gl/NQ3ubGTWy4E5NJE8A" target="_blank" class="footer_directions">Get Directions</a></div></div></div></div><div class="footer_row"><p class="footer_label">Contact</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">WhatsApp</p><div class="footer_list"><a whatsap="url" href="https://api.whatsapp.com/send?phone=16192434426" target="_blank" rel="noopener" whatsapp="number" class="footer_list-link">+1 619 243 4426</a></div></div><div class="footer_col"><p class="footer_group-label">Email</p><div class="footer_list"><a href="mailto:info@englishcollege.com" class="footer_list-link">info@englishcollege.com</a></div></div><div class="footer_col"><p class="footer_group-label">Phone</p><div class="footer_list"><a href="tel:+16192347466" class="footer_list-link">+1 619 234 7466</a></div></div></div></div><div class="footer_row"><div class="footer_title"><p class="footer_label">Courses</p></div><div class="footer_content"><div class="footer_col"><p class="footer_group-label">General</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/general-english" class="footer_list-link">General English</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-academic-skills" class="footer_list-link">English + Academic Skills</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/global-pathway-preparation" class="footer_list-link">Global Pathway</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-toefl-exam-preparation" class="footer_list-link">English Plus TOEFL Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/private-lessons" class="footer_list-link">Private lessons</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">English Plus</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/english-career-development" class="footer_list-link">English Plus Career Development</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-cambridge-prep" class="footer_list-link">English Plus Cambridge Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-experience" class="footer_list-link">English Plus Experience</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-volunteering" class="footer_list-link">English Plus Volunteering</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-surfing" class="footer_list-link">English Plus Surfing</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">Pathway</p><div class="footer_list"><a href="/pathway-program-usa" class="footer_list-link">Pathway Program</a><a href="/pathway/certificate-programs" class="footer_list-link">Certificate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Undergraduate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Graduate Programs</a><a href="/pathway/us-education-system" class="footer_list-link">US Education System</a><a href="/pathway/semester-abroad" class="footer_list-link">Semester Abroad</a></div></div></div></div><div class="footer_row"><p class="footer_label">Housing</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">San Diego</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-san-diego" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/premium-homestay-san-diego" class="footer_list-link">Premium Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-standard-san-diego" class="footer_list-link">CEL Shared Apartment Standard</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-premium-san-diego" class="footer_list-link">CEL Shared Apartment Premium</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-superior-pacific-beach-san-diego" class="footer_list-link">CEL Shared Apartment Superior Pacific Beach</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Los Angeles</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-los-angeles" class="footer_list-link">Homestay</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Vancouver</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-vancouver" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-budget-vancouver" class="footer_list-link">Student House Budget</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-vancouver" class="footer_list-link">Student House</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-silverstone-vancouver" class="footer_list-link">Shared Apartment Silverstone</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-downtown-vancouver" class="footer_list-link">Shared Apartment Downtown</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/apartment-economy-apt-living-vancouver" class="footer_list-link">Apartment Economy APT Living</a></div></div></div></div></div></div><div class="footer_row"><p class="footer_label">Vancouver</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Study in Vancouver</p><div class="footer_list"><a href="/vancouver" aria-current="page" class="footer_list-link w--current">Vancouver Language School</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/vancouver/student-services" class="footer_list-link">Student Services</a><a href="/vancouver/policies" class="footer_list-link">School Policies</a></div></div><div class="footer_col"><p class="footer_group-label">Useful Guides</p><div class="footer_list"><a href="/vancouver/cost-of-studying-english" class="footer_list-link">Cost of Studying English</a><a href="/vancouver/how-long-to-learn-english" class="footer_list-link">How Long to Learn English</a><a href="/vancouver/vs-toronto" class="footer_list-link">Vancouver vs Toronto</a></div></div><div class="footer_col"></div></div></div><div class="footer_row"><p class="footer_label">Explore</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Destinations</p><div class="footer_list"><a href="/learn-english-usa" class="footer_list-link">Learn English in the USA</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/san-diego-ca/language-school" class="footer_list-link">San Diego Language School</a><a href="/los-angeles-ca/language-courses" class="footer_list-link">Los Angeles Language School</a></div></div><div class="footer_col"><p class="footer_group-label">Study at CEL</p><div class="footer_list"><a href="/courses" class="footer_list-link">All Courses</a><a href="/housing" class="footer_list-link">All Housing</a><a href="/summer-camp-san-diego" class="footer_list-link">Summer Camp </a><a href="/booking" class="footer_list-link">Apply Now</a></div></div><div class="footer_col"><p class="footer_group-label">About CEL</p><div class="footer_list"><a href="/voices" class="footer_list-link">Student Voices</a><a href="/blog" class="footer_list-link">Blog</a><a href="/faq" class="footer_list-link">FAQs</a><a href="/contact-cel" class="footer_list-link">Contact Us</a></div></div></div></div><div class="footer_legal"><div class="footer_legal-left"><p class="footer_copyright">© 2026 <a href="/" class="footer_copyright-link">College of English Language</a>. All rights reserved.</p><div class="w-dyn-list"><div role="list" class="footer_legal-links w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/page/privacy-policy" class="footer_list-link">Privacy Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cookie-policy" class="footer_list-link">Cookie Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/terms-conditions" class="footer_list-link">Terms &amp; Conditions</a></div><div role="listitem" class="w-dyn-item"><a href="/page/bppe" class="footer_list-link">BPPE Compliance Statement</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cel-affiliate-program" class="footer_list-link">Affiliate Program</a></div></div></div></div><div class="footer_social"><a aria-label="Instagram" href="https://www.instagram.com/cel_usa/" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd7762899cb7e32485e_footer-icon-instagram.svg" alt="Instagram" width="20" height="20"></imgraw><!--/$--></a><a aria-label="TikTok" href="https://www.tiktok.com/@cel_usa" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd8ba967271e3015dd1_footer-icon-tiktok.svg" alt="TikTok" width="18" height="20"></imgraw><!--/$--></a><a aria-label="YouTube" href="https://www.youtube.com/@collegeofenglishlanguage" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><!--$--><imgraw data-raw-src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdae04fb1af8c919b6a_footer-icon-youtube.svg" alt="YouTube" width="22" height="16"></imgraw><!--/$--></a></div></div></div></div></footer>
+<footer data-wf--footer--variant="base" class="section_footer"><div class="padding-global"><div class="container"><div class="footer_logo-row"><a href="/" class="footer_logo-link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" loading="lazy" alt="College of English Language" class="footer_logo-mark"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdb169f37f0fff7fd21_footer-logo-wordmark.svg" loading="lazy" alt="College of English Language" class="footer_logo-wordmark"></a></div><div class="footer_row"><p class="footer_label">Schools</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">CEL San Diego</p><p class="footer_address">945 Hornblend Street, Suite G,<br>2nd floor, San Diego, CA 92109 USA</p><div class="footer_list"><a href="tel:+18584126888" class="footer_list-link">+1 858 412 6888</a><a rel="noopener" href="https://maps.app.goo.gl/LioLhFM1asPBk9ge8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Los Angeles</p><p class="footer_address">401 Wilshire Boulevard #200,<br>Santa Monica, CA 90401 USA</p><div class="footer_list"><a href="tel:+13109333419" class="footer_list-link">+1 310 933 3419</a><a rel="noopener" href="https://maps.app.goo.gl/65CBJckYFSMR7bRk8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Vancouver</p><p class="footer_address">1190 Melville St, #300,<br>Vancouver, BC V6E 3W1, Canada</p><div class="footer_list"><a href="tel:+16046850291" class="footer_list-link">+1 604 685 0291</a><a rel="noopener" href="https://maps.app.goo.gl/NQ3ubGTWy4E5NJE8A" target="_blank" class="footer_directions">Get Directions</a></div></div></div></div><div class="footer_row"><p class="footer_label">Contact</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">WhatsApp</p><div class="footer_list"><a whatsap="url" href="https://api.whatsapp.com/send?phone=16192434426" target="_blank" rel="noopener" whatsapp="number" class="footer_list-link">+1 619 243 4426</a></div></div><div class="footer_col"><p class="footer_group-label">Email</p><div class="footer_list"><a href="mailto:info@englishcollege.com" class="footer_list-link">info@englishcollege.com</a></div></div><div class="footer_col"><p class="footer_group-label">Phone</p><div class="footer_list"><a href="tel:+16192347466" class="footer_list-link">+1 619 234 7466</a></div></div></div></div><div class="footer_row"><div class="footer_title"><p class="footer_label">Courses</p></div><div class="footer_content"><div class="footer_col"><p class="footer_group-label">General</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/general-english" class="footer_list-link">General English</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-academic-skills" class="footer_list-link">English + Academic Skills</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/global-pathway-preparation" class="footer_list-link">Global Pathway</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-toefl-exam-preparation" class="footer_list-link">English Plus TOEFL Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/private-lessons" class="footer_list-link">Private lessons</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">English Plus</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/english-career-development" class="footer_list-link">English Plus Career Development</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-cambridge-prep" class="footer_list-link">English Plus Cambridge Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-experience" class="footer_list-link">English Plus Experience</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-volunteering" class="footer_list-link">English Plus Volunteering</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-surfing" class="footer_list-link">English Plus Surfing</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">Pathway</p><div class="footer_list"><a href="/pathway-program-usa" class="footer_list-link">Pathway Program</a><a href="/pathway/certificate-programs" class="footer_list-link">Certificate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Undergraduate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Graduate Programs</a><a href="/pathway/us-education-system" class="footer_list-link">US Education System</a><a href="/pathway/semester-abroad" class="footer_list-link">Semester Abroad</a></div></div></div></div><div class="footer_row"><p class="footer_label">Housing</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">San Diego</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-san-diego" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/premium-homestay-san-diego" class="footer_list-link">Premium Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-standard-san-diego" class="footer_list-link">CEL Shared Apartment Standard</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-premium-san-diego" class="footer_list-link">CEL Shared Apartment Premium</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-superior-pacific-beach-san-diego" class="footer_list-link">CEL Shared Apartment Superior Pacific Beach</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Los Angeles</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-los-angeles" class="footer_list-link">Homestay</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Vancouver</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-vancouver" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-budget-vancouver" class="footer_list-link">Student House Budget</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-vancouver" class="footer_list-link">Student House</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-silverstone-vancouver" class="footer_list-link">Shared Apartment Silverstone</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-downtown-vancouver" class="footer_list-link">Shared Apartment Downtown</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/apartment-economy-apt-living-vancouver" class="footer_list-link">Apartment Economy APT Living</a></div></div></div></div></div></div><div class="footer_row"><p class="footer_label">Vancouver</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Study in Vancouver</p><div class="footer_list"><a href="/vancouver" class="footer_list-link">Vancouver Language School</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/vancouver/student-services" class="footer_list-link">Student Services</a><a href="/vancouver/policies" class="footer_list-link">School Policies</a></div></div><div class="footer_col"><p class="footer_group-label">Useful Guides</p><div class="footer_list"><a href="/vancouver/cost-of-studying-english" class="footer_list-link">Cost of Studying English</a><a href="/vancouver/how-long-to-learn-english" class="footer_list-link">How Long to Learn English</a><a href="/vancouver/vs-toronto" class="footer_list-link">Vancouver vs Toronto</a></div></div><div class="footer_col"></div></div></div><div class="footer_row"><p class="footer_label">Explore</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Destinations</p><div class="footer_list"><a href="/learn-english-usa" class="footer_list-link">Learn English in the USA</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/san-diego-ca/language-school" class="footer_list-link">San Diego Language School</a><a href="/los-angeles-ca/language-courses" class="footer_list-link">Los Angeles Language School</a></div></div><div class="footer_col"><p class="footer_group-label">Study at CEL</p><div class="footer_list"><a href="/courses" class="footer_list-link">All Courses</a><a href="/housing" class="footer_list-link">All Housing</a><a href="/summer-camp-san-diego" class="footer_list-link">Summer Camp </a><a href="/booking" class="footer_list-link">Apply Now</a></div></div><div class="footer_col"><p class="footer_group-label">About CEL</p><div class="footer_list"><a href="/voices" class="footer_list-link">Student Voices</a><a href="/blog" class="footer_list-link">Blog</a><a href="/faq" class="footer_list-link">FAQs</a><a href="/contact-cel" class="footer_list-link">Contact Us</a></div></div></div></div><div class="footer_legal"><div class="footer_legal-left"><p class="footer_copyright">© 2026 <a href="/" class="footer_copyright-link">College of English Language</a>. All rights reserved.</p><div class="w-dyn-list"><div role="list" class="footer_legal-links w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/page/privacy-policy" class="footer_list-link">Privacy Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cookie-policy" class="footer_list-link">Cookie Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/terms-conditions" class="footer_list-link">Terms &amp; Conditions</a></div><div role="listitem" class="w-dyn-item"><a href="/page/bppe" class="footer_list-link">BPPE Compliance Statement</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cel-affiliate-program" class="footer_list-link">Affiliate Program</a></div></div></div></div><div class="footer_social"><a aria-label="Instagram" href="https://www.instagram.com/cel_usa/" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd7762899cb7e32485e_footer-icon-instagram.svg" alt="Instagram" width="20" height="20"></a><a aria-label="TikTok" href="https://www.tiktok.com/@cel_usa" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd8ba967271e3015dd1_footer-icon-tiktok.svg" alt="TikTok" width="18" height="20"></a><a aria-label="YouTube" href="https://www.youtube.com/@collegeofenglishlanguage" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdae04fb1af8c919b6a_footer-icon-youtube.svg" alt="YouTube" width="22" height="16"></a></div></div></div></div></footer>
 </div>
 
 <!-- Swiper: use the vendored build the live site injects, not a public CDN -->
 <script src="../../_live/swiper-bundle.min.js"></script>
-<!-- utils.js drives the TOC scroll-spy (adds .is-active), the FAQ accordion and the
-     video facade. Without it the TOC has no current state and the FAQ will not open. -->
-<script src="../../shared/utils.js"></script>
+<!-- The page bundle is vancouver/scripts.js — it owns the TOC (scroll-spy WITH navbar-height
+     offset + mobile slide-out), the sliders, the FAQ accordion and the video facade.
+     Do NOT also load shared/utils.js here: it is a non-deferred reference build whose
+     auto-init claims the __celTocDone guard first, which makes this bundle's TOC bail out
+     and leaves the crude fallback (no navbar offset — targets land under the sticky nav). -->
 <script src="../vancouver/scripts.js" defer></script>
+<!-- §16 planner — three inputs → live "from" estimate + visa verdict (plan_* in landing.css).
+     MOVED OUT OF THE PAGE (handoff review): the mechanics now come from the shared calculator
+     engine, and only this page's rates and copy live in its config. Same numbers, same markup
+     classes, same behaviour — including the tweened figures, the 90-day cap state and its two
+     one-click fixes (data-calc-set). Engine first, config second. -->
+<script src="../../shared/calculator.js" defer></script>
+<script src="calculator-sandiego.js" defer></script>
 <!-- §4 fit + §9 timeline scroll reveal — toggles .is-inview both directions (transform/opacity only) -->
 <script>
 (function(){
-  var rows = document.querySelectorAll('#typical-day .timeline_row, #fit .timeline_row, #book-with-confidence .timeline_row');
+  var rows = document.querySelectorAll('#typical-day .timeline_row, #fit .timeline_row, #book-with-confidence .timeline_row, #budget .plan_col');
   if (!rows.length || !('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  /* Opt into the hidden start-states only once we know we can undo them (see landing.css). */
+  document.documentElement.classList.add('has-reveal');
   var io = new IntersectionObserver(function(es){
     es.forEach(function(e){ e.target.classList.toggle('is-inview', e.isIntersecting); });
   }, { rootMargin: '0px 0px -12% 0px', threshold: 0.15 });
   rows.forEach(function(r){ io.observe(r); });
 })();
 </script>
-<!-- §6 course finder — goal buttons swap the recommended course-card -->
+<!-- §6 course finder — goal tabs swap the recommended course-card. Manual only: no
+     autoplay, so scrolling past never moves the card under the reader. -->
 <script>
 (function(){
-  var root  = document.querySelector('#courses .chooser_component');
-  var goals = document.querySelectorAll('#courses .chooser_goal');
-  var cards = document.querySelectorAll('#courses .chooser_card');
-  if (!root || !goals.length || !cards.length) return;
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var DELAY = 4200, current = 0, timer = null, paused = false;
+  var root = document.querySelector('#courses .chooser_component');
+  if (!root) return;
+  var goals = [].slice.call(root.querySelectorAll('.chooser_goal'));
+  var cards = [].slice.call(root.querySelectorAll('.chooser_card'));
+  if (!goals.length || !cards.length) return;
+  var current = 0;
 
-  function select(i){
+  function select(i, moveFocus){
     current = (i + goals.length) % goals.length;
-    var g = goals[current], course = g.getAttribute('data-course');
-    goals.forEach(function(x){ var on = x === g; x.classList.toggle('is-active', on); x.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    var course = goals[current].getAttribute('data-course');
+    goals.forEach(function(x, n){
+      var on = n === current;
+      x.classList.toggle('is-active', on);
+      x.setAttribute('aria-selected', on ? 'true' : 'false');
+      x.setAttribute('tabindex', on ? '0' : '-1');
+    });
     cards.forEach(function(c){ c.classList.toggle('is-active', c.getAttribute('data-course') === course); });
+    if (moveFocus) goals[current].focus();
   }
-  function stop(){ if (timer){ clearInterval(timer); timer = null; } }
-  function start(){ if (reduce || paused || timer) return; timer = setInterval(function(){ select(current + 1); }, DELAY); }
-  function restart(){ stop(); start(); }
 
   goals.forEach(function(g, i){
-    g.addEventListener('click', function(){ select(i); restart(); });
+    g.addEventListener('click', function(e){ e.preventDefault(); select(i); });
+    g.addEventListener('keydown', function(e){
+      var k = e.key;
+      if (k === 'ArrowDown' || k === 'ArrowRight'){ e.preventDefault(); select(current + 1, true); }
+      else if (k === 'ArrowUp' || k === 'ArrowLeft'){ e.preventDefault(); select(current - 1, true); }
+      else if (k === 'Home'){ e.preventDefault(); select(0, true); }
+      else if (k === 'End'){ e.preventDefault(); select(goals.length - 1, true); }
+    });
   });
-  // Pause while the user is engaging; resume when they leave.
-  root.addEventListener('pointerenter', function(){ paused = true; stop(); });
-  root.addEventListener('pointerleave', function(){ paused = false; start(); });
-  root.addEventListener('focusin', function(){ paused = true; stop(); });
-  root.addEventListener('focusout', function(){ paused = false; start(); });
-  document.addEventListener('visibilitychange', function(){ if (document.hidden){ stop(); } else { start(); } });
 
   select(0);
-  start();
 })();
 </script>
+<!-- FIX-BRIEF §8.1 — NAVBAR RUNTIME. Resolved, and not by adding a script tag.
+     The defect is real: without jQuery + webflow.js the pasted Navbar markup is inert (at <=991px
+     .w-nav-menu is display:none, the hamburger is unwired, and both dropdowns need .w--open, which only
+     webflow.js adds).
+     It cannot be fixed by loading a bundle here, and two attempts proved it:
+       1. assets-global.website-files.com/<site-id>/js/webflow.schunk.js — not a real asset path. 404,
+          window.Webflow stayed undefined, the navbar stayed inert, and every page gained a console error.
+       2. The real content-hashed filenames from the live snapshot
+          (_live/webflow.cb53894d.ee0df61b176939bc.js) — that file IS vendored, but it is a CODE-SPLIT
+          ENTRY: it immediately requests 14 webflow.achunk.*.js siblings that were never vendored, so it
+          throws ChunkLoadError and 14 more resource errors.
+     The correct resolution: DO NOT hand-author these tags. Webflow injects jQuery and its own bundle
+     into every published page automatically, so on the deploy target the navbar works with no tag in the
+     source — and a hand-authored tag would be a duplicate. The inertness is therefore a LOCAL PREVIEW
+     limitation only. To exercise the navbar locally, vendor the 14 webflow.achunk.*.js files alongside
+     the entry; that is a project-asset task, not a page edit.
+     jQuery IS loaded below, from the vendored copy the live snapshot itself references, because it loads
+     cleanly and several live page scripts assume it. -->
+<script src="../../shared/utils.js"></script>
+<script src="../../_live/jquery-3.5.1.min.dc5e7f18c8.js" type="text/javascript"></script>
+<!-- PUBLISHING: the unpack splash and no-JS fallback for a published artifact. Simple mark on the
+     page's own cream ground; no external references, so it renders before anything else loads. -->
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" data-bg-color="#faf3e8">
+    <rect width="240" height="160" fill="#faf3e8"></rect>
+    <rect x="72" y="50" width="96" height="60" rx="14" fill="#5d60ee"></rect>
+    <text x="120" y="90" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="600" fill="#faf3e8">CEL</text>
+    <text x="120" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#9a8f80">SAN DIEGO</text>
+  </svg>
+</template>
 </body>
 </html>

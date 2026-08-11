@@ -41,6 +41,12 @@ function initTocCore(options) {
       l.classList.toggle('is-active', isActive);
       var dot = l.querySelector('.stoc_dot');
       if (dot) dot.classList.toggle('is-active', isActive);
+      /* Also on .stoc_text itself. The deployed bundle already does this (TOC-RESPONSIVE-SPEC
+         §8); this copy did not, which is why `.stoc_text.is-active` was inert and the only
+         thing painting the active row's text was a descendant selector in landing.css. Flat
+         combo instead of a descendant rule = one Webflow style object. */
+      var txt = l.querySelector('.stoc_text');
+      if (txt) txt.classList.toggle('is-active', isActive);
     });
     if (stocLabel) {
       var active = [].slice.call(tocLinks).find(function(l) { return l.dataset.target === id; });
@@ -83,10 +89,16 @@ function initTocMobile(tocCore) {
 
   var stocComponent = document.querySelector('.stoc_component');
   var stocLabel = document.querySelector('.stoc_label');
+  var stocNav = document.querySelector('.stoc_nav');
   if (!stocComponent || !stocLabel) return;
 
   var backdrop = document.createElement('div');
   backdrop.className = 'stoc_backdrop';
+  /* Geometry set INLINE, not by a stylesheet: this element is created here at runtime and
+     never exists in the Designer, so Webflow has nothing to hang a style object on and would
+     publish no rule for it (TOC-RESPONSIVE-SPEC §10). Inline is the sanctioned route. */
+  backdrop.style.cssText = 'display:none;position:fixed;inset:0;z-index:899;' +
+    'background:rgba(55,51,44,.06);-webkit-tap-highlight-color:transparent';
   document.body.appendChild(backdrop);
 
   var isOpen = false;
@@ -95,7 +107,12 @@ function initTocMobile(tocCore) {
     isOpen = typeof open === 'boolean' ? open : !isOpen;
     stocComponent.classList.toggle('is-menu-open', isOpen);
     stocLabel.classList.toggle('is-menu-open', isOpen);
+    /* The open state has to reach .stoc_nav as a class ON .stoc_nav. `.stoc_component.is-menu-open
+       .stoc_nav` is a descendant selector and a Webflow combo can never express it, so the class
+       is flattened onto the element itself (TOC-RESPONSIVE-SPEC §10, change 1). */
+    if (stocNav) stocNav.classList.toggle('is-menu-open', isOpen);
     backdrop.classList.toggle('is-visible', isOpen);
+    backdrop.style.display = isOpen ? 'block' : 'none';
     document.body.style.overflow = isOpen ? 'hidden' : '';
   }
 
@@ -214,9 +231,18 @@ function initNavbarTransparent() {
   if (window.__celNt || window.__celNavDone) return;
   var n = document.querySelector('[data-wf--navbar--variant]');
   if (!n) return;
-  window.__celNavDone = true;
-  var hero = document.querySelector('.section_hero');
+  /* Option-review builds stack two .section_hero blocks (A and B) until the hero section is picked,
+     so the end of the hero zone is the LAST one. querySelector took the first and flipped the navbar
+     to indigo while option B's hero was still on screen. Single-hero pages are unaffected. */
+  var heroes = document.querySelectorAll('.section_hero');
+  var hero = heroes[heroes.length - 1];
   if (!hero) return;
+  /* Claim the guard only once BOTH nodes are in hand. THIS ORDERING IS THE BUG THAT MADE THE FOUR
+     SAN DIEGO PAGES DISAGREE: the flag used to be set above the hero lookup, so any call that ran
+     before the hero existed marked the behaviour "done" and it never bound a listener — the navbar
+     then held whatever colour it had at load for the entire page. san-diego.html and costs.html
+     escaped it only because their copy of this code lived in a page script that ran later. */
+  window.__celNavDone = true;
 
   function check() {
     if (hero.getBoundingClientRect().bottom > 80) {
@@ -226,11 +252,29 @@ function initNavbarTransparent() {
     }
   }
   check();
-  var raf = false;
-  window.addEventListener('scroll', function() {
-    if (raf) return; raf = true;
-    requestAnimationFrame(function() { check(); raf = false; });
-  }, { passive: true });
+
+  /* Both an IntersectionObserver AND a plain scroll listener, because each one alone has a measured
+     dead zone:
+     1. The original code coalesced scroll behind a `raf` flag. In a throttled or hidden frame the
+        scheduled callback never fires, so the flag stayed true and check() was never called again
+        after the FIRST scroll — the navbar held its load-time colour for the whole page.
+     2. requestAnimationFrame AND IntersectionObserver are both suspended while
+        document.visibilityState === 'hidden' (measured: rafRan 0, ioRan 0, setTimeout still 1), so an
+        IO-only version cannot self-correct in a background frame either.
+     A scroll listener with no rAF gate is one getBoundingClientRect per event, and the observer keeps
+     it correct when the flip happens without a scroll (resize, layout shift, anchor jump). Whichever
+     fires, both write the same value, so they cannot disagree.
+     rootMargin -80px reproduces the `bottom > 80` threshold exactly: the hero stops intersecting once
+     its bottom edge passes 80px below the top of the viewport. */
+  window.addEventListener('scroll', check, { passive: true });
+  window.addEventListener('resize', check, { passive: true });
+  if (typeof IntersectionObserver === 'function') {
+    new IntersectionObserver(function (entries) {
+      n.style.setProperty('background-color', entries[0].isIntersecting ? 'transparent' : '#5d60ee', 'important');
+    }, { rootMargin: '-80px 0px 0px 0px', threshold: 0 }).observe(hero);
+  }
+  /* A hidden frame dispatches neither, so re-check the moment the page becomes visible. */
+  document.addEventListener('visibilitychange', check);
 
   /* Strip Webflow w--current from hero CTA buttons */
   document.querySelectorAll('.hero_actions a').forEach(function(a) {
@@ -323,11 +367,16 @@ function loadInlineCta(options) {
     links.forEach(function(l) {
       const d = l.querySelector('.stoc_dot');
       if (!d) return;
+      /* is-hover goes on the dot AND the text, so the row-hover colour can be a flat combo
+         (.stoc_text.is-hover) instead of `.stoc_link:hover .stoc_text` — which is a descendant
+         selector the deploy pipeline drops. */
+      const t = l.querySelector('.stoc_text');
       l.addEventListener('mouseenter', function() {
-        if (!l.classList.contains('is-active')) d.classList.add('is-hover');
+        if (!l.classList.contains('is-active')) { d.classList.add('is-hover'); if (t) t.classList.add('is-hover'); }
       });
       l.addEventListener('mouseleave', function() {
         d.classList.remove('is-hover');
+        if (t) t.classList.remove('is-hover');
       });
     });
   }

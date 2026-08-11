@@ -1,0 +1,549 @@
+/* ============================================================
+   CEL — About page class layer
+   Client-First compliant: flat single-class selectors, is- combos,
+   no :nth-child / sibling / attribute selectors, no !important.
+   Link AFTER colors_and_type.css + client-first.css.
+   Interactive compound rules (hover-child, state-child) follow the
+   base-custom-code.css convention — they live in the custom-code layer.
+   ============================================================ */
+
+/* ── Uppercase heading treatment (Cameraobscura serif titles) ── */
+.hero_title,
+.about_statement,
+.section-title,
+.timeline_title,
+.principle_title,
+.feature_title,
+.team-card_name,
+.photo-card_title,
+.activity_city,
+.inline-cta-h2 { text-transform: uppercase; }
+
+.hero_title { letter-spacing: 1px; }
+.about_statement { letter-spacing: 0.8px; }
+.section-title { letter-spacing: 1px; }
+.timeline_title,
+.principle_title,
+.feature_title,
+.team-card_name,
+.photo-card_title,
+.activity_city { letter-spacing: 0.8px; }
+.inline-cta-h2 { letter-spacing: 1px; }
+
+/* ── Editorial flow shell ──────────────────────────────────── */
+/* ── Navbar ─────────────────────────────────────────────────
+   This page opts OUT of the transparent-over-hero behaviour (shared/utils.js):
+   the hero is a light cream composition, not a dark photograph, so a transparent
+   navbar would put the white lettermark on cream. Solid indigo at every scroll
+   position instead — declarative, no page script, nothing copied from utils.js. */
+/* Nothing here. This page takes the navbar's SOLID variant natively — the copy in
+   about.dc.html carries data-wf--navbar--variant="base" and drops the
+   w-variant-0947456c-… markers — so the live sheet supplies background, logo position
+   and logo opacity as one consistent set. Pinning them by hand was tried and failed:
+   the variant swap is a three-declaration state (opacity + position + which mark is in
+   flow), and overriding opacity alone left the white lettermark visible, out of flow,
+   never lazily decoded, and therefore 0px wide.
+   The transparent-over-hero behaviour in shared/utils.js still does not apply here —
+   this hero is a light cream composition, not a dark photograph. */
+
+/* ── Hero — centred, symmetrical, no full-bleed background image ── */
+.abouthero { padding-top: 150px; padding-bottom: 96px; }
+.abouthero_head { max-width: 780px; margin: 0 auto; text-align: center; }
+.abouthero_eyebrow { display: flex; align-items: center; justify-content: center; gap: 14px; max-width: none; margin: 0 auto 28px; font-family: 'LibreFranklin', sans-serif; font-size: 0.6875rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--orange-gold, #e78b10); }
+.abouthero_title { font-family: 'Cameraobscura', serif; font-weight: 500; font-size: clamp(30px, 3.9vw, 54px); line-height: 1.08; letter-spacing: 1px; text-transform: uppercase; color: var(--brown-dark, #5f5950); margin: 0 0 26px; }
+.abouthero_sub { max-width: 58ch; margin: 0 auto; font-size: 1.0625rem; line-height: 1.7; color: var(--brown-soft, #7a6e5d); text-wrap: pretty; }
+
+/* Three credentials as one centred row of chips, sitting between the copy and the
+   plates — a quiet credential line, not a stat ledger: the figures are context for the
+   sentence above them, so they read at label scale rather than competing with the H1. */
+/* Pills again, but outlined rather than filled: a filled cream capsule on a cream page
+   reads as a button and invites a click these carry no action for. Hairline only, the
+   figure in the display face, and an orange dot doing the separating the old dash did. */
+.abouthero_meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 44px; }
+.abouthero_chip { display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px; padding: 12px 28px; border-radius: 1600px; border: 1px solid var(--cream-medium, #e9deca); background-color: var(--cream, #f3e7d3); }
+.abouthero_chip-num { font-family: 'LibreFranklin', sans-serif; font-size: 0.6875rem; font-weight: 600; line-height: 1; letter-spacing: 0.3px; color: var(--brown-deep, #37332c); }
+.abouthero_chip-dot { display: block; width: 4px; height: 4px; border-radius: 50%; background-color: var(--orange-gold, #e78b10); flex-shrink: 0; margin: 0 6px; }
+.abouthero_chip-label { margin-left: -7px; font-size: 0.6875rem; font-weight: 500; letter-spacing: 1.4px; text-transform: uppercase; color: var(--brown-soft, #7a6e5d); }
+
+/* ── Hero gallery — SYMMETRICAL overlap + scroll parallax (client, 11 Aug) ────────
+   A centre column between two mirrored stacks: 4-4-4 columns, each flank a pair of 3:2 landscapes,
+   the centre one 4:5 portrait spanning both rows. Every measurement is mirrored, so the block
+   balances on its centre line — the previous pass left a hole on the right because plates were
+   placed band by band with unequal spans and offsets. Tight by construction: one 12px gutter
+   everywhere, the centre plate pulled 24px into each stack (z-index above them) so the overlap is
+   equal on both sides, and both stacks break the wrapper by the same 40px.
+   PARALLAX: --hero-par is a 0→1 scroll progress written on <html> by the page's scroll handler;
+   each plate multiplies it by its own small --par offset, so the stacks and the centre pass each
+   other slowly. It DEFAULTS TO 0 (CLAUDE.md — a frame that never reports scroll shows the
+   composition exactly as designed; nothing is armed and nothing is hidden).
+   The IMG rule is not optional: without width/height the placeholder SVGs render at their intrinsic
+   3×2 px. An earlier pass dropped it and the plates collapsed to a few pixels. */
+.abouthero_gallery { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin: 56px 0 0; }
+.abouthero_tile { position: relative; transform: translateY(calc(var(--hero-par, 0) * var(--par, 0px))); transition: transform 0.25s linear; }
+.abouthero_frame { display: block; overflow: hidden; border-radius: 16px; background-color: var(--cream-medium, #e9deca); box-shadow: 0 0 0 6px var(--cream, #f3e7d3); }
+.abouthero_img { width: 100%; height: 100%; display: block; object-fit: cover; background-color: var(--cream-medium, #e9deca); }
+.abouthero_tile:nth-child(1) { grid-column: 1 / span 4; grid-row: 1; margin-left: -40px; --par: -34px; }
+.abouthero_tile:nth-child(2) { grid-column: 1 / span 4; grid-row: 2; margin-left: -40px; --par: -14px; }
+.abouthero_tile:nth-child(4) { grid-column: 9 / span 4; grid-row: 1; margin-right: -40px; --par: -34px; }
+.abouthero_tile:nth-child(5) { grid-column: 9 / span 4; grid-row: 2; margin-right: -40px; --par: -14px; }
+.abouthero_tile:nth-child(1) .abouthero_frame, .abouthero_tile:nth-child(2) .abouthero_frame,
+.abouthero_tile:nth-child(4) .abouthero_frame, .abouthero_tile:nth-child(5) .abouthero_frame { aspect-ratio: 3 / 2; }
+.abouthero_tile:nth-child(3) { grid-column: 5 / span 4; grid-row: 1 / span 2; align-self: center; margin: 0 -24px; z-index: 2; --par: 26px; }
+.abouthero_tile:nth-child(3) .abouthero_frame { aspect-ratio: 4 / 5; }
+
+
+
+
+/* Panel sections — the .section_page card treatment the San Diego pages use
+   (cream fill, hairline, 28px radius, clamped inset), applied to this page's
+   plain editorial flow: no TOC rail, no page_body-layout grid. The panel IS the
+   .container, so its edge lands on the page measure. */
+/* Same vertical rhythm as the San Diego pages: .page_content section[id] + section[id]
+   is 120 / 80 / 56px down the breakpoint ladder (shared/base-custom-code.css). */
+.section_flow.is-panel { padding-top: 0; padding-bottom: 0; border-top: none; margin-top: 120px; }
+.section_flow.is-panel.is-first { margin-top: 0; }
+/* The live .card-slider_clip deliberately bleeds ±84px — the PAGE gutter — so the next
+   card peeks past the text measure. Inside a panel that gutter is the wrong reference:
+   measured 946px inside a 780px panel content box, so slide 4 started outside the
+   viewport and the pagination fraction was cut in half. Same bleed, retargeted to the
+   panel's own inset token, which is already declared on .container and inherits here —
+   so the peek survives and it re-measures itself at every breakpoint. */
+.section_flow.is-panel .card-slider_clip { width: calc(100% + var(--section-pad-x) * 2); max-width: none; margin-left: calc(var(--section-pad-x) * -1); margin-right: calc(var(--section-pad-x) * -1); padding-left: var(--section-pad-x); }
+/* Only the CARDS bleed. The nav is chrome, so it sits back on the panel's own right inset. */
+.section_flow.is-panel .card-slider_nav { padding-right: var(--section-pad-x); }
+
+/* Panel inset = the live .section_page inset, not a local one: 96px 84px at desktop,
+   stepping 24/20/16 down the ladder (client-first.css .section_page). The San Diego pages
+   sit on the same primitive, so the two page families line up at every breakpoint. */
+.section_flow.is-panel .container { --section-pad-x: clamp(48px, 4vw + 16px, 84px); background-color: var(--cream, #f3e7d3); border: 1px solid var(--cream-medium, #e9deca); border-radius: 28px; padding: 96px var(--section-pad-x); }
+
+.about_flow { display: block; min-width: 0; }
+
+/* ── Left rail (submenu) — the same stoc_ primitive the San Diego pages use ──
+   Body grid and rail chrome come from client-first.css + the live sheet; is-about only
+   drops the grid's top border and vertical padding, because the hero already carries
+   that space and the first panel has to sit level with the rail. Sections keep their own
+   padding-global/container (the panel look is hung on .container), so the inner gutter is
+   zeroed rather than paid twice. */
+.page_body-layout.is-about { --toc-w: 244px; gap: clamp(40px, 4vw, 72px); padding-top: 0; padding-bottom: 0; border-top: none; }
+.page_body-layout.is-about .stoc_component { margin-top: 0; }
+.about_flow .padding-global { padding-left: 0; padding-right: 0; }
+.section_flow { scroll-margin-top: 118px; }
+
+/* One source of truth for the current row: the scroll-spy writes is-active on the LINK
+   (a template hole, so a re-render cannot drop it) and dot + text follow from here. */
+.stoc_link:hover .stoc_dot { border-color: var(--brown-deep, #37332c); }
+.stoc_link:hover .stoc_text { color: var(--brown-deep, #37332c); }
+.stoc_link.is-active .stoc_dot { border-color: var(--orange-gold, #e78b10); background-color: var(--orange-gold, #e78b10); }
+.stoc_link.is-active .stoc_text { color: var(--indigo-bright, #5d60ee); font-weight: 600; }
+.stoc_link:focus-visible { outline: 2px solid var(--indigo-bright, #5d60ee); outline-offset: 3px; border-radius: 4px; }
+.section_flow { padding-top: 96px; padding-bottom: 96px; border-top: 1px solid var(--cream-medium, #e9deca); }
+.section_flow.is-first { border-top: none; }
+.section_flow.is-card { border-top: none; background-color: var(--cream, #f3e7d3); }
+
+/* big serif mission statement (heading use only) */
+.about_statement { font-family: 'Cameraobscura', serif; font-weight: 500; font-size: clamp(28px, 2.5vw, 40px); line-height: 1.15; letter-spacing: 0.5px; color: var(--brown-dark, #5f5950); max-width: 30ch; margin: 0 0 28px; }
+
+/* ── Mission photos — the San Diego bento (campus_bento) ──
+   Flush tiles, no gaps, no inner radius, overlay captions on a bottom-weighted gradient, and the
+   block runs to the panel's own edges (left, right and bottom) instead of sitting inside the
+   inset — the same full-bleed composition .campus_bento makes inside .section_page. A 21:9 lead
+   tile over three 3:2 tiles; the panel clips, so the corners come from the card. */
+.media-bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 56px calc(var(--section-pad-x) * -1) -96px; }
+.media-bento_item { position: relative; overflow: hidden; min-height: 220px; }
+.media-bento_item.is-hero { grid-column: 1 / -1; aspect-ratio: 21 / 9; min-height: 300px; }
+.media-bento_img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background-color: var(--cream-medium, #e9deca); transform: scale(1.002); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.media-bento_item:hover .media-bento_img { transform: scale(1.05); }
+.media-bento_overlay { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; justify-content: flex-end; padding: 22px 26px; background-image: linear-gradient(0deg, rgba(10, 8, 20, 0.72) 0%, rgba(10, 8, 20, 0.34) 46%, rgba(10, 8, 20, 0.06) 78%, transparent 100%); }
+.media-bento_item.is-hero .media-bento_overlay { padding: 32px clamp(28px, 3vw, 44px); }
+.media-bento_text { margin: 0; font-size: 0.9375rem; font-weight: 500; line-height: 1.5; color: var(--cream-soft, #f9f1df); text-wrap: pretty; }
+.media-bento_item.is-hero .media-bento_text { font-size: 1.0625rem; }
+
+/* ── Timeline (story) — vertical rail, scroll-scrubbed ──
+   The content column inside the panel (page gutter + rail + panel inset) runs ~720–1140px,
+   so five 1fr columns left each step ~140px — a column that cannot hold a sentence. Same
+   scrub, rotated: rail down the left, fill grows in height, one row per year. Descriptions
+   render unconditionally (CLAUDE.md: content that carries information is never armed by JS);
+   is-active drives the marker, the year colour and the ghost figure only. */
+/* The rail sits in a PANEL STANDARD surface (shared/panel-standard.css) — cream-soft on the
+   cream panel, the same one-step-lighter ground the San Diego ledgers use. The panel's own
+   --panel-x/--panel-y inset it, so every absolutely-positioned rail part is offset by the same
+   tokens rather than a second hard-coded number. */
+/* ONE POSTER YEAR AT A TIME (client, 11 Aug): the big figure lives in the RIGHT GUTTER as
+   background — exactly one visible, swapped by scroll with a soft cross-fade and drift — while
+   every row keeps its small readable year in column 1. Scroll drives two things, both
+   colour/position only: which ghost figure is up and which row is lit (.is-active). Content is
+   never hidden by either (CLAUDE.md — no scroll-armed content): the default render ships with
+   row 0 lit and figure 0 shown, so a frame that never reports scroll shows a complete ledger. */
+.timeline_wrap { --tl-fig: 216px; --tl-year: 68px; --tl-gap: 22px; position: relative; margin-top: 40px; }
+.timeline_track { position: relative; }
+.timeline_item { position: relative; display: grid; grid-template-columns: var(--tl-year) 10px minmax(0, 1fr); column-gap: var(--tl-gap); row-gap: 5px; align-items: start; padding: calc(var(--panel-y) + 6px) calc(var(--panel-x) + var(--tl-fig)) calc(var(--panel-y) + 6px) var(--panel-x); border-top: 1px solid var(--cream-medium, #e9deca); transition: background-color 0.45s ease; }
+.timeline_item:first-child { border-top: none; }
+/* Rail drawn per ROW (rows are flush, so the segments join), trimmed to the first/last marker. */
+.timeline_item::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(var(--panel-x) + var(--tl-year) + var(--tl-gap) + 4px); width: 1px; background-color: var(--cream-medium, #e9deca); }
+.timeline_item:first-child::before { top: calc(var(--panel-y) + 17px); }
+.timeline_item:last-child::before { bottom: auto; height: calc(var(--panel-y) + 18px); }
+.timeline_item:hover, .timeline_item.is-active { background-color: rgba(95, 89, 80, 0.03); }
+.timeline_dot { grid-column: 2; grid-row: 1; position: relative; z-index: 1; box-sizing: border-box; width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background-color: var(--cream-soft, #f9f1df); border: 1.5px solid var(--brown-muted, #9a8f80); transition: background-color 0.35s ease, border-color 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.timeline_item:hover .timeline_dot, .timeline_item.is-active .timeline_dot { background-color: var(--orange-gold, #e78b10); border-color: var(--orange-gold, #e78b10); transform: scale(1.2); }
+.timeline_item.is-now .timeline_dot { background-color: var(--orange-gold, #e78b10); border-color: var(--orange-gold, #e78b10); }
+.timeline_dot::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid var(--brown-muted, #9a8f80); opacity: 0; transform: scale(0.55); transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.timeline_item:hover .timeline_dot::after, .timeline_item.is-active .timeline_dot::after { border-color: var(--orange-gold, #e78b10); opacity: 0.5; transform: scale(1); }
+.timeline_item.is-now .timeline_dot::after { border-color: var(--orange-gold, #e78b10); animation: tl-pulse 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite; }
+@keyframes tl-pulse { 0% { opacity: 0.55; transform: scale(0.55); } 70%, 100% { opacity: 0; transform: scale(2); } }
+/* One slow light down the hairline — decoration; a stalled timeline parks it above the clip. */
+.timeline_track::after { content: ""; position: absolute; z-index: 0; top: 0; left: calc(var(--panel-x) + var(--tl-year) + var(--tl-gap) + 4px); width: 1px; height: 34%; background-image: linear-gradient(to bottom, rgba(231, 139, 16, 0), rgba(231, 139, 16, 0.5), rgba(231, 139, 16, 0)); transform: translateY(-100%); animation: tl-travel 7.5s linear infinite; pointer-events: none; }
+@keyframes tl-travel { from { transform: translateY(-100%); } to { transform: translateY(300%); } }
+/* The figure appears in the gutter AT ITS OWN ROW (client, 11 Aug): each row owns its year,
+   revealed while the row is current, so the figure travels down the column with the scroll and
+   only one shows. Watermark ink — the deepened-cream pass read as a stain. Decoration only, and
+   the opacity transition is safe: row 0 is .is-active in the FIRST render, so the visible state
+   is declarative (transitions run on CHANGES, never to reach the default), and every row keeps
+   its readable year in column 1. */
+.timeline_item::after { content: attr(data-year); position: absolute; z-index: 0; right: calc(var(--panel-x) - 8px); top: 50%; transform: translateY(-42%); font-family: 'Cameraobscura', serif; font-size: calc(var(--tl-fig) * 0.4); font-weight: 500; letter-spacing: 2px; font-variant-numeric: tabular-nums; line-height: 0.8; color: rgba(95, 89, 80, 0.12); opacity: 0; pointer-events: none; user-select: none; transition: opacity 0.5s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+.timeline_item.is-active::after { opacity: 1; transform: translateY(-50%); }
+.timeline_year { grid-column: 1; grid-row: 1; position: relative; z-index: 1; font-family: 'LibreFranklin', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; font-variant-numeric: tabular-nums; color: var(--brown-dark, #5f5950); line-height: 1.2; margin: 0; padding-top: 7px; transition: color 0.35s ease; }
+.timeline_item.is-now .timeline_year { color: var(--orange-gold, #e78b10); }
+/* Cameraobscura ALWAYS carries text-transform: uppercase (DESIGN-RULES.md). The global rule only
+   covers h1-h6, so every class-level Cameraobscura rule states it itself — root cause of the
+   mixed-case accreditation titles. */
+.timeline_title { grid-column: 3; grid-row: 1; position: relative; z-index: 1; font-family: 'Cameraobscura', serif; font-size: 1.25rem; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--brown-dark, #5f5950); line-height: 1.25; margin: 0; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.timeline_item:hover .timeline_title, .timeline_item.is-active .timeline_title { transform: translateX(3px); }
+.timeline_desc-box { grid-column: 3; grid-row: 2; position: relative; z-index: 1; min-height: 0; }
+.timeline_desc { font-size: 0.9375rem; line-height: 1.65; color: var(--brown-soft, #7a6e5d); margin: 0; max-width: 58ch; text-wrap: pretty; }
+
+/* in-body callout — the live .callout: a 3px INDIGO edge on a 4% indigo tint, 0/12/12/0 radius.
+   (Orange is the .is-orange variant over there; indigo is the default, and marks section-level
+   callouts on the San Diego pages.) 32px step above, the normalised callout rhythm. */
+.about_callout { border-left: 3px solid var(--indigo-bright, #5d60ee); background-color: rgba(93, 96, 238, 0.04); border-radius: 0 12px 12px 0; padding: 20px 24px 20px 22px; margin-top: 32px; max-width: 76ch; }
+.about_callout-text { margin: 0; color: var(--brown-dark, #5f5950); line-height: 1.7; }
+.about_callout.is-quote { margin-top: 12px; }
+.quote_attrib.is-callout { margin-top: 16px; }
+
+/* ── Philosophy — BENTO (client, 11 Aug). Six tiles on one 4-column grid: three text plates
+   (cream-soft on the panel, hairline edge — the panel-standard surface) and three photographs as
+   real <img> elements in clipped tiles, never backgrounds. Text sits at the tile's foot. */
+.principle_grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-areas: "t1 t1 ia ib" "ic t2 t3 t3"; grid-auto-rows: minmax(260px, auto); gap: 14px; margin-top: 56px; }
+.principle_item { display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; background-color: var(--cream-soft, #f9f1df); border: 1px solid var(--cream-medium, #e9deca); border-radius: 16px; padding: 30px; }
+.principle_item.is-t1 { grid-area: t1; }
+.principle_item.is-t2 { grid-area: t2; }
+.principle_item.is-t3 { grid-area: t3; }
+.principle_media { border-radius: 16px; overflow: hidden; display: flex; }
+.principle_media.is-a { grid-area: ia; }
+.principle_media.is-b { grid-area: ib; }
+.principle_media.is-c { grid-area: ic; }
+.principle_img { width: 100%; height: 100%; object-fit: cover; display: block; background-color: var(--cream-medium, #e9deca); transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+.principle_media:hover .principle_img { transform: scale(1.04); }
+.principle_title { font-family: 'Cameraobscura', serif; font-size: 1.125rem; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--brown-dark, #5f5950); line-height: 1.25; margin: 0; }
+.principle_desc { font-size: 0.9375rem; line-height: 1.65; color: var(--brown-soft, #7a6e5d); margin: 0; max-width: 44ch; }
+
+/* ── CEO — half-panel bleed portrait ───────────────────────
+   The one full-bleed object in the flow: the portrait takes half the panel and runs flush to its
+   left, top and bottom edges — the .card-slider_clip trick, using the panel's own --section-pad-x
+   plus its 96px vertical inset. The panel clips, so the photo inherits the 28px corner and carries
+   no radius of its own. */
+.section_flow.is-panel.is-media-bleed .container { overflow: hidden; }
+.ceo_card { display: block; }
+.ceo_layout { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 4vw, 64px); align-items: stretch; }
+.ceo_media { display: flex; margin: -96px 0 -96px calc(var(--section-pad-x) * -1); }
+.ceo_photo { width: 100%; height: 100%; min-height: 420px; object-fit: cover; object-position: 50% 18%; display: block; background-color: var(--cream-extra-light, #f9f0df); }
+.ceo_body { position: relative; display: flex; flex-direction: column; justify-content: center; padding: 8px 0; }
+.ceo_mark { position: absolute; top: -34px; left: -8px; font-family: 'Cameraobscura', serif; font-size: 140px; line-height: 1; color: var(--brown-deep, #37332c); opacity: 0.05; pointer-events: none; }
+.ceo_quote { font-size: 1.25rem; font-weight: 300; line-height: 1.7; color: var(--brown-deep, #37332c); margin: 0 0 28px; max-width: 34em; }
+.ceo_attrib { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; margin-top: 24px; }
+.ceo_attrib-dot { display: none; }
+.quote_attrib { display: flex; flex-direction: column; gap: 4px; }
+.quote_name { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--brown-dark, #5f5950); }
+.quote_role { font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--brown-muted, #9a8f80); }
+
+/* ── Team tabs + slider ────────────────────────────────────── */
+.team_tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 48px; margin-bottom: 36px; }
+.team_tab { display: inline-flex; align-items: center; padding: 9px 20px; border-radius: 1600px; border: 1.5px solid var(--cream-medium, #e9deca); background-color: var(--cream-soft, #f9f1df); color: var(--brown-dark, #5f5950); font-family: 'LibreFranklin', sans-serif; font-size: 0.6875rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: border-color 0.2s, background-color 0.2s, color 0.2s; }
+.team_tab:hover { border-color: var(--brown-muted, #9a8f80); }
+.team_tab.is-active { background-color: var(--indigo-bright, #5d60ee); border-color: var(--indigo-bright, #5d60ee); color: var(--cream-soft, #f9f1df); }
+
+.team-slider_el { overflow: visible; }
+.swiper-slide.is-team { width: 300px; height: auto; }
+.team-card { display: flex; flex-direction: column; }
+.team-card_media { aspect-ratio: 3 / 4; border-radius: 20px; overflow: hidden; background-color: var(--cream-medium, #e9deca); }
+.team-card_img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.team-card_info { padding: 16px 2px 0; display: flex; flex-direction: column; gap: 5px; }
+/* The role sits UNDER the name and reads as its caption, so it takes the quiet ink — orange is
+   the page's one accent and it was spending it on every card in the slider. */
+.team-card_role { font-size: 0.6875rem; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--brown-muted, #9a8f80); }
+.team-card_name { font-family: 'Cameraobscura', serif; font-size: 1.25rem; font-weight: 500; color: var(--brown-dark, #5f5950); line-height: 1.2; margin: 0; }
+/* Hover only, base state untouched: the photo eases up a step under the cursor. */
+.team-card_media { overflow: hidden; }
+.team-card_img { transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+.team-card:hover .team-card_img { transform: scale(1.045); }
+/* Slider nav — the shared standard, restated because the live .opt sheet ships its own
+   .card-slider_arrow ink for arrows that sit on dark photography, and cream-on-cream is why the
+   chevrons were invisible here. Same values as the San Diego / Vancouver sheets: transparent
+   disc, cream-medium edge, brown ink; hover takes edge and ink to indigo on cream-soft. Icon at
+   15px — the sprite chevron is a 1.75 stroke on a 24 box, which thins to a hairline below that. */
+.card-slider_nav .card-slider_arrow, .card-slider_nav a.card-slider_arrow { background: transparent; border: 1.5px solid var(--cream-medium, #e9deca); color: var(--brown-dark, #5f5950); transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease; }
+.card-slider_nav .card-slider_arrow:hover, .card-slider_nav a.card-slider_arrow:hover { border-color: var(--indigo-bright, #5d60ee); background: var(--cream-soft, #f9f1df); color: var(--indigo-bright, #5d60ee); }
+.card-slider_nav .card-slider_arrow.is-disabled { opacity: 0.3; pointer-events: none; }
+.card-slider_nav .card-slider_progress { background: var(--cream-medium, #e9deca); }
+.card-slider_nav .card-slider_progress-fill { background: var(--indigo-bright, #5d60ee); }
+.card-slider_arrow-icon { width: 15px; height: 15px; display: block; }
+/* static fallback if the slider script has not loaded yet */
+.card-slider_row { display: flex; }
+
+/* ── Why CEL — a 2-up hairline grid ────────────────────────────
+   Was a numbered ledger with each row's numeral repeated as a big figure behind it. Six parallel
+   reasons are not a sequence, so the count carried no information — "01" told the reader nothing
+   the title did not — and the figure behind it was the loudest thing in the section. The panel
+   now divides into six cells on the SAME hairline as its own edge (the page's panel-standard
+   vocabulary, one step quieter), with a short rule above each title doing the marker's job. */
+.feature_grid { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; }
+.feature_cell { position: relative; padding: calc(var(--panel-y) + 14px) var(--panel-x) calc(var(--panel-y) + 16px); border-top: 1px solid var(--cream-medium, #e9deca); transition: background-color 0.3s ease; }
+.feature_cell:nth-child(-n+2) { border-top: none; }
+.feature_cell:nth-child(even) { border-left: 1px solid var(--cream-medium, #e9deca); }
+.feature_cell:hover { background-color: rgba(95, 89, 80, 0.03); }
+/* Icons, not rules (client, 11 Aug): one per cell from the shared sprite — same 1.75-stroke
+   family as the rest of the site, currentColor so they can never bake the wrong colour in.
+   Ink is the SD standard, SOFT (client, 11 Aug): those sheets render icons as brightness(0)
+   opacity(.62), i.e. a 38%-lightened brown that never reaches heading ink — brown-muted is the
+   token at that value. 24px, not 28: the same 1.75 stroke reads heavier the larger it is drawn,
+   which is the other half of why this looked hard. */
+.feature_icon { display: block; width: 24px; height: 24px; color: var(--brown-muted, #9a8f80); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.feature_cell:hover .feature_icon { transform: translateY(-2px); }
+.feature_title { font-family: 'Cameraobscura', serif; font-size: 1.125rem; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--brown-dark, #5f5950); line-height: 1.2; margin: 22px 0 0; text-wrap: balance; }
+.feature_desc { margin: 10px 0 0; font-size: 1rem; line-height: 1.65; color: var(--brown-soft, #7a6e5d); max-width: 40ch; text-wrap: pretty; }
+
+/* ── Campuses — the San Diego §18 city banners (citylist_*) ──
+   The same object as "More options" on /san-diego: a full-bleed photograph, the hero's
+   bottom-weighted veil, an allcaps eyebrow with the display-face city name, and a cream pill
+   beside the lettermark — rows flush inside one 20px-radius clip. Two additions this page's
+   content needs, both inside .citylist_text: the one-line description and the weekly chips.
+   (Replaces the sticky scrollytelling that used to swap three campus cards on scroll.) */
+.page-wrapper { overflow: clip; }
+/* The band is a panel like every other section, so the heading lands on the same left edge as
+   its siblings; the rows then bleed to the panel's own edges (the .media-bento / .ceo_media
+   trick) and take their corners from the card's clip instead of a radius of their own. */
+.citylist_rows { display: flex; flex-direction: column; gap: 0; overflow: hidden; margin: 48px calc(var(--section-pad-x) * -1) -96px; }
+.citylist_row { position: relative; display: block; aspect-ratio: 16 / 9; min-height: 460px; overflow: hidden; text-decoration: none; }
+.citylist_img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; transform: scale(1.005); transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1); }
+.citylist_row:hover .citylist_img { transform: scale(1.055); }
+.citylist_veil { position: absolute; inset: 0; background-image: linear-gradient(#1e1c3266 0%, #1e1c3226 15%, #0000 30%), linear-gradient(#0000 0%, #2321374c 30%, #1e1c3298 55%, #19172dd8 75%, #141228f2 100%); opacity: 1; transition: opacity 0.5s ease; }
+.citylist_row:hover .citylist_veil { opacity: 0.88; }
+.citylist_body { position: absolute; inset: auto 0 0 0; display: flex; flex-direction: column; gap: 22px; padding: 48px 52px; }
+.citylist_text { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.citylist_actions { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.citylist_logo-mark { height: 34px; width: auto; display: block; opacity: 0.92; }
+.citylist_meta { font-size: 0.75rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--cream-soft, #f9f1df); opacity: 0.8; margin: 0; }
+.citylist_name { font-family: 'Cameraobscura', serif; font-size: 38px; font-weight: 500; letter-spacing: 0.5px; line-height: 1.1; text-transform: uppercase; color: var(--cream-soft, #f9f1df); margin: 0; }
+.citylist_desc { font-size: 1.0625rem; line-height: 1.6; color: var(--cream-soft, #f9f1df); opacity: 0.9; margin: 0; max-width: 46ch; }
+/* The weekly activities are METADATA, not actions (client, 11 Aug): as bordered pills they were
+   the same object as the "View campus" pill below them — three things that look pressable and
+   are not, competing with the one thing that is. Now one dot-separated line: no ground, no edge,
+   no radius, nothing that reads as a target. */
+.campus_chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; }
+.campus_chip { display: inline-flex; align-items: center; gap: 10px; padding: 0; font-size: 0.75rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--cream-soft, #f9f1df); opacity: 0.82; white-space: nowrap; }
+.campus_chip:not(:last-child)::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background-color: currentColor; opacity: 0.6; }
+
+/* ── Activities (3 city columns) ───────────────────────────── */
+.activity_grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; margin-top: 56px; }
+.activity_col { display: flex; flex-direction: column; }
+.activity_city { font-family: 'Cameraobscura', serif; font-size: 1.15rem; font-weight: 500; color: var(--brown-dark, #5f5950); margin: 0 0 4px; }
+.activity_sub { font-size: 0.6875rem; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--brown-muted, #9a8f80); margin: 0 0 16px; }
+.activity_list { display: flex; flex-direction: column; }
+.activity_item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--cream-medium, #e9deca); font-size: 0.9375rem; color: var(--brown-dark, #5f5950); }
+.activity_item.is-last { border-bottom: none; }
+.activity_dot { width: 6px; height: 6px; border-radius: 50%; background-color: var(--orange-gold, #e78b10); flex-shrink: 0; }
+.activity_text { margin: 0; font-size: inherit; color: inherit; }
+
+/* ── Stat band ─────────────────────────────────────────────── */
+.stat_row { display: none; }
+/* THE SNAPSHOT (client, 11 Aug): one cinematic plate bleeding across the panel, a display
+   subheading, then four stat TILES — each figure on its own cream-soft plate with the panel
+   hairline, a different ground from the panel behind it, and the figures set in the TEXT face
+   (DESIGN-RULES.md: never Cameraobscura on a number). One accent: the last figure. */
+.students_layout { margin-top: 40px; }
+.students_media { margin: 0 calc(var(--section-pad-x) * -1); }
+.students_media-item { display: flex; }
+.students_photo { width: 100%; aspect-ratio: 21 / 9; object-fit: cover; display: block; background-color: var(--cream-extra-light, #f9f0df); }
+/* 1×4 BENTO (client, 11 Aug): four equal tiles in one row — no asymmetric spans — each its own
+   cream-soft plate with the panel hairline and an 18px radius on a 12px gutter. Figure ABOVE its
+   label, text-face and modest (DESIGN-RULES.md: never Cameraobscura on a number). One accent:
+   the last figure. */
+.students_stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 56px; }
+.students_stat { display: flex; flex-direction: column; gap: 8px; padding: 26px 28px; background-color: var(--cream-soft, #f9f1df); border: 1px solid var(--cream-medium, #e9deca); border-radius: 18px; }
+.students_stat-num { font-family: 'LibreFranklin', sans-serif; font-size: 1.375rem; font-weight: 500; line-height: 1.1; letter-spacing: 0; font-variant-numeric: tabular-nums; color: var(--brown-dark, #5f5950); }
+.students_stat:last-child .students_stat-num { color: var(--orange-gold, #e78b10); }
+.stat_label { margin: 0; font-size: 0.9375rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--brown-soft, #7a6e5d); line-height: 1.5; max-width: 22ch; }
+
+/* ── Accreditations ────────────────────────────────────────── */
+.accred_layout { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
+.accred_intro { display: flex; flex-direction: column; }
+.accred_intro > *:last-child { margin-bottom: 0; }
+/* The story ledger's recipe, verbatim: a panel-standard table whose rows are a label, a ring on
+   a hairline rail, and the copy. It was four check-marked lines on bare hairlines — the same four
+   facts with no column structure, an icon doing a marker's job, and no voice of its own. One
+   accent, the award row, exactly as .is-now marks the present on the story rail. */
+.accred_panel { --ac-label: 132px; --ac-gap: 22px; }
+.accred_row { position: relative; display: grid; grid-template-columns: var(--ac-label) 10px minmax(0, 1fr); column-gap: var(--ac-gap); row-gap: 7px; align-items: start; padding: calc(var(--panel-y) + 12px) var(--panel-x); border-top: 1px solid var(--cream-medium, #e9deca); transition: background-color 0.25s ease; }
+.accred_row:first-child { border-top: none; }
+.accred_row::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(var(--panel-x) + var(--ac-label) + var(--ac-gap) + 4px); width: 1px; background-color: var(--cream-medium, #e9deca); }
+.accred_row:first-child::before { top: calc(var(--panel-y) + 23px); }
+.accred_row:last-child::before { bottom: auto; height: calc(var(--panel-y) + 24px); }
+.accred_row:hover { background-color: rgba(95, 89, 80, 0.03); }
+.accred_ring { grid-column: 2; grid-row: 1; position: relative; z-index: 1; box-sizing: border-box; width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background-color: var(--cream-soft, #f9f1df); border: 1.5px solid var(--brown-muted, #9a8f80); transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.accred_row:hover .accred_ring { background-color: var(--brown-dark, #5f5950); border-color: var(--brown-dark, #5f5950); transform: scale(1.15); }
+.accred_row.is-award .accred_ring { background-color: var(--orange-gold, #e78b10); border-color: var(--orange-gold, #e78b10); }
+.accred_row.is-award .accred_label { color: var(--orange-gold, #e78b10); }
+.accred_label { grid-column: 1; grid-row: 1; position: relative; z-index: 1; font-family: 'LibreFranklin', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--brown-dark, #5f5950); line-height: 1.2; padding-top: 5px; }
+.accred_title { grid-column: 3; grid-row: 1; position: relative; z-index: 1; font-family: 'Cameraobscura', serif; font-size: 1rem; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: var(--brown-dark, #5f5950); line-height: 1.35; margin: 3px 0 0; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.accred_row:hover .accred_title { transform: translateX(3px); }
+.accred_desc { grid-column: 3; grid-row: 2; position: relative; z-index: 1; margin: 0; font-size: 1.0625rem; font-weight: 450; line-height: 1.6; color: var(--brown-dark, #5f5950); max-width: 62ch; text-wrap: pretty; }
+
+/* ── Responsive (CEL breakpoints: 1439 / 1279 / 991 / 767 / 479) ── */
+@media (max-width: 1279px) {
+  .ceo_layout { gap: 40px; }
+  .stat_row { gap: 36px; }
+}
+@media (max-width: 991px) {
+  .section_flow { padding-top: 72px; padding-bottom: 72px; }
+  .about_statement { font-size: clamp(26px, 4vw, 32px); }
+  .timeline_wrap { --tl-fig: 168px; --tl-year: 64px; --tl-gap: 18px; }
+  .timeline_title { font-size: 1.125rem; }
+  .principle_grid { grid-template-columns: 1fr 1fr; grid-template-areas: "t1 ia" "ib ic" "t2 t3"; grid-auto-rows: minmax(220px, auto); gap: 12px; }
+  .ceo_layout { grid-template-columns: 1fr 1fr; gap: 28px; }
+  .ceo_media { margin: -64px 0 -64px calc(var(--section-pad-x) * -1); }
+  .ceo_photo { min-height: 340px; }
+  .ceo_mark { display: none; }
+  .feature_title { font-size: 1.0625rem; letter-spacing: 0.6px; }
+  .activity_grid { grid-template-columns: 1fr; gap: 40px; }
+  .stat_row { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .students_stats { grid-template-columns: 1fr 1fr; margin-top: 48px; }
+  .students_photo { aspect-ratio: 16 / 9; }
+  .citylist_name { font-size: 30px; }
+  .media-bento, .citylist_rows { margin-bottom: -64px; }
+  .accred_layout { grid-template-columns: 1fr; gap: 36px; }
+}
+@media (max-width: 767px) {
+  .section_flow { padding-top: 56px; padding-bottom: 56px; }
+  /* Stacked at last: a half-panel portrait beside a quote needs ~380px of text column, and
+     below 768 there isn't one. Full-bleed top plate at 4:3 — the whole head stays in frame,
+     which a fixed-height 2.75:1 strip cannot do with a 0.8 portrait. */
+  .ceo_layout { grid-template-columns: 1fr; gap: 28px; }
+  .ceo_media { margin: -48px calc(var(--section-pad-x) * -1) 0; }
+  .ceo_photo { height: auto; min-height: 0; aspect-ratio: 4 / 3; object-position: 50% 22%; }
+  /* Below 768 the marker leads, the figure gives up its gutter and sits behind the rows, and the
+     three text lines stack. */
+  .timeline_wrap { --tl-fig: 0px; }
+  .timeline_item::after { font-size: 84px; right: calc(var(--panel-x) - 4px); color: rgba(95, 89, 80, 0.09); }
+  .principle_grid { grid-template-columns: 1fr; grid-template-areas: "t1" "ia" "t2" "ib" "t3" "ic"; grid-auto-rows: auto; }
+  .principle_media { aspect-ratio: 16 / 10; }
+  .principle_item { padding: 24px; min-height: 0; }
+  .timeline_item { grid-template-columns: 10px minmax(0, 1fr); column-gap: 18px; row-gap: 4px; padding-right: var(--panel-x); }
+  .timeline_track::after { left: calc(var(--panel-x) + 4px); }
+  .timeline_item::before { left: calc(var(--panel-x) + 4px); }
+  .timeline_item:first-child::before { top: calc(var(--panel-y) + 14px); }
+  .timeline_item:last-child::before { bottom: auto; height: calc(var(--panel-y) + 15px); }
+  .timeline_dot { grid-column: 1; grid-row: 1; margin-top: 4px; }
+  .timeline_year { grid-column: 2; grid-row: 1; padding-top: 0; }
+  .timeline_title { grid-column: 2; grid-row: 2; margin-top: 0; }
+  .timeline_desc-box { grid-column: 2; grid-row: 3; }
+  .accred_panel { --ac-label: 0px; }
+  .accred_row { grid-template-columns: 10px minmax(0, 1fr); column-gap: 18px; row-gap: 4px; }
+  .accred_row::before { left: calc(var(--panel-x) + 4px); }
+  .accred_label { grid-column: 2; grid-row: 1; padding-top: 0; }
+  .accred_title { grid-column: 2; grid-row: 2; margin-top: 0; }
+  .accred_desc { grid-column: 2; grid-row: 3; }
+  .citylist_row { aspect-ratio: 4 / 3; min-height: 320px; }
+  .citylist_body { padding: 28px 24px; gap: 18px; }
+  .citylist_text { gap: 12px; }
+  .citylist_logo-mark { height: 26px; }
+  .citylist_name { font-size: 26px; }
+  .citylist_desc { font-size: 0.9375rem; }
+  .media-bento { grid-template-columns: 1fr; margin-bottom: -48px; }
+  .citylist_rows { margin-bottom: -48px; }
+  .media-bento_item.is-hero { aspect-ratio: 16 / 9; }
+  .swiper-slide.is-team { width: 240px; }
+  .stat_ring { width: 132px; height: 132px; }
+  .stat_ring-num { font-size: 1.625rem; }
+  .students_stats { grid-template-columns: 1fr; }
+  .students_stat { padding: 22px; }
+  .students_stat-num { font-size: 1.25rem; }
+  .stat_label { margin-top: 10px; }
+  .team_tabs { margin-top: 36px; }
+  /* One column below 768: two 44ch measures do not fit side by side, and the cell divider
+     becomes the row hairline the rest of the page uses. */
+  .feature_grid { grid-template-columns: 1fr; }
+  .feature_cell:nth-child(even) { border-left: none; }
+  .feature_cell:nth-child(2) { border-top: 1px solid var(--cream-medium, #e9deca); }
+  .feature_title { font-size: 1rem; margin-top: 14px; }
+  .feature_desc { line-height: 1.7; }
+}
+
+/* ── Reduced motion: transitions short-circuit ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .timeline_item, .timeline_year, .timeline_dot, .timeline_dot::after, .timeline_title, .feature_cell, .feature_icon, .principle_img, .accred_row, .accred_ring, .accred_title, .team-card_img, .citylist_img, .citylist_veil, .media-bento_img { transition-duration: 0.01ms; transition-delay: 0ms; }
+  .timeline_track::after, .timeline_item.is-now .timeline_dot::after, .abouthero_frame { animation: none; }
+
+}
+
+@media (max-width: 991px) {
+  .abouthero { padding-top: 118px; padding-bottom: 72px; }
+  /* Same mirrored composition, gentler bleed and overlap. */
+  .abouthero_gallery { gap: 10px; margin-top: 44px; }
+  .abouthero_tile:nth-child(1), .abouthero_tile:nth-child(2) { margin-left: -20px; }
+  .abouthero_tile:nth-child(4), .abouthero_tile:nth-child(5) { margin-right: -20px; }
+  .abouthero_tile:nth-child(3) { margin: 0 -14px; }
+  .section_flow.is-panel { margin-top: 80px; }
+  .section_flow.is-panel .container { --section-pad-x: 24px; padding: 64px var(--section-pad-x); border-radius: 20px; }
+}
+@media (max-width: 767px) {
+  .abouthero { padding-top: 104px; padding-bottom: 56px; }
+  /* Below 768 the overlaps come off — at this width a plate crossing another reads as a bug, not
+     a composition. The centre portrait leads, the four landscapes pair up beneath it. */
+  .abouthero_gallery { grid-template-columns: 1fr 1fr; gap: 8px; margin: 40px 0 0; }
+  .abouthero_tile:nth-child(n) { grid-column: auto / span 1; grid-row: auto; margin: 0; z-index: auto; align-self: auto; --par: 0px; }
+  .abouthero_tile:nth-child(n) .abouthero_frame { box-shadow: none; }
+  .abouthero_tile:nth-child(3) { grid-column: 1 / span 2; order: -1; }
+  .section_flow.is-panel { margin-top: 56px; }
+  .section_flow.is-panel .container { --section-pad-x: 20px; padding: 48px var(--section-pad-x); border-radius: 16px; }
+}
+
+/* The rail costs the content column ~300px. Below 1440 the two widest compositions get a
+   step down rather than a squeeze; below 1200 the rail leaves the flow entirely (drawer)
+   and the page is exactly as wide as it was before. */
+@media (max-width: 1439px) {
+}
+
+/* ── Rail → floating drawer (≤1199px) ────────────────────────
+   Copied from shared/base.css so this page needs no extra sheet. It is restated rather
+   than inherited because client-first.css loads AFTER the live .opt sheet, so its desktop
+   .stoc_component / .stoc_label rules would otherwise beat the live sheet's own ≤991
+   block. The breakpoint is 1199, not 991: between 992 and 1199 the rail's ~300px leaves
+   the timeline and the campus composition too narrow to read. */
+@media (max-width: 1199px) {
+  .page_body-layout.is-about { grid-template-columns: 1fr; gap: 0; }
+  .stoc_component { position: fixed; top: 90px; right: 0; left: auto; bottom: auto; z-index: 900; display: flex; flex-direction: column; align-items: flex-end; gap: 0; margin-top: 0; padding: 0; background-color: transparent; border: none; border-radius: 0; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .stoc_component.is-visible { opacity: 1; }
+  .stoc_label { display: flex; align-items: center; gap: 8px; margin: 0; padding: 9px 14px 9px 12px; background-color: rgba(243, 231, 211, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: var(--indigo-bright, #5d60ee); font-size: 0.6875rem; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; border: 1px solid rgba(233, 222, 202, 0.5); border-right: none; border-radius: 10px 0 0 10px; cursor: pointer; pointer-events: auto; transition: background-color 0.2s; }
+  .stoc_label:hover { background-color: rgba(243, 231, 211, 0.98); }
+  .stoc_label.is-menu-open { background-color: rgba(243, 231, 211, 0.98); }
+  .stoc_label::before { content: ""; flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background-color: var(--orange-gold, #e78b10); }
+  .stoc_label::after { content: ""; flex-shrink: 0; width: 5px; height: 5px; margin-left: 2px; border-right: 1.5px solid var(--brown-dark, #5f5950); border-bottom: 1.5px solid var(--brown-dark, #5f5950); opacity: 0.4; transform: rotate(45deg); transition: transform 0.25s ease, opacity 0.2s ease; }
+  .stoc_label.is-menu-open::after { transform: rotate(-135deg); opacity: 0.6; }
+  .stoc_nav { flex-direction: column; align-items: stretch; gap: 0; min-width: 150px; max-width: 190px; margin-top: 4px; margin-bottom: 0; padding: 10px; background-color: rgba(249, 241, 223, 0.94); background-image: none; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(233, 222, 202, 0.5); border-right: none; border-radius: 20px 0 0 20px; opacity: 0; visibility: hidden; transform: translateY(-8px); pointer-events: auto; transition: opacity 0.2s ease-out, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s; }
+  .stoc_nav::before { display: none; }
+  .stoc_nav.is-menu-open { opacity: 1; visibility: visible; transform: translateY(0); }
+  .stoc_link { white-space: nowrap; gap: 8px; padding: 7px 10px; font-size: 0.6875rem; border-radius: 8px; transition: background-color 0.15s, color 0.2s; }
+  .stoc_link:hover { background-color: rgba(233, 222, 202, 0.5); }
+  .stoc_dot { width: 6px; height: 6px; }
+  .stoc_cta-btn { display: none; }
+  .stoc_cta-btn.inline-cta-btn.is-primary { display: none; }
+  .stoc_backdrop { display: none; position: fixed; inset: 0; z-index: 899; background-color: rgba(55, 51, 44, 0.06); }
+  .stoc_backdrop.is-visible { display: block; }
+}
+@media (max-width: 479px) {
+  .section_flow.is-panel .container { --section-pad-x: 16px; padding: 36px var(--section-pad-x); }
+  .stoc_label { font-size: 0.625rem; padding: 7px 14px 7px 12px; }
+  .stoc_link { font-size: 0.625rem; padding: 6px 8px; }
+  .citylist_name { font-size: 23px; }
+  .stoc_nav { min-width: 130px; padding: 8px; }
+}

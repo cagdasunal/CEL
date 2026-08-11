@@ -1,0 +1,1141 @@
+/* ============================================================
+   CEL San Diego — Cost of Studying English  (pages/san-diego/costs.html)
+   Two blocks only:
+     A. PREVIEW-ONLY CASCADE PATCH — DO NOT DEPLOY AS NEW STYLES.
+        These 17 classes already exist as Webflow style objects; the linked
+        _live/*.opt snapshot predates their rename. Declarations copied verbatim
+        from pages/cost-of-studying-english/styles.css + shared/base.css.
+        At deploy: bind to the EXISTING style objects. Creating new ones forks
+        them permanently — see inline-cta becoming inline-cta-a8a1.
+        (Not tree-shaking: a sheet shaken for THIS page would by definition
+        contain the classes this page uses. It is a stale capture.)
+     B. NEW CLASSES — the contract-approved B1-B6 set only, each with basedOn.
+   Client-First: every div classed · no standalone span · no inline style ·
+   no background-image for content · no :nth-child / + / ~ / [data-*] ·
+   no !important · desktop-first (max-width queries only).
+   ============================================================ */
+
+
+/* ============================================================
+   A. PREVIEW-ONLY CASCADE PATCH — verbatim from the live class layer.
+      DO NOT DEPLOY AS NEW STYLES — bind to the existing style objects.
+   ============================================================ */
+
+/* PARAGRAPH RHYTHM (client, 4 Aug). The live sheets set .body-text/.body-intro to
+   margin-bottom:0 and ship NO `p + p` rule — an earlier comment in this file assumed one — so
+   consecutive paragraphs ran together with no gap at all. One bottom margin on the paragraph
+   itself (not a sibling selector, which Client-First bans) restores the gap everywhere; where a
+   panel follows, the two margins collapse to the panel's larger one, so nothing doubles.
+   Callouts get their gap from a flex column, so a two-line callout needs no trailing margin. */
+.section_page .body-text,.section_page .body-intro{margin-bottom:1.4em}
+.callout{display:flex;flex-direction:column;gap:14px}
+
+/* shared/base.css:114 — real <div> dash, not a pseudo-element */
+.section-tagline-dash{display:inline-block;width:14px;height:2px;background-color:var(--orange-gold,#e78b10);flex-shrink:0}
+/* The _live .opt snapshot still ships the OLD `.section-tagline:before` dash that
+   the real <div> replaced (shared/base.css:112 — "Webflow publish truncates
+   background-position Y, so we use a real <div> styled as a dash"). Both present
+   = two dashes. base.css's own .section-tagline rule has no :before; suppress the
+   stale one here so the live cascade matches the current class layer. */
+.section-tagline:before{content:none}
+
+/* _live/page-vancouver.opt.min.css ships the DESKTOP base rule for the CTA heading; this
+   page's stale .opt snapshot ships only its three media-query steps (24/22/20px), so above
+   992px .inline-cta-h2 fell back to the global h3 (brown, ~38px) on an indigo panel. Same
+   style object as pages/san-diego/san-diego.html §19 — verbatim, do not retune. */
+.inline-cta-h2{color:#f9f1df;letter-spacing:.5px;font-size:28px;font-weight:500;line-height:1.15}
+
+/* pages/cost-of-studying-english/styles.css — priorities grid (replaces the
+   dead living_priorities-* set, which is never used on this page) */
+
+
+
+
+/* the page ships `.section_page p + p { margin-top:1.4em }`; grid cells are <p> */
+
+
+
+
+/* pages/cost-of-studying-english/styles.css — h4 step above "Why 12 weeks?" */
+.section-subtitle{font-size:1.125rem;font-weight:500;color:var(--brown-dark,#5f5950);margin-bottom:20px}
+/* The verbatim rule carries no margin-top, so every h4 step sits flush against the
+   paragraph above it — invisible with ONE instance (§4 "Why 12 weeks?"), a real defect
+   once §6/§8/§12 add five more. 40px is the DS heading step (= .price-table_head's own
+   margin-top, zeroed below so the badge row does not double it). */
+.section-subtitle{margin-top:40px}
+@media (max-width:767px){.section-subtitle{margin-top:32px}}
+
+/* pages/cost-of-studying-english/styles.css — 64px hairline rule */
+
+
+/* pages/cost-of-studying-english/styles.css — living-costs panoramic slider card */
+.costs_act_pano-card{position:relative;display:flex;flex-direction:row;border-radius:24px;overflow:hidden;height:480px;transition:transform .5s cubic-bezier(0.16,1,0.3,1)}
+.costs_act_pano-photo{flex:0 0 45%;overflow:hidden;align-self:stretch;border-radius:20px 0 0 20px}
+.costs_act_pano-img{width:100%;height:100%;object-fit:cover;object-position:center 60%;display:block;transition:transform .7s cubic-bezier(0.16,1,0.3,1)}
+.costs_act_pano-card:hover .costs_act_pano-img{transform:scale(1.04)}
+.costs_act_pano-body{position:relative;flex:0 0 55%;min-width:0;padding:32px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;background-color:var(--cream-soft,#f9f1df)}
+.costs_act_pano-tag{font-size:12px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;line-height:1;color:var(--orange-gold,#e78b10);margin-top:0;margin-bottom:20px;background-image:linear-gradient(var(--orange-gold,#e78b10),var(--orange-gold,#e78b10));background-size:14px 2px;background-repeat:no-repeat;background-position:0 50%;padding-left:24px}
+.costs_act_pano-title{font-size:clamp(1.375rem,2.2vw,1.75rem);color:var(--indigo-bright,#5d60ee);letter-spacing:.5px;line-height:1.15;margin:0 0 16px}
+.costs_act_pano-desc{font-size:1rem;color:var(--brown-dark,#5f5950);line-height:1.7;margin:0}
+@media (max-width:767px){
+.costs_act_pano-card{height:auto;flex-direction:column}
+  .costs_act_pano-photo{flex:0 0 220px;border-radius:20px 20px 0 0}
+  .costs_act_pano-body{padding:24px}
+  .costs_act_pano-title{font-size:1.25rem}
+  .costs_act_pano-desc{font-size:.875rem}
+}
+@media (max-width:479px){
+.costs_act_pano-photo{flex:0 0 180px}
+  .costs_act_pano-body{padding:20px}
+  .costs_act_pano-title{font-size:1.125rem}
+  .costs_act_pano-desc{font-size:.8125rem}
+}
+
+/* living-slider_* nav aliases — the shared card-slider_* family carries the
+   styling; these are the per-slider scoping aliases the reference also ships */
+.living-slider_arrow{flex-shrink:0}
+.living-slider_progress{flex:1}
+.living-slider_progress-fill{width:0%}
+
+/* accom_detail-text — the renamed <p> inside accom_float-detail. The type is
+   set by .accom_float-detail (shared/base.css:1458); this only resets margin.
+   NOTE: .accom_float-detail itself is ALSO absent from the _live .opt snapshot —
+   an 18th stale class beyond the 17 the brief lists. Without it the row is
+   display:block and the icon sits ABOVE the text instead of beside it.
+   Verbatim from shared/base.css:1458 + its 991px step. */
+.accom_float-detail{display:flex;align-items:center;gap:10px;font-size:.875rem;color:var(--brown-dark,#5f5950);opacity:1;line-height:1.4}
+@media (max-width:991px){.accom_float-detail{font-size:.8125rem}}
+.accom_detail-text{margin:0}
+.accom_float-detail .accom_detail-text{margin-top:0}
+
+
+
+/* ------------------------------------------------------------
+   A2. REUSED FROM THE SIBLING SD PAGE — also preview-only.
+   The nextread_* family was minted on pages/san-diego/san-diego.html (§19 blog
+   cluster) AFTER CLASS-CONTRACT.md was written, and it is city-agnostic by design.
+   §12 binds to it instead of minting contract B7 (the retired blog-card family),
+   which would have created a SECOND Webflow style object for the same component.
+   Declarations below are copied VERBATIM from pages/san-diego/landing.css — at
+   deploy, bind to those existing style objects, do not create new ones.
+   ------------------------------------------------------------ */
+.nextread_grid{display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1fr 1fr auto;gap:16px;margin-top:48px}
+.nextread_card{background:var(--cream-soft,#f9f1df);border:1px solid rgba(95,89,80,.15);border-radius:20px;overflow:hidden;text-decoration:none;transition:transform .35s cubic-bezier(0.16,1,0.3,1),border-color .35s ease,background .35s ease}
+.nextread_card:hover{transform:translateY(-3px);border-color:rgba(231,139,16,.45);background:var(--cream-light,#f3e7d3)}
+.nextread_card.is-feature{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column}
+.nextread_media{aspect-ratio:16/10;overflow:hidden}
+.nextread_img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(0.16,1,0.3,1)}
+.nextread_card:hover .nextread_img{transform:scale(1.03)}
+.nextread_body{padding:28px 30px 30px;display:flex;flex-direction:column;gap:10px;flex:1}
+.nextread_cat{font-size:.6875rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--orange-gold,#e78b10);margin:0}
+.nextread_title{font-family:"Cameraobscura",serif;font-size:1.375rem;font-weight:500;letter-spacing:.5px;line-height:1.2;text-transform:uppercase;color:var(--brown-dark,#5f5950);margin:0}
+.nextread_excerpt{font-size:1rem;line-height:1.6;color:var(--brown-dark,#5f5950);margin:0;text-wrap:pretty}
+.nextread_card .cta-pill-indigo{margin-top:auto;align-self:flex-start}
+.nextread_card:hover .cta-pill-indigo{opacity:.85}
+.nextread_card:not(.is-feature){grid-column:2;display:flex;flex-direction:column;gap:8px;padding:26px 28px}
+.nextread_card:not(.is-feature) .nextread_title{margin-top:auto}
+.nextread_card:not(.is-feature) .cta-pill-indigo{margin-top:16px}
+.nextread_card.is-wide{grid-column:1 / -1;grid-row:3;padding:30px}
+.nextread_card.is-wide .cta-pill-indigo{margin-top:22px}
+@media (max-width:991px){.nextread_grid{grid-template-columns:1fr;grid-template-rows:auto}.nextread_card.is-feature{grid-column:1;grid-row:auto}.nextread_card:not(.is-feature){grid-column:1}.nextread_card.is-wide{grid-column:1;grid-row:auto}}
+@media (max-width:767px){.nextread_body{padding:24px}}
+@media (max-width:479px){.nextread_grid{margin-top:28px}}
+
+/* Design-system callout spacing, also verbatim from pages/san-diego/landing.css.
+   The live .opt ships .callout{margin:0}, so without this every callout on this page
+   sits flush against the block above it. 32px is the normalised DS standard. */
+.section_page .callout{margin-top:32px}
+.section_page .callout + .callout{margin-top:32px}
+
+/* ── §2 sticky TOC states — cascade patch (same root cause as landing.css:1) ──
+   The .opt snapshot ships `.stoc_text{color:var(--brown-dark);font-weight:400}` and
+   `.stoc_dot{...}` with NO state rules for either child. Both labels are child nodes,
+   so their own colour/weight beat what `.stoc_link:hover` / `.stoc_link.is-active`
+   set on the parent <a> — the scroll-spy was adding is-active and the cascade threw
+   the visual away. The dot has `:hover` (dot-only, so it never fires from the link)
+   and `.is-hover` but no `.is-active`; shared/utils.js used to paper over that with
+   polled inline colours and is no longer loaded.
+   Target the children from the link, active AFTER hover so the current item keeps
+   indigo while hovered. No new Webflow objects: existing classes, states only. */
+/* FLATTENED — RESPONSIVE-BRIEF §4 and TOC-RESPONSIVE-SPEC §10. The eight rules above were all
+   descendant chains (.stoc_link.is-active .stoc_text and friends), and a Webflow combo styles the
+   element carrying both classes, never its descendants — so all eight were undeployable, at every
+   width. They are replaced by the SAME flat block landing.css now carries, character for character,
+   so the two sheets cannot drift: the scroll-spy already writes is-active onto .stoc_dot and
+   .stoc_text directly, and the shared painter writes is-hover, is-visible and is-menu-open onto the
+   element that answers them. Literal hex, because a Webflow style object cannot carry a var().
+   NOTE the deploy caveat that comes with this: .stoc_dot.is-active is inert in PREVIEW on any page
+   whose painter also writes an inline #e78b10 onto the active dot (inline beats a stylesheet). It is
+   authored anyway because Webflow ships no .stoc_dot.is-active rule at all and the deployed page has
+   nothing else. */
+.stoc_text.is-hover{color:#37332c}
+.stoc_text.is-active{color:#5d60ee;font-weight:600}
+.stoc_dot.is-active{border-color:#e78b10;background:#e78b10}
+/* ≤991 — the card becomes the right-edge glass pill. The resting styles are the live sheet's and
+   nothing here contests them; these are only the five state rules Webflow tree-shakes out because no
+   Designer element wears the combo. Not restated: .stoc_nav{background-image:none} and the 6px
+   .stoc_dot, both of which the live 991 sheet already computes. */
+@media screen and (max-width:991px){
+.stoc_component.is-visible{opacity:1}
+.stoc_link.is-active,.stoc_link.is-active:hover{color:#5d60ee;font-weight:500}
+.stoc_text.is-active{font-weight:500}
+.stoc_label.is-menu-open{background-color:rgba(243,231,211,.98)}
+/* A chevron ROTATION, not the spec's two background-images: the live 991 sheet still ships
+   .stoc_label::before/::after, so redrawing them as background layers paints a second dot and an
+   upward chevron across the existing downward one — a visible X. A combo + pseudo-element variant is
+   equally deployable and flips the chevron that is already there. */
+.stoc_label.is-menu-open::after{transform:rotate(-135deg);opacity:.6}
+.stoc_nav.is-menu-open{visibility:visible;opacity:1;transform:translateY(0);background-color:rgba(249,241,223,.97)}
+}
+/* Anchor landing offset — the navbar is fixed (~90px) and nothing on this page set
+   scroll-margin, so every TOC jump parked the section heading behind the navbar and
+   the spy then read the NEXT section as current. 120px clears navbar + breathing room
+   and matches the spy's own 160px trigger line. */
+.page_content .section_page,.page_content .section_inline-cta{scroll-margin-top:120px}
+@media (max-width:991px){.page_content .section_page,.page_content .section_inline-cta{scroll-margin-top:96px}}
+
+/* ============================================================
+   B. NEW CLASSES — contract-approved B1-B6 only
+   ============================================================ */
+
+/* C1 · §3 currency converter inside the 4th overview_card.
+   NEW family. Two cream panels side by side — type US$ left, read the converted amount
+   right, pick the currency from the pill on the right panel. Reference direction (client,
+   3 Aug): modern, minimal, no clutter — so no borders, no white, no submit, no swap, one
+   rate line. Surfaces are DS creams (cream-light panel on the cream-soft card); the only
+   3px indigo ring is the focus state, from the live /contact-cel field spec documented in
+   booking/widget.css §Inputs. Numbers are LibreFranklin 500 (README.md: numbers are data,
+   not headings) — Cameraobscura never touches a figure. No inline styles, no !important. */
+/* NO top margin. .overview_card is a flex column, so margins do NOT collapse here — any
+   margin-top on the widget ADDS to the 1.4em margin-bottom of the paragraph above it (that
+   stack was the 37px gap the client flagged, 4 Aug). The paragraph's own bottom margin owns
+   the spacing; keep it that way for anything else dropped into this card. */
+
+
+
+
+
+
+
+
+
+
+
+
+/* currency tags: the source one is fixed, the target one opens the panel — same pill */
+.fx_pick{flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 14px;border:0;border-radius:100px;background-color:var(--cream-medium,#e9deca);font-family:'LibreFranklin',sans-serif;font-size:.8125rem;font-weight:600;letter-spacing:1px;color:var(--brown-deep,#37332c);line-height:1}
+
+/* flags: real artwork from flagcdn (no hand-drawn SVG), circle-cropped, hairline ring
+   so a white or pale flag never floats on the cream panel */
+.fx_flag{flex-shrink:0;width:20px;height:20px;border-radius:50%;object-fit:cover;box-shadow:inset 0 0 0 1px rgba(55,51,44,.16),0 0 0 1px rgba(55,51,44,.08)}
+.fx_pick{cursor:pointer;transition:background-color .15s ease,color .15s ease}
+.fx_pick:hover{background-color:var(--cream-light,#f3e7d3);color:var(--brown-deep,#37332c)}
+.fx_pick:focus-visible{outline:none;box-shadow:0 0 0 2px var(--indigo-bright,#5d60ee)}
+.fx_pick[aria-expanded="true"]{background-color:var(--cream-soft,#f9f1df);color:var(--brown-deep,#37332c);box-shadow:inset 0 0 0 1px rgba(95,89,80,.22)}
+.fx_pick-caret{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s ease}
+.fx_pick[aria-expanded="true"] .fx_pick-caret{transform:translateY(1px) rotate(-135deg)}
+/* option panel — cream card, DS "selected = dark fill" for the active currency */
+.fx_menu{position:absolute;z-index:5;top:calc(100% + 8px);left:0;right:0;display:flex;flex-direction:column;gap:1px;max-height:264px;overflow-y:auto;padding:8px;background-color:var(--cream-extra-light,#f9f0df);border-radius:14px;box-shadow:0 12px 30px rgba(55,51,44,.14)}
+.fx_menu[hidden]{display:none}
+.fx_option{display:flex;align-items:center;gap:10px;padding:10px 14px;border:0;border-radius:8px;background-color:transparent;font-family:'LibreFranklin',sans-serif;font-size:.8125rem;font-weight:600;letter-spacing:.6px;color:var(--brown-dark,#5f5950);line-height:1.2;text-align:left;cursor:pointer;transition:background-color .12s ease,color .12s ease}
+.fx_option:hover{background-color:var(--cream-soft,#f9f1df)}
+.fx_option:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--indigo-bright,#5d60ee)}
+.fx_option.is-active{background-color:var(--cream-light,#f3e7d3);color:var(--brown-deep,#37332c)}
+.fx_option-name{font-size:.75rem;font-weight:400;letter-spacing:0;color:var(--brown-dark,#5f5950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx_option.is-active .fx_option-name{color:var(--brown-dark,#5f5950)}
+
+/* the page ships `.section_page p + p{margin-top:1.4em}` */
+
+
+
+
+
+/* C2 · §4 cost calculator (calc_*). Same component vocabulary as the SD landing
+   planner (plan_* in pages/san-diego/landing.css §16), rebuilt page-scoped: one flat
+   cream sheet, inputs left, live ledger right, radio tiles, chunky slider, dashed
+   total, visa chip. Indigo and orange are ACCENTS only (checked dot, focus ring,
+   total, over-ESTA state) — never surface fills. Figures are LibreFranklin with
+   tabular numerals; Cameraobscura never touches a number. Logic: the SHARED engine
+   shared/calculator.js + the page config calculator-sandiego-costs.js (see
+   shared/CALCULATOR.md). The markup is bound by data-calc-* hooks, so the same engine
+   drives the plan_* planner on the SD landing page.
+
+   DELIBERATE, DOCUMENTED EXCEPTION to DESIGN-RULES §1 (Tables): "uniform font-size in
+   every cell, no header/body/total hierarchy inside a table". That rule was written from
+   the rejected blog data tables — comparison grids the reader scans cell by cell. This
+   is not one: .calc_ledger is the APPROVED planner ledger (plan_line / plan_total-val,
+   shipped on the SD landing page), and it is marked up as a <table> only because the §4
+   [CMS] note requires a real table so the calculation stays extractable. Flattening it to
+   one type size would break the approved component, so the ladder is kept to the minimum
+   the planner needs: row text and values share one size, the sub-line is quiet, and the
+   TOTAL is the one step up — the reader's single answer, not a cell to compare. No
+   coloured header bar, no zebra, no shadow: those parts of the rule still hold. */
+/* Desktop default = two columns (inputs | ledger). Every step below is a MAX-width query,
+   on Webflow's own breakpoints (991 tablet / 767 mobile landscape / 479 mobile portrait),
+   per DESIGN-RULES §Deploy surface: min-width cannot be authored in the Designer. */
+  /* 992-1279 RAIL BAND (see the block above): narrow at base, wide at large, wide restated at
+     medium, because 768-991 and >=1280 are not contiguous and the 272px rail only costs the column
+     its width in between.
+     Measured: two columns inside the 309px band column clipped the calculator by 261px (309/570). */
+.calc_sheet{display:grid;grid-template-columns:1fr;border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);margin-top:32px;text-align:left;overflow:hidden}
+@media screen and (min-width:1280px){.calc_sheet{grid-template-columns:1.05fr 1fr}}
+.calc_col{padding:32px 36px 30px}
+/* Both columns share the sheet's --cream-soft; the hairline alone separates them. */
+.calc_col.is-result{display:flex;flex-direction:column;border-top:1px solid rgba(95,89,80,.12)}
+@media screen and (min-width:1280px){.calc_col.is-result{border-top:none;border-left:1px solid rgba(95,89,80,.12)}}
+@media (max-width:991px){
+.calc_sheet{grid-template-columns:1fr}
+  .calc_col{padding:26px 28px 24px}
+  .calc_col.is-result{border-left:none;border-top:1px solid rgba(95,89,80,.12)}
+}
+.calc_col-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8D877B;margin:0 0 18px}
+.calc_field{padding:18px 0}
+.calc_field:first-child{padding-top:0}
+/* No dividers in the input column (client, 4 Aug): each field already reads as its own block
+   from the uppercase key label plus the 18px rhythm, and the hairlines fought the slider's two
+   quiet caption bands. The right-hand summary column keeps its own rules. */
+.calc_col .calc_field + .calc_field{border-top:0}
+.calc_field.is-last{padding-bottom:0}
+.calc_key{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-deep,#37332c);margin:0}
+.calc_field-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+/* Weeks readout — the SAME floating bubble as the landing planner's .plan_weeks
+   (landing.css §16): a cream tile with a 1.5px edge that rides the thumb, turning orange
+   past the ESTA limit. --calc-fill / --calc-frac come from the shared engine; the 28px
+   term is the thumb width, so the bubble stays centred over it at both ends. */
+.calc_slider{position:relative;margin-top:56px;--calc-fill:31.43%;--calc-frac:.3143}
+/* The bubble rides the thumb but is CLAMPED inside the track: its half-width (~52px at
+   "36 weeks") is far wider than the 14px thumb inset plus the column padding, so at either
+   extreme it used to cross .calc_sheet's edge and be cropped by the sheet's overflow:hidden
+   (which is there to protect the 20px radius) — cutting the primary readout on mobile. */
+.calc_weeks{position:absolute;bottom:calc(100% + 12px);left:clamp(52px,calc(14px + var(--calc-fill,31.43%) - 28px * var(--calc-frac,.3143)),calc(100% - 52px));transform:translateX(-50%);display:flex;align-items:baseline;gap:4px;background:var(--cream-medium,#e9deca);border:1.5px solid #b6a88c;border-radius:10px;padding:7px 12px;font-family:'LibreFranklin',sans-serif;font-size:.875rem;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3;color:var(--brown-deep,#37332c);margin:0;white-space:nowrap;transition:border-color .3s ease}
+/* the readout bubble is part of the same control, so it takes the route colour too — it was the last
+   part still keyed to is-over, which would have left it orange on a b1b2 (indigo) verdict */
+#calcTool .calc_weeks{border-color:var(--calc-route)}
+.calc_weeks-unit{font-size:.6875rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8D877B;margin-left:1px}
+/* ESTA tick — the planner's .plan_tick: quiet until the stay passes 12 weeks, then orange.
+   left: (12-1)/(36-1) = 31.43% of the track.
+   The label needs its OWN band. The planner's geometry works because its track is the full
+   content width; here the track is only 204px inside the 276px input column, so a label
+   sitting in the scale's 14px gap overlapped the scale numbers both vertically (23px label
+   in a 14px gap) and horizontally (132px label on a 204px track).
+   FIX (client, 4 Aug): three stacked bands inside .calc_slider instead of one crowded row —
+   track (with the 2px tick on it), then the 1/12/24/36 scale, then the caption in its own
+   band. Nothing can overlap at any width, and the order reads top to bottom. The caption is
+   centred on the tick's 31.43%, not on the scale's "12", so it labels the mark on the track. */
+.calc_tick{position:absolute;left:31.43%;top:-3px;width:2px;height:20px;background:rgba(95,89,80,.38);opacity:0;pointer-events:none;transition:opacity .35s ease,background .35s ease}
+/* Clamped like the readout bubble so the caption can never cross the sheet's overflow:hidden edge. */
+.calc_esta{position:relative;height:13px;margin-top:3px;pointer-events:none}
+.calc_tick-label{position:absolute;top:0;left:31.43%;transform:translateX(-50%);white-space:nowrap;line-height:1;font-size:.625rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#8D877B;opacity:0;transition:color .35s ease,opacity .35s ease}
+#calcTool.is-esta-limit .calc_tick,#calcTool.is-esta-limit .calc_tick-label{opacity:1}
+/* ================ THE CONTROL WEARS THE VERDICT'S COLOUR (client, 4 Aug: "the progress bar color and
+   the visa color should match ... design consistency is the key")
+   --calc-route is set once per route on the tool root and every coloured part of the slider reads it:
+   the track fill, the thumb ring, the focus ring, the ESTA tick and its caption. So the answer at the
+   bottom of the column and the control at the top of it can never disagree.
+     esta  #1ea869 green   — nothing extra to apply for
+     b1b2  #5d60ee indigo  — a visitor visa: a step, not a barrier
+     f1    #e78b10 orange  — a student visa: SEVIS + MRV + an interview
+   Exactly the three colours the .calc_chip states use. REPLACES the old "#calcTool.is-over" colour
+   rules, which turned the track and tick orange the moment the stay passed 12 weeks — at which point
+   the route is b1b2, so the control said "student visa" while the chip said "visitor visa". The
+   is-over flag still ships (it is a true state) but no longer paints anything; .is-esta-limit alone
+   decides whether the tick is VISIBLE. ================ */
+#calcTool{--calc-route:var(--indigo-bright,#5d60ee)}
+#calcTool.is-route-esta{--calc-route:#1ea869}
+#calcTool.is-route-b1b2{--calc-route:var(--indigo-bright,#5d60ee)}
+#calcTool.is-route-f1{--calc-route:var(--orange-gold,#e78b10)}
+#calcTool .calc_tick{background:var(--calc-route)}
+#calcTool .calc_tick-label{color:var(--calc-route)}
+/* slider — 14px track, cream rest, indigo fill; --calc-fill set by the shared engine */
+.calc_range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:14px;border-radius:7px;margin:0;cursor:pointer;background:linear-gradient(90deg,var(--calc-fillc,var(--indigo-bright,#5d60ee)) var(--calc-fill,31.43%),var(--cream-medium,#e9deca) var(--calc-fill,31.43%))}
+.calc_range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fdf8ee;border:2px solid var(--calc-fillc,var(--indigo-bright,#5d60ee));box-shadow:0 2px 8px rgba(55,51,44,.24);transition:transform .18s ease}
+.calc_range:hover::-webkit-slider-thumb{transform:scale(1.07)}
+.calc_range::-moz-range-track{height:14px;border-radius:7px;background:transparent}
+.calc_range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fdf8ee;border:2px solid var(--calc-fillc,var(--indigo-bright,#5d60ee));box-shadow:0 2px 8px rgba(55,51,44,.24)}
+/* colour-mix so the focus ring follows the route too, at the same 25% strength as before */
+.calc_range:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--calc-fillc,var(--indigo-bright,#5d60ee)) 30%,transparent)}
+#calcTool .calc_range{--calc-fillc:var(--calc-route)}
+/* Scale numbers sit at their TRUE track fractions ((v-1)/35), not spread by space-between, so
+   "12" lands exactly under the tick and the ESTA caption lands exactly under "12" — one shared
+   31.43% axis for all three. First and last are flush to the ends so the row reads symmetrical
+   at every width. 10px of clearance clears the 26px thumb (which overhangs the 14px track by
+   6px) with no more air than that. */
+.calc_scale{position:relative;height:14px;margin-top:10px;font-size:.6875rem;font-weight:600;line-height:1;letter-spacing:1px;color:#8D877B}
+.calc_scale span{position:absolute;top:0;transform:translateX(-50%)}
+.calc_scale span:nth-child(1){left:0;transform:none}
+.calc_scale span:nth-child(2){left:31.43%}
+.calc_scale span:nth-child(3){left:65.71%}
+.calc_scale span:nth-child(4){left:auto;right:0;transform:none}
+/* Select fields — the DS form field: 3px cream-medium edge, 7px radius, 3rem min-height,
+   #9a8f80 caret, indigo border + 3px indigo ring on focus. A native select keeps the control
+   compact and responsive at every width, which seven residence tiles did not. The caret is a
+   background image because appearance:none removes the platform one.
+   FILL is #fdf8ee, the booking widget's lighter field surface — NOT --cream-extra-light: on this
+   sheet's --cream-soft (#f9f1df) that token is #f9f0df, one value apart, so the field read as a
+   hole with only its border. #fdf8ee sits clearly above the sheet at both column tints. */
+.calc_control{position:relative;margin-top:10px}
+.calc_select{width:100%;min-height:3rem;padding:.6rem 2.75rem .6rem 1.1rem;border:3px solid var(--cream-medium,#e9deca);border-radius:7px;background-color:#fdf8ee;background-image:linear-gradient(45deg,transparent 50%,#9a8f80 50%),linear-gradient(135deg,#9a8f80 50%,transparent 50%);background-size:6px 6px,6px 6px;background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%;background-repeat:no-repeat;font-family:'LibreFranklin',sans-serif;font-size:.9375rem;font-weight:500;color:var(--brown-deep,#37332c);line-height:1.3;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .15s ease,box-shadow .15s ease}
+.calc_select:hover{border-color:#ddd0b6}
+.calc_select:focus{outline:none;border-color:var(--indigo-bright,#5d60ee);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
+.calc_field-note{font-size:.8125rem;font-weight:500;font-variant-numeric:tabular-nums;color:#8D877B;line-height:1.4;margin:8px 0 0}
+.calc_col .calc_field-note{margin-top:8px}
+
+/* radio tiles */
+
+/* Accommodation tiles are 1-up for the WHOLE two-column sheet. Measured: the input
+   column is 275px at 1200 and 330px at 1440, so a 2-up tile lands at 124–138px and
+   "Shared apt Standard" wraps to three lines. They only go 2-up once the sheet itself
+   collapses to one column (≤991), where the row has the full content width. */
+
+
+
+
+
+
+
+
+
+
+
+/* Add/remove rows — same field metrics as .calc_select above (3rem min-height, 3px
+   cream-medium edge, 7px radius, #fdf8ee fill, indigo focus ring) so the whole input column
+   reads as one control family. Full width, stacked: a chip row wrapped unpredictably inside
+   the 275px input column, and these are budget LINES, not tags. Selected state is the DS
+   "chosen" treatment: cream-medium fill, #b6a88c edge, indigo mark. */
+.calc_adds{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.calc_add{appearance:none;font:inherit;font-size:.9375rem;font-weight:500;display:flex;width:100%;align-items:center;gap:10px;min-height:3rem;padding:.6rem 1.1rem;background:#fdf8ee;border:3px solid var(--cream-medium,#e9deca);border-radius:7px;cursor:pointer;text-align:left;color:var(--brown-dark,#5f5950);transition:background-color .18s ease,border-color .18s ease,color .18s ease}
+.calc_add:hover{border-color:#ddd0b6;color:var(--brown-deep,#37332c)}
+.calc_add:focus-visible{outline:none;border-color:var(--indigo-bright,#5d60ee);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
+.calc_add.is-on{background:var(--cream-medium,#e9deca);border-color:#b6a88c;color:var(--brown-deep,#37332c);font-weight:600}
+.calc_add-mark{flex:0 0 auto;position:relative;width:1.125rem;height:1.125rem;border-radius:5px;background:#fdf8ee;border:1.5px solid #bdae93;transition:background-color .15s ease,border-color .15s ease}
+.calc_add.is-on .calc_add-mark{background:var(--indigo-bright,#5d60ee);border-color:var(--indigo-bright,#5d60ee)}
+.calc_add-mark:after{content:'';position:absolute;top:3px;left:5px;width:5px;height:9px;border-right:1.5px solid #fdf8ee;border-bottom:1.5px solid #fdf8ee;transform:rotate(40deg) scale(0);transition:transform .18s cubic-bezier(.34,1.56,.64,1)}
+.calc_add.is-on .calc_add-mark:after{transform:rotate(40deg) scale(1)}
+.calc_add-hint{margin-left:auto;padding-left:12px;font-size:.8125rem;font-weight:500;font-variant-numeric:tabular-nums;color:#9a8f80;white-space:nowrap}
+.calc_add.is-on .calc_add-hint{color:var(--brown-dark,#5f5950)}
+/* ledger — a real table, kept visually quiet: no header bar, no zebra, no shadow */
+.calc_ledger{width:100%;border-collapse:collapse;table-layout:auto}
+.calc_caption{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.calc_ledger th,.calc_ledger td{padding:18px 0;text-align:left;vertical-align:baseline;font-weight:600}
+/* No row hairlines (client, 4 Aug): the estimate reads as a clean two-column list — term left,
+   figure right — and the 13px row padding does the separating. Only the total keeps a rule. */
+.calc_ledger th{font-size:1rem;color:var(--brown-dark,#5f5950)}
+.calc_ledger td{font-family:'LibreFranklin',sans-serif;font-size:1rem;letter-spacing:-.1px;font-variant-numeric:tabular-nums;color:var(--brown-dark,#5f5950);text-align:right;white-space:nowrap}
+.calc_row-sub{display:block;font-size:.875rem;font-weight:400;line-height:1.4;color:#8D877B;margin-top:3px}
+/* The total row is a flex row, not two table cells: at 992–1200 the label and a
+   six-figure total cannot share a 368px column, and a nowrap cell would clip the
+   number — the one thing on this page that must never be half-visible. Wrapping lets
+   the figure drop to its own line instead. */
+/* The total row stays real table markup: the cell keeps table display so the dashed rule
+   spans the whole column, and the label + figure are an INLINE run inside it. No flex here —
+   a flex box inside a table cell drove this table into a sizing loop that hung the page. */
+.calc_total-cell{border-top:1.5px dashed rgba(95,89,80,.35);padding-top:18px;text-align:left;line-height:1.2}
+/* Label and value group are centred on the same line: the pill is 34px tall, so the label gets
+   the same line box rather than sitting on the text baseline. */
+.calc_total-k{display:inline-block;vertical-align:middle;min-height:34px;line-height:34px;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-deep,#37332c)}
+/* The value group floats right on one line and wraps as a unit when the column is too narrow;
+   below 767px it drops under the label and aligns left, so nothing is ever squeezed or clipped. */
+.calc_total-v{float:right;vertical-align:middle;margin-left:16px;white-space:nowrap;flex-wrap:wrap;justify-content:flex-end}
+/* ================ THE TOTAL ROW HOLDS STILL (client, 4 Aug: "while the number is changing this area
+   is moving ... make it look stable")
+   .calc_total-v is float:right and the number is its LAST child, so the right edge is pinned and every
+   extra digit shoved the "from" label and the currency pill LEFTWARDS — dragging the weeks slider made
+   the whole group jitter. Two reserved slots stop it, and neither clips:
+     · the number gets min-width:8ch + text-align:right. 8ch covers everything up to "1,234,567" at
+       tabular figures, which is every US$ total this calculator can produce; a currency with a much
+       larger unit (IDR, VND) still expands rather than truncating.
+     · the prefix gets a slot wide enough for "from", because it swaps to "≈" on a converted total —
+       two different widths in the same position, which moved the pill on every currency change.
+   min-width, not width: reserving space is the fix, clipping never is. ================ */
+.calc_total-from{display:inline-block;min-width:2.9em;text-align:right;font-size:.875rem;font-weight:500;color:#8D877B;margin-right:6px}
+/* Currency picker INSIDE the total — the §3 converter's control REUSED, class for class
+   (.fx_pick / .fx_menu / .fx_option), so the pill, the cream option panel and the flags are
+   literally the same component, not a copy. The ANCHORING now matches too (client, 4 Aug): the
+   §3 panel spans its whole field, so this one spans the whole total row rather than hanging off
+   the pill as a narrow flyout. .calc_fx is static so the panel's containing block is the total
+   cell, which is the full column width; the panel drops from the cell's bottom edge. */
+.calc_total-v{display:inline-flex;align-items:center;gap:10px}
+.calc_total-from{align-self:center}
+.calc_fx{position:static;display:inline-flex;align-items:center}
+.calc_total-cell{position:relative}
+.calc_fx-menu{left:0;right:0;width:auto;text-align:left}
+.calc_total-num{display:inline-block;min-width:8ch;text-align:right;font-size:.9375rem;font-weight:600;line-height:1.2;letter-spacing:-.1px;font-variant-numeric:tabular-nums;color:var(--indigo-bright,#5d60ee)}
+.calc_fx-note{font-size:.75rem;color:#8D877B;line-height:1.5;margin:10px 0 0}
+.calc_col .calc_fx-note{margin-top:10px}
+.calc_fx-note:empty{display:none}
+@media (max-width:767px){
+.calc_total-v{float:none;display:flex;margin-left:0;margin-top:12px;justify-content:flex-start}
+  .calc_total-k{min-height:0;line-height:1.2}
+  /* Left-aligned at this width, so the reserved slots would open a visible gap before the number
+     instead of absorbing its growth — the row is on its own line here and has nothing to push. */
+  .calc_total-from,.calc_total-num{min-width:0;text-align:left}
+}
+@media (max-width:479px){.calc_fx{height:32px}}
+
+/* Visa block — the estimate column's closing statement: route chip, why it applies, and the
+   government fees it implies. Sits on the column's own cream with a hairline above it, so it
+   reads as a section of the estimate rather than a second card. */
+.calc_visa{margin-top:22px;padding-top:20px}
+.calc_visa .calc_col-label{margin-bottom:10px}
+.calc_visa .calc_chip{display:inline-block;margin:0}
+.calc_visa-why{font-size:.875rem;line-height:1.6;color:var(--brown-dark,#5f5950);margin:12px 0 0}
+.calc_visa-fees{font-size:.8125rem;line-height:1.6;color:#8D877B;margin:8px 0 0}
+
+.calc_meta{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:14px}
+.calc_month{font-size:.875rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--brown-dark,#5f5950);margin:0}
+/* THE VERDICT CHIP carries its colour on ITS OWN state class (client, 4 Aug: "the color needs to
+   change properly when the info changes"). It used to be painted by "#calcTool.is-f1 .calc_chip" — a
+   flag on the tool ROOT — while the engine wrote is-esta / is-f1 onto the chip itself, so the class
+   that described the state was not the class that styled it, and there was no third state at all.
+   Now three, matching the three routes the model actually returns, and read in the same colour
+   language as the rest of the page: is-esta green (nothing extra to apply for), is-b1b2 indigo (a
+   visitor visa — a step, not a barrier), is-f1 orange (a student visa: SEVIS + MRV + an interview),
+   the same orange the ESTA-limit tick already uses when the stay crosses 12 weeks. The label spells
+   the route out, so nothing rests on colour alone. */
+.calc_chip{margin:0;padding:6px 12px;border-radius:999px;font-size:.6875rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;background:var(--cream-medium,#e9deca);color:var(--brown-deep,#37332c)}
+.calc_chip.is-esta{background:#1ea8691f;color:#15754a}
+.calc_chip.is-b1b2{background:#5d60ee1f;color:#4e51be}
+.calc_chip.is-f1{background:#e78b1024;color:#9c5c07}
+.calc_note{font-size:.8125rem;line-height:1.55;color:#8D877B;margin:14px 0 0;max-width:46ch}
+
+
+/* the page ships `.section_page p + p{margin-top:1.4em}` — these are stacked <p>. The note
+   keeps its 14px, restated at the SAME specificity as the reset (the earlier .calc_note
+   version lost to .calc_col .calc_note and the gap silently collapsed to 0). */
+.calc_col .calc_month{margin-top:0}
+.calc_col .calc_note{margin-top:14px}
+@media (max-width:767px){.calc_col{padding:22px 22px 20px}.calc_total-v{font-size:1.25rem}.calc_meta{gap:10px}}
+@media (max-width:479px){
+.calc_col{padding:20px 18px 18px}
+  .calc_ledger td{font-size:.9375rem}
+  
+  .calc_ledger th{font-size:.9375rem}
+  .calc_meta{flex-direction:column;align-items:flex-start}
+}
+
+/* §3 card grid — 3 + 1 on desktop: the three short text cards share a row (equal height,
+   content bottom-aligned, icon pinned top), the converter card sits below them at full width,
+   sized to its own content — a form widget has nothing to bottom-align against.
+   Desktop-first, max-width steps only (991 / 767), so it stays Designer-authorable. */
+/* Card headings use the general heading colour (--brown-dark, the h1-h6 token), not
+   indigo — indigo stays reserved for links and the current TOC item. */
+.overview_col-title{color:var(--brown-dark,#5f5950)}
+/* THREE cards now (the currency card was removed, client 4 Aug), so the layout is a clean 3-up row
+   and every :nth-child(4) rule went with the card — the full-width 4th cell, and the "not the 4th"
+   qualifier on the icon/title spacing, which existed only to exempt it. Left as-is those rules put an
+   empty cell in a 2x2 at 991px and below. */
+#quick-answer .overview_layout{grid-template-columns:repeat(3,1fr)}
+#quick-answer .overview_col-icon{margin-bottom:auto}
+#quick-answer .overview_col-title{margin-top:80px}
+@media (max-width:991px){
+#quick-answer .overview_layout{grid-template-columns:repeat(3,1fr)}
+  #quick-answer .overview_col-title{margin-top:60px}
+}
+@media (max-width:767px){
+#quick-answer .overview_layout{grid-template-columns:1fr}
+  #quick-answer .overview_col-icon{margin-bottom:48px}
+  #quick-answer .overview_col-title{margin-top:0}
+}
+
+
+
+
+
+
+/* B9 · §4 "See the details" disclosure. A native <details>, so it needs no JS, prints open in the
+   browser's print view, and stays out of the .faq-* family (which the live accordion script and the
+   FAQPage schema both own). The toggle is a FULL-WIDTH row, not a pill: it sits directly under a
+   full-width calculator sheet, and a small left-aligned pill under 735px of sheet reads as a stray
+   button. Same field vocabulary as the calculator's own controls — 3rem min-height, 7px radius,
+   cream fill, hairline edge — with a caret that flips and a one-line summary of what is inside. */
+.calc_details{margin-top:24px}
+.calc_details-toggle{display:flex;align-items:center;gap:14px;width:100%;min-height:3.25rem;padding:18px 32px;border:1px solid rgba(95,89,80,.15);border-radius:16px;background:var(--cream-soft,#f9f1df);cursor:pointer;list-style:none;transition:background-color .18s ease,border-color .18s ease}
+.calc_details-toggle::-webkit-details-marker{display:none}
+.calc_details-toggle:hover{border-color:rgba(95,89,80,.3)}
+.calc_details-toggle:focus-visible{outline:none;border-color:var(--indigo-bright,#5d60ee);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
+.calc_details-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-deep,#37332c)}
+.calc_details-hint{font-size:.875rem;font-weight:500;color:#8D877B;line-height:1.4}
+.calc_details-caret{flex-shrink:0;margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--brown-dark,#5f5950);border-bottom:1.5px solid var(--brown-dark,#5f5950);transform:translateY(-2px) rotate(45deg);transition:transform .18s ease}
+.calc_details[open] .calc_details-caret{transform:translateY(1px) rotate(-135deg)}
+.calc_details[open] .calc_details-toggle{border-color:rgba(95,89,80,.3);border-radius:16px 16px 0 0;border-bottom-color:transparent}
+/* the body is the same cream sheet as the calculator, joined to the toggle */
+.calc_details-body{padding:20px 32px 36px;border:1px solid rgba(95,89,80,.15);border-top:0;border-radius:0 0 16px 16px;background:var(--cream-soft,#f9f1df)}
+/* Inside the disclosure the blocks are stacked evidence, so every callout gets real air below
+   it and no divider rules are used — the spacing separates, not a line. */
+.calc_details-body .callout{margin-top:24px;margin-bottom:32px}
+.calc_details-body .section-subtitle{margin-top:36px}
+.calc_details-body .section-subtitle.is-first{margin-top:0}
+.calc_details-body .feetable{margin-bottom:8px}
+.calc_details-body .feetable + .body-text{margin-top:20px}
+/* prose that follows the rate panel inside the disclosure — the panel is a bordered block, so its
+   first paragraph needs the section's own step, not a table's tighter one */
+.calc_details-body .brackets_panel + .body-text{margin-top:28px}
+.calc_details-body .body-text + .body-text{margin-top:16px}
+/* the first child inside the body must not double the disclosure's own spacing */
+.calc_details-body > :first-child{margin-top:0}
+@media (max-width:479px){.calc_details-toggle{padding:14px 18px;gap:10px}.calc_details-hint{display:none}.calc_details-body{padding:16px 20px 28px}}
+/* A .brackets_panel INSIDE the disclosure drops its own chrome. Both surfaces are #f9f1df with a
+   1px hairline and a large radius, so nesting them draws a box inside a box — the defect CLAUDE.md
+   records from the §3 rebuild, and the one thing a screenshot catches instantly. The disclosure body
+   IS the panel here; the panel keeps only its parts (band, table, foot). --panel-x:0 hands the
+   horizontal inset to the body's own 32px padding, so the band spans the body's content width and
+   the table's .is-inset-l/-r cells align with everything else inside the disclosure instead of being
+   indented twice. Same reasoning as .brackets_panel.is-factors. */
+.calc_details-body .brackets_panel{--panel-x:0px;background:none;border:0;border-radius:0;overflow:visible;margin:0}
+.calc_details-body .brackets_head{padding-left:0;padding-right:0;background:none;border-top:0}
+.calc_details-body .brackets_foot{padding-left:0;padding-right:0}
+
+/* B10 · §4 one-time fee table, inside the "See the details" disclosure. Quiet by DESIGN-RULES
+   §1: one font size in every cell, no header bar, no zebra, no shadow — the head row is separated
+   by a hairline and a small-caps label only. Amount column is tabular and right-aligned. */
+/* border-collapse:SEPARATE with zero spacing, not collapse: in the collapsing border model the
+   browser IGNORES padding on the table box (CSS 2.1 §17.6.2), so the panel inset set on .feetable
+   never reached its cells — every table sat flush against the panel edge while the band and the
+   footnote were inset. Separate + border-spacing:0 renders identically (every rule below draws
+   one-sided borders only) and the table can be padded like any other block. */
+/* THE 992-1279 RAIL BAND. Above 991 the 272px rail is back IN FLOW and .section_page still charges
+   its 84px inset, so the content column is 311px at 992 and 598px at 1279 — narrower than any tablet
+   state, and narrower than the 696px this component gets at 1440. Webflow has no max-width tier
+   between main and medium, so the only legal shape is: narrow at BASE, wide at large, wide restated
+   at medium. The medium restatement is NOT redundant — 768-991 and >=1280 are not contiguous.
+   Measured at 992 before the change, clientWidth/scrollWidth: is-rates 309/363, the second is-rates
+   245/294 and is-visa 309/353 — 44 to 54px of table cut off and swallowed by
+   .page_content{overflow:hidden}. The narrow shape is the block scroller B10 already ships at 767.
+   display:block costs table-layout:fixed inside the band, which is the right trade: auto columns
+   size to content and the row scrolls, rather than losing a column. Real table again at large and
+   at medium. */
+.feetable{width:100%;border-collapse:separate;border-spacing:0;margin-top:20px;table-layout:auto;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media screen and (min-width:1280px){.feetable{display:table;overflow-x:visible}}
+@media screen and (max-width:991px){.feetable{display:table;overflow-x:visible}}
+.feetable_caption{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* ================ TABLE SPACING — ONE SCALE, EVERY TABLE (client, 4 Aug: "use more gap, padding,
+   whitespacing for all tables ... make sure the font sizes in the cells are the same for regular
+   texts. Design consistency is very important").
+   Before this there were THREE row heights on the same page — 14px (base .feetable), 15px
+   (.is-rates) and 18px (.is-visa) — and each variant restated the header band's padding to win the
+   specificity fight it had just created. The variant overrides are DELETED, not retuned: with no
+   ".feetable.is-x th" rule at (0,2,1) in the way, the base rule sizes every row and
+   ".feetable thead th" (0,1,2) sizes every band, so one edit changes every table on both pages.
+   THE SCALE:  rows 20px top/bottom · column gutter 28px · header band 22px · 479px: 16px / 16px
+   TYPE:       every regular data cell is 1rem — .feetable th/td, .feetable_label AND the
+               calculator's .calc_ledger, which was 15px and is the one table that read smaller than
+               its neighbours. Secondary lines inside a cell are .875rem everywhere
+               (.feetable_note, .calc_row-sub — the latter was .8125rem).
+   ================ */
+.feetable th,.feetable td{font-size:1rem;line-height:1.5;text-align:left;padding:20px 28px 20px 0;vertical-align:top;color:var(--brown-dark,#5f5950)}
+/* Column titles (client, 4 Aug): framed top AND bottom, darker ink, small uppercase. The label rung
+   is the page's existing one for column keys — 12px / 600 / 1.5px tracking, uppercase — and the ink
+   moves off brown-soft to brown-dark so a title is not quieter than the data under it.
+   MATCHED TO .ladder_legend (client, 4 Aug: "the similar look and feel ... full width, the bg color,
+   border colors ... a smooth very soft contrast so they look like they are the title of a table").
+   Same #F6EEDA fill, same single 10%-brown hairline BELOW it (#5f59501a — down from 22%, which was
+   the hard edge that stopped it reading as a soft band; the top rule is gone too, client 4 Aug — the
+   band already has .brackets_head's own hairline above it, so a second one doubled up), same
+   generous vertical padding at 20px. Full width is real, not
+   faked: the table's --panel-x inset moved into the markup (see TABLE EDGE INSET below), so the fill
+   AND both rules span the panel edge to edge. Ink stays brown-dark rather than the legend's
+   brown-soft, because a column title should not be quieter than the data beneath it. */
+.feetable thead th{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5f5950;background-color:#F6EEDA;padding-top:22px;padding-bottom:22px;border-bottom:1px solid #5f59501a}
+/* Cell ink is the REGULAR PARAGRAPH COLOUR everywhere (client, 4 Aug: "too dark font color ... use
+   our regular paragraph color in the tables for all tables"). Row keys and amount cells were
+   --brown-deep #37332c — the emphasis ink — so the first and last column of every table sat a step
+   darker than the copy around them and read as a different class of text. All cells are now
+   --brown-dark #5f5950, the ink of every paragraph on the page; weight alone still separates a row key
+   from its value. Only .feetable_note stays lighter, because it IS a note. */
+.feetable tbody th{font-weight:600;color:var(--brown-dark,#5f5950)}
+.feetable tbody tr + tr th,.feetable tbody tr + tr td{border-top:1px solid rgba(95,89,80,.1)}
+/* Amount column: left aligned (client, 4 Aug) — every column on this page starts on its own
+   left edge, so figures are read down a single start edge rather than a ragged right one. */
+.feetable th:last-child,.feetable td:last-child{padding-right:0;text-align:left;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;color:var(--brown-dark,#5f5950)}
+@media (max-width:767px){.feetable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+@media (max-width:479px){.feetable th,.feetable td{font-size:.9375rem;padding:16px 16px 16px 0}}
+
+/* B13 · §9 visa & arrival fee table.  basedOn: .feetable (B10) — same table object, plus
+   an `is-visa` combo for the icon cell, because this table's first column carries an icon,
+   a fee name and a source note rather than a bare label. Amount column inherits B10's
+   tabular right-aligned :last-child rule, so the five figures compare down a single edge.
+   Icons are the five that shipped on the retired fee-banners, at the .priorities_icon size. */
+/* Two fixed columns: the fee takes the width, the amount only what "US$4 per day" needs, and
+   both are LEFT aligned, so the amounts start on one edge instead of drifting in from the right
+   and the two columns keep the same width on every row. */
+/* The §9 fees panel is a LIVE component (.budget-fees-panel, 64/48px padding, a bare
+   budget_sub-heading and an intro paragraph) that predates the panel standard, which is why its
+   heading did not match any other panel on the page. Brought into the standard here: it takes the
+   same tokens, its header becomes the #F9F1DF band with the shared label + title + note steps,
+   and the panel's own padding moves onto the band and the table. Page-scoped overrides only — the
+   shared Webflow objects are untouched, and at deploy this binds as page custom code. */
+.budget-fees-panel{--panel-x:32px;--panel-y:26px;--panel-gap:12px;border:1px solid var(--cream-medium,#e9deca);border-radius:20px;overflow:hidden;padding:0 0 var(--panel-y)}
+@media (max-width:991px){.budget-fees-panel{--panel-x:26px;--panel-y:22px;--panel-gap:10px}}
+@media (max-width:479px){.budget-fees-panel{--panel-x:20px;--panel-y:20px;--panel-gap:8px}}
+/* margin:0 — MEASURED: the band's bottom sat 20px above the table's top while the table's own
+   margin-top was already 0, so the blank strip was the BAND's bottom margin (a live .budget_* default),
+   not the table's. Zeroing the table alone could never close it. The band's bottom hairline is the
+   table's top edge, as on every other panel. */
+.budget-fees-panel_header{margin:0;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:22px var(--panel-x);background:#F9F1DF;border-bottom:1px solid var(--cream-medium,#e9deca)}
+/* Band title and note at the shared steps: budget_sub-heading ships at 22px/1.2px, a full
+   section-heading step, and the intro paragraph ships at body size — both louder than the band
+   titles beside them. */
+.budget-fees-panel_header .budget_sub-heading{font-size:1.125rem;font-weight:500;letter-spacing:.5px;line-height:1.3;margin:0}
+.budget-fees-panel_header .body-intro{font-size:.9375rem;font-weight:400;color:#8D877B;line-height:1.55;margin:0;text-wrap:pretty}
+/* margin-top:0 — the 24px gap between the header band and the table is removed (client, 4 Aug).
+   Every other panel on this page sits its table flush against the band, so the band's bottom hairline
+   IS the table's top edge; a 24px void here left the band floating and read as two objects. */
+.feetable.is-visa{margin-top:0;table-layout:fixed;padding:0}
+/* Widths come from a COLGROUP, not from the cells. With table-layout:fixed the browser takes its
+   column widths from the first row — and in the header row BOTH cells are <th>, so a width set on
+   .is-visa th applied to the amount column as well and the two ended up equal (50/50). A <col>
+   cannot be confused by cell type, so the split holds however the row is marked up. */
+.feetable.is-visa .feetable_col-amount{width:19%}
+/* The amount holds the top line of its row so it sits level with the fee name, not centred
+   against the note under it. */
+.feetable.is-visa td{vertical-align:top;text-align:left;white-space:nowrap}
+.feetable_cell{display:grid;grid-template-columns:24px 1fr;column-gap:18px;align-items:start}
+/* margin-top:0 — the icon, the label's line box and the direction chip are all 24px and all start at
+   the cell's padding edge, so the row's first band lines up without per-element nudges. */
+.feetable_icon{width:24px;height:24px;flex-shrink:0;margin-top:0}
+.feetable_stack{min-width:0}
+/* Both <p> children reset their margin: B10 styles tbody th at 600 weight, so the note has
+   to opt out of the label's weight and colour explicitly. */
+.feetable_label{font-size:1rem;font-weight:600;color:var(--brown-dark,#5f5950);line-height:1.5;margin:0}
+.feetable_note{font-size:.875rem;font-weight:400;color:#8D877B;line-height:1.6;margin:8px 0 0;max-width:62ch;text-wrap:pretty}
+@media (max-width:479px){
+.feetable_cell{grid-template-columns:20px 1fr;column-gap:12px}
+  .feetable_icon{width:20px;height:20px}
+}
+
+/* B2 · §4 soft CTA. basedOn: .callout (live, OPT) for the tinted panel + the
+   indigo left rule, and .inline-cta-btn.is-primary for the button metrics. */
+.soft-cta_wrap{background-color:rgba(93,96,238,.04);border-left:3px solid var(--indigo-bright,#5d60ee);border-radius:0 12px 12px 0;margin-top:32px;padding:22px 28px}
+.soft-cta_text{font-size:1rem;color:var(--brown-dark,#5f5950);line-height:1.65;margin:0;max-width:70ch}
+
+
+@media (max-width:767px){.soft-cta_wrap{padding:20px 22px}}
+
+/* B7 WITHDRAWN AGAIN (client, 3 Aug, later call): the §1 tiles are single-line labels, so
+   is-stacked / hero_highlight-note are not minted. Re-mint both if the descriptors return. */
+
+/* B1 · §1 hero "Last updated" line.  basedOn: .hero_sub (shared/base.css:257)
+   — same hero_ block, sibling directly after it inside .hero_content-left.
+   Quieter than hero_sub: the small label step, same cream-on-photo family. */
+/* sentence case on purpose: Annex A ties WebPage dateModified to the visible
+   string, so it stays human-readable — no uppercase transform */
+.hero_meta{font-size:.8125rem;font-weight:500;letter-spacing:.4px;color:rgba(255,255,255,.66);line-height:1.4;margin:14px 0 0}
+@media (max-width:991px){.hero_meta{margin-top:10px}}
+@media (max-width:479px){.hero_meta{font-size:.75rem}}
+
+/* B11 · §5 included / not-included ledger.  REPLACES the two-overview_card layout.
+   basedOn: .priorities_grid for the 1px-gap hairline grid (the divider IS the grid gap,
+   showing the panel's own border colour through it), .quickfacts_panel for the row
+   rhythm and 20px radius, .price-table_badge for the column badge, .quickfacts_key for
+   the status type. NO icons: the old section repeated one glyph 14 times, so the icons
+   were decoration, and the excluded side's were topical stand-ins for an asset that does
+   not exist. Difference is carried by fill value, the column head, and the status column.
+   Deliberately NOT a comparison table: the two sides are independent lists of different
+   lengths of thought, so nothing is aligned row-to-row and only the right side is
+   annotated. Desktop-first, max-width steps only.
+   B3 `is-excluded` is retained as the standalone combo, now on incl_col / incl_row —
+   quiet by design (the excluded list is a budgeting aid, not a warning: it steps back in
+   value rather than shouting in a semantic red). Its .overview_card / .priorities_item /
+   .priorities_icon pairings are retired with the old markup. */
+/* SYMMETRICAL CELLS (client, 4 Aug): the two columns share ONE set of grid rows — the head
+   plus seven item rows — and each column is a subgrid of it, so row N is the same height in
+   both columns no matter which side wraps to two lines. Nothing is measured or padded to a
+   guessed height; the row itself is the shared track. */
+.incl_ledger{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto repeat(7,auto);background:#F9F1DF;border:1px solid var(--cream-medium,#e9deca);border-radius:20px;overflow:hidden;margin-top:32px}
+.incl_col{display:grid;grid-row:1 / -1;grid-template-rows:subgrid;padding:0 0 26px}
+/* The panel is ONE fill now (client, 4 Aug: #F9F1DF), so the divider is a hairline on the
+   second column instead of a grid gap letting a darker background show through. */
+.incl_col.is-excluded{border-left:1px solid var(--cream-medium,#e9deca)}
+/* is-single is retired — §6 uses the .brackets_panel + .feetable recipe instead. */
+/* Heading band on #F9F1DF (client, 4 Aug) — the .stoc_component panel fill, a half-step off
+   the column's own cream. It bleeds to the panel edges, so the column's own padding moves
+   onto the band and the list. */
+.incl_col-head{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:22px var(--panel-x);background:#F9F1DF;border-bottom:1px solid var(--cream-medium,#e9deca)}
+.incl_list{display:grid;grid-row:2 / -1;grid-template-rows:subgrid;padding:var(--panel-gap) var(--panel-x) 0}
+/* TYPE SCALE: three steps only, each already used elsewhere on this page — .feetable thead th
+   for the group label, .fit_list-title for the group title, .feetable cell for the item — so
+   the ledger reads as part of the page, not a new component. One bold element per group. */
+/* Both group labels are indigo (client, 4 Aug): the two groups are equal halves of one
+   answer, so neither label steps back in value. is-excluded stays on the node — it is the
+   B3 hook the icons still use. */
+.incl_col-note{font-size:.9375rem;font-weight:400;color:#8D877B;line-height:1.55;margin:0;text-wrap:pretty}
+/* TWO COLUMNS (client, 4 Aug): the two groups sit side by side and the 1px grid gap is the
+   divider between them; items inside a group run one-up. Both groups hold exactly 7 items in
+   the same row shape — key term, then detail — so the halves stay the same height and the
+   bold terms line up across the divider. */
+.incl_row{padding:13px 0;border-bottom:1px solid rgba(95,89,80,.1)}
+.incl_list .incl_row:last-child{border-bottom:none}
+.incl_row-text{font-size:1rem;font-weight:400;color:#8D877B;line-height:1.6;margin:0;text-wrap:pretty}
+/* The key term carries weight, not extra darkness (client, 4 Aug): --brown-dark, the general
+   text value — --brown-deep is reserved for prices and labels. */
+.incl_row-text strong{font-weight:600;color:var(--brown-dark,#5f5950)}
+@media (max-width:991px){.incl_col{padding-bottom:22px}}
+/* Below 767px the two groups stack, and one column of 1px gap turns the divider horizontal
+   with no extra rule — the panel radius still clips both ends. */
+@media (max-width:767px){
+/* Stacked: there is no second column to align to, so the shared row track is dropped and
+     both the column and its list fall back to normal flow. */
+  .incl_ledger{grid-template-columns:1fr;grid-template-rows:none}
+  .incl_col{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
+  /* Stacked, so the divider turns horizontal. */
+  .incl_col.is-excluded{border-left:none;border-top:1px solid var(--cream-medium,#e9deca)}
+  .incl_list{display:flex;flex-direction:column;grid-row:auto;grid-template-rows:none}
+}
+@media (max-width:479px){.incl_col{padding-bottom:18px}}
+
+/* B12 · §7 accommodation duration brackets.  basedOn: .quickfacts_panel for the panel
+   and its row rhythm, .quickfacts_row for the two-column key/value line, .feetable for the
+   tabular amount column, .incl_ledger (B11) for the 2-up hairline grid. Two panels, three
+   rows each: the bracket is the key, the weekly rate the value, so the price ladder is
+   readable at a glance instead of being parsed out of a sentence. The long-stay row is the
+   one the card from-prices refer to, so it alone is marked. No icons — the old tiles used
+   four unrelated glyphs for four lines of the same kind of fact.
+   Desktop-first, max-width steps only. */
+/* ONE COLUMN (client, 4 Aug): a single full-width rate table, not two side-by-side ladders.
+   Rows are grouped by housing type, so the two ladders — which do not share bracket edges —
+   sit in one table without faking a shared scale. Label colour is indigo, never orange. */
+.brackets_panel{border:1px solid var(--cream-medium,#e9deca);border-radius:20px;background:var(--cream-soft,#f9f1df);overflow:hidden;margin-top:24px;margin-bottom:32px}
+/* Same band recipe as .price-table_head / .incl_col-head. */
+.brackets_head{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:22px var(--panel-x);background:#F9F1DF;border-bottom:1px solid var(--cream-medium,#e9deca)}
+.brackets_foot{font-size:.9375rem;font-weight:400;color:#8D877B;line-height:1.55;margin:0;padding:calc(var(--panel-gap) + 6px) var(--panel-x) var(--panel-y);text-wrap:pretty}
+/* The table is B10's .feetable with an is-rates combo. FLAT (client, 4 Aug): three columns —
+   housing, bracket, rate — one row per bracket and no group rows, so every row is self-contained
+   and the rates read straight down one column. The two homestay brackets CEL does not publish per
+   room carry an em dash and are explained in the footnote, exactly as the §4 rate table already
+   does — the page's own convention, rather than inventing words like "Highest rate".
+   The key column is fixed so the housing names line up; the rate column is only as wide as it
+   needs to be, and both come from a COLGROUP (a width on th would also hit the header row's
+   other cells — see the §9 table). */
+.feetable.is-rates{margin-top:0;padding:0;table-layout:fixed}
+.feetable.is-rates .feetable_col-key{width:34%}
+.feetable.is-rates .feetable_col-amount{width:22%}
+/* §6 tuition table (client, 4 Aug): "Length of stay" wider than the other three. 31%, not the
+   key col's 34% — the other columns hold nowrap strings ("General English 20") that need the
+   remaining 23% each; 34% would squeeze them to 22% and risk cell overflow at the 992-1119 band. */
+.feetable.is-rates .feetable_col-stay{width:31%}
+.feetable.is-rates td{white-space:nowrap}
+/* is-factors — the panel that holds §8's cost-driver TABLE. The six .factors_tile rows it used to
+   hold are gone (see the markup note), so the descendant rules that un-carded them went with them. */
+/* 48px above (it follows the living-costs SLIDER — see the rhythm block) and nothing below: the 80px
+   bottom margin here was the "too much padding" under this section, on top of the section's own
+   closing padding. The section boundary closes the section. */
+.brackets_panel.is-factors{margin-top:48px;margin-bottom:0}
+/* .is-drivers — two columns: the driver (icon, name, what it changes) and its direction. The second
+   column is sized to the longest chip so all six chips share one left edge and the column reads as a
+   single axis rather than six loose labels. */
+/* margin-top:0 — the base .feetable ships margin-top:20px and this variant never reset it (is-rates
+   and is-visa both do), so the band floated 20px above its own table. On every other panel the band's
+   bottom hairline IS the table's top edge. */
+.feetable.is-drivers{table-layout:fixed;margin-top:0}
+/* 216px, not 200: MEASURED overflow. The column's content box is its width minus the 32px
+   .is-inset-r padding, and .feetable th:last-child sets white-space:nowrap, so a header string wider
+   than that box pushed the table past the panel's edge and the panel clipped it. "Effect" replaced
+   "Effect on your total" in the markup for the same reason — the chips say which way. */
+.feetable_col-dir{width:196px}
+@media (max-width:991px){.feetable_col-dir{width:170px}}
+/* The direction chip. Colour is the SEMANTIC part — green lowers, orange raises — using
+   --green-fresh #1ea869 and --orange-medium #e78b10 from colors_and_type.css, the documented
+   data-viz pair, not new hues; the two "outside our fees" rows stay brown so they read as absent
+   rather than as a third direction. The glyph is a text arrow, never drawn artwork, and the label
+   repeats it in words so the meaning does not rest on colour alone. */
+/* ALIGNED BY GEOMETRY, not by nudging (client, 4 Aug: "align better with the icon and the text").
+   MEASURED before: the row's label sits in a 24px line box starting at the cell's 20px padding-top,
+   its centre at +12px; the chip was 32.2px tall, centre at +16.1px — 4px low, which is what read as
+   misaligned. Now the chip is built to be exactly 24px too: 12px of line box plus 6px padding top and
+   bottom. All three things in the row's first band — icon, label, chip — are 24px and top-aligned, so
+   their centres coincide at every font size instead of relying on a magic margin. The glyph is 12px
+   so it fits that line box without stretching it. */
+.driver_dir{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:100px;font-size:.6875rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;line-height:12px;white-space:nowrap}
+/* 11px text — the page's smallest label step, matching .calc_chip (client, 4 Aug). At .8125rem the
+   chip read as a second value column rather than an annotation on the row. */
+.driver_dir-glyph{font-size:.75rem;line-height:12px;font-weight:700}
+.driver_dir.is-down{background:#1ea8691f;color:#15754a}
+.driver_dir.is-up{background:#e78b1024;color:#9c5c07}
+.driver_dir.is-either{background:#5d60ee1f;color:#4e51be}
+.driver_dir.is-outside{background:#5f59501a;color:#8D877B}
+@media (max-width:479px){.driver_dir{font-size:.625rem;letter-spacing:.5px;padding:5px 9px}}
+/* THE ILLEGAL @media (max-width:560px) IS GONE, and so are the two opt-outs that made it necessary
+   (worklist §2.4 and fragile primitive #7). The chain was inconsistent by construction: B10 turns
+   every .feetable into a block scroller at 767, is-visa and is-rates opted back OUT of it, and
+   is-rates opted back IN at the illegal 560 — while is-drivers, an identically-shaped two-column
+   table, was never opted out at all and scrolled the whole time.
+   Snapping 560 to tiny was tried first and MEASURED, which is what settled it: at 480 the two rates
+   tables were still display:table and overflowed their column by 31px (411/442) and 26px (347/373),
+   and is-visa by 25px (411/436) — all three silently clipped by .page_content{overflow:hidden}.
+   Retiring both opt-outs makes B10's one rule govern every table from 767 down: measured after, at
+   767 nothing needs to scroll (594/594 on all three base tables, 658/658 on the wide ones) and at
+   480/479 the tables that do not fit scroll instead of losing their last column. One rule, four
+   tables, no illegal width, and the three-way specificity fight is deleted rather than retuned. */
+
+/* The B2 / B11 / B12 rules above were duplicated verbatim further down this file, and the
+   stale second copy — old two-panel ladder, orange labels, is-single — sat LATER in the source,
+   so it won the cascade: that is why §6/§7 kept their old spacing and orange after being
+   rebuilt. The duplicate is deleted; only the two rules that existed nowhere else survive. */
+/* Back to Cameraobscura (client, 4 Aug) but a step SMALLER than the band title above it
+   (1.125rem), so the bracket label sits under the heading rather than competing with it.
+   Tabular so the brackets align down the column. */
+/* Ink set explicitly to the heading colour (client, 4 Aug: "use regular heading color"). The live
+   .price-tier-code ships a lighter/accented colour, so the bracket label read as a different class of
+   text from the tier name beside it; brown-dark is the ink every other heading on the page uses. */
+.price-tier-code{font-size:1rem;font-variant-numeric:tabular-nums;color:var(--brown-dark,#5f5950)}
+@media (max-width:991px){.price-tier-code{font-size:.9375rem}}
+@media (max-width:767px){.price-tier-code{font-size:.875rem}}
+
+/* B14 · price-table_wrap — the panel that holds a head and its table as one unit.
+   basedOn: .price-table (live, OPT) for the cream panel, hairline border and 16px radius; the
+   table hands its own panel chrome to the wrapper (descendant rules, so the shared .price-table
+   object is untouched) and the head becomes the panel's heading band. */
+.price-table_wrap{border:1px solid var(--cream-medium,#e9deca);border-radius:16px;background:var(--cream-soft,#f9f1df);overflow:hidden;margin-top:40px;margin-bottom:32px}
+.price-table_wrap .price-table{border:none;border-radius:0;background:transparent;margin-bottom:0}
+/* The live .price-row ships a 24px horizontal padding (20/16px at the smaller steps), so its
+   first cell sat 2px inside the band label instead of on the same edge. Only the horizontal
+   value is overridden — the row's own vertical rhythm per breakpoint is untouched. */
+.price-table_wrap .price-row{padding-left:var(--panel-x);padding-right:var(--panel-x)}
+/* ============================================================
+   PANEL STANDARD — one recipe for every bordered panel on this page (§5 ledger, §6 course table,
+   §6 tuition tables, §7 rate table, §8 cost drivers, §9 fee table). Spacing lives in three custom
+   properties on the panel, so a responsive step changes the TOKENS in one place instead of
+   restating padding on every part — and no part can drift out of line with the others:
+     --panel-x    horizontal inset shared by band, rows, tables and footnote
+     --panel-y    band top / bottom padding
+     --panel-gap  air between the band and the first row, and before the footnote
+   Band: #F9F1DF fill (same value as the panel body — the hairline alone separates them), --cream-medium hairline under it, a .875rem/500 SENTENCE-CASE label above
+   the title, title in Cameraobscura 500 at 1.125rem. No letterspaced micro-caps: rank comes from
+   size, weight and colour, so column heads, group rows and band labels stay distinguishable. One column: the label sits on top of the
+   heading, never beside it — side by side they read as one run of text.
+   ============================================================ */
+.price-table_wrap,.brackets_panel,.incl_ledger{--panel-x:32px;--panel-y:26px;--panel-gap:12px}
+@media (max-width:991px){.price-table_wrap,.brackets_panel,.incl_ledger{--panel-x:26px;--panel-y:22px;--panel-gap:10px}}
+@media (max-width:479px){.price-table_wrap,.brackets_panel,.incl_ledger{--panel-x:20px;--panel-y:20px;--panel-gap:8px}}
+.price-table_head{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin:0;padding:22px var(--panel-x);background:#F9F1DF;border-bottom:1px solid var(--cream-medium,#e9deca)}
+/* ONE label rule and ONE title rule for every band on the page — §5 ledger groups, §6 tuition
+   tables, §6 course table, §7 rate table, §8 cost drivers. Grouped rather than repeated per
+   family so a band cannot drift: .price-table_badge had lost its declarations entirely and was
+   rendering as body text. */
+/* 600, and the label owns NO margin: the label-to-title gap is the band's flex gap, so all three
+   bands (tuition tables, ledger groups, rate/course/factor panels) space it identically. It used
+   to be a 10px margin here PLUS a 12px flex gap on .price-table_head only, so that one band sat
+   22px apart while the others sat at 10px. */
+/* One eyebrow step for the WHOLE page (client, 4 Aug): these band labels were 14px/0.8px, a
+   step larger and looser than every other uppercase label here (.calc_col-label, .calc_key,
+   .incl_col-label are all 12px/1.5px) — which is what read as "not right" next to them. Now
+   they match: 12px, 1.5px tracking. */
+.price-table_badge,.brackets_note,.incl_col-badge{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--indigo-bright,#5d60ee);line-height:1.5;white-space:nowrap;margin:0}
+.price-table_head .section-subtitle,.brackets_title,.incl_col-title{font-family:"Cameraobscura",serif;color:var(--brown-dark,#5f5950);font-size:1.125rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;line-height:1.3;margin:0}
+/* The §7 and §8 labels wrap (they carry thresholds, not a short category name). */
+.brackets_note{white-space:normal}
+@media (max-width:479px){.price-table_badge,.brackets_note,.incl_col-badge{font-size:.6875rem}.price-table_head,.incl_col-head,.brackets_head{gap:8px}}
+@media (max-width:479px){.price-table_badge{letter-spacing:1.2px}}
+
+/* B5 · §11 copy wrapper + trust line.  basedOn: .inline-cta-body.
+   .inline-cta-a8a1 is a `1fr auto` grid, so inline-cta-copy IS column 1 — it replaces
+   the reference’s unclassed <div>, it does not add a level of nesting.
+   NOTE: `is-secondary` needed no minting — .inline-cta-btn.is-secondary already ships
+   in the live cascade (cream 1.5px outline on the indigo panel). B5 is 2 classes, not 3. */
+/* The live sheets set both .inline-cta-h2 and .inline-cta-body to margin:0, so the heading sat
+   directly on the paragraph. The copy column owns the spacing as a flex gap — one value, applied
+   identically to every CTA section on both pages (costs §11, san-diego §19). */
+.inline-cta-copy{min-width:0;display:flex;flex-direction:column;gap:12px}
+/* B15 · CTA trust badge — the review line as a pill rather than a loose caption: the real
+   Google mark (the same asset the reviews component uses) plus the rating, on a translucent
+   cream fill so it reads as a credential on the indigo panel. Identical on both pages. */
+/* Trust pill (client, 4 Aug). It sits ON the indigo panel, so it now reads as a DEEPER well in
+   the same indigo rather than a cream chip pasted over it: a darkened #4245C4 (the panel's own
+   #5d60ee taken down two steps, same hue), the panel's own cream type, and a hairline in cream at
+   low alpha instead of a brown one. The Google mark keeps a light disc behind it — the logo is
+   four brand colours and needs a light ground to stay legible; the disc is the only light shape
+   left, which is what makes it read as the badge's anchor. */
+.inline-cta_trust{grid-column:1 / -1;display:inline-flex;align-items:center;justify-content:center;gap:12px;align-self:center;justify-self:center;background:#4245C4;border:1px solid rgba(249,240,223,.22);border-radius:100px;padding:5px 20px 5px 9px;margin:0 auto 14px}
+.inline-cta_trust-disc{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--cream-extra-light,#f9f0df)}
+.inline-cta_trust-logo{width:16px;height:16px;flex:0 0 auto;display:block}
+/* The score is the point of the badge, so it is the only element given size — but in the TEXT
+   family, not the display face: Cameraobscura is a display face for headings and it renders
+   figures as a stylised set, which is wrong for a rating. Tabular so 4.8 and any translated
+   decimal separator hold the same width.
+   No "out of 5": the scale is implicit in a Google rating, and it is a phrase that has to be
+   re-translated for all nine locales to say nothing. */
+/* Score at the SAME size as the review count beside it (client, 4 Aug, applied across every
+   san-diego CTA): 1.125rem made "4.8" a headline inside a pill whose other text is a .8125rem
+   label, so the two halves of one credential read at different volumes. */
+.inline-cta_trust-score{font-size:.8125rem;font-weight:600;letter-spacing:.6px;font-variant-numeric:tabular-nums;color:var(--cream-soft,#f9f1df);line-height:1.2;margin:0}
+/* Stars — 4.8/5 = 96% of the row. The empty row carries the SAME artwork at low opacity so the
+   unearned fifth reads as a ghost of a star rather than a different shape; the filled row sits on
+   top, clipped. Both rows use one 3px gap so the clip lands inside the fifth glyph, not in a gap. */
+.cta_stars{position:relative;display:inline-block;flex:0 0 auto;line-height:0;--stars-fill:96%}
+.cta_stars-row{display:flex;align-items:center;gap:3px;line-height:0}
+.cta_stars-row img{display:block;width:13px;height:13px}
+.cta_stars-row.is-empty{opacity:.3}
+.cta_stars-row.is-full{position:absolute;inset:0;width:var(--stars-fill);overflow:hidden}
+.inline-cta_trust-rule{width:1px;height:16px;background:rgba(249,240,223,.3);flex:0 0 auto}
+.inline-cta-trust{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:rgba(249,240,223,.82);line-height:1.4;margin:0}
+@media (max-width:479px){.inline-cta-trust{font-size:.75rem;letter-spacing:.4px}}
+
+/* B5b · WhatsApp CTA (client, 4 Aug). REPLACES is-secondary on the WhatsApp link in both
+   places it appears (§11 panel and the ≤991px sticky bar) — one combo, so the two can never
+   drift apart. It is a CHANNEL button, not a second "submit": WhatsApp's own green carries the
+   recognition, which no cream outline can. The label is the panel's cream, like the primary
+   beside it (client, 4 Aug) — so the green is set at #12A150: bright enough to read as WhatsApp,
+   deep enough that the cream label holds at ~3.3:1. HANDOFF: that is below the 4.5:1 AA figure
+   for 14px text. Cream type is only fully compliant from about #0E8040 down, and brand-bright
+   #22C55E needs a dark label to comply. Both were shown and declined; the cream-on-#12A150
+   pairing is the accepted one, and it is on a 50px pill with 600-weight uppercase, not body copy. Metrics are untouched:
+   same 12px/30px padding, 1.5px edge, pill radius, 50px height as is-primary beside it.
+   The mark is the official WhatsApp glyph served from simpleicons (real brand artwork, never a
+   hand-drawn path), tinted cream to match the label. */
+.inline-cta-btn.is-whatsapp{display:flex;align-items:center;gap:10px;padding:12px 30px;font-size:14px;letter-spacing:1px;border-radius:1600px;background-color:#12A150;border:1.5px solid #12A150;color:var(--cream-extra-light,#faf3e8);transition:background-color .15s ease,border-color .15s ease}
+.inline-cta-btn.is-whatsapp:hover{background-color:#0F8F46;border-color:#0F8F46;color:var(--cream-extra-light,#faf3e8)}
+.inline-cta-btn.is-whatsapp:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(250,243,232,.55)}
+.inline-cta-btn-icon{flex:0 0 auto;width:18px;height:18px;display:block}
+
+/* B6 · §11 mobile sticky CTA bar.  basedOn: .hero_actions for the button row,
+   .inline-cta-btn is-primary / is-secondary for the buttons.
+   Shown ≤991px only. z-index 880 sits UNDER the mobile TOC drawer (.stoc_component is
+   z-index 900 when fixed) and under the navbar (9999), so neither is ever covered.
+
+   OCCLUSION FIX (review, 3 Aug): a bar fixed to the viewport bottom sat on top of the
+   hero's own .hero_actions row — the hero is full-fold, so its CTAs live in the bottom
+   ~75px at every width ≤991px, and DESIGN-RULES.md §6.6 requires all hero content
+   visible without scrolling. Bottom padding cannot fix that (the hero is fold-height),
+   so the bar now SLIDES IN only after the hero CTA row has scrolled past — the
+   is-visible state is added by costs.js (passive scroll listener, not an
+   IntersectionObserver: an IO that fails to fire would kill the bar entirely),
+   never authored in the HTML.
+   The footer gets matching bottom clearance so the bar cannot cover the last rows
+   either; it is a descendant rule so the shared .section_footer object is untouched. */
+.sticky-cta_bar{display:none}
+@media (max-width:991px){
+.sticky-cta_bar{display:block;position:fixed;left:0;right:0;bottom:0;z-index:880;background-color:var(--indigo-bright,#5d60ee);border-top:1px solid rgba(250,243,232,.18);padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));transform:translateY(115%);opacity:0;pointer-events:none;transition:transform .3s cubic-bezier(0.16,1,0.3,1),opacity .3s ease}
+  .sticky-cta_bar.is-visible{transform:translateY(0);opacity:1;pointer-events:auto}
+  .sticky-cta_actions{display:flex;align-items:center;gap:10px}
+  .sticky-cta_bar .inline-cta-btn{flex:1 1 0;min-height:48px;justify-content:center;text-align:center;padding:12px 14px}
+  .page-wrapper .section_footer{padding-bottom:96px}
+}
+@media (prefers-reduced-motion:reduce){.sticky-cta_bar{transition-duration:.01ms}}
+
+/* ============================================================================
+   TABLE EDGE INSET — the structural half of the full-width header band.
+   The band could not bleed while .feetable.is-rates carried the --panel-x inset
+   on the TABLE: a background stops at the cells, and the box-shadow that used to
+   fake the bleed is one flat rectangle, so it could not carry the band's two
+   hairlines. The inset moved to the markup instead — the first and last cell of
+   every row carry .is-inset-l / .is-inset-r — so the table spans the panel edge
+   to edge and the header band, its fill AND its rules, spans with it.
+   Classes on the cells, not :first-child / :last-child, which §10 bans. Inner
+   column boundaries keep the normal 16px gutter; only the two outer edges take
+   the panel inset, so nothing about the column rhythm changes.
+   ============================================================================ */
+/* th.is-inset-l, not .is-inset-l: the base rule is ".feetable th,.feetable td" at specificity
+   (0,1,1), so a lone class at (0,1,0) lost and the padding stayed 0 — measured, the first column's
+   text sat flush on the panel edge. An element+class compound matches that specificity and wins on
+   source order (this sheet's last block), and it is NOT a descendant selector, so §10 holds. */
+th.is-inset-l,td.is-inset-l{padding-left:var(--panel-x, 0px)}
+/* The doubled class is deliberate. The base sheet already ships
+   ".feetable th:last-child,.feetable td:last-child{padding-right:0}" at specificity (0,2,1) — a
+   pre-existing :last-child rule — so th.is-inset-r at (0,1,1) lost and the last column's text sat
+   flush on the panel edge (measured: padding-right 0). Repeating the class raises this to (0,2,1),
+   which wins on source order, and it stays a compound simple selector: no descendant chain, and no
+   new dependence on the banned pseudo-class. */
+th.is-inset-r.is-inset-r,td.is-inset-r.is-inset-r{padding-right:var(--panel-x, 0px)}
+
+/* ================ ONE INK FOR EVERY CONTENT ICON — ROOT CAUSE (client, 4 Aug: "all icon colors must
+   be the same, find the root cause and fix")
+   THE CAUSE: these pages draw icons from FOUR asset families — costs-icon-*, adults-16-icon-*,
+   duration-guide-icon-* and the v2/v3/v4 revisions — and each is baked with its own colour. An
+   <img>-rendered SVG cannot be recoloured by CSS, so every previous attempt only ever *preserved*
+   that difference: "grayscale(1) opacity(.72)" maps a green-ish source to a lighter grey than a brown
+   one, and the per-icon brightness patch I added on top (.is-lightsrc, now deleted) traded one
+   mismatch for another.
+   THE FIX: brightness(0) multiplies every channel by zero, so ANY source colour collapses to black
+   while the alpha channel — the drawing itself — is untouched. One opacity then renders one ink for
+   every icon, from any set, including sets nobody has drawn yet. At .62 over the page creams that
+   lands on #5f5950, the brown-dark heading ink, to within a couple of luminance points.
+   Stars, the Google mark and the review check are NOT in this list: they are brand artwork whose
+   colour is the point. ================ */
+/* opacity:1 is not redundant. client-first.css sets ELEMENT opacity on two of these classes
+   (.accom_detail-icon .7, .hero_highlight-icon .9), and element opacity MULTIPLIES with the filter's
+   opacity — .62 x .7 = .43 — so those icons rendered visibly paler than their neighbours while every
+   filter in this sheet was identical. Resetting it here is what actually makes the ink equal.
+   The same applies to the hero rule below. */
+.feetable_icon,.overview_col-icon,.accom_detail-icon,.slider-arrow-icon,.levers_icon{filter:brightness(0) opacity(.62);opacity:1}
+/* The hero icons sit on a dark photograph, so they collapse the other way: brightness(0) then
+   invert(1) forces any source to pure white, and .92 softens it to the hero's cream. Same principle,
+   opposite end — and it fixes a real mismatch, since this page's hero mixed cream-baked hero icons
+   with a brown duration-guide one. */
+.hero_highlight-icon{filter:brightness(0) invert(1) opacity(.92);opacity:1}
+
+/* ================ §12 COST LEVERS — the page's standard panel ================
+   Rows inside a .brackets_panel: the PANEL owns the horizontal inset (--panel-x) and the band's own
+   bottom hairline is the first divider, so the first row carries no border of its own. Row rhythm is
+   the table scale — 20px top and bottom — so this panel and the four .feetable panels above it read as
+   one family.
+   HISTORY, because it cost a review round: this shipped once as a two-column grid with a numeral in a
+   34px track. When the markup became panel rows the replacement of THIS block silently no-matched — I
+   asserted the markup change and not the stylesheet one — so the 34px track was still styling rows
+   that no longer had a numeral, squeezing each title into 34px on top of its own paragraph. Assert
+   both sides of a two-file edit. ================ */
+.levers{padding:0 var(--panel-x) var(--panel-y)}
+/* Icons on the left (client, 4 Aug: "put good icons on the left, make them look related with the
+   content"). They are the SAME four assets the §8 cost-driver table uses for these same four
+   subjects — clock, sun, bed, book — so one page has one mapping from subject to icon rather than two.
+   Geometry follows the rule the driver chips settled: the icon is 24px, the title's line box is 24px,
+   and both start at the row's padding edge, so they align without a nudge. */
+.levers_item{display:grid;grid-template-columns:24px minmax(0,1fr);column-gap:18px;align-items:start;padding:20px 0;border-top:1px solid rgba(95,89,80,.1)}
+.levers_icon{width:24px;height:24px;flex-shrink:0}
+.levers_body{min-width:0}
+.levers_item:first-child{border-top:0;padding-top:calc(var(--panel-gap) + 8px)}
+/* A <p>, not an <h5>: the live sheets style h5 as a display-face heading with its own box model, and
+   inside a row it overlapped the paragraph beside it. The row title needs the LOOK of a label, not
+   the semantics of a heading — the section already has its h3 and h4, and four more heading levels
+   would only add noise to the document outline. */
+.levers_title{font-size:1rem;font-weight:600;color:var(--brown-dark,#5f5950);line-height:1.4;margin:0}
+.levers_text{font-size:1rem;font-weight:400;color:var(--brown-dark,#5f5950);line-height:1.65;margin:8px 0 0;max-width:70ch;text-wrap:pretty}
+@media (max-width:479px){
+.levers_item{grid-template-columns:20px minmax(0,1fr);column-gap:14px}
+  .levers_icon{width:20px;height:20px}
+  .levers_text,.levers_title{font-size:.9375rem}
+}
+
+/* ================ VERTICAL RHYTHM — ONE SCALE FOR THE WHOLE PAGE ================
+   (client, 4 Aug: "put enough standard whitespace between the elements in the page for all areas and
+   in other pages too. Audit, fix, put a standard.")
+   MEASURED before this, every section-level child of every section. There was no scale: a section's
+   MAIN OBJECT sat 24px below its intro in some sections (.overview_layout, .calc_details,
+   .brackets_panel), 32px in others (.incl_ledger, .budget-fees-panel), 40px in §6
+   (.price-table_wrap) and 48px in the rest (.accom_component, .faq-list, .nextread_grid) — four
+   answers to one question, and the same object disagreed with itself from section to section.
+   THE SCALE, and nothing else is used at section level:
+     32px  intro -> main object, main object -> following prose, and every .callout
+     48px  a full-bleed MEDIA or SLIDER band, and the first object after one — a band that runs the
+           full column width needs more air than a text block does, or it reads as glued to it
+   Declared here in one place so no object carries its own idea of the rhythm. The same block, with the
+   same two numbers, is in how-long.css, landing.css and pacific-beach.css. ================ */
+.overview_layout,.incl_ledger,.budget-fees-panel,.price-table_wrap,.brackets_panel,.calc_details,.goals-list,.faq-list,.nextread_grid,.soft-cta_wrap{margin-top:32px}
+.callout{margin-top:32px;margin-bottom:32px}
+.accom_component,.card-slider_clip{margin-top:48px;margin-bottom:0}
+/* the first object after a slider band takes the 48px step too */
+.card-slider_clip + *,.accom_component + *{margin-top:48px}
+
+/* The CTA fills its column (client, 4 Aug: "make it full width" — applied to every page for
+   consistency). MEASURED on how-long: the section sat 832px inside an 877px .page_content, held off both
+   edges by a 22.37px horizontal margin from the live .section_inline-cta rule — a centring margin written
+   for a full-bleed page, not for a body column that is already inset. page_content is a flex column, so
+   the section also has to opt into stretching. */
+.section_inline-cta{margin-left:0;margin-right:0;align-self:stretch;width:100%;position:relative}
+/* THE BADGE SITS ON THE PANEL'S TOP EDGE — the same block, the same values, in all four san-diego sheets
+   (client, 4 Aug: "put it to the top of the section with 50% - margin-top ... use position absolute if
+   needed" and "use exactly the same style about the badge in all pages"). It leaves the flex flow and is
+   centred on the edge itself: translate(-50%,-50%) IS that -50% margin-top, taken from the badge's own
+   height, so it stays centred whatever the pill measures. The panel's top padding grows to keep the heading
+   clear — with the badge out of the flow it would otherwise ride up under the pill. */
+.inline-cta_trust{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;z-index:2}
+/* §10 #cta's one real gap (worklist §3.2), and the only fragile primitive that was unhandled on all
+   four pages: inline-flex, no wrap, no cap, absolutely positioned and centred on the panel's top
+   edge, with no rule at 991, 767 or 479. Measured 301px in English — it fits today — but the site
+   runs Weglot across nine locales ("195 reviews" -> "195 Bewertungen") and without a cap it clips
+   against the section instead of wrapping. Capped and allowed to wrap from small down; it stays
+   centred on the edge when it wraps, because the -50% translate is taken from its own height.
+   Same block, same values, in all four sheets. */
+@media screen and (max-width:767px){.inline-cta_trust{max-width:calc(100% - 24px);flex-wrap:wrap;row-gap:4px}}
+.inline-cta-a8a1{padding-top:72px}
+@media screen and (max-width:991px){.inline-cta-a8a1{padding-top:56px}}
+/* Heading bands are 22px top and bottom on every page — see the audit note in pacific-beach.css. */

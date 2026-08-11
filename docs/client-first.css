@@ -1,0 +1,410 @@
+/* ============================================================
+   CEL — Design System
+   client-first.css
+   THE REAL FINSWEET CLIENT-FIRST LAYER for Canadian English
+   Language College (englishcollege.com).
+
+   These are the actual class names + values used on the LIVE site,
+   distilled from the deployable shared layer (sites/cel/shared/base.css
+   + base-custom-code.css) and reconciled against the live published
+   stylesheet (englishcollege.webflow.shared.54a3c3338.min.css +
+   the contact page CSS, fetched 2026-06-25). Where this disagrees with
+   older notes, the live CSS wins.
+
+   Build production markup with THESE class names and the nesting in
+   STRUCTURE.md so a design drops into Webflow 1:1 — no hand-translation.
+   The element defaults + tokens live in colors_and_type.css; the `.ds-*`
+   specimen classes there are visual samples only — do NOT ship them.
+
+   Link order in a page / preview:
+     <link rel="stylesheet" href="colors_and_type.css">   (fonts + tokens + element defaults)
+     <link rel="stylesheet" href="client-first.css">      (the real CF classes below)
+
+   WEBFLOW-COMPAT INVARIANTS honoured throughout this file:
+   - flat single-class selectors only (deployable via Webflow style_tool)
+   - no :nth-child / + / ~ / [data-*] selectors  (use is- combos instead)
+   - no important-flags, no var() inside font-family
+   - decorative ::before only where identical everywhere (the tagline dash)
+   - compound/descendant rules that the live site needs (e.g. hover-child,
+     section[id] spacing) stay in base-custom-code.css / the Webflow Designer,
+     NOT here — this file is the renderable class catalog.
+   ============================================================ */
+
+/* structure-only tokens (colors/type tokens live in colors_and_type.css) */
+:root {
+  --toc-w: 272px;
+  --max-width-content: 1600px;
+}
+
+/* ============================================================
+   1. STRUCTURE — the CEL page skeleton
+   page-wrapper > main-wrapper
+     > section_hero                         (full-bleed hero)
+     > padding-global > container
+         > page_body-layout                 (TOC sidebar + content grid)
+             > stoc_component (sticky TOC)
+             > page_content (main)
+                 > section_page (+ is-consecutive, + section_[name] co-class)
+   See STRUCTURE.md §1 for the mandatory nest.
+   ============================================================ */
+.page-wrapper { position: relative; overflow: hidden; }
+.main-wrapper { display: block; }
+
+/* 5% page gutter + centered max-width (Client-First wrappers) */
+.padding-global { padding-left: var(--section-pad-x, 84px); padding-right: var(--section-pad-x, 84px); }
+.container { width: 100%; max-width: var(--max-width-content, 1600px); margin-left: auto; margin-right: auto; }
+
+/* body grid: sticky TOC rail + content column */
+.page_body-layout {
+  padding-top: 80px;
+  padding-bottom: 80px;
+  display: grid;
+  grid-template-columns: var(--toc-w) 1fr;
+  gap: 100px;
+  align-items: start;
+  border-top: 1px solid var(--cream-medium);
+}
+.page_content { padding-top: 48px; min-width: 0; }
+
+/* the CEL content-section primitive — a cream card.
+   On the live site this is scoped `.page_content .section_page`; as a single
+   class here it renders identically. Stack sections with `is-consecutive`. */
+.section_page {
+  --section-pad-x: clamp(48px, 4vw + 16px, 84px);
+  background: var(--cream);
+  border: 1px solid var(--cream-medium);
+  border-radius: 28px;
+  padding-top: 96px;
+  padding-right: var(--section-pad-x);
+  padding-bottom: 96px;
+  padding-left: var(--section-pad-x);
+}
+.section_page.is-consecutive { margin-top: 120px; }
+
+@media (max-width: 991px) {
+  .page_body-layout { grid-template-columns: 1fr; gap: 0; padding-top: 0; }
+  .section_page { --section-pad-x: 24px; padding-top: 64px; padding-bottom: 64px; border: none; border-radius: 0; }
+  .section_page.is-consecutive { margin-top: 80px; }
+}
+@media (max-width: 767px) {
+  .section_page { --section-pad-x: 20px; padding-top: 48px; padding-bottom: 48px; }
+  .section_page.is-consecutive { margin-top: 56px; }
+}
+@media (max-width: 479px) {
+  .section_page { --section-pad-x: 16px; padding-top: 36px; padding-bottom: 36px; }
+  .section_page.is-consecutive { margin-top: 40px; }
+}
+
+/* ============================================================
+   2. HERO — full-viewport photo + dual gradient overlay
+   section_hero > hero_bg-image + hero_overlay + hero_wrapper
+     > hero_content (hero_content-left + hero_content-right) + hero_actions
+   ============================================================ */
+.section_hero { position: relative; padding: 0; overflow: hidden; min-height: 100vh; display: flex; align-items: stretch; }
+.hero_bg-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center center; z-index: 0; }
+.hero_overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(30,28,50,0.35) 0%, rgba(30,28,50,0.12) 12%, transparent 22%),
+    linear-gradient(0deg, rgba(20,18,40,0.92) 0%, rgba(25,23,45,0.80) 30%, rgba(30,28,50,0.55) 50%, rgba(35,33,55,0.25) 70%, transparent 100%);
+}
+.hero_wrapper { position: relative; z-index: 2; max-width: var(--max-width-content, 1600px); margin: 0 auto; padding: 44px 80px 80px; display: flex; flex-direction: column; justify-content: flex-end; width: 100%; }
+.hero_content { display: grid; grid-template-columns: 1fr auto; grid-column-gap: 40px; align-items: end; }
+.hero_content-left { display: flex; flex-direction: column; max-width: 700px; grid-column: 1; }
+.hero_content-right { display: flex; flex-direction: column; align-self: stretch; grid-column: 2; grid-row: 1 / 3; }
+.hero_actions { display: flex; align-items: center; gap: 14px; grid-column: 1; margin-top: 40px; }
+.hero_title { font-family: 'Cameraobscura', serif; font-size: 46px; font-weight: 500; color: var(--cream-soft); line-height: 1.08; margin-bottom: 20px; }
+.hero_sub { color: rgba(255,255,255,0.85); line-height: 1.75; max-width: 560px; margin-bottom: 0; }
+.hero_highlights { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.hero_highlight { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: rgba(249,241,223,0.08); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 10px; border: 1px solid rgba(249,241,223,0.06); font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.4px; color: var(--cream-soft); text-transform: uppercase; line-height: 1.3; }
+.hero_highlight-icon { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.9; }
+.hero_highlight-text { margin: 0; font-size: inherit; font-weight: inherit; letter-spacing: inherit; color: inherit; line-height: inherit; text-transform: inherit; }
+@media (min-width: 1440px) { .hero_highlights { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 991px) {
+  .hero_wrapper { padding-top: 36px; padding-right: 48px; padding-bottom: 48px; padding-left: 48px; }
+  .hero_content { grid-template-columns: 1fr; gap: 36px; }
+  .hero_content-left { max-width: 100%; }
+  .hero_title { font-size: 38px; }
+}
+@media (max-width: 767px) {
+  .section_hero { min-height: 80vh; }
+  .hero_wrapper { padding-top: 24px; padding-right: 24px; padding-bottom: 36px; padding-left: 24px; }
+  .hero_content { display: flex; flex-direction: column; gap: 0; }
+  .hero_title { font-size: 30px; margin-bottom: 8px; }
+}
+
+/* ============================================================
+   3. SECTION HEADER — tagline (orange dash + uppercase) > title > intro
+   ALWAYS this order. The dash is a real <div>, not a pseudo (Webflow
+   publish truncates background-position-Y, so a div is used).
+   ============================================================ */
+.section-tagline { display: flex; align-items: center; gap: 10px; font-family: 'LibreFranklin', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--orange-gold); margin-bottom: 32px; }
+.section-tagline-dash { display: inline-block; width: 14px; height: 2px; background-color: var(--orange-gold); flex-shrink: 0; }
+.section-title { font-family: 'Cameraobscura', serif; font-size: 38px; font-weight: 500; color: var(--brown-dark); letter-spacing: 0.5px; line-height: 1.1; margin-bottom: 32px; }
+.body-intro { color: var(--brown-dark); line-height: 1.75; margin-bottom: 1.35rem; }
+
+/* breadcrumb (used in heroes) */
+.breadcrumb { display: flex; align-items: center; margin-bottom: 32px; font-size: 0.875rem; letter-spacing: 0.3px; background: rgba(30,28,50,0.45); padding: 7px 18px; border-radius: 100px; width: fit-content; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(249,241,223,0.08); }
+.breadcrumb-link { color: rgba(249,241,223,0.72); text-decoration: none; transition: color 0.2s; }
+.breadcrumb-link:hover { color: rgba(249,241,223,0.95); }
+.breadcrumb-current { color: rgba(249,241,223,0.72); font-weight: 500; }
+.breadcrumb-sep { width: 10px; height: 10px; margin: 0 6px; flex-shrink: 0; }
+
+/* ============================================================
+   4. BUTTONS — exactly two: primary (orange pill) + ghost (outline).
+   Pill radius 1600px, uppercase, weight 600, 14x30 padding.
+   Reuse these; never mint a new button style.
+   ============================================================ */
+.cta-btn-primary, .hero_cta-primary, .inline-cta-btn.is-primary {
+  display: inline-block; font-family: 'LibreFranklin', sans-serif; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--cream-extra-light); background: var(--orange-gold); border-radius: 1600px; padding: 14px 30px;
+  transition: background 0.2s, transform 0.15s; white-space: nowrap; text-decoration: none;
+}
+.cta-btn-primary:hover, .hero_cta-primary:hover, .inline-cta-btn.is-primary:hover { background: var(--orange-gold-dark); transform: translateY(-1px); }
+.cta-btn-ghost, .hero_cta-ghost {
+  display: inline-block; font-family: 'LibreFranklin', sans-serif; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--cream-soft); background: transparent; border-radius: 1600px; border: 1.5px solid rgba(249,240,223,0.3); padding: 14px 30px;
+  transition: border-color 0.2s, background 0.2s; white-space: nowrap; text-decoration: none;
+}
+.cta-btn-ghost:hover, .hero_cta-ghost:hover { border-color: rgba(249,240,223,0.7); background: rgba(249,240,223,0.06); }
+/* small outline pills used on cards (cream on dark / indigo on cream) */
+.cta-pill-indigo { display: inline-flex; align-items: center; padding: 9px 20px; border-radius: 1600px; background: transparent; font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; border: 1.5px solid var(--indigo-bright); color: var(--indigo-bright); transition: border-color 0.3s, background 0.3s, opacity 0.2s; width: fit-content; }
+.cta-pill-indigo:hover { opacity: 0.75; }
+.cta-pill-cream { display: inline-flex; align-items: center; padding: 9px 20px; border-radius: 1600px; background: transparent; font-size: 0.6875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; border: 1.5px solid rgba(249,240,223,0.25); color: var(--cream-soft); transition: border-color 0.3s, background 0.3s, opacity 0.2s; width: fit-content; }
+/* navbar/form submit button — the live form submit is `navbar_button is-form` (a CTA button, so 600 like cta-btn-primary above) */
+.navbar_button { display: flex; align-items: center; justify-content: center; height: 38px; padding-left: 1.25rem; padding-right: 1.25rem; color: var(--cream-extra-light); text-transform: uppercase; background-color: var(--orange-gold); border: 1.5px solid var(--orange-gold); border-radius: 100rem; font-size: 0.8rem; font-weight: 600; line-height: 120%; text-decoration: none; cursor: pointer; }
+.navbar_button.is-secondary { border-color: var(--indigo-bright); background-color: var(--indigo-bright); }
+.navbar_button.is-form { display: block; cursor: pointer; }
+
+/* small utility text/colour/background classes (Client-First, additive to Webflow's set) */
+.text-size-xxsmall { font-size: 0.625rem; }
+.text-color-brown-deep { color: var(--brown-deep); }
+.text-color-orange { color: var(--orange-gold); }
+.text-color-cream { color: var(--cream-soft); }
+.background-color-cream-light { background-color: var(--cream-light); }
+.background-color-cream-medium { background-color: var(--cream-medium); }
+.background-color-indigo { background-color: var(--indigo-bright); }
+.background-color-orange { background-color: var(--orange-gold); }
+
+/* ============================================================
+   5. CARD SLIDER (Swiper) — shared infrastructure.
+   Every slider SECTION gets a UNIQUE prefix (course-slider_, accom-slider_…);
+   the arrows + progress bar look identical so the infra classes are shared.
+   Navigation (arrows + progress) is MANDATORY; dots are banned.
+   ⚠ REQUIRES JS (page bundle): a Swiper init per unique slider prefix wires the
+   swipe + arrows + progress-fill. The CSS below is presentational only — without
+   the init the slider is a static, non-swiping row.
+   ============================================================ */
+.card-slider_clip { overflow: hidden; position: relative; }
+.card-slider { overflow: visible; position: relative; z-index: 1; }
+.card-slider_nav { display: flex; align-items: center; gap: 16px; margin-top: 28px; }
+.card-slider_progress { flex: 1; height: 2px; background: var(--cream-medium); border-radius: 2px; position: relative; overflow: hidden; }
+.card-slider_progress-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--indigo-bright); border-radius: 2px; transition: width 0.4s cubic-bezier(0.25,0.1,0.25,1); }
+.card-slider_arrow { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: transparent; border: 1.5px solid var(--cream-medium); color: var(--cream-medium); cursor: pointer; transition: border-color 0.25s, background 0.25s, color 0.25s; flex-shrink: 0; }
+.card-slider_arrow:hover { border-color: var(--cream-extra-light); background: var(--cream-extra-light); color: var(--brown-dark); }
+.card-slider_arrow.is-prev { transform: rotate(180deg); }
+.card-slider_arrow.is-disabled { opacity: 0.3; pointer-events: none; }
+
+/* image course card (dark gradient + cream text) */
+.course-card { position: relative; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; text-decoration: none; color: inherit; min-height: 520px; }
+.course-card_image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.25,0.1,0.25,1); }
+.course-card_badge { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3; background: var(--indigo-bright); color: var(--cream-soft); font-size: 0.6875rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; padding: 7px 18px; border-radius: 0 0 12px 12px; white-space: nowrap; }
+.course-card_info { position: relative; z-index: 2; padding: 32px 28px; display: flex; flex-direction: column; background-image: linear-gradient(0deg, rgba(30,28,50,0.94) 0%, rgba(30,28,50,0.88) 30%, rgba(35,33,55,0.70) 55%, rgba(40,38,60,0.25) 80%, transparent 100%); }
+.course-card_title { font-family: 'Cameraobscura', serif; font-size: 1.125rem; color: var(--cream-extra-light); margin: 0 0 10px; line-height: 1.2; }
+.course-card_desc { font-size: 0.9375rem; color: var(--cream-extra-light); line-height: 1.7; margin: 0 0 24px; }
+
+/* photo grid card (each image its own rounded corner + overlay) */
+.photo-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+.photo-card_visual { position: relative; aspect-ratio: 4 / 3; border-radius: 20px; overflow: hidden; }
+.photo-card_img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.7s cubic-bezier(0.16,1,0.3,1); }
+.photo-card_overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(10,8,20,0.80) 0%, rgba(10,8,20,0.30) 50%, transparent 100%); border-radius: 20px; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px 18px; }
+.photo-card_title { font-family: 'Cameraobscura', serif; color: var(--cream-soft); margin: 0 0 5px; line-height: 1.2; }
+.photo-card_desc { font-size: 0.875rem; color: rgba(249,241,223,0.82); line-height: 1.5; margin: 0; }
+@media (max-width: 991px) { .photo-cards { grid-template-columns: repeat(2, 1fr); gap: 14px; } }
+@media (max-width: 479px) { .photo-cards { gap: 10px; margin-top: 32px; } }
+
+/* ============================================================
+   6. TESTIMONIAL / REVIEW CARD — solid cream surface, dark text,
+   5-star rating row, author block with photo + country.
+   ============================================================ */
+.review-card { position: relative; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; background: var(--cream); height: 100%; padding: 32px 28px; }
+.review-card_rating { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.review-card_rating-stars { display: flex; gap: 2px; color: var(--star-gold); }
+.review-card_rating-score { font-size: 0.875rem; font-weight: 600; color: var(--brown-dark); }
+.review-card_quote { font-size: 1rem; line-height: 1.65; color: var(--indigo-deep); margin: 0 0 16px; }
+.review-card_author { display: flex; align-items: center; gap: 14px; padding-top: 16px; }
+.review-card_author-photo { width: 72px; height: 72px; border-radius: 20px; object-fit: cover; flex-shrink: 0; }
+.review-card_author-name { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--brown-dark); }
+.review-card_author-country { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--brown-muted); margin-top: 2px; }
+.review-card_author-flag { display: inline-block; width: 18px; height: auto; border-radius: 2px; object-fit: contain; flex-shrink: 0; }
+
+/* ============================================================
+   7. FAQ ACCORDION — cream-soft list, +/rotate icon, single-open.
+   faq-list > faq-item (+ is-last) > faq-q (button) + faq-body > faq-body-inner
+   ============================================================ */
+.faq-list { display: flex; flex-direction: column; margin-top: 40px; background: var(--cream-soft); border: 1px solid var(--cream-medium); border-radius: 20px; overflow: hidden; }
+.faq-item { border-bottom: 1px solid var(--cream-medium); }
+.faq-item.is-last { border-bottom: none; }
+.faq-q { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 22px 28px; background: none; border: none; cursor: pointer; font-family: 'LibreFranklin', sans-serif; font-size: 1.05rem; font-weight: 500; color: var(--brown-dark); text-align: left; gap: 16px; line-height: 1.4; transition: color 0.2s; }
+.faq-q:hover { color: var(--indigo-bright); }
+.faq-q.is-open { color: var(--indigo-bright); }
+/* SCHEMA CONTRACT (rules/faq-schema-contract.md): the FAQPage JSON-LD extractor reads
+   `.faq-question-text p` (question) + `.faq-body-inner` (answer). The question is a
+   <div class="faq-question-text"> wrapping a <p>; the answer is a plain <p> in faq-body-inner.
+   Do NOT rename `.faq-question-text` / `.faq-body-inner` — that silently breaks FAQ rich results. */
+.faq-question-text { flex: 1; margin: 0; }
+.faq-icon { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid rgba(95,89,80,0.3); align-self: flex-start; margin-top: 2px; display: flex; align-items: center; justify-content: center; background: var(--cream-extra-light); font-size: 18px; color: var(--brown-dark); transition: transform 0.3s, background 0.2s, color 0.2s; }
+.faq-icon.is-open { transform: rotate(45deg); background: var(--indigo-bright); color: var(--cream); }
+.faq-body { overflow: hidden; max-height: 0; transition: max-height 0.38s cubic-bezier(0.16,1,0.3,1); }
+.faq-body-inner { overflow: hidden; padding-left: 28px; padding-right: 28px; }
+
+/* ============================================================
+   8. COMPARISON TABLE — the LIVE canonical `.compare-table` (how-long page;
+   base-custom-code.css calls it "the canonical pattern"). A 2-column CSS grid;
+   the `.compare-cell` items are DIRECT grid children (NO row wrapper). ONE bg
+   colour, no zebra, no header tint. `is-primary` highlights the left column.
+   ⚠ HYPHEN names (compare-table/compare-cell). Vancouver's UNDERSCORE `.compare_*`
+   is a SEPARATE vertical bar-chart component — never merge the two families.
+   compare-table > compare-head > compare-head-row > compare-duration ; then
+   compare-cell (+ is-primary) > compare-dot + text
+   Live uses :nth-child for borders (NOT Webflow-deployable) — here borders are
+   flat per-cell; the right column's outer border-right is clipped by the
+   container's overflow:hidden, and an `is-last-row` combo trims the final divider. */
+.compare-table { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); width: 100%; background: var(--cream-soft); border: 1px solid var(--cream-medium); border-radius: 20px; overflow: hidden; }
+.compare-head { padding: 22px 32px; border-bottom: 2px solid var(--cream-medium); border-right: 1px solid var(--cream-medium); }
+.compare-head-row { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.compare-duration { font-family: 'Cameraobscura', serif; font-size: 1.25rem; font-weight: 500; color: var(--brown-deep); margin: 0; }
+.compare-cell { display: flex; align-items: center; gap: 12px; padding: 15px 32px; font-size: 0.9375rem; line-height: 1.5; color: var(--brown-dark); border-bottom: 1px solid var(--cream-medium); border-right: 1px solid var(--cream-medium); }
+.compare-cell.is-primary { background-color: var(--cream-warm); }
+.compare-cell.is-last-row { border-bottom: none; }
+.compare-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brown-muted); flex-shrink: 0; }
+.compare-dot.is-accent { background: var(--indigo-bright); }
+
+/* ============================================================
+   9. CONTACT FORM — live `/contact-cel` values.
+   form-wrapper > form_field-wrapper (+ is-two) > form_field-label + form_input
+   form_input + is-text-area / is-select-input ; form_checkbox ; submit = navbar_button is-form
+   ============================================================ */
+.form-wrapper { display: grid; grid-template-columns: 1fr; gap: 1.5rem; background-color: var(--cream-light); border-radius: 15px; padding: 4rem 4.5rem; }
+.form_field-wrapper { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; max-width: 1024px; position: relative; }
+.form_field-wrapper.is-two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; align-items: start; }
+/* form_field-label = a small UPPERCASE label → weight 600, same rule as section-tagline / review-card_author-name */
+.form_field-label { letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.85rem; font-weight: 600; color: var(--brown-deep); }
+.form_input { width: 100%; min-height: 3rem; color: var(--brown-deep); background-color: var(--cream-extra-light); border: 3px solid var(--cream-medium); border-radius: 7px; margin-bottom: 0; padding: 0.5rem 1.25rem; font-family: 'LibreFranklin', sans-serif; font-size: 1rem; line-height: 1.6; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+.form_input:focus { border-color: rgba(34,34,32,0.2); color: var(--brown-deep); outline: none; }
+.form_input.is-text-area { height: auto; min-height: 11.25rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.form_input.is-select-input { background-repeat: no-repeat; background-position: 98%; background-size: 20px; height: 3rem; }
+.form_checkbox { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 0; padding-left: 0.8rem; }
+.form_checkbox-icon { width: 1.25rem; min-width: 1.25rem; height: 1.25rem; margin-top: 0; margin-left: -24px; background-color: var(--cream-soft); border: 1px solid var(--cream-medium); border-radius: 5px; cursor: pointer; transition: all 0.2s; }
+.form_checkbox-label { margin-top: -2px; margin-bottom: 0; font-size: 0.9rem; color: var(--brown-dark); }
+@media (max-width: 991px) { .form-wrapper { padding-left: 3rem; padding-right: 3rem; } }
+@media (max-width: 767px) { .form-wrapper { gap: 1rem; padding: 2rem; } .form_field-wrapper.is-two { grid-template-columns: 1fr; gap: 1rem; } }
+
+/* ============================================================
+   10. INLINE CTA — indigo panel, heading + body + actions.
+   ============================================================ */
+.inline-cta-a8a1 { background: var(--indigo-bright); border-radius: 20px; padding: 52px 56px; display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; }
+.inline-cta-h2 { font-family: 'Cameraobscura', serif; font-size: 28px; font-weight: 500; color: var(--cream-soft); letter-spacing: 0.5px; line-height: 1.15; margin-bottom: 14px; }
+.inline-cta-body { font-size: 17px; color: var(--cream-soft); line-height: 1.6; max-width: 380px; }
+.inline-cta-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex-shrink: 0; }
+@media (max-width: 767px) { .inline-cta-a8a1 { padding: 36px 28px; grid-template-columns: 1fr; gap: 24px; } .inline-cta-actions { align-items: flex-start; } }
+
+/* ============================================================
+   11. STICKY TOC SIDEBAR — stoc_component (rail) on the body grid.
+   ⚠ REQUIRES JS (page bundle): scroll-spy sets `.stoc_link.is-active` / `.stoc_dot.is-active`;
+   on ≤991px the rail becomes a floating menu — the trigger `.stoc_label` + `.stoc_backdrop`
+   are toggled via `.stoc_component.is-visible` / `.is-menu-open`. The fixed-position mobile
+   layout + those `.is-menu-open .stoc_nav` compound rules live in base.css (custom code,
+   NOT style_tool-deployable) — copy them from sites/cel/shared/base.css when building.
+   ============================================================ */
+.stoc_component { position: sticky; top: 100px; margin-top: 48px; padding: 28px 24px; background: #F6EEDA; border: 1px solid var(--cream-medium); border-radius: 20px; z-index: 10; }
+.stoc_nav { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 36px; }
+.stoc_link { display: flex; align-items: center; gap: 14px; padding: 7px 0; font-size: 0.875rem; color: var(--brown-dark); background: transparent; cursor: pointer; text-decoration: none; }
+.stoc_link:hover { color: var(--brown-deep); }
+.stoc_link.is-active { color: var(--indigo-bright); font-weight: 600; }
+.stoc_dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(95,89,80,0.25); background: var(--cream-soft); flex-shrink: 0; transition: border-color 0.2s, background 0.2s; }
+.stoc_dot.is-active { border-color: var(--orange-gold); background: var(--orange-gold); }
+.stoc_cta-btn { display: block; padding: 12px 18px; text-align: center; }
+/* mobile floating-menu trigger + backdrop (shown ≤991px; desktop base = hidden).
+   The fixed-position + is-menu-open compound behaviour is in base.css. */
+.stoc_label { display: none; align-items: center; gap: 8px; padding: 9px 14px; background: rgba(243,231,211,0.92); color: var(--indigo-bright); font-size: 0.6875rem; font-weight: 500; border: 1px solid rgba(233,222,202,0.5); border-radius: 10px 0 0 10px; cursor: pointer; white-space: nowrap; }
+.stoc_backdrop { display: none; position: fixed; inset: 0; z-index: 899; background: rgba(55,51,44,0.06); }
+.stoc_backdrop.is-visible { display: block; }
+
+/* ============================================================
+   12. VIDEO PLAYER — facade thumbnail + lazy iframe (used on 2 live pages).
+   video_player > video_thumbnail + video_play-btn + video_embed.
+   ⚠ REQUIRES JS: the page bundle adds `.is-playing` (hides facade, loads iframe);
+   the `.video_player.is-playing .video_thumbnail` compound rule lives in base.css.
+   ============================================================ */
+.video_player { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 20px; }
+.video_embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; display: block; }
+.video_thumbnail { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer; }
+
+/* ============================================================
+   13. ACCOMMODATION FLOAT CARD — slider card (image + info panel). 2 live pages.
+   accom-slider_clip > card-slider (swiper) > swiper-slide.is-accom > accom_float-card
+     > accom_float-photo > accom_float-img ; + accom_float-panel
+       (accom_float-price + accom_float-title + accom_float-details > accom_float-detail)
+   ============================================================ */
+.accom_float-card { position: relative; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; height: 100%; }
+.accom_float-photo { aspect-ratio: 4 / 5; overflow: hidden; position: relative; }
+.accom_float-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+.accom_float-panel { position: relative; background: var(--cream-soft); border-radius: 0 0 20px 20px; padding: 20px 24px 22px; flex: 1; display: flex; flex-direction: column; }
+.accom_float-price { display: inline-block; font-size: 0.875rem; font-weight: 500; text-transform: uppercase; color: var(--brown-dark); background: var(--cream); padding: 7px 24px; clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%); margin: 0 0 20px -24px; }
+.accom_float-title { font-size: 1.125rem; font-weight: 500; color: var(--indigo-bright); margin: 0 0 14px; line-height: 1.2; }
+.accom_float-details { display: flex; flex-direction: column; gap: 14px; }
+.accom_float-detail { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: var(--brown-dark); line-height: 1.4; }
+.accom_detail-icon { flex-shrink: 0; width: 20px; height: 20px; color: var(--brown-dark); opacity: 0.7; }
+.accom-card_badge { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3; background: var(--indigo-bright); color: var(--cream-soft); font-size: 0.6875rem; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; padding: 7px 18px; border-radius: 0 0 12px 12px; white-space: nowrap; }
+
+/* ============================================================
+   14. BLOG BENTO — 2-col mosaic: left hero (photo) + right type-only list.
+   section_blog > blog-bento_grid > blog-bento_hero (media/img/overlay/body) + blog-bento_list (item…)
+   (responsive breakpoints in base.css; this is the desktop layer)
+   ============================================================ */
+.section_blog { margin-top: 120px; }
+.blog-bento_grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; }
+.blog-bento_hero { position: relative; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 24px 0 0 20px; overflow: hidden; text-decoration: none; color: var(--cream-soft); min-height: 480px; transition: transform 0.35s cubic-bezier(0.34,1.3,0.64,1); }
+.blog-bento_hero-media { position: absolute; inset: 0; z-index: 0; }
+.blog-bento_hero-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.8s cubic-bezier(0.4,0,0.2,1); }
+.blog-bento_hero-overlay { position: absolute; inset: 0; z-index: 1; background-image: linear-gradient(180deg, rgba(30,28,50,0.05) 0%, rgba(30,28,50,0.15) 35%, rgba(30,28,50,0.82) 100%); }
+.blog-bento_hero-body { position: relative; z-index: 2; padding: 96px 84px; display: flex; flex-direction: column; gap: 14px; }
+.blog-bento_hero-cat { font-size: 0.6875rem; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(249,241,223,0.78); margin: 0; }
+.blog-bento_hero-title { font-family: 'Cameraobscura', serif; font-size: 26px; line-height: 1.2; font-weight: 500; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cream-soft); margin: 0; }
+.blog-bento_hero-excerpt { font-size: 17px; line-height: 1.5; color: rgba(249,241,223,0.88); margin: 0; }
+.blog-bento_list { display: flex; flex-direction: column; justify-content: space-between; height: 100%; background: var(--cream); border-radius: 0 24px 20px 0; padding: 96px 84px; }
+.blog-bento_item { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 26px 0; border-bottom: 1px solid #d9c7a8; text-decoration: none; color: inherit; }
+.blog-bento_item.is-last-article { border-bottom: none; }
+.blog-bento_item-cat { font-size: 0.6875rem; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--orange-gold); margin: 0; }
+.blog-bento_item-title { font-family: 'Cameraobscura', serif; font-size: 18px; line-height: 1.35; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--brown-dark); margin: 0; }
+.blog-bento_cta-row { flex: 0 0 auto; padding-top: 24px; }
+
+/* ============================================================
+   15. COST VISUALIZATION — horizontal bar + icon-group SVG.
+   cv-alt_wrap > cv-alt_svg (contains .cv-bar-fill + .cv-icon-group).
+   ⚠ The bar/icon scroll-in animation (.cv-bar-fill / .cv-icon-group) is a
+   compound rule in base-custom-code.css — copy it when you wire the animation.
+   ============================================================ */
+.cv-alt_wrap { background: var(--cream-extra-light); border-radius: 12px; padding: 16px 20px 12px; margin: 8px auto 0; max-width: 80%; }
+.cv-alt_svg { display: block; width: 100%; overflow: visible; }
+
+/* ============================================================
+   16. REVIEWS-PAGE HERO — first slide of the testimonial slider (aggregate card).
+   review-card is-reviews-hero > reviews-hero_top (logo + title + stars) + reviews-hero_bottom (meta).
+   ⚠ reviews-hero_meta is SCHEMA-relevant: the adults-16 extractor reads the
+   "X.X average · YY reviews" text for aggregateRating (rules/faq-schema-contract.md).
+   reviews-hero_title is LibreFranklin (a product-name exception), not Cameraobscura.
+   ============================================================ */
+.review-card.is-reviews-hero { background: transparent; justify-content: space-between; }
+.reviews-hero_top { display: flex; flex-direction: column; gap: 16px; }
+.reviews-hero_logo { width: 56px; height: 56px; }
+.reviews-hero_title { font-size: 3.5rem; line-height: 0.95; color: var(--brown-dark); letter-spacing: -0.5px; }
+.reviews-hero_stars { display: flex; gap: 4px; }
+.reviews-hero_star { width: 28px; height: 28px; color: var(--star-gold); }
+.reviews-hero_bottom { display: flex; flex-direction: column; gap: 12px; }
+.reviews-hero_meta { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; color: var(--brown-dark); }
+.reviews-hero_count-icon { width: 18px; height: 18px; color: var(--green-fresh); }
+
+/* focus ring — visible on every interactive element (WCAG AA) */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--indigo-bright); outline-offset: 2px; }

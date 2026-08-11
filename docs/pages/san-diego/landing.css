@@ -1,73 +1,527 @@
-/* Vertical dot+rail timeline (§9 Typical Day) */
+/* ============================================================
+   Sticky TOC (stoc_*) — STATE LAYER ONLY.
+   The resting styles at base / 991 / 767 / 479 are the live sheet's
+   (_live/page-vancouver.opt.min.css) and nothing here contests them. Every rule below
+   answers a class the page JS sets at runtime — the five gaps in TOC-RESPONSIVE-SPEC §9,
+   which Webflow tree-shakes out of the published sheet because no Designer element wears
+   the combo.
+   PREVIEW ONLY in the sense of RESPONSIVE-BRIEF §4: each rule must reach Webflow as a real
+   style object / combo (per TOC-RESPONSIVE-SPEC §10) or via data_scripts_tool — never as site
+   custom code, which is a banned deploy path. Every selector here is FLAT: one class, or two
+   or three classes on ONE element. No descendant selectors.
+   Earlier version of this comment claimed shared/utils.js "is no longer loaded". Settled at
+   runtime 2026-08-05 on san-diego.html: it IS loaded (no defer, so it claims __celTocDone
+   before the deferred page bundle and OWNS the TOC), and its 300ms painter does write inline
+   #e78b10 onto the active dot. Inline beats any stylesheet, so .stoc_dot.is-active below is
+   inert on this page; it is kept because Webflow ships no .stoc_dot.is-active rule at all and
+   the deployed page needs one.
+   ============================================================ */
+.stoc_text.is-hover{color:#37332c}
+.stoc_text.is-active{color:#5d60ee;font-weight:600}
+.stoc_dot.is-active{border-color:#e78b10;background:#e78b10}
+/* ≤991 — the card becomes the right-edge glass pill (TOC-RESPONSIVE-SPEC §4).
+   Deliberately NOT restated here, because the live sheet already computes them at this
+   breakpoint: .stoc_nav{background-image:none} (its `background:` shorthand resets the
+   image — measured `none`) and .stoc_dot.is-active{width/height:6px} (the live 991
+   .stoc_dot is already 6px). */
+@media screen and (max-width:991px){
+.stoc_component.is-visible{opacity:1}
+.stoc_link.is-active,.stoc_link.is-active:hover{color:#5d60ee;font-weight:500}
+.stoc_text.is-active{font-weight:500}
+.stoc_label.is-menu-open{background-color:rgba(243,231,211,.98)}
+/* §9 redraws the dot + chevron as two background-images so the open state can flip the
+   chevron. Not transcribed: the live 991 sheet still ships .stoc_label::before/::after, so
+   the background layers would paint a SECOND dot and an upward chevron across the existing
+   downward one — a visible X. A combo + pseudo-element variant is equally deployable
+   (§10 lists pseudo states as style objects) and flips the chevron that is already there. */
+.stoc_label.is-menu-open::after{transform:rotate(-135deg);opacity:.6}
+.stoc_nav.is-menu-open{visibility:visible;opacity:1;transform:translateY(0);background-color:rgba(249,241,223,.97)}
+/* This page's rail CTA carries `stoc_cta-btn inline-cta-btn is-primary`, and the live
+   .inline-cta-btn.is-primary (0,2,0) outranks the live 991 .stoc_cta-btn{display:none}
+   (0,1,0) — so the orange button was still rendering inside the pill stack. Three-class
+   combo, so it wins on specificity, not on source order (RESPONSIVE-BRIEF §2.7). */
+.stoc_cta-btn.inline-cta-btn.is-primary{display:none}
+}
+
+/* PARAGRAPH RHYTHM (client, 4 Aug). The live sheets set .body-text/.body-intro to
+   margin-bottom:0 and ship NO `p + p` rule — an earlier comment in this file assumed one — so
+   consecutive paragraphs ran together with no gap at all. One bottom margin on the paragraph
+   itself (not a sibling selector, which Client-First bans) restores the gap everywhere; where a
+   panel follows, the two margins collapse to the panel's larger one, so nothing doubles.
+   Callouts get their gap from a flex column, so a two-line callout needs no trailing margin. */
+.section_page .body-text,.section_page .body-intro{margin-bottom:1.4em}
+.callout{display:flex;flex-direction:column;gap:14px}
+
+/* Vertical dot+rail timeline (§9 Typical Day) — vertical adaptation of the approved
+   horizontal step-timeline recipe (DESIGN-RULES §3.1): 48px cream-medium dots,
+   0 0 0 6px cream-soft ring (the one sanctioned box-shadow), 20px stroke icons. */
 .section_page .timeline_list{border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);padding:40px;margin-top:8px;text-align:left}
 .timeline_row{position:relative;display:grid;grid-template-columns:48px 1fr;column-gap:24px;align-items:start;padding-bottom:36px}
 .timeline_row:last-child{padding-bottom:0}
 .timeline_row::before{content:"";position:absolute;left:23px;top:48px;bottom:0;width:2px;background:var(--cream-medium,#e9deca);transform-origin:top;transition:transform .7s cubic-bezier(0.16,1,0.3,1) .15s}
 .timeline_row:last-child::before{content:none}
-.timeline_marker{width:48px;height:48px;border-radius:50%;background:var(--cream,#F3E7D3);display:flex;align-items:center;justify-content:center;color:var(--text-muted,#8D877B)}
+.timeline_marker{width:48px;height:48px;border-radius:50%;background:var(--cream-light,#f3e7d3);display:flex;align-items:center;justify-content:center;color:#8D877B}
 .timeline_icon{width:20px;height:20px;display:flex}
 .timeline_icon svg{width:100%;height:100%}
 .timeline_body{padding-top:12px}
 .timeline_body p+p{margin-top:6px}
-.timeline_row .timeline_marker,.timeline_row .timeline_body{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s cubic-bezier(0.16,1,0.3,1)}
+/* Scroll reveal — .is-inview toggled by the IntersectionObserver in san-diego.html, which also
+   sets .has-reveal on <html>. Every hidden start-state below is scoped to .has-reveal, so if
+   that script never runs (or IntersectionObserver never fires) the content is simply visible
+   instead of stuck at opacity 0. Animates in both directions. */
+.has-reveal .timeline_row .timeline_marker,.has-reveal .timeline_row .timeline_body{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s cubic-bezier(0.16,1,0.3,1)}
 .timeline_row .timeline_body{transition-delay:.1s}
-.timeline_row::before{transform:scaleY(0)}
+.has-reveal .timeline_row::before{transform:scaleY(0)}
 .timeline_row.is-inview .timeline_marker,.timeline_row.is-inview .timeline_body{opacity:1;transform:none}
 .timeline_row.is-inview::before{transform:scaleY(1)}
-@media (prefers-reduced-motion:reduce){.timeline_row .timeline_marker,.timeline_row .timeline_body{opacity:1;transform:none}.timeline_row::before{transform:none}}
+/* The .timeline_row .timeline_marker/.timeline_body{opacity:1;transform:none} pair that used to open
+   this block is DELETED as DEAD (RESPONSIVE-BRIEF §1): san-diego.html returns early when
+   matchMedia('(prefers-reduced-motion: reduce)') matches, so .has-reveal is never set and the hidden
+   start-state it was undoing never exists. The ::before reset is kept — see the JS spec in the round
+   report, which is how the remaining reduced-motion rules reach Webflow. */
+@media (prefers-reduced-motion:reduce){.timeline_row::before{transform:none}}
 .timeline_label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange-gold,#e78b10);margin:0}
 .timeline_text{font-size:1.0625rem;color:var(--brown-dark,#5f5950);line-height:1.6;margin:0;max-width:56ch}
 @media (max-width:767px){.timeline_row{grid-template-columns:40px 1fr;column-gap:16px;padding-bottom:28px}.timeline_marker{width:40px;height:40px}.timeline_icon{width:18px;height:18px}.timeline_row::before{left:19px;top:40px}.timeline_body{padding-top:9px}}
 @media (max-width:479px){.section_page .timeline_list{padding:28px 20px}}
-/* §6 Course finder */
+/* §4 Who It's For — the §9 Student Life timeline verbatim (.timeline_list / .timeline_row),
+   so the qualifying scenarios read as one connected sequence rather than five loose rows.
+   Additions: a header band for the lead-in sentence, and a tick that draws itself on reveal. */
+.timeline_list.is-fit{margin-top:8px}
+/* Header band: bleeds past .timeline_list's 40px padding, a light --cream fill. The uppercase
+   comes from the global h4 rule, which suits a header band. Cameraobscura at small heading size;
+   colour is --brown-dark (the h1-h6 token) — --brown-deep is for labels and prices, never headings. */
+/* Shared heading-band recipe (client, 4 Aug): #F6EEDA fill, 26/24 vertical padding and a
+   --cream-medium hairline — identical to .price-table_head / .incl_col-head / .brackets_head on
+   pages/san-diego/costs.html. Horizontal padding follows this panel's own 40px column. */
+.fit_list-title{font-family:"Cameraobscura",serif;font-size:1.125rem;font-weight:500;letter-spacing:.5px;line-height:1.3;color:var(--brown-dark,#5f5950);background:#F6EEDA;margin:-40px -40px 32px;padding:22px 40px;border-radius:19px 19px 0 0;border-bottom:1px solid var(--cream-medium,#e9deca)}
+/* The shared .timeline_body padding-top (12px) is tuned for rows that open with a 12px
+   eyebrow label. These rows are a bare sentence, so centre the first line box on the 48px
+   marker instead: (48 - 27.2 line-height) / 2 ≈ 10px, and 6px against the 40px mobile marker. */
+.timeline_list.is-fit .timeline_body{padding-top:10px}
+@media (max-width:767px){.timeline_list.is-fit .timeline_body{padding-top:6px}}
+.has-reveal .timeline_list.is-fit .timeline_icon svg path{stroke-dasharray:26;stroke-dashoffset:26;transition:stroke-dashoffset .55s cubic-bezier(0.16,1,0.3,1) .15s}
+.timeline_list.is-fit .timeline_row.is-inview .timeline_icon svg path{stroke-dashoffset:0}
+@media (max-width:479px){.fit_list-title{margin:-28px -20px 24px;padding:22px 20px}}
+/* §3 Overview tiles — 2 / 3 / 2 rhythm, no ragged rows. A 6-column grid lets the paired rows sit as
+   equal halves (is-wide / is-after-wide, span 3) while the middle row keeps three equal thirds (span 2).
+   INVERTED in the responsive round (RESPONSIVE-BRIEF §1, worklist §2.2). This was authored inside
+   @media (min-width:768px) — an illegal width, dropped WHOLESALE by the deploy pipeline, and the only
+   one of the four whose loss deletes a desktop layout instead of degrading a narrow one: nothing set
+   this grid at base. Desktop is base now; the narrow state is authored at small.
+   The fallback below 768 was not determinable from the file, so it was MEASURED: the live sheet's own
+   repeat(2,1fr) at 767 and 480, and display:flex at 479 — which nothing here contests, so no display
+   is declared and the 479 shape is untouched.
+   FLAT selectors, no descendants. Two consequences, both deliberate and both measured:
+   · .info-tile{grid-column:span 2} is a SITE-WIDE style object. The page's two other info-tile grids
+     are handled with it rather than around it — .info-tile.is-small (§12's video-showcase trio) resets
+     to auto, and .campus_bento-specs is re-tracked to 6 columns below, which computes the IDENTICAL
+     tile width as repeat(3,1fr) at every width ((W-32)/3 either way, gap 16). Nothing else on these
+     four pages carries .info-tile. See the round report for the Designer note.
+   · the three plain tiles get their span from .info-tile, NOT from a new combo: is-third is banned
+     by CLASS-CONTRACT §5.2, and minting a base class to solve a responsive problem is banned by
+     RESPONSIVE-BRIEF §2.1. */
+/* THE 992-1279 RAIL BAND. Above 991 the 272px rail is back IN FLOW and .section_page still charges
+   its 84px inset, so the content column is 311px at 992 and 598px at 1279 — narrower than any tablet
+   state, and narrower than the 696px this component gets at 1440. Webflow has no max-width tier
+   between main and medium, so the only legal shape is: narrow at BASE, wide at large, wide restated
+   at medium. The medium restatement is NOT redundant — 768-991 and >=1280 are not contiguous.
+   Measured here before the change: at 992 .overview_tiles resolved to SIX tracks of 41.85px and a
+   plain tile to 96px. Two columns give it 150px at 992 and 293px at 1279, and the 2/3/2 rhythm
+   returns the moment the column can hold it. */
+.overview_tiles{grid-template-columns:repeat(2,1fr)}
+.info-tile{grid-column:auto}
+.info-tile.is-wide{grid-column:span 2}
+.info-tile.is-after-wide{grid-column:auto}
+.info-tile.is-small{grid-column:auto}
+@media screen and (min-width:1280px){
+.overview_tiles{grid-template-columns:repeat(6,1fr)}
+.info-tile{grid-column:span 2}
+.info-tile.is-wide{grid-column:span 3}
+.info-tile.is-after-wide{grid-column:span 3}
+.info-tile.is-small{grid-column:auto}
+}
+@media screen and (max-width:991px){
+.overview_tiles{grid-template-columns:repeat(6,1fr)}
+.info-tile{grid-column:span 2}
+.info-tile.is-wide{grid-column:span 3}
+.info-tile.is-after-wide{grid-column:span 3}
+.info-tile.is-small{grid-column:auto}
+}
+@media screen and (max-width:767px){
+.overview_tiles{grid-template-columns:repeat(2,1fr)}
+.info-tile{grid-column:auto}
+.info-tile.is-wide{grid-column:span 2}
+.info-tile.is-after-wide{grid-column:auto}
+}
+/* ============================================================
+   §1a Quick facts — a plain spec sheet: ten key/value lines, LibreFranklin only (no display
+   face), keys as small muted caps in a fixed column, values in the regular text colour, one
+   hairline between rows. Generous row air; hierarchy comes from tone and spacing, nothing else.
+   ============================================================ */
+.quickfacts_panel{border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);margin-top:32px;padding:20px 52px}
+  /* 992-1279 RAIL BAND (see the block above): narrow at base, wide at large, wide restated at
+     medium, because 768-991 and >=1280 are not contiguous and the 272px rail only costs the column
+     its width in between.
+     Measured: the panel's inner box is 205px at 992, so a 216px LABEL COLUMN alone was wider than
+     the row it sat in — the ledger clipped by up to 127px (205/332), silently, behind
+     .page_content{overflow:hidden}. Fragile primitive #10 turned out to be worse than "a fixed label
+     column holds unchanged from 991 to 480": above 991 it does not fit at all. */
+.quickfacts_row{display:grid;grid-template-columns:1fr;row-gap:3px;column-gap:32px;align-items:baseline;padding:21px 0;border-bottom:1px solid rgba(95,89,80,.08)}
+@media screen and (min-width:1280px){.quickfacts_row{grid-template-columns:216px 1fr;row-gap:0}}
+.quickfacts_row:last-child{border-bottom:none}
+.quickfacts_key{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;line-height:1.6;color:#8D877B;margin:0}
+.quickfacts_val{font-size:1.0625rem;font-weight:500;line-height:1.6;color:var(--brown-deep,#37332c);margin:0;text-wrap:pretty}
+@media (max-width:991px){.quickfacts_panel{padding:14px 32px}.quickfacts_row{grid-template-columns:150px 1fr;row-gap:0;column-gap:20px;padding:18px 0}}
+@media (max-width:767px){.quickfacts_panel{padding:10px 24px}}
+@media (max-width:479px){.quickfacts_row{grid-template-columns:1fr;row-gap:3px;padding:14px 0}}
+/* ============================================================
+   §6 Course finder — goal → recommended course.
+   One cream panel: the question as a full-width title band, then two symmetrical
+   columns (goal list | recommendation) sharing one hairline divider that runs the
+   full height of both content rows. Selection reads from the radio dot + cream
+   fill; there is no numbering and no left-border accent bar.
+   ============================================================ */
 .chooser_component{margin:40px 0 8px}
-.chooser_finder{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);overflow:hidden}
-.chooser_goals{padding:0 44px 44px 36px;display:flex;flex-direction:column;gap:2px}
-.chooser_stage{padding:0 36px 44px 44px}
-.chooser_goals-label,.chooser_stage-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-deep,#37332c);background:var(--cream-medium,#e9deca);padding:22px 32px}
-.chooser_goals-label{margin:0 -44px 36px -36px}
-.chooser_stage-label{margin:0 -36px 36px -44px}
-.chooser_goal{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;text-align:left;background:none;border:none;border-radius:14px;padding:13px 14px;font-family:inherit;font-size:.9375rem;line-height:1.4;color:var(--brown-dark,#5f5950);cursor:pointer;transition:background .25s ease,color .25s ease}
-.chooser_goal:hover{background:var(--cream,#F3E7D3)}
-.chooser_goal.is-active{background:var(--cream,#F3E7D3);color:var(--brown-deep,#37332c);font-weight:600}
-.chooser_goal-arrow{width:18px;height:18px;flex:none;color:var(--orange-gold,#e78b10);opacity:0;transform:translateX(-6px);transition:opacity .3s ease,transform .3s cubic-bezier(0.16,1,0.3,1)}
-.chooser_goal-arrow svg{width:100%;height:100%;display:block}
-.chooser_goal:hover .chooser_goal-arrow{opacity:.4;transform:none}
-.chooser_goal.is-active .chooser_goal-arrow{opacity:1;transform:none}
-.chooser_cards{display:grid}
+/* 992-1279 RAIL BAND, and the last component on this page that was still two columns inside it:
+   measured 309/449, so the finder clipped by 140px. Unlike quickfacts and the bento this one is
+   MONOTONIC — one column everywhere below 1280 — so the old 991 block is not restated, it is
+   deleted, and its values are the base. */
+.chooser_finder{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto auto auto;border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);overflow:hidden}
+/* Title band — same treatment as .fit_list-title (§4): Cameraobscura 500 at small heading size on
+   a light --cream band, heading colour --brown-dark, uppercase from the global h4 rule. Only the
+   padding differs, to line up with this panel's 32px columns. */
+.chooser_title{grid-column:1 / -1;grid-row:1;font-family:"Cameraobscura",serif;font-size:1.125rem;font-weight:500;letter-spacing:.5px;line-height:1.3;color:var(--brown-dark,#5f5950);background:#F6EEDA;margin:0;padding:22px 32px;border-bottom:1px solid var(--cream-medium,#e9deca);text-wrap:pretty}
+.chooser_goals-label,.chooser_stage-label{margin:0;padding:26px 32px 14px;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8D877B}
+.chooser_goals-label{grid-column:1;grid-row:2}
+.chooser_stage-label{grid-column:1;grid-row:4}
+.chooser_goals{grid-column:1;grid-row:3;padding:0 24px 24px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid rgba(95,89,80,.12)}
+.chooser_stage{grid-column:1;grid-row:5;padding:0 20px 28px;display:flex;align-items:flex-start}
+/* One continuous divider down the middle, spanning the eyebrow row and the content row — only where
+   there IS a middle, i.e. at large. Stacked, the goals list closes on a horizontal hairline instead
+   (declared on .chooser_goals above). */
+@media screen and (min-width:1280px){
+  .chooser_finder{grid-template-columns:1fr 1fr;grid-template-rows:auto auto minmax(0,1fr)}
+  .chooser_goals-label{grid-column:1;grid-row:2;border-right:1px solid rgba(95,89,80,.12)}
+  .chooser_stage-label{grid-column:2;grid-row:2}
+  .chooser_goals{grid-column:1;grid-row:3;padding:0 24px 28px;border-right:1px solid rgba(95,89,80,.12);border-bottom:0}
+  .chooser_stage{grid-column:2;grid-row:3;padding:0 32px 28px}
+}
+/* Goal row: radio dot + label, whole row is the hit target (48px min). */
+.chooser_goal{display:grid;grid-template-columns:18px 1fr;align-items:center;column-gap:14px;width:100%;min-height:48px;text-align:left;background:none;border:none;border-radius:12px;padding:11px 14px;font-family:inherit;font-size:.9375rem;line-height:1.4;color:var(--brown-dark,#5f5950);cursor:pointer;transition:background .25s ease,color .25s ease}
+.chooser_goal-dot{width:18px;height:18px;border-radius:50%;border:1.5px solid rgba(95,89,80,.3);background:var(--cream-extra-light,#fdfaf3);position:relative;transition:border-color .25s ease}
+.chooser_goal-dot::after{content:"";position:absolute;inset:3.5px;border-radius:50%;background:var(--orange-gold,#e78b10);transform:scale(0);transition:transform .3s cubic-bezier(0.16,1,0.3,1)}
+.chooser_goal:hover{background:var(--cream-light,#f3e7d3)}
+.chooser_goal:hover .chooser_goal-dot{border-color:rgba(95,89,80,.5)}
+.chooser_goal:focus-visible{outline:2px solid var(--indigo-bright,#5D60EE);outline-offset:2px}
+.chooser_goal.is-active{background:var(--cream-light,#f3e7d3);color:var(--brown-deep,#37332c);font-weight:600}
+.chooser_goal.is-active .chooser_goal-dot{border-color:var(--orange-gold,#e78b10)}
+.chooser_goal.is-active .chooser_goal-dot::after{transform:scale(1)}
+.chooser_cards{display:grid;width:100%}
 .chooser_card{grid-area:1/1;opacity:0;visibility:hidden;transform:translateY(12px) scale(.988);transition:opacity .7s ease,transform .8s cubic-bezier(0.22,1,0.36,1),visibility 0s linear .8s}
 .chooser_card.is-active{opacity:1;visibility:visible;transform:none;z-index:1;transition:opacity .7s ease,transform .8s cubic-bezier(0.22,1,0.36,1),visibility 0s}
-.chooser_card .course-card{width:100%}
-@media (prefers-reduced-motion:reduce){.chooser_card{transition:opacity .3s ease}.chooser_goal-arrow{transition:none}}
-@media (max-width:991px){.chooser_finder{grid-template-columns:1fr}.chooser_goals{padding:0 32px 36px}.chooser_stage{padding:0 32px 40px}.chooser_goals-label{margin:0 -32px 32px}.chooser_stage-label{margin:0 -32px 32px}.chooser_card .course-card{max-width:440px;margin:0 auto}}
+/* 440px cap and auto centring are the stacked treatment; at large the stage column is ~350px wide,
+   so the cap never binds and it needs no reset — which keeps this a single existing rule rather than
+   a new descendant selector. */
+.chooser_card .course-card{width:100%;max-width:440px;margin:0 auto}
+@media (prefers-reduced-motion:reduce){.chooser_card{transition:opacity .3s ease}.chooser_goal-dot,.chooser_goal-dot::after{transition:none}}
+@media (max-width:767px){.chooser_title{padding:16px 20px}.chooser_goals-label,.chooser_stage-label{padding:20px 20px 12px}.chooser_goals{padding:0 14px 20px}}
 .course-card_cat{font-size:.625rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#faf3e8;margin:0 0 8px}
-/* §18 More Options — 2-up grid */
-.section_support .photo-cards{gap:24px}
-.section_support .photo-card{flex:1 1 calc(50% - 12px);min-width:280px}
-@media (max-width:767px){.section_support .photo-card{flex:1 1 100%}}
-/* §3 Program Overview — featured first tile (mirrors live's w-node span) */
-.overview_tiles .info-tile.is-wide{grid-column:span 3}
-@media (min-width:1280px){.overview_tiles .info-tile.is-wide{grid-column:span 2}}
-@media (max-width:767px){.overview_tiles .info-tile.is-wide{grid-column:span 2}}
-/* Spacing standards */
+
+/* ============================================================
+   §14 Activities — panorama card tag (act_pano-tag)
+   The live sheet has NO rule for .act_pano-tag / -tag-dash, so
+   the eyebrow rendered as plain body text. Restores the
+   reference treatment (orange allcaps + 12px dash) and pins it
+   to the TOP of the cream body while title/desc stay centred.
+   ============================================================ */
+.act_pano-tag{position:absolute;top:32px;left:32px;margin:0;padding-left:20px;font-size:.6875rem;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--orange-gold,#e78b10)}
+.act_pano-tag-dash{position:absolute;left:0;top:50%;transform:translateY(-50%);width:12px;height:2px;background:var(--orange-gold,#e78b10)}
+.act_pano-body{padding-top:76px}
+@media (max-width:767px){.act_pano-tag{top:24px;left:24px}.act_pano-body{padding-top:64px}}
+
+/* ============================================================
+   §16 Planning — interactive study planner (plan_*)
+   One flat cream sheet styled after booking/widget.css: indigo/
+   orange are ACCENTS only (checked radios, focus rings, warning
+   text) — never surface fills; selected tiles use the widget's
+   cream #e9deca + #b6a88c treatment. Calculator layout: inputs
+   left, live estimate in a tinted summary panel right (≥1​992px);
+   stacked panels below. Logic is NOT in this page any
+   more: shared/calculator.js (engine) + calculator-sandiego.js
+   (rates + copy) — see shared/CALCULATOR.md. Under 24 lessons/wk → ESTA (≤90 days
+   ≈ 12 wks, tick on slider) · 24+ → F-1 · part-time past 12 wks
+   → cap state with one-click fixes. rAF-tweened tabular figures.
+   ============================================================ */
+  /* 992-1279 RAIL BAND (see the block above): narrow at base, wide at large, wide restated at
+     medium, because 768-991 and >=1280 are not contiguous and the 272px rail only costs the column
+     its width in between.
+     Measured: two columns inside the 309px band column clipped the planner by 138px (309/447). */
+.plan_sheet{display:grid;grid-template-columns:1fr;border:1px solid rgba(95,89,80,.15);border-radius:20px;background:var(--cream-soft,#f9f1df);padding:0;margin-top:40px;text-align:left;overflow:hidden}
+@media screen and (min-width:1280px){.plan_sheet{grid-template-columns:1.05fr 1fr}}
+.plan_col{padding:32px 36px 30px}
+.plan_col-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;line-height:1.5;color:#8D877B;margin:0 0 2px}
+/* PARITY with the §4 calculator on the costs page (COMPONENTS.md §13): both columns sit on the
+   sheet's cream and only the hairline separates them — a tinted estimate column made the result
+   side the heaviest surface in the section. */
+/* Stacked at base, so the hairline runs across the top; it becomes the vertical divider only where
+   the sheet actually has two columns. (This replaces a pair of rules where the second immediately
+   overrode the first.) */
+.plan_col.is-result{border-top:1px solid rgba(95,89,80,.12);border-left:none}
+@media screen and (min-width:1280px){.plan_col.is-result{border-top:none;border-left:1px solid rgba(95,89,80,.12)}}
+@media (max-width:991px){
+  .plan_sheet{grid-template-columns:1fr}
+  .plan_col{padding:26px 28px 24px}
+  .plan_col.is-result{border-left:none;border-top:1px solid rgba(95,89,80,.12)}
+}
+.plan_field{padding:20px 0}
+.plan_fields{display:grid;grid-template-columns:1fr;gap:0}
+.plan_field-key{font-size:.8125rem;font-weight:500;line-height:1.4;letter-spacing:1.5px;text-transform:uppercase;color:#37332c;margin:0;display:block}
+.plan_field-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+/* Clamped inside the track for the same reason as .calc_weeks (costs.css C2): at either
+   extreme the bubble's half-width crosses the sheet edge and is cropped. */
+.plan_weeks{position:absolute;bottom:calc(100% + 12px);left:clamp(52px,calc(14px + var(--calc-fill,21.57%) - 28px * var(--calc-frac,.2157)),calc(100% - 52px));transform:translateX(-50%);display:flex;align-items:baseline;gap:4px;background:#e9deca;border:1.5px solid #b6a88c;border-radius:10px;padding:7px 12px;font-size:.875rem;font-weight:600;line-height:1.3;font-variant-numeric:tabular-nums;color:#37332c;margin:0;white-space:nowrap;transition:border-color .3s}
+#plan-tool .plan_weeks{border-color:var(--plan-route)}
+.plan_weeks-unit{font-size:.6875rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#5f5950;margin-left:1px}
+/* Slider — chunky 14px track, widget-cream rest, indigo fill accent; --calc-fill / --plan-fillc set by JS. */
+.plan_slider{position:relative;margin-top:60px;--calc-fill:21.57%;--calc-frac:.2157}
+.plan_range{-webkit-appearance:none;appearance:none;display:block;width:100%;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--plan-fillc,var(--indigo-bright,#5D60EE)) var(--calc-fill,21.57%),#e9deca var(--calc-fill,21.57%));cursor:pointer;margin:0;transition:box-shadow .2s}
+.plan_range::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fdf8ee;border:2px solid var(--plan-fillc,var(--indigo-bright,#5D60EE));box-shadow:0 2px 8px rgba(55,51,44,.28);transition:transform .2s,border-color .3s}
+.plan_range:hover::-webkit-slider-thumb{transform:scale(1.07)}
+.plan_range:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--plan-fillc,var(--indigo-bright,#5D60EE)) 30%,transparent)}
+.plan_range:active::-webkit-slider-thumb{transform:scale(1.15)}
+.plan_range::-moz-range-track{height:14px;border-radius:7px;background:transparent}
+.plan_range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fdf8ee;border:2px solid var(--plan-fillc,var(--indigo-bright,#5D60EE));box-shadow:0 2px 8px rgba(55,51,44,.28)}
+.plan_tick{position:absolute;left:21.57%;top:-3px;width:2px;height:20px;background:rgba(95,89,80,.38);opacity:0;transition:opacity .35s,background .35s;pointer-events:none}
+.plan_tick-label{position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.625rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#8D877B;transition:color .35s}
+#plan-tool.is-part .plan_tick{opacity:1}
+/* ================ THE PLANNER'S CONTROL WEARS ITS VERDICT — same system as costs.css
+   (client, 4 Aug: "similar ux, styling and coloring ... design consistency is very important")
+   --plan-route is set once per verdict on the tool root, and the track fill, thumb ring, focus ring,
+   tick, tick caption and the weeks bubble all read it. Before this the slider was indigo for BOTH
+   visa-free and F-1 and only turned orange on the over-limit state, so the control agreed with the
+   verdict in exactly one of three cases.
+     esta  #1ea869 green   — visa-free, nothing extra to apply for
+     f1    #e78b10 orange  — a student visa is required
+     cap   #e78b10 orange  — over the 90-day window; something has to change
+   The same three colours the costs calculator uses, and f1/cap share the hue because they share the
+   meaning: not visa-free. They stay distinguishable on the CHIP, where f1 is a soft fill and cap is
+   an outline. ================ */
+#plan-tool{--plan-route:var(--indigo-bright,#5D60EE)}
+#plan-tool.is-route-esta{--plan-route:#1ea869}
+#plan-tool.is-route-f1,#plan-tool.is-route-cap{--plan-route:var(--orange-gold,#e78b10)}
+#plan-tool .plan_range{--plan-fillc:var(--plan-route)}
+#plan-tool .plan_tick{background:var(--plan-route)}
+#plan-tool .plan_tick-label{color:var(--plan-route)}
+.plan_scale{display:flex;justify-content:space-between;margin-top:34px;font-size:.6875rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8D877B}
+/* Select fields — the DS form field (live /contact-cel, documented in booking/widget.css
+   §Inputs): cream #f9f0df fill, 3px cream-medium edge, 7px radius, 3rem min-height, indigo
+   focus ring, caret drawn as a background image because appearance:none drops the native one.
+   Shared vocabulary with the §4 calculator on the costs page — see COMPONENTS.md §13. */
+.plan_control{position:relative;margin-top:10px}
+.plan_select{width:100%;min-height:3rem;padding:.6rem 2.75rem .6rem 1.1rem;border:3px solid #e9deca;border-radius:7px;background-color:#fdf8ee;background-image:linear-gradient(45deg,transparent 50%,#9a8f80 50%),linear-gradient(135deg,#9a8f80 50%,transparent 50%);background-size:6px 6px,6px 6px;background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%;background-repeat:no-repeat;font-family:"Librefranklin",Arial,sans-serif;font-size:.9375rem;font-weight:500;color:#37332c;line-height:1.3;cursor:pointer;appearance:none;-webkit-appearance:none;transition:border-color .15s ease,box-shadow .15s ease}
+.plan_select:hover{border-color:#ddd0b6}
+.plan_select:focus{outline:none;border-color:var(--indigo-bright,#5D60EE);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
+
+/* Radio tiles — retained for two-option choices that must stay visible side by side
+   (booking-widget vocabulary: cream tile, bordered radio, indigo check, dark-cream selected) */
+.plan_seg{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.plan_seg-btn{appearance:none;font:inherit;font-size:.875rem;font-weight:500;line-height:1.3;text-align:left;display:flex;align-items:center;gap:10px;background:#f9f0df;border:1.5px solid #e2d4ba;border-radius:10px;padding:12px 14px;cursor:pointer;color:#5f5950;transition:background-color .2s,border-color .2s,color .2s}
+.plan_seg-btn:hover{background:#fdf8ee;border-color:#b6a88c;color:#37332c}
+.plan_seg-btn:focus-visible{outline:none;box-shadow:0 0 0 3px #5d60ee40}
+.plan_seg-btn.is-on{background:#e9deca;border-color:#b6a88c;color:#37332c;font-weight:600}
+.plan_seg-dot{flex:0 0 auto;width:1.25rem;height:1.25rem;border-radius:50%;background:#fdf8ee;border:1.5px solid #bdae93;position:relative;transition:border-color .15s,background-color .15s}
+.plan_seg-btn:hover .plan_seg-dot{border-color:#9a8f80}
+.plan_seg-btn.is-on .plan_seg-dot{background:#5d60ee;border-color:#5d60ee}
+.plan_seg-dot::after{content:"";position:absolute;inset:0;margin:auto;width:8px;height:8px;border-radius:50%;background:#fdf8ee;transform:scale(0);transition:transform .18s cubic-bezier(0.34,1.56,0.64,1)}
+.plan_seg-btn.is-on .plan_seg-dot::after{transform:scale(1)}
+.plan_seg-hint{margin-left:auto;padding-left:12px;font-size:.8125rem;font-weight:500;color:#9a8f80}
+.plan_seg-btn.is-on .plan_seg-hint{color:#5f5950}
+/* Ledger rows */
+.plan_line{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 0}
+.plan_line + .plan_line{border-top:1px solid rgba(95,89,80,.1)}
+.plan_line-key{font-size:.9375rem;font-weight:600;color:var(--brown-dark,#5f5950);margin:0}
+.plan_line-sub{display:block;font-size:.8125rem;font-weight:400;line-height:1.4;color:#8D877B;margin-top:2px}
+.plan_line-val{font-family:"Librefranklin",Arial,sans-serif;font-size:.9375rem;font-weight:600;letter-spacing:-.2px;font-variant-numeric:tabular-nums;color:var(--brown-dark,#5f5950);margin:0;white-space:nowrap;transition:opacity .3s}
+.plan_val-cur{font-size:.875rem;font-weight:500;opacity:.65;margin-right:1px}
+.plan_line.is-off .plan_line-val{opacity:.45}
+.plan_line.is-total{border-top:1.5px dashed rgba(95,89,80,.35)}
+.plan_total-val{font-family:"Librefranklin",Arial,sans-serif;font-size:1.375rem;font-weight:600;line-height:1;letter-spacing:-.3px;font-variant-numeric:tabular-nums;color:var(--indigo-bright,#5D60EE);margin:0;white-space:nowrap}
+.plan_total-val .plan_val-cur{font-size:.875rem;opacity:.7}
+.plan_total-from{font-size:.875rem;font-weight:500;letter-spacing:0;color:#8D877B;margin-right:5px}
+/* Visa verdict row */
+.plan_group-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange-gold,#e78b10);margin:0}
+.plan_visa{border-top:1px solid rgba(95,89,80,.1);padding:14px 0 8px}
+.plan_visa-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.plan_chip{margin:0;padding:6px 12px;border-radius:999px;font-size:.75rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;border:1px solid transparent;transition:background .35s,color .35s,border-color .35s}
+/* Chip states in the costs page's colour language, so the two calculators read the same: esta green,
+   f1 orange. They were dark-brown / cream-brown / orange-outline — three treatments that shared
+   nothing with the other tool, and where the visa-free verdict looked like a neutral label rather
+   than the good outcome it is. cap keeps the OUTLINE so it stays distinct from f1 while sharing the
+   hue: both mean "not visa-free", but cap is the one the visitor has to act on. */
+.plan_chip.is-esta{background:#1ea8691f;color:#15754a}
+.plan_chip.is-f1{background:#e78b1024;color:#9c5c07}
+.plan_chip.is-cap{background:transparent;border-color:#e78b10;color:#9c5c07}
+.plan_chip.is-pop{animation:planPop .45s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes planPop{0%{transform:scale(.82)}100%{transform:scale(1)}}
+.plan_visa-state{display:none}
+.plan_visa-state.is-on{display:block;animation:planRise .5s cubic-bezier(0.16,1,0.3,1)}
+@keyframes planRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.plan_visa-verdict{font-size:.9375rem;line-height:1.55;color:var(--brown-dark,#5f5950);margin:10px 0 0;text-wrap:pretty}
+.plan_visa-path{display:block;margin-top:6px;font-size:.875rem;line-height:1.6;color:#8D877B}
+.plan_fix{appearance:none;background:none;border:none;padding:0;margin:0;font:inherit;font-weight:600;color:var(--indigo-medium,#4e51be);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.plan_fix:hover{color:var(--indigo-bright,#5D60EE)}
+.plan_note{margin:0;padding:14px 0 12px;border-top:1px solid rgba(95,89,80,.1);font-size:.875rem;line-height:1.6;color:#8D877B;text-wrap:pretty}
+.section_budget > .callout{margin-top:24px;width:100%}
+/* Reveal (shared .is-inview observer) */
+.has-reveal .plan_col{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s cubic-bezier(0.16,1,0.3,1)}
+.has-reveal .plan_col.is-result{transition-delay:.12s}
+.plan_col.is-inview{opacity:1;transform:none}
+/* .has-reveal .plan_col{opacity:1;…} deleted here for the same reason: it can never match, because
+   .has-reveal is only ever set by a script that has already returned on the same media query. */
+@media (prefers-reduced-motion:reduce){.plan_visa-state.is-on,.plan_chip.is-pop{animation:none}.plan_range::-webkit-slider-thumb{transition:none}}
+/* §15 — the illegal @media (max-width:600px) is GONE (RESPONSIVE-BRIEF §1, worklist §2.3). Its three
+   declarations were resolved by measuring each one rather than by snapping the query to a legal width,
+   because 600 -> 767 is a real behaviour change for the whole 601-767 band and §15 had nothing there.
+   · .plan_col padding -> tiny. 22/18/18 leaves 375px of content in the 412px column; the inherited 991
+     value (26/28/24) leaves 355px. The tighter pair is only wanted on the phone, and §15 had ZERO rules
+     at 479 before this, so this becomes its 479 step.
+   · .plan_visa-head flex-wrap -> small. Measured, the row does not need to wrap in English (group label
+     89px + chip 149px inside 374-602px), so it is a no-op today and a guard for the nine Weglot
+     locales — which is why it is set at the wider of the two tiers.
+   · #plan-tool.is-part .plan_scale{visibility:hidden} -> DELETED, not re-keyed and not re-specified as
+     JS. It was ID-keyed AND a descendant selector, and it guarded a collision that does not happen at
+     any legal width: measured at 479 with the rule off, the ESTA tick caption occupies y 24583-24606
+     and the scale row y 24613-24636 — 7px of clear air between two separate lines — while
+     horizontally "1 week" ends at x100 against the caption's x102. So the scale and the caption never
+     touch, and deleting the rule shows two labels on the phone instead of shipping an undeployable
+     rule to hide them. */
+@media screen and (max-width:767px){.plan_visa-head{flex-wrap:wrap}}
+@media screen and (max-width:479px){.plan_col{padding:22px 18px 18px}}
+
+/* ============================================================
+   §18 More Options — full-width city banners (citylist_*)
+   Hero idiom: full-bleed photo, the hero's bottom-weighted veil,
+   allcaps country eyebrow + display-face city name + cream pill
+   sitting on the image. One column, stacked.
+   ============================================================ */
+.section_citylist{background:none;border:none;padding:64px 0 8px;margin:0}
+.citylist_rows{display:flex;flex-direction:column;gap:0;border-radius:20px;overflow:hidden}
+.citylist_row{position:relative;display:block;aspect-ratio:16/9;min-height:460px;overflow:hidden;text-decoration:none}
+.citylist_img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;transform:scale(1.005);transition:transform 1.4s cubic-bezier(0.22,1,0.36,1)}
+.citylist_row:hover .citylist_img{transform:scale(1.055)}
+.citylist_veil{position:absolute;inset:0;background-image:linear-gradient(#1e1c3266 0%,#1e1c3226 15%,#0000 30%),linear-gradient(#0000 0%,#2321374c 30%,#1e1c3298 55%,#19172dd8 75%,#141228f2 100%);opacity:1;transition:opacity 1s ease}
+.citylist_row:hover .citylist_veil{opacity:.88}
+.citylist_body{position:absolute;inset:auto 0 0 0;display:flex;flex-direction:column;gap:22px;padding:48px 52px}
+.citylist_text{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+/* Pill and lettermark share one row so their centres line up exactly. */
+.citylist_actions{display:flex;align-items:center;justify-content:space-between;gap:24px}
+.citylist_logo-mark{height:34px;width:auto;display:block;opacity:.92}
+
+.citylist_meta{font-size:.75rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f9f1df;opacity:.8;margin:0}
+/* Standard section-title size so the city name reads as a section heading rather than a
+   second hero. Mirrors the .section-title ladder in _live/page-vancouver.opt.min.css:
+   38 / 991:30 / 767:26 / 479:23 — keep the steps in sync if that scale changes. */
+.citylist_name{font-family:"Cameraobscura",serif;font-size:38px;font-weight:500;letter-spacing:.5px;line-height:1.1;text-transform:uppercase;color:#f9f1df;margin:0}
+@media (prefers-reduced-motion:reduce){.citylist_img,.citylist_veil{transition:none}}
+@media (max-width:991px){.citylist_name{font-size:30px}}
+@media (max-width:767px){.citylist_row{aspect-ratio:4/3;min-height:320px}.citylist_body{padding:28px 24px;gap:18px}.citylist_text{gap:12px}.citylist_logo-mark{height:26px}.citylist_name{font-size:26px}}
+@media (max-width:479px){.citylist_name{font-size:23px}}
+
+/* ============================================================
+   §19 Related Guides — nextread_* link cluster
+   One feature card (image + excerpt) beside three compact link
+   rows; every card is a whole-card anchor so the hit target is
+   the full tile.
+   ============================================================ */
+.section_nextread{padding:8px 0 8px}
+.nextread_grid{display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1fr 1fr auto;gap:16px;margin-top:48px}
+.nextread_card{background:var(--cream-soft,#f9f1df);border:1px solid rgba(95,89,80,.15);border-radius:20px;overflow:hidden;text-decoration:none;transition:transform .35s cubic-bezier(0.16,1,0.3,1),border-color .35s ease,background .35s ease}
+.nextread_card:hover{transform:translateY(-3px);border-color:rgba(231,139,16,.45);background:var(--cream-light,#f3e7d3)}
+.nextread_card.is-feature{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column}
+.nextread_media{aspect-ratio:16/10;overflow:hidden}
+.nextread_img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(0.16,1,0.3,1)}
+.nextread_card:hover .nextread_img{transform:scale(1.03)}
+.nextread_body{padding:28px 30px 30px;display:flex;flex-direction:column;gap:10px;flex:1}
+.nextread_cat{font-size:.6875rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--orange-gold,#e78b10);margin:0}
+.nextread_title{font-family:"Cameraobscura",serif;font-size:1.375rem;font-weight:500;letter-spacing:.5px;line-height:1.2;text-transform:uppercase;color:var(--brown-dark,#5f5950);margin:0}
+.nextread_excerpt{font-size:1rem;line-height:1.6;color:var(--brown-dark,#5f5950);margin:0;text-wrap:pretty}
+/* Card CTA — the live secondary pill (.cta-pill-indigo), pinned to the card bottom. */
+.nextread_card .cta-pill-indigo{margin-top:auto;align-self:flex-start}
+.nextread_card:hover .cta-pill-indigo{opacity:.85}
+.nextread_card:not(.is-feature){grid-column:2;display:flex;flex-direction:column;gap:8px;padding:26px 28px}
+/* Tagline pinned top; heading + excerpt + button cluster at the bottom. */
+.nextread_card:not(.is-feature) .nextread_title{margin-top:auto}
+.nextread_card:not(.is-feature) .cta-pill-indigo{margin-top:16px}
+/* Full-width row beneath the grid — text and CTA stacked, button bottom-left. */
+.nextread_card.is-wide{grid-column:1 / -1;grid-row:3;padding:30px}
+.nextread_card.is-wide .cta-pill-indigo{margin-top:22px}
+@media (max-width:991px){.nextread_grid{grid-template-columns:1fr;grid-template-rows:auto}.nextread_card.is-feature{grid-column:1;grid-row:auto}.nextread_card:not(.is-feature){grid-column:1}.nextread_card.is-wide{grid-column:1;grid-row:auto}}
+@media (max-width:767px){.nextread_body{padding:24px}}
+/* keep the heading gap in step with .faq-list, which drops to 28px at this width */
+@media (max-width:479px){.nextread_grid{margin-top:28px}}
+
+/* ============================================================
+   §3 Program Overview — featured first tile
+   ------------------------------------------------------------
+   LIVE /vancouver does NOT render 8 uniform tiles. The first tile
+   ("Ideal for") spans multiple columns, giving a featured card on
+   row 1 and 3-up rows beneath. Live achieves it with a Webflow
+   grid-child ID rule (#w-node-f4d7f63c-…), which the Designer emits
+   when you span a grid child — an id we cannot and should not reuse.
+
+   The markup already carries the `is-wide` combo, so express it as a
+   class here. In Webflow the builder sets the span on the grid child
+   itself (regenerating its own w-node id); `grid-column` on a combo
+   class is equally deployable and is the correct design-system form.
+
+   Live's three states, mirrored exactly:
+     base (768–1279px)  span 3  -> full width
+     >=1280px           span 2  -> 2 of 3
+     <=767px            span 2  -> grid is 2-col, so full width
+     <=479px            grid becomes flex column; span is moot
+   NOTE: the two descendant rules that used to sit here (.overview_tiles .info-tile.is-wide, base and
+   @767) are DELETED. They said exactly what .info-tile.is-wide now says as a flat combo at base and at
+   small, so keeping them would have been a second, undeployable copy of a rule that already exists. */
+
+/* ── Design-system spacing standards (normalised in review) ──
+   One standard gap above every callout, and the SAME gap between two stacked
+   callouts — was 0–60px across sections (the §4 callout sat flush at 0px).
+   The accred_regulatory block keeps its own 60px component margin. */
 .section_page .callout:not(.accred_regulatory){margin-top:32px}
 .section_page .callout + .callout{margin-top:32px}
+/* Swiper nav: standard 28px gap from the cards on every slider (dest was 48px). */
 .card-slider_nav.dest-slider_nav{margin-top:28px}
-/* §4 Who It's For */
+
+/* §4 Who It's For — reuses the §9 timeline_* recipe verbatim (rail, dots, .is-inview reveal);
+   only addition: the tick icon is an <img>, so mirror the svg sizing rule. */
 .timeline_icon img{width:100%;height:100%;display:block}
 .section_fit .timeline_list{margin-top:12px}
-/* Review fixes */
+
+/* ── Review fixes ──────────────────────────────────────────── */
+/* Small-classes comparison: drop the trailing 40px so it sits flush to the section end. */
 .campus_small-classes .compare_component{margin-bottom:0}
-/* Method grid (§8) */
+
+/* Method grid (§8) — six equal-height cards, uniform text padding, no overflow. */
 .campus_method .photo-card{height:440px;border-radius:20px;overflow:hidden;background:#F9F1DF;border:1px solid var(--cream-medium,#E8DCC8)}
 .campus_method .photo-card_visual{position:relative;height:100%;width:100%;aspect-ratio:auto}
 .campus_method .campus_bento-card-overlay{padding:40px 38px;box-sizing:border-box}
+/* Icon cards (1, 4, 5 & 6): no photo, solid cream. Icon pinned to the top, copy to the bottom, so
+   every card in the row shares one baseline for its text (matching 2 & 3, where the copy
+   sits at the foot of the photo). This is what the deployed .cm-is1_overlay variant does. */
 .campus_method .photo-card.is-1 .photo-card_img,
-.campus_method .photo-card.is-4 .photo-card_img{display:none}
+.campus_method .photo-card.is-4 .photo-card_img,
+.campus_method .photo-card.is-5 .photo-card_img,
+.campus_method .photo-card.is-6 .photo-card_img{display:none}
 .campus_method .photo-card.is-1 .photo-card_visual,
-.campus_method .photo-card.is-4 .photo-card_visual{display:flex;flex-direction:column}
+.campus_method .photo-card.is-4 .photo-card_visual,
+.campus_method .photo-card.is-5 .photo-card_visual,
+.campus_method .photo-card.is-6 .photo-card_visual{display:flex;flex-direction:column}
 .campus_method .photo-card.is-1 .campus_bento-card-overlay,
-.campus_method .photo-card.is-4 .campus_bento-card-overlay{position:relative;inset:auto;height:100%;background:#F9F1DF;background-image:none;display:flex;flex-direction:column;gap:16px;justify-content:flex-start}
+.campus_method .photo-card.is-4 .campus_bento-card-overlay,
+.campus_method .photo-card.is-5 .campus_bento-card-overlay,
+.campus_method .photo-card.is-6 .campus_bento-card-overlay{position:relative;inset:auto;height:100%;background:#F9F1DF;background-image:none;display:flex;flex-direction:column;gap:16px;justify-content:space-between}
+/* Photo cards (2 & 3): image fills the card; light text over the gradient at the bottom. */
 .campus_method .photo-card.is-2 .photo-card_img,
 .campus_method .photo-card.is-3 .photo-card_img{display:block;height:100%}
 .campus_method .photo-card.is-2 .campus_bento-card-overlay,
@@ -79,10 +533,242 @@
 .campus_method .photo-card.is-2 .photo-card_desc,
 .campus_method .photo-card.is-3 .photo-card_desc{opacity:.9}
 @media (max-width:767px){.campus_method .photo-card{height:auto;min-height:340px}}
-/* Campus bento (§7) */
-.campus_bento-specs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+
+/* Campus bento (§7) — the live sheet's bento rules all read var(--section-pad-x)
+   but NOTHING in the loaded cascade defines it, so the copy fell flush to the
+   full-bleed edge below 991px (no fallback in those media rules). Define the
+   token on the bento itself: scoped to this subtree, so .campus_bento-text and
+   the spec tiles resolve to the SAME gutter at every breakpoint. */
+.campus_bento{--section-pad-x:84px}
+/* SIX tracks, not three, so the site-wide .info-tile{grid-column:span 2} above lands on exactly the
+   width repeat(3,1fr) gave it: a span-2 item is 2t+16 and 6t+80=W, so 2t+16=(W-32)/3 — the same number
+   repeat(3,1fr) computes. Verified at all eight widths on both pages that use this block. */
+/* FRAGILE PRIMITIVE #13, and the worklist's proposed fix and my first one were BOTH wrong — the
+   render is what settled it. The facts: this block is used on two pages. On san-diego it sits inside
+   a full-bleed .campus_bento, where --section-pad-x IS the section gutter and 84px is right. On
+   why-learn-english-pacific-beach.html it is a direct child of .section_page, with no .campus_bento
+   anywhere, so the token was unresolved, the padding SHORTHAND was therefore invalid, and padding
+   computed 0 on all four sides at every width >=992.
+   That reads like a bug, and both proposed fixes — var(--section-pad-x,84px), and declaring the
+   ladder on this element — "fix" it by giving Pacific Beach an 84px gutter. MEASURED, that is the
+   real defect: every sibling in that section (section-tagline, section-title, body-intro,
+   quickfacts_panel) sits at x558 at 1440, and the tiles moved to x642 — 84px indented from the
+   column they belong to, inside a .page_content that is already inset. The unresolved token was
+   accidentally CORRECT on that page.
+   So the horizontal inset is CONTEXTUAL and its default is 0: longhands, not a shorthand, so an
+   unresolved token can only zero the axis it applies to instead of taking the whole declaration
+   down with it — which is what silently killed padding-top here too. san-diego inherits 84/48/32/20
+   from .campus_bento exactly as before; Pacific Beach gets 0 horizontally, aligned with its
+   siblings, and now actually gets its 84px top step, which the invalid shorthand had been eating. */
+.campus_bento-specs{display:grid;grid-template-columns:1fr;gap:16px;padding-top:84px;padding-left:var(--section-pad-x,0px);padding-right:var(--section-pad-x,0px);padding-bottom:0}
+@media screen and (min-width:1280px){.campus_bento-specs{grid-template-columns:repeat(6,1fr)}}
 .campus_bento-specs .info-tile{margin:0}
-@media (max-width:767px){.campus_bento-specs{grid-template-columns:1fr}}
-/* §13a Book With Confidence */
-.timeline_num{font-family:"Cameraobscura",Arial,sans-serif;font-weight:500;font-size:1.375rem;line-height:1;color:var(--orange-gold,#e78b10)}
+@media (max-width:991px){.campus_bento{--section-pad-x:48px}.campus_bento-specs{grid-template-columns:repeat(6,1fr);padding-top:64px}}
+/* 1fr, unchanged — and that is deliberate, not an oversight. The small block above already resets
+   .info-tile to grid-column:auto for the 2-column overview grid, so a tile here occupies ONE track:
+   a single 1fr track is what keeps it one tile per row. Re-tracking this to repeat(2,1fr) put two
+   290px tiles on a row where the sheet had always shipped one 596px tile — measured and reverted. */
+@media (max-width:767px){.campus_bento{--section-pad-x:32px}.campus_bento-specs{grid-template-columns:1fr;padding-top:48px}}
+@media (max-width:479px){.campus_bento{--section-pad-x:20px}}
+/* §7 copy — the four points were four stacked full-measure paragraphs: no entry points, no
+   scan targets. Recast as a hairline-ruled ledger: the label hangs in its own narrow column
+   (display face, uppercase — same register as .section-tagline / .info-card-label) and the
+   body drops to a ~62ch measure beside it. Labels become the scan layer; the em dash that
+   separated label from body inline is now structural, so it is gone from the copy. */
+.campus_bento-points{display:flex;flex-direction:column;margin:0}
+.campus_bento-point{display:grid;grid-template-columns:minmax(180px,254px) minmax(0,62ch);column-gap:clamp(32px,4vw,64px);align-items:start;padding:26px 0;border-top:1px solid rgba(95,89,80,.16)}
+.campus_bento-point:last-child{border-bottom:1px solid rgba(95,89,80,.16)}
+.campus_bento-point-label{font-family:var(--display--font-family,"Cameraobscura"),Arial,sans-serif;font-weight:500;font-size:1.0625rem;line-height:1.2;letter-spacing:.8px;text-transform:uppercase;color:var(--brown-dark,#5f5950);margin:2px 0 0;text-wrap:balance}
+.campus_bento-point-body{font-size:1.0625rem;line-height:1.75;color:#5f5950;margin:0;text-wrap:pretty}
+@media (max-width:991px){.campus_bento-point{grid-template-columns:minmax(190px,266px) minmax(0,1fr);column-gap:36px}.campus_bento-point-label{font-size:1rem;letter-spacing:.6px}}
+@media (max-width:767px){.campus_bento-point{grid-template-columns:1fr;row-gap:10px;padding:22px 0}.campus_bento-point-label{font-size:.9375rem;letter-spacing:.6px}.campus_bento-point-body{font-size:.9375rem;line-height:1.7}}
+
+/* §13a Book With Confidence — reuses the §4/§9 timeline recipe; the 48px marker holds a
+   number (timeline_num) instead of a tick icon, with the same .is-inview reveal. */
+/* §13 accreditation logos — local trimmed PNGs (assets/accreditations/, whitespace + CEA's
+   baked-in "Accredited by" caption removed from the CDN "Frame" lockups).
+   A single shared height cannot balance these: the seven marks range from a 5.6:1 wordmark
+   (CSN) to a 2:1 badge (ST Star), and their type sits at wildly different fractions of the
+   artwork height — CEA's letterforms fill ~85% of their PNG, ST Star's "star awards" ~14%.
+   So each mark gets its own --logo-h, tuned so the *type* inside every lockup lands at a
+   comparable size and the resulting footprints stay in a 100–160px band inside a 64px well:
+     cea        30px → 110w   bold 1-line wordmark, heaviest ink; smallest height
+     toefl-itp  26px → 138w   1-line italic wordmark
+     csn        28px → 156w   1-line light script, widest
+     sevis      42px → 133w   seal + 1 line of small caps
+     alto       42px → 106w   monogram + 3 stacked lines
+     english-usa 44px → 104w  2 lines of heavy type + strapline
+     st-star    52px → 102w   badge: sized by height, type is tiny relative to artwork */
+#about .accred_accred-logo{height:64px;margin-bottom:16px}
+#about .accred_accred-logo-img{width:auto;height:auto;max-width:100%;max-height:var(--logo-h,40px);object-fit:contain}
+#about .accred_accred-logo-img[src$="cea.png"]{--logo-h:30px}
+#about .accred_accred-logo-img[src$="toefl-itp.png"]{--logo-h:26px}
+#about .accred_accred-logo-img[src$="csn.png"]{--logo-h:32px}
+#about .accred_accred-logo-img[src$="sevis.png"]{--logo-h:42px}
+#about .accred_accred-logo-img[src$="alto.png"]{--logo-h:42px}
+#about .accred_accred-logo-img[src$="english-usa.png"]{--logo-h:44px}
+#about .accred_accred-logo-img[src$="st-star.png"]{--logo-h:52px}
+@media (max-width:479px){#about .accred_accred-logo{height:56px}#about .accred_accred-logo-img{max-height:calc(var(--logo-h,40px)*.86)}}
+/* Numeral uses the body paragraph font, not the display face. */
+.timeline_num{font-family:"Librefranklin",Arial,sans-serif;font-weight:600;font-size:.75rem;letter-spacing:1.5px;line-height:1;color:#8D877B}
 #book-with-confidence .timeline_list{margin-top:24px}
+
+/* Comparison table: the VS badge belongs on the divider between the two header columns.
+   The base rule pins it to right:-24px / top:50% of an unpositioned .compare_grid, so it
+   drifted outside the table and, once anchored, to the middle of all 5 rows. Place it as
+   a real grid item in row 1 instead — the two header cols are pinned explicitly so the 8
+   comparison cells still auto-place from row 2. */
+.campus_small-classes .compare_grid{position:relative}
+.campus_small-classes .compare_component:not(.is-scrollable) .compare_col.is-first{grid-column:1;grid-row:1}
+.campus_small-classes .compare_component:not(.is-scrollable) .compare_col.is-last{grid-column:2;grid-row:1}
+.campus_small-classes .compare_component:not(.is-scrollable) .compare_vs{position:relative;grid-column:1 / -1;grid-row:1;justify-self:center;align-self:center;left:auto;right:auto;top:auto;transform:none;margin:0}
+
+/* §8 method cards: standard heading colour, not the indigo the live sheet ships — these are
+   section-level card headings and read as body headings alongside .section-title. */
+.campus_method .photo-card_title{color:var(--brown-dark,#5f5950)}
+.campus_method .photo-card.is-2 .photo-card_title,
+.campus_method .photo-card.is-3 .photo-card_title{color:#FAF3E8}
+
+/* ============================================================
+   §19 final CTA — B5 copy wrapper + trust line, the SAME style object the costs page
+   uses (pages/san-diego/costs.css B5). .inline-cta-a8a1 is a `1fr auto` grid, so
+   .inline-cta-copy IS column 1: it replaces the reference's unclassed <div> rather than
+   adding nesting. At deploy this binds to the existing object — do not fork it.
+   ============================================================ */
+/* The live sheets set both .inline-cta-h2 and .inline-cta-body to margin:0, so the heading sat
+   directly on the paragraph. The copy column owns the spacing as a flex gap — one value, applied
+   identically to every CTA section on both pages (costs §11, san-diego §19). */
+.inline-cta-copy{min-width:0;display:flex;flex-direction:column;gap:12px}
+/* ============================================================
+   §19 CTA trust pill + WhatsApp — the SAME block as pages/san-diego/costs.css B15/B5b, copied
+   verbatim (client, 4 Aug: "apply this CTA styling for all pages"). This sheet carried an EARLIER
+   version of the pill — a cream #F3E7D3 chip with brown type and no stars — so the hub's CTA and the
+   costs/duration CTAs disagreed about the same component. Replaced wholesale rather than patched, so
+   a diff of the two sheets shows the block is identical. At deploy this binds once, not per page.
+   ============================================================ */
+/* B15 · CTA trust badge — the review line as a pill rather than a loose caption: the real
+   Google mark (the same asset the reviews component uses) plus the rating, on a translucent
+   cream fill so it reads as a credential on the indigo panel. Identical on both pages. */
+/* Trust pill (client, 4 Aug). It sits ON the indigo panel, so it now reads as a DEEPER well in
+   the same indigo rather than a cream chip pasted over it: a darkened #4245C4 (the panel's own
+   #5d60ee taken down two steps, same hue), the panel's own cream type, and a hairline in cream at
+   low alpha instead of a brown one. The Google mark keeps a light disc behind it — the logo is
+   four brand colours and needs a light ground to stay legible; the disc is the only light shape
+   left, which is what makes it read as the badge's anchor. */
+.inline-cta_trust{grid-column:1 / -1;display:inline-flex;align-items:center;justify-content:center;gap:12px;align-self:center;justify-self:center;background:#4245C4;border:1px solid rgba(249,240,223,.22);border-radius:100px;padding:5px 20px 5px 9px;margin:0 auto 14px}
+.inline-cta_trust-disc{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--cream-extra-light,#f9f0df)}
+.inline-cta_trust-logo{width:16px;height:16px;flex:0 0 auto;display:block}
+/* The score is the point of the badge, so it is the only element given size — but in the TEXT
+   family, not the display face: Cameraobscura is a display face for headings and it renders
+   figures as a stylised set, which is wrong for a rating. Tabular so 4.8 and any translated
+   decimal separator hold the same width.
+   No "out of 5": the scale is implicit in a Google rating, and it is a phrase that has to be
+   re-translated for all nine locales to say nothing. */
+/* Score at the SAME size as the review count beside it (client, 4 Aug, applied across every
+   san-diego CTA): 1.125rem made "4.8" a headline inside a pill whose other text is a .8125rem
+   label, so the two halves of one credential read at different volumes. */
+.inline-cta_trust-score{font-size:.8125rem;font-weight:600;letter-spacing:.6px;font-variant-numeric:tabular-nums;color:var(--cream-soft,#f9f1df);line-height:1.2;margin:0}
+/* Stars — 4.8/5 = 96% of the row. The empty row carries the SAME artwork at low opacity so the
+   unearned fifth reads as a ghost of a star rather than a different shape; the filled row sits on
+   top, clipped. Both rows use one 3px gap so the clip lands inside the fifth glyph, not in a gap. */
+.cta_stars{position:relative;display:inline-block;flex:0 0 auto;line-height:0;--stars-fill:96%}
+.cta_stars-row{display:flex;align-items:center;gap:3px;line-height:0}
+.cta_stars-row img{display:block;width:13px;height:13px}
+.cta_stars-row.is-empty{opacity:.3}
+.cta_stars-row.is-full{position:absolute;inset:0;width:var(--stars-fill);overflow:hidden}
+.inline-cta_trust-rule{width:1px;height:16px;background:rgba(249,240,223,.3);flex:0 0 auto}
+.inline-cta-trust{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:rgba(249,240,223,.82);line-height:1.4;margin:0}
+@media (max-width:479px){.inline-cta-trust{font-size:.75rem;letter-spacing:.4px}}
+
+/* B5b · WhatsApp CTA (client, 4 Aug). REPLACES is-secondary on the WhatsApp link in both
+   places it appears (§11 panel and the ≤991px sticky bar) — one combo, so the two can never
+   drift apart. It is a CHANNEL button, not a second "submit": WhatsApp's own green carries the
+   recognition, which no cream outline can. The label is the panel's cream, like the primary
+   beside it (client, 4 Aug) — so the green is set at #12A150: bright enough to read as WhatsApp,
+   deep enough that the cream label holds at ~3.3:1. HANDOFF: that is below the 4.5:1 AA figure
+   for 14px text. Cream type is only fully compliant from about #0E8040 down, and brand-bright
+   #22C55E needs a dark label to comply. Both were shown and declined; the cream-on-#12A150
+   pairing is the accepted one, and it is on a 50px pill with 600-weight uppercase, not body copy. Metrics are untouched:
+   same 12px/30px padding, 1.5px edge, pill radius, 50px height as is-primary beside it.
+   The mark is the official WhatsApp glyph served from simpleicons (real brand artwork, never a
+   hand-drawn path), tinted cream to match the label. */
+.inline-cta-btn.is-whatsapp{display:flex;align-items:center;gap:10px;padding:12px 30px;font-size:14px;letter-spacing:1px;border-radius:1600px;background-color:#12A150;border:1.5px solid #12A150;color:var(--cream-extra-light,#faf3e8);transition:background-color .15s ease,border-color .15s ease}
+.inline-cta-btn.is-whatsapp:hover{background-color:#0F8F46;border-color:#0F8F46;color:var(--cream-extra-light,#faf3e8)}
+.inline-cta-btn.is-whatsapp:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(250,243,232,.55)}
+.inline-cta-btn-icon{flex:0 0 auto;width:18px;height:18px;display:block}
+
+/* ================ ONE INK FOR EVERY CONTENT ICON — ROOT CAUSE (client, 4 Aug: "all icon colors must
+   be the same, find the root cause and fix")
+   THE CAUSE: these pages draw icons from FOUR asset families — costs-icon-*, adults-16-icon-*,
+   duration-guide-icon-* and the v2/v3/v4 revisions — and each is baked with its own colour. An
+   <img>-rendered SVG cannot be recoloured by CSS, so every previous attempt only ever *preserved*
+   that difference: "grayscale(1) opacity(.72)" maps a green-ish source to a lighter grey than a brown
+   one, and the per-icon brightness patch I added on top (.is-lightsrc, now deleted) traded one
+   mismatch for another.
+   THE FIX: brightness(0) multiplies every channel by zero, so ANY source colour collapses to black
+   while the alpha channel — the drawing itself — is untouched. One opacity then renders one ink for
+   every icon, from any set, including sets nobody has drawn yet. At .62 over the page creams that
+   lands on #5f5950, the brown-dark heading ink, to within a couple of luminance points.
+   Stars, the Google mark and the review check are NOT in this list: they are brand artwork whose
+   colour is the point. ================ */
+/* opacity:1 is not redundant. client-first.css sets ELEMENT opacity on two of these classes
+   (.accom_detail-icon .7, .hero_highlight-icon .9), and element opacity MULTIPLIES with the filter's
+   opacity — .62 x .7 = .43 — so those icons rendered visibly paler than their neighbours while every
+   filter in this sheet was identical. Resetting it here is what actually makes the ink equal.
+   The same applies to the hero rule below. */
+.info-card-icon,.photo-card_icon{filter:brightness(0) opacity(.62);opacity:1}
+/* The hero icons sit on a dark photograph, so they collapse the other way: brightness(0) then
+   invert(1) forces any source to pure white, and .92 softens it to the hero's cream. Same principle,
+   opposite end — and it fixes a real mismatch, since this page's hero mixed cream-baked hero icons
+   with a brown duration-guide one. */
+.hero_highlight-icon{filter:brightness(0) invert(1) opacity(.92);opacity:1}
+
+/* ================ VERTICAL RHYTHM — ONE SCALE FOR THE WHOLE PAGE ================
+   (client, 4 Aug: "put enough standard whitespace between the elements in the page for all areas and
+   in other pages too. Audit, fix, put a standard.")
+   MEASURED before this, every section-level child of every section. There was no scale: a section's
+   MAIN OBJECT sat 24px below its intro in some sections (.overview_layout, .calc_details,
+   .brackets_panel), 32px in others (.incl_ledger, .budget-fees-panel), 40px in §6
+   (.price-table_wrap) and 48px in the rest (.accom_component, .faq-list, .nextread_grid) — four
+   answers to one question, and the same object disagreed with itself from section to section.
+   THE SCALE, and nothing else is used at section level:
+     32px  intro -> main object, main object -> following prose, and every .callout
+     48px  a full-bleed MEDIA or SLIDER band, and the first object after one — a band that runs the
+           full column width needs more air than a text block does, or it reads as glued to it
+   Declared here in one place so no object carries its own idea of the rhythm. The same block, with the
+   same two numbers, is in how-long.css, landing.css and pacific-beach.css. ================ */
+.overview_layout,.brackets_panel,.info-card_grid,.goals-list,.faq-list,.nextread_grid,.plan_sheet,.reviews-hero{margin-top:32px}
+.callout{margin-top:32px;margin-bottom:32px}
+.card-slider_clip,.photo-card_grid{margin-top:48px;margin-bottom:0}
+.card-slider_clip + *{margin-top:48px}
+
+/* The CTA fills its column (client, 4 Aug: "make it full width" — applied to every page for
+   consistency). MEASURED on how-long: the section sat 832px inside an 877px .page_content, held off both
+   edges by a 22.37px horizontal margin from the live .section_inline-cta rule — a centring margin written
+   for a full-bleed page, not for a body column that is already inset. page_content is a flex column, so
+   the section also has to opt into stretching. */
+.section_inline-cta{margin-left:0;margin-right:0;align-self:stretch;width:100%;position:relative}
+/* THE BADGE SITS ON THE PANEL'S TOP EDGE — the same block, the same values, in all four san-diego sheets
+   (client, 4 Aug: "put it to the top of the section with 50% - margin-top ... use position absolute if
+   needed" and "use exactly the same style about the badge in all pages"). It leaves the flex flow and is
+   centred on the edge itself: translate(-50%,-50%) IS that -50% margin-top, taken from the badge's own
+   height, so it stays centred whatever the pill measures. The panel's top padding grows to keep the heading
+   clear — with the badge out of the flow it would otherwise ride up under the pill. */
+.inline-cta_trust{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;z-index:2}
+/* The only fragile primitive that was unhandled on every one of the four pages: inline-flex, no wrap,
+   no cap, absolutely positioned and centred on the panel's top edge. Measured 301px in English at
+   767-1440 and 206px at 479, so it fits today with 65-360px of slack — but the site runs Weglot across
+   nine locales ("195 reviews" -> "195 Bewertungen") and without a cap it clips against the section
+   instead of wrapping. Capped and allowed to wrap from small down. It stays centred on the edge when
+   it wraps, because the -50% translate is taken from its own height. Same block in all four sheets. */
+@media screen and (max-width:767px){.inline-cta_trust{max-width:calc(100% - 24px);flex-wrap:wrap;row-gap:4px}}
+.inline-cta-a8a1{padding-top:72px}
+@media screen and (max-width:991px){.inline-cta-a8a1{padding-top:56px}}
+
+/* .info-card-figure — one step down (client, 4 Aug: "make these texts font-size a little smaller for all
+   pages"). The live sheets set 1.15rem and raise it to 1.25rem at their own breakpoints; 1.0625rem is the
+   ledger's value rung, so a tile figure and a ledger value now read at the same size. Declared here because
+   landing.css is the sheet both pages using info-card-figure load, and it loads after the .opt sheets, so
+   this one rule replaces all three of theirs at every width. */
+.info-card-figure{font-size:1.0625rem}
+/* Heading bands are 22px top and bottom on every page — see the audit note in pacific-beach.css. */
