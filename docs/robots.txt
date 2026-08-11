@@ -8,20 +8,34 @@
 # lever available for HTML — and it only works while Googlebot can still FETCH
 # the page and read it.
 #
-# ⚠ DO NOT ADD `Disallow: /`. It would:
+# That is why the two groups below are deliberately ASYMMETRIC:
+#
+#   `User-agent: *`   — search crawlers. Kept crawlable on purpose. They must
+#                       reach the pages to READ the noindex tags, and this host
+#                       serves two things www.englishcollege.com depends on.
+#   AI crawlers       — blanket `Disallow: /`. They have no reason to be here:
+#                       they neither read noindex nor serve the main site, and
+#                       the LLM-facing summary they would want is published
+#                       separately at https://www.englishcollege.com/llms.txt.
+#
+# ⚠ DO NOT ADD `Disallow: /` TO THE `*` GROUP. It would:
 #   1. stop Googlebot ever reading those noindex tags — and a blocked URL can
 #      still be indexed as a bare link, which is the exact opposite of intent; and
 #   2. break www.englishcollege.com, because this host serves
 #        /sitemap.xml  — the MASTER sitemap for the main site (746 www URLs,
-#                        submitted in Search Console, cited by llms.txt), and
+#                        submitted in Search Console). BOTH this file and
+#                        www.englishcollege.com/robots.txt point their only
+#                        `Sitemap:` line here, so blocking it orphans the
+#                        main site's sitemap from every crawler at once; and
 #        /scripts/     — the production JS bundles Googlebot fetches when it
 #                        renders englishcollege.com pages.
-#      Those two paths must stay crawlable. /llms.txt is published deliberately.
+#      Blocking either is main-site SEO damage, not subdomain hygiene.
 #
 # Non-HTML files cannot carry a meta tag, so the internal ones are Disallow'd
 # below — that is the only mechanism they have.
 # =============================================================================
 
+# ── Search crawlers — crawlable so the noindex tags are readable ─────────────
 User-agent: *
 Disallow: /admin/
 Disallow: /reviews/
@@ -31,49 +45,52 @@ Disallow: /blog-image-optimization-setup.md
 Allow: /sitemap.xml
 Allow: /llms.txt
 
+# ── AI crawlers / training tokens — blocked from the whole host ──────────────
 # A crawler that matches a specific User-agent group ignores the `*` group
-# entirely, so each block below repeats the full Disallow list.
+# entirely, so each token needs its own explicit rule.
+# Google-Extended is a Gemini training/grounding control token, NOT a crawler —
+# it has no effect on Googlebot, Search crawling, or indexing.
 
 User-agent: GPTBot
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
 
 User-agent: ClaudeBot
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
+Disallow: /
 
-User-agent: PerplexityBot
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
-
-User-agent: Google-Extended
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
-
-User-agent: CCBot
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
+User-agent: Claude-Web
+Disallow: /
 
 User-agent: anthropic-ai
-Disallow: /admin/
-Disallow: /reviews/
-Disallow: /log.txt
-Disallow: /ARCHITECTURE.md
-Disallow: /blog-image-optimization-setup.md
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Perplexity-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
 
 Sitemap: https://cel.englishcollege.com/sitemap.xml
