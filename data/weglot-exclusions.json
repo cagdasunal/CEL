@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-08-11T15:08:12.959863+00:00",
+  "last_sync": "2026-08-11T16:12:22.264132+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -5489,6 +5489,21 @@
       "source": "api",
       "url_path": "/post/faire-un-stage-aux-etats-unis-mon-experience-inoubliable-chez-cel",
       "added_at": "2026-05-28T16:21:03.902922+00:00"
+    },
+    "california-study-abroad-budget-ja": {
+      "language": "ja",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "it",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/california-study-abroad-budget-ja",
+      "added_at": "2026-08-11T16:12:22.264017+00:00"
     }
   }
 }
