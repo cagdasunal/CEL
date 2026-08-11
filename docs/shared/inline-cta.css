@@ -1,0 +1,107 @@
+/* ============================================================
+   CEL STANDARD CLOSING CTA — the one recipe every page ends on.
+   Ported VERBATIM from pages/san-diego/landing.css §19 (which is itself the same block as
+   pages/san-diego/costs.css B5/B5b/B15), so the four San Diego sheets and every page that
+   links this file diff line for line. Client, 4 Aug: "apply this CTA styling for all pages".
+   DO NOT fork this block into a page sheet — link this file and add nothing.
+
+   Markup contract (see sections/inline-cta.html):
+     section.section_inline-cta
+       div.inline-cta-a8a1                     <- indigo panel, `1fr auto` grid
+         div.inline-cta_trust                  <- badge on the panel's TOP EDGE, spans both cols
+           span.inline-cta_trust-disc > img.inline-cta_trust-logo
+           p.inline-cta_trust-score
+           span.cta_stars > span.cta_stars-row.is-empty + span.cta_stars-row.is-full
+           div.inline-cta_trust-rule
+           p.inline-cta-trust
+         div.inline-cta-copy > h3.inline-cta-h2 + p.inline-cta-body
+         div.inline-cta-actions > a.inline-cta-btn.is-primary + a.inline-cta-btn.is-whatsapp
+   Base panel/heading/body/actions rules live in client-first.css §10 — this file adds only
+   the trust pill, the WhatsApp channel button, and the full-width/badge geometry.
+   ============================================================ */
+
+/* The live sheets set both .inline-cta-h2 and .inline-cta-body to margin:0, so the heading sat
+   directly on the paragraph. The copy column owns the spacing as a flex gap — one value, applied
+   identically to every CTA section on every page. */
+.inline-cta-copy{min-width:0;display:flex;flex-direction:column;gap:12px}
+
+/* Trust pill. It straddles the panel's TOP EDGE — half of it hangs over the page behind it — so
+   it carries the panel's OWN indigo (client, 11 Aug: "use indigo bg color"): the badge reads as
+   part of the panel it is pinned to, not a darker chip floating off it. It was #4245C4, the same
+   indigo two steps down, which read as a bruise on the cream half. The panel's cream type, and a VERY soft
+   cream hairline (client, 11 Aug: in-flow above the heading, "a very soft border color").
+   The Google mark keeps a light disc behind it — the logo is four brand colours and needs a
+   light ground to stay legible; the disc is the only light shape left, which is what makes it
+   read as the badge's anchor. */
+.inline-cta_trust{display:inline-flex;align-items:center;justify-content:center;gap:12px;align-self:center;justify-self:center;background:var(--indigo-bright,#5d60ee);border:1px solid rgba(249,240,223,.12);border-radius:100px;padding:5px 20px 5px 9px;margin:0 auto 14px}
+.inline-cta_trust-disc{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--cream-extra-light,#f9f0df)}
+.inline-cta_trust-logo{width:16px;height:16px;flex:0 0 auto;display:block}
+/* The score is the point of the badge, but it is set in the TEXT family, not the display face:
+   Cameraobscura renders figures as a stylised set, which is wrong for a rating. Tabular so 4.8
+   and any translated decimal separator hold the same width. No "out of 5": the scale is implicit
+   in a Google rating. Score at the SAME size as the review count beside it — 1.125rem made "4.8"
+   a headline inside a pill whose other text is a .8125rem label. */
+.inline-cta_trust-score{font-size:.8125rem;font-weight:600;letter-spacing:.6px;font-variant-numeric:tabular-nums;color:var(--cream-soft,#f9f1df);line-height:1.2;margin:0}
+/* Stars — 4.8/5 = 96% of the row. The empty row carries the SAME artwork at low opacity so the
+   unearned fifth reads as a ghost of a star rather than a different shape; the filled row sits on
+   top, clipped. Both rows use one 3px gap so the clip lands inside the fifth glyph, not in a gap.
+   --stars-fill is the only number to edit. */
+.cta_stars{position:relative;display:inline-block;flex:0 0 auto;line-height:0;--stars-fill:96%}
+.cta_stars-row{display:flex;align-items:center;gap:3px;line-height:0}
+.cta_stars-row img{display:block;width:13px;height:13px}
+.cta_stars-row.is-empty{opacity:.3}
+.cta_stars-row.is-full{position:absolute;inset:0;width:var(--stars-fill);overflow:hidden}
+.inline-cta_trust-rule{width:1px;height:16px;background:rgba(249,240,223,.3);flex:0 0 auto}
+.inline-cta-trust{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:rgba(249,240,223,.82);line-height:1.4;margin:0}
+@media (max-width:479px){.inline-cta-trust{font-size:.75rem;letter-spacing:.4px}}
+
+/* WhatsApp CTA (client, 4 Aug). REPLACES is-secondary on the second button. It is a CHANNEL
+   button, not a second "submit": WhatsApp's own green carries the recognition, which no cream
+   outline can. The label is the panel's cream, like the primary beside it — so the green is set
+   at #12A150: bright enough to read as WhatsApp, deep enough that the cream label holds at
+   ~3.3:1. HANDOFF: that is below the 4.5:1 AA figure for 14px text. Cream type is only fully
+   compliant from about #0E8040 down, and brand-bright #22C55E needs a dark label to comply. Both
+   were shown and declined; the cream-on-#12A150 pairing is the accepted one, and it is on a 50px
+   pill with 600-weight uppercase, not body copy. Metrics match is-primary beside it: 12px/30px
+   padding, 1.5px edge, pill radius, 50px height. The mark is the official WhatsApp glyph served
+   from simpleicons (real brand artwork, never a hand-drawn path), tinted cream to match. */
+.inline-cta-btn.is-whatsapp{display:flex;align-items:center;gap:10px;padding:12px 30px;font-size:14px;letter-spacing:1px;border-radius:1600px;background-color:#12A150;border:1.5px solid #12A150;color:var(--cream-extra-light,#faf3e8);transition:background-color .15s ease,border-color .15s ease}
+.inline-cta-btn.is-whatsapp:hover{background-color:#0F8F46;border-color:#0F8F46;color:var(--cream-extra-light,#faf3e8)}
+.inline-cta-btn.is-whatsapp:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(250,243,232,.55)}
+.inline-cta-btn-icon{flex:0 0 auto;width:18px;height:18px;display:block}
+
+/* THE PANEL OWNS ITS OWN COMPOSITION — one centred column, exactly as the live sheet renders it
+   on the San Diego pages: flex column, centred, 1rem gap, centred text. This is pinned here and
+   not left to the base sheet, because the two base sheets DISAGREE: the live cascade
+   (page-*.opt.min.css) declares flex/column/centre, while client-first.css §10 redeclares the
+   same class as `display:grid; grid-template-columns:1fr auto; gap:48px`. A page that links
+   client-first.css after the live cascade therefore rendered a two-column panel while San Diego,
+   which does not link it, rendered the centred one — the same "standard" splitting in two
+   depending on the page's stylesheet order. The standard wins on source order over both. */
+.inline-cta-a8a1{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1rem;text-align:center;grid-template-columns:none}
+/* The copy column centres with the panel; the body keeps the live 720px measure —
+   client-first.css caps it at 380px, which was written for the two-column panel and breaks a
+   centred paragraph into a narrow tower. */
+.inline-cta-copy{align-items:center}
+.inline-cta-body{max-width:720px;margin-left:auto;margin-right:auto}
+/* The two actions are a ROW — one primary beside one channel button — centred under the copy.
+   client-first.css sets a right-aligned COLUMN, which stacks the pills into a tower. */
+.inline-cta-actions{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px}
+/* The CTA fills its column (client, 4 Aug: "make it full width"). MEASURED on how-long: the
+   section sat 832px inside an 877px .page_content, held off both edges by a 22.37px horizontal
+   margin from the live .section_inline-cta rule — a centring margin written for a full-bleed
+   page, not for a body column that is already inset. page_content is a flex column, so the
+   section also has to opt into stretching. */
+.section_inline-cta{margin-left:0;margin-right:0;align-self:stretch;width:100%;position:relative}
+/* THE BADGE SITS IN THE FLOW, ABOVE THE HEADING (client, 11 Aug: "move it above to the heading"
+   — supersedes the 4 Aug edge-straddling position). First item of the centred column, so the
+   flex gap spaces it from the heading and no padding-top compensation is needed. */
+.inline-cta-a8a1{position:relative}
+.inline-cta_trust{position:static;transform:none;margin:0 0 4px}
+/* The only fragile primitive: inline-flex, no wrap, no cap, absolutely positioned and centred on
+   the panel's top edge. Measured 301px in English at desktop — a locale that runs 40% longer, or
+   a 4-digit review count, overflows the panel instead of wrapping. Capped and allowed to wrap
+   from small down. It stays centred on the edge when it wraps, because the -50% translate is
+   taken from its own height. */
+@media screen and (max-width:767px){.inline-cta_trust{max-width:calc(100% - 24px);flex-wrap:wrap;row-gap:4px}}
+

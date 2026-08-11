@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<!-- =====================================================================================
+     CEL · San Diego — How Long Does It Take to Learn English in San Diego?
+     Deliverable for pages/san-diego/how-long-to-learn-english/BUILD-BRIEF.md (round 2).
+
+     Concept: a straight answer with the receipts attached, so nobody has to ask twice.
+     Signature element: the 10-week answer in §3, at the 46px hero_title rung, alone on its panel.
+     Loud: §1 hero · §3 quick answer · §12 closing CTA.  Quiet: §2 TOC · §5 visa · §6 factors · §13.
+
+     PHASE D COMPLETE (4 Aug): every section resolved to its A option. The losing blocks and the
+     is-review labels are gone, and how-long.css has been pruned of the rules that served only a B
+     block. Each section id is the scroll-spy target resolved by getElementById(data-target).
+
+     Archetype, exactly as pages/how-long-to-learn-english/index.html builds it:
+       page-wrapper > navbar_component (site template, verbatim — a Webflow Navbar, dressed by the
+                      navbar_* classes, never re-authored)
+       then main-wrapper.subpage-wp > section_hero (breadcrumb inside hero_wrapper)
+       then ONE padding-global#content > container > page_body-layout
+            > stoc_component (rail) + page_content (section_page cards)
+       then section_inline-cta
+       then section_footer (site template, verbatim — every column, every address block, the
+                      copyright row, the social links).
+
+     Navbar and footer come from scraps/_navbar.txt and scraps/_footer.txt, byte-faithful APART
+     from the three shell fixes BUILD-BRIEF §1 requires: (a) the jQuery + webflow.js runtime pair
+     is linked at the foot of this file; (b) aria-current="page" + w--current are removed from the
+     /vancouver links in both fragments — this is not the Vancouver page; (c) the three stray
+     </imgraw> end tags left in the footer's social row are removed, so those three <img> elements
+     are real images with real alt text.
+
+     Decision log, one line per kept decision traced to the concept:
+       pages/san-diego/how-long-to-learn-english/DECISIONS.md
+     Spine of record (measured):
+       pages/san-diego/how-long-to-learn-english/PHASE-0.md  (measurement reference only)
+     ===================================================================================== -->
+<html lang="en" class="geo-ready"><head>
+  <!-- ============================================================
+       STAGING PREVIEW — MUST NOT BE INDEXED
+       Served from cel.englishcollege.com for review only. The production
+       page lives on englishcollege.com. Copy still carries unresolved
+       [CONFIRM: ...] markers and placeholder imagery.
+
+       noindex is the authoritative signal and REQUIRES the page to stay
+       crawlable — robots.txt deliberately does NOT Disallow /pages/,
+       because a blocked URL can still be indexed as a bare link while
+       Google never sees this tag. Do not "harden" it by blocking crawl.
+       ============================================================ -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>How Long Does It Take to Learn English in San Diego?</title>
+<meta name="description" content="Most students complete one CEFR level in about 10 weeks. Realistic timelines from beginner to fluent — and how long you can study in the USA on each visa.">
+<link rel="canonical" href="https://englishcollege.com/san-diego-ca/how-long-to-learn-english">
+<meta property="og:title" content="How Long Does It Take to Learn English in San Diego?">
+<meta property="og:description" content="Most students complete one CEFR level in about 10 weeks. Realistic timelines from beginner to fluent — and how long you can study in the USA on each visa.">
+<!-- og:image — copy doc §0: "SD campus/classroom photo — not a stock beach image". This is the one
+     San Diego asset whose pixels match a truthful description; see DECISIONS.md, asset audit. -->
+<meta property="og:image" content="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f9dc82e465d1b097a86d16_adults-16-budget-classroom.avif">
+<meta name="twitter:title" content="How Long Does It Take to Learn English in San Diego?">
+<meta name="twitter:description" content="Most students complete one CEFR level in about 10 weeks. Realistic timelines from beginner to fluent — and how long you can study in the USA on each visa.">
+
+<!-- ===== CASCADE — exactly BUILD-BRIEF §11. Order is load-bearing. =====
+     NEVER _live/all-components.css (deprecated 2026-07-21; a comment-only stub, zero rules).
+     NEVER client-first.css or pages/*/styles.css as a render layer (authoring contract only:
+     0 rules for section_hero / section_page / breadcrumb, and a relative @import that resolves
+     to nothing once moved). See COMPONENTS.md § Cascade contract. -->
+<link rel="stylesheet" href="../../_live/englishcollege.webflow.shared.54a3c3338.min.css">
+<link rel="stylesheet" href="../../_live/page-how-long-to-learn-english.opt.min.css">
+<link rel="stylesheet" href="../../_live/site-custom-code.css">
+<link rel="stylesheet" href="../../_live/swiper-bundle.min.css">
+<link rel="stylesheet" href="../../shared/hero-clearance.css">
+<link rel="stylesheet" href="../../shared/hero-layout.css">
+<link rel="stylesheet" href="how-long.css">
+
+<script type="application/ld+json">{
+ "@context": "https://schema.org",
+ "@graph": [
+  {
+   "@type": "WebPage",
+   "@id": "https://englishcollege.com/san-diego-ca/how-long-to-learn-english#webpage",
+   "url": "https://englishcollege.com/san-diego-ca/how-long-to-learn-english",
+   "name": "How Long Does It Take to Learn English in San Diego?",
+   "description": "Most students complete one CEFR level in about 10 weeks. Realistic timelines from beginner to fluent — and how long you can study in the USA on each visa.",
+   "inLanguage": "en",
+   "dateModified": "[freeze at publication]"
+  },
+  {
+   "@type": "BreadcrumbList",
+   "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "USA", "item": "https://englishcollege.com/usa" },
+    { "@type": "ListItem", "position": 2, "name": "San Diego", "item": "https://englishcollege.com/san-diego-ca" },
+    { "@type": "ListItem", "position": 3, "name": "Study Duration Guide", "item": "https://englishcollege.com/san-diego-ca/how-long-to-learn-english" }
+   ]
+  },
+  {
+   "@type": "FAQPage",
+   "mainEntity": [
+    { "@type": "Question", "name": "How many weeks do I need to improve my English?", "acceptedAnswer": { "@type": "Answer", "text": "Approx. 10 weeks per CEFR level; even 4 weeks brings noticeable speaking gains. Where you start and how many lessons per week you take set your exact pace." } },
+    { "@type": "Question", "name": "How long can I study English in the USA without a student visa?", "acceptedAnswer": { "@type": "Answer", "text": "Up to 12 weeks on ESTA if eligible; a B1/B2 visitor visa typically allows up to 6 months. Courses of 24+ lessons per week always require an F-1 visa." } },
+    { "@type": "Question", "name": "Is 12 weeks enough to see real progress?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — for most students, 12 weeks is enough to complete one full CEFR level, which is when progress becomes clearly noticeable. It is also the most popular course length at CEL San Diego." } },
+    { "@type": "Question", "name": "Can I extend my course once I'm in San Diego?", "acceptedAnswer": { "@type": "Answer", "text": "Extending your course is easy in-school — but whether you can extend your stay depends on how you entered the USA. An ESTA stay cannot be extended beyond 90 days — students planning more than 12 weeks need a B1/B2 visitor visa (typically up to 6 months) or an F-1 visa. Plan your intended duration before you enter the USA." } },
+    { "@type": "Question", "name": "Can I study for only 2–4 weeks?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — courses start any Monday from 1 week; expect fluency and confidence gains, not a full level." } },
+    { "@type": "Question", "name": "How long does it take from B1 to B2?", "acceptedAnswer": { "@type": "Answer", "text": "From B1 to B2 takes about 10 weeks of full-time study on average." } },
+    { "@type": "Question", "name": "Does studying longer reduce the weekly price?", "acceptedAnswer": { "@type": "Answer", "text": "Yes — weekly tuition drops at 7, 13 and 20 weeks." } },
+    { "@type": "Question", "name": "How long should I prepare for TOEFL or Cambridge?", "acceptedAnswer": { "@type": "Answer", "text": "The exam electives run for up to 8 weeks. Most TOEFL students start with General English and switch to exam preparation later in their stay, so total stays are usually longer than 8 weeks. Higher-level Cambridge candidates sometimes book only the 8-week exam block." } }
+   ]
+  }
+ ]
+}</script>
+</head>
+<body>
+<div class="page-wrapper">
+<!-- ===== NAVBAR (site template) — scraps/_navbar.txt, byte-faithful apart from BRIEF §1 fix (b):
+     aria-current="page" + w--current removed from the /vancouver dropdown link. It is a Webflow
+     Navbar widget — dressed by the navbar_* classes, never re-authored. ===== -->
+<!-- ===== NAVBAR (site template) — components/navbar.html ===== -->
+<div data-animation="default" class="navbar_component w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-nav" data-wf--navbar--variant="transparent" data-easing2="ease" fs-scrolldisable-element="smart-nav" data-easing="ease" data-collapse="medium" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187faa5" role="banner" data-duration="400"><div class="container is-navbar"><a href="/" class="navbar_logo-link w-nav-brand"><div class="logo_icon-wrapper"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454ccd01_CEL-Lettermark-Logo-OneColor-Light-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-white"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" alt="College of English Language Logo" class="logo_icon w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-color"></div><div class="logo_text w-embed"><svg height="100%" viewBox="0 0 758 289" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M175.353 53.6001C175.578 55.4008 175.803 57.2015 175.803 58.8897C175.803 75.7714 163.423 86.1254 144.178 86.1254C117.618 86.1254 104.338 66.6553 104.338 46.1722C104.338 25.5766 117.73 2.84258 145.867 2.84258C162.636 2.84258 171.864 10.8332 171.864 18.8239C171.864 25.3515 165.562 31.9916 152.844 34.4676C151.719 20.7371 142.715 8.24471 136.188 8.24471C130.898 8.24471 129.435 16.6855 129.435 26.8145C129.435 44.1464 139.114 63.8417 153.52 63.8417C161.735 63.8417 170.289 60.1277 175.353 53.6001ZM217.486 2.84258C244.047 2.84258 257.327 21.1873 257.327 41.6704C257.327 62.8288 243.934 86.1254 217.486 86.1254C190.926 86.1254 177.645 67.218 177.645 46.1722C177.645 25.5766 191.038 2.84258 217.486 2.84258ZM225.477 80.7233C230.316 80.7233 232.229 74.871 232.229 66.5427C232.229 45.4969 219.737 8.24471 209.495 8.24471C204.656 8.24471 202.743 13.8719 202.743 22.0877C202.743 43.1335 215.573 80.7233 225.477 80.7233ZM262.572 3.96803H289.808V81.0609C300.838 78.8101 310.404 72.0574 317.607 59.1148C317.607 67.5556 318.057 74.4208 318.957 85H262.572V3.96803ZM324.12 3.96803H351.356V81.0609C362.385 78.8101 371.952 72.0574 379.154 59.1148C379.154 67.5556 379.605 74.4208 380.505 85H324.12V3.96803ZM444.304 85H385.668V3.96803H441.602C441.602 12.859 442.39 21.2999 442.953 29.8532C433.949 19.6117 424.383 10.9458 412.904 6.78163V42.008C418.531 39.9822 423.595 36.2683 428.322 31.4289V55.0632C423.483 50.2238 418.306 46.7349 412.904 44.5966V81.0609C424.833 78.8101 435.187 72.0574 442.953 59.1148C442.953 67.5556 443.403 74.4208 444.304 85ZM486.077 42.9084H517.139V85H500.595L496.431 82.524C492.829 84.8875 488.215 86.1254 482.588 86.1254C460.417 86.1254 447.136 66.6553 447.136 46.1722C447.136 25.5766 460.529 2.84258 488.665 2.84258C505.434 2.84258 514.663 10.8332 514.663 18.8239C514.663 25.3515 508.361 31.9916 495.643 34.4676C494.518 20.7371 485.514 8.24471 478.987 8.24471C473.697 8.24471 472.234 16.6855 472.234 26.8145C472.234 49.2109 480.225 74.4208 491.029 78.9226V75.9964C491.029 64.9671 490.804 53.9377 486.077 42.9084ZM582.676 85H524.04V3.96803H579.975C579.975 12.859 580.763 21.2999 581.325 29.8532C572.322 19.6117 562.756 10.9458 551.276 6.78163V42.008C556.903 39.9822 561.968 36.2683 566.695 31.4289V55.0632C561.855 50.2238 556.678 46.7349 551.276 44.5966V81.0609C563.206 78.8101 573.56 72.0574 581.325 59.1148C581.325 67.5556 581.776 74.4208 582.676 85ZM654.585 2.84258C681.145 2.84258 694.426 21.1873 694.426 41.6704C694.426 62.8288 681.033 86.1254 654.585 86.1254C628.024 86.1254 614.744 67.218 614.744 46.1722C614.744 25.5766 628.137 2.84258 654.585 2.84258ZM662.575 80.7233C667.415 80.7233 669.328 74.871 669.328 66.5427C669.328 45.4969 656.836 8.24471 646.594 8.24471C641.755 8.24471 639.841 13.8719 639.841 22.0877C639.841 43.1335 652.672 80.7233 662.575 80.7233ZM726.907 6.78163V42.008C732.534 39.9822 737.599 36.2683 742.325 31.4289V55.0632C737.486 50.2238 732.309 46.7349 726.907 44.5966V85H699.671V3.96803H754.48C754.48 12.859 755.268 21.2999 755.831 29.8532C747.165 19.6117 737.936 10.9458 726.907 6.78163ZM166.35 186H107.714V104.968H163.649C163.649 113.859 164.436 122.3 164.999 130.853C155.996 120.612 146.429 111.946 134.95 107.782V143.008C140.577 140.982 145.641 137.268 150.368 132.429V156.063C145.529 151.224 140.352 147.735 134.95 145.597V182.061C146.879 179.81 157.234 173.057 164.999 160.115C164.999 168.556 165.449 175.421 166.35 186ZM178.186 116.11V120.387C178.186 143.121 179.537 166.755 199.682 186H172.559V104.968H202.608L237.835 174.858V170.581C237.835 147.847 236.484 124.213 216.339 104.968H243.462V186H213.525L178.186 116.11ZM287.036 143.908H318.098V186H301.554L297.39 183.524C293.789 185.887 289.174 187.125 283.547 187.125C261.376 187.125 248.096 167.655 248.096 147.172C248.096 126.577 261.488 103.843 289.624 103.843C306.394 103.843 315.622 111.833 315.622 119.824C315.622 126.351 309.32 132.992 296.602 135.468C295.477 121.737 286.473 109.245 279.946 109.245C274.656 109.245 273.193 117.686 273.193 127.815C273.193 150.211 281.184 175.421 291.988 179.923V176.996C291.988 165.967 291.763 154.938 287.036 143.908ZM324.999 104.968H352.235V182.061C363.264 179.81 372.831 173.057 380.034 160.115C380.034 168.556 380.484 175.421 381.384 186H324.999V104.968ZM386.547 104.968H413.783V186H386.547V104.968ZM420.477 130.516C420.477 119.261 432.519 103.843 455.478 103.843C473.935 103.843 479.788 111.833 479.788 119.824C479.788 124.888 473.935 130.178 462.118 132.091C460.88 120.162 454.578 109.245 447.487 109.245C443.998 109.245 442.198 114.309 442.198 119.486C442.198 135.242 482.038 139.407 482.038 160.565C482.038 171.819 469.996 187.125 447.037 187.125C428.58 187.125 419.351 179.135 419.351 171.144C419.351 166.08 425.203 160.903 437.021 158.989C438.259 170.919 447.937 181.723 455.028 181.723C458.517 181.723 460.317 176.771 460.317 171.594C460.317 155.726 420.477 151.561 420.477 130.516ZM487.332 104.968H514.567V144.584H530.549V104.968H557.784V186H530.549V149.311H514.567V186H487.332V104.968ZM107.714 205.968H134.95V283.061C145.979 280.81 155.545 274.057 162.748 261.115C162.748 269.556 163.198 276.421 164.099 287H107.714V205.968ZM190.307 213.508C186.931 227.577 183.667 243.558 183.667 257.738C183.667 258.526 183.78 259.427 183.78 260.214H204.15L190.307 213.508ZM188.057 205.968H215.292L239.377 287H212.141L205.501 264.716H184.005C184.905 273.495 187.494 281.26 193.009 287H163.522L188.057 205.968ZM248.307 217.11V221.387C248.307 244.121 249.657 267.755 269.803 287H242.679V205.968H272.729L307.955 275.858V271.581C307.955 248.847 306.605 225.213 286.459 205.968H313.582V287H283.645L248.307 217.11ZM357.156 244.908H388.219V287H371.675L367.51 284.524C363.909 286.887 359.295 288.125 353.667 288.125C331.496 288.125 318.216 268.655 318.216 248.172C318.216 227.577 331.609 204.843 359.745 204.843C376.514 204.843 385.743 212.833 385.743 220.824C385.743 227.351 379.44 233.992 366.723 236.468C365.597 222.737 356.594 210.245 350.066 210.245C344.776 210.245 343.313 218.686 343.313 228.815C343.313 251.211 351.304 276.421 362.108 280.923V277.996C362.108 266.967 361.883 255.938 357.156 244.908ZM394.557 259.314V205.968H421.793V272.819C421.793 280.247 425.844 283.624 429.784 283.624C433.723 283.624 437.774 280.247 437.774 272.819V205.968H465.01V259.314C465.01 283.061 447.453 288.125 429.896 288.125C412.227 288.125 394.557 282.948 394.557 259.314ZM493.65 213.508C490.274 227.577 487.01 243.558 487.01 257.738C487.01 258.526 487.122 259.427 487.122 260.214H507.493L493.65 213.508ZM491.399 205.968H518.635L542.719 287H515.483L508.843 264.716H487.347C488.248 273.495 490.836 281.26 496.351 287H466.864L491.399 205.968ZM581.586 244.908H612.648V287H596.104L591.94 284.524C588.338 286.887 583.724 288.125 578.097 288.125C555.926 288.125 542.645 268.655 542.645 248.172C542.645 227.577 556.038 204.843 584.174 204.843C600.943 204.843 610.172 212.833 610.172 220.824C610.172 227.351 603.87 233.992 591.152 236.468C590.027 222.737 581.023 210.245 574.495 210.245C569.206 210.245 567.743 218.686 567.743 228.815C567.743 251.211 575.733 276.421 586.538 280.923V277.996C586.538 266.967 586.313 255.938 581.586 244.908ZM678.185 287H619.549V205.968H675.484C675.484 214.859 676.272 223.3 676.834 231.853C667.831 221.612 658.264 212.946 646.785 208.782V244.008C652.412 241.982 657.477 238.268 662.204 233.429V257.063C657.364 252.224 652.187 248.735 646.785 246.597V283.061C658.715 280.81 669.069 274.057 676.834 261.115C676.834 269.556 677.284 276.421 678.185 287Z" fill="currentcolor"></path>
+<line x1="3.14183" y1="9" x2="3.14182" y2="287" stroke="currentcolor" stroke-width="6.28366"></line>
+</svg></div></a><nav role="navigation" class="navbar_menu w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-nav-menu"><a id="schema_sandiego" href="/san-diego-ca/language-school" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>San Diego</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a id="schema_losangeles" href="/los-angeles-ca/language-courses" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Los Angeles</div></a><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><div data-delay="200" data-hover="false" data-w-id="dcc14621-e4cd-a4c8-518c-d15fb187fab7" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle is-vancouver w-dropdown-toggle"><div>Vancouver</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list is-vancouver w-dropdown-list"><a href="/vancouver" class="navbar_dropdown-link is-first w-inline-block"><div>Vancouver Language School</div></a><a id="link_pathway" href="/vancouver/cost-of-studying-english" class="navbar_dropdown-link w-inline-block"><div>Cost of Studying English</div></a><a id="link_courses" href="/vancouver/how-long-to-learn-english" class="navbar_dropdown-link w-inline-block"><div>How Long to Learn English</div></a><a href="/vancouver/vs-toronto" class="navbar_dropdown-link is-last w-inline-block"><div>Vancouver vs Toronto</div></a></nav></div><div class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a data-geo="offers" href="/offers" class="navbar_link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div data-w-id="b8cd39b7-7e77-0eb8-1fba-1d93c04f1c03" class="navbar_dot"></div><div>Offers</div></a><div data-geo="offers" class="navbar_divider-wrapper hide"><div class="navbar_inner"></div></div><a href="/booking" class="navbar_link is-contact w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca60_659c0c6bab83c55cd1ac60a1_Arrow%20upright%20red%201.svg" loading="lazy" alt="" class="icon-1x1-small is-nav"><div>Apply Now</div></a><div data-delay="200" data-hover="false" data-w-id="be190588-2bc4-6b64-cd10-57ff63314947" class="navbar_menu-dropdown w-dropdown"><div class="navbar_dropdwn-toggle w-dropdown-toggle"><div>More</div><div class="dropdown-chevron w-embed"><svg width=" 100%" height=" 100%" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M2.55806 6.29544C2.46043 6.19781 2.46043 6.03952 2.55806 5.94189L3.44195 5.058C3.53958 4.96037 3.69787 4.96037 3.7955 5.058L8.00001 9.26251L12.2045 5.058C12.3021 4.96037 12.4604 4.96037 12.5581 5.058L13.4419 5.94189C13.5396 6.03952 13.5396 6.19781 13.4419 6.29544L8.17678 11.5606C8.07915 11.6582 7.92086 11.6582 7.82323 11.5606L2.55806 6.29544Z" fill="currentColor"></path>
+</svg></div></div><nav class="navbar_dropdown-list w-dropdown-list"><a href="/summer-camp-san-diego" class="navbar_dropdown-link w-inline-block"><div>Summer Camp</div></a><a id="link_pathway-2" href="/pathway-program-usa" class="navbar_dropdown-link w-inline-block"><div>Pathway</div></a><a id="link_courses-2" href="/courses" class="navbar_dropdown-link w-inline-block"><div>Courses</div></a><a id="link_housing" href="/housing" class="navbar_dropdown-link w-inline-block"><div>Housing</div></a><a href="/voices" class="navbar_dropdown-link w-inline-block"><div>Voices</div></a><a id="link_blog_top" href="/blog" class="navbar_dropdown-link w-inline-block"><div>Blog</div></a><a href="/faq" class="navbar_dropdown-link is-last w-inline-block"><div>FAQs</div></a></nav></div><a href="/contact-cel" class="navbar_link is-apply w-inline-block"><div>Contact us</div></a></nav><div id="w-node-dcc14621-e4cd-a4c8-518c-d15fb187fad5-b187faa5" class="navbar_button-wrapper"><div class="navbar_buttons"><div class="offers_counter w-variant-0947456c-11ec-2419-24b4-dab16b38388d is-nav"><div class="counter_item is-top"><div class="count_days">00</div></div><div class="counter_item is-top"><div class="count_hours is-top">00</div></div><div class="counter_item is-top"><div class="count_minutes">00</div></div><div class="counter_item is-top"><div class="count_seconds">00</div></div></div><a href="/booking" class="navbar_button is-light is-mobile w-inline-block"><div>Apply Now</div></a><a href="/contact-cel" class="navbar_button is-mobile w-inline-block"><div>Contact us</div></a><a href="#" class="navbar_button is-mobile is-influencer w-variant-0947456c-11ec-2419-24b4-dab16b38388d w-inline-block"><div>Unlock Offer</div></a><div class="button_weglot w-variant-0947456c-11ec-2419-24b4-dab16b38388d"></div></div><div class="navbar_menu-button w-nav-button"><div class="menu-icon"><div class="menu-icon_line-top"></div><div class="menu-icon_line-middle"><div class="menu-icon_line-middle-inner"></div></div><div class="menu-icon_line-bottom"></div></div></div></div></div></div>
+<div class="main-wrapper subpage-wp">
+
+<!-- ============================== §1 HERO ============================== -->
+<section class="section_hero">
+<!-- TODO: replace with SD asset — a street-level, natural-daylight exterior of the Pacific Beach
+     campus. No such asset exists in the project; this is the one file whose pixels match a
+     truthful description (DECISIONS.md, asset audit), and the alt describes what is visible. -->
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69f9dc82e465d1b097a86d16_adults-16-budget-classroom.avif" loading="lazy" sizes="100vw" alt="Adult students in a CEL San Diego classroom, working around a shared table" class="hero_bg-image">
+<div class="hero_overlay"></div>
+<div class="hero_wrapper is-subpage">
+<nav aria-label="Breadcrumb" class="breadcrumb">
+<a href="/usa" class="breadcrumb-link">USA</a>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69beeef66d387cb04dca12b1_adults-16-breadcrumb-chevron.svg" loading="lazy" alt="" class="breadcrumb-sep">
+<a href="/san-diego-ca" class="breadcrumb-link">San Diego</a>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69beeef66d387cb04dca12b1_adults-16-breadcrumb-chevron.svg" loading="lazy" alt="" class="breadcrumb-sep">
+<p class="breadcrumb-current">Study Duration Guide</p>
+</nav>
+<div class="hero_content">
+<div class="hero_content-left">
+<h1 class="hero_title">How Long Does It Take to Learn English in San Diego?</h1>
+<p class="hero_sub text-size-medium">Most students complete one CEFR level in about 10 weeks. Small classes, measurable CEFR progress, courses from 1 week to a full academic year — starting any Monday.</p>
+</div>
+<div class="hero_content-right">
+<div class="hero_highlights is-wrap">
+<div class="hero_highlight is-wrap">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c23c5c6ba315a2441a6_adults-16-icon-hero-clock.svg" loading="lazy" alt="" class="hero_highlight-icon">
+<p class="hero_highlight-text is-wrap text-style-allcaps">Approx. 10 weeks per level</p>
+</div>
+<div class="hero_highlight is-wrap">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd3c217fe3e58ecc762806_adults-16-icon-hero-person.svg" loading="lazy" alt="" class="hero_highlight-icon">
+<p class="hero_highlight-text is-wrap text-style-allcaps">Avg. 7 students per class (max 12)</p>
+</div>
+<div class="hero_highlight is-wrap">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c132265846826fa88282b8_dg-hero-chart-v2.svg" loading="lazy" alt="" class="hero_highlight-icon">
+<p class="hero_highlight-text is-wrap text-style-allcaps">A1–C2 all levels offered</p>
+</div>
+<div class="hero_highlight is-wrap">
+<!-- ASSET NOTE: the live calendar icon is the only one in the set that carries the "start date"
+     fact; its live alt is "" as a hero chip. Flagged for a two-second visual check. -->
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt="" class="hero_highlight-icon">
+<p class="hero_highlight-text is-wrap text-style-allcaps">Start any Monday</p>
+</div>
+</div>
+</div>
+</div>
+<div class="hero_actions">
+<a href="/contact-cel" class="hero_cta-primary">Get a Quote</a>
+<a href="/contact-cel" class="hero_cta-ghost">Contact Us</a>
+</div>
+</div>
+</section>
+
+<!-- ===================== PAGE BODY — one padding-global > container > page_body-layout, with
+     exactly TWO grid children: the rail, then page_content. A third is auto-placed into a new
+     track and reflows every sibling after it (measured: five children put the rail in the content
+     column and squeezed page_content from 866px to 423px). id="content" is the hero ghost CTA's
+     anchor. ===================================================================== -->
+<div id="content" class="padding-global">
+<div class="container">
+<div class="page_body-layout">
+
+<!-- ============================== §2 ON-THIS-PAGE ==============================
+     The rail is the boxed live panel (#f6eeda fill, cream-medium hairline, 20px radius). It is the
+     first grid child of page_body-layout; a second <aside> is not authorable here — see the
+     grid-children note above. -->
+<!-- §2 — bare sticky rail: dots and hairline are the only chrome -->
+<aside class="stoc_component">
+<p class="stoc_label">On this page</p>
+<nav class="stoc_nav">
+<a data-target="overview" href="#overview" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Overview</p></a>
+<a data-target="fit" href="#fit" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Which Duration Fits You?</p></a>
+<a data-target="cefr" href="#cefr" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">CEFR Levels</p></a>
+<a data-target="visa" href="#visa" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Visa &amp; Duration</p></a>
+<a data-target="factors" href="#factors" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">What Affects Progress</p></a>
+<a data-target="duration" href="#duration" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Program Lengths</p></a>
+<a data-target="electives" href="#electives" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Courses &amp; Electives</p></a>
+<a data-target="goals" href="#goals" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Duration by Goal</p></a>
+<a data-target="shortcourse" href="#shortcourse" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">Short Courses</p></a>
+<a data-target="faq" href="#faq" class="stoc_link"><div class="stoc_dot"></div><p class="stoc_text">FAQ</p></a>
+</nav>
+<a href="/contact-cel" class="stoc_cta-btn">Get a Quote</a>
+</aside>
+
+<main class="page_content">
+
+
+<!-- ============================== §3 QUICK ANSWER — the signature element ============================== -->
+<!-- §3 — the page's signature moment, rebuilt 4 Aug (2nd pass, client: "messy, not good
+     typography").
+     5th pass (client): the section's TWO panels are merged into ONE (same content, one column) —
+     band, duration table, an internal .brackets_split band, then the planning inputs stacked one per
+     row. Two panels stacked 32px apart read as two unrelated objects answering one question.
+     4th pass: §3 speaks costs.html's PANEL STANDARD verbatim — .brackets_panel with a
+     .brackets_head band (indigo caps note + Cameraobscura title over one hairline), the answer as
+     the band title, the four duration facts as a .feetable, the decision inputs as .factors_tiles
+     rows in a second banded panel. Rules are COPIED from costs.css §PANEL STANDARD into
+     how-long.css §6 so the two sheets stay diffable. The 46px .dur-num.is-answer signature figure
+     is RETIRED by this direction — the answer lives in the band title now.
+     ONE CONTENT CHANGE, flagged for sign-off: paragraph 1 was a semicolon list of four duration
+     facts ("A 2-4 week course improves…; the most popular 12-week booking…; 20+ weeks spans…; Up to
+     12 weeks can be studied visa-free…"). Those four facts are the most useful content in the
+     section and they were the hardest to find. They are now a duration -> outcome ledger on the
+     .quickfacts_* chassis this page already uses three times. Every fact and substantially every
+     word is preserved; only the prose joins are gone. -->
+<section id="overview" class="section_page">
+<h2 class="section-tagline">Overview</h2>
+<h3 class="section-title">How Long Do You Need to Learn English in San Diego?</h3>
+<p class="body-intro is-measure text-size-medium">How many weeks you need depends on where you start and where you want to go. This guide gives you realistic timelines for every level and goal at our <a href="/san-diego-ca" class="text-link">English school in San Diego</a>. Average of 7 students per class, capped at 12.</p>
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Quick answer</p><h4 class="brackets_title">Approx. 10 Weeks to Complete One CEFR Level</h4></div>
+<table class="feetable is-rates is-outcomes">
+<caption class="feetable_caption">Typical outcome by course length at CEL San Diego</caption>
+<colgroup><col class="feetable_col-key"><col></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Length of stay</th><th scope="col" class="is-inset-r">Typical outcome</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">2–4 weeks</th><td class="is-inset-r">Improves fluency and confidence</td></tr>
+<tr><th scope="row" class="is-inset-l is-withchip">12 weeks <span class="dur-label is-pennant is-inline">Most popular</span></th><td class="is-inset-r">Typically completes a full CEFR level, with margin</td></tr>
+<tr><th scope="row" class="is-inset-l">20+ weeks</th><td class="is-inset-r">Spans multiple levels, or exam preparation</td></tr>
+<tr><th scope="row" class="is-inset-l">Up to 12 weeks</th><td class="is-inset-r">Can be studied visa-free on ESTA (eligible nationalities)</td></tr>
+</tbody>
+</table>
+<div class="brackets_split"><p class="brackets_note">Planning inputs</p><h4 class="brackets_title">What Shapes Your Decision</h4></div>
+<div class="factors_tiles">
+<div class="factors_tile"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea8e14910a9ef78c26d1df_duration-guide-icon-level.svg" loading="lazy" alt="" class="factors_card-icon"><p class="factors_card-text">Your current level</p></div>
+<div class="factors_tile"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ebceb2b17767ddde58afc8_duration-guide-icon-trend-up.svg" loading="lazy" alt="" class="factors_card-icon"><p class="factors_card-text">Your target level</p></div>
+<div class="factors_tile"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ebcebbbd48331b55bbabd5_duration-guide-icon-doc-check.svg" loading="lazy" alt="" class="factors_card-icon"><p class="factors_card-text">Exam plans (TOEFL / Cambridge)</p></div>
+<div class="factors_tile"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ebcebc4f4b3b012afa53bf_duration-guide-icon-graduation.svg" loading="lazy" alt="" class="factors_card-icon"><p class="factors_card-text">Academic or career goals</p></div>
+</div>
+</div>
+<div class="margin-top margin-large"><div class="margin-bottom margin-small"><h3 class="section-title is-small">Available Course Lengths at CEL San Diego</h3></div></div>
+<p class="body-intro is-measure text-size-medium">Courses start any Monday, at every level from A1 to C2. You can book anything from 1 week to a full academic year. Many students choose 8–12 weeks — a strong balance between measurable progress and the experience abroad; exam preparation and university pathways run longer. <a href="/san-diego-ca/cost-of-studying-english" class="text-link">Weekly tuition drops at 7, 13 and 20 weeks</a> — longer courses cost less per week.</p>
+</section>
+
+
+<!-- ============================== §3a WHICH DURATION FITS YOU ==============================
+     SECTION-PLAN letters swapped, and why: the plan proposed A = ledger-rows, B = chooser stage.
+     Row 10 (§9 Duration by Goal) is a goal-item hairline ledger with the verdict on the right —
+     the same object — and in the A pass those two sections would read as one component used
+     twice. The copy's own first line here is an instruction, "Find your situation", which is a
+     selection, not a list. Both proposed compositions are still built; only the letters differ. -->
+<!-- §3a — duration finder table on the costs.css panel standard (client, 4 Aug: the tab
+     chooser's radio behaviour did not survive static preview, and a five-row lookup is a table,
+     not a widget). Every row ends in an in-page link to the section with the detail. -->
+<section id="fit" class="section_page">
+<h2 class="section-tagline">Which Duration</h2>
+<h3 class="section-title">Which Duration Fits You?</h3>
+<p class="body-intro text-size-medium">Find your situation — every row links to the details further down the page.</p>
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Duration finder</p><h4 class="brackets_title">Match Your Situation to a Duration</h4></div>
+<table class="feetable is-rates is-outcomes is-fit">
+<caption class="feetable_caption">Typical course duration by student situation at CEL San Diego</caption>
+<colgroup><col class="feetable_col-key"><col><col class="feetable_col-link"></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Your situation</th><th scope="col">Typical duration</th><th scope="col" class="is-inset-r">Details</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">I’m a beginner</th><td>Roughly 35–40 weeks to B2 — about one academic year</td><td class="is-inset-r"><a href="#cefr" class="text-link">The cumulative table</a></td></tr>
+<tr><th scope="row" class="is-inset-l">I’m B1 and want B2</th><td>Approx. 10 weeks</td><td class="is-inset-r"><a href="#cefr" class="text-link">The CEFR ladder</a></td></tr>
+<tr><th scope="row" class="is-inset-l">I only have the summer</th><td>4–8 weeks, bookable on ESTA (eligible nationalities) or a B1/B2 visitor visa</td><td class="is-inset-r"><a href="#shortcourse" class="text-link">Short courses</a></td></tr>
+<tr><th scope="row" class="is-inset-l">I need TOEFL or Cambridge</th><td>General English first, exam elective up to 8 weeks; total stay typically longer</td><td class="is-inset-r"><a href="#electives" class="text-link">Courses &amp; electives</a></td></tr>
+<tr><th scope="row" class="is-inset-l">I’m heading to a US university</th><td>20+ weeks, typically F-1</td><td class="is-inset-r"><a href="#goals" class="text-link">Duration by goal</a></td></tr>
+</tbody>
+</table>
+</div>
+<div class="dur_callout"><div class="callout-inner"><p>Not sure where you are? <a href="/contact-cel" class="text-link">Tell us your level and goal!</a></p></div></div>
+</section>
+
+
+<!-- ============================== §4 CEFR LADDER ==============================
+     A is BRIEF §3's named class source for the CEFR table (compare-cell / compare-dot) built as a
+     two-column grid on classed divs: levels as rows, weeks on one common axis.
+     B is the live purpose-built ladder (cefr-grid), where the code hangs in a 44px margin column
+     and the bar makes the pattern visible — that early levels are shorter work than late ones,
+     which §13's first long-form answer then asserts in prose.
+     Recommendation and the one caveat are in DECISIONS.md: 11A is also a compare-table, so
+     shipping 5A and 11A together puts the same object on the page twice, which BRIEF §2 names as
+     a failure mode. 5B + 11A does not. -->
+<!-- §4 — the ladder as a PROPORTIONAL BAR CHART (client, 4 Aug: "progress bar which represents the
+     weeks with different colors indigo orange green — mention the numbers too"). The two-column
+     compare-table stated the same six figures as text, so the one thing a reader wants — that the
+     levels get slowly longer, 8 to 11 weeks — was invisible. Bars are scaled to the longest level
+     (11 weeks = 100%), banded by stage, and each row keeps its figure AND its description. C2 has
+     no bar because it has no next level to complete. Widths are CLASSES, not inline styles. -->
+<section id="cefr" class="section_page">
+<h2 class="section-tagline">CEFR Levels</h2>
+<h3 class="section-title">How Long Does It Take to Move Up One CEFR Level?</h3>
+<p class="body-intro text-size-medium">Most students at CEL San Diego complete one CEFR level in about 10 weeks. Here is what that looks like level by level — the figures are CEL averages from full-time study:</p>
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">CEFR ladder</p><h4 class="brackets_title">Typical Weeks to Complete Each Level</h4></div>
+<div class="ladder_legend">
+<div class="ladder_key"><div class="ladder_swatch is-found"></div><p class="ladder_key-text">Foundation · A1–A2</p></div>
+<div class="ladder_key"><div class="ladder_swatch is-core"></div><p class="ladder_key-text">Core · B1–B2</p></div>
+<div class="ladder_key"><div class="ladder_swatch is-adv"></div><p class="ladder_key-text">Advanced · C1</p></div>
+</div>
+<div class="ladder_list">
+<div class="ladder_row">
+<div class="ladder_meta"><p class="ladder_code">A1</p><p class="ladder_name">Beginner</p></div>
+<div class="ladder_bar"><div class="ladder_track"><div class="ladder_fill is-found is-w8"></div></div><p class="ladder_weeks">Approx. 8 weeks</p></div>
+<p class="ladder_desc">You handle everyday phrases and introduce yourself</p>
+</div>
+<div class="ladder_row">
+<div class="ladder_meta"><p class="ladder_code">A2</p><p class="ladder_name">Elementary</p></div>
+<div class="ladder_bar"><div class="ladder_track"><div class="ladder_fill is-found is-w9"></div></div><p class="ladder_weeks">Approx. 9 weeks</p></div>
+<p class="ladder_desc">You manage routine situations — shopping, directions, small talk</p>
+</div>
+<div class="ladder_row">
+<div class="ladder_meta"><p class="ladder_code">B1</p><p class="ladder_name">Intermediate</p></div>
+<div class="ladder_bar"><div class="ladder_track"><div class="ladder_fill is-core is-w10"></div></div><p class="ladder_weeks">Approx. 10 weeks</p></div>
+<p class="ladder_desc">You hold real conversations and travel independently</p>
+</div>
+<div class="ladder_row">
+<div class="ladder_meta"><p class="ladder_code">B2</p><p class="ladder_name">Upper-Intermediate</p></div>
+<div class="ladder_bar"><div class="ladder_track"><div class="ladder_fill is-core is-w10"></div></div><p class="ladder_weeks">Approx. 10 weeks</p></div>
+<p class="ladder_desc">University entry starts here; you argue a point and follow native speech</p>
+</div>
+<div class="ladder_row">
+<div class="ladder_meta"><p class="ladder_code">C1</p><p class="ladder_name">Advanced</p></div>
+<div class="ladder_bar"><div class="ladder_track"><div class="ladder_fill is-adv is-w11"></div></div><p class="ladder_weeks">Approx. 11 weeks</p></div>
+<p class="ladder_desc">IELTS 7+ territory; you work and study comfortably in English</p>
+</div>
+<div class="ladder_row is-last">
+<div class="ladder_meta"><p class="ladder_code">C2</p><p class="ladder_name">Mastery</p></div>
+<div class="ladder_bar"><div class="ladder_track"></div><p class="ladder_weeks is-none">— no next level</p></div>
+<p class="ladder_desc">The highest CEFR level: students at C2 refine range and precision rather than work toward a next level</p>
+</div>
+</div>
+<p class="brackets_foot">Bar length is proportional to the weeks in that level — CEL averages from full-time General English. Individual pace varies.</p>
+</div>
+<!-- Everything from here to the end of §4 folds into the SAME disclosure component costs.html uses
+     (client, 4 Aug: "create an accordion as in costs.html and put this and everything below it in that
+     accordion — 'See the details'"). The ladder answers the question; the 250-hour comparison, the
+     cumulative table and the from-beginner totals are the evidence behind it, so they read better on
+     demand than as four more blocks in the scroll.
+     The rules are copied verbatim from costs.css B9 into how-long.css so the two sheets diff line for
+     line. NOT .faq-item: that family is bound to the live single-open accordion and to this page's
+     FAQPage JSON-LD, so reusing it for non-FAQ content would put a rate table in the FAQ rich result. -->
+<details class="calc_details">
+<summary class="calc_details-toggle"><span class="calc_details-label">See the details</span><span class="calc_details-hint">Study hours, cumulative totals and from-beginner timings</span><span class="calc_details-caret" aria-hidden="true"></span></summary>
+<div class="calc_details-body">
+<p class="body-text">Universities often estimate about 250 hours of study per CEFR level; full-time immersion is typically faster — at CEL the average is about 10 weeks. That difference is the reason students study abroad: in San Diego, English continues after class — in shops, at the beach, in your shared apartment.</p>
+<p class="body-text is-measure">On average, students need approx. 10 weeks of consistent study to complete one CEFR level.</p>
+<p class="body-intro text-size-medium">Most bookings target a single level or exam — but if you’re starting from the beginning, the per-level averages add up like this:</p>
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Cumulative totals</p><h4 class="brackets_title">Starting from Scratch — How Long to Reach Each Level?</h4></div>
+<table class="feetable is-rates is-outcomes">
+<caption class="feetable_caption">Cumulative weeks from beginner to each CEFR level at CEL San Diego</caption>
+<colgroup><col class="feetable_col-key"><col></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Target level</th><th scope="col" class="is-inset-r">Total from beginner</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">A2</th><td class="is-inset-r">Approx. 17 weeks</td></tr>
+<tr><th scope="row" class="is-inset-l">B1</th><td class="is-inset-r">Approx. 27 weeks</td></tr>
+<tr><th scope="row" class="is-inset-l">B2</th><td class="is-inset-r">Roughly 35–40 weeks — about one academic year</td></tr>
+<!-- GATED: the C1-from-beginner figure publishes only with the sign-off in the copy doc's
+     checklist item 1. Instance 1 of 3 on this page — the checklist says it appears twice; the copy
+     actually prints it three times (this row, this section's closing paragraph, and §13's fluency
+     answer). A grep guided by the checklist's count leaves one instance live. -->
+<tr><th scope="row" class="is-inset-l">C1</th><td class="is-inset-r">Approx. 48 weeks</td></tr>
+</tbody>
+</table>
+<p class="brackets_foot">Sums of per-level averages — individual pace varies.</p>
+</div>
+<!-- GATED: instance 2 of 3 — the final sentence of this paragraph only. -->
+<div class="dur_callout"><div class="callout-inner"><p>Starting from beginner, students typically reach B1 in about 27 weeks and B2 in roughly 35–40 weeks — about one academic year. From beginner to B2 takes roughly 35–40 weeks — about one academic year. Reaching C1 from beginner takes approximately 48 weeks — the sum of CEL’s per-level averages.</p></div></div>
+</div>
+</details>
+<div class="callout"><div class="callout-inner"><p>True zero beginners are rare in study abroad — CEL beginners are typically false beginners with some prior knowledge, and they start any Monday like every other level. “Courses start any Monday, at every level from A1 to C2.”</p></div></div>
+</section>
+
+
+<!-- ============================== §5 VISA & DURATION ==============================
+     Neither option is a compare-cell table: BRIEF §2 names "the visa table and the CEFR table
+     read as the same object" as page failure, and §4 owns that chassis. §5 is also QUIET by
+     assignment — it is the section a reader reaches already worried, and duration is the key
+     column because duration is the question they asked. -->
+<!-- §5 — entry routes on the costs.html §6 table shape (client, 4 Aug: "reorganize, it looks very
+     messy"). Each row carried THREE facts — length, route, course — in two cells joined by a "·",
+     so the route and the course ran together as one string. Three columns, one fact each. -->
+<section id="visa" class="section_page">
+<h2 class="section-tagline">Visa &amp; Duration</h2>
+<h3 class="section-title">How Long Are You Allowed to Study English in the USA?</h3>
+<p class="body-intro text-size-medium">In the US market, how long you <strong>want</strong> to stay and how long you are <strong>allowed</strong> to stay are the same decision. The route you enter on sets your maximum study duration:</p>
+<div class="brackets_panel">
+<div class="brackets_head"><p class="brackets_note">Entry routes</p><h4 class="brackets_title">How Long Each Route Lets You Stay</h4></div>
+<table class="feetable is-rates is-outcomes is-routes">
+<caption class="feetable_caption">US entry route and eligible course by length of stay</caption>
+<colgroup><col class="feetable_col-key"><col><col></colgroup>
+<thead><tr><th scope="col" class="is-inset-l">Length of stay</th><th scope="col">Visa route</th><th scope="col" class="is-inset-r">Course</th></tr></thead>
+<tbody>
+<tr><th scope="row" class="is-inset-l">Up to 12 weeks</th><td>ESTA (Visa Waiver — <a href="https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visa-waiver-program.html" class="text-link">eligible nationalities</a>)</td><td class="is-inset-r">GE20, or <a href="/courses/general-english" class="text-link">GE23 for more lessons per week</a></td></tr>
+<tr><th scope="row" class="is-inset-l">Typically up to 6 months</th><td>B1/B2 visitor visa</td><td class="is-inset-r">GE20 or GE23</td></tr>
+<tr><th scope="row" class="is-inset-l">Longer stays / 24+ lessons per week</th><td><a href="/san-diego-ca/f1-visa-english-school" class="text-link">F-1 student visa</a></td><td class="is-inset-r">GE24 or GE28</td></tr>
+</tbody>
+</table>
+</div>
+<div class="margin-bottom margin-small"><p class="body-text">You can study English in the USA for up to 12 weeks on ESTA (if eligible); courses of 24 or more lessons per week require an F-1 visa. A B1/B2 visitor visa typically allows English study for up to 6 months.</p></div>
+<p class="body-text">CEL’s General English 23 (23.75 lessons per week) stays below the 24-lesson F-1 threshold — more lessons per week, still on ESTA.</p>
+<div class="callout is-orange"><div class="callout-inner"><p>CEL provides course guidance, not visa advice — eligibility and duration are decided by U.S. authorities. <a href="https://travel.state.gov" class="text-link">travel.state.gov</a></p></div></div>
+</section>
+
+
+<!-- ============================== §6 WHAT AFFECTS PROGRESS ============================== -->
+<!-- §6 — four factor cards on the live overview_layout grid: repeat(2,1fr), so the pairs sit 2x2
+     at equal width and stretch to equal row height (client, 4 Aug — the uneven 1.35fr/1fr span is
+     retired). -->
+<section id="factors" class="section_page">
+<h2 class="section-tagline">What Affects Progress</h2>
+<h3 class="section-title">What Affects How Fast You Learn?</h3>
+<div class="overview_layout">
+<div class="overview_card">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea8e14910a9ef78c26d1df_duration-guide-icon-level.svg" loading="lazy" alt="Starting level icon" class="overview_col-icon">
+<h4 class="overview_col-title is-ink">Your starting level</h4>
+<p class="body-text">Higher levels take slightly longer: refining complex arguments at C1 is slower work than learning everyday phrases at A1. The ladder above shows the typical range — approx. 8 to 11 weeks per level.</p>
+</div>
+<div class="overview_card">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea8e1d910a9ef78c26d905_duration-guide-icon-intensity.svg" loading="lazy" alt="Course intensity icon" class="overview_col-icon">
+<h4 class="overview_col-title is-ink">Course intensity</h4>
+<p class="body-text">More weekly lessons compress calendar time. CEL offers GE20 (20 lessons/week), GE23 (23.75 lessons/week — more lessons, still on ESTA), GE24 (24 lessons/week, F-1) and GE28 (28 lessons/week, F-1). Compare weekly prices on the <a href="/san-diego-ca/cost-of-studying-english" class="text-link">cost page</a>.</p>
+</div>
+<div class="overview_card">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt="Daily immersion icon" class="overview_col-icon">
+<h4 class="overview_col-title is-ink">Daily immersion</h4>
+<p class="body-text">In Pacific Beach, class is only part of your English day — you order, ask, negotiate and joke in English in shops, at the beach and in your shared apartment or homestay. Students who use English outside class progress faster.</p>
+</div>
+<div class="overview_card">
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea8e1e5019f08e92b69493_duration-guide-icon-motivation.svg" loading="lazy" alt="Personal motivation icon" class="overview_col-icon">
+<h4 class="overview_col-title is-ink">Personal motivation</h4>
+<p class="body-text">Attendance, homework and the willingness to speak from day one make measurable differences — they’re the variables you control.</p>
+</div>
+</div>
+</section>
+
+
+<!-- ============================== §7 PROGRAM LENGTHS ==============================
+     The page's one genuinely ordered set (BRIEF §7: content with intrinsic order must have the
+     order expressed). A puts the sequence and the outcome it produces on ONE spine, so the reader
+     travels it; B separates the sequence from four bookable lengths as cards, with 12 weeks
+     pennanted. Every card and every row closes on its visa route — a reader cannot choose a
+     length without seeing what it costs them in paperwork. -->
+<!-- §8 — step-track: the sequence on one drawn spine, order expressed as order -->
+<section id="duration" class="section_page">
+<h2 class="section-tagline">Program Lengths</h2>
+<h3 class="section-title">What Do You Achieve in 4, 8, 12 or 20+ Weeks?</h3>
+<div class="timeline_list">
+<div class="timeline_row">
+<div class="timeline_rail"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">Weeks 1–4</p>
+<p class="timeline_text is-heading">Speaking confidence and everyday fluency grow</p>
+<p class="timeline_text is-second">A 4-week course improves fluency and confidence, but is usually not enough to complete a full CEFR level. Expect faster, more comfortable speaking — and a real immersion experience.</p>
+<p class="note-soft">Bookable on ESTA (eligible nationalities) or B1/B2 visitor visa</p>
+</div>
+</div>
+<div class="timeline_row">
+<div class="timeline_rail"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">Weeks 5–8</p>
+<p class="timeline_text is-heading">Conversations get noticeably easier</p>
+<p class="timeline_text is-second">Solid, noticeable progress — many students complete a level that started before arrival or get most of the way through one. A strong choice if the summer is your window.</p>
+<p class="note-soft">Bookable on ESTA (eligible nationalities) or B1/B2 visitor visa</p>
+</div>
+</div>
+<div class="timeline_row">
+<div class="timeline_rail"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<div class="timeline_meta"><p class="timeline_when">Weeks 9–12</p><p class="dur-label is-pennant is-inline">Most Popular · The Sweet Spot</p></div>
+<p class="timeline_text is-heading">One full CEFR level, typically completed</p>
+<p class="timeline_text is-second">Twelve weeks is the most popular course length — typically enough to complete one full CEFR level. It fits inside the 12-week ESTA window and leaves margin to complete a full level.</p>
+<p class="note-soft">Bookable on ESTA (eligible nationalities) or B1/B2 visitor visa</p>
+</div>
+</div>
+<div class="timeline_row is-last">
+<div class="timeline_rail is-last"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">Weeks 20+</p>
+<p class="timeline_text is-heading">Multiple levels, or exam preparation</p>
+<p class="timeline_text is-second">Multiple CEFR levels, exam preparation or a university pathway — the route to studying at a US university or working in English. This is academic-year territory — from beginner to B2 takes roughly 35–40 weeks. <a href="/pathway-program-usa" class="text-link">Pathway Program USA</a></p>
+<p class="note-soft">Typically F-1 (or B1/B2 up to ~6 months)</p>
+</div>
+</div>
+</div>
+<div class="callout is-orange"><div class="callout-inner"><p>Weekly tuition drops at 7, 13 and 20 weeks — longer courses cost less per week. <a href="/san-diego-ca/cost-of-studying-english" class="text-link">See the cost page</a></p></div></div>
+<div class="dur_callout"><div class="callout-inner"><p>Not sure whether 8, 12 or 20 weeks is right for you? <a href="/contact-cel" class="text-link">Tell us your current level and your goal — we’ll recommend a study plan.</a></p></div></div>
+</section>
+
+
+<!-- §9 — index-list: three numbered phases, prose at 66ch -->
+<section id="electives" class="section_page">
+<h2 class="section-tagline">Courses &amp; Electives</h2>
+<h3 class="section-title">How Do You Structure a Longer Stay?</h3>
+<p class="body-intro is-measure text-size-medium">On a longer stay you don’t repeat the same course — you build a pathway. CEL San Diego’s elective areas are Career Development Skills, Academic Skills, TOEFL Exam Preparation and Cambridge Exam Preparation.</p>
+<p class="body-intro is-measure text-size-medium">TOEFL and Cambridge exam electives run for up to 8 weeks; most exam students start with General English and switch to exam preparation later in their stay. Cambridge is more mixed: higher-level candidates sometimes book only the 8-week Cambridge block, others start with General English and switch.</p>
+<div class="margin-top margin-large"><div class="margin-bottom margin-small"><h4 class="section-title is-small">Same intensity, same price.</h4></div></div>
+<p class="body-intro is-measure text-size-medium">Courses of the same intensity cost the same — you can switch from General English to TOEFL preparation or Career Development mid-stay at no extra cost.</p>
+
+<div class="timeline_list">
+<div class="timeline_row">
+<div class="timeline_rail"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">8–16 weeks</p>
+<p class="timeline_text is-heading">General English core</p>
+<p class="timeline_text is-second">Level progress, fluency, foundations — <a href="/courses/general-english" class="text-link">General English courses</a></p>
+</div>
+</div>
+<div class="timeline_row">
+<div class="timeline_rail"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">Up to 8 weeks</p>
+<p class="timeline_text is-heading">Elective focus</p>
+<p class="timeline_text is-second">TOEFL, Cambridge, Career Development or Academic Skills — <a href="/courses" class="text-link">elective courses</a></p>
+</div>
+</div>
+<div class="timeline_row is-last">
+<div class="timeline_rail is-last"></div>
+<div class="timeline_marker"><img class="timeline_icon" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69ea5e054393bcba73cc6573_duration-guide-icon-calendar.svg" loading="lazy" alt=""></div>
+<div class="timeline_body">
+<p class="timeline_when">On completion</p>
+<p class="timeline_text is-heading">Certificate + next step</p>
+<p class="timeline_text is-second">CEFR certificate; university applicants continue via the <a href="/pathway-program-usa" class="text-link">Pathway Program USA</a></p>
+</div>
+</div>
+</div></section>
+
+
+<!-- ============================== §9 DURATION BY GOAL ==============================
+     Built with the is-ledger combos from day one (BRIEF §9). The live goal-* component is drawn
+     for figures of ten characters or fewer; this copy is verbatim and roughly twice that, so the
+     layout absorbs the strings — "Elective:" and "Roughly" stay in the figures, and nowrap is
+     dropped wherever a verbatim string cannot fit unwrapped. -->
+<!-- §10 — goal-item is-ledger: goal left, duration right on one baseline -->
+<section id="goals" class="section_page">
+<h2 class="section-tagline">Duration by Goal</h2>
+<h3 class="section-title">How Long Do You Need for Your Goal?</h3>
+<div class="goals-list">
+<div class="goal-item is-ledger">
+<p class="goal-intent">Improve fluency and confidence</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger"><p class="goal-weeks is-ledger">4–8 weeks</p></div>
+</div>
+<div class="goal-item is-ledger">
+<p class="goal-intent">Complete one CEFR level</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger"><p class="goal-weeks is-ledger">Approx. 10 weeks</p></div>
+</div>
+<div class="goal-item is-ledger">
+<p class="goal-intent">TOEFL or Cambridge preparation</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger">
+<p class="goal-weeks is-ledger">Elective: up to 8 weeks</p>
+<p class="goal-level is-ledger">total stay: typically longer, General English first</p>
+</div>
+</div>
+<div class="goal-item is-ledger">
+<p class="goal-intent">Career-relevant English</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger">
+<p class="goal-weeks is-ledger">12–24 weeks</p>
+<p class="goal-level is-ledger">(General English + Career Development electives)</p>
+</div>
+</div>
+<div class="goal-item is-ledger">
+<p class="goal-intent">University pathway</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger">
+<p class="goal-weeks is-ledger">20+ weeks</p>
+<a href="/pathway-program-usa" class="goal-level is-ledger text-link">Pathway Program USA</a>
+</div>
+</div>
+<div class="goal-item is-ledger is-last">
+<p class="goal-intent">Beginner to B2</p>
+<img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69c284eea308f72ff1e189be_duration-guide-icon-arrow-right-v4.svg" loading="lazy" alt="" class="goal-arrow is-ledger">
+<div class="goal-recommendation is-ledger">
+<p class="goal-weeks is-ledger">Roughly 35–40 weeks</p>
+<p class="goal-level is-ledger">— about one academic year</p>
+</div>
+</div>
+</div>
+</section>
+
+
+<!-- ============================== §10 SHORT COURSES ==============================
+     Comparison is the job here, so A is the compare-cell table (BRIEF §7) — and it is the live
+     component doing the live job: on /how-long-to-learn-english this exact table IS §10. Every
+     cell repeats its achievement, because .compare-table is overflow:auto and drag-scrolled at
+     narrow widths, where only one column is on screen and a cell reading "Yes" alone is useless. -->
+<!-- §11 — comparison-table: 1–4 weeks against 10+ weeks on a common axis, dense -->
+<section id="shortcourse" class="section_page">
+<h2 class="section-tagline">Short Courses</h2>
+<h3 class="section-title">Is a Short Course Worth It?</h3>
+<p class="body-intro text-size-medium">Yes — if you expect the right things from it. A 2–4 week course builds speaking confidence, refreshes rusty skills and gives you a real immersion experience. It usually does not complete a full CEFR level, because a level covers more ground than a few weeks of lessons can — measurable academic progression needs approx. 10+ weeks.</p>
+<div class="compare-table is-weeks">
+<div class="compare-head is-primary"><div class="compare-head-row"><h4 class="compare-duration is-quiet">1–4 weeks</h4></div></div>
+<div class="compare-head"><div class="compare-head-row"><h4 class="compare-duration is-quiet">10+ weeks</h4></div></div>
+<div class="compare-cell is-primary is-top"><div class="compare-dot is-title"></div><p>Speaking confidence and everyday fluency — Yes</p></div>
+<div class="compare-cell is-top"><div class="compare-dot is-indigo is-title"></div><p>Speaking confidence and everyday fluency — Yes</p></div>
+<div class="compare-cell is-primary is-top"><div class="compare-dot is-title"></div><p>Refreshed skills and study momentum — Yes</p></div>
+<div class="compare-cell is-top"><div class="compare-dot is-indigo is-title"></div><p>Refreshed skills and study momentum — Yes</p></div>
+<div class="compare-cell is-primary is-top"><div class="compare-dot is-title"></div><p>Real immersion experience in San Diego — Yes</p></div>
+<div class="compare-cell is-top"><div class="compare-dot is-indigo is-title"></div><p>Real immersion experience in San Diego — Yes</p></div>
+<div class="compare-cell is-primary is-top"><div class="compare-dot is-title"></div><p>One full CEFR level completed, with certificate — Usually not</p></div>
+<div class="compare-cell is-top"><div class="compare-dot is-indigo is-title"></div><p>One full CEFR level completed, with certificate — Typically yes</p></div>
+<div class="compare-cell is-primary is-top"><div class="compare-dot is-title"></div><p>Exam preparation (TOEFL / Cambridge) — Yes — exam electives can be booked during short stays</p></div>
+<div class="compare-cell is-top"><div class="compare-dot is-indigo is-title"></div><p>Exam preparation (TOEFL / Cambridge) — Yes — up to the full 8-week elective within the stay</p></div>
+</div>
+<div class="dur_callout"><div class="callout-inner"><p>Many students choose 8–12 weeks — a strong balance between measurable progress and the experience abroad. Both fit inside the 12-week ESTA window (eligible nationalities); not ESTA-eligible? The same courses run on a B1/B2 visitor visa — see the <a href="#visa" class="text-link">visa table</a>.</p></div></div>
+</section>
+
+
+<!-- ============================== §11 FAQ ==============================
+     Closed by default with nothing pre-opened: pre-opening one makes an editorial claim about
+     which question matters most, and the copy makes no such claim.
+     .faq-q carries no href — the live delegated handler does not call preventDefault, so an
+     <a href="#faq-1"> would jump the page on every open and every close. Same pattern the site
+     already uses on .stoc_link, plus a keydown handler because an anchor with no href is not
+     natively activated by Enter or Space. -->
+<!-- §12 — accordion-list: eight rows closed by default, bare on the canvas -->
+<section id="faq" class="section_page section_faq">
+<h2 class="section-tagline">FAQ</h2>
+<h3 class="section-title">Frequently Asked Questions</h3>
+<div class="faq-list">
+<div id="faq-1" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-1-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How many weeks do I need to improve my English?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-1-body" class="faq-body"><div class="faq-body-inner"><p>Approx. 10 weeks per CEFR level; even 4 weeks brings noticeable speaking gains. Where you start and how many lessons per week you take set your exact pace.</p></div></div>
+</div>
+<div id="faq-2" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-2-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How long can I study English in the USA without a student visa?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-2-body" class="faq-body"><div class="faq-body-inner"><p>Up to 12 weeks on ESTA if eligible; a B1/B2 visitor visa typically allows up to 6 months. Courses of 24+ lessons per week always require an F-1 visa. See the <a href="#visa" class="text-link">visa table</a> and our <a href="/san-diego-ca/f1-visa-english-school" class="text-link">F-1 visa page</a>.</p></div></div>
+</div>
+<div id="faq-3" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-3-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>Is 12 weeks enough to see real progress?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-3-body" class="faq-body"><div class="faq-body-inner"><p>Yes — for most students, 12 weeks is enough to complete one full CEFR level, which is when progress becomes clearly noticeable. It is also the most popular course length at CEL San Diego.</p></div></div>
+</div>
+<div id="faq-4" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-4-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>Can I extend my course once I’m in San Diego?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-4-body" class="faq-body"><div class="faq-body-inner"><p>Extending your course is easy in-school — but whether you can extend your <strong>stay</strong> depends on how you entered the USA. An ESTA stay cannot be extended beyond 90 days — students planning more than 12 weeks need a B1/B2 visitor visa (typically up to 6 months) or an F-1 visa. Plan your intended duration before you enter the USA.</p></div></div>
+</div>
+<div id="faq-5" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-5-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>Can I study for only 2–4 weeks?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-5-body" class="faq-body"><div class="faq-body-inner"><p>Yes — courses start any Monday from 1 week; expect fluency and confidence gains, not a full level.</p></div></div>
+</div>
+<div id="faq-6" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-6-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How long does it take from B1 to B2?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-6-body" class="faq-body"><div class="faq-body-inner"><p>From B1 to B2 takes about 10 weeks of full-time study on average.</p></div></div>
+</div>
+<div id="faq-7" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-7-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>Does studying longer reduce the weekly price?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-7-body" class="faq-body"><div class="faq-body-inner"><p>Yes — weekly tuition drops at 7, 13 and 20 weeks. <a href="/san-diego-ca/cost-of-studying-english" class="text-link">See the cost page</a>.</p></div></div>
+</div>
+<div id="faq-8" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="faq-8-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How long should I prepare for TOEFL or Cambridge?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="faq-8-body" class="faq-body"><div class="faq-body-inner"><p>The exam electives run for up to 8 weeks. Most TOEFL students start with General English and switch to exam preparation later in their stay, so total stays are usually longer than 8 weeks. Higher-level Cambridge candidates sometimes book only the 8-week exam block.</p></div></div>
+</div>
+</div>
+</section>
+
+
+<!-- ============================== §13 LONG-FORM SEO BLOCK ==============================
+     id="blog" per the copy doc, and it is the rail's eleventh anchor. Both options carry the same
+     strings — the five long-form answers, the four related guides, and the visible "Last updated"
+     line the copy's §0 Metadata table requires. They differ on measure, containment and whether a
+     photograph is spent here.
+     The related guides are four REAL internal destinations, not a post collection: the live
+     blog-bento_grid is CMS-bound and cel-featured-posts.min.js strips the rail's blog link when
+     the collection holds fewer than two posts. There is no San Diego post collection, and the copy
+     forbids empty teaser cards and dead "Continue reading" links. -->
+<!-- §14 — prose-with-pullquote: the answers at 66ch, one line pulled past the measure -->
+<section id="blog" data-lang="en,de,fr,it,ko" class="section_page section_faq">
+<h2 class="section-tagline">Timelines</h2>
+<h3 class="section-title">How Long Does It Take to Learn English in San Diego?</h3>
+<!-- The five long-form answers use §12's .faq-item accordion (client, 4 Aug: "it is an faq
+     section and you need to use the faq item styling"). ids are namespaced seo-* — two elements
+     sharing an id is invalid HTML and the accordion resolves aria-controls by id. The accordion
+     script is document-wide single-open, which is the live behaviour: opening an answer here closes
+     one in §12. DROPPED in the same edit: a .dur_callout above the academic-year answer whose text
+     was the first sentence of that answer verbatim — inside a collapsed panel it would have printed
+     the same sentence twice. -->
+<div class="faq-list">
+<div id="seo-1" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="seo-1-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>Do beginners learn faster than advanced students?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="seo-1-body" class="faq-body"><div class="faq-body-inner"><p>In weeks per level, yes — slightly. Early levels cover high-frequency language you use every day, so progress feels fast (approx. 8–9 weeks for A1–A2). Moving from upper-intermediate to advanced takes longer (approx. 10–11 weeks for B2–C1) because you are refining complex arguments, precision and range rather than adding basics. That’s normal — it’s the plateau every learner meets, and structured classes are what push you through it.</p></div></div>
+</div>
+<div id="seo-2" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="seo-2-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How does your living situation affect progress?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="seo-2-body" class="faq-body"><div class="faq-body-inner"><p>Students who live in English progress faster. In a homestay you negotiate daily life with your hosts in English; in a shared student apartment you live with other internationals whose only common language is English. Both extend immersion beyond the classroom — choose by lifestyle, not by fear of speaking. <a href="/san-diego-ca/accommodation" class="text-link">See housing options</a>.</p></div></div>
+</div>
+<div id="seo-3" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="seo-3-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How does an academic-year stay work?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="seo-3-body" class="faq-body"><div class="faq-body-inner"><p>An academic year is roughly 35–40 weeks — enough to go from beginner to B2, or from intermediate level through C1 with time for exam preparation. Stays of this length run on an F-1 student visa with GE24 or GE28, and university-bound students can continue into the <a href="/pathway-program-usa" class="text-link">Pathway Program USA</a>. Weekly tuition drops at 7, 13 and 20 weeks, so academic-year stays also have the lowest weekly rates. <a href="/san-diego-ca/f1-visa-english-school" class="text-link">See the F-1 visa page</a>.</p></div></div>
+</div>
+<div id="seo-4" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="seo-4-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>How long does it take to become fluent in English?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<!-- GATED: instance 3 of 3 — the final sentence of this answer carries the C1-from-beginner
+     figure and publishes only with the sign-off in the copy doc's checklist item 1. -->
+<div id="seo-4-body" class="faq-body"><div class="faq-body-inner"><p>There is no single definition of fluency. Many students consider B2 fluent for work, travel and daily life, while C1 is typically needed for university study or professional writing. From beginner to B2 takes roughly 35–40 weeks — about one academic year. Reaching C1 from beginner takes approximately 48 weeks — the sum of CEL’s per-level averages.</p></div></div>
+</div>
+<div id="seo-5" data-faq-open="false" class="faq-item">
+<a role="button" aria-expanded="false" aria-controls="seo-5-body" tabindex="0" class="faq-q">
+<div class="faq-question-text"><p>San Diego or Vancouver for a longer stay?</p></div>
+<div class="faq-icon"><p>+</p></div>
+</a>
+<div id="seo-5-body" class="faq-body"><div class="faq-body-inner"><p>Both CEL cities teach the same methodology with the same approx. 10-weeks-per-level average — the difference is the setting and the paperwork. San Diego offers up to 12 visa-free weeks on ESTA (eligible nationalities; B1/B2 visitor visa otherwise) and TOEFL preparation for US universities; Vancouver suits students targeting Canada. Compare directly: <a href="/vancouver/how-long-to-learn-english" class="text-link">How long to learn English in Vancouver</a>.</p></div></div>
+</div>
+</div>
+<div class="nextread_grid is-2up">
+<a href="/san-diego-ca/cost-of-studying-english" class="nextread_card is-stacked">
+<p class="nextread_cat">Costs</p>
+<h4 class="nextread_title">Cost of Studying English in San Diego</h4>
+<p class="nextread_excerpt">Weekly tuition drops at 7, 13 and 20 weeks — longer courses cost less per week.</p>
+<div class="cta-pill-indigo is-card">Read the guide</div>
+</a>
+<a href="/san-diego-ca/f1-visa-english-school" class="nextread_card is-stacked">
+<p class="nextread_cat">Visa</p>
+<h4 class="nextread_title">F-1 Visa English School</h4>
+<p class="nextread_excerpt">Courses of 24 or more lessons per week require an F-1 visa.</p>
+<div class="cta-pill-indigo is-card">Read the guide</div>
+</a>
+<a href="/pathway-program-usa" class="nextread_card is-stacked">
+<p class="nextread_cat">Pathway</p>
+<h4 class="nextread_title">Pathway Program USA</h4>
+<p class="nextread_excerpt">The route to studying at a US university or working in English.</p>
+<div class="cta-pill-indigo is-card">Read the guide</div>
+</a>
+<a href="/vancouver/how-long-to-learn-english" class="nextread_card is-stacked">
+<p class="nextread_cat">Compare</p>
+<h4 class="nextread_title">How Long to Learn English in Vancouver</h4>
+<p class="nextread_excerpt">Both CEL cities teach the same methodology with the same approx. 10-weeks-per-level average — the difference is the setting and the paperwork.</p>
+<div class="cta-pill-indigo is-card">Read the guide</div>
+</a>
+</div>
+</section>
+
+
+<!-- §12 — the closing CTA, structurally IDENTICAL to costs.html's §11 (client, 4 Aug: "pull the
+     cta section styling from costs.html and use the same one; just keep the texts"). Same
+     .inline-cta-a8a1 grid, same .inline-cta_trust pill, same .inline-cta-copy column, same
+     .inline-cta-actions row; the rules are copied into how-long.css §10 so the two sheets diff.
+     The old trust LINE ("4.8★ on Google · 195 reviews — Reply within 1 business day…") is split the
+     way costs splits it: the score and review count become the pill, the reply promise joins the
+     body. No string is lost. The ★ character is gone with it — costs renders real CEL star artwork.
+     PLACEMENT (client, 4 Aug): inside main.page_content as the last section, which is where
+     costs.html puts its CTA — not as a sibling of #content. page_body-layout still has exactly TWO
+     grid children (rail + page_content), which is the constraint that governs this column.
+     NOT ported: costs' .sticky-cta_bar and its WhatsApp button. The bar needs the scroll script that
+     toggles .is-visible, and WhatsApp is not one of this page's CTAs. -->
+<section id="cta" class="section_inline-cta">
+<div class="inline-cta-a8a1">
+<div class="inline-cta_trust">
+<span class="inline-cta_trust-disc"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd2e7d6daef797a73fd2e5_adults-16-icon-google-logo.svg" loading="lazy" alt="Google" class="inline-cta_trust-logo"></span>
+<p class="inline-cta_trust-score">4.8</p>
+<!-- 4.8 of 5 as ONE clipped overlay, not five part-filled glyphs: the same star asset laid down
+     twice, the top copy clipped to 96%, so the fifth star is 80% full to the pixel. --stars-fill is
+     the only number to edit. -->
+<span role="img" aria-label="4.8 out of 5 stars" class="cta_stars">
+<span class="cta_stars-row is-empty"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+<span class="cta_stars-row is-full"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/69bd36636daef797a742e602_adults-16-icon-review-star.svg" width="13" height="13" alt=""></span>
+</span>
+<div class="inline-cta_trust-rule"></div>
+<p class="inline-cta-trust">195 reviews</p>
+</div>
+<div class="inline-cta-copy">
+<h3 class="inline-cta-h2">Not Sure How Long You Need?</h3>
+<p class="inline-cta-body">Tell us your level and what you want to achieve — university, career or confident everyday English — we’ll recommend a duration and send you a personal quote. Reply within 1 business day — no auto-reply.</p>
+</div>
+<div class="inline-cta-actions"><a href="/contact-cel" class="inline-cta-btn is-primary">Get a Quote</a><a href="/contact-cel" class="inline-cta-btn is-secondary">Contact Us</a></div>
+</div>
+</section>
+</main>
+</div>
+</div>
+</div>
+
+
+</div><!-- /main-wrapper -->
+<!-- ===== FOOTER (site template) — scraps/_footer.txt, byte-faithful apart from BRIEF §1 fixes
+     (b) aria-current="page" + w--current removed from the /vancouver list link, and (c) the three
+     stray </imgraw> end tags removed from the social row, so those three <img> elements are real
+     images with real alt text. ===== -->
+<footer data-wf--footer--variant="base" class="section_footer"><div class="padding-global"><div class="container"><div class="footer_logo-row"><a href="/" class="footer_logo-link w-inline-block"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/667453c576e8d35c454cca44_CEL-Lettermark-Logo-Multicolor-Vector-SVG.svg" loading="lazy" alt="College of English Language" class="footer_logo-mark"><img src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdb169f37f0fff7fd21_footer-logo-wordmark.svg" loading="lazy" alt="College of English Language" class="footer_logo-wordmark"></a></div><div class="footer_row"><p class="footer_label">Schools</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">CEL San Diego</p><p class="footer_address">945 Hornblend Street, Suite G,<br>2nd floor, San Diego, CA 92109 USA</p><div class="footer_list"><a href="tel:+18584126888" class="footer_list-link">+1 858 412 6888</a><a rel="noopener" href="https://maps.app.goo.gl/LioLhFM1asPBk9ge8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Los Angeles</p><p class="footer_address">401 Wilshire Boulevard #200,<br>Santa Monica, CA 90401 USA</p><div class="footer_list"><a href="tel:+13109333419" class="footer_list-link">+1 310 933 3419</a><a rel="noopener" href="https://maps.app.goo.gl/65CBJckYFSMR7bRk8" target="_blank" class="footer_directions">Get Directions</a></div></div><div class="footer_col"><p class="footer_group-label">CEL Vancouver</p><p class="footer_address">1190 Melville St, #300,<br>Vancouver, BC V6E 3W1, Canada</p><div class="footer_list"><a href="tel:+16046850291" class="footer_list-link">+1 604 685 0291</a><a rel="noopener" href="https://maps.app.goo.gl/NQ3ubGTWy4E5NJE8A" target="_blank" class="footer_directions">Get Directions</a></div></div></div></div><div class="footer_row"><p class="footer_label">Contact</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">WhatsApp</p><div class="footer_list"><a whatsap="url" href="https://api.whatsapp.com/send?phone=16192434426" target="_blank" rel="noopener" whatsapp="number" class="footer_list-link">+1 619 243 4426</a></div></div><div class="footer_col"><p class="footer_group-label">Email</p><div class="footer_list"><a href="mailto:info@englishcollege.com" class="footer_list-link">info@englishcollege.com</a></div></div><div class="footer_col"><p class="footer_group-label">Phone</p><div class="footer_list"><a href="tel:+16192347466" class="footer_list-link">+1 619 234 7466</a></div></div></div></div><div class="footer_row"><div class="footer_title"><p class="footer_label">Courses</p></div><div class="footer_content"><div class="footer_col"><p class="footer_group-label">General</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/general-english" class="footer_list-link">General English</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-academic-skills" class="footer_list-link">English + Academic Skills</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/global-pathway-preparation" class="footer_list-link">Global Pathway</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-toefl-exam-preparation" class="footer_list-link">English Plus TOEFL Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/private-lessons" class="footer_list-link">Private lessons</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">English Plus</p><div class="footer_list"><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/courses/english-career-development" class="footer_list-link">English Plus Career Development</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-cambridge-prep" class="footer_list-link">English Plus Cambridge Preparation</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-experience" class="footer_list-link">English Plus Experience</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-volunteering" class="footer_list-link">English Plus Volunteering</a></div><div role="listitem" class="w-dyn-item"><a href="/courses/english-plus-surfing" class="footer_list-link">English Plus Surfing</a></div></div></div></div></div><div class="footer_col"><p class="footer_group-label">Pathway</p><div class="footer_list"><a href="/pathway-program-usa" class="footer_list-link">Pathway Program</a><a href="/pathway/certificate-programs" class="footer_list-link">Certificate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Undergraduate Programs</a><a href="/pathway/undergraduate-programs" class="footer_list-link">Graduate Programs</a><a href="/pathway/us-education-system" class="footer_list-link">US Education System</a><a href="/pathway/semester-abroad" class="footer_list-link">Semester Abroad</a></div></div></div></div><div class="footer_row"><p class="footer_label">Housing</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">San Diego</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-san-diego" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/premium-homestay-san-diego" class="footer_list-link">Premium Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-standard-san-diego" class="footer_list-link">CEL Shared Apartment Standard</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-premium-san-diego" class="footer_list-link">CEL Shared Apartment Premium</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/cel-shared-apartment-superior-pacific-beach-san-diego" class="footer_list-link">CEL Shared Apartment Superior Pacific Beach</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Los Angeles</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-los-angeles" class="footer_list-link">Homestay</a></div></div></div></div><div class="footer_col"><p class="footer_group-label">Vancouver</p><div class="w-dyn-list"><div role="list" class="footer_list w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/housing/homestay-vancouver" class="footer_list-link">Homestay</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-budget-vancouver" class="footer_list-link">Student House Budget</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/student-house-vancouver" class="footer_list-link">Student House</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-silverstone-vancouver" class="footer_list-link">Shared Apartment Silverstone</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/shared-apartment-downtown-vancouver" class="footer_list-link">Shared Apartment Downtown</a></div><div role="listitem" class="w-dyn-item"><a href="/housing/apartment-economy-apt-living-vancouver" class="footer_list-link">Apartment Economy APT Living</a></div></div></div></div></div></div><div class="footer_row"><p class="footer_label">Vancouver</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Study in Vancouver</p><div class="footer_list"><a href="/vancouver" class="footer_list-link">Vancouver Language School</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/vancouver/student-services" class="footer_list-link">Student Services</a><a href="/vancouver/policies" class="footer_list-link">School Policies</a></div></div><div class="footer_col"><p class="footer_group-label">Useful Guides</p><div class="footer_list"><a href="/vancouver/cost-of-studying-english" class="footer_list-link">Cost of Studying English</a><a href="/vancouver/how-long-to-learn-english" class="footer_list-link">How Long to Learn English</a><a href="/vancouver/vs-toronto" class="footer_list-link">Vancouver vs Toronto</a></div></div><div class="footer_col"></div></div></div><div class="footer_row"><p class="footer_label">Explore</p><div class="footer_content"><div class="footer_col"><p class="footer_group-label">Destinations</p><div class="footer_list"><a href="/learn-english-usa" class="footer_list-link">Learn English in the USA</a><a href="/learn-english-canada" class="footer_list-link">Learn English in Canada</a><a href="/san-diego-ca/language-school" class="footer_list-link">San Diego Language School</a><a href="/los-angeles-ca/language-courses" class="footer_list-link">Los Angeles Language School</a></div></div><div class="footer_col"><p class="footer_group-label">Study at CEL</p><div class="footer_list"><a href="/courses" class="footer_list-link">All Courses</a><a href="/housing" class="footer_list-link">All Housing</a><a href="/summer-camp-san-diego" class="footer_list-link">Summer Camp </a><a href="/booking" class="footer_list-link">Apply Now</a></div></div><div class="footer_col"><p class="footer_group-label">About CEL</p><div class="footer_list"><a href="/voices" class="footer_list-link">Student Voices</a><a href="/blog" class="footer_list-link">Blog</a><a href="/faq" class="footer_list-link">FAQs</a><a href="/contact-cel" class="footer_list-link">Contact Us</a></div></div></div></div><div class="footer_legal"><div class="footer_legal-left"><p class="footer_copyright">© 2026 <a href="/" class="footer_copyright-link">College of English Language</a>. All rights reserved.</p><div class="w-dyn-list"><div role="list" class="footer_legal-links w-dyn-items"><div role="listitem" class="w-dyn-item"><a href="/page/privacy-policy" class="footer_list-link">Privacy Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cookie-policy" class="footer_list-link">Cookie Policy</a></div><div role="listitem" class="w-dyn-item"><a href="/page/terms-conditions" class="footer_list-link">Terms &amp; Conditions</a></div><div role="listitem" class="w-dyn-item"><a href="/page/bppe" class="footer_list-link">BPPE Compliance Statement</a></div><div role="listitem" class="w-dyn-item"><a href="/page/cel-affiliate-program" class="footer_list-link">Affiliate Program</a></div></div></div></div><div class="footer_social"><a aria-label="Instagram" href="https://www.instagram.com/cel_usa/" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd7762899cb7e32485e_footer-icon-instagram.svg" alt="Instagram" width="20" height="20"></a><a aria-label="TikTok" href="https://www.tiktok.com/@cel_usa" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbd8ba967271e3015dd1_footer-icon-tiktok.svg" alt="TikTok" width="18" height="20"></a><a aria-label="YouTube" href="https://www.youtube.com/@collegeofenglishlanguage" target="_blank" rel="noopener nofollow" class="footer_social-link w-inline-block"><img loading="lazy" src="https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae/6a18bbdae04fb1af8c919b6a_footer-icon-youtube.svg" alt="YouTube" width="22" height="16"></a></div></div></div></div></footer>
+</div><!-- /page-wrapper -->
+
+<!-- ===== PAGE SCRIPTS — ONE block (BRIEF §11; DESIGN-RULES §5 records the live duration page at
+     15/15 on Webflow's per-page script budget). Six IIFEs, five ported from
+     _live/cel-how-long-to-learn-english.min.js and one from the SD hub. On deploy this becomes
+     tools/cel-page-scripts/src/cel-san-diego-how-long.js, served from cel.englishcollege.com like
+     every other page bundle. ===== -->
+<script>
+/* 1. Webflow stamps w--current on any same-page anchor, and .hero_cta-ghost.w--current forces
+   color:var(--cream-soft). All four live page bundles ship this identical cleanup. */
+(function(){
+  function clean(){document.querySelectorAll('.hero_cta-ghost.w--current,.hero_cta-primary.w--current').forEach(function(e){e.classList.remove('w--current');});}
+  setInterval(clean,300); clean();
+})();
+
+/* 2. Active TOC dot. There is NO CSS for .stoc_dot.is-active in any served stylesheet — this
+   inline style is the only thing that fills it. Amber #e78b10 = "you are here". */
+(function(){
+  if(!document.querySelector('.stoc_dot')) return;
+  function paint(){
+    document.querySelectorAll('.stoc_dot').forEach(function(d){
+      var link=d.closest('.stoc_link'), on=link&&link.classList.contains('is-active');
+      d.style.backgroundColor=on?'#e78b10':''; d.style.borderColor=on?'#e78b10':'';
+    });
+  }
+  setInterval(paint,300); paint();
+})();
+
+/* 3. TOC scroll-spy. Strips href, sets tabindex, smooth-scrolls by navbar height + 24, picks the
+   last section with top <= navbarHeight + 40, and rewrites .stoc_label for the mobile trigger. */
+(function(){
+  if(window.__celToc) return; window.__celToc=window.__celTocDone=true;
+  var links=[].slice.call(document.querySelectorAll('.stoc_link[data-target]')); if(!links.length) return;
+  var targets=links.map(function(l){return l.dataset.target;});
+  var sections=targets.map(function(t){return document.getElementById(t);}).filter(Boolean);
+  if(!sections.length) return;
+  var navbar=document.querySelector('.navbar_component'), label=document.querySelector('.stoc_label');
+  links.forEach(function(l){l.removeAttribute('href');l.setAttribute('tabindex','0');});
+  function setActive(id){
+    links.forEach(function(l){
+      var on=l.dataset.target===id, dot=l.querySelector('.stoc_dot'), txt=l.querySelector('.stoc_text');
+      l.classList.toggle('is-active',on);
+      if(dot) dot.classList.toggle('is-active',on);
+      if(txt) txt.classList.toggle('is-active',on);
+    });
+    if(label){var cur=links.find(function(l){return l.dataset.target===id;});
+      if(cur){var t=cur.querySelector('.stoc_text'); label.textContent=t?t.textContent.trim():cur.textContent.trim();}}
+  }
+  function spy(){
+    var edge=(navbar?navbar.offsetHeight:90)+40, id=sections[0].id;
+    sections.forEach(function(s){ if(s.getBoundingClientRect().top<=edge) id=s.id; });
+    setActive(id);
+  }
+  var queued=0;
+  window.addEventListener('scroll',function(){ if(queued) return; queued=1; requestAnimationFrame(function(){spy();queued=0;}); },{passive:true});
+  links.forEach(function(l){
+    l.addEventListener('click',function(e){
+      e.preventDefault();
+      var s=document.getElementById(l.dataset.target); if(!s) return;
+      setActive(l.dataset.target);
+      window.scrollTo({top:s.getBoundingClientRect().top+window.scrollY-(navbar?navbar.offsetHeight:90)-24,behavior:'smooth'});
+    });
+    l.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();l.click();} });
+  });
+  var hash=location.hash.replace('#','');
+  if(targets.indexOf(hash)!==-1) setActive(hash); else spy();
+})();
+
+
+/* THE SCROLL REVEAL IS GONE (client, 4 Aug: the §8 pathway rendered EMPTY, and before that the §4
+   ladder bars rendered at zero width). It stranded content three times: twice on the bars, once on a
+   whole timeline. Both failures were the same shape — rows armed to opacity:0 or scaleX(0), then an
+   IntersectionObserver that never reported and a timeout sweep that did not save them. This page's
+   timelines and bar chart ARE the information; there is no entrance animation worth a third outage, and
+   no amount of safety-netting makes an armed-by-default design safe when the arming happens in JS and
+   the disarming depends on a callback. Nothing replaces it: the content simply renders. */
+/* 5. FAQ accordion — single-open, maxHeight animation, aria-expanded. Ported from the live bundle
+   (guard window.__celFq). Closed by default; nothing is pre-opened. The keydown handler is the one
+   addition: an <a> with no href is not natively activated by Enter or Space. */
+(function(){
+  if(window.__celFq) return; window.__celFq=true;
+  if(!document.querySelector('.faq-item')) return;
+  document.addEventListener('click',function(e){
+    var q=e.target.closest('.faq-q'); if(!q) return;
+    var item=q.closest('.faq-item'); if(!item) return;
+    var wasOpen=item.dataset.faqOpen==='true';
+    document.querySelectorAll('.faq-item').forEach(function(it){
+      var body=it.querySelector('.faq-body'),qq=it.querySelector('.faq-q'),ic=it.querySelector('.faq-icon');
+      it.dataset.faqOpen='false'; it.classList.remove('is-open');
+      if(qq){qq.classList.remove('is-open');qq.setAttribute('aria-expanded','false');}
+      if(ic) ic.classList.remove('is-open');
+      if(body) body.style.maxHeight='0px';
+    });
+    if(!wasOpen){
+      var body=item.querySelector('.faq-body'),inner=item.querySelector('.faq-body-inner'),ic=item.querySelector('.faq-icon');
+      item.dataset.faqOpen='true'; item.classList.add('is-open');
+      q.classList.add('is-open'); q.setAttribute('aria-expanded','true');
+      if(ic) ic.classList.add('is-open');
+      if(body&&inner) body.style.maxHeight=inner.scrollHeight+'px';
+    }
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter'&&e.key!==' ') return;
+    var q=e.target.closest&&e.target.closest('.faq-q'); if(!q) return;
+    e.preventDefault(); q.click();
+  });
+})();
+
+</script>
+
+<!-- ===== NAVBAR RUNTIME — BRIEF §1 fix (a), and the one instruction in the brief I could not
+     carry out as written. Reported rather than worked around.
+     jQuery IS linked (below) from the vendored copy the live snapshot references: it loads cleanly
+     and several live page scripts assume it.
+     webflow.cb53894d.ee0df61b176939bc.js is vendored too, but it is a CODE-SPLIT ENTRY. Linking it
+     was tried and MEASURED in this round: it immediately requests 14 webflow.achunk.*.js siblings
+     that were never vendored, so the page logs 1 ChunkLoadError ("Loading chunk 482 failed") plus
+     14 failed-resource errors — and the hamburger and both dropdown panels stay inert anyway,
+     because the modules that wire them live in those missing chunks. Linking it therefore adds 15
+     console errors and delivers none of the behaviour the instruction is asking for.
+     Two ways to close it, neither a page edit: vendor the 14 webflow.achunk.*.js files next to the
+     entry (a project-asset task, no network egress from the build environment); or accept that on
+     the DEPLOY TARGET Webflow injects jQuery and its own bundle into every published page
+     automatically, in which case a hand-authored tag here would be a duplicate and the inertness is
+     a local-preview limitation only. Restoring the tag is one line:
+     <script src="../../_live/webflow.cb53894d.ee0df61b176939bc.js"></script>
+     ===== -->
+<script src="../../shared/utils.js"></script>
+<script src="../../_live/jquery-3.5.1.min.dc5e7f18c8.js" type="text/javascript"></script>
+<!-- PUBLISHING: the unpack splash and no-JS fallback for a published artifact. Simple mark on the
+     page's own cream ground; no external references, so it renders before anything else loads. -->
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" data-bg-color="#faf3e8">
+    <rect width="240" height="160" fill="#faf3e8"></rect>
+    <rect x="72" y="50" width="96" height="60" rx="14" fill="#5d60ee"></rect>
+    <text x="120" y="90" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="600" fill="#faf3e8">CEL</text>
+    <text x="120" y="132" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="2" fill="#9a8f80">HOW LONG</text>
+  </svg>
+</template>
+</body></html>

@@ -1,0 +1,46 @@
+/* CEL — subpage hero clearance. ONE copy for every page.
+   Root cause it fixes: .navbar_component overlays the hero (position:fixed/sticky at top:0, 90px at
+   desktop and an explicit height:4.5rem = 72px at ≤991), while the live .hero_wrapper padding-top
+   ladder is 44 / 36 / 24 / 16px. Every one of those is INSIDE the navbar band, so a subpage hero that
+   shows a breadcrumb puts the breadcrumb pill under the navbar and the CEL logo lands on top of it.
+
+   Why it hid at desktop: .hero_wrapper is justify-content:flex-end, so on a tall hero the content is
+   pushed to the bottom and padding-top never binds. Measure at 1452px only and the page looks fine;
+   at ≤991 the hero shortens, the top padding starts to bite, and the collision appears — measured at
+   924px on san-diego.html, breadcrumb top 36px against a 72px navbar, logo overlapping the crumb.
+
+   This rule used to live in pages/san-diego/how-long.css and pacific-beach.css only, which is why
+   how-long-to-learn-english.html and why-learn-english-pacific-beach.html cleared the navbar and
+   san-diego.html and costs.html did not. It is a system-level fix, so it belongs in a shared sheet —
+   the central fix the pacific-beach DECISIONS item 12 asked for.
+
+   A COMBO on .hero_wrapper — the element whose padding actually changes — never a descendant
+   selector (DESIGN-RULES §10 bans them, and .section_hero.is-subpage .hero_wrapper was the first,
+   rejected form). Clearance stays above the navbar height at every breakpoint: 96 > 90, 88 > 72,
+   80 > 72. */
+.hero_wrapper.is-subpage{padding-top:96px}
+@media screen and (max-width:991px){.hero_wrapper.is-subpage{padding-top:88px}}
+@media screen and (max-width:767px){.hero_wrapper.is-subpage{padding-top:80px}}
+
+/* ============================================================================
+   HERO MEASURE — the H1 column's cap. Client, 4 Aug: "make left column wider for
+   all pages".
+   The live opt sheets cap .hero_content-left at max-width:700px, so widening the
+   hero copy could not be done per page without four divergent overrides — the
+   exact failure this shared file exists to prevent (see CLAUDE.md: two site-wide
+   hero concerns, one home each). One rule, all four San Diego pages.
+   960px (raised from 860 on 4 Aug, same request repeated). It is still a measure,
+   not a free-for-all: at the 17px hero_sub it lands near 105ch, which is the top
+   of the readable band, and .hero_content is "1fr auto" — the column only ever
+   takes what the chip block beside it does not need, so on a hero with wide chips
+   nothing changes. The <=991 opt rules set max-width:100% and win there on source
+   order, so the stacked hero is untouched.
+   ============================================================================ */
+.hero_content-left{max-width:960px}
+
+/* ── Navbar links carry NO underline — site-wide standard ────
+   ROOT CAUSE (about page, 11 Aug): no sheet in this project ever declares text-decoration on
+   .navbar_link, so the BROWSER default underline wins on any page whose stylesheet set happens
+   not to cover it — it looked page-specific but was a hole in the shared cascade. This file is
+   the navbar's shared home (CLAUDE.md), so the standard lives here once: link it, never copy it. */
+.navbar_component a.navbar_link, .navbar_component a.navbar_dropdown-link, .navbar_component a.navbar_logo-link, .navbar_component a.navbar_button { text-decoration: none; }

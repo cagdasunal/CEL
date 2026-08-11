@@ -1,0 +1,47 @@
+/* ============================================================================
+   HERO LAYOUT — the approved §1 hero proportions, one home for all city pages.
+   (client, 4 Aug, on why-learn-english-pacific-beach: "make it one column",
+   "make it wider".)
+
+   These three rules were authored in pacific-beach.css and applied to that page
+   only, which is exactly the divergence CLAUDE.md warns about — the four San
+   Diego heroes are the same object and were disagreeing about their own
+   proportions. Load this AFTER the _live opt sheet and BEFORE the page sheet
+   (every SD page links it right after shared/hero-clearance.css), so a page can
+   still override a value with a two-class combo — how-long.css does, capping
+   .hero_highlights.is-wrap at 380px because its chips wrap.
+
+   Live base being overridden (identical in all four page .opt sheets):
+     .hero_content       1fr auto grid, 40px gap, align-items:end
+     .hero_content-left  max-width:700px
+     .hero_sub           max-width:560px
+     .hero_highlights    1fr — but repeat(2,1fr) at min-width:1440, 991 and 767
+   ============================================================================ */
+
+/* ONE COLUMN AT EVERY WIDTH. The live object is a single column only between
+   992 and 1439px; its own breakpoints switch to repeat(2,1fr) at 1440, 991 and
+   767, so the chips paired up on every screen the client is looking at.
+   Restated per band rather than once, because a plain rule cannot outrank those
+   media rules — same specificity, and the media block wins by being inside the
+   matching condition. The chips are different lengths, so a 2-up grid also
+   stretched some of them to a track they do not fill. */
+.hero_highlights{grid-template-columns:1fr}
+@media screen and (max-width:991px){.hero_highlights{grid-template-columns:1fr}}
+@media screen and (max-width:767px){.hero_highlights{grid-template-columns:1fr}}
+@media screen and (max-width:479px){.hero_highlights{grid-template-columns:1fr}}
+
+/* The headline column takes more of the row. hero_content is a 1fr auto grid,
+   so the left column only needed its 700px cap lifted — the chips are nowrap
+   and take exactly the width they need, and the 1fr track absorbs the rest.
+   860px is the H1's own comfortable measure at the display face: past that a
+   two-line headline starts to set as three unbalanced lines. max-width is a cap,
+   not a floor, so a narrower container still shrinks the track — nothing
+   overflows on the longer headlines (costs, how-long). */
+.hero_content-left{max-width:860px}
+
+/* The support line's own measure, not just the column's. The live rule caps
+   .hero_sub at 560px, so widening the column alone changed nothing visible —
+   the paragraph kept breaking at the same word. 720px is about 78 characters at
+   this size: wide enough that two sentences set as three even lines, short
+   enough to stay a readable measure over a photograph. */
+.hero_sub{max-width:720px}

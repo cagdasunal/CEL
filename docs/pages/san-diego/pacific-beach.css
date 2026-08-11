@@ -1,0 +1,534 @@
+/* ====================================================================
+   pacific-beach.css — San Diego · Why Learn English in Pacific Beach   (ROUND 2)
+   PAGE-SCOPED SHEET. Loads LAST, after (BUILD-BRIEF §11):
+     _live/englishcollege.webflow.shared.54a3c3338.min.css
+     _live/page-vancouver.opt.min.css        <- this page's role sheet (city/area page)
+     _live/site-custom-code.css
+     _live/swiper-bundle.min.css
+     pages/san-diego/landing.css             <- the SD hub's components, reused
+   Never _live/all-components.css (deprecated stub, zero rules).
+   Never client-first.css or the per-page styles sheets as a render layer.
+
+   Output contract held throughout (BRIEF §10), measured on this sheet rather than assumed:
+     0 descendant selectors · 0 child (>) · 0 sibling (+ ~) · 0 :nth-child/:first-child/
+     :last-child/:not() · 0 [attr] · 0 id-keyed rules · 0 ::before/::after · 0 !important ·
+     0 var(). Every row-position rule is an is-first/is-last/is-N combo.
+   One carried-forward item: landing.css itself uses :last-child and :not() in the components this
+   page reuses. Carried verbatim rather than forked — forking a shipped component to satisfy a lint
+   is how two versions of one class reach the Designer. Flagged for a single pass on both pages.
+
+   NOTE ON COMMENTS: never write a glob path such as pages/<star>/styles.css inside a CSS comment.
+   Round 1 did, the sequence closed the comment early, error recovery swallowed tokens up to and
+   including the next rule block — which was the .compare-table base — and §6 rendered as one
+   stacked column. A glob inside a CSS comment is a live grenade.
+
+   Contents:
+     1. The canonical compare-* component, copied in explicitly (no base rule in this cascade),
+        plus the one new generic combo for the six-column matrix.
+     2. Combos the copy forces.
+     3. The fit_split component.
+     4. Option-review labels.
+     5. Option-only combos.
+   ==================================================================== */
+
+/* ============ 1. THE COMPARISON TABLE ============
+   Copied VERBATIM from _live/page-how-long-to-learn-english.opt.min.css, per BRIEF §11 ("copy the
+   canonical base rules explicitly into pacific-beach.css").
+
+   WHY IT HAS TO BE COPIED: in page-vancouver.opt.min.css these classes are breakpoint fragments
+   with NO base rule — only .compare-table.is-weeks at max-width 767/479 and .compare-cell.is-primary
+   at max-width 479. compare-dot, compare-head, compare-head-row and compare-duration are absent
+   from that sheet entirely. Authoring them without this block ships an unstyled grid. Measured.
+
+   These are the canonical HYPHEN classes. The underscore .compare_* family is an unrelated vertical
+   bar-chart component on /vancouver, and STRUCTURE.md §3 warns that a same-named .compare_cell would
+   clobber it in the Designer. Do not normalise the separator. */
+.compare-table{cursor:grab;background-color:#f9f1df;border:1px solid #e9deca;border-radius:20px;grid-template-columns:minmax(340px,1fr) minmax(340px,1fr);width:100%;margin-top:48px;margin-bottom:28px;display:grid;overflow:auto hidden}
+.compare-head{text-align:left;border-bottom:2px solid #e9deca;padding:22px 32px}
+.compare-head.is-primary{background-color:#f8eddb}
+.compare-head-row{flex-direction:column;align-items:flex-start;gap:6px;display:flex}
+.compare-duration{color:#5d60ee;letter-spacing:.3px;text-transform:uppercase;font-size:22px;font-weight:500;line-height:1.2}
+.compare-cell{color:#5f5950;border-bottom:1px solid #e9deca;align-items:center;padding:15px 32px;font-size:.9375rem;line-height:1.5;display:flex}
+.compare-cell.is-primary{background-color:#f8eddb}
+.compare-dot{aspect-ratio:1;background-color:#e78b10;border-radius:50%;flex-shrink:0;width:7px;height:7px;margin-right:12px;display:inline-block;position:relative;top:-1px}
+.compare-dot.is-indigo{background-color:#5d60ee}
+@media screen and (max-width:767px){.compare-table.is-weeks{grid-template-columns:minmax(250px,1fr) minmax(250px,1fr);overflow:auto}}
+@media screen and (max-width:479px){
+  .compare-table.is-weeks{grid-template-rows:auto auto}
+  .compare-cell.is-primary{padding:5px 15px 5px 16px}
+}
+
+/* ---- THE ONE NEW COMPONENT: .compare-table.is-areas ----
+   §6's matrix is SIX columns (a row label plus five San Diego areas) by EIGHT attribute rows. The
+   canonical base is a TWO-column grid and cannot express it, yet both this brief and the standing
+   San Diego brief require §6 to use these classes.
+   Why no live class fit: there is no multi-column comparison component anywhere in the CEL cascade.
+   is-areas is the smallest possible addition — it changes only the column count and pins the label
+   column, exactly the role is-weeks already plays for the two-column case (is-weeks carries zero
+   desktop declarations; it exists only to hold breakpoint column counts). No base is edited, every
+   class stays a reusable Webflow object, and the combo is generic: any city comparing its
+   neighbourhoods needs it.
+   The sticky first column implements the copy's own mobile instruction — "horizontally scrollable
+   cards, row-label column always visible". The horizontal scroll is free: the base is already
+   overflow:auto hidden; cursor:grab. */
+.compare-table.is-areas{grid-template-columns:minmax(190px,240px) repeat(5,minmax(210px,1fr));margin-top:32px}
+/* THE SITE'S OWN TABLE DRESSING, applied to the matrix (client, 4 Aug: "apply our own column table and
+   heading styling in here"). Every value is lifted from .feetable on costs.html / how-long, so the three
+   pages state a table the same way and one edit moves all of them:
+     column-title band  #f6eeda fill, ONE 10%-brown hairline below, 22px vertical padding
+     column titles      .75rem / 600 / 1.5px tracking / uppercase / #5f5950 — was indigo 15px, which
+                        made the area names read as links rather than as titles
+     data cells         1rem / 1.5, 20px 24px, top-aligned, 10%-brown hairline between rows
+   The per-cell dots are DELETED from the markup with it: 40 discs that repeated what the cell already
+   said in words, and the only thing they encoded — which column is the reader's — is carried by that
+   column's own #f8eddb fill. (.compare-dot keeps its rules in the verbatim block above: that block is
+   the canonical component, shared with the two-column tables on the other pages, and forking it to
+   satisfy one page is what puts two versions of a class in the Designer.)
+   The label column takes the SAME #f6eeda as the band, so the sticky first column reads as the row-title
+   column of a table rather than as a tinted panel. */
+.compare-head.is-area{padding:22px 24px;background-color:#f6eeda;border-bottom:1px solid #5f59501a}
+.compare-head.is-label{padding:22px 24px;background-color:#f6eeda;border-bottom:1px solid #5f59501a}
+/* The reader's own column stays marked in the head row too: is-primary and is-area are both two-class
+   combos, so the later one would otherwise win and take the tint off the Pacific Beach header. */
+.compare-head.is-primary.is-area{background-color:#f8eddb}
+.compare-cell.is-label,.compare-head.is-label{position:sticky;left:0;z-index:2;color:#5f5950;font-weight:600;box-shadow:1px 0 0 #e9deca}
+.compare-cell.is-label{background-color:#f9f1df;font-size:1rem;line-height:1.5;padding:20px 24px;align-items:flex-start;border-bottom:1px solid rgba(95,89,80,.1)}
+.compare-cell.is-area{padding:20px 24px;align-items:flex-start;font-size:1rem;line-height:1.5;border-bottom:1px solid rgba(95,89,80,.1)}
+/* The bottom row has no hairline: the panel's own border is 1px below it, and the two together read as a
+   double rule. A combo on the row's cells, because :last-child is banned by this sheet's contract. */
+.compare-cell.is-lastrow{border-bottom:0}
+/* font-family:inherit — the area name is an <h4>, so it arrives in Cameraobscura, the DISPLAY face.
+   Every column title on the other two pages is a <th> and therefore in the body face; a display-face
+   column title reads as a heading inside the table rather than as its column key. Inherit takes the
+   table's own family, so it cannot drift if the token changes. */
+.compare-area-name{font-family:inherit;color:#5f5950;letter-spacing:1.5px;text-transform:uppercase;margin:0;font-size:.75rem;font-weight:600;line-height:1.35}
+/* RESPONSIVE ROUND item 2 — the two is-areas TRACK rules (@991 = 1100px of min-content, @479 = 976px)
+   are DELETED, not reordered. §6's markup carries is-areas AND is-duo, so both combos are (0,2,0) and
+   the six-column tracks only ever lost to is-duo's three on SOURCE ORDER, which Webflow does not
+   preserve. Measured before deletion: 991 -> 210px 319 319, 479 -> 126 150 150, i.e. is-duo already
+   won at both. Measured after: identical. The label inset step stays — it belongs to the sticky
+   column, not to the six-column shape. */
+@media screen and (max-width:991px){
+  .compare-cell.is-label,.compare-head.is-label{padding-left:18px;padding-right:18px}
+}
+
+/* ---- THE DUO TABLE AND ITS SWITCH ----
+   (client, 4 Aug: "this is a big table ... more than half of the table is invisible. Maybe it is better to
+   have only 3 column in total and they can select and switch the columns.")
+   is-duo takes the six-column matrix down to THREE: the attribute, Pacific Beach, and one alternative the
+   reader chooses from the chip row above. Nothing is removed from the page — all five areas stay in the
+   markup and the four unselected columns carry is-off, which is the only thing this block hides. The
+   horizontal scroll and the grab cursor go with the extra columns; both come back below 767, where three
+   columns genuinely do not fit and a short scroll beats a squeezed cell.
+   is-off is a CLASS, not an [attr] selector: this sheet's output contract bans attribute selectors, so the
+   page script reads data-area and writes classes.
+   The chips are the page's own pill vocabulary — .stoc_cta-btn's radius on the ledger band's #f6eeda fill —
+   with indigo for the selected one, the ink this page already uses for anything interactive. */
+/* COLOURING AND CORNERS (client, 4 Aug: "check the coloring and border radius of the whole table. not good").
+   Two defects, both real:
+   1. overflow:visible — set here to drop the six-column scroll — stopped the 20px radius clipping its
+      children, so every cell background painted square over the panel's rounded corners. is-duo needs no
+      scroll at desktop, so the value is hidden, not visible; the narrow bands below restore auto for the
+      scroll and still clip.
+   2. THREE creams were stacked in one object: #f9f1df panel, #f6eeda band AND #f6eeda again on the sticky
+      label column, which made the first column read as a tinted block bolted to the table. The label column
+      now takes the panel's OWN #f9f1df — still opaque, so it stays readable when the table scrolls under it
+      at narrow widths — leaving exactly two surfaces plus the reader's own #f8eddb column. */
+/* INVERTED with the rest of the band: the narrow three-column scroller is base (three tracks pinned
+   at their minimums are 470px, which does not fit the 311-598px content column below 1280), and the
+   unscrolled desktop shape opts in at large. */
+.compare-table.is-duo{grid-template-columns:minmax(126px,150px) minmax(150px,1fr) minmax(150px,1fr);overflow:auto hidden;cursor:grab;margin-top:20px}
+@media screen and (min-width:1280px){.compare-table.is-duo{grid-template-columns:minmax(190px,260px) minmax(0,1fr) minmax(0,1fr);overflow:hidden;cursor:auto}}
+.compare-cell.is-off,.compare-head.is-off{display:none}
+/* The comparison column's header IS the control (client, 4 Aug: "create a dropdown selectbox in here so
+   they can select instead of the buttons above"). The chip row that used to sit above the table is gone —
+   these rules replace all eight of its own. A native <select>, so nothing here fights the UA's caret,
+   keyboard or mobile picker; it is dressed in the ledger's vocabulary only: the panel's cream fill, the
+   cream-medium hairline, the body face, and the indigo focus ring the page uses on every other control. */
+.compare-head.is-alt-head{padding:22px 24px;background-color:#f6eeda;border-bottom:1px solid #5f59501a}
+/* IT IS A COLUMN TITLE THAT HAPPENS TO BE A CONTROL (client, 4 Aug: "it should have the same styling as
+   with 'pacific beach' near the column so design consistency is the key. make it look super modern").
+   So the select carries .compare-area-name's exact rung — .75rem / 600 / 1.5px / uppercase / #5f5950 in the
+   body face — and drops the input chrome entirely: no fill, no box, just the title, a hairline under it and
+   the caret. The affordance is the caret plus that hairline going indigo on hover and focus; nothing else
+   moves, so the header row reads as two column titles of equal weight, one of which can be changed. */
+.compare-select-wrap{position:relative;display:inline-flex;align-items:center;width:100%;max-width:260px}
+.compare-select{appearance:none;-webkit-appearance:none;font-family:inherit;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;line-height:1.35;color:#5f5950;background-color:#0000;border:0;border-bottom:1px solid rgba(95,89,80,.3);border-radius:0;padding:4px 24px 6px 0;width:100%;cursor:pointer;transition:color .15s ease,border-color .15s ease}
+.compare-select:hover{color:#37332c;border-bottom-color:#5d60ee}
+/* The caret is a real element, not a ::after (banned by this sheet's contract) and not a background image
+   (the library's only chevron points right and a background cannot be rotated). Same rotated 1.5px corner
+   costs.css draws on its disclosure toggle. pointer-events:none so the whole control stays clickable. */
+.compare-select-caret{position:absolute;right:6px;width:6px;height:6px;border-right:1.5px solid #8d877b;border-bottom:1.5px solid #8d877b;transform:translateY(-3px) rotate(45deg);pointer-events:none}
+.compare-select:focus-visible{outline:none;border-bottom-color:#5d60ee;box-shadow:0 3px 0 -1px rgba(93,96,238,.35)}
+/* 768-991 is the one tier with no rail and no phone: three columns fit unscrolled, so the overflow
+   and the grab cursor are restated OFF here — they are the base value now, not an inherited one. */
+@media screen and (max-width:991px){.compare-table.is-duo{grid-template-columns:minmax(150px,210px) minmax(0,1fr) minmax(0,1fr);overflow:hidden;cursor:auto}}
+@media screen and (max-width:767px){
+  .compare-table.is-duo{grid-template-columns:minmax(126px,150px) minmax(150px,1fr) minmax(150px,1fr);overflow:auto hidden;cursor:grab}
+  .compare-head.is-alt-head{padding:22px 18px}
+  .compare-select{padding-right:20px}
+}
+
+/* ============ 2. COMBOS THE COPY FORCES ============ */
+
+/* .hero_wrapper.is-subpage — MOVED to shared/hero-clearance.css, which every page links.
+   It used to be declared here and in the other SD page sheet only, which is exactly why
+   san-diego.html and costs.html did not clear the fixed navbar and these two pages did. A
+   system-level fix belongs in one shared sheet, not copied per page. ── */
+
+/* ============ 3. fit_split — §7's two-column fit block ============
+   The second new component, and the last. §7's copy is two lists that must be weighed against each
+   other, which needs them side by side under two headings of unequal length.
+   Why no live class fit: the closest live components are chooser_finder (a two-column SELECTOR whose
+   left column is interactive rows and whose right column is a revealed stage — wrong semantics for
+   two static lists) and quickfacts_panel (single-axis key/value rows, no second column). Neither
+   expresses "two independent lists under one shared heading row".
+   The structure is borrowed from chooser_finder rather than invented: two columns AND two rows, both
+   headings in row 1, so the lists start at the same height however many lines each heading takes. The
+   first draft nested each heading in its own column and the right list started ~15px low, because
+   "Consider another environment if you prefer" wraps to three lines against the left heading's two.
+   fit_list-title is reused verbatim for the heading bands. Generic names. */
+/* BORDER COLOURS (client, 4 Aug: "you missed border colors") — the panel was still on the generic
+   rgba(95,89,80,.15)/.12 pair it was drafted with, while every other panel and table on the page now draws
+   #e9deca outside, #5f59501a under a column-title band and rgba(95,89,80,.1) between rows. Same three
+   values here, so the fit panel and the ledgers are visibly one family. */
+/* INVERTED in the responsive round (RESPONSIVE-BRIEF §1, worklist §2.1): the STACKED shape is now
+   base and the two-column shape is authored at large (min-width:1280px). It used to be the other way
+   round, with the stacked shape restated inside the 992-1119 band that the deploy pipeline drops
+   wholesale. Base-down also fixes 1120-1279, which had no rule at all: the rail is present from 992
+   up, so the content column is 311px at 992 and 598px at 1279 — narrower than any tablet state, and
+   never wide enough for two columns of prose. */
+.fit_split{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto auto;border:1px solid #e9deca;border-radius:20px;background:#f9f1df;overflow:hidden;margin-top:32px}
+/* The two heads are COLUMN TITLES, so they take the page's column-title rung instead of the display face
+   (client, 4 Aug: "change the font family"). Same values as §6's .compare-area-name and the ledgers'
+   .quickfacts_key.is-head — .75rem / 600 / 1.5px / uppercase in the body face — so every column title on
+   the page is one thing. font-family:inherit, not a named family: the h4 arrives in Cameraobscura from the
+   h1-h6 rule, and inheriting from .fit_split takes the body face without naming a token. */
+.fit_list-title.is-split{margin:0;border-radius:0;align-content:center;font-family:inherit;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5f5950;line-height:1.5}
+.fit_list-title.is-left{grid-column:1;grid-row:1;border-right:0}
+.fit_list-title.is-right{grid-column:1;grid-row:3;border-top:1px solid rgba(95,89,80,.1)}
+.fit_split-col{padding:24px 28px 30px}
+.fit_split-col.is-left{grid-column:1;grid-row:2;border-right:0}
+.fit_split-col.is-right{grid-column:1;grid-row:4}
+.fit_row{display:grid;grid-template-columns:18px 1fr;column-gap:14px;align-items:baseline;padding:9px 0}
+.fit_dot{width:7px;height:7px;border-radius:50%;background:#e78b10;margin-top:8px}
+.fit_dot.is-indigo{background:#5d60ee}
+/* The whole <=991 fit block is GONE: every value in it is the base now. The desktop shape instead
+   opts IN at large, where the content column finally clears 599px. */
+@media screen and (min-width:1280px){
+  .fit_split{grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr}
+  .fit_list-title.is-left{grid-row:1;border-right:1px solid rgba(95,89,80,.1)}
+  .fit_list-title.is-right{grid-column:2;grid-row:1;border-top:0}
+  .fit_split-col{padding:28px 40px 36px}
+  .fit_split-col.is-left{grid-row:2;border-right:1px solid rgba(95,89,80,.1)}
+  .fit_split-col.is-right{grid-column:2;grid-row:2}
+}
+@media screen and (max-width:479px){.fit_split-col{padding:20px 20px 24px}}
+
+
+/* ============ 6. THE 992-1119px RAIL BAND - REMOVED ============
+   Was an @media at min-width 992 / max-width 1119, 15 rules, 28% of this sheet's media weight, and an
+   ILLEGAL pair of widths: the deploy pipeline skips such a block wholesale, with a [WARN] line, a zero
+   exit code and no drop report. Everything it carried is now the BASE shape of each component, with
+   the desktop shape opting in at large (min-width:1280px) - see .fit_split, .quickfacts_row,
+   .compare-table.is-duo and .bento_grid above. That also covers 1120-1279, which the band never
+   reached, and it retires the <=991 restatements the band had to duplicate.
+   ============ */
+
+/* ============================================================
+   §11 FINAL CTA — the SAME style block as pages/san-diego/costs.css B5/B15/B5b, copied verbatim
+   (client, 4 Aug: "apply this CTA styling for all pages"). This page's closing CTA was an
+   .editorial_split with .hero_actions buttons and two .cta_trust-line captions; those two rules and
+   .hero_cta-ghost.is-onlight are deleted above, because the markup that used them is gone.
+   At deploy this binds to the one shared object — do not fork it.
+   ============================================================ */
+.inline-cta-copy{min-width:0;display:flex;flex-direction:column;gap:12px}
+/* B15 · CTA trust badge — the review line as a pill rather than a loose caption: the real
+   Google mark (the same asset the reviews component uses) plus the rating, on a translucent
+   cream fill so it reads as a credential on the indigo panel. Identical on both pages. */
+/* Trust pill (client, 4 Aug). It sits ON the indigo panel, so it now reads as a DEEPER well in
+   the same indigo rather than a cream chip pasted over it: a darkened #4245C4 (the panel's own
+   #5d60ee taken down two steps, same hue), the panel's own cream type, and a hairline in cream at
+   low alpha instead of a brown one. The Google mark keeps a light disc behind it — the logo is
+   four brand colours and needs a light ground to stay legible; the disc is the only light shape
+   left, which is what makes it read as the badge's anchor. */
+.inline-cta_trust{grid-column:1 / -1;display:inline-flex;align-items:center;justify-content:center;gap:12px;align-self:center;justify-self:center;background:#4245C4;border:1px solid rgba(249,240,223,.22);border-radius:100px;padding:5px 20px 5px 9px;margin:0 auto 14px}
+.inline-cta_trust-disc{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--cream-extra-light,#f9f0df)}
+.inline-cta_trust-logo{width:16px;height:16px;flex:0 0 auto;display:block}
+/* The score is the point of the badge, so it is the only element given size — but in the TEXT
+   family, not the display face: Cameraobscura is a display face for headings and it renders
+   figures as a stylised set, which is wrong for a rating. Tabular so 4.8 and any translated
+   decimal separator hold the same width.
+   No "out of 5": the scale is implicit in a Google rating, and it is a phrase that has to be
+   re-translated for all nine locales to say nothing. */
+/* Score at the SAME size as the review count beside it (client, 4 Aug, applied across every
+   san-diego CTA): 1.125rem made "4.8" a headline inside a pill whose other text is a .8125rem
+   label, so the two halves of one credential read at different volumes. */
+.inline-cta_trust-score{font-size:.8125rem;font-weight:600;letter-spacing:.6px;font-variant-numeric:tabular-nums;color:var(--cream-soft,#f9f1df);line-height:1.2;margin:0}
+/* Stars — 4.8/5 = 96% of the row. The empty row carries the SAME artwork at low opacity so the
+   unearned fifth reads as a ghost of a star rather than a different shape; the filled row sits on
+   top, clipped. Both rows use one 3px gap so the clip lands inside the fifth glyph, not in a gap. */
+.cta_stars{position:relative;display:inline-block;flex:0 0 auto;line-height:0;--stars-fill:96%}
+.cta_stars-row{display:flex;align-items:center;gap:3px;line-height:0}
+.cta_stars-row img{display:block;width:13px;height:13px}
+.cta_stars-row.is-empty{opacity:.3}
+.cta_stars-row.is-full{position:absolute;inset:0;width:var(--stars-fill);overflow:hidden}
+.inline-cta_trust-rule{width:1px;height:16px;background:rgba(249,240,223,.3);flex:0 0 auto}
+.inline-cta-trust{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:rgba(249,240,223,.82);line-height:1.4;margin:0}
+@media (max-width:479px){.inline-cta-trust{font-size:.75rem;letter-spacing:.4px}}
+
+/* B5b · WhatsApp CTA (client, 4 Aug). REPLACES is-secondary on the WhatsApp link in both
+   places it appears (§11 panel and the ≤991px sticky bar) — one combo, so the two can never
+   drift apart. It is a CHANNEL button, not a second "submit": WhatsApp's own green carries the
+   recognition, which no cream outline can. The label is the panel's cream, like the primary
+   beside it (client, 4 Aug) — so the green is set at #12A150: bright enough to read as WhatsApp,
+   deep enough that the cream label holds at ~3.3:1. HANDOFF: that is below the 4.5:1 AA figure
+   for 14px text. Cream type is only fully compliant from about #0E8040 down, and brand-bright
+   #22C55E needs a dark label to comply. Both were shown and declined; the cream-on-#12A150
+   pairing is the accepted one, and it is on a 50px pill with 600-weight uppercase, not body copy. Metrics are untouched:
+   same 12px/30px padding, 1.5px edge, pill radius, 50px height as is-primary beside it.
+   The mark is the official WhatsApp glyph served from simpleicons (real brand artwork, never a
+   hand-drawn path), tinted cream to match the label. */
+.inline-cta-btn.is-whatsapp{display:flex;align-items:center;gap:10px;padding:12px 30px;font-size:14px;letter-spacing:1px;border-radius:1600px;background-color:#12A150;border:1.5px solid #12A150;color:var(--cream-extra-light,#faf3e8);transition:background-color .15s ease,border-color .15s ease}
+.inline-cta-btn.is-whatsapp:hover{background-color:#0F8F46;border-color:#0F8F46;color:var(--cream-extra-light,#faf3e8)}
+.inline-cta-btn.is-whatsapp:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(250,243,232,.55)}
+.inline-cta-btn-icon{flex:0 0 auto;width:18px;height:18px;display:block}
+
+/* .text-link.is-oncta — MEASURED DEFECT, not a preference: .text-link is indigo #5d60ee and the CTA
+   panel is indigo #5d60ee, so this link rendered invisible against its own background — the same
+   ink-on-surface trap as the cream-baked icon, and the reason CLAUDE.md now says to check an
+   element's colour against the surface it will sit on. Cream type with a translucent cream underline,
+   which is the only pairing that reads on that panel. A COMBO, not a descendant chain: the link
+   itself declares where it is, so it cannot be defeated by being moved. */
+.text-link.is-oncta{color:var(--cream-soft,#f9f1df);text-decoration-color:rgba(249,241,223,.5)}
+.text-link.is-oncta:hover{color:#fff;text-decoration-color:#fff}
+
+/* HEADING BAND: 22px TOP AND BOTTOM, EVERY TABLE, EVERY PAGE (client, 4 Aug: "the heading padding top and
+   bottom should be the same for all tables. go and audit this page, other pages and fix"). Audited across
+   the four san-diego sheets: the bands were on five different pairs — 22/22 (.feetable thead th), 20/20
+   (this page's ledger head), 18/18 at ≤991, 26/24 (.fit_list-title, .chooser_title) and var(--panel-y),
+   26/26 desktop and 20/20 narrow (.price-table_head, .incl_col-head, .brackets_head, .brackets_split,
+   .budget-fees-panel_header), plus .ladder_legend at 18/22. All are 22/22 now, at every width. The
+   HORIZONTAL inset still follows each panel's own column — that is what keeps a band's ink over its own
+   data — and only the vertical pair is standardised. */
+
+/* ============ THE LEDGER AS A TABLE — column titles and iconed keys ============
+   The page's three ledgers are one object, .quickfacts_panel (landing.css), given the two things the
+   client asked for on 4 Aug: "apply column, heading, col title, table look and feel in this page as you
+   did with other pages", and "use icons for the left column. put enough gap with the icon and the text".
+   Combos only — no new component, and the base panel is untouched, so §2, §5 and §8 stay one style
+   object in the Designer.
+   is-tabular  the panel drops its top padding and clips, so the title band can bleed to the panel's
+               own edges instead of floating inside its 52px inset — the band IS the table's top edge on
+               costs.html, and a 20px cream strip above it is what makes it read as a stray row.
+   is-head     the title row: the same #f6eeda fill, the same single 10%-brown hairline and the same
+               .75rem/600/1.5px uppercase ink as .feetable thead th.
+   is-iconed   a wider key column (250px, not 216) because the key now carries a 20px icon and an 18px
+               gutter in front of it; without the extra width "SUPERIOR SHARED APARTMENTS, PACIFIC BEACH"
+               wrapped to four lines.
+   THE ICON GUTTER IS 18px, not the 12-14px the chips use: at 12px the mark read as a bullet glued to
+   the label. filter:brightness(0) opacity(.55) is the .overview_col-icon treatment from costs.css and it
+   is load-bearing, not cosmetic — several icons in this set are baked cream for dark photo backgrounds
+   and an <imgraw>-rendered SVG cannot be recoloured by CSS (CLAUDE.md). brightness(0) forces ANY source
+   to black first, so the ink is the same on every row whatever the file ships. */
+.quickfacts_panel.is-tabular{padding-top:0;overflow:hidden}
+/* display:none is the BASE now (the rows stack from 1279 down, and a stacked row states its own key).
+   The title band opts back in at large and again at <=991, the two tiers where the rows are 1:1. */
+.quickfacts_row.is-head{display:none;background-color:#f6eeda;margin:0 -52px;padding:22px 52px;border-bottom:1px solid #5f59501a}
+.quickfacts_key.is-head{color:#5f5950}
+/* is-wide — a band with ONE title spans both tracks (client, 4 Aug: "full width"). §4's and §9's bands name
+   the whole table rather than a column each, so without this the title wrapped inside the 50% track it did
+   not need. The two-title bands (§5, §8) are untouched: their titles must stay over their own columns. */
+.quickfacts_key.is-wide{grid-column:1 / -1}
+/* …and a SINGLE-title band is content, not a pair of column names, so it stays visible at every
+   width — §4's "What you get in Pacific Beach" and §9's calendar sentence exist only here. */
+.quickfacts_row.is-head.is-wide{display:grid}
+/* is-foot / is-footed — a panel that CLOSES on a strip, the way .brackets_foot and .ladder_legend close a panel
+   on how-long.css: a hairline on top, the full width — but on #f6eeda (client, 4 Aug), the SAME band cream as
+   the title row above it rather than the deeper #f3e7d3 those pages recess to, so the panel opens and closes
+   on one tone and the
+   full width. §9's link lives there, so the calendar opens on a title band and closes on a band of equal
+   weight instead of leaving a link loose in a data row. The panel drops its bottom padding so the strip meets
+   the edge, and the row bleeds by exactly the panel's own inset — the same trick as the head band. */
+.quickfacts_panel.is-footed{padding-bottom:0}
+.quickfacts_row.is-foot{grid-template-columns:minmax(0,1fr);background-color:#f6eeda;margin:0 -52px;padding:20px 52px;border-top:1px solid #e9deca;border-bottom:0}
+.quickfacts_val.is-wide{grid-column:1 / -1}
+@media screen and (max-width:991px){.quickfacts_row.is-foot{margin:0 -32px;padding:18px 32px}}
+@media screen and (max-width:767px){.quickfacts_row.is-foot{margin:0 -24px;padding:16px 24px}}
+/* 1:1 TRACKS (client, 4 Aug: "1:1 grid layout for the table. 50% column width"). landing.css pins the key
+   column at 216px, which made it a caption beside a wide value; halves make it a table, and the column
+   titles then sit exactly over the data they name. minmax(0,1fr) rather than 1fr so a long unbroken key
+   cannot push its track past 50%. One rule for every row kind — plain, iconed and head — so the ledgers
+   cannot drift apart. */
+.quickfacts_row{grid-template-columns:minmax(0,1fr);row-gap:6px}
+.quickfacts_row.is-iconed{grid-template-columns:minmax(0,1fr);row-gap:8px}
+/* The 1:1 shape is restated at BOTH large and <=991 on purpose. It is not a redundant override: the
+   ledger is stacked between them (992-1279, where the 272px rail leaves the column 311-598px), so the
+   two tiers that get columns are not contiguous and neither can inherit from the other. */
+@media screen and (min-width:1280px){
+  .quickfacts_row,.quickfacts_row.is-iconed{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:0}
+  .quickfacts_row.is-head{display:grid}
+}
+.quickfacts_keycell{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:18px;align-items:center}
+/* The value cell's own icon column — the mirror of keycell, for §5, where the mark belongs to the VALUE
+   (the mode of travel) and not to the key. 14px gutter, not 18: the mark sits inside a cell here rather
+   than in front of a column, so it reads as part of the value. */
+.quickfacts_valcell{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:14px;align-items:center}
+/* is-light — regular weight for a value that is a duration rather than a headline (client, 4 Aug). */
+.quickfacts_val.is-light{font-weight:400}
+.quickfacts_icon{width:20px;height:20px;display:block;filter:brightness(0) opacity(.55);opacity:1}
+/* is-brand — the one icon that keeps its own colour: §2's Google mark. Brand artwork flattened to grey
+   is a misrepresentation, and it needs no help to hold on cream (sampled: four brand colours, no cream). */
+.quickfacts_icon.is-brand{filter:none}
+/* The rating row's value column: score, stars and count on one baseline. The count sits at the same
+   .8125rem uppercase rung as .inline-cta-trust in the §11 badge, so the two credentials read alike. */
+.quickfacts_rating{display:flex;align-items:center;column-gap:14px;row-gap:8px;flex-wrap:wrap}
+.quickfacts_val.is-rating{font-variant-numeric:tabular-nums;margin:0}
+/* The review count sits at the same ink as the score it belongs to (client, 5 Aug: "the color needs to be
+   same with the text: 4.8") — .quickfacts_val's brown-deep, not the muted key grey. It keeps its smaller
+   uppercase rung, so the two still read as value and footnote. */
+.quickfacts_note{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:var(--brown-deep,#37332c);line-height:1.4;margin:0}
+/* is-prose — the value column when it holds a SENTENCE rather than a value (§4's five reasons, §5's
+   on-foot list). The base .quickfacts_val is 500-weight brown-deep, right for "5-Minute Walk to the Beach"
+   and too loud for two lines of prose: this is the body rung, capped at 62ch so the measure matches the
+   paragraphs around it. */
+.quickfacts_val.is-prose{font-weight:400;color:#5f5950;line-height:1.7;max-width:62ch}
+/* is-stack — the row's two cells become two LINES: the key (with its icon) then the sentence under it, at
+   the full measure (client, 4 Aug). Used by §4, whose values are prose; the data ledgers stay in halves.
+   is-accent — indigo keys, the page's accent for a named thing. Both are combos, so §4's ledger is still
+   the same object as §2's, §5's and §8's. */
+.quickfacts_row.is-stack{grid-template-columns:minmax(0,1fr);row-gap:10px}
+/* is-single is retired: §9's calendar went from one column to two (client, 4 Aug), and two cells per row is
+   what the base 1:1 grid already does — so the pairs need no rule at all, and they inherit the ≤767 and
+   992-1119 stacking with every other ledger. */
+.quickfacts_key.is-accent{color:#5d60ee}
+@media screen and (max-width:991px){
+  .quickfacts_row,.quickfacts_row.is-iconed{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:0}
+  .quickfacts_row.is-head{display:grid;margin:0 -32px;padding:22px 32px}
+  .quickfacts_keycell{column-gap:14px}
+}
+@media screen and (max-width:767px){
+  /* Below 767 the value needs the full measure, so every row stacks and the column titles retire —
+     a stacked row states its own key. */
+  .quickfacts_row{grid-template-columns:minmax(0,1fr);row-gap:6px}
+  .quickfacts_row.is-iconed{grid-template-columns:minmax(0,1fr);row-gap:8px}
+  /* fragile primitive #14: the bleed has to match the panel's own padding at this tier too
+     (landing.css takes .quickfacts_panel to 10px 24px), or the is-wide band overhangs by 8px a side. */
+  .quickfacts_row.is-head{display:none;margin:0 -24px;padding:22px 24px}
+  /* …EXCEPT a single-title band, which is CONTENT, not a pair of column names. Two names are safely dropped
+     once the rows stack — each stacked row states its own key — but §4's "What you get in Pacific Beach" and
+     §9's "Depending on the activity calendar, a week may include" exist ONLY here, and §9's is the copy doc's
+     own sentence. Hiding them deleted copy at two breakpoints. is-wide marks exactly those bands. */
+  .quickfacts_row.is-head.is-wide{display:grid}
+  .quickfacts_panel.is-tabular{padding-top:10px}
+}
+
+/* ============ §9's BENTO ============
+   One tile skin, one grid, two spans (client, 4 Aug: "a better bento style design ... more compact").
+   Values are the page's panel values, not new ones — #f9f1df on a #e9deca hairline at 20px radius — so a
+   bento tile, a ledger panel and the comparison table are visibly the same object family. The grid is THREE
+   columns with is-wide spanning two: a 2-column grid gives four equal boxes, which is a card grid, not a
+   bento. The photograph crops (4/3 in a single track, 16/9 across two) are what keep the section short; the
+   hover scale is on the image itself, since this sheet's contract bans descendant selectors.
+   Why new classes: the live photo-card family has no surface of its own and act_pano-card is a fixed 520px
+   two-pane card — neither expresses a spanning tile, and both were what made this section read as three
+   different designs. Generic names; any city page's student-life section can use them. */
+/* One column is BASE. The three-column bento needs 1280 to work: measured at 992 it gave three tracks
+   of 95.7px inside the 311px content column — and the 992-1119 band that was supposed to prevent that
+   was DEAD, because its .bento_grid rule sat earlier in this file than the base rule it had to beat at
+   equal specificity (RESPONSIVE-BRIEF §2.7, found by measuring rather than by reading). */
+.bento_grid{display:grid;grid-template-columns:minmax(0,1fr);grid-column-gap:12px;grid-row-gap:12px;margin-top:32px}
+.bento_tile{display:flex;flex-direction:column;background-color:#f9f1df;border:1px solid #e9deca;border-radius:20px;overflow:hidden}
+.bento_tile.is-wide{grid-column:span 1}
+.bento_body{display:flex;flex-direction:column;gap:14px;padding:30px 32px 32px}
+.bento_text{margin:0;font-size:1rem;line-height:1.7;color:#5f5950;max-width:62ch;text-wrap:pretty}
+/* The photograph fills its tile (client, 4 Aug): no label strip under it, so the tile is the crop. flex:1 so
+   a photo tile still matches the height of a text tile beside it when the grid row is set by the text. */
+.bento_photo{position:relative;flex:1;aspect-ratio:4/3;overflow:hidden}
+/* The wide crop is capped as well as proportioned: across two tracks at desktop 16/9 resolves to ~264px, but
+   at ≤991 the same two tracks are the full column and it grew to 445px — taller than the tile it was meant to
+   keep compact. object-fit:cover means the cap crops rather than distorts. */
+.bento_photo.is-wide{aspect-ratio:4/3;max-height:300px}
+.bento_img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.16,1,.3,1)}
+.bento_img:hover{transform:scale(1.04)}
+@media screen and (min-width:1280px){
+  .bento_grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .bento_tile.is-wide{grid-column:span 2}
+  .bento_photo.is-wide{aspect-ratio:16/9}
+}
+/* 768-991: no rail, so the column is 658-852px and two tracks fit — the spanning tile takes both,
+   which is the shape this tier has always had. Restated for the same reason as quickfacts_row: the
+   tier above it (992-1279) is single-column, so there is nothing to inherit. */
+@media screen and (max-width:991px){
+  .bento_grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bento_tile.is-wide{grid-column:span 2}
+  .bento_photo.is-wide{aspect-ratio:16/9}
+  .bento_body{padding:26px 26px 28px}
+}
+@media screen and (max-width:767px){
+  .bento_grid{grid-template-columns:minmax(0,1fr)}
+  .bento_tile.is-wide{grid-column:span 1}
+  .bento_photo.is-wide{aspect-ratio:4/3}
+  .bento_body{padding:22px 22px 24px}
+}
+
+/* ============ THE ON-THIS-PAGE RAIL — panel, hover and current ============
+   (client, 4 Aug: "bg color, hover states, current states are missing".) The rail was authored on an
+   is-bare combo that stripped the live panel — background, border, radius and padding all off — and with
+   no panel behind them the hover and current states had nothing to read against. is-bare is deleted, so
+   the live .stoc_component panel is back (#f6eeda, cream-medium hairline, 20px radius, 28/24, sticky).
+   The state rules that were missing are landing.css's, which this page already loads; what was missing
+   here was the SURFACE. Two page-level additions, both combos:
+   The states themselves are landing.css's, which this page already loads — indigo label and amber dot for
+   the current item, brown-deep on hover — and they are COLOUR ONLY (client, 4 Aug: "no bg color in the
+   items"). A cream wash behind the row was tried and removed: on a #f6eeda panel it read as a second,
+   competing surface, and the rail's own vocabulary is the dot. Nothing is declared here for the states;
+   the panel is what was missing. */
+
+/* HERO PROPORTIONS — MOVED to shared/hero-layout.css, which all four San Diego pages link (client,
+   4 Aug: "make it one column", "make it wider", then: apply it to the other pages). One-column chips at
+   every width, .hero_content-left 860px, .hero_sub 720px — the same three rules, one home, with the full
+   reasoning kept in that file. Declared here they applied to this page ONLY, which is why the four SD
+   heroes disagreed about their own proportions. Nothing about this page's hero changed. */
+
+/* ================ VERTICAL RHYTHM — ONE SCALE FOR THE WHOLE PAGE ================
+   (client, 4 Aug: "put enough standard whitespace between the elements in the page for all areas and
+   in other pages too. Audit, fix, put a standard.")
+   MEASURED before this, every section-level child of every section. There was no scale: a section's
+   MAIN OBJECT sat 24px below its intro in some sections (.overview_layout, .calc_details,
+   .brackets_panel), 32px in others (.incl_ledger, .budget-fees-panel), 40px in §6
+   (.price-table_wrap) and 48px in the rest (.accom_component, .faq-list, .nextread_grid) — four
+   answers to one question, and the same object disagreed with itself from section to section.
+   THE SCALE, and nothing else is used at section level:
+     32px  intro -> main object, main object -> following prose, and every .callout
+     48px  a full-bleed MEDIA or SLIDER band, and the first object after one — a band that runs the
+           full column width needs more air than a text block does, or it reads as glued to it
+   Declared here in one place so no object carries its own idea of the rhythm. The same block, with the
+   same two numbers, is in how-long.css, landing.css and pacific-beach.css. ================ */
+.quickfacts_panel,.faq-list{margin-top:32px}
+.callout{margin-top:32px;margin-bottom:32px}
+/* No 48px MEDIA step any more: the page's one remaining photograph is §9's, which is a card and takes the
+   32px step like every other object. */
+
+/* The CTA fills its column (client, 4 Aug: "make it full width" — applied to every page for
+   consistency). MEASURED on how-long: the section sat 832px inside an 877px .page_content, held off both
+   edges by a 22.37px horizontal margin from the live .section_inline-cta rule — a centring margin written
+   for a full-bleed page, not for a body column that is already inset. page_content is a flex column, so
+   the section also has to opt into stretching. */
+.section_inline-cta{margin-left:0;margin-right:0;align-self:stretch;width:100%;position:relative}
+/* THE BADGE ON THE PANEL'S EDGE (client, 4 Aug: "put it to the top of the section with 50% - margin-top ...
+   use position absolute if needed"). It leaves the flex flow and is centred on the top edge itself:
+   translate(-50%,-50%) is that -50% margin-top, but taken from the badge's own height, so it stays centred
+   on the edge whatever the pill's height ends up being. The panel's top padding grows to 72px to keep the
+   heading clear of it — the badge no longer occupies a row in the flow, so without that the heading would
+   ride up under the pill. margin:0 replaces the base rule's own auto centring, which no longer applies. */
+.inline-cta_trust{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;z-index:2}
+/* The one fragile primitive that was unhandled on all four pages. It is inline-flex with no wrap and
+   no cap, absolutely positioned and centred on the panel edge, and it measures 301px in English —
+   which fits at every width today with 65-360px of slack. The site runs Weglot across nine locales
+   ("195 reviews" -> "195 Bewertungen"), and without a cap it would clip against the section rather
+   than wrap. Capped and allowed to wrap from small down; it stays centred on the edge because the
+   -50% translate is taken from its own height, whatever that ends up being. */
+@media screen and (max-width:767px){.inline-cta_trust{max-width:calc(100% - 24px);flex-wrap:wrap;row-gap:4px}}
+.inline-cta-a8a1{padding-top:72px}
+@media screen and (max-width:991px){.inline-cta-a8a1{padding-top:56px}}

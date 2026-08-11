@@ -1,0 +1,229 @@
+/* ============================================================
+   CEL — Colors & Typography Tokens
+   Single source of truth for color + type variables.
+   Mirrors site.json / claude-design-export/code/tokens.css.
+
+   Reconciled 2026-06-25 against the live published stylesheet
+   (englishcollege.webflow.shared.54a3c3338.min.css): the cream / brown /
+   indigo / orange values below match the rendered site. The newer Webflow
+   fallback values (--color--cream #FAF3E8, --background-color--background
+   #F5EDE0) are NOT the rendered surfaces — do not hardcode them; the cream
+   tokens here are the live truth.
+   ============================================================ */
+
+/* ── Webfonts (self-hosted) ─────────────────────────────── */
+@font-face {
+  font-family: 'Cameraobscura';
+  src: url('fonts/CameraObscura.otf') format('opentype');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'LibreFranklin';
+  src: url('fonts/LibreFranklin-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'LibreFranklin';
+  src: url('fonts/LibreFranklin-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'LibreFranklin';
+  src: url('fonts/LibreFranklin-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'LibreFranklin';
+  src: url('fonts/LibreFranklin-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'LibreFranklin';
+  src: url('fonts/LibreFranklin-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── Brand color palette ──────────────────────────────── */
+  --indigo-bright:      #5d60ee;
+  --indigo-medium:      #4e51be;
+  --indigo-deep:        #1e1c32;
+  --orange-gold:        #e78b10;
+  --orange-gold-dark:   #c97a0d;
+
+  /* ── Logo mark colors (cel-logo-multicolor.svg) ───────── */
+  --clay-peach:         #e49273;
+  --clay-brown:         #c6785a;
+
+  /* ── Text colors ──────────────────────────────────────── */
+  --brown-dark:         #5f5950;   /* Body text, section titles */
+  --brown-deep:         #37332c;   /* High-contrast labels, prices */
+  --brown-soft:         #7a6e5d;   /* Secondary text */
+  --brown-muted:        #9a8f80;   /* Tertiary, muted icon color */
+
+  /* ── Cream surface system (NEVER use #fff) ───────────── */
+  --cream:              #f3e7d3;   /* Primary surface, card fills */
+  --cream-soft:         #f9f1df;   /* Page background */
+  --cream-medium:       #e9deca;   /* Borders, dividers */
+  --cream-extra-light:  #f9f0df;   /* Hover, subtle fills, form input fill */
+  --cream-warm:         #f8eddb;
+  --cream-bar:          #ede3d0;   /* Progress bars, divider tracks */
+  --cream-light:        rgba(243, 231, 211, 0.35);
+
+  /* ── Data-viz palette ─────────────────────────────────── */
+  --viz-green:          #27ae60;
+  --viz-green-light:    #2ecc71;
+  --viz-green-mid:      #6ab04c;
+  --viz-lime:           #badc58;
+  --viz-yellow:         #f9ca24;
+  --viz-orange:         #f0932b;
+  --viz-orange-deep:    #e67e22;
+  --viz-red-light:      #eb4d4b;
+  --viz-red-deep:       #e55039;
+  --viz-red:            #c0392b;
+
+  /* ── Semantic accents ─────────────────────────────────── */
+  --star-gold:          #fbbc04;
+  --sky-blue:           #3a8fd6;
+  --green-fresh:        #1ea869;
+  --error-red:          #e74c3c;
+
+  /* ── Type families ────────────────────────────────────── */
+  --font-heading: 'Cameraobscura', 'Libre Caslon Text', Georgia, serif;
+  --font-body:    'LibreFranklin', 'Libre Franklin', system-ui, sans-serif;
+
+  /* ── Semantic type tokens ─────────────────────────────── */
+  --fs-hero:           46px;        /* H1 hero — Cameraobscura 500 */
+  --lh-hero:           1.08;         /* @kind font */
+  --fs-section-title:  38px;        /* H2 — Cameraobscura 500 */
+  --lh-section-title:  1.1;          /* @kind font */
+  --fs-display-num:    3rem;        /* Big stat numbers (LibreFranklin, not Cameraobscura) */
+  --fs-tagline:        11px;        /* uppercase, ls 2.5px, 600 */
+  --ls-tagline:        2.5px;
+  --fs-body:           1rem;
+  --lh-body:           1.6;          /* @kind font */
+  --fs-body-intro:     1.05rem;
+  --lh-body-intro:     1.75;         /* @kind font */
+  --fs-pill:           0.6875rem;   /* uppercase, ls 1px, 500 */
+  --ls-pill:           1px;
+  --fs-button:         0.875rem;    /* uppercase, ls 1px, 600 */
+  --ls-button:         1px;
+
+  /* ── Spacing & layout ─────────────────────────────────── */
+  --section-pad-x:      84px;
+  --section-pad-y:      96px;
+  --max-width-content:  1600px;
+  --gap-tagline-title:  32px;
+  --radius-card:        20px;
+  --radius-card-lg:     24px;
+  --radius-section:     28px;
+  --radius-pill:        100px;
+  --radius-button:      1600px;     /* fully-pill */
+}
+
+@media (max-width: 991px) { :root { --section-pad-x: 48px; } }
+@media (max-width: 767px) { :root { --section-pad-x: 28px; } }
+@media (max-width: 479px) { :root { --section-pad-x: 20px; } }
+
+/* ============================================================
+   Element-level type defaults (semantic — no italics ever)
+   ============================================================ */
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--brown-dark);
+  background: var(--cream-soft);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── HEADING ELEMENT DEFAULTS — extracted from the LIVE stylesheet ──
+   Source: englishcollege.webflow.<pageId>.<hash>.opt.min.css (2026-07-21).
+   Re-extract with: python3 scripts/pull_live_bundle.py --all
+
+   ⚠ CORRECTED 2026-07-21. The previous block was wrong in two ways and it
+   showed on every page built from this system:
+     1. NO text-transform. The live site sets --h1--text-transform through
+        --h6--text-transform to uppercase, so EVERY heading renders UPPERCASE.
+     2. It baked the CLASS sizes (46px / 38px) into the ELEMENT selectors.
+        Live element sizes are far larger (h1 5.5rem, h2 3.75rem, h3 3.25rem);
+        .hero_title (46px) and .section-title (38px) are the in-page OVERRIDES.
+   Net effect of the old block: any heading without an overriding class came out
+   sentence-case at the wrong size — the opposite of the live site.
+
+   The override classes do NOT reset text-transform, so they inherit UPPERCASE.
+   Keep it that way.
+
+   COLOUR: brown-dark, below, is the display face's ONLY ink on light surfaces
+   (cream #f9f1df on indigo or photography). brown-deep #37332c is the BODY
+   face's emphasis ink and must not be used on Cameraobscura. This matters when
+   you set display type on something that is NOT an hN — a <p> used as a figure
+   or a level code — because then this element default does not apply and the
+   colour has to be written by hand. That is the one place it has drifted. */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  color: var(--brown-dark);
+  margin: 0 0 0.5em;
+  letter-spacing: 0.03em;      /* live: var(--letter-spacing--0-03) */
+  text-transform: uppercase;   /* live: var(--hN--text-transform) — ALL SIX LEVELS */
+}
+
+h1 { font-size: 5.5rem;  line-height: 1; }   /* live --h1--font-size */
+h2 { font-size: 3.75rem; line-height: 1; }   /* live --h2--font-size */
+h3 { font-size: 3.25rem; line-height: 1; }   /* live --h3--font-size */
+h4 { font-size: 2.5rem;  line-height: 1; }   /* live --h4--font-size */
+h5 { font-size: 2rem;    line-height: 1; }   /* live --h5--font-size */
+h6 { font-size: 1.5rem;  line-height: 1; }   /* live --h6--font-size */
+
+p  { margin: 0 0 1.4em; max-width: 66ch; }
+
+em, i { font-style: normal; }   /* italics banned site-wide */
+
+a {
+  color: var(--indigo-bright);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.25s ease;
+}
+a:hover { text-decoration-color: transparent; }
+
+/* uppercase tagline label — same small-UPPERCASE-label rule as section-tagline (LibreFranklin 600) */
+.tagline {
+  font-family: var(--font-body);
+  font-size: var(--fs-tagline);
+  font-weight: 600;
+  letter-spacing: var(--ls-tagline);
+  text-transform: uppercase;
+  color: var(--orange-gold);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 var(--gap-tagline-title);
+}
+.tagline::before {
+  content: "";
+  display: inline-block;
+  width: 14px; height: 2px;
+  background: var(--orange-gold);
+  flex-shrink: 0;
+}
+
+::selection { background: rgba(93, 96, 238, 0.2); color: var(--brown-deep); }
+*:focus-visible { outline: 2px solid var(--indigo-bright); outline-offset: 2px; }

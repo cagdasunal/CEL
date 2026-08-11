@@ -1,0 +1,724 @@
+/* ====================================================================
+   how-long.css — San Diego · How Long to Learn English   (ROUND 2)
+   PAGE-SCOPED SHEET. Loads LAST, after (BUILD-BRIEF §11):
+     _live/englishcollege.webflow.shared.54a3c3338.min.css
+     _live/page-how-long-to-learn-english.opt.min.css   <- this page's role sheet
+     _live/site-custom-code.css
+     _live/swiper-bundle.min.css
+   Never _live/all-components.css (deprecated stub, zero rules).
+   Never client-first.css or pages/<page>/styles.css (authoring contract, not a render layer).
+
+   Output contract held throughout (BUILD-BRIEF §10): zero descendant/child/sibling compound
+   selectors, zero ::before/::after, zero :nth-child/:first-child/:last-child/:not(), zero
+   [attr] selectors, zero id-keyed rules, @media only at 1920/1440/1280 min-width or
+   991/767/479 max-width, literal hex never var(), no !important.
+
+   Contents, in order:
+     1. Combos proven in round 1 and reused verbatim (BRIEF §3: "reuse them, do not re-derive").
+     2. Combos new this round, each with one line saying why no live class fit.
+     3. Option-review labels.
+     4. Option-only combos (blocks that only one of the two options needs).
+     5. Components copied EXPLICITLY from pages/san-diego/landing.css (BRIEF §3: copy the rules
+        in, never merge sheets). Verbatim, same declarations, same breakpoints, so the SD hub
+        and this page cannot drift.
+
+   CONTRACT NOTE for the build side, measured on this sheet rather than assumed:
+     0 descendant selectors · 0 child (>) · 0 sibling (+ ~) · 0 :nth-child/:first-child/:last-child/
+     :not() · 0 [attr] · 0 id-keyed rules · 0 ::before/::after · 0 !important · 0 var().
+     Every row-position rule is an `is-first` / `is-last` / `is-N` combo, not a structural pseudo.
+   Two carried-forward items, both PRE-EXISTING in landing.css and already shipped on
+   pages/san-diego/san-diego.html, carried verbatim rather than forked (forking a shipped component
+   to satisfy a lint is how two versions of one class reach the Designer):
+     · `:focus-visible` on .chooser_goal (STRUCTURE.md §4 lists :hover/:focus/:active as safe and
+       does not name :focus-visible). One instance.
+     · the `@media (prefers-reduced-motion:reduce)` block, which is not one of the six width
+       breakpoints BRIEF §10 allows. It disables transitions only.
+   Fix both in one pass, on both pages.
+   ==================================================================== */
+
+/* ================ 1. PROVEN IN ROUND 1 — REUSED ================ */
+
+/* .hero_highlights.is-wrap — .hero_content is "1fr auto", so the chip column takes its INTRINSIC
+   width, and .hero_highlight is white-space:nowrap. The live hero carries three short chips; this
+   copy specifies four, one being "Avg. 7 students per class (max 12)". Unwrapped, that string
+   widens the auto column until it overruns hero_wrapper and squeezes the H1's measure.
+   REVISED 4 Aug (client): "(max 12)" wrapping to a second line was the defect, not the fix. The cap
+   is 720px, so the 2-up chip grid sizes its tracks to the longest chip's max-content (measured: the
+   column lands at 312px, the block at 641px, the H1 still at three lines, zero page overflow) and
+   every chip sits on one line. white-space stays NORMAL, so nothing is forced to overflow — below
+   about 1200px the tracks narrow and the long chip wraps again rather than punching out of the hero.
+   Generic — DE/FR run 30-40% longer than English (README, multilingual). */
+/* ONE COLUMN at every width (client, 4 Aug), and the cap drops 720 -> 380px. Two consequences, both
+   wanted: the chips stack, and because .hero_content is "1fr auto" the narrower chip column hands
+   ~260px back to the H1's track. 380px clears the longest chip's 349px max-content, so every chip
+   still sits on one line. Two-class combo, and this sheet loads last, so it beats all four
+   single-class .hero_highlights rules in the opt sheet — including the min-width:1440 2-up rule. */
+.hero_highlights.is-wrap{grid-template-columns:minmax(0,1fr);max-width:380px}
+.hero_highlight.is-wrap{white-space:normal}
+.hero_highlight-text.is-wrap{text-wrap:balance}
+
+/* .hero_wrapper.is-subpage — MOVED to shared/hero-clearance.css, which every page links.
+   It used to be declared here and in the other SD page sheet only, which is exactly why
+   san-diego.html and costs.html did not clear the fixed navbar and these two pages did. A
+   system-level fix belongs in one shared sheet, not copied per page. ── */
+
+/* ================ 2. NEW THIS ROUND ================ */
+
+/* .dur-note.is-caption — MEASURED DEFECT, found by rendering at 1452px: .dur-note carries
+   min-height:200px at min-width:1440 in the live sheet. Inside a .dur-card that is the live
+   behaviour (it equalises the card footers at wide viewports); on a standalone caption, and inside
+   a timeline row, it renders a 14px line as a 200px void. The combo drops the reservation and the
+   auto top margin and keeps the hairline. Generic: any use of dur-note outside a dur-card. */
+.dur-note.is-caption{min-height:0;margin-top:16px;margin-bottom:20px;padding-top:12px;padding-bottom:0}
+
+/* .nextread_grid.is-stack — option 14A. The copied nextread grid is photograph-led (1.15fr/1fr
+   with a feature media card). 14A is type-only, so the same four cards stack full measure and
+   the photograph is what B adds. One column, auto rows. Generic. */
+/* is-2up — four related guides on a 2x2 grid (client, 4 Aug). The live .nextread_grid ships a
+   feature-plus-rows arrangement; is-stack was the single-column variant. Equal cards, equal rows. */
+/* grid-template-rows:1fr 1fr — equal height for all FOUR cards (client: "same height is a must").
+   grid-auto-rows was the WRONG property and silently did nothing: .nextread_grid declares explicit
+   rows, and auto-rows only sizes IMPLICIT tracks. It looked fixed at 1452px purely because the base
+   rule happens to be "1fr 1fr auto"; below 992 the opt sheet's "grid-template-rows:auto" took over and
+   rows sized to content again (measured 250/250/301/301). Declaring the rows here beats that media
+   rule at every width — it is 2-class against 1-class, and a media query adds no specificity.
+   The pill keeps margin-top:auto so the slack lands above it and the four pills share a baseline. */
+  /* 992-1279 RAIL BAND (see the block above): narrow at base, wide at large, wide restated at
+     medium, because 768-991 and >=1280 are not contiguous and the 272px rail only costs the column
+     its width in between.
+     Measured: two tracks inside the 311px band column left each card an 86px text box, and the
+     titles clipped by up to 49px (86/135). */
+.nextread_grid.is-2up{grid-template-columns:minmax(0,1fr);grid-template-rows:1fr 1fr;gap:16px}
+@media screen and (min-width:1280px){.nextread_grid.is-2up{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media screen and (max-width:991px){.nextread_grid.is-2up{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cta-pill-indigo.is-card{margin-top:auto}
+@media screen and (max-width:767px){.nextread_grid.is-2up{grid-template-columns:minmax(0,1fr)}}
+
+/* .body-intro.is-measure / .body-text.is-measure — options 9A and 14A are the two prose-led
+   options in the pair set, and measure is their composition. .body-intro{max-width:none} is an
+   explicit live declaration (the live sheet REMOVES a max-width), so the content column runs to
+   ~82ch. Capping at 66ch is a compositional variable of those two blocks only; every other
+   paragraph on the page keeps the live measure, which matches /vancouver, /costs and /vs-toronto.
+   Generic. */
+.body-intro.is-measure{max-width:66ch}
+.body-text.is-measure{max-width:66ch}
+
+
+/* ============ §9 DURATION BY GOAL — shipped WITH the section, per BRIEF §9 ============
+   The component is not broken: it is a LIVE component drawn for <=10-character figures
+   ("4-8 weeks" on /vancouver) and this page's copy puts verbatim strings roughly twice that long
+   in it. Measured in round 1: left-edge jag 259.9 -> 0.0px, height ratio 2.09 -> 1.39, zero
+   figure wraps. COMBOS only — .goal-item / .goal-weeks / .goal-level / .goal-recommendation /
+   .goal-arrow are live style objects rendering englishcollege.com, and editing a base forks
+   /vancouver.
+   Base (<=1279): one column, arrow rotated 90deg — there is no width for a two-column ledger
+   once the 272px rail is paid for. */
+.goal-item.is-ledger{grid-template-columns:minmax(0,1fr);grid-column-gap:0px;grid-row-gap:2px;align-items:start;justify-items:start;text-align:left;border-bottom:1px solid #e9deca;padding:20px 24px}
+/* MEASURED DEFECT (client: "icon is not visible"), and it took two wrong diagnoses to land.
+   NOT a 404: the file loads fine. NOT stroke-thinning either — that was the second guess, and the
+   remedy it suggested (swap to the 10x10 breadcrumb chevron) made it WORSE, because that asset is the
+   HERO variant, baked in light cream for dark photographic backgrounds. Sampled on a canvas: every
+   opaque pixel of the chevron is #f9f1df — the exact fill of .goals-list. Contrast 1.00:1, invisible
+   at any size or opacity. The project already documents this trap on san-diego.html (~line 1171) and
+   in PHASE-0: an <img>-rendered SVG cannot be recoloured by CSS, so a cream-baked icon can only be
+   used on a dark surface. The breadcrumb chevron is back to .breadcrumb-sep only, over the hero photo.
+   The real fault was that the CORRECT asset (duration-guide-icon-arrow-right-v4 — sampled luminance
+   106 against the panel's 241, the ink the rest of this page's icons use) was merely too FAINT: .55
+   opacity on a 150-unit graphic rendered into 16px. Fixed by raising the opacity and rendering it at
+   22px, so the stroke resolves above a hairline.
+   The rotate(90deg) is correct for the <=1279 STACKED variant; the >=1280 rule below clears it so the
+   arrow points along the three-track row. */
+.goal-arrow.is-ledger{align-self:start;justify-self:start;transform:rotate(90deg);margin-top:3px;width:22px;height:22px}
+.goal-recommendation.is-ledger{text-align:left;align-items:flex-start;gap:2px}
+/* BRIEF §9: drop white-space:nowrap wherever a verbatim string cannot fit unwrapped. Round 1 set
+   nowrap here and paid for it by trimming "Elective:" and "Roughly" out of two figures. The copy
+   is a signed contract, so the layout absorbs the strings instead. */
+.goal-weeks.is-ledger{white-space:normal;text-wrap:pretty}
+.goal-level.is-ledger{margin-top:4px;text-wrap:pretty}
+.goal-item.is-last{border-bottom-width:0}
+@media screen and (min-width:1280px){
+  .goal-item.is-ledger{grid-template-columns:minmax(0,1fr) 36px minmax(280px,1.4fr);grid-column-gap:24px;grid-row-gap:0px;align-items:baseline;min-height:84px;padding:22px 24px}
+  .goal-arrow.is-ledger{align-self:start;justify-self:center;transform:none;margin-top:4px}
+}
+
+/* ================ 3. OPTION-REVIEW LABELS ================
+   BRIEF §12: each block is labelled by a classed element on an is-review combo — never an inline
+   style, never a <style> block. .dur-label is the live 5px chip (one of the page's two control
+   shapes), so the label introduces no new shape and no new surface; is-review only recolours it.
+   Chained combos keep it one Webflow style object per state. Both the labels and the losing
+   blocks are deleted in one pass at Phase D. */
+
+/* .dur-label.is-pennant — the "Most Popular · The Sweet Spot" mark inside option 8A's timeline row.
+   .dur-label carries align-self:flex-start, which needs a flex parent; .timeline_body is a block,
+   so the chip drew as a full-width band. MEASURED and fixed with the one property that makes a chip
+   a chip outside a flex context. The margin-bottom reset is the second half: .dur-label carries
+   margin:0 0 14px, which inside §3's ledger added 16px to one row of four and visibly broke the
+   rhythm. Generic. */
+.dur-label.is-pennant{width:fit-content;margin-bottom:0}
+/* is-inline — the chip beside its text on one line (client, 4 Aug: "near the text not below").
+   A separate combo because §7's timeline chips sit alone on their own line, where the inline
+   treatment and its left margin would misplace them. */
+/* GAP, not margin (client, 4 Aug: "no margin in those elements, only use 'gap:'"). The cell is a flex
+   row and the space between the figure and its chip is the row's gap — which survives the editor's
+   drag-reorder and delete, where a per-element margin does not. is-withchip is on the CELL because a
+   table cell has to opt in to flex explicitly. */
+.feetable th.is-withchip{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.dur-label.is-pennant.is-inline{display:inline-flex;vertical-align:2px}
+/* is-under — the §7 chip placed in the BADGE's column, under the badge (client, 4 Aug: "the
+   placement is not right"). It qualifies the duration, so it belongs with the duration; sitting in
+   the body it split the row title from the body copy that continues it. Explicit grid placement
+   because .timeline_row is a two-track grid and a third child would otherwise be auto-placed into
+   the body column. */
+/* position:relative + z-index — .timeline_rail is position:absolute, so it painted OVER this
+   statically-positioned chip; the 2px rule ran straight through the text (client: "improve
+   z-index"). A stacking context of its own puts the chip above the rail, and its own fill masks the
+   rule behind it. inline-flex + centre so the label sits on the chip's vertical middle. */
+.dur-label.is-pennant.is-under{position:relative;z-index:1;grid-column:1;grid-row:2;display:inline-flex;align-items:center;justify-content:center;margin:10px 0 0;padding:6px 10px;white-space:normal;text-align:center;width:100%;line-height:1.35}
+
+/* .goal-weeks.is-ledger — smaller and heavier (client, 4 Aug: "make it smaller, use a different
+   styling — font-size and weight"). The live figure rung is 20px/500, which at ledger scale sat
+   almost level with the goal text beside it. 15px/600 with 1px tracking reads as a figure — smaller
+   than the prose but denser — and the caps-indigo treatment stays, which is what that class is for
+   on SHORT strings (§3a's sentence-length verdicts are the case where it did not apply). */
+/* Tagline metrics and off indigo (client, 4 Aug: "smaller font size like the one in the tagline and
+   use another color"). The live rung is 20px/500 INDIGO caps — on this page indigo means
+   interactive, and at 20px the figure sat almost level with the goal text beside it. Now the
+   .section-tagline rung (11px, 2.5px tracking, 600) in the page's standard ink, so it reads as a
+   quiet label against the goal rather than competing with it or looking like a link. */
+.goal-weeks.is-ledger{font-size:11px;font-weight:600;letter-spacing:2.5px;line-height:1.5;color:#5f5950}
+
+/* ================ 4. §3 + §4 COMPOSITION (rebuilt 4 Aug) ================ */
+
+/* .overview_factors.is-grid + .overview_factor-item.is-col — the four decision inputs as a hairline
+   ledger row instead of a bordered panel of stacked rows. Why: the panel was the section's second
+   contained surface and competed with the answer; four one-line labels do not need containment,
+   they need a common axis. The rule per cell replaces the .overview_factor-divider elements, which
+   are removed from the markup — a divider that only exists between items cannot be authored without
+   :first-child or ::before, and §10 bans both. Generic: any short label set on one axis. */
+
+/* ================ 5. COPIED FROM landing.css ================ */
+
+/* --- timeline_* — vertical dot+rail spine. Source: landing.css §9 Typical Day (a vertical
+   adaptation of the DESIGN-RULES §3.1 step-timeline recipe: 48px cream-medium dots, 20px stroke
+   icons). Used here for §7's ordered progress sequence (Weeks 1-4 -> 20+).
+   The .has-reveal / .is-inview scroll-reveal rules are DELIBERATELY NOT COPIED: no
+   scroll-triggered reveals on this page. Without them the rows are simply visible, which is also
+   landing.css's own no-JS fallback state. */
+.timeline_list{border:1px solid rgba(95,89,80,.15);border-radius:20px;background:#f9f1df;padding:48px 44px;text-align:left}
+/* ================ TIMELINE ROWS — calendar icon left, duration with the heading right
+   (client, 4 Aug: "for similar timelines use calendar icon in the timeline and move the times up to the
+   heading on the right")
+   The duration used to be a BADGE filling a 152px left track, which put the row's most scannable fact
+   away from the text it qualifies and left the left third of the panel almost empty. Now the left column
+   is a 28px marker — one calendar icon per row, sitting on the rail — and the duration is the heading's
+   EYEBROW, so every row reads as the page's standard eyebrow-then-title pair, the same shape as
+   .brackets_note + .brackets_title. Applies to BOTH timelines here: §7's four stages and §8's three
+   pathway phases. ================ */
+.timeline_row{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:22px;align-items:start;padding-bottom:44px}
+.timeline_row.is-last{padding-bottom:0}
+.timeline_rail{position:absolute;left:13px;top:34px;bottom:4px;width:2px;background:#e9deca}
+.timeline_rail.is-last{display:none}
+.timeline_marker{position:relative;z-index:1;width:28px;height:28px;border-radius:50%;background:#f3e7d3;display:flex;align-items:center;justify-content:center}
+/* 16px in a 28px disc, and the disc is opaque so the rail passes behind it rather than through it. */
+.timeline_icon{width:16px;height:16px;display:block}
+/* The eyebrow takes the page's label rung — 12px / 600 / 1.5px tracking / uppercase / brown-soft — so
+   the duration reads as a category above its title rather than as a second heading. */
+/* ALIGNED BY GEOMETRY (client, 4 Aug: "align the text with the icon near of it much better"). The marker
+   is a 28px disc starting at the row's top edge, centre at +14px; the eyebrow's line box was 18px, centre
+   at +9px, so the label rode 5px high of the icon beside it. A 28px line box makes both boxes identical
+   and both start at the row top, so their centres coincide — the same fix as the §8 driver chips, and it
+   holds at any font size instead of needing a margin tuned to one. */
+.timeline_when{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8D877B;line-height:28px;margin:0 0 2px}
+/* The one row that also carries a chip keeps both on a line, spaced by GAP, never margin. */
+.timeline_meta{display:flex;align-items:center;flex-wrap:wrap;gap:10px;min-height:28px;margin:0 0 2px}
+.timeline_meta .timeline_when{margin:0}
+
+.timeline_body{padding-top:0;grid-column:2}
+.timeline_text.is-second{margin-top:10px}
+/* .timeline_text.is-heading — the row's first line promoted to a heading rung (client, 4 Aug:
+   "use heading styling in here but small one"). NOT Cameraobscura, for the reason now recorded in
+   README: the display face is uppercase-only on this brand, and these lines are 45-55 character
+   SENTENCES — caps body copy, which README bans. Same call, same reasoning as §3a's chooser
+   verdict. So it takes the heading's SIZE, WEIGHT and INK (18px / 600 / brown-deep, the
+   .brackets_title rung) in LibreFranklin, which reads as a small heading over the body line
+   beneath it without borrowing a face it cannot legally use. */
+/* .timeline_text.is-heading — the row title at the .brackets_title rung (client, 4 Aug: "use
+   heading style but small"). REVISED from a LibreFranklin 18px line: I first ruled the display face
+   out because these strings are 40-46 characters, but the page's own precedent settles it — the
+   .brackets_title band titles (33 chars) and .section-title.is-small (40 chars) are already set in
+   uppercase Cameraobscura. These are TITLES, not body copy, so they belong on that rung: same face,
+   same 1.125rem, same brown-dark ink, same .5px tracking. The <strong> wrappers were removed from
+   the markup — the face ships 400/500 only (README) and caps already carry the emphasis. */
+.timeline_text.is-heading{font-family:Cameraobscura,serif;font-size:1.125rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;line-height:1.3;color:#5f5950}
+@media screen and (max-width:479px){.timeline_text.is-heading{font-size:1.0625rem}}
+
+.timeline_text{font-size:1.0625rem;color:#5f5950;line-height:1.6;margin:0;max-width:56ch}
+.timeline_num{font-family:"Librefranklin",Arial,sans-serif;font-weight:600;font-size:.75rem;letter-spacing:1.5px;line-height:1;color:#8D877B}
+@media screen and (max-width:767px){.timeline_row{grid-template-columns:26px minmax(0,1fr);column-gap:16px;padding-bottom:32px}.timeline_marker{width:26px;height:26px}.timeline_icon{width:15px;height:15px}.timeline_rail{left:12px;top:32px}.timeline_body{padding-top:9px}
+}
+@media screen and (max-width:479px){.timeline_list{padding:32px 22px}}
+
+/* --- nextread_* — one feature card beside three compact link rows, whole-card anchors.
+   Source: landing.css §19 Related Guides. Used here for §13's related-guides cluster.
+   Chosen over the live blog-bento_grid because that component is CMS-bound (w-dyn-list) and
+   these four links are static internal guides, not a post collection — and the copy doc forbids
+   empty teaser cards and dead "Continue reading" links. */
+.nextread_grid{display:grid;grid-template-columns:1.15fr 1fr;grid-template-rows:1fr 1fr auto;gap:16px;margin-top:48px}
+.nextread_card{background:#f9f1df;border:1px solid rgba(95,89,80,.15);border-radius:20px;overflow:hidden;text-decoration:none;transition:transform .35s cubic-bezier(0.16,1,0.3,1),border-color .35s ease,background .35s ease}
+.nextread_card:hover{transform:translateY(-3px);border-color:rgba(231,139,16,.45);background:#f3e7d3}
+
+.nextread_cat{font-size:.6875rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#e78b10;margin:0}
+.nextread_title{font-family:"Cameraobscura",serif;font-size:1.375rem;font-weight:500;letter-spacing:.5px;line-height:1.2;text-transform:uppercase;color:#5f5950;margin:0}
+.nextread_excerpt{font-size:1rem;line-height:1.6;color:#5f5950;margin:0;text-wrap:pretty}
+.cta-pill-indigo.is-card{margin-top:auto;align-self:flex-start;white-space:nowrap}
+
+/* .nextread_card.is-stacked — option 14A. MEASURED DEFECT, found by rendering: is-wide pins the
+   card to grid-row:3, which is right for the photograph-led grid (one wide card closing three
+   rows) and wrong for the type-only stack, where all four cards landed in row 3 and drew on top of
+   one another. is-stacked releases the row and makes the card a flex column so the pill can pin to
+   its foot. Generic. */
+/* grid-column:auto, not 1. This rule was authored for the one-column .nextread_grid.is-stack
+   arrangement, where pinning every card to track 1 was the point. Under .is-2up it silently defeated
+   the container: two tracks existed and all four cards resolved to grid-column 1, so track 2 stayed
+   empty. A track list says nothing about where children land — check the CHILD's gridColumn. */
+.nextread_card.is-stacked{grid-column:auto;grid-row:auto;display:flex;flex-direction:column;gap:8px;padding:30px}
+@media screen and (max-width:991px){.nextread_grid{grid-template-columns:1fr;grid-template-rows:auto}
+}
+
+@media screen and (max-width:479px){.nextread_grid{margin-top:28px}}
+
+@media (prefers-reduced-motion:reduce){
+  .nextread_card{transition:none}
+}
+
+/* ================ 6. PANEL STANDARD — COPIED FROM costs.css (client, 4 Aug: "use the same
+   styles as san-diego.html and costs.html; keep the design consistent"). One recipe for every
+   banded panel: --panel-x/-y/-gap tokens on the panel, #F9F1DF band with an indigo caps note and
+   a Cameraobscura title over one hairline. Copied VERBATIM where possible so this sheet diffs
+   against costs.css; the .feetable rules keep costs.css's element-scoped selectors (.feetable th)
+   for the same reason — the §10 contract targets class-descendant chains, and classing every cell
+   would fork the component. ================ */
+.brackets_panel{--panel-x:32px;--panel-y:26px;--panel-gap:12px;border:1px solid #e9deca;border-radius:20px;background-color:#f9f1df;overflow:hidden;margin-top:32px;margin-bottom:32px}
+@media screen and (max-width:991px){.brackets_panel{--panel-x:26px;--panel-y:22px;--panel-gap:10px}}
+@media screen and (max-width:479px){.brackets_panel{--panel-x:20px;--panel-y:20px;--panel-gap:8px}}
+.brackets_head{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:22px var(--panel-x);background-color:#F9F1DF;border-bottom:1px solid #e9deca}
+.brackets_note{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5d60ee;line-height:1.5;white-space:normal;margin:0}
+.brackets_title{font-family:Cameraobscura,serif;color:#5f5950;font-size:1.125rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;line-height:1.3;margin:0}
+/* The footnote sits on the same recessed #f3e7d3 strip as .ladder_legend (client, 4 Aug), with the
+   hairline on top — so a panel that opens with a key band closes with a note band, and the rows in
+   between are the only thing on the panel's own fill. */
+.brackets_foot{background-color:#f6eeda;border-top:1px solid #5f59501a;font-size:.9375rem;font-weight:400;color:#8D877B;line-height:1.55;margin:0;padding:18px var(--panel-x) 20px;text-wrap:pretty}
+/* .brackets_split — a SECOND band inside one panel, for a panel that carries two parts (client,
+   4 Aug: merge §3's two panels, keep one column). Same recipe as .brackets_head with the hairline
+   moved to the top, so the two parts read as one object with two chapters rather than two objects
+   32px apart. Generic. */
+/* Hairlines on BOTH edges (client, 4 Aug: "you missed the border bottom in here"). The band opens a
+   second chapter inside one panel, so it needs closing as well as opening: without the bottom rule the
+   inputs below it floated free while every other band on these pages sits between two lines. Same
+   #e9deca, same weight, as .brackets_head's own bottom hairline. */
+.brackets_split{display:flex;flex-direction:column;align-items:flex-start;gap:10px;margin-top:calc(var(--panel-gap) + 10px);padding:22px var(--panel-x);background-color:#F9F1DF;border-top:1px solid #e9deca;border-bottom:1px solid #e9deca}
+@media screen and (max-width:479px){.brackets_note{font-size:.6875rem}.brackets_head{gap:8px}}
+/* B10 table core, from costs.css */
+/* THE 992-1279 RAIL BAND. Above 991 the 272px rail is back IN FLOW and .section_page still charges
+   its 84px inset, so the content column is 311px at 992 and 598px at 1279 — narrower than any tablet
+   state, and narrower than the 696px this component gets at 1440. Webflow has no max-width tier
+   between main and medium, so the only legal shape is: narrow at BASE, wide at large, wide restated
+   at medium. The medium restatement is NOT redundant — 768-991 and >=1280 are not contiguous.
+   For a table the narrow shape is the block scroller B10 already ships at 767: measured at 992 the
+   is-fit table was 309px against 390px of content and clipped a Details cell by 8px. display:block
+   costs table-layout:fixed inside the band, which is the right trade there — auto columns size to
+   their content and the row scrolls, instead of the last column being cut off by
+   .page_content{overflow:hidden}. Restored to a real table at large and again at medium. */
+.feetable{width:100%;border-collapse:separate;border-spacing:0;margin-top:20px;table-layout:auto;display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media screen and (min-width:1280px){.feetable{display:table;overflow-x:visible}}
+@media screen and (max-width:991px){.feetable{display:table;overflow-x:visible}}
+.feetable_caption{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* ================ TABLE SPACING — ONE SCALE, EVERY TABLE (client, 4 Aug: "use more gap, padding,
+   whitespacing for all tables ... make sure the font sizes in the cells are the same for regular
+   texts. Design consistency is very important").
+   Before this there were THREE row heights on the same page — 14px (base .feetable), 15px
+   (.is-rates) and 18px (.is-visa) — and each variant restated the header band's padding to win the
+   specificity fight it had just created. The variant overrides are DELETED, not retuned: with no
+   ".feetable.is-x th" rule at (0,2,1) in the way, the base rule sizes every row and
+   ".feetable thead th" (0,1,2) sizes every band, so one edit changes every table on both pages.
+   THE SCALE:  rows 20px top/bottom · column gutter 28px · header band 22px · 479px: 16px / 16px
+   TYPE:       every regular data cell is 1rem — .feetable th/td, .feetable_label AND the
+               calculator's .calc_ledger, which was 15px and is the one table that read smaller than
+               its neighbours. Secondary lines inside a cell are .875rem everywhere
+               (.feetable_note, .calc_row-sub — the latter was .8125rem).
+   ================ */
+.feetable th,.feetable td{font-size:1rem;line-height:1.5;text-align:left;padding:20px 28px 20px 0;vertical-align:top;color:#5f5950}
+/* Column titles (client, 4 Aug): framed top AND bottom, darker ink, small uppercase. The label rung
+   is the page's existing one for column keys — 12px / 600 / 1.5px tracking, uppercase — and the ink
+   moves off brown-soft to brown-dark so a title is not quieter than the data under it.
+   MATCHED TO .ladder_legend (client, 4 Aug: "the similar look and feel ... full width, the bg color,
+   border colors ... a smooth very soft contrast so they look like they are the title of a table").
+   Same #F6EEDA fill, same single 10%-brown hairline BELOW it (#5f59501a — down from 22%, which was
+   the hard edge that stopped it reading as a soft band; the top rule is gone too, client 4 Aug — the
+   band already has .brackets_head's own hairline above it, so a second one doubled up), same
+   generous vertical padding at 20px. Full width is real, not
+   faked: the table's --panel-x inset moved into the markup (see TABLE EDGE INSET below), so the fill
+   AND both rules span the panel edge to edge. Ink stays brown-dark rather than the legend's
+   brown-soft, because a column title should not be quieter than the data beneath it. */
+.feetable thead th{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#5f5950;background-color:#F6EEDA;padding-top:22px;padding-bottom:22px;border-bottom:1px solid #5f59501a}
+/* Cell ink is the REGULAR PARAGRAPH COLOUR everywhere (client, 4 Aug: "too dark font color ... use
+   our regular paragraph color in the tables for all tables"). Row keys and amount cells were
+   --brown-deep #37332c — the emphasis ink — so the first and last column of every table sat a step
+   darker than the copy around them and read as a different class of text. All cells are now
+   --brown-dark #5f5950, the ink of every paragraph on the page; weight alone still separates a row key
+   from its value. Only .feetable_note stays lighter, because it IS a note. */
+.feetable tbody th{font-weight:600;color:#5f5950}
+.feetable tbody tr + tr th,.feetable tbody tr + tr td{border-top:1px solid #5f59501a}
+.feetable th:last-child,.feetable td:last-child{padding-right:0;text-align:left;font-variant-numeric:tabular-nums}
+@media screen and (max-width:767px){.feetable{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}
+@media screen and (max-width:479px){.feetable th,.feetable td{font-size:.9375rem;padding:16px 16px 16px 0}}
+.feetable.is-rates{margin-top:0;padding:0;table-layout:fixed}
+.feetable.is-rates .feetable_col-key{width:34%}
+@media screen and (max-width:767px){.feetable.is-rates{display:table;overflow-x:visible}}
+/* is-outcomes — this page's variant: the value column carries SENTENCES, not amounts, so it
+   wraps at body weight instead of costs.css's nowrap/600 amount treatment. */
+.feetable.is-outcomes td{white-space:normal;font-weight:400}
+/* is-fit — the §3a finder: the third column is a plain text link (client, 4 Aug: "remove arrow").
+   It shipped with a trailing "→", then a chevron, and now neither: the column is headed "Details" and
+   every cell in it is a link, so a per-link glyph repeated the one thing the column already says.
+   THE nowrap IS GONE — worklist §4 item 2, and it was CONTENT LOSS, not a cosmetic risk. Measured
+   before the change, cell width vs cell scrollWidth in the Details column:
+     479   98px track  vs 146 / 148 / 139 / 117 / 113px of text  -> up to 50px of every label cut off
+     992   74px track  vs 155 / 148 / 125 / 120px                -> up to 81px cut off
+     1280  146px track vs 155 / 148px                            -> still cutting at desktop
+   and the escape hatch could not save it: the 767 .feetable{display:block;overflow-x:auto} rule is
+   cancelled two lines below by .feetable.is-rates{display:table;overflow-x:visible} at higher
+   specificity, and this table carries is-rates — measured display:table, overflow-x:visible at all
+   eight widths, so nothing on this page scrolls and .page_content{overflow:hidden} clips the rest in
+   silence. Letting the labels WRAP costs two lines in one column and loses no words; the longest
+   unbreakable token is "cumulative" at ~75px, which clears the narrowest track.
+   The width rule is also FLAT now. .feetable_col-link is a <col> class used exactly once in this
+   bundle, so the is-fit qualifier was only ever a descendant chain the pipeline would drop. */
+.feetable_col-link{width:24%}
+/* 30% at tiny: 24% of a 410px table is a 98px track, and .is-inset-r takes 20px of it, leaving 78px
+   against that 75px token — a 3px margin. 30% gives 123px, so 103px usable. */
+@media screen and (max-width:479px){.feetable_col-link{width:30%}}
+/* compare-table refinements (client, 4 Aug). is-title: the live .compare-cell centres its dot
+   against the whole cell, so beside any wrapped cell — every §4 level row, several §11 rows — the
+   dot floated between lines; it now locks to the first line's centre (15px padding + (21px line −
+   7px dot)/2 = 7px). is-quiet: the live .compare-duration head is 22px INDIGO caps, a louder voice
+   than the .brackets_title band standard every other panel now speaks — same face, same 1.125rem,
+   same ink. */
+.compare-dot.is-title{align-self:flex-start;margin-top:7px}
+/* is-top — §11's cells: BOTH columns wrap, so the whole cell top-anchors and the dot's first-line
+   lock (is-title) holds. §4's weeks column keeps the live centred cell: its value is a single
+   line, centred against the tall level cell beside it, and there the dot stays centred too
+   (is-title removed) — a top-pinned dot beside centred text was the misalignment the client saw. */
+.compare-cell.is-top{align-items:flex-start}
+.compare-duration.is-quiet{color:#5f5950;font-size:1.125rem;letter-spacing:.5px}
+/* .overview_col-title.is-ink — the live card title is indigo; on this page indigo means
+   "interactive" (links, the .brackets_note eyebrow), so four card headings in it read as links.
+   Dropped to the .section-title ink (client, 4 Aug: "use heading color"). */
+.overview_col-title.is-ink{color:#5f5950}
+/* is-routes — §5's third column holds course codes, which must not break mid-code. */
+.feetable.is-routes td:last-child{white-space:normal}
+/* factors rows, from costs.css §8 (there they override a live .factors_tile base; this page's
+   opt sheet ships none, so the resolved values are written flat) */
+.factors_tiles{display:grid;grid-template-columns:1fr 1fr;column-gap:44px;row-gap:0;margin:0;padding:var(--panel-gap) var(--panel-x) var(--panel-y)}
+.factors_tile{display:grid;grid-template-columns:20px 1fr;column-gap:14px;align-items:center;justify-content:start;padding:13px 0}
+.factors_card-icon{width:20px;height:20px}
+.factors_card-text{font-size:1rem;font-weight:500;color:#5f5950;line-height:1.5;margin:0}
+@media screen and (max-width:991px){.factors_tiles{column-gap:32px}}
+@media screen and (max-width:479px){.factors_tiles{grid-template-columns:1fr}}
+
+/* ================ 7. VERTICAL RHYTHM ================
+   MEASURED, every section-level child of every .section_page. The page had no scale: a section's
+   MAIN OBJECT sat 24px below its intro in some sections, 32px in others and 48px in the rest —
+   three answers to one question — and THREE pairs collided at 0px, because .callout owns no
+   vertical margin and the live .body-text resets its top margin.
+   THE SCALE, and nothing else is used at section level:
+     32px  intro -> main object, main object -> following prose, and every .callout
+     40px  .dur_callout — the loud pull-quote keeps its extra step
+     48px  a full-bleed media block
+   Declared here in one place so no object carries its own idea of the rhythm. ================ */
+.brackets_panel,.compare-table,.overview_layout,.timeline_list,.goals-list,.faq-list,.nextread_grid{margin-top:32px}
+.callout{margin-top:32px;margin-bottom:32px}
+.dur_callout{margin-top:40px;margin-bottom:40px}
+/* .note-soft — NEW CLASS, the quiet inline note (client, 4 Aug: "use another soft, not colorful
+   that much, callout styling in here. it is a new styling"). Third and final treatment for the §7
+   visa qualifiers, and the right one: first they were .dur-note.is-caption hairline captions (too
+   quiet, and a second note idiom), then .dur_callout.is-small (the indigo pull-quote edge — too
+   loud for a footnote, and it borrowed the emphasis that belongs to the section's real callouts).
+   This adds NO colour: the page's own cream #f3e7d3 half a step under the panel's #f9f1df, one
+   hairline, body-paragraph ink. It reads as an aside because it is RECESSED, not because it is
+   accented or greyed (client, 4 Aug: "font color needs to be regular paragraph color"), and the
+   qualifier stays as readable as the copy it qualifies. The left edge is INDIGO (client, 4 Aug),
+   matching .dur_callout — so this now reads as the small member of the same callout family rather
+   than a separate object: same edge colour, quieter surface, no bold fill. A single <p>, no wrapper pair: it holds one line of qualifying text and nothing else.
+   Generic. */
+/* REVISED (client, 4 Aug: "use the same colors but use callout styling"). Same palette as before —
+   the page's cream #f3e7d3 and brown-soft text, no accent — but the CALLOUT's structural signature:
+   a 3px left edge and the 0/10/10/0 asymmetric radius that .dur_callout uses. The edge is brown at
+   25% rather than indigo, so it reads as the same family of object at a quieter volume; indigo
+   still marks only the section-level callouts. */
+.note-soft{background-color:#f3e7d3;border:1px solid #5f595021;border-left:3px solid #5d60ee;border-radius:0 10px 10px 0;padding:11px 16px 11px 14px;margin:14px 0 0;font-size:.875rem;font-weight:500;line-height:1.55;color:#5f5950;text-wrap:pretty}
+
+/* ================ 8. §4 CEFR BAR LADDER ================
+   Six levels, one common axis. Bar length is the datum: proportional to the level's weeks against
+   the longest (11 weeks = 100%), so "levels get gradually longer" is readable at a glance instead
+   of being spelled out six times in prose. Widths are CLASSES (is-w8 … is-w11) because §10 bans
+   inline styles; the set is closed and small, and a new figure means a new class, which is the
+   point — a width cannot be typed in by hand and drift from the number beside it.
+   COLOUR is the stage band, not decoration: green = foundation, indigo = core, orange = advanced.
+   Green is #1ea869 — --green-fresh from colors_and_type.css's data-viz palette, NOT a new hue; this
+   is a chart, which is what that palette is for.
+   The track's radius plus overflow:hidden rounds the fill, so no ::before is needed (§10). */
+/* The legend gets its own recessed strip (client, 4 Aug: "another bg color, a little darker but
+   soft, then more padding bottom") — #f3e7d3, the page's cream, one step under the panel's #f9f1df
+   and the same value .note-soft uses, with a hairline under it so it reads as a key band above the
+   rows rather than a floating row of swatches. */
+.ladder_legend{display:flex;flex-wrap:wrap;column-gap:32px;row-gap:10px;background-color:#f6eeda;border-bottom:1px solid #5f59501a;padding:22px var(--panel-x)}
+.ladder_key{display:flex;align-items:center;gap:8px}
+.ladder_swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.ladder_swatch.is-found{background-color:#1ea869}
+.ladder_swatch.is-core{background-color:#5d60ee}
+.ladder_swatch.is-adv{background-color:#e78b10}
+.ladder_key-text{font-size:.75rem;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#8D877B;line-height:1.5;margin:0}
+.ladder_list{padding:22px var(--panel-x) calc(var(--panel-y) + 10px)}
+/* THE 992-1279 RAIL BAND. Above 991 the 272px rail is back IN FLOW and .section_page still charges
+   its 84px inset, so the content column is 311px at 992 and 598px at 1279 — narrower than any tablet
+   state, and narrower than the 696px this component gets at 1440. Webflow has no max-width tier
+   between main and medium, so the only legal shape is: narrow at BASE, wide at large, wide restated
+   at medium. The medium restatement is NOT redundant — 768-991 and >=1280 are not contiguous.
+   The ladder is the sharpest case on any of the four pages: .ladder_row's 196px meta column plus a
+   36px gap leaves the bar's own track 15px inside the 247px content box, and minmax(0,280px) inside
+   15px is 0 — measured, .ladder_bar resolved to 0px 120px 0px at 992 and the whole element to 13px.
+   A CHART whose bar length IS its datum was rendering at zero width across the entire band. Base is
+   therefore the STACKED shape (which is also what 479 already used); the two-column row returns at
+   medium and the full desktop row at large. */
+.ladder_row{display:grid;grid-template-columns:minmax(0,1fr);row-gap:12px;padding:32px 0;border-bottom:1px solid #5f59501a}
+.ladder_row.is-last{border-bottom:none;padding-bottom:0}
+.ladder_meta{grid-column:1;grid-row:auto;display:flex;align-items:baseline;gap:10px}
+/* #5f5950 (brown-dark) is the ONLY ink the display face takes on this brand — see README "Type".
+   This rule shipped at #37332c (brown-deep) and was the single deviation in the whole project. */
+.ladder_code{font-family:Cameraobscura,serif;font-size:1.375rem;font-weight:500;letter-spacing:.5px;text-transform:uppercase;color:#5f5950;line-height:1.2;margin:0}
+/* The level name is the code's other half, so it takes the code's ink, uppercased (client, 4 Aug).
+   LibreFranklin, not the display face: at 13px the serif loses its shape. */
+.ladder_name{font-size:.8125rem;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:#5f5950;line-height:1.5;margin:4px 0 0;text-wrap:pretty}
+/* MEASURED, LEFT ALONE — and the measurement is worth keeping, because the obvious reading is wrong.
+   .ladder_bar resolves to 0px 120px 0px at 992 (the whole element 13px wide) and 119px at 1280: a
+   CHART whose bar length IS its datum, rendering at zero width across the entire 992-1119 band. It
+   looks like this track list is too wide for the tier, so the fix looks like inverting it to large the
+   way pacific-beach.css's band was inverted. It was tried, and it changed NOTHING at any of the eight
+   widths — because the constraint is not here. .ladder_row is 196px + minmax(0,1fr) with a 36px gap,
+   which inside the 311px content column the 272px rail leaves at 992 hands the bar's own track 15px,
+   and a minmax(0,200px) inside 15px is 0 whatever its maximum says. The cause is .ladder_row, the tier
+   is 992-1119, and that is the same rail band the report raises as one follow-up rather than four
+   separate patches. Reverting rather than shipping a rule that measures identical is deliberate. */
+.ladder_bar{grid-column:1;grid-row:auto;display:grid;grid-template-columns:minmax(0,1fr);row-gap:10px;align-items:center}
+@media screen and (min-width:1280px){
+  .ladder_row{grid-template-columns:196px minmax(0,1fr);column-gap:36px;row-gap:16px}
+  .ladder_meta{grid-column:1;grid-row:1 / span 2;display:block}
+  .ladder_name{margin:4px 0 0}
+  .ladder_bar{grid-column:2;grid-row:1;grid-template-columns:minmax(0,280px) 136px 1fr;column-gap:28px;row-gap:0}
+  .ladder_desc{grid-column:2;grid-row:2}
+}
+.ladder_track{height:8px;border-radius:999px;background-color:#e9deca;overflow:hidden}
+.ladder_fill{height:100%;border-radius:999px;transform-origin:left center}
+.ladder_fill.is-found{background-color:#1ea869}
+.ladder_fill.is-core{background-color:#5d60ee}
+.ladder_fill.is-adv{background-color:#e78b10}
+.ladder_fill.is-w8{width:72.7%}
+.ladder_fill.is-w9{width:81.8%}
+.ladder_fill.is-w10{width:90.9%}
+.ladder_fill.is-w11{width:100%}
+.ladder_weeks{font-size:.9375rem;font-weight:600;color:#37332c;font-variant-numeric:tabular-nums;line-height:1.5;margin:0;white-space:nowrap}
+.ladder_weeks.is-none{font-weight:400;color:#8D877B}
+/* row-gap on .ladder_row is what separated the bar from this line; 12px was tuned when the bar was
+   taller. 6px (client, 4 Aug: "less gap with the top") — the description belongs to the bar above it, so
+   it should sit closer to that bar than the row does to its neighbours. */
+.ladder_desc{grid-column:1;grid-row:auto;font-size:.9375rem;font-weight:400;color:#8D877B;line-height:1.65;margin:-6px 0 0;max-width:58ch;text-wrap:pretty}
+@media screen and (max-width:991px){
+  .ladder_row{grid-template-columns:158px minmax(0,1fr);column-gap:26px;row-gap:16px;padding:26px 0}
+  .ladder_meta{grid-column:1;grid-row:1 / span 2;display:block}
+  .ladder_name{margin:4px 0 0}
+  /* auto, not 120px: .ladder_weeks is nowrap tabular and measures 126px, so the fixed track clipped
+     every "N weeks" figure by 6px at 991, 767 and 480 alike — a figure, so content, not decoration.
+     auto sizes to it and the minmax(0,200px) track gives the 3px back where space is tight. */
+  .ladder_bar{grid-column:2;grid-row:1;grid-template-columns:minmax(0,200px) auto 1fr;column-gap:18px;row-gap:0}
+  .ladder_desc{grid-column:2;grid-row:2}
+}
+/* 480-767 keeps the three-track bar (measured 596px of content at 767, which holds 200+120+36), so
+   the stacked row and the three-track bar are both restated here — medium sits between this tier and
+   the base and sets neither. */
+@media screen and (max-width:767px){
+  .ladder_row{grid-template-columns:minmax(0,1fr);row-gap:12px}
+  .ladder_meta{grid-column:1;grid-row:auto;display:flex;align-items:baseline;gap:10px}
+  .ladder_name{margin:0}
+  .ladder_bar{grid-column:1;grid-row:auto;grid-template-columns:minmax(0,200px) auto 1fr;column-gap:18px;row-gap:0}
+  .ladder_desc{grid-column:1;grid-row:auto}
+}
+@media screen and (max-width:479px){.ladder_bar{grid-template-columns:minmax(0,1fr);row-gap:10px}}
+
+
+/* ================ 10. CLOSING CTA — COPIED FROM costs.css ================
+   The §11 CTA object from costs.css, verbatim apart from literal hex for the two var() fallbacks
+   (this sheet ships no :root). Copied rather than re-derived so the two pages' CTAs diff line for
+   line. NOT copied: .sticky-cta_bar (needs the scroll script that toggles .is-visible) and
+   .inline-cta-btn.is-whatsapp (not a CTA on this page). ================ */
+.inline-cta-copy{min-width:0;display:flex;flex-direction:column;gap:12px}
+.inline-cta_trust{grid-column:1 / -1;display:inline-flex;align-items:center;justify-content:center;gap:12px;align-self:center;justify-self:center;background:#4245C4;border:1px solid rgba(249,240,223,.22);border-radius:100px;padding:5px 20px 5px 9px;margin:0 auto 14px}
+.inline-cta_trust-disc{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#f9f0df}
+.inline-cta_trust-logo{width:16px;height:16px;flex:0 0 auto;display:block}
+.inline-cta_trust-score{font-size:.8125rem;font-weight:600;letter-spacing:.6px;font-variant-numeric:tabular-nums;color:#f9f1df;line-height:1.2;margin:0}
+.cta_stars{position:relative;display:inline-block;flex:0 0 auto;line-height:0;--stars-fill:96%}
+.cta_stars-row{display:flex;align-items:center;gap:3px;line-height:0}
+.cta_stars-row.is-empty{opacity:.3}
+.cta_stars-row.is-full{position:absolute;inset:0;width:var(--stars-fill);overflow:hidden}
+.inline-cta_trust-rule{width:1px;height:16px;background:rgba(249,240,223,.3);flex:0 0 auto}
+/* MISSED IN THE FIRST PORT: costs.css declares .inline-cta-trust (hyphen) as well as
+   .inline-cta_trust (underscore) — two different objects, one letter apart. Without it the review
+   count inherited brown-deep #37332c and sat almost invisible on the indigo pill. */
+.inline-cta-trust{font-size:.8125rem;font-weight:500;letter-spacing:.6px;text-transform:uppercase;color:rgba(249,240,223,.82);line-height:1.4;margin:0}
+@media screen and (max-width:479px){.inline-cta-trust{font-size:.75rem;letter-spacing:.4px}}
+
+/* ============================================================================
+   TABLE EDGE INSET — the structural half of the full-width header band.
+   The band could not bleed while .feetable.is-rates carried the --panel-x inset
+   on the TABLE: a background stops at the cells, and the box-shadow that used to
+   fake the bleed is one flat rectangle, so it could not carry the band's two
+   hairlines. The inset moved to the markup instead — the first and last cell of
+   every row carry .is-inset-l / .is-inset-r — so the table spans the panel edge
+   to edge and the header band, its fill AND its rules, spans with it.
+   Classes on the cells, not :first-child / :last-child, which §10 bans. Inner
+   column boundaries keep the normal 16px gutter; only the two outer edges take
+   the panel inset, so nothing about the column rhythm changes.
+   ============================================================================ */
+/* th.is-inset-l, not .is-inset-l: the base rule is ".feetable th,.feetable td" at specificity
+   (0,1,1), so a lone class at (0,1,0) lost and the padding stayed 0 — measured, the first column's
+   text sat flush on the panel edge. An element+class compound matches that specificity and wins on
+   source order (this sheet's last block), and it is NOT a descendant selector, so §10 holds. */
+th.is-inset-l,td.is-inset-l{padding-left:var(--panel-x, 0px)}
+/* The doubled class is deliberate. The base sheet already ships
+   ".feetable th:last-child,.feetable td:last-child{padding-right:0}" at specificity (0,2,1) — a
+   pre-existing :last-child rule — so th.is-inset-r at (0,1,1) lost and the last column's text sat
+   flush on the panel edge (measured: padding-right 0). Repeating the class raises this to (0,2,1),
+   which wins on source order, and it stays a compound simple selector: no descendant chain, and no
+   new dependence on the banned pseudo-class. */
+th.is-inset-r.is-inset-r,td.is-inset-r.is-inset-r{padding-right:var(--panel-x, 0px)}
+
+/* ================ ONE INK FOR EVERY CONTENT ICON — ROOT CAUSE (client, 4 Aug: "all icon colors must
+   be the same, find the root cause and fix")
+   THE CAUSE: these pages draw icons from FOUR asset families — costs-icon-*, adults-16-icon-*,
+   duration-guide-icon-* and the v2/v3/v4 revisions — and each is baked with its own colour. An
+   <img>-rendered SVG cannot be recoloured by CSS, so every previous attempt only ever *preserved*
+   that difference: "grayscale(1) opacity(.72)" maps a green-ish source to a lighter grey than a brown
+   one, and the per-icon brightness patch I added on top (.is-lightsrc, now deleted) traded one
+   mismatch for another.
+   THE FIX: brightness(0) multiplies every channel by zero, so ANY source colour collapses to black
+   while the alpha channel — the drawing itself — is untouched. One opacity then renders one ink for
+   every icon, from any set, including sets nobody has drawn yet. At .62 over the page creams that
+   lands on #5f5950, the brown-dark heading ink, to within a couple of luminance points.
+   Stars, the Google mark and the review check are NOT in this list: they are brand artwork whose
+   colour is the point. ================ */
+/* opacity:1 is not redundant. client-first.css sets ELEMENT opacity on two of these classes
+   (.accom_detail-icon .7, .hero_highlight-icon .9), and element opacity MULTIPLIES with the filter's
+   opacity — .62 x .7 = .43 — so those icons rendered visibly paler than their neighbours while every
+   filter in this sheet was identical. Resetting it here is what actually makes the ink equal.
+   The same applies to the hero rule below. */
+.overview_col-icon,.factors_card-icon{filter:brightness(0) opacity(.62);opacity:1}
+/* .goal-arrow is INDIGO, and deliberately outside the one-ink rule above (client, 4 Aug: "make the
+   arrows indigo"). It is not a content icon labelling a thing — it is the connector that says "this
+   intent leads to this recommendation", the same job a link does, and indigo is this page's
+   interactive colour. An <img>-rendered SVG cannot take a colour property, so the recolour is a filter
+   chain: brightness(0) flattens the source to black, then the invert/sepia/saturate/hue-rotate steps
+   carry it to #5d60ee. The chain is the one already authored for this same asset in
+   pages/how-long-to-learn-english/styles.css — reused rather than re-derived, so both sheets tint it
+   identically. */
+.goal-arrow{filter:brightness(0) saturate(100%) invert(32%) sepia(80%) saturate(1500%) hue-rotate(224deg) brightness(105%);opacity:1}
+/* The hero icons sit on a dark photograph, so they collapse the other way: brightness(0) then
+   invert(1) forces any source to pure white, and .92 softens it to the hero's cream. Same principle,
+   opposite end — and it fixes a real mismatch, since this page's hero mixed cream-baked hero icons
+   with a brown duration-guide one. */
+.hero_highlight-icon{filter:brightness(0) invert(1) opacity(.92);opacity:1}
+
+/* B9 · §4 "See the details" disclosure. A native <details>, so it needs no JS, prints open in the
+   browser's print view, and stays out of the .faq-* family (which the live accordion script and the
+   FAQPage schema both own). The toggle is a FULL-WIDTH row, not a pill: it sits directly under a
+   full-width calculator sheet, and a small left-aligned pill under 735px of sheet reads as a stray
+   button. Same field vocabulary as the calculator's own controls — 3rem min-height, 7px radius,
+   cream fill, hairline edge — with a caret that flips and a one-line summary of what is inside. */
+.calc_details{margin-top:24px}
+.calc_details-toggle{display:flex;align-items:center;gap:14px;width:100%;min-height:3.25rem;padding:18px 32px;border:1px solid rgba(95,89,80,.15);border-radius:16px;background:var(--cream-soft,#f9f1df);cursor:pointer;list-style:none;transition:background-color .18s ease,border-color .18s ease}
+.calc_details-toggle::-webkit-details-marker{display:none}
+.calc_details-toggle:hover{border-color:rgba(95,89,80,.3)}
+.calc_details-toggle:focus-visible{outline:none;border-color:var(--indigo-bright,#5d60ee);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
+.calc_details-label{font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--brown-deep,#37332c)}
+.calc_details-hint{font-size:.875rem;font-weight:500;color:#8D877B;line-height:1.4}
+.calc_details-caret{flex-shrink:0;margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--brown-dark,#5f5950);border-bottom:1.5px solid var(--brown-dark,#5f5950);transform:translateY(-2px) rotate(45deg);transition:transform .18s ease}
+.calc_details[open] .calc_details-caret{transform:translateY(1px) rotate(-135deg)}
+.calc_details[open] .calc_details-toggle{border-color:rgba(95,89,80,.3);border-radius:16px 16px 0 0;border-bottom-color:transparent}
+/* the body is the same cream sheet as the calculator, joined to the toggle */
+.calc_details-body{padding:20px 32px 36px;border:1px solid rgba(95,89,80,.15);border-top:0;border-radius:0 0 16px 16px;background:var(--cream-soft,#f9f1df)}
+/* Inside the disclosure the blocks are stacked evidence, so every callout gets real air below
+   it and no divider rules are used — the spacing separates, not a line. */
+.calc_details-body .callout{margin-top:24px;margin-bottom:32px}
+.calc_details-body .section-subtitle{margin-top:36px}
+.calc_details-body .section-subtitle.is-first{margin-top:0}
+.calc_details-body .feetable{margin-bottom:8px}
+.calc_details-body .feetable + .body-text{margin-top:20px}
+/* prose that follows the rate panel inside the disclosure — the panel is a bordered block, so its
+   first paragraph needs the section's own step, not a table's tighter one */
+.calc_details-body .brackets_panel + .body-text{margin-top:28px}
+.calc_details-body .body-text + .body-text{margin-top:16px}
+/* the first child inside the body must not double the disclosure's own spacing */
+.calc_details-body > :first-child{margin-top:0}
+/* Spacing for a body that holds PROSE, not just one panel — this page's disclosure carries three
+   paragraphs before its table, and the costs block only ever needed rules for a callout, a subtitle and
+   a table. Measured: consecutive .body-text / .body-intro had no gap at all (the live sheets reset a
+   paragraph's top margin) so two sentences ran together, while the unchromed panel below them sat in a
+   32px void. One 16px step between paragraphs, one 28px step before the panel. */
+.calc_details-body .body-text,.calc_details-body .body-intro{margin-top:16px}
+.calc_details-body .brackets_panel{margin-top:28px}
+.calc_details-body .dur_callout{margin-top:24px;margin-bottom:0}
+/* THE MISSING small STEP (worklist §3.3 and fragile primitive #8). The toggle and the body held
+   desktop padding — 18px/32px and 20px/32px/36px — unchanged from 1440 all the way down to 480, with
+   their only override inside the bare-479 block. The horizontal value follows this sheet's own panel
+   ladder, which is 32 -> 26 (@991) -> 20 (@479) on --panel-x and had no 767 rung either; the vertical
+   pair interpolates the two ends that already existed.
+   NOT given a 991 step, and that is a measured decision rather than an omission: at 991 the rail has
+   left flow AND .section_page's 84px inset is gone, so this panel is 850px wide against 696px at 1440.
+   991 is the WIDEST tier this component ever sees on this page, so a tablet step there would tighten
+   padding on the roomiest layout. The tier that genuinely squeezes it is 992-1119 (311px), which is
+   above the ceiling of this round — see the report. */
+@media screen and (max-width:767px){.calc_details-toggle{padding:16px 26px}.calc_details-body{padding:18px 26px 32px}}
+@media (max-width:479px){.calc_details-toggle{padding:14px 18px;gap:10px}.calc_details-hint{display:none}.calc_details-body{padding:16px 20px 28px}}
+/* A .brackets_panel INSIDE the disclosure drops its own chrome. Both surfaces are #f9f1df with a
+   1px hairline and a large radius, so nesting them draws a box inside a box — the defect CLAUDE.md
+   records from the §3 rebuild, and the one thing a screenshot catches instantly. The disclosure body
+   IS the panel here; the panel keeps only its parts (band, table, foot). --panel-x:0 hands the
+   horizontal inset to the body's own 32px padding, so the band spans the body's content width and
+   the table's .is-inset-l/-r cells align with everything else inside the disclosure instead of being
+   indented twice. Same reasoning as .brackets_panel.is-factors. */
+.calc_details-body .brackets_panel{--panel-x:0px;background:none;border:0;border-radius:0;overflow:visible;margin:0}
+.calc_details-body .brackets_head{padding-left:0;padding-right:0;background:none;border-top:0}
+.calc_details-body .brackets_foot{padding-left:0;padding-right:0}
+
+/* The CTA fills its column (client, 4 Aug: "make it full width"). MEASURED: the section was 832px inside
+   an 877px .page_content, held off both edges by a 22.37px horizontal margin from the live
+   .section_inline-cta rule — a centring margin written for a full-bleed page, not for a body column that
+   is already inset. page_content is a flex column, so the section also has to opt into stretching. */
+.section_inline-cta{margin-left:0;margin-right:0;align-self:stretch;width:100%;position:relative}
+/* THE BADGE SITS ON THE PANEL'S TOP EDGE — the same block, the same values, in all four san-diego sheets
+   (client, 4 Aug: "put it to the top of the section with 50% - margin-top ... use position absolute if
+   needed" and "use exactly the same style about the badge in all pages"). It leaves the flex flow and is
+   centred on the edge itself: translate(-50%,-50%) IS that -50% margin-top, taken from the badge's own
+   height, so it stays centred whatever the pill measures. The panel's top padding grows to keep the heading
+   clear — with the badge out of the flow it would otherwise ride up under the pill. */
+.inline-cta_trust{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);margin:0;z-index:2}
+/* The only fragile primitive that was unhandled on every one of the four pages: inline-flex, no wrap,
+   no cap, absolutely positioned and centred on the panel's top edge. Measured 301px in English at
+   767-1440 and 206px at 479 — it fits today with 65-360px of slack — but the site runs Weglot across
+   nine locales ("195 reviews" -> "195 Bewertungen") and without a cap it clips against the section
+   instead of wrapping. Capped and allowed to wrap from small down; it stays centred on the edge when
+   it wraps, because the -50% translate is taken from its own height. Same block in all four sheets. */
+@media screen and (max-width:767px){.inline-cta_trust{max-width:calc(100% - 24px);flex-wrap:wrap;row-gap:4px}}
+.inline-cta-a8a1{padding-top:72px}
+@media screen and (max-width:991px){.inline-cta-a8a1{padding-top:56px}}
+@media screen and (max-width:767px){.timeline_when{line-height:26px}.timeline_meta{min-height:26px}}
+/* Heading bands are 22px top and bottom on every page — see the audit note in pacific-beach.css. */
