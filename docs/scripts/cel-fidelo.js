@@ -14,8 +14,9 @@
  *   - NEVER reads free-text / email / tel / textarea / number input VALUES.
  *     The only field content it reads is selection-control LABELS (checked
  *     radios, active service buttons) and the displayed price total.
- *   - Selection capture is gated to the non-PII steps (courses/housing/extras).
- *     The personal-details and confirmation steps emit the step MARKER only.
+ *   - Selection capture is gated BY NAME to the non-PII steps (courses/housing/extras).
+ *     The destination, personal-details and confirmation steps emit the step MARKER only,
+ *     as does any step whose name could not be resolved (see stepNameFor).
  *   - Sets no cookies, uses no storage, loads no resources, uses no eval.
  *   - Wrapped so it can never throw into the host (Fidelo) page.
  *
@@ -52,10 +53,20 @@
   // labels are translated per locale (COURSES/KURSE/دورة …) but the order is
   // identical across all locales (verified EN/DE/AR), so the index is the stable
   // key — we never depend on the translated label.
-  const STEP_NAMES = ['courses', 'housing', 'extras', 'personal_details', 'confirmation'];
+  //
+  // ORDER RE-VERIFIED 2026-08-11 against the live widget nav: Fidelo rebuilt the form as
+  // SIX steps and moved personal details from 4th to 2nd. The old five-entry map
+  // (courses/housing/extras/personal_details/confirmation) still RESOLVED at every index,
+  // so each booking_step carried a confidently wrong step_name — index 2 reported
+  // "housing" for Personal Details, index 3 "extras" for Courses, and so on, in every
+  // locale. See stepNameFor() for the guard that makes the next such change self-announce.
+  const STEP_NAMES = ['destination', 'personal_details', 'courses', 'housing', 'extras', 'confirmation'];
 
-  // Steps on which a (non-PII) selection snapshot may be captured. personal_details
-  // and confirmation are intentionally ABSENT — those screens carry personal data.
+  // Steps on which a (non-PII) selection snapshot may be captured. Keyed by NAME, not by
+  // index, so the gate follows the map above wherever Fidelo moves those screens.
+  // personal_details and confirmation are intentionally ABSENT — those screens carry
+  // personal data. So is destination: its only control is a <select name="school">, which
+  // captureSelection() does not read (it reads checked radios + active buttons only).
   const CAPTURE_STEPS = { courses: true, housing: true, extras: true };
 
   const NAV = '[component="block-nav-steps"]';
@@ -66,6 +77,7 @@
   const SUBMIT_POLL_MAX = 90; // ~90s watch window after reaching confirmation
 
   let lastStep = -1;
+  let navTotal = 0;           // nav length observed at the last step change (see stepNameFor)
   let leadSent = false;
   let watchingSubmit = false;
   let widgetOpened = false;   // fidelo_widget_open posted once when the nav first renders
@@ -193,6 +205,28 @@
     return -1;
   }
 
+  // Resolve the language-independent key for a nav index. An INDEX-keyed map cannot
+  // survive Fidelo inserting, removing or reordering a step: every index at or after the
+  // change resolves to a real-looking but WRONG name — which is exactly how the funnel
+  // went silently wrong before 2026-08-11. The nav LENGTH is the one drift signal
+  // available for free, so once it stops matching the map we stop trusting the map's
+  // indices and emit generic step_<n> keys instead.
+  //
+  // That fallback is deliberately visible: a GA4 funnel of step_1…step_7 announces "the
+  // map is stale" on the very first event, where a plausible-but-wrong label announces
+  // nothing. It also fails SAFE for privacy — a generic name is not in CAPTURE_STEPS, so
+  // no selection snapshot is taken until a human re-verifies the order. It needs no
+  // parent-side change either: the signal rides the step_name param cel-events.js already
+  // forwards, so no new field has to be whitelisted in the receiver or mapped in GTM.
+  //
+  // KNOWN LIMIT: a re-order that keeps the SAME count is undetectable from an index alone
+  // (the labels are translated into 9 locales, which is why the map is index-keyed at
+  // all). Re-verify STEP_NAMES against the live nav on any Fidelo form change.
+  function stepNameFor(idx, total) {
+    if (total === STEP_NAMES.length && STEP_NAMES[idx]) return STEP_NAMES[idx];
+    return 'step_' + (idx + 1);
+  }
+
   // Non-PII selection snapshot for the CURRENT step. Reads ONLY selection-control
   // labels (checked radios, active service buttons) + the displayed price total.
   // It NEVER reads .value of any input/textarea, so names, emails, phone numbers,
@@ -254,7 +288,10 @@
     const prevSeen = lastStep !== -1;
     lastStep = idx;
     stepEnteredAt = now();
-    const name = STEP_NAMES[idx] || ('step_' + (idx + 1));
+    // Remember the nav length seen at step time so postAbandon can resolve the same name
+    // without re-reading the DOM during page teardown (where the nav may already be gone).
+    navTotal = links.length;
+    const name = stepNameFor(idx, links.length);
     const msg = { event: 'fidelo_booking_step', step: idx + 1, step_name: name, step_total: links.length, step_direction: direction };
     if (prevSeen && enteredPrev) {
       const dur = Math.round(stepEnteredAt - enteredPrev);
@@ -274,7 +311,10 @@
       }
     }
     send(msg);
-    if (name === 'confirmation') startSubmitWatch();
+    // The final nav step is the pre-payment summary in both the old and the current form,
+    // so the index test is equivalent to the name test today — it is here so that a stale
+    // map (generic step_<n> names) can never silently switch conversion tracking off.
+    if (name === 'confirmation' || idx === links.length - 1) startSubmitWatch();
   }
 
   // Completion signal — CONFIRMED against a live completed booking 2026-06-03.
@@ -417,7 +457,9 @@
   function postAbandon() {
     if (abandonSent || leadSent || lastStep < 0) return;
     abandonSent = true;
-    const name = STEP_NAMES[lastStep] || ('step_' + (lastStep + 1));
+    // navTotal (not a fresh DOM read) — this runs during pagehide, where the nav may
+    // already be torn down; a 0-length read would mislabel an otherwise healthy abandon.
+    const name = stepNameFor(lastStep, navTotal);
     send({ event: 'fidelo_booking_abandon', step: lastStep + 1, step_name: name });
   }
 
