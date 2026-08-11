@@ -543,6 +543,16 @@
  *   • A missing / non-CEL / third-party referrer still matches nothing — a foreign
  *     host embedding the Fidelo widget never receives CEL branding.
  *
+ * NO LONGER FAIL-INVISIBLE (2026-08-11): the referrer fix above stops the gate from
+ * wrongly declining, but it does not make the UNSKINNED state safe — and the gate
+ * declines legitimately all the time (any non-CEL parent). Whenever the skin does not
+ * apply, applySkin now calls neutralizeLegacyAdminCss(), which switches Fidelo's admin
+ * <style> off so the form falls back to Fidelo's own readable defaults instead of cream
+ * on cream. Read that function's comment before touching this file's failure modes.
+ * This is a floor, not a cure-all: if the SCRIPT itself never loads (CSP script-src,
+ * CDN outage) nothing here runs, and only removing the rules in Fidelo's admin fixes
+ * that. See FIDELO-ADMIN-CSS-CLEANUP.md.
+ *
  * STATE TODAY: PRODUCTION — ALLOWED_PATH is the live /booking slug, SKIN_CSS is
  * populated, and applySkin injects it. To retarget the gate, edit ALLOWED_PATH
  * (and the /ar/ referrer test in widgetIsArabic) — that is the whole switch.
@@ -586,28 +596,115 @@
     } catch (e) { return false; }
   }
 
+  /* ── LEGACY ADMIN-CSS NEUTRALIZER (added 2026-08-11) ────────────────────────
+   * Fidelo's per-client admin config injects an inline <style> into the widget
+   * document. It was written years ago for a dark indigo card CEL no longer uses,
+   * and its `label,h4,h3,h2,p{color:#f9f0df}` assumes an indigo `.card-body` sits
+   * behind it. Measured on the live widget 2026-08-11 with the skin off: there is
+   * NO .card-body in the DOM on the Destination / Personal Details screens, and no
+   * ancestor of any label has a background — so the cream paints straight onto the
+   * transparent iframe over CEL's cream page. That is why a missing skin made the
+   * form INVISIBLE rather than merely unstyled (see the ⚠ note above).
+   *
+   * Our skin is the only thing that has ever masked this. So when the skin does NOT
+   * apply, we switch the block off instead, and the form falls back to Fidelo's own
+   * product CSS — measured readable: white form, rgb(33,37,41) text.
+   *
+   * SCOPE — why this only ever touches the admin block:
+   *   • INLINE <style> only. Fidelo's real theme ships via <link> (registration.css
+   *     184 rules, registration-bootstrap4.css 534) and is never a candidate.
+   *   • Must carry a `.fidelo-registration-form` selector, which excludes the widget's
+   *     runtime Vue-calendar sheets (`.vc-*[data-v-…]`) and the anti-spam honeypot.
+   *   • Never our own <style id="cel-fidelo-…">.
+   *   • MAX_ADMIN_RULES is a blast-radius cap, NOT a heuristic: it exists so that if
+   *     Fidelo ever inlines their REAL theme we can never disable it. Admin block = 14.
+   * A value-agnostic test on purpose — recolouring the admin CSS must not silently
+   * disarm this. If the block is ever removed at the source, nothing matches and the
+   * whole path becomes a no-op.
+   */
+  const MAX_ADMIN_RULES = 50;
+
+  // Replaces what the admin block's ≤500px rule was trying to do. With the block off,
+  // Fidelo's default nav renders the six step labels one letter per line — 616px of it
+  // on a 393px iPhone, pushing the first field below the fold (measured). `display:none`
+  // collapses the box; their `visibility:hidden` did NOT, which is precisely why the
+  // block also needed `margin-bottom:-70%` to claw the dead space back. 616px → 28px.
+  const FALLBACK_CSS = '@media (max-width:500px){.fidelo-registration-form nav[component="block-nav-steps"] a.nav-link span{display:none}}';
+
+  // ⚠ Check selectorText BEFORE recursing. Modern CSSStyleRule implements
+  // CSSGroupingRule, so `.cssRules` is a TRUTHY EMPTY list on an ordinary style rule —
+  // treating it as "this is a grouping rule" skips every declaration in the sheet.
+  function mentionsForm(rules, depth) {
+    for (let i = 0; i < rules.length; i++) {
+      const r = rules[i];
+      if (r.selectorText && r.selectorText.indexOf('fidelo-registration-form') !== -1) return true;
+      if (depth < 2 && r.cssRules && r.cssRules.length && mentionsForm(r.cssRules, depth + 1)) return true;
+    }
+    return false;
+  }
+
+  function isLegacyAdminSheet(el) {
+    if (el.id && el.id.indexOf('cel-fidelo') === 0) return false;   // never our own
+    const sheet = el.sheet;
+    if (!sheet || sheet.href) return false;                         // inline only
+    let rules;
+    try { rules = sheet.cssRules; } catch (e) { return false; }     // unreadable — leave alone
+    if (!rules || !rules.length || rules.length > MAX_ADMIN_RULES) return false;
+    return mentionsForm(rules, 0);
+  }
+
+  function neutralizeLegacyAdminCss() {
+    try {
+      const styles = document.querySelectorAll('style');
+      let n = 0;
+      for (let i = 0; i < styles.length; i++) {
+        if (!isLegacyAdminSheet(styles[i])) continue;
+        try { styles[i].sheet.disabled = true; } catch (e) { /* fall through to the reflection */ }
+        styles[i].disabled = true;    // HTMLStyleElement.disabled reflects sheet.disabled
+        n++;
+      }
+      if (n && !document.getElementById('cel-fidelo-fallback')) {
+        const f = document.createElement('style');
+        f.id = 'cel-fidelo-fallback';
+        f.textContent = FALLBACK_CSS;
+        (document.head || document.documentElement).appendChild(f);
+      }
+    } catch (e) { /* never throw into the host (Fidelo) page */ }
+  }
+
   function applySkin() {
-    if (!SKIN_CSS) return;            // empty SKIN_CSS = no-op
-    if (!envAllowsSkin()) return;     // gate: /booking slug only — any other parent page never matches
+    let applied = false;
     // Inject <style id="cel-fidelo-skin"> (base skin), then optionally a SECOND
     // <style id="cel-fidelo-skin-rtl"> (Arabic RTL). Idempotent + try/catch-wrapped so a CSP
     // style-src block or a missing <head> can never throw into Fidelo's page. These are the
     // ONLY DOM writes this file makes (the analytics IIFE above stays read-only).
-    try {
-      if (!document.getElementById('cel-fidelo-skin')) {
-        const style = document.createElement('style');
-        style.id = 'cel-fidelo-skin';
-        style.textContent = SKIN_CSS;
-        (document.head || document.documentElement).appendChild(style);
-      }
-      // Arabic RTL layer: a SECOND gated <style>, only when the widget renders Arabic.
-      if (RTL_CSS && widgetIsArabic() && !document.getElementById('cel-fidelo-skin-rtl')) {
-        const rtl = document.createElement('style');
-        rtl.id = 'cel-fidelo-skin-rtl';
-        rtl.textContent = RTL_CSS;
-        (document.head || document.documentElement).appendChild(rtl);
-      }
-    } catch (e) { /* never throw into the host (Fidelo) page */ }
+    if (SKIN_CSS && envAllowsSkin()) {   // gate: CEL origin only — a foreign parent never matches
+      try {
+        let style = document.getElementById('cel-fidelo-skin');
+        if (!style) {
+          style = document.createElement('style');
+          style.id = 'cel-fidelo-skin';
+          style.textContent = SKIN_CSS;
+          (document.head || document.documentElement).appendChild(style);
+        }
+        // Arabic RTL layer: a SECOND gated <style>, only when the widget renders Arabic.
+        if (RTL_CSS && widgetIsArabic() && !document.getElementById('cel-fidelo-skin-rtl')) {
+          const rtl = document.createElement('style');
+          rtl.id = 'cel-fidelo-skin-rtl';
+          rtl.textContent = RTL_CSS;
+          (document.head || document.documentElement).appendChild(rtl);
+        }
+        // An element in the DOM is NOT proof the CSS applied: a CSP style-src block leaves
+        // the <style> in the tree with a null .sheet. Confirm it became a live stylesheet,
+        // because "our CSS silently didn't apply" is the exact case the fallback is for.
+        applied = !!style.sheet;
+        try { if (applied && style.sheet.cssRules.length === 0) applied = false; }
+        catch (e) { /* cssRules unreadable — .sheet existing is enough */ }
+      } catch (e) { applied = false; }
+    }
+    // Gate declined (incl. every WebKit parent that is not CEL), SKIN_CSS dormant, or the
+    // injection was blocked → make sure Fidelo's legacy admin CSS cannot hide the form.
+    if (!applied) neutralizeLegacyAdminCss();
   }
 
   applySkin();
