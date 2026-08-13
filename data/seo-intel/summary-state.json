@@ -592,8 +592,8 @@
     "generated_at": "2026-05-21T13:08:25.867834+00:00"
   },
   "6964d1f803137621a1ff8a71": {
-    "source_hash": "51512d9badd0a7607a4465e9290d49f31384fc71196196de511c8979c2864710",
-    "generated_at": "2026-05-21T13:08:25.867851+00:00"
+    "source_hash": "55f813cccaf35b72e5f4f2df0e1a4b6546da652909b13da9762057d903a43a0f",
+    "generated_at": "2026-08-13T05:52:54.734264+00:00"
   },
   "6946a9bc28a8bcc5d16ed81a": {
     "source_hash": "2d77b10df52200859dbcde16e5a3ed0d81d055673e8e4303d4bf21e49227ff2f",
@@ -828,8 +828,8 @@
     "generated_at": "2026-05-21T13:08:25.868856+00:00"
   },
   "68da8c32a864aa7dac765adf": {
-    "source_hash": "314a34409c8caaa73cd7ad48b9fcd09ad7feb5684446ccd8fb1a807b0af4d87c",
-    "generated_at": "2026-05-21T13:08:25.868871+00:00"
+    "source_hash": "f83f6ad56bce63d2e3033784caa8449b1826e7894f484e642b62847566433bae",
+    "generated_at": "2026-08-13T05:52:56.144458+00:00"
   },
   "68da8565dd33e75f24e75248": {
     "source_hash": "63429018459ed8762c32a867410c6b4099b1b3935f90e1b9c1d3537d0ded0dd2",
@@ -1174,5 +1174,9 @@
   "https://www.englishcollege.com/courses": {
     "source_hash": "4db45c0ee551750dd730db99adb0746eafd0e414d49c9b8efbb1155431aacb2a",
     "generated_at": "2026-05-22T11:52:16.641823+00:00"
+  },
+  "6964c3e979cf74d51ecca3f9": {
+    "source_hash": "e5affa8376765fb48e2e1cde41803a91a8acc325e06d6d861035187e39ec2d99",
+    "generated_at": "2026-08-13T05:52:55.641731+00:00"
   }
 }
