@@ -1,5 +1,5 @@
 {
-  "last_sync": "2026-08-15T08:38:52.038083+00:00",
+  "last_sync": "2026-08-15T09:08:52.418067+00:00",
   "exclusions": {
     "where-do-students-live-vancouver": {
       "language": "en",
@@ -5504,6 +5504,21 @@
       "source": "api",
       "url_path": "/post/california-study-abroad-budget-ja",
       "added_at": "2026-08-11T16:12:22.264017+00:00"
+    },
+    "soggiorno-linguistico-canada-vs-usa": {
+      "language": "it",
+      "excluded_from": [
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt"
+      ],
+      "source": "api",
+      "url_path": "/post/soggiorno-linguistico-canada-vs-usa",
+      "added_at": "2026-08-15T09:08:52.417973+00:00"
     }
   }
 }
