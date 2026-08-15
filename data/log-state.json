@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-08-15T05:53:06.587150-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-08-15T04:59:49.886823-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "soggiorno-linguistico-canada-vs-usa"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-08-15T01:38:52.177494-07:00",
-      "detail": {}
     }
   ]
 }
