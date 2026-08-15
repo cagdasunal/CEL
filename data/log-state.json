@@ -1,6 +1,15 @@
 {
   "events": [
     {
+      "kind": "weglot_update",
+      "ts": "2026-08-15T02:13:16.305245-07:00",
+      "detail": {
+        "slugs": [
+          "soggiorno-linguistico-canada-vs-usa"
+        ]
+      }
+    },
+    {
       "kind": "no_change",
       "ts": "2026-08-15T01:38:52.177494-07:00",
       "detail": {}
@@ -43,11 +52,6 @@
     {
       "kind": "no_change",
       "ts": "2026-08-14T21:49:32.491784-07:00",
-      "detail": {}
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-08-14T21:14:44.852390-07:00",
       "detail": {}
     }
   ]
