@@ -2,6 +2,11 @@
   "events": [
     {
       "kind": "no_change",
+      "ts": "2026-08-22T06:38:09.174385-07:00",
+      "detail": {}
+    },
+    {
+      "kind": "no_change",
       "ts": "2026-08-22T05:54:31.901798-07:00",
       "detail": {}
     },
@@ -48,11 +53,6 @@
           "soggiorno-linguistico-san-diego-falo-mission-beach"
         ]
       }
-    },
-    {
-      "kind": "no_change",
-      "ts": "2026-08-22T01:40:14.307293-07:00",
-      "detail": {}
     }
   ]
 }
