@@ -1142,6 +1142,48 @@ def _parse_iinf(data: bytes, iinf: _Box) -> list[tuple[int, bytes, _Box]]:
     return out
 
 
+# ISO/IEC 14496-12 §8.11.6: for a version 2/3 `infe` whose item_type is 'mime',
+# the null-terminated item_name is followed by a null-terminated content_type.
+# It is the ONLY authoritative statement of what an item holds — and it was
+# parsed nowhere, so `mime` items were classified by grepping their payload for
+# the literal bytes "xmpmeta". That missed two things: XMP serialised without
+# the optional <x:xmpmeta> wrapper (XMP part 1 permits a bare rdf:RDF root, and
+# Adobe's toolkit has kXMP_OmitXMPMetaElement for exactly this), and any
+# non-XMP vendor sidecar. The second is the dangerous one: no Signal meant
+# _strip_iso's drop set stayed empty, strip() returned the file unchanged, and
+# a rescan by the same blind parser reported clean=True — while a payload like
+# {"generator":"Higgsfield"} sat in the file, invisible to raw_residue() too.
+_ISO_XMP_CONTENT_TYPES = frozenset({
+    b"application/rdf+xml", b"application/xml", b"text/xml",
+})
+_ISO_C2PA_CONTENT_TYPES = frozenset({
+    b"application/x-c2pa-manifest-store", b"application/c2pa",
+})
+
+
+def _infe_content_type(data: bytes, infe: _Box) -> bytes:
+    """The declared content_type of a 'mime' item, or b"" if absent/unparseable."""
+    b = infe.offset + infe.hdr
+    if b >= len(data):
+        return b""
+    iver = data[b]
+    if iver not in (2, 3):
+        return b""
+    q = b + 4
+    q += 2 if iver == 2 else 4          # item_ID
+    q += 2                              # item_protection_index
+    if data[q:q + 4] != b"mime":
+        return b""
+    q += 4
+    end = min(infe.end, len(data))
+    nul = data.find(b"\x00", q, end)   # item_name
+    if nul < 0:
+        return b""
+    q = nul + 1
+    nul = data.find(b"\x00", q, end)   # content_type
+    return (data[q:nul] if nul >= 0 else data[q:end]).strip().lower()
+
+
 def _parse_iloc(data: bytes, iloc: _Box) -> tuple[dict, list[dict]]:
     """Parse an iloc box into (header-info, entries)."""
     b = iloc.offset + iloc.hdr
@@ -1264,9 +1306,31 @@ def _scan_iso(data: bytes, rep: Report) -> None:
                 s = ent["base_offset"] + ex["offset"]
                 blob += data[s:s + ex["length"]]
                 length += ex["length"]
-        if item_type == b"mime" and b"xmpmeta" not in blob and b"c2pa" not in blob:
-            continue                                   # some other mime item
+        detail_extra = ""
+        if item_type == b"mime":
+            # Decide from the DECLARED content_type, falling back to the payload
+            # sniff only when the infe is malformed enough not to carry one.
+            ctype = _infe_content_type(data, infe)
+            if ctype in _ISO_C2PA_CONTENT_TYPES:
+                kind = "c2pa"
+            elif ctype in _ISO_XMP_CONTENT_TYPES:
+                kind = "xmp"
+            elif ctype:
+                # A vendor sidecar. It is ancillary metadata by construction —
+                # a `meta` item is not the picture, and render-essential parts
+                # of an AVIF/HEIF are coded item types (av01/hvc1) or `Exif`,
+                # never `mime`. Report it, name what it declared itself to be,
+                # and let the policy decide.
+                kind = "other_metadata"
+                detail_extra = f"content_type={ctype.decode('latin1', 'replace')}"
+            elif b"xmpmeta" in blob or b"rdf:RDF" in blob:
+                kind = "xmp"
+            elif b"c2pa" in blob or b"jumb" in blob:
+                kind = "c2pa"
+            else:
+                continue                              # no type, no payload signal
         refined, extra = _classify_blob(blob, kind)
+        extra = f"{extra} {detail_extra}".strip()
         rep.signals.append(Signal(
             kind=refined, where=f"ISOBMFF:item:{item_type.decode('latin1', 'replace')}",
             offset=infe.offset, length=length, removable=True,

@@ -1537,7 +1537,25 @@ def cmd_replace(args: argparse.Namespace) -> int:
 # marked original it came from. That is positive evidence of AI origin for a file
 # that carries no trace of it.
 PHASH_BITS = 512
-PHASH_MATCH_MAX = 40      # measured: same image after resize+WebP = 1-4; different images = 228-270
+# Measured on a 512x512 structured image (scripts/tests/test_watermark_cleaner.py
+# ::TestLineageMatchBoundary keeps these numbers honest — they go red if the
+# descriptor changes and this comment is not updated):
+#
+#   SURVIVES              resize 50% = 6 · resize 200% = 0 · aspect squash = 3
+#                         JPEG q70 re-encode = 1
+#   DOES NOT SURVIVE      crop 1% = 45 · 2% = 87 · 5% = 159 · 10% = 245
+#                         mirror = 185 · rotate 90 = 243 · rotate 2 deg = 93
+#   unrelated images      240
+#
+# A row/column difference hash over a fixed 16x16 grid of the WHOLE frame:
+# cropping shifts every cell, so it decorrelates almost immediately. Note the
+# threshold cannot be raised to buy crop tolerance — an unrelated image sits at
+# 240 and a 3% crop at 118, so any threshold wide enough to catch modest crops
+# starts colliding unrelated content. Real crop tolerance needs a
+# translation-invariant descriptor (tiled overlapping windows, or a block-mean /
+# ORB second opinion), not a bigger number.
+PHASH_BITS_UNRELATED_FLOOR = 200   # documentation of the measured separation
+PHASH_MATCH_MAX = 40
 
 
 def _px(img):
@@ -1778,6 +1796,16 @@ def cmd_lineage(args: argparse.Namespace) -> int:
     print("  image, and any pixel-domain watermark it carries is untouched and")
     print("  undetectable from here. This command answers 'which are AI?', which is")
     print("  a different question from 'which can be cleaned?'.")
+    print()
+    print("  WHAT THIS MATCH SURVIVES — measured, not assumed:")
+    print("    survives      resizing, re-encoding (JPEG/WebP/AVIF), aspect squash")
+    print("    does NOT      cropping (even 1% off each edge), mirroring, rotation")
+    print()
+    print(f"  So `matched an AI original {matched}` is a LOWER BOUND. A non-match is")
+    print("  NOT evidence of human origin: an image cropped on the way in — a CMS")
+    print("  thumbnail rule, a card aspect ratio, a square avatar — is AI-derived and")
+    print("  will not match. Raising the threshold does not fix this and would start")
+    print("  matching unrelated images; it needs a translation-invariant descriptor.")
     print(f"{'─' * 78}\n")
     if args.log_jsonl:
         append_jsonl(Path(args.log_jsonl), rows)
