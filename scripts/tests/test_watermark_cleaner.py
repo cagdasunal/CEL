@@ -15,6 +15,7 @@ import ast
 import inspect
 import io
 import json
+import random
 import struct
 import urllib.error
 import sys
@@ -28,6 +29,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import image_provenance as ip  # noqa: E402
 import watermark_cleaner as wc  # noqa: E402
+
+try:  # Pillow drives the lineage-boundary fixtures only
+    from PIL import Image
+except ImportError:  # pragma: no cover
+    Image = None
 
 
 # ── fixtures ─────────────────────────────────────────────────────────────────
@@ -2286,3 +2292,104 @@ class TestScanSummaryIsQualifiedByCoverage:
         assert rc == 0
         assert "NOT read" not in out and "n/a" not in out
         assert "unreadable" not in out
+
+
+@pytest.mark.skipif(Image is None, reason="Pillow not installed")
+class TestLineageMatchBoundary:
+    """153 `crop-defeats-hash-no-caveat`.
+
+    The threshold comment documented only the two transforms the hash handles
+    well, and the printed report asserted flatly that the command answers
+    "which are AI?". Neither mentioned cropping — which defeats the match at
+    1% off each edge, because a row/column difference hash over a fixed 16x16
+    grid of the whole frame shifts every cell when the frame moves.
+
+    These tests exist so the caveat cannot silently go stale: change the
+    descriptor and they go red until the documented boundary is updated too.
+    They assert BANDS, not exact distances — an exact number would be a
+    brittle re-statement of the implementation.
+    """
+
+    @staticmethod
+    def _img(seed: int = 1, w: int = 512, h: int = 512):
+        rnd = random.Random(seed)
+        im = Image.new("RGB", (w, h))
+        px = im.load()
+        for y in range(h):
+            for x in range(w):
+                px[x, y] = ((x * 7 + y * 3) % 256, (y * 5) % 256, (x * 11 + y * 13) % 256)
+        for _ in range(40):
+            cx, cy, r = rnd.randrange(w), rnd.randrange(h), rnd.randrange(10, 60)
+            c = (rnd.randrange(256), rnd.randrange(256), rnd.randrange(256))
+            for y in range(max(0, cy - r), min(h, cy + r)):
+                for x in range(max(0, cx - r), min(w, cx + r)):
+                    if (x - cx) ** 2 + (y - cy) ** 2 <= r * r:
+                        px[x, y] = c
+        return im
+
+    @staticmethod
+    def _enc(im, fmt="PNG", **kw) -> bytes:
+        b = io.BytesIO()
+        im.save(b, fmt, **kw)
+        return b.getvalue()
+
+    def _d(self, a, b) -> int:
+        return wc.fingerprint_distance(wc.perceptual_fingerprint(a), wc.perceptual_fingerprint(b))
+
+    # ── what the caveat promises it SURVIVES ────────────────────────────────
+    @pytest.mark.parametrize("label,tf", [
+        ("resize 50%", lambda im: im.resize((im.width // 2, im.height // 2))),
+        ("resize 200%", lambda im: im.resize((im.width * 2, im.height * 2))),
+        ("aspect squash", lambda im: im.resize((im.width // 2, im.height))),
+    ])
+    def test_survives(self, label, tf):
+        im = self._img()
+        d = self._d(self._enc(im), self._enc(tf(im)))
+        assert d <= wc.PHASH_MATCH_MAX, f"{label} no longer matches (d={d}); the report claims it does"
+
+    def test_survives_lossy_re_encode(self):
+        im = self._img()
+        d = self._d(self._enc(im), self._enc(im, "JPEG", quality=70))
+        assert d <= wc.PHASH_MATCH_MAX, f"JPEG q70 no longer matches (d={d})"
+
+    # ── what the caveat admits it does NOT survive ──────────────────────────
+    @pytest.mark.parametrize("pct", [1, 2, 5, 10])
+    def test_does_not_survive_cropping(self, pct):
+        """If this ever starts passing, the descriptor gained crop tolerance and
+        the printed caveat is now a lie — update both together."""
+        im = self._img()
+        m = int(im.width * pct / 100)
+        cropped = im.crop((m, m, im.width - m, im.height - m))
+        d = self._d(self._enc(im), self._enc(cropped))
+        assert d > wc.PHASH_MATCH_MAX, (
+            f"a {pct}% crop now matches (d={d}) — the report says it does not")
+
+    @pytest.mark.parametrize("label,tf", [
+        ("mirror", lambda im: im.transpose(Image.FLIP_LEFT_RIGHT)),
+        ("rotate 90", lambda im: im.transpose(Image.ROTATE_90)),
+        ("rotate 2deg", lambda im: im.rotate(2)),
+    ])
+    def test_does_not_survive_reorientation(self, label, tf):
+        im = self._img()
+        d = self._d(self._enc(im), self._enc(tf(im)))
+        assert d > wc.PHASH_MATCH_MAX, f"{label} now matches (d={d}) — the report says it does not"
+
+    # ── and the separation the threshold depends on ─────────────────────────
+    def test_unrelated_images_stay_far_apart(self):
+        """The reason the threshold cannot simply be raised to buy crop
+        tolerance: there is no gap to raise it into."""
+        d = self._d(self._enc(self._img(seed=1)), self._enc(self._img(seed=99)))
+        assert d >= wc.PHASH_BITS_UNRELATED_FLOOR, (
+            f"unrelated images are only {d} apart; the documented separation is gone")
+
+    def test_the_report_states_the_boundary(self, monkeypatch, capsys):
+        """A caveat that lives only in a code comment protects nobody. It has to
+        be in what the operator reads."""
+        src = inspect.getsource(wc.cmd_lineage)
+        assert "LOWER BOUND" in src and "cropping" in src
+        assert "NOT evidence of human origin" in src
+
+    def test_the_threshold_was_not_quietly_raised(self):
+        """The finding's explicit instruction. A bigger number would 'fix' the
+        crop misses by matching unrelated content instead."""
+        assert wc.PHASH_MATCH_MAX == 40

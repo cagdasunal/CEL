@@ -455,6 +455,57 @@ class TestSpecConformance:
         assert not rep.signals, "no metadata declared, so none may be reported"
 
 
+def _bmff(items: list[tuple[int, bytes, bytes, bytes]], *, brand: bytes = b"avif") -> bytes:
+    """Build a minimal, spec-shaped still AVIF/HEIF carrying the given items.
+
+    ``items`` is (item_id, item_type, content_type, payload); content_type is
+    used only for ``mime`` items, per ISO/IEC 14496-12 §8.11.6.
+
+    Written for the `iso-mime-xmpmeta-heuristic` fix. The suite previously had
+    no synthetic ISOBMFF at all — every AVIF test went through Pillow, so it
+    could only produce files Pillow chooses to write, and a hand-crafted `mime`
+    item with a vendor content_type was unreachable.
+    """
+    def box(typ: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body) + 8) + typ + body
+
+    def full(typ: bytes, ver: int, flags: int, body: bytes) -> bytes:
+        return box(typ, bytes([ver]) + flags.to_bytes(3, "big") + body)
+
+    infes = b""
+    for iid, ityp, ctype, _payload in items:
+        b = struct.pack(">H", iid) + struct.pack(">H", 0) + ityp
+        b += b"item\x00"                                   # item_name
+        if ityp == b"mime":
+            b += ctype + b"\x00"                           # content_type
+        infes += full(b"infe", 2, 0, b)
+    iinf = full(b"iinf", 0, 0, struct.pack(">H", len(items)) + infes)
+    hdlr = full(b"hdlr", 0, 0, b"\x00" * 4 + b"pict" + b"\x00" * 12 + b"h\x00")
+    pitm = full(b"pitm", 0, 0, struct.pack(">H", items[0][0]))
+
+    # iloc offsets point into mdat, so lay the file out once with placeholder
+    # offsets to learn its size, then again with the real ones.
+    def build(offsets: list[int]) -> bytes:
+        body = bytes([(4 << 4) | 4, 0]) + struct.pack(">H", len(items))
+        for (iid, _t, _c, payload), off in zip(items, offsets):
+            body += struct.pack(">H", iid) + struct.pack(">H", 0)
+            body += struct.pack(">H", 1)                    # extent_count
+            body += struct.pack(">I", off) + struct.pack(">I", len(payload))
+        iloc = full(b"iloc", 0, 0, body)
+        meta = full(b"meta", 0, 0, hdlr + pitm + iinf + iloc)
+        ftyp = box(b"ftyp", brand + b"\x00" * 4 + brand + b"mif1")
+        mdat = box(b"mdat", b"".join(p for _i, _t, _c, p in items))
+        return ftyp + meta + mdat
+
+    stub = build([0] * len(items))
+    mdat_payload_start = len(stub) - sum(len(p) for _i, _t, _c, p in items)
+    real, cur = [], mdat_payload_start
+    for _i, _t, _c, payload in items:
+        real.append(cur)
+        cur += len(payload)
+    return build(real)
+
+
 class TestIsobmffRefusesWhatItCannotAccountFor:
     """The remux rebuilds mdat from meta-level iloc items ONLY.
 
@@ -1068,3 +1119,127 @@ def test_decoded_pixels_are_identical_after_strip():
         checked += 1
     if checked == 0:
         pytest.skip("nothing under sites/ needed stripping — corpus is clean")
+
+
+class TestIsoMimeItemsAreClassifiedByTheirDeclaredType:
+    """153 `iso-mime-xmpmeta-heuristic`.
+
+    `mime` items were classified by grepping their payload for the literal
+    bytes "xmpmeta". The infe box's declared content_type — the only
+    authoritative statement of what an item holds — was parsed nowhere.
+
+    Two payloads walked straight through. The dangerous one is a vendor
+    sidecar: no Signal meant `_strip_iso`'s drop set stayed empty, `strip()`
+    returned the file unchanged, and a rescan by the same blind parser reported
+    `clean=True` — with the payload still in the file and `raw_residue()`
+    carrying no marker for it either.
+    """
+
+    PIC = bytes(range(64))
+    VENDOR = b'{"hf-job-id":"8812","generator":"Higgsfield"}'
+    BARE_RDF = (b'<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>'
+                b'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+                b'<rdf:Description Iptc4xmpExt:digitalSourceType='
+                b'"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"/>'
+                b'</rdf:RDF><?xpacket end="w"?>')
+
+    def _img(self, ctype: bytes, payload: bytes) -> bytes:
+        return _bmff([(1, b"av01", b"", self.PIC), (2, b"mime", ctype, payload)])
+
+    def test_the_fixture_builder_produces_a_file_the_parser_accepts(self):
+        """Guard the guard: if the synthetic AVIF did not parse, every
+        assertion below would be about a rejected file, not about the fix."""
+        rep = ip.scan(_bmff([(1, b"av01", b"", self.PIC)]))
+        assert rep.container == "avif" and not rep.parse_error
+        assert rep.signals == [], "a picture-only file must carry no signal"
+
+    def test_a_vendor_sidecar_is_seen(self):
+        rep = ip.scan(self._img(b"application/json", self.VENDOR))
+        assert rep.signals, "a mime item with a vendor content_type was invisible"
+        assert rep.ai_generators == ["Higgsfield"]
+        assert rep.is_ai_flagged is True
+
+    def test_a_vendor_sidecar_is_actually_evicted(self):
+        """The half that mattered: before, strip() reported clean=True with
+        bytes_removed=0 and the payload still in the file."""
+        res = ip.strip(self._img(b"application/json", self.VENDOR))
+        assert b"Higgsfield" not in res.data
+        assert res.bytes_removed > 0 and res.clean and res.lossless
+
+    def test_the_picture_item_survives_the_remux_byte_exactly(self):
+        """Evicting a sibling item must not disturb the one that renders."""
+        res = ip.strip(self._img(b"application/json", self.VENDOR))
+        assert self.PIC in res.data
+        out = res.data
+        meta = next(b for b in ip._iso_boxes(out, 0, len(out)) if b.typ == b"meta")
+        sub = list(ip._iso_boxes(out, meta.offset + meta.hdr + 4, meta.end))
+        iloc = next(b for b in sub if b.typ == b"iloc")
+        _info, entries = ip._parse_iloc(out, iloc)
+        assert len(entries) == 1, "the dropped item is still registered in iloc"
+        e = entries[0]
+        blob = b"".join(out[e["base_offset"] + x["offset"]:
+                            e["base_offset"] + x["offset"] + x["length"]] for x in e["extents"])
+        assert blob == self.PIC, "iloc no longer resolves the picture to its own bytes"
+
+    def test_xmp_without_the_optional_xmpmeta_wrapper_is_seen(self):
+        """XMP part 1 permits a bare rdf:RDF root, and Adobe's toolkit has
+        kXMP_OmitXMPMetaElement for exactly this."""
+        assert b"xmpmeta" not in self.BARE_RDF, "fixture defeats its own purpose"
+        rep = ip.scan(self._img(b"application/rdf+xml", self.BARE_RDF))
+        assert any(s.kind == "iptc_ai" for s in rep.signals)
+        assert rep.is_ai_flagged is True
+
+    @pytest.mark.parametrize("ctype", [b"application/xml", b"text/xml", b"APPLICATION/RDF+XML"])
+    def test_every_xml_content_type_routes_to_xmp(self, ctype):
+        rep = ip.scan(self._img(ctype, self.BARE_RDF))
+        assert any(s.kind == "iptc_ai" for s in rep.signals), f"{ctype!r} was not recognised"
+
+    def test_an_unrecognised_mime_item_is_reported_not_hidden(self):
+        """An opaque sidecar carries no AI marker, but it is still metadata and
+        the operator is still entitled to know it was there."""
+        rep = ip.scan(self._img(b"application/octet-stream", b"opaque bytes"))
+        assert [s.kind for s in rep.signals] == ["other_metadata"]
+        assert "content_type=application/octet-stream" in rep.signals[0].detail
+
+    def test_a_malformed_infe_falls_back_to_the_payload_sniff(self):
+        """Deciding from the declared type must not mean going blind when the
+        declaration is missing — that would trade one silent miss for another."""
+        img = self._img(b"application/rdf+xml", self.BARE_RDF)
+        broken = img.replace(b"application/rdf+xml\x00", b"\x00" * 20, 1)
+        assert len(broken) == len(img), "the fixture must stay the same length"
+        rep = ip.scan(broken)
+        assert any(s.kind == "iptc_ai" for s in rep.signals), \
+            "no content_type AND no payload sniff = the original blind spot, restored"
+
+    def test_content_type_is_recorded_so_the_operator_can_see_what_was_dropped(self):
+        res = ip.strip(self._img(b"application/json", self.VENDOR))
+        assert res.removed, "nothing was removed"
+        joined = " ".join(s.detail for s in res.removed)
+        assert "content_type=application/json" in joined or "Higgsfield" in joined
+
+    PLAIN_XMP = (b'<?xpacket begin="" id="W5M0Mp"?>'
+                 b'<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+                 b'<rdf:Description dc:creator="Jane"/></rdf:RDF><?xpacket end="w"?>')
+
+    def test_a_plain_xml_item_classifies_as_xmp_not_as_other(self):
+        """Not cosmetic. `other_metadata` is the catch-all whose Policy.wants()
+        returns True unconditionally, so misfiling XMP there makes the policy
+        unreachable for ISO items — see the next test."""
+        rep = ip.scan(self._img(b"application/rdf+xml", self.PLAIN_XMP))
+        assert [s.kind for s in rep.signals] == ["xmp"]
+
+    def test_keep_xmp_actually_keeps_an_iso_xmp_item(self):
+        """The consequence. A policy the caller set is honoured only if the
+        signal carries the kind that policy names."""
+        img = self._img(b"application/rdf+xml", self.PLAIN_XMP)
+        keep = ip.Policy(strip_xmp=False, strip_iptc=False)
+        res = ip.strip(img, policy=keep)
+        assert self.PLAIN_XMP in res.data, "--keep-xmp did not reach an ISOBMFF item"
+        assert res.clean, "the policy's intent was achieved; the result must say so"
+        assert not res.fully_stripped
+
+    def test_the_default_policy_still_removes_it(self):
+        """Guard the guard: a Policy that could never remove anything would
+        pass the test above too."""
+        res = ip.strip(self._img(b"application/rdf+xml", self.PLAIN_XMP))
+        assert self.PLAIN_XMP not in res.data and res.fully_stripped
