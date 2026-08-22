@@ -1031,10 +1031,23 @@ def cmd_scan(args: argparse.Namespace) -> int:
             rows.append({"ts": utc_iso(), "mode": "scan-asset", "asset_id": a.get("id"),
                          "name": name, "url": url, **rep.as_dict()})
 
+    # The WARNING above scrolls; this block is what gets read. "AI-flagged 0" is
+    # a clean bill of health, and printing it after reading 0 of 5 assets states
+    # something the run did not establish — so the count is qualified by the
+    # coverage it was measured over, and an all-unreadable run does not get to
+    # print a number at all.
+    read = totals["files"]
+    unread = totals["unreadable"]
     print(f"\n{'─' * 70}")
-    print(f"  scanned              {totals['files']}")
+    print(f"  scanned              {read}"
+          + (f"   ({unread} unreadable — status UNKNOWN, not clean)" if unread else ""))
     print(f"  carry metadata       {totals['with_metadata']}")
-    print(f"  AI-flagged (C2PA/IPTC){totals['flagged']:>4}   <- what a crawler reads as 'AI-generated'")
+    if read == 0 and unread:
+        print("  AI-flagged (C2PA/IPTC)  n/a   <- NOTHING was read; this is not a clean result")
+    else:
+        cov = f"   of {read} read" + (f", {unread} NOT read" if unread else "")
+        print(f"  AI-flagged (C2PA/IPTC){totals['flagged']:>4}   <- what a crawler reads as "
+              f"'AI-generated'{cov}")
     print(f"  removable            {_fmt_bytes(totals['removable_bytes'])}")
     if totals["undetectable"]:
         print(f"  pixel watermark declared on {totals['undetectable']} image(s) — NOT removable by any lossless tool")

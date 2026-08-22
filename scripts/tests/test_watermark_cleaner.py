@@ -2239,3 +2239,50 @@ class TestCmsReportsDesignerReferences:
                              backup_dir=str(tmp_path), log_jsonl=str(log)))
         row = [json.loads(x) for x in log.read_text().splitlines()][-1]
         assert row.get("designer_refs_unknown") is True
+
+
+class TestScanSummaryIsQualifiedByCoverage:
+    """153 `scan-green-when-every-fetch-fails`, remainder.
+
+    The exit code and the WARNING were fixed; the SUMMARY was not. "AI-flagged
+    0" is a clean bill of health, and it was printed after reading 0 of 5
+    assets — as the last thing on screen, below a warning that had scrolled.
+    """
+
+    def _run(self, monkeypatch, n_ok: int, n_fail: int, capsys):
+        assets = [_asset(f"{i:024x}", f"a{i}.png") for i in range(n_ok + n_fail)]
+        ok_urls = {a["hostedUrl"] for a in assets[:n_ok]}
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: assets)
+
+        def fetch(u, timeout=30):
+            if u in ok_urls:
+                return DIRTY_PNG
+            raise urllib.error.HTTPError(u, 403, "Forbidden", {}, None)
+
+        monkeypatch.setattr(wc, "download_image", fetch)
+        rc = wc.cmd_scan(wc.build_parser().parse_args(["scan", "--site", "cel"]))
+        return rc, capsys.readouterr().out
+
+    def test_a_run_that_read_nothing_prints_no_count_at_all(self, monkeypatch, capsys):
+        rc, out = self._run(monkeypatch, n_ok=0, n_fail=5, capsys=capsys)
+        assert rc == 2
+        assert "AI-flagged (C2PA/IPTC)  n/a" in out
+        assert "this is not a clean result" in out
+        assert "AI-flagged (C2PA/IPTC)   0" not in out, \
+            "a clean bill of health was printed for assets that were never read"
+
+    def test_a_partial_run_qualifies_its_count(self, monkeypatch, capsys):
+        rc, out = self._run(monkeypatch, n_ok=3, n_fail=2, capsys=capsys)
+        assert rc == 2
+        assert "of 3 read, 2 NOT read" in out, \
+            "the count must state the coverage it was measured over"
+
+    def test_a_complete_run_reads_normally(self, monkeypatch, capsys):
+        """Guard the guard: qualifying everything would be the same as
+        qualifying nothing."""
+        rc, out = self._run(monkeypatch, n_ok=4, n_fail=0, capsys=capsys)
+        assert rc == 0
+        assert "NOT read" not in out and "n/a" not in out
+        assert "unreadable" not in out
