@@ -13,6 +13,27 @@ on:
         required: false
         type: string
         default: ""
+      # ── AI-provenance scrub ────────────────────────────────────────────────
+      # The nightly cron only ever SCANS (read-only). Replacing bytes on the
+      # live site is an outward write on client assets, so it is manual-only and
+      # needs BOTH inputs below — the checkbox alone is not enough. That is the
+      # operator's standing instruction: replace happens on request, never on a
+      # schedule.
+      scrub_provenance:
+        description: "Also STRIP provenance metadata and re-upload (manual only)"
+        required: false
+        type: boolean
+        default: false
+      scrub_confirm:
+        description: "Type REPLACE to confirm the scrub. Anything else aborts."
+        required: false
+        type: string
+        default: ""
+      scrub_allow_new_asset_id:
+        description: "Proceed even if a re-upload changes the asset id (breaks Designer refs)"
+        required: false
+        type: boolean
+        default: false
   # Triggered by a Webflow `collection_item_publish` webhook → forwarded
   # via a Cloudflare Worker (or any HMAC-validating relay) to GitHub's
   # /repos/{owner}/{repo}/dispatches endpoint with event_type
@@ -54,6 +75,15 @@ jobs:
 
       - name: Resolve scope (collections + --posts filter)
         id: filter
+        # env indirection, NOT `${{ }}` inside the script (audit 151 B-149).
+        # `${{ }}` substitutes TEXTUALLY before bash parses the line, so a
+        # webhook-supplied slug containing `$(...)`, a backtick or a newline used
+        # to execute as code here — with contents:write and WEBFLOW_API_TOKEN in
+        # scope. As env vars they are inert data, and the allowlist below rejects
+        # anything that is not a Webflow slug shape.
+        env:
+          POSTS_INPUT: ${{ github.event.inputs.posts }}
+          DISPATCH_SLUG: ${{ github.event.client_payload.slug }}
         run: |
           # workflow_dispatch.inputs.posts (manual) — optional comma list
           # repository_dispatch.client_payload.slug (webhook) — single slug
@@ -66,25 +96,40 @@ jobs:
           #     (--collections all) so every collection's images (Courses,
           #     Testimonials, Team, Activities, …) get AVIF-optimized and the
           #     /admin/#images dashboard reflects all of them.
-          POSTS_INPUT="${{ github.event.inputs.posts }}"
-          DISPATCH_SLUG="${{ github.event.client_payload.slug }}"
-          if [ -n "$POSTS_INPUT" ]; then
-            echo "posts_arg=--posts $POSTS_INPUT" >> "$GITHUB_OUTPUT"
-            echo "collections_arg=--collections blog" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          # A Webflow slug is lowercase alnum + hyphen by construction; the manual
+          # input is a comma-separated list of them. Anything else is refused
+          # rather than passed downstream.
+          case "${POSTS_INPUT:-}" in
+            *[!a-z0-9,-]*) echo "::error::rejected posts input — expected lowercase slugs separated by commas"; exit 1 ;;
+          esac
+          case "${DISPATCH_SLUG:-}" in
+            *[!a-z0-9-]*) echo "::error::rejected dispatch slug — expected a lowercase Webflow slug"; exit 1 ;;
+          esac
+          # The values are emitted BARE (not as pre-built `--posts X` argument
+          # strings): the consumer step quotes them, so a value can never split
+          # into extra command-line words.
+          if [ -n "${POSTS_INPUT:-}" ]; then
+            echo "posts=$POSTS_INPUT" >> "$GITHUB_OUTPUT"
+            echo "collections=blog" >> "$GITHUB_OUTPUT"
             echo "Filter: manual posts=$POSTS_INPUT (blog only)"
-          elif [ -n "$DISPATCH_SLUG" ]; then
-            echo "posts_arg=--posts $DISPATCH_SLUG" >> "$GITHUB_OUTPUT"
-            echo "collections_arg=--collections blog" >> "$GITHUB_OUTPUT"
+          elif [ -n "${DISPATCH_SLUG:-}" ]; then
+            echo "posts=$DISPATCH_SLUG" >> "$GITHUB_OUTPUT"
+            echo "collections=blog" >> "$GITHUB_OUTPUT"
             echo "Filter: webhook slug=$DISPATCH_SLUG (blog only)"
           else
-            echo "posts_arg=" >> "$GITHUB_OUTPUT"
-            echo "collections_arg=--collections all" >> "$GITHUB_OUTPUT"
+            echo "posts=" >> "$GITHUB_OUTPUT"
+            echo "collections=all" >> "$GITHUB_OUTPUT"
             echo "Filter: WHOLE CMS sweep (--collections all)"
           fi
 
       - name: Run CMS-image optimizer (--apply --auto-publish)
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          # Same env-indirection rule as the resolve step: these are derived from
+          # user/webhook input, so they never touch the command line as `${{ }}`.
+          COLLECTIONS: ${{ steps.filter.outputs.collections }}
+          POSTS: ${{ steps.filter.outputs.posts }}
         run: |
           mkdir -p data/blog-richtext-backup
           touch data/blog-optimization-log.jsonl
@@ -92,16 +137,126 @@ jobs:
           # The optimizer enforces the safeguard internally:
           #   only items with lastPublished != null AND isDraft=False
           #   AND isArchived=False are published. Drafts are NEVER published.
-          # collections_arg = "--collections all" on the nightly run (whole-CMS
-          # sweep), "--collections blog" on targeted manual/webhook runs.
+          # COLLECTIONS = "all" on the nightly run (whole-CMS sweep), "blog" on
+          # targeted manual/webhook runs. POSTS is empty on the nightly run, so
+          # --posts is added only when there is a value — via an array, so the
+          # value stays ONE argument even if it ever contains a space.
+          POSTS_ARGS=()
+          if [ -n "${POSTS:-}" ]; then
+            POSTS_ARGS=(--posts "$POSTS")
+          fi
           python scripts/optimize_blog_richtext_images.py \
             --site cel \
             --apply \
             --auto-publish \
-            ${{ steps.filter.outputs.collections_arg }} \
-            ${{ steps.filter.outputs.posts_arg }} \
+            --collections "$COLLECTIONS" \
+            "${POSTS_ARGS[@]}" \
             --log-jsonl data/blog-optimization-log.jsonl \
             --backup-dir data/blog-richtext-backup
+
+      # ── AI-provenance scan (READ-ONLY — runs on every trigger) ─────────────
+      # The optimizer above destroys C2PA as a side effect of re-encoding to
+      # AVIF, but only for images it actually re-encodes. It skips already-AVIF
+      # files under 200 KB and anything saving less than 30%, and it never sees
+      # site Assets that no CMS item references. Those are exactly the images
+      # that keep a signed manifest, so they need their own pass.
+      #
+      # This step never writes to Webflow. It downloads each asset, reports what
+      # a crawler would read, and records the result. `--skip-known-clean` means
+      # a nightly run only re-fetches assets not already proven clean, so the
+      # steady-state cost is a handful of requests rather than 1,500.
+      - name: Scan Webflow assets for AI-provenance metadata
+        id: provenance_scan
+        if: always()
+        continue-on-error: true   # a scan failure must not fail the AVIF job
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+        run: |
+          set -uo pipefail          # NOT -e: we need to read the exit code below
+          mkdir -p data
+          touch data/watermark-clean-log.jsonl
+          python scripts/watermark_cleaner.py scan \
+            --site cel \
+            --skip-known-clean data/watermark-clean-log.jsonl \
+            --log-jsonl data/watermark-clean-log.jsonl \
+            --summary-out data/watermark-scan-summary.json \
+            --markdown-out data/watermark-scan-summary.md \
+            --verbose
+          rc=$?
+          # `continue-on-error: true` makes the step green whatever happens, so
+          # the scan's exit code was being thrown away entirely — exit 2 ("part
+          # of the input was unreadable, status UNKNOWN") reached nobody, and
+          # `Notify on failure` never fired. Capture it as an output instead.
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          if [ "$rc" -eq 2 ]; then
+            echo "::warning::provenance scan could not read part of its input — coverage is incomplete, status UNKNOWN"
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error::provenance scan failed with exit $rc"
+          fi
+          exit 0
+
+      - name: Publish provenance summary to the job page
+        if: always()
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          # The markdown is rendered by watermark_cleaner.render_markdown_summary()
+          # (unit-tested) rather than by a Python heredoc embedded in this YAML —
+          # that construction depends on three layers of indentation agreeing and
+          # breaks silently when any is reflowed.
+          #
+          # Always emit something, even at zero findings: a health surface that
+          # appears only on failure is indistinguishable from a broken one
+          # (rules/infrastructure-discipline.md §4).
+          if [ -f data/watermark-scan-summary.md ]; then
+            cat data/watermark-scan-summary.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## AI-provenance scan"
+              echo ""
+              echo "> Summary missing — the scan did not complete."
+              echo "> Status is **UNKNOWN**, which is not the same as clean."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # ── AI-provenance SCRUB (manual + double-confirmed only) ───────────────
+      # Guarded three ways: manual dispatch only, the checkbox, and the literal
+      # word REPLACE typed into a second field. The script itself then demands
+      # WATERMARK_CLEANER_CONFIRM=1, and refuses any asset whose re-upload would
+      # change its asset id while a published page still points at the old URL.
+      - name: Strip provenance metadata and re-upload (manual, confirmed)
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.scrub_provenance == 'true' &&
+          github.event.inputs.scrub_confirm == 'REPLACE'
+        env:
+          WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
+          WATERMARK_CLEANER_CONFIRM: "1"
+          ALLOW_NEW_ID: ${{ github.event.inputs.scrub_allow_new_asset_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p data/watermark-backup
+          # A plain `EXTRA=()` expanded as "${EXTRA[@]}" is an "unbound variable"
+          # error under `set -u` on bash < 4.4. ubuntu-latest has bash 5, so this
+          # would have worked on the runner and failed for anyone testing on
+          # macOS (bash 3.2) — a difference that hides until someone debugs the
+          # workflow locally. Seed the array with the flag instead of appending
+          # to an empty one, so it is never expanded while empty.
+          if [ "${ALLOW_NEW_ID:-false}" = "true" ]; then
+            EXTRA=(--allow-new-asset-id)
+            echo "::warning::--allow-new-asset-id is set: asset URLs may change and Designer-placed references will NOT be rewritten."
+          else
+            EXTRA=(--check-live-pages)   # already the default; keeps the array non-empty
+          fi
+          python scripts/watermark_cleaner.py replace \
+            --site cel \
+            --apply \
+            --site-url https://cel.englishcollege.com \
+            --verify \
+            --auto-publish \
+            --log-jsonl data/watermark-clean-log.jsonl \
+            --backup-dir data/watermark-backup \
+            "${EXTRA[@]}"
 
       - name: Regenerate /admin/#images dashboard page
         if: always()  # render even if the optimizer hit a non-fatal image error
@@ -129,7 +284,9 @@ jobs:
           git add data/blog-optimization-log.jsonl \
                   data/blog-richtext-backup/ \
                   sites/cel/shared/uploaded_assets.json \
-                  docs/admin/images/index.html
+                  docs/admin/images/index.html \
+                  data/watermark-clean-log.jsonl \
+                  data/watermark-scan-summary.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0
