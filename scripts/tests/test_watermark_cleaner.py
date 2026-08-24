@@ -752,18 +752,17 @@ class TestPurgeSafety:
 
     def test_no_domain_on_record_is_not_silently_treated_as_proof(self, monkeypatch, tmp_path, capsys):
         """With no domain, purge must record a failure rather than an empty index."""
-        import argparse
         monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
         monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
         monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
         monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: DIRTY_PNG)
         monkeypatch.setattr(wc, "evidence_domains", lambda *a, **k: [])
         monkeypatch.setattr(wc, "asset_id_appears_in_cms", lambda *a, **k: {AID_HERO: []})
-        args = argparse.Namespace(site="bv", apply=False, asset_id="", limit=0,
-                                  check_live_pages=True, site_url="", backup_dir=str(tmp_path),
-                                  quiet=True, token=None, keep_c2pa=False, keep_exif=False,
-                                  strip_icc=False, drop_orientation=False, log_jsonl="",
-                                  verbose=False, all=False, json=False)
+        # Through the real parser, never a hand-rolled Namespace: this test broke
+        # the moment purge gained --superseded, which is exactly the drift the
+        # _replace_args docstring warns about.
+        args = wc.build_parser().parse_args(["purge", "--site", "bv", "--quiet"])
+        args.backup_dir = str(tmp_path)
         wc.cmd_purge(args)
         out = capsys.readouterr().out
         assert "No domain on record" in out
@@ -1388,6 +1387,7 @@ class _ReplaceHarness:
         # vacuously.
         self.repoint_status = repoint_status
         self.uploads: list[tuple[str, int]] = []
+        self.upload_folders: list[str | None] = []
         self.repoints: list[dict] = []
         self.published: list[tuple[str, list[str]]] = []
         self.upload_id = upload_id
@@ -1402,8 +1402,9 @@ class _ReplaceHarness:
         monkeypatch.setattr(wc, "build_live_page_index",
                             lambda url, **kw: (live_index or {}, ["p"] if live_index is not None else [], []))
 
-        def fake_upload(data, name, site_id, token):
+        def fake_upload(data, name, site_id, token, parent_folder=None):
             self.uploads.append((name, len(data)))
+            self.upload_folders.append(parent_folder)
             return {"asset_id": upload_id, "hostedUrl": f"{CDN}/{upload_id}_{name}",
                     "md5": "x", "size": len(data)}
 
@@ -1943,6 +1944,7 @@ class _CmsHarness:
     def __init__(self, monkeypatch, *, upload_id, items=None, bytes_by_url=None,
                  repoint_status=None, upload_error=None):
         self.uploads: list[tuple[str, int]] = []
+        self.upload_folders: list[str | None] = []
         self.repoints: list[dict] = []
         self.published: list[tuple[str, list[str]]] = []
         self.repoint_status = repoint_status
@@ -1957,10 +1959,11 @@ class _CmsHarness:
         monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
         monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: blobs.get(u, DIRTY_PNG))
 
-        def fake_upload(data, name, site_id, token):
+        def fake_upload(data, name, site_id, token, parent_folder=None):
             if upload_error:
                 raise upload_error
             self.uploads.append((name, len(data)))
+            self.upload_folders.append(parent_folder)
             return {"asset_id": upload_id, "hostedUrl": f"{CDN}/{upload_id}_{name}",
                     "md5": "x", "size": len(data)}
 
@@ -2047,6 +2050,25 @@ class TestCmsSkipCacheActuallySkips:
                              skip_known_clean=str(log)))
         assert h.uploads == [], "cmd_cms re-replaced an already-replaced image"
         assert "already replaced" in capsys.readouterr().out
+
+    def test_the_log_records_which_items_were_edited(self, monkeypatch, tmp_path):
+        """Without this a failed publish cannot be retried from the log. The CEL
+        run re-pointed 242 items, the publish died on Webflow's 100-id cap, and
+        rebuilding the list afterwards meant re-crawling the CMS and matching an
+        asset id buried in a stacked URL key — because Webflow re-hosts the file
+        on write and the URL we PATCH in is never the URL it stores.
+        """
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        log = tmp_path / "l.jsonl"
+        wc.cmd_cms(_cms_args(apply=True, check_live_pages=False,
+                             backup_dir=str(tmp_path), log_jsonl=str(log)))
+        done = [json.loads(x) for x in log.read_text().splitlines()]
+        done = [r for r in done if r.get("action") == "replaced"]
+        assert done, "fixture produced no replace"
+        touched = done[0].get("touched_items")
+        assert touched, "the log does not say which items were edited"
+        assert all(":" in t for t in touched), "expected collection_id:item_id pairs"
+        assert "col2:i2" in touched
 
     def test_without_the_cache_it_still_does_the_work(self, monkeypatch, tmp_path):
         """Guard the guard: the two tests above would also pass on a `cms` that
@@ -2136,15 +2158,26 @@ class TestCmsReportsDesignerReferences:
         monkeypatch.setattr(wc, "build_live_page_index",
                             lambda url, **kw: (index, ["https://example.com/about"], list(failures)))
 
-    def test_a_designer_reference_makes_the_run_incomplete(self, monkeypatch, tmp_path, capsys):
+    def _page_html(self, monkeypatch, html: bytes):
+        """Control what the post-write re-check sees on the live page."""
+        class _R:
+            def read(self): return html
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+        monkeypatch.setattr(wc.urllib.request, "urlopen", lambda *a, **k: _R())
+
+    def test_a_reference_still_on_the_page_after_the_write_is_reported(
+            self, monkeypatch, tmp_path, capsys):
         h = _CmsHarness(monkeypatch, upload_id=AID_NEW)
         self._live(monkeypatch, self.LIVE)
+        # the live page STILL shows the old filename after the write
+        self._page_html(monkeypatch, f'<img src="{CDN}/{AID_HERO}_hero.png">'.encode())
         rc = wc.cmd_cms(_cms_args(apply=True, check_live_pages=True, site_url="https://example.com",
                                   backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
         out = capsys.readouterr().out
         assert len(h.uploads) == 1, "the CMS half must still be done"
         assert h.repoints, "the CMS reference must still be rewritten"
-        assert "STILL DIRTY on 1 published page" in out
+        assert "STILL DIRTY" in out
         assert "webflow-implement" in out
         assert "1 Designer-set reference(s) still point at un-stripped" in out, \
             "the summary must carry the count too — the per-image line scrolls away"
@@ -2160,9 +2193,80 @@ class TestCmsReportsDesignerReferences:
         assert rc == 0
         assert "STILL DIRTY" not in capsys.readouterr().out
 
+    def test_a_cms_driven_page_is_NOT_reported_once_the_write_lands(
+            self, monkeypatch, tmp_path, capsys):
+        """The false positive this deferral exists to kill. `live_index` is a
+        PRE-WRITE snapshot, so a page whose image comes from the CMS field this
+        run just re-pointed still shows the old URL in it. Reporting from the
+        snapshot flagged 18 references on a real brightvalley run that the very
+        same run had already fixed, counted each as an error, and sent the
+        operator to the Designer to repair nothing.
+        """
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        self._live(monkeypatch, self.LIVE)
+        # the live page now shows the NEW filename — the run fixed it
+        self._page_html(monkeypatch, f'<img src="{CDN}/{AID_NEW}_hero.png">'.encode())
+        rc = wc.cmd_cms(_cms_args(apply=True, check_live_pages=True, site_url="https://example.com",
+                                  backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        out = capsys.readouterr().out
+        assert "STILL DIRTY" not in out
+        assert "already fixed by this run" in out
+        assert rc == 0, "a run that fixed everything must not exit non-zero"
+
+    def test_a_dry_run_still_warns_that_the_image_is_on_a_page(
+            self, monkeypatch, tmp_path, capsys):
+        """Deferring the check to a post-write re-fetch is correct under --apply
+        and WRONG in a preview: nothing has been written, so the snapshot is the
+        truth. The first version of the deferral silently removed the preview's
+        most useful warning — that replacing this image will leave a
+        Designer-placed copy serving the un-stripped file.
+        """
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        self._live(monkeypatch, self.LIVE)
+        wc.cmd_cms(_cms_args(apply=False, check_live_pages=True,
+                             site_url="https://example.com",
+                             backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        out = capsys.readouterr().out
+        assert "ALSO on 1 published page" in out
+        assert "also appear on a published page" in out, "the summary must carry it too"
+        assert "This run is NOT complete" not in out, \
+            "a preview has not failed at anything — that wording is for --apply"
+
+    def test_a_dry_run_records_the_pages_in_the_log(self, monkeypatch, tmp_path):
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        self._live(monkeypatch, self.LIVE)
+        log = tmp_path / "l.jsonl"
+        wc.cmd_cms(_cms_args(apply=False, check_live_pages=True,
+                             site_url="https://example.com",
+                             backup_dir=str(tmp_path), log_jsonl=str(log)))
+        row = [json.loads(x) for x in log.read_text().splitlines()][-1]
+        assert row["designer_page_refs"] == ["https://example.com/about"]
+
+    def test_a_dry_run_with_no_page_refs_says_nothing(self, monkeypatch, tmp_path, capsys):
+        """Guard the guard: warning unconditionally would be the same as never."""
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        self._live(monkeypatch, {})
+        wc.cmd_cms(_cms_args(apply=False, check_live_pages=True,
+                             site_url="https://example.com",
+                             backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        assert "ALSO on" not in capsys.readouterr().out
+
+    def test_an_unreadable_page_keeps_the_flag(self, monkeypatch, tmp_path, capsys):
+        """Unreadable proves nothing either way, so it must not clear the flag —
+        that would turn a network blip into a clean bill of health."""
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        self._live(monkeypatch, self.LIVE)
+        def boom(*a, **k):
+            raise urllib.error.URLError("down")
+        monkeypatch.setattr(wc.urllib.request, "urlopen", boom)
+        rc = wc.cmd_cms(_cms_args(apply=True, check_live_pages=True, site_url="https://example.com",
+                                  backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        assert "STILL DIRTY" in capsys.readouterr().out and rc == 2
+
     def test_the_reference_is_recorded_in_the_log(self, monkeypatch, tmp_path):
         _CmsHarness(monkeypatch, upload_id=AID_NEW)
         self._live(monkeypatch, self.LIVE)
+        self._page_html(monkeypatch, f'<img src="{CDN}/{AID_HERO}_hero.png">'.encode())
         log = tmp_path / "l.jsonl"
         wc.cmd_cms(_cms_args(apply=True, check_live_pages=True, site_url="https://example.com",
                              backup_dir=str(tmp_path), log_jsonl=str(log)))
@@ -2261,6 +2365,10 @@ class TestScanSummaryIsQualifiedByCoverage:
         monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
         monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
         monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: assets)
+        # cmd_scan now also walks the CMS surface; without this the test reaches
+        # the real API. Empty = "this site has no CMS-only images", which keeps
+        # these tests about the coverage-qualification they were written for.
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
 
         def fetch(u, timeout=30):
             if u in ok_urls:
@@ -2393,3 +2501,350 @@ class TestLineageMatchBoundary:
         """The finding's explicit instruction. A bigger number would 'fix' the
         crop misses by matching unrelated content instead."""
         assert wc.PHASH_MATCH_MAX == 40
+
+
+class TestLineageCoversBothSurfaces:
+    """`cmd_lineage` walked `list_assets` only.
+
+    On brightvalley the asset list and the CMS-image set do not overlap at all
+    (214 vs 164, zero shared), so "matched an AI original 59" had never included
+    a single CMS image — including 13 team photos known to be AI-generated. A
+    lineage answer scoped to one surface, printed without saying which, is the
+    confident-partial-answer this tool exists to avoid.
+    """
+
+    def _harness(self, monkeypatch, *, assets, cms_items):
+        seen = {"downloaded": []}
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: assets)
+        _install_fake(monkeypatch, _FakeApi(
+            collections=[{"id": "col2", "slug": "team"}],
+            fields={"col2": [{"slug": "headshot", "type": "Image"}]},
+            items=cms_items, assets=assets))
+        monkeypatch.setattr(wc, "build_lineage_corpus",
+                            lambda src, progress=True: ([{"path": "orig/a.png", "fp": (0, 0),
+                                                          "generators": ["Higgsfield"]}], []))
+
+        def dl(u, timeout=30):
+            seen["downloaded"].append(u)
+            return CLEAN_PNG
+
+        monkeypatch.setattr(wc, "download_image", dl)
+        return seen
+
+    def test_a_cms_only_image_is_checked(self, monkeypatch, capsys):
+        """The defect in one assertion: an image that exists only as a CMS
+        reference must reach the matcher."""
+        cms_url = f"{CDN}/{AID_BODY}_cms-only.png"
+        items = {"col2": [{"id": "i2", "isDraft": False, "isArchived": False,
+                           "lastPublished": "2026-01-01",
+                           "fieldData": {"slug": "jane",
+                                         "headshot": {"url": cms_url, "fileId": AID_BODY}}}]}
+        seen = self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")], cms_items=items)
+        wc.cmd_lineage(wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet"]))
+        assert cms_url in seen["downloaded"], "the CMS-only image was never fetched"
+        out = capsys.readouterr().out
+        assert "1 site asset(s) + 1 CMS-only image(s)" in out
+
+    def test_the_summary_names_which_surfaces_it_measured(self, monkeypatch, capsys):
+        """A coverage number without its surface is how 59 was read as
+        'the whole site' for a week."""
+        self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")],
+                      cms_items={"col2": []})
+        wc.cmd_lineage(wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet"]))
+        out = capsys.readouterr().out
+        # The SUMMARY line specifically, not the progress line above it — the
+        # summary is what gets quoted, and the first version of this test passed
+        # on a mutant that stripped the surfaces from exactly that line.
+        summary = [ln for ln in out.splitlines() if "images checked" in ln]
+        assert summary, "no summary line at all"
+        assert "site asset(s) +" in summary[0] and "CMS-only" in summary[0], \
+            f"the summary does not name its surfaces: {summary[0]!r}"
+
+    def test_an_image_in_both_surfaces_is_counted_once(self, monkeypatch):
+        """Most sites DO overlap. Double-fetching would double every count."""
+        url = f"{CDN}/{AID_HERO}_hero.png"
+        items = {"col2": [{"id": "i2", "isDraft": False, "isArchived": False,
+                           "lastPublished": "2026-01-01",
+                           "fieldData": {"slug": "jane",
+                                         "headshot": {"url": url, "fileId": AID_HERO}}}]}
+        seen = self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")], cms_items=items)
+        wc.cmd_lineage(wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet"]))
+        assert seen["downloaded"].count(url) == 1, "the same image was fetched twice"
+
+    def test_no_cms_says_so_rather_than_quietly_narrowing(self, monkeypatch, capsys):
+        """Opting out is allowed; doing it silently is not."""
+        cms_url = f"{CDN}/{AID_BODY}_cms-only.png"
+        items = {"col2": [{"id": "i2", "isDraft": False, "isArchived": False,
+                           "lastPublished": "2026-01-01",
+                           "fieldData": {"slug": "jane",
+                                         "headshot": {"url": cms_url, "fileId": AID_BODY}}}]}
+        seen = self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")], cms_items=items)
+        wc.cmd_lineage(wc.build_parser().parse_args(
+            ["lineage", "--site", "cel", "--quiet", "--no-cms"]))
+        assert cms_url not in seen["downloaded"]
+        assert "CMS images were NOT checked" in capsys.readouterr().out
+
+    def test_rows_record_which_surface_each_image_came_from(self, monkeypatch, tmp_path):
+        cms_url = f"{CDN}/{AID_BODY}_cms-only.png"
+        items = {"col2": [{"id": "i2", "isDraft": False, "isArchived": False,
+                           "lastPublished": "2026-01-01",
+                           "fieldData": {"slug": "jane",
+                                         "headshot": {"url": cms_url, "fileId": AID_BODY}}}]}
+        self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")], cms_items=items)
+        log = tmp_path / "l.jsonl"
+        wc.cmd_lineage(wc.build_parser().parse_args(
+            ["lineage", "--site", "cel", "--quiet", "--log-jsonl", str(log)]))
+        if log.exists():
+            surfaces = {json.loads(x).get("surface") for x in log.read_text().splitlines()}
+            assert surfaces <= {"asset", "cms", None}
+
+
+class TestLineageCorpusProvenance:
+    """`data/watermark-backup` is a FLAT shared root, so the default corpus
+    silently mixes every site the tool has ever touched.
+
+    `lineage --site cel` built a 77-image corpus of which 76 were
+    brightvalley's and ZERO were CEL's. "matched an AI original 0" therefore
+    meant "nothing of CEL's was available to compare against" — and read as a
+    clean bill of health. It is why known AI-generated CEL blog thumbnails came
+    back unflagged.
+    """
+
+    def _run(self, monkeypatch, capsys, site, corpus_paths):
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [])
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(wc, "build_lineage_corpus", lambda src, progress=True: (
+            [{"path": p, "fp": (1, 1), "generators": ["Higgsfield"]} for p in corpus_paths], []))
+        wc.cmd_lineage(wc.build_parser().parse_args(["lineage", "--site", site, "--quiet"]))
+        return capsys.readouterr().out
+
+    def test_a_corpus_with_none_of_this_site_says_so(self, monkeypatch, capsys):
+        out = self._run(monkeypatch, capsys, "cel",
+                        ["data/watermark-backup/sites/brightvalley/a.png",
+                         "data/watermark-backup/sites/brightvalley/b.png"])
+        assert "NONE of these originals are cel's" in out
+        assert "NOT 'not AI'" in out, "the warning must name the wrong conclusion it prevents"
+
+    def test_it_names_which_sites_did_contribute(self, monkeypatch, capsys):
+        out = self._run(monkeypatch, capsys, "cel",
+                        ["data/watermark-backup/sites/brightvalley/a.png"])
+        assert "brightvalley=1" in out
+
+    def test_an_own_site_corpus_does_not_warn(self, monkeypatch, capsys):
+        """Guard the guard: warning always would be the same as never."""
+        out = self._run(monkeypatch, capsys, "cel",
+                        ["sites/cel/assets/a.png", "sites/cel/assets/b.png"])
+        assert "NONE of these originals" not in out
+
+    def test_a_mixed_corpus_still_reports_composition(self, monkeypatch, capsys):
+        """Own originals present but diluted — no false alarm, but the operator
+        should still see that another client's images are in the comparison."""
+        out = self._run(monkeypatch, capsys, "cel",
+                        ["sites/cel/a.png", "data/watermark-backup/sites/brightvalley/b.png"])
+        assert "NONE of these originals" not in out
+        assert "cel=1" in out and "brightvalley=1" in out
+
+
+class TestReplacementsAreFiledInAFolder:
+    """Webflow's Assets panel has an in-place Replace, but the Data API does not
+    expose it: `update_asset` changes metadata only, and `compress_assets` — the
+    one endpoint that does swap the hosted file — cannot reach a CMS-uploaded
+    image at all (`get_asset` on one returns 404).
+
+    So a replace MINTS a new asset for every CMS image, and the panel grows
+    whether anyone wants it to. Deleting the new asset is not an option either:
+    a deleted asset's CDN URL returns 403, which would break the very reference
+    just re-pointed at it. Filing them into one folder is what remains.
+    """
+
+    def test_replace_files_uploads_into_the_folder(self, monkeypatch, tmp_path):
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                            assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        monkeypatch.setattr(wc, "resolve_or_create_folder", lambda t, s, n: "fold123")
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                     asset_folder="Metadata-Stripped",
+                                     backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.upload_folders == ["fold123"], "the replacement was uploaded to the panel root"
+
+    def test_cms_files_uploads_into_the_folder(self, monkeypatch, tmp_path):
+        h = _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        monkeypatch.setattr(wc, "resolve_or_create_folder", lambda t, s, n: "fold123")
+        wc.cmd_cms(_cms_args(apply=True, asset_folder="Metadata-Stripped",
+                             backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.upload_folders == ["fold123"]
+
+    def test_an_empty_folder_name_uploads_to_the_root(self, monkeypatch, tmp_path):
+        """Opting out must actually opt out — otherwise the flag is decoration."""
+        h = _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        monkeypatch.setattr(wc, "resolve_or_create_folder",
+                            lambda t, s, n: pytest.fail("folder resolved despite empty name"))
+        wc.cmd_cms(_cms_args(apply=True, asset_folder="",
+                             backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.upload_folders == [None]
+
+    def test_a_dry_run_creates_no_folder(self, monkeypatch, tmp_path):
+        """Webflow has no API to DELETE an asset folder, so a preview must not
+        leave one behind."""
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        monkeypatch.setattr(wc, "resolve_or_create_folder",
+                            lambda t, s, n: pytest.fail("dry run created a folder"))
+        wc.cmd_cms(_cms_args(apply=False, asset_folder="Metadata-Stripped",
+                             backup_dir=str(tmp_path), log_jsonl=str(tmp_path / "l.jsonl")))
+
+    def test_an_existing_folder_is_reused_not_duplicated(self, monkeypatch):
+        calls = {"post": 0}
+
+        def fake_req(method, url, token, data=None):
+            if method == "GET" and "asset_folders" in url:
+                return {"assetFolders": [{"id": "existing1", "displayName": "Metadata-Stripped"}]}
+            calls["post"] += 1
+            return {"id": "new1"}
+
+        monkeypatch.setattr(wc, "rate_limited_request", fake_req)
+        assert wc.resolve_or_create_folder("t", SITE_ID, "Metadata-Stripped") == "existing1"
+        assert calls["post"] == 0, "a duplicate folder was created; folders cannot be deleted"
+
+    def test_the_match_is_case_insensitive(self, monkeypatch):
+        monkeypatch.setattr(wc, "rate_limited_request", lambda m, u, t, data=None: (
+            {"assetFolders": [{"id": "e1", "displayName": "metadata-stripped"}]}
+            if m == "GET" else pytest.fail("created a duplicate differing only in case")))
+        assert wc.resolve_or_create_folder("t", SITE_ID, "Metadata-Stripped") == "e1"
+
+    def test_the_folder_actually_reaches_the_register_call(self, monkeypatch):
+        """The tests above stub `upload_bytes` wholesale, so the folder could
+        stop reaching Webflow and none of them would notice. This drives the
+        real `upload_avif` and inspects the registration body it POSTs.
+        """
+        import avif_optimizer
+        seen = {}
+
+        def fake_req(method, url, token, data=None):
+            if method == "POST" and url.endswith("/assets"):
+                seen.update(data or {})
+                return {"id": AID_NEW, "uploadUrl": "https://s3.example/u",
+                        "uploadDetails": {}}
+            # upload_avif polls GET /assets/{id} until hostedUrl appears
+            return {"id": AID_NEW, "hostedUrl": f"{CDN}/{AID_NEW}_x.png"}
+
+        monkeypatch.setattr(avif_optimizer, "rate_limited_request", fake_req)
+        monkeypatch.setattr(avif_optimizer, "build_multipart_body",
+                            lambda details, path: (b"", "multipart/form-data"))
+
+        class _R:
+            status = 204
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        monkeypatch.setattr(avif_optimizer.urllib.request, "urlopen", lambda *a, **k: _R())
+        avif_optimizer.upload_avif(CLEAN_PNG, "x.png", SITE_ID, "tok", parent_folder="fold123")
+        assert seen.get("parentFolder") == "fold123", \
+            f"the folder never reached Webflow's register call: {seen}"
+
+        seen.clear()
+        avif_optimizer.upload_avif(CLEAN_PNG, "x.png", SITE_ID, "tok")
+        assert "parentFolder" not in seen, "root uploads must not send an empty parentFolder"
+
+
+class TestMerchantCenterWarning:
+    """Google Search Central requires the exact marker this tool removes, on
+    ecommerce product images:
+
+      "AI-generated images must contain metadata using the IPTC
+       DigitalSourceType TrainedAlgorithmicMedia metadata."
+
+    The tool cannot tell a product image from a blog image, so it warns rather
+    than refuses. Before this, nothing anywhere — tool or docs — mentioned it.
+    """
+
+    def test_it_warns_by_default(self, capsys):
+        wc.warn_merchant_center({}, ip.Policy(), "cel")
+        out = capsys.readouterr().out
+        assert "Merchant Center REQUIRES" in out
+        assert "TrainedAlgorithmicMedia" in out
+        assert "merchant_center" in out, "the warning must name its own off-switch"
+
+    def test_a_site_that_sells_nothing_can_silence_it(self, capsys):
+        wc.warn_merchant_center({"merchant_center": False}, ip.Policy(), "cel")
+        assert capsys.readouterr().out == ""
+
+    def test_a_policy_that_keeps_the_marker_does_not_warn(self, capsys):
+        """No removal, no hazard. Warning anyway would train people to ignore it."""
+        keep = ip.Policy(strip_iptc=False, strip_xmp=False)
+        assert keep.wants("iptc_ai") is False, "fixture no longer models 'keep the marker'"
+        wc.warn_merchant_center({}, keep, "cel")
+        assert capsys.readouterr().out == ""
+
+    def test_merchant_center_true_still_warns(self, capsys):
+        """Only an explicit False silences it — a site that DOES sell must see it."""
+        wc.warn_merchant_center({"merchant_center": True}, ip.Policy(), "cel")
+        assert "Merchant Center REQUIRES" in capsys.readouterr().out
+
+    def test_both_writing_commands_call_it(self):
+        """A guard wired into one of the two commands that strip is half a guard."""
+        for fn in (wc.cmd_replace, wc.cmd_cms):
+            assert "warn_merchant_center" in inspect.getsource(fn), \
+                f"{fn.__name__} strips metadata without the Merchant Center warning"
+
+
+class TestPublishBatching:
+    """Webflow's CMS publish endpoint caps itemIds at 100 and REJECTS the whole
+    request above that — it does not truncate.
+
+    Sending 242 in one call returned HTTP 400 on the live CEL run and left every
+    one of them unpublished: the CMS held the correct stripped reference while
+    every live page still served the un-stripped image. Brightvalley had passed
+    only because its largest batch was 24.
+    """
+
+    def _capture(self, monkeypatch):
+        sent = []
+        monkeypatch.setattr(wc, "rate_limited_request",
+                            lambda m, u, t, data=None: (sent.append(data["itemIds"]), {})[1])
+        return sent
+
+    def test_a_batch_over_the_cap_is_split(self, monkeypatch):
+        sent = self._capture(monkeypatch)
+        wc.publish_items("tok", "col1", [f"i{n}" for n in range(242)])
+        assert [len(b) for b in sent] == [100, 100, 42]
+
+    def test_no_batch_exceeds_the_cap(self, monkeypatch):
+        sent = self._capture(monkeypatch)
+        wc.publish_items("tok", "col1", [f"i{n}" for n in range(1000)])
+        assert max(len(b) for b in sent) <= wc.PUBLISH_BATCH_MAX
+
+    def test_every_id_is_sent_exactly_once_in_order(self, monkeypatch):
+        """Batching must not drop or duplicate — a silently skipped item is an
+        unpublished page that reports success."""
+        sent = self._capture(monkeypatch)
+        ids = [f"i{n}" for n in range(242)]
+        wc.publish_items("tok", "col1", ids)
+        assert [x for b in sent for x in b] == ids
+
+    def test_a_small_batch_is_a_single_call(self, monkeypatch):
+        sent = self._capture(monkeypatch)
+        wc.publish_items("tok", "col1", ["a", "b", "c"])
+        assert sent == [["a", "b", "c"]]
+
+    def test_empty_makes_no_call_at_all(self, monkeypatch):
+        sent = self._capture(monkeypatch)
+        assert wc.publish_items("tok", "col1", []) == {}
+        assert sent == []
+
+    def test_a_failing_batch_raises_rather_than_reporting_success(self, monkeypatch):
+        """Half-published is not published. The caller counts the raise as an
+        error, which is what moves the exit code."""
+        calls = {"n": 0}
+
+        def flaky(m, u, t, data=None):
+            calls["n"] += 1
+            if calls["n"] == 2:
+                raise wc.APIError(400, "too many items", "https://api.webflow.com/x")
+            return {}
+
+        monkeypatch.setattr(wc, "rate_limited_request", flaky)
+        with pytest.raises(wc.APIError):
+            wc.publish_items("tok", "col1", [f"i{n}" for n in range(242)])

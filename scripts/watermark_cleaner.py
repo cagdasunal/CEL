@@ -54,6 +54,7 @@ import dataclasses
 import fnmatch
 import io
 import json
+import pathlib
 import os
 import sys
 import time
@@ -430,11 +431,39 @@ def patch_item(token: str, collection_id: str, item_id: str, field_data: dict,
     return rate_limited_request("PATCH", url, token, data=body)
 
 
+PUBLISH_BATCH_MAX = 100     # Webflow: "Value (itemIds) should NOT have more than 100 items"
+
+
 def publish_items(token: str, collection_id: str, item_ids: list[str]) -> dict:
+    """Publish CMS items, in batches Webflow will accept.
+
+    The endpoint caps itemIds at 100 and rejects the WHOLE request above that —
+    it does not truncate. Sending 242 in one call returned HTTP 400 on the live
+    CEL run and left every one of them unpublished: the CMS held the correct,
+    stripped reference while every live page still served the un-stripped
+    image. Brightvalley passed only because its largest batch was 24.
+
+    A failing batch raises, so a half-published run cannot report success — the
+    caller counts that as an error and the exit code moves.
+
+    The caller still owns WHICH ids these are: an explicit, reviewed list of
+    items this task edited, never a set derived from a query
+    (memory/feedback_publish-only-edited-items.md).
+    """
     if not item_ids:
         return {}
     url = f"{WEBFLOW_API_BASE}/collections/{collection_id}/items/publish"
-    return rate_limited_request("POST", url, token, data={"itemIds": item_ids})
+    out: dict = {}
+    for i in range(0, len(item_ids), PUBLISH_BATCH_MAX):
+        batch = item_ids[i:i + PUBLISH_BATCH_MAX]
+        resp = rate_limited_request("POST", url, token, data={"itemIds": batch})
+        if isinstance(resp, dict):
+            for k, v in resp.items():
+                if isinstance(v, list):
+                    out.setdefault(k, []).extend(v)
+                else:
+                    out.setdefault(k, v)
+    return out
 
 
 # ── reference index ──────────────────────────────────────────────────────────
@@ -1002,13 +1031,48 @@ def cmd_scan(args: argparse.Namespace) -> int:
             before_n = len(assets)
             assets = [a for a in assets if a.get("id") not in known]
             print(f"\n  {before_n - len(assets)} asset(s) already proven clean — skipping them.")
-        print(f"\nScanning {len(assets)} Webflow asset(s) on '{args.site}'…\n")
-        for a in assets:
+
+        # BOTH surfaces. This is THE "is my site clean?" command, and it saw the
+        # asset list only. `GET /sites/{id}/assets` does not return images
+        # uploaded straight into a CMS item, and on brightvalley the two sets do
+        # not overlap AT ALL — so every "214 assets, 0 AI-flagged" this command
+        # ever printed was silent about 164 CMS images, including 13 known to be
+        # AI-generated. The command whose entire job is answering the question
+        # was answering it about half the site.
+        targets: list[dict] = []
+        seen_keys: set[str] = set()
+        for a in ([] if args.no_assets else assets):
             url = a.get("hostedUrl") or ""
-            name = asset_basename(a.get("originalFileName", ""), a.get("displayName", ""))
-            if args.pattern and not fnmatch.fnmatch(name, args.pattern):
+            nm = asset_basename(a.get("originalFileName", ""), a.get("displayName", ""))
+            if not url or not nm:
                 continue
-            if not url:
+            seen_keys.add(_url_key(url))
+            targets.append({"name": nm, "url": url, "asset_id": a.get("id"), "surface": "asset"})
+        n_assets = len(targets)
+
+        n_cms = 0
+        if not args.no_cms:
+            cms_index, _sums = build_reference_index(
+                token, site_id, collections_filter=args.collections, progress=not args.quiet)
+            for key, refs in cms_index.items():
+                curl = refs[0].source_url if refs and refs[0].source_url else ""
+                aid = asset_id_from_url_key(key)
+                if not curl or key in seen_keys or (aid and aid in known):
+                    continue
+                seen_keys.add(key)
+                targets.append({"name": _strip_id_prefixes(key) or "image", "url": curl,
+                                "asset_id": aid, "surface": "cms"})
+                n_cms += 1
+
+        if args.no_assets:
+            print(f"\n  --no-assets: the {len(assets)} image(s) in the Assets panel were NOT "
+                  "scanned.")
+        print(f"\nScanning {len(targets)} image(s) on '{args.site}' — "
+              f"{n_assets} site asset(s) + {n_cms} CMS-only image(s)…\n")
+        for a in targets:
+            url = a["url"]
+            name = a["name"]
+            if args.pattern and not fnmatch.fnmatch(name, args.pattern):
                 continue
             try:
                 rep, size = fetch_and_scan(url)
@@ -1027,8 +1091,9 @@ def cmd_scan(args: argparse.Namespace) -> int:
             if rep.undetectable_watermarks:
                 totals["undetectable"] += 1
             if rep.signals or args.all:
-                _print_report(f"{name}  ({a.get('id')})", rep, verbose=args.verbose)
-            rows.append({"ts": utc_iso(), "mode": "scan-asset", "asset_id": a.get("id"),
+                _print_report(f"{name}  ({a.get('asset_id')})", rep, verbose=args.verbose)
+            rows.append({"ts": utc_iso(), "mode": "scan-asset", "asset_id": a.get("asset_id"),
+                         "surface": a["surface"],
                          "name": name, "url": url, **rep.as_dict()})
 
     # The WARNING above scrolls; this block is what gets read. "AI-flagged 0" is
@@ -1200,6 +1265,9 @@ def cmd_replace(args: argparse.Namespace) -> int:
     # asset id silently breaks that page, because nothing here can rewrite it.
     live_index: dict[str, list[str]] = {}
     live_known = False
+    warn_merchant_center(cfg, policy, args.site)
+    folder_id = (resolve_or_create_folder(token, site_id, args.asset_folder)
+                 if args.apply and args.asset_folder else None)
     site_domains = evidence_domains(args.site, cfg, args.site_url)
     site_url = site_domains[0] if site_domains else ""
     if args.check_live_pages and site_domains:
@@ -1374,7 +1442,8 @@ def cmd_replace(args: argparse.Namespace) -> int:
         (backup_dir / f"{asset_id}_{name}").write_bytes(data)
 
         try:
-            up = upload_bytes(res.data, name, site_id, token)
+            up = upload_bytes(res.data, name, site_id, token,
+                              parent_folder=folder_id)
         except (APIError, NetworkError, RuntimeError, ValueError,
                 urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
             stats["errors"] += 1
@@ -1730,17 +1799,78 @@ def cmd_lineage(args: argparse.Namespace) -> int:
         print("  (If the sources were already stripped, point --source at data/watermark-backup.)")
         return 1
 
+    # WHOSE originals are these? `data/watermark-backup` is a FLAT shared root,
+    # so the default corpus silently mixes every site the tool has ever touched.
+    # Running `lineage --site cel` built a 77-image corpus of which 76 were
+    # brightvalley's and ZERO were CEL's — so "matched an AI original 0" on CEL
+    # meant "there was nothing of CEL's to match against", not "no AI here".
+    # That reads as a clean bill of health and is the reason a set of known
+    # AI-generated CEL blog thumbnails came back unflagged.
+    by_site: dict[str, int] = {}
+    for c in corpus:
+        # Match the `sites/<nick>/` segment wherever it appears, absolute or
+        # relative. Keying on the literal "/sites/" missed a relative path and
+        # filed the site's OWN originals under "shared", which would have fired
+        # the warning on a correctly-scoped corpus — a false alarm in the one
+        # place the operator needs to trust the signal.
+        parts = pathlib.Path(str(c["path"])).parts
+        who = "<shared backup root>"
+        if "sites" in parts:
+            i = parts.index("sites")
+            if i + 1 < len(parts):
+                who = parts[i + 1]
+        by_site[who] = by_site.get(who, 0) + 1
+    own = by_site.get(args.site, 0)
+    if len(by_site) > 1 or own == 0:
+        print("  corpus composition: "
+              + ", ".join(f"{k}={v}" for k, v in sorted(by_site.items(), key=lambda x: -x[1])))
+    if own == 0:
+        print(f"  ! NONE of these originals are {args.site}'s. A non-match below therefore means")
+        print(f"    'nothing of {args.site}'s was available to compare against' — NOT 'not AI'.")
+        print(f"    Point --source at a directory holding {args.site}'s AI originals to get a")
+        print("    real answer; cross-site matches are also a false-positive risk on stock imagery.")
+
+    # BOTH surfaces. `list_assets` alone was the whole coverage: on brightvalley
+    # the asset list and the CMS-image set do not overlap AT ALL (214 vs 164,
+    # zero shared), so "matched an AI original 59" had never included a single
+    # CMS image — including 13 team photos that are known to be AI-generated.
+    # A lineage answer scoped to one surface, printed without saying which, is
+    # the same confident-partial-answer this tool exists to avoid.
     assets = list_assets(token, site_id, limit=args.limit)
-    print(f"Matching {len(assets)} Webflow asset(s) against the corpus…\n")
+    targets: list[dict] = []
+    seen_keys: set[str] = set()
+    for a in assets:
+        url = a.get("hostedUrl") or ""
+        nm = asset_basename(a.get("originalFileName", ""), a.get("displayName", ""))
+        if not url or not nm:
+            continue
+        seen_keys.add(_url_key(url))
+        targets.append({"name": nm, "url": url, "asset_id": a.get("id"), "surface": "asset"})
+    n_assets = len(targets)
+
+    n_cms = 0
+    if not args.no_cms:
+        cms_index, _sums = build_reference_index(
+            token, site_id, collections_filter=args.collections, progress=not args.quiet)
+        for key, refs in cms_index.items():
+            url = refs[0].source_url if refs and refs[0].source_url else ""
+            if not url or key in seen_keys:
+                continue          # an image in both surfaces is one image
+            seen_keys.add(key)
+            targets.append({"name": _strip_id_prefixes(key) or "image", "url": url,
+                            "asset_id": asset_id_from_url_key(key), "surface": "cms",
+                            "refs": len(refs)})
+            n_cms += 1
+
+    print(f"Matching {len(targets)} image(s) against the corpus — "
+          f"{n_assets} site asset(s) + {n_cms} CMS-only image(s)…\n")
     rows: list[dict] = []
     matched = clean_derivative = still_dirty = skipped_flat = 0
     fetch_errors = 0
 
-    for a in assets:
-        url = a.get("hostedUrl") or ""
-        name = asset_basename(a.get("originalFileName", ""), a.get("displayName", ""))
-        if not url or not name:
-            continue
+    for a in targets:
+        url = a["url"]
+        name = a["name"]
         if args.pattern and not fnmatch.fnmatch(name, args.pattern):
             continue
         try:
@@ -1749,8 +1879,8 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             fp = perceptual_fingerprint(data)
         except Exception as e:  # noqa: BLE001 — fonts/SVG/unsupported all land here
             fetch_errors += 1
-            rows.append({"name": name, "asset_id": a.get("id"), "action": "error",
-                         "error": f"{type(e).__name__}: {e}"})
+            rows.append({"name": name, "asset_id": a.get("asset_id"), "surface": a["surface"],
+                         "action": "error", "error": f"{type(e).__name__}: {e}"})
             continue
 
         if fingerprint_is_degenerate(fp):
@@ -1758,7 +1888,7 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             # silently dropped.
             skipped_flat += 1
             rows.append({"ts": utc_iso(), "mode": "lineage", "site": args.site,
-                         "asset_id": a.get("id"), "name": name,
+                         "asset_id": a.get("asset_id"), "surface": a["surface"], "name": name,
                          "action": "skipped_low_detail"})
             continue
         best = min(corpus, key=lambda c: fingerprint_distance(c["fp"], fp))
@@ -1774,17 +1904,21 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             clean_derivative += 1
         rows.append({
             "ts": utc_iso(), "mode": "lineage", "site": args.site,
-            "asset_id": a.get("id"), "name": name, "url": url,
+            "asset_id": a.get("asset_id"), "surface": a["surface"], "name": name, "url": url,
             "distance": dist, "source": best["path"], "generators": best["generators"],
             "carries_metadata": has_meta,
             "signals": [s.kind for s in rep.signals],
         })
         flag = "HAS METADATA" if has_meta else "already clean"
-        print(f"  AI-DERIVED  {name[:46]:46} d={dist:>3}  {flag:13} "
+        print(f"  AI-DERIVED  {name[:44]:44} [{a['surface']:5}] d={dist:>3}  {flag:13} "
               f"<- {pathlib_name(best['path'])}  [{','.join(best['generators'])}]")
 
     print(f"\n{'─' * 78}")
-    print(f"  assets checked            {len(assets)}")
+    print(f"  images checked            {len(targets)}"
+          f"   ({n_assets} site asset(s) + {n_cms} CMS-only)")
+    if args.no_cms:
+        print("  CMS images were NOT checked (--no-cms). On a site whose CMS images are")
+        print("  not in the asset list, that is most of the site.")
     print(f"  could not be read         {fetch_errors}")
     print(f"  too flat to identify      {skipped_flat}")
     print(f"  matched an AI original    {matched}")
@@ -1893,6 +2027,46 @@ def crawl_evidence_domains(site_nickname: str, cfg: dict, override: str, *,
     return index, pages, failures
 
 
+def warn_merchant_center(cfg: dict, policy: Policy, site: str) -> None:
+    """Warn once when a run would remove the marker Merchant Center REQUIRES.
+
+    Google Search Central: "For ecommerce sites, Google Merchant Center has
+    policies for AI-generated content. In particular, AI-generated images must
+    contain metadata using the IPTC DigitalSourceType TrainedAlgorithmicMedia
+    metadata." That is precisely what `strip_iptc`/`strip_xmp` remove.
+
+    The tool cannot tell a product image from a blog image, so it does not
+    refuse — it says so once and lets the operator decide. A site that sells
+    nothing sets `"merchant_center": false` in site.json and never sees it.
+    Researched 2026-08-24; see rules/ai-provenance.md §5c.
+    """
+    if cfg.get("merchant_center") is False:
+        return
+    if not policy.wants("iptc_ai"):
+        return
+    print("  ! This removes IPTC DigitalSourceType=TrainedAlgorithmicMedia, which Google")
+    print("    Merchant Center REQUIRES on AI-generated PRODUCT images. Harmless for blog")
+    print("    and marketing imagery; a policy violation for a Merchant Center catalogue.")
+    print(f"    Set \"merchant_center\": false in sites/{site}/site.json to silence this.")
+
+
+def resolve_or_create_folder(token: str, site_id: str, name: str) -> str:
+    """Asset-folder id for ``name``, creating the folder if it does not exist.
+
+    Webflow has no API to DELETE an asset folder, so this creates at most one
+    per site and reuses it forever after.
+    """
+    r = rate_limited_request(
+        "GET", f"{WEBFLOW_API_BASE}/sites/{site_id}/asset_folders?limit=100", token)
+    for f in r.get("assetFolders", []) or []:
+        if (f.get("displayName") or "").strip().lower() == name.strip().lower():
+            return f.get("id") or f.get("_id") or ""
+    created = rate_limited_request(
+        "POST", f"{WEBFLOW_API_BASE}/sites/{site_id}/asset_folders", token,
+        data={"displayName": name})
+    return created.get("id") or created.get("_id") or ""
+
+
 def delete_asset(token: str, asset_id: str) -> dict:
     return rate_limited_request("DELETE", f"{WEBFLOW_API_BASE}/assets/{asset_id}", token)
 
@@ -1939,9 +2113,24 @@ def cmd_purge(args: argparse.Namespace) -> int:
     if not args.apply:
         print("  No deletions will be made.\n")
 
+    # Condition 1 has TWO ways to be satisfied, and only one of them was
+    # implemented. "It still carries an AI signal" is the right reason for an
+    # untouched original. But after a metadata-only replace — which is most of
+    # what this tool now does — the superseded original is an orphan carrying
+    # ordinary EXIF, and `is_ai_flagged` is False, so purge could not see the
+    # very leftovers the replace had just created. `--superseded <log>` sources
+    # candidates from the replace log's `superseded_by` links instead; every
+    # other safety check below is unchanged and still runs.
+    superseded_ids: set[str] = set()
+    if args.superseded:
+        superseded_ids = set(load_superseded(Path(args.superseded)))
+        print(f"  {len(superseded_ids)} asset(s) recorded as superseded in "
+              f"{args.superseded}")
+
     assets = list_assets(token, site_id, limit=args.limit)
     candidates = []
-    print(f"  Scanning {len(assets)} asset(s) for AI-flagged, unreferenced originals…")
+    why = "superseded-by-a-replacement" if superseded_ids else "AI-flagged"
+    print(f"  Scanning {len(assets)} asset(s) for {why}, unreferenced originals…")
     for a in assets:
         url, aid = a.get("hostedUrl") or "", a.get("id", "")
         name = asset_basename(a.get("originalFileName", ""), a.get("displayName", ""))
@@ -1954,11 +2143,11 @@ def cmd_purge(args: argparse.Namespace) -> int:
         except Exception:
             continue
         rep = ip.scan(data)
-        if not rep.is_ai_flagged:
+        if not (rep.is_ai_flagged or aid in superseded_ids):
             continue
         candidates.append({"id": aid, "name": name, "url": url, "bytes": data,
                            "generators": rep.ai_generators, "kinds": rep.kinds})
-    print(f"  {len(candidates)} AI-flagged asset(s) found\n")
+    print(f"  {len(candidates)} {why} asset(s) found\n")
     if not candidates:
         print("  Nothing to purge.\n")
         return 0
@@ -2068,6 +2257,9 @@ def cmd_cms(args: argparse.Namespace) -> int:
     # cannot exit 0 while a dirty image is still published.
     live_index: dict[str, list[str]] = {}
     live_known = False
+    warn_merchant_center(cfg, policy, args.site)
+    folder_id = (resolve_or_create_folder(token, site_id, args.asset_folder)
+                 if args.apply and args.asset_folder else None)
     site_domains = evidence_domains(args.site, cfg, args.site_url)
     site_url = site_domains[0] if site_domains else ""
     if args.check_live_pages and site_domains:
@@ -2088,6 +2280,7 @@ def cmd_cms(args: argparse.Namespace) -> int:
         if not args.no_skip_superseded:
             superseded = load_superseded(Path(args.skip_known_clean))
     rows: list[dict] = []
+    pending_designer: list[dict] = []
     stats = {"examined": 0, "clean": 0, "not_ai": 0, "stripped": 0, "repointed": 0,
              "errors": 0, "bytes": 0, "undetectable": 0, "skipped": 0,
              "unreadable": 0, "superseded": 0, "designer_refs": 0}
@@ -2177,13 +2370,28 @@ def cmd_cms(args: argparse.Namespace) -> int:
             stats["stripped"] += 1
             stats["bytes"] += res.bytes_removed
             row["action"] = "would_replace"
+            # In a DRY RUN the snapshot is the truth — nothing has been written,
+            # so the old URL genuinely is still on that page. Deferring the check
+            # to a post-write re-fetch (correct under --apply) silently removed
+            # the preview's most useful warning: "this image is ALSO placed on a
+            # published page, so replacing it will leave that page serving the
+            # un-stripped file". Report it here, from the snapshot, unchecked.
+            preview_pages, _ = lookup_refs(live_index, url)
+            if preview_pages:
+                stats["designer_refs"] += len(preview_pages)
+                row["designer_page_refs"] = preview_pages[:10]
+                print(f"          ! ALSO on {len(preview_pages)} published page(s), e.g. "
+                      f"{preview_pages[0]}")
+                print("            If that reference is set on the page itself rather than "
+                      "driven by this CMS field, it will still serve the old file.")
             rows.append(row)
             continue
 
         backup_dir.mkdir(parents=True, exist_ok=True)
         (backup_dir / f"{args.site}_{_url_key(url)}").write_bytes(data)
         try:
-            up = upload_bytes(res.data, name, site_id, token)
+            up = upload_bytes(res.data, name, site_id, token,
+                              parent_folder=folder_id)
         except (APIError, NetworkError, RuntimeError, ValueError,
                 urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
             stats["errors"] += 1
@@ -2241,7 +2449,16 @@ def cmd_cms(args: argparse.Namespace) -> int:
         row["action"] = ("incomplete_repoint" if incomplete
                          else "verify_failed" if verify_failed else "replaced")
         row.update({"new_asset_id": up["asset_id"], "new_url": up["hostedUrl"],
-                    "repointed": n_ok, "verify": verify})
+                    "repointed": n_ok, "verify": verify,
+                    # WHICH items were edited. Without this a failed publish
+                    # cannot be retried from the log: the CEL run re-pointed 242
+                    # items, the publish died on Webflow's 100-id cap, and
+                    # rebuilding the list afterwards meant re-crawling the CMS
+                    # and matching on an asset id buried in a stacked URL key,
+                    # because Webflow re-hosts the file on write and the URL we
+                    # PATCHed in is never the URL it stores.
+                    "touched_items": sorted({f"{r.collection_id}:{r.item_id}"
+                                             for r in refs})[:200]})
         if row["action"] == "replaced":
             # `load_superseded` keys on the ORIGINAL asset id; cmd_cms works
             # from URLs, so recover it here or the row records a supersession
@@ -2254,15 +2471,16 @@ def cmd_cms(args: argparse.Namespace) -> int:
         print(f"          -> repointed {n_ok}/{len(refs)}  "
               f"[{'verified clean' if verify.get('clean') else ('VERIFY FAILED' if args.verify else 'not verified')}]")
 
+        # DEFERRED. `live_index` is a snapshot taken before any write, so a page
+        # whose image comes FROM the CMS field this run just re-pointed still
+        # shows the old URL in it. Reporting straight from the snapshot flagged
+        # 18 references that this very run had already fixed, counted each as an
+        # error, and sent the operator to the Designer to repair nothing.
+        # Re-checked against the live page after the writes instead.
         page_refs, _ = lookup_refs(live_index, url)
         if page_refs:
-            stats["designer_refs"] += len(page_refs)
-            stats["errors"] += 1
-            row["designer_page_refs"] = page_refs[:10]
-            print(f"          ! STILL DIRTY on {len(page_refs)} published page(s): "
-                  f"{page_refs[0]}")
-            print("            Those references are set in the Designer, not the CMS, "
-                  "and cannot be rewritten from here — fix them via /webflow-implement.")
+            pending_designer.append({"row": row, "name": name, "old_url": url,
+                                     "new_url": up["hostedUrl"], "pages": page_refs})
         elif args.check_live_pages and not live_known:
             row["designer_refs_unknown"] = True
         rows.append(row)
@@ -2282,6 +2500,43 @@ def cmd_cms(args: argparse.Namespace) -> int:
                 print(f"      {len(ids)} item(s) were re-pointed but are NOT live; "
                       "the published page still serves the un-stripped image.")
 
+    if pending_designer:
+        # Re-fetch each page ONCE, now that the CMS writes and publishes have
+        # landed. A page whose image comes from a CMS field this run re-pointed
+        # is already fixed; only a reference set on the page itself survives.
+        print(f"\n  Re-checking {len(pending_designer)} image(s) against the live pages…")
+        html_cache: dict[str, str] = {}
+        for item in pending_designer:
+            still: list[str] = []
+            for page in item["pages"]:
+                if page not in html_cache:
+                    try:
+                        req = urllib.request.Request(
+                            page, headers={"User-Agent": "watermark-cleaner/1.0"})
+                        with urllib.request.urlopen(req, timeout=30) as r:
+                            html_cache[page] = r.read().decode("utf-8", "replace")
+                    except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+                        # Unreadable proves nothing either way — keep the flag.
+                        html_cache[page] = ""
+                        still.append(page)
+                        continue
+                if _url_key(item["old_url"]) in html_cache[page].lower():
+                    still.append(page)
+            if still:
+                stats["designer_refs"] += len(still)
+                stats["errors"] += 1
+                item["row"]["designer_page_refs"] = still[:10]
+                print(f"    ! STILL DIRTY  {item['name'][:44]}  on {len(still)} page(s): "
+                      f"{still[0]}")
+                print("      That reference is set on the page itself, not in the CMS — "
+                      "fix it via /webflow-implement.")
+        fixed = len(pending_designer) - sum(
+            1 for i in pending_designer if i["row"].get("designer_page_refs"))
+        if fixed:
+            print(f"    {fixed} image(s) appeared on a published page in the pre-write "
+                  "snapshot but the live page now serves the stripped file — CMS-driven, "
+                  "already fixed by this run.")
+
     print(f"\n{'─' * 70}")
     print(f"  examined {stats['examined']}   carried no removable metadata {stats['clean']}   "
           f"{'replaced' if args.apply else 'would replace'} {stats['stripped']}")
@@ -2299,10 +2554,16 @@ def cmd_cms(args: argparse.Namespace) -> int:
     if stats["errors"]:
         print(f"  errors                 {stats['errors']}")
     print(f"  bytes removed          {_fmt_bytes(stats['bytes'])}")
-    if stats["designer_refs"]:
+    if stats["designer_refs"] and args.apply:
         print(f"\n  {stats['designer_refs']} Designer-set reference(s) still point at un-stripped")
         print("  images. The CMS half is done; those are set on the page itself and")
         print("  need /webflow-implement. This run is NOT complete.")
+    elif stats["designer_refs"]:
+        print(f"\n  {stats['designer_refs']} of these image(s) also appear on a published page.")
+        print("  Where the page renders them FROM this CMS field, --apply fixes them too;")
+        print("  where they are placed on the page itself, they will keep serving the old")
+        print("  file and need /webflow-implement. This run re-checks after writing and")
+        print("  reports only the ones that are genuinely still dirty.")
     elif not live_known:
         # Key on whether the crawl PRODUCED COVERAGE, never on whether the flag
         # was passed. `--check-live-pages` with no site URL, or a crawl that
@@ -2454,6 +2715,17 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--pattern", default="", help="fnmatch filter on asset filename")
     sc.add_argument("--limit", type=int, default=0, help="stop after N assets")
     sc.add_argument("--token", default=None, help="Webflow API token override")
+    sc.add_argument("--quiet", action="store_true",
+                    help="suppress per-collection index progress")
+    sc.add_argument("--collections", default="all",
+                    help="comma-separated collection ids for the CMS surface (default: all)")
+    sc.add_argument("--no-assets", action="store_true",
+                    help="scan CMS images only, skipping the Assets panel. The complement of "
+                         "--no-cms; use it to scope a run to one collection on a large site")
+    sc.add_argument("--no-cms", action="store_true",
+                    help="scan site assets only. Off by default: `GET /sites/{id}/assets` does "
+                         "not return CMS-uploaded images, and on brightvalley the two sets do "
+                         "not overlap at all — so this hides most of the site")
     sc.add_argument("--skip-known-clean", default="",
                     help="a prior --log-jsonl file; assets it proved clean are not re-fetched")
     sc.add_argument("--fail-on-flagged", action="store_true",
@@ -2502,6 +2774,11 @@ def build_parser() -> argparse.ArgumentParser:
     rp.add_argument("--token", default=None, help="Webflow API token override")
     rp.add_argument("--skip-known-clean", default="",
                     help="a prior --log-jsonl file; assets it proved clean are not re-fetched")
+    rp.add_argument("--asset-folder", default="Metadata-Stripped",
+                    help="Assets-panel folder to file replacements into. A replace MINTS a new "
+                         "asset for any image not addressable as a site asset (every "
+                         "CMS-uploaded image), so the panel grows either way — this keeps that "
+                         "growth in one place. Pass an empty string to upload to the root.")
     rp.add_argument("--no-skip-superseded", action="store_true",
                     help="also re-process assets a prior run already replaced. Off by "
                          "default: a Webflow asset is immutable, so replacing one twice "
@@ -2513,6 +2790,11 @@ def build_parser() -> argparse.ArgumentParser:
                         help="delete AI-flagged assets that nothing references (irreversible)")
     pg.add_argument("--site", required=True)
     pg.add_argument("--apply", action="store_true", help="actually delete — IRREVERSIBLE")
+    pg.add_argument("--superseded", default="",
+                    help="a replace/cms --log-jsonl file; also treat assets it records as "
+                         "superseded_by a replacement as deletion candidates. Every other "
+                         "safety check still runs — no CMS reference, no published page, and "
+                         "a byte-identical backup on disk.")
     pg.add_argument("--asset-id", default="", help="comma-separated asset ids to limit to")
     pg.add_argument("--limit", type=int, default=0)
     pg.add_argument("--check-live-pages", action="store_true", default=True)
@@ -2532,7 +2814,13 @@ def build_parser() -> argparse.ArgumentParser:
                     help="local dirs holding AI-marked originals "
                          "(default: sites/<site> + data/watermark-backup/sites/<site> "
                          "+ data/watermark-backup, where replace/cms write flat)")
-    ln.add_argument("--pattern", default="", help="fnmatch filter on asset filename")
+    ln.add_argument("--collections", default="all",
+                    help="comma-separated collection ids for the CMS surface (default: all)")
+    ln.add_argument("--no-cms", action="store_true",
+                    help="match site assets only. Off by default: on a site whose CMS images "
+                         "are not in the asset list — brightvalley's two sets do not overlap "
+                         "at all — that skips most of the site")
+    ln.add_argument("--pattern", default="", help="fnmatch filter on image filename")
     ln.add_argument("--limit", type=int, default=0)
     ln.add_argument("--quiet", action="store_true")
     ln.add_argument("--token", default=None)
@@ -2559,6 +2847,11 @@ def build_parser() -> argparse.ArgumentParser:
     cm.add_argument("--live-page-limit", type=int, default=0, help="stop after N published pages")
     cm.add_argument("--skip-known-clean", default="",
                     help="a prior --log-jsonl file; images it proved clean are not re-fetched")
+    cm.add_argument("--asset-folder", default="Metadata-Stripped",
+                    help="Assets-panel folder to file replacements into. A replace MINTS a new "
+                         "asset for any image not addressable as a site asset (every "
+                         "CMS-uploaded image), so the panel grows either way — this keeps that "
+                         "growth in one place. Pass an empty string to upload to the root.")
     cm.add_argument("--no-skip-superseded", action="store_true",
                     help="also re-process images a prior run already replaced")
     cm.add_argument("--backup-dir", default=str(DEFAULT_BACKUP_DIR))
