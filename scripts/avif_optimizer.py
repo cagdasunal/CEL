@@ -161,7 +161,8 @@ def rate_limited_request(method: str, url: str, token: str, data: dict | None = 
     raise last_err
 
 
-def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) -> dict:
+def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str,
+                parent_folder: str | None = None) -> dict:
     """Upload image bytes via Webflow's 2-step S3 presigned flow.
 
     Receives bytes in-memory rather than reading from disk, so the image
@@ -187,7 +188,14 @@ def upload_avif(image_bytes: bytes, file_name: str, site_id: str, token: str) ->
     suffix = Path(file_name).suffix.lower() or ".avif"
 
     # Step 1: register asset
+    # `parentFolder` files the new asset into an Assets-panel folder. A replace
+    # necessarily MINTS a new asset for any image that is not addressable as a
+    # site asset — every CMS-uploaded image on brightvalley and CEL — so the
+    # panel grows whether or not anyone wants it to. Filing them keeps that
+    # growth organised instead of scattering it through the root.
     register_body = {"fileName": file_name, "fileHash": md5}
+    if parent_folder:
+        register_body["parentFolder"] = parent_folder
     register_url = f"{WEBFLOW_API_BASE}/sites/{site_id}/assets"
     register_resp = rate_limited_request("POST", register_url, token, data=register_body)
     asset_id = register_resp.get("id")
