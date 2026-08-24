@@ -12,10 +12,12 @@ re-pointing, the refusal rule, and the two safety gates on ``--apply``.
 from __future__ import annotations
 
 import ast
+import http.client
 import inspect
 import io
 import json
 import random
+import re
 import struct
 import urllib.error
 import sys
@@ -148,6 +150,24 @@ class TestBasenameMatching:
 
     def test_leaves_a_non_id_prefix_alone(self):
         assert wc._strip_id_prefixes("my_photo_2026.png") == "my_photo_2026.png"
+
+    def test_a_24_char_NON_HEX_head_is_not_an_id_prefix(self):
+        """The length check alone is not the rule — the head must be hex too.
+
+        'my_photo_2026.png' only exercises the length clause (head 'my'), so
+        dropping the hex test from `_strip_id_prefixes` changed nothing any test
+        could see. A real filename can easily reach 24 characters before its
+        first underscore, and eating that head silently renames the image: every
+        basename join then compares the WRONG names, which is the fallback the
+        whole brightvalley re-point depends on.
+        """
+        name = "montreal-summer-camp-jan_hero.png"
+        assert len(name.partition("_")[0]) == 24, "premise: the head is exactly 24 chars"
+        assert wc._strip_id_prefixes(name) == name, \
+            "a 24-character non-hex head is part of the filename, not an asset id"
+        # Guard the guard: the hex path must still strip, or the assertion above
+        # could be satisfied by a function that never strips anything.
+        assert wc._strip_id_prefixes(f"{AID_HERO}_hero.png") == "hero.png"
 
     def test_basename_key_matches_across_differing_ids(self):
         a = f"https://s3.amazonaws.com/webflow-prod-assets/{SITE_ID}/{AID_HERO}_shot.png"
@@ -322,7 +342,15 @@ class TestPerceptualLineage:
         unrelated. That is the transform the Team Members photos went through.
         """
         from PIL import Image
-        orig = self._img(17, 200, 200)
+        # 600x600, not 200x200. The absolute claim below is a property of the
+        # SOURCE RESOLUTION, not of the data domain: a 200x200 source loses
+        # so much detail on the way to a 16x16 grid that the trim boundary
+        # dominates it. Measured on this exact fixture (Pillow 12.2.0):
+        #   200x200 -> paired 41   300x300 -> 11   400x400 -> 31   600x600 -> 19
+        # 41 is OVER the threshold of 40, which is why the absolute assertion
+        # used to live in a separate test gated on a real photograph. It does
+        # not need one — it needs a source big enough to survive the downsample.
+        orig = self._img(17, 600, 600)
         im = Image.open(io.BytesIO(orig)).convert("RGB")
         canvas = Image.new("RGB", (im.width + 160, im.height + 200), (255, 255, 255))
         canvas.paste(im, (80, 120))
@@ -336,55 +364,124 @@ class TestPerceptualLineage:
         assert plain > wc.PHASH_MATCH_MAX, (
             f"fixture is not actually padded enough to break the plain hash (got {plain}) — "
             "this test would pass vacuously")
-        # A RELATIVE claim, deliberately: it holds for any fixture, so it cannot
-        # be satisfied by tuning the threshold to fit this one. The absolute
-        # "comes under the threshold" claim is asserted against REAL photographs
-        # in test_padding_rescued_on_real_images, because that is the actual data
-        # domain — a synthetic pattern downsampled to 16x16 is dominated by the
-        # trim boundary and lands near the threshold no matter how good the fix is.
+        # A RELATIVE claim: it holds for any fixture, so it cannot be satisfied
+        # by tuning the threshold to fit this one.
         assert paired < plain / 2, (
             f"trimming barely helped: {plain} -> {paired}. Expected a large reduction.")
+        # And the ABSOLUTE claim, which is the one the tool actually acts on:
+        # the derivative must come back UNDER the match threshold, or lineage
+        # still reports a padded AI derivative as unrelated. This used to live
+        # in a sibling test gated on
+        # `sites/brightvalley/assets/office-scenes/A1-gabriela-solo.png`, which
+        # is not tracked by git — so it ran on one machine and SKIPPED
+        # everywhere else, i.e. the absolute claim was effectively unasserted in
+        # CI. A large enough synthetic source carries it portably instead.
+        assert paired <= wc.PHASH_MATCH_MAX, (
+            f"a padded derivative still misses the threshold ({paired} > {wc.PHASH_MATCH_MAX})")
 
-    @pytest.mark.skipif(
-        not (ROOT / "sites/brightvalley/assets/office-scenes/A1-gabriela-solo.png").is_file(),
-        reason="needs a real photograph from the corpus")
-    def test_padding_rescued_on_real_images(self):
-        """The absolute claim, on the real data domain.
+    def test_the_plain_hash_is_sometimes_the_half_that_carries_the_match(self):
+        """The other direction — the reason `perceptual_fingerprint` keeps BOTH.
 
-        Reproduces the actual team-headshot transform (scale + pad + 700px WebP,
-        parameters from iod-report.json) against a real photograph. Measured
-        before the fix: 99-205 bits, i.e. scored as unrelated. After: 3-8.
+        Every other fixture here measures the padding case, where the trimmed
+        hash is by construction the better half; collapsing
+        `fingerprint_distance` to the trimmed leg alone therefore survived all
+        of them. Trimming is a heuristic: on an image with a legitimate solid
+        border as part of the composition it removes real signal, and it does
+        not remove the SAME amount from a lossy re-encode of that image,
+        because the compression artefacts smear the border edge. The two
+        trimmed crops then disagree while the untrimmed frames still match.
         """
         from PIL import Image
-        src = (ROOT / "sites/brightvalley/assets/office-scenes/A1-gabriela-solo.png").read_bytes()
-        im = Image.open(io.BytesIO(src)).convert("RGB")
-        im = im.resize((int(im.width * 0.929), int(im.height * 0.929)), Image.LANCZOS)
-        canvas = Image.new("RGB", (im.width + 81, im.height + 203), (255, 255, 255))
-        canvas.paste(im, (0, 203))
-        canvas = canvas.resize((700, int(canvas.height * 700 / canvas.width)), Image.LANCZOS)
-        buf = io.BytesIO(); canvas.save(buf, format="WEBP", quality=82)
+        base = Image.new("RGB", (400, 400), (0, 0, 0))
+        base.paste(Image.open(io.BytesIO(self._img(11, 340, 340))).convert("RGB"), (30, 30))
+        b1 = io.BytesIO(); base.save(b1, format="PNG")
+        original = b1.getvalue()
+        b2 = io.BytesIO(); base.resize((300, 300), Image.LANCZOS).save(b2, format="WEBP", quality=30)
+        derivative = b2.getvalue()          # resize + lossy re-encode, NO added padding
 
-        plain = wc.hamming(wc.perceptual_hash(src), wc.perceptual_hash(buf.getvalue()))
-        paired = wc.fingerprint_distance(wc.perceptual_fingerprint(src),
-                                         wc.perceptual_fingerprint(buf.getvalue()))
-        assert plain > wc.PHASH_MATCH_MAX, f"fixture no longer reproduces the defect ({plain})"
-        assert paired <= wc.PHASH_MATCH_MAX, (
-            f"a padded derivative of a real photograph still misses ({paired})")
+        fa = wc.perceptual_fingerprint(original)
+        fb = wc.perceptual_fingerprint(derivative)
+        plain, trimmed = wc.hamming(fa[0], fb[0]), wc.hamming(fa[1], fb[1])
+
+        assert trimmed > wc.PHASH_MATCH_MAX, (
+            f"premise: the TRIMMED half must miss here ({trimmed}) or this test proves nothing "
+            "about keeping the plain one")
+        assert plain < trimmed, f"the plain half must be the better one here ({plain} vs {trimmed})"
+        assert plain <= wc.PHASH_MATCH_MAX, f"the plain half must actually match ({plain})"
+        assert wc.fingerprint_distance(fa, fb) <= wc.PHASH_MATCH_MAX, (
+            "matching must take the BETTER of the two hashes — taking the trimmed one alone "
+            f"loses this derivative entirely ({trimmed} > {wc.PHASH_MATCH_MAX})")
+
+    def _padded(self, seed: int, pad: int, colour: tuple[int, int, int]) -> bytes:
+        """A 160x160 image centred in a uniform border — the shape _autotrim exists for."""
+        from PIL import Image
+        im = Image.open(io.BytesIO(self._img(seed, 160, 160))).convert("RGB")
+        canvas = Image.new("RGB", (im.width + 2 * pad, im.height + 2 * pad), colour)
+        canvas.paste(im, (pad, pad))
+        buf = io.BytesIO(); canvas.save(buf, format="PNG"); return buf.getvalue()
 
     def test_trimming_does_not_make_unrelated_images_collide(self):
-        a, b = self._img(5, 160, 160), self._img(37, 160, 160)
+        """Trimming pulls two DIFFERENT pictures onto the same canvas size.
+
+        The fixtures must actually be trimmed, or this is a duplicate of
+        test_different_images_are_far_apart: full-bleed images are a no-op for
+        _autotrim, so fingerprint_distance collapses to the plain-hash
+        comparison and the trim-aware leg is never measured. Different border
+        widths AND different border colours on purpose — that is the shape in
+        which trimming could plausibly normalise two unrelated images into one.
+        """
+        from PIL import Image
+        a = self._padded(5, 60, (255, 255, 255))
+        b = self._padded(37, 140, (8, 8, 8))
+        assert Image.open(io.BytesIO(a)).size == (280, 280)
+        assert Image.open(io.BytesIO(b)).size == (440, 440)
+        assert wc._autotrim(Image.open(io.BytesIO(a))).size == (160, 160), \
+            "fixture a was not trimmed — the trim-aware leg would go untested"
+        assert wc._autotrim(Image.open(io.BytesIO(b))).size == (160, 160), \
+            "fixture b was not trimmed — the trim-aware leg would go untested"
+
         d = wc.fingerprint_distance(wc.perceptual_fingerprint(a), wc.perceptual_fingerprint(b))
         assert d > wc.PHASH_MATCH_MAX * 2, f"trim-aware matching collided unrelated images ({d})"
 
-    def test_near_uniform_image_is_not_trimmed_to_nothing(self):
-        """A flat image must not trim away to a sliver — every flat image would
-        then collide with every other."""
-        from PIL import Image
+    def test_a_perfectly_flat_image_has_no_bbox_and_is_left_alone(self):
+        """The `getbbox() is None` leg: a uniform field differs from its own
+        corner colour nowhere, so there is no box to crop to at all."""
+        from PIL import Image, ImageChops
         buf = io.BytesIO()
         Image.new("RGB", (200, 200), (240, 240, 240)).save(buf, format="PNG")
         flat = buf.getvalue()
-        trimmed = wc._autotrim(Image.open(io.BytesIO(flat)))
-        assert trimmed.width >= 200 * 0.3 and trimmed.height >= 200 * 0.3
+        g = Image.open(io.BytesIO(flat)).convert("RGB")
+        bg = Image.new("RGB", g.size, g.getpixel((0, 0)))
+        assert ImageChops.difference(g, bg).convert("L").getbbox() is None, \
+            "premise: this fixture reaches the `bb is None` branch, not the 30% floor"
+        assert wc._autotrim(Image.open(io.BytesIO(flat))).size == (200, 200)
+
+    def test_near_uniform_image_is_not_trimmed_to_nothing(self):
+        """A NEAR-uniform image must not trim away to a sliver — every such
+        image would then collide with every other.
+
+        The fixture is deliberately near-uniform rather than perfectly flat: a
+        perfectly flat one has no bbox at all, short-circuits on `bb and …`,
+        and leaves the two 30%-floor clauses unevaluated — so it locked
+        nothing. Here the bbox EXISTS and is tiny, which is the only shape that
+        reaches the floor.
+        """
+        from PIL import Image, ImageChops
+        im = Image.new("RGB", (200, 200), (240, 240, 240))
+        for x in range(100, 106):
+            for y in range(100, 106):
+                im.putpixel((x, y), (60, 60, 60))
+        buf = io.BytesIO(); im.save(buf, format="PNG")
+        near_uniform = buf.getvalue()
+
+        g = Image.open(io.BytesIO(near_uniform)).convert("RGB")
+        bg = Image.new("RGB", g.size, g.getpixel((0, 0)))
+        raw = ImageChops.difference(g, bg).convert("L").point(
+            lambda v: 255 if v > 12 else 0).getbbox()
+        assert raw == (100, 100, 106, 106), (
+            f"premise: the raw bbox must be a tiny 6x6 box the floor has to reject (got {raw})")
+        assert wc._autotrim(Image.open(io.BytesIO(near_uniform))).size == (200, 200), \
+            "a 6x6 bbox is under 30% of both dimensions — the crop must be refused"
 
     def test_flat_images_are_degenerate_and_never_match(self):
         """A difference hash on a flat image is all zeros — so ALL flat images
@@ -406,6 +503,39 @@ class TestPerceptualLineage:
             fps.append(fp)
         # premise of the guard: they really are indistinguishable
         assert wc.fingerprint_distance(fps[0], fps[1]) <= wc.PHASH_MATCH_MAX
+
+    def test_a_picture_on_a_big_white_canvas_is_not_called_degenerate(self):
+        """`max()`, not `min()` — the degeneracy test asks whether EITHER half
+        carries signal, and it must, because either half can be the flat one.
+
+        A small photograph centred on a large white canvas — a product shot, a
+        logo card, a letterboxed thumbnail — is mostly background, so the
+        whole-frame hash really is close to flat. The TRIMMED hash sees the
+        actual picture. Taking the minimum of the two popcounts would evict
+        exactly these images from the corpus as 'too flat to identify', and
+        `lineage` reports what it evicted as `skipped_low_detail` — a confident
+        non-answer on an image it could in fact have matched.
+        """
+        from PIL import Image
+        import math
+        inner = Image.new("RGB", (104, 104))
+        inner.putdata([(int(128 + 100 * math.sin(2.6 * x / 104) * math.cos(2.0 * y / 104)),) * 3
+                       for y in range(104) for x in range(104)])
+        canvas = Image.new("RGB", (340, 340), (255, 255, 255))
+        canvas.paste(inner, (118, 118))
+        buf = io.BytesIO(); canvas.save(buf, format="PNG")
+        data = buf.getvalue()
+
+        fp = wc.perceptual_fingerprint(data)
+        plain_bits = bin(fp[0]).count("1")
+        trimmed_bits = bin(fp[1]).count("1")
+        assert plain_bits < wc.MIN_FINGERPRINT_BITS, (
+            f"premise: the whole-frame hash must be under the floor ({plain_bits}) — "
+            "otherwise this fixture never reaches the max/min distinction")
+        assert trimmed_bits >= wc.MIN_FINGERPRINT_BITS, (
+            f"premise: the trimmed hash must carry real signal ({trimmed_bits})")
+        assert not wc.fingerprint_is_degenerate(fp), (
+            "one rich half is enough — this image is identifiable and must stay in the corpus")
 
     def test_real_photographs_are_not_degenerate(self):
         """The guard must not exclude the images lineage exists to match."""
@@ -554,6 +684,35 @@ class TestVerdictIsNotAGuess:
         out = capsys.readouterr().out
         assert "UNKNOWN" in out and "clean" not in out.split("UNKNOWN")[0]
 
+    def test_verify_live_retries_while_the_cdn_still_serves_the_old_bytes(self, monkeypatch):
+        """A CDN mid-propagation answers 200 with the PREVIOUS object.
+
+        That response is parseable and DIRTY, not an error — so the retry loop
+        is the only thing standing between "we uploaded a clean file" and
+        "verify_failed" on a replace that in fact succeeded. Returning the first
+        answer whatever it says makes the poll a single fetch with extra steps,
+        and the failure it invents is indistinguishable from a real one.
+        """
+        served = [DIRTY_PNG, CLEAN_PNG]
+        fetched = []
+
+        def dl(u, timeout=30):
+            fetched.append(u)
+            return served[min(len(fetched) - 1, len(served) - 1)]
+
+        monkeypatch.setattr(wc, "download_image", dl)
+        r = wc.verify_live("https://x/y.png", tries=2, sleep=0)
+        assert len(fetched) == 2, f"a DIRTY first answer must be retried (fetched {len(fetched)})"
+        assert r["clean"] is True and r["verdict"] == "CLEAN"
+
+    def test_verify_live_stops_at_the_last_try_rather_than_looping(self, monkeypatch):
+        """Guard the guard: retrying forever would hang the nightly run."""
+        fetched = []
+        monkeypatch.setattr(wc, "download_image",
+                            lambda u, timeout=30: (fetched.append(u), DIRTY_PNG)[1])
+        r = wc.verify_live("https://x/y.png", tries=3, sleep=0)
+        assert len(fetched) == 3 and r["clean"] is False
+
     def test_verify_live_reports_unknown_rather_than_clean(self, monkeypatch):
         monkeypatch.setattr(wc, "download_image",
                             lambda u, timeout=30: self._dirty_but_unparseable())
@@ -586,16 +745,64 @@ class TestUnreadableIsNotNoise:
     def test_a_clean_image_is_not_concerning(self):
         assert not wc._is_concerning_parse_error(ip.scan(CLEAN_PNG))
 
-    def test_scan_exits_zero_on_a_site_that_merely_contains_fonts(self, tmp_path):
-        (tmp_path / "f.ttf").write_bytes(b"\x00\x01\x00\x00\x00\x0c\x00\x80\x00\x03\x00@")
+    FONT = b"\x00\x01\x00\x00\x00\x0c\x00\x80\x00\x03\x00@"
+
+    def test_the_local_walker_never_even_opens_a_font(self, tmp_path):
+        """Why the exemption cannot be tested on `--local`.
+
+        `iter_local_images` filters on IMAGE_EXTS, so a .ttf on disk never
+        reaches `_is_concerning_parse_error` at all. Two tests used to claim
+        they locked the font exemption from here; they were measuring the
+        extension filter. The exemption itself is exercised on `--site`, below,
+        where the asset list serves whatever Webflow holds.
+        """
+        (tmp_path / "f.ttf").write_bytes(self.FONT)
         (tmp_path / "ok.png").write_bytes(CLEAN_PNG)
+        assert [p.name for p in wc.iter_local_images([str(tmp_path)])] == ["ok.png"]
+        assert ".ttf" not in wc.IMAGE_EXTS
         assert wc.main(["scan", "--local", str(tmp_path)]) == 0
 
     def test_scan_exits_two_when_a_real_image_could_not_be_read(self, tmp_path, capsys):
-        (tmp_path / "f.ttf").write_bytes(b"\x00\x01\x00\x00\x00\x0c\x00\x80\x00\x03\x00@")
         (tmp_path / "broken.png").write_bytes(ip._PNG_MAGIC + b"\x00\x00\x00\x0dIHDR")
         assert wc.main(["scan", "--local", str(tmp_path)]) == 2
         assert "UNKNOWN, not clean" in capsys.readouterr().err
+
+    def _site(self, monkeypatch, blobs: list[tuple[str, str, bytes]]):
+        """`scan --site` over `(asset_id, name, bytes)` — the surface where a
+        font really does get downloaded and handed to the scanner."""
+        assets = [{"id": aid, "originalFileName": f"{aid}_{name}", "displayName": name,
+                   "hostedUrl": f"{CDN}/{aid}_{name}", "contentType": "application/octet-stream"}
+                  for aid, name, _ in blobs]
+        by_url = {f"{CDN}/{aid}_{name}": data for aid, name, data in blobs}
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: assets)
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: by_url[u])
+        return wc.cmd_scan(wc.build_parser().parse_args(["scan", "--site", "cel", "--quiet"]))
+
+    def test_a_site_whose_assets_include_a_font_still_exits_zero(self, monkeypatch, capsys):
+        """The exemption, on the path that has it. Every Webflow site holds
+        fonts and PDFs in the Assets panel; counting them unreadable made the
+        nightly exit 2 on a healthy site, every night, forever."""
+        rc = self._site(monkeypatch, [(AID_LOGO, "brand.ttf", self.FONT),
+                                      (AID_HERO, "hero.png", CLEAN_PNG)])
+        out = capsys.readouterr()
+        assert rc == 0, f"a font must not redden a clean site\n{out.out}"
+        assert "unreadable" not in out.out
+
+    def test_a_font_does_not_mask_an_image_that_really_could_not_be_read(
+            self, monkeypatch, capsys):
+        """Guard the guard: exempting the font must not exempt the shape a
+        manifest hides in — a container we DID recognise whose walk aborted, so
+        it reports zero signals and looks exactly like a clean file."""
+        rc = self._site(monkeypatch, [
+            (AID_LOGO, "brand.ttf", self.FONT),
+            (AID_HERO, "hero.png", ip._PNG_MAGIC + b"\x00\x00\x00\x0dIHDR")])
+        out = capsys.readouterr()
+        assert rc == 2, "an unreadable PNG must still move the exit code"
+        assert "1 unreadable" in out.out, f"exactly the PNG, not the font\n{out.out}"
+        assert "UNKNOWN, not clean" in out.err
 
 
 class TestPagination:
@@ -774,6 +981,109 @@ class TestPurgeSafety:
         monkeypatch.setattr(wc, "cmd_purge", lambda a: (called.append(1), 0)[1])
         assert wc.main(["purge", "--site", "cel", "--apply"]) == 3
         assert not called, "cmd_purge must not run without the env confirmation"
+
+
+class TestPurgeRequiresAllFourConditions:
+    """`cmd_purge` is the only IRREVERSIBLE mode, and one test reached its body.
+
+    Its docstring promises four independent, ALL-required conditions. Nothing
+    measured them: `test_no_domain_on_record_is_not_silently_treated_as_proof`
+    covers the no-domain path and every other assertion about purge was made
+    against `evidence_domains` in isolation. A condition that is never
+    individually falsified is a condition nobody has checked is wired up — and
+    the failure mode here is a deleted client asset.
+    """
+
+    def _purge(self, monkeypatch, tmp_path, *, blob=DIRTY_PNG, cms=(), page_hits=(),
+               backup=True, argv=(), delete_raises=None):
+        """Drive cmd_purge with exactly one candidate; return (rc, deleted_ids, out)."""
+        deleted: list[str] = []
+        url = f"{CDN}/{AID_HERO}_hero.png"
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets",
+                            lambda t, s, limit=None: [_asset(AID_HERO, "hero.png")])
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: blob)
+        monkeypatch.setattr(wc, "asset_id_appears_in_cms",
+                            lambda *a, **k: {AID_HERO: list(cms)})
+        index = {wc._url_key(url): list(page_hits)} if page_hits else {}
+        monkeypatch.setattr(wc, "crawl_evidence_domains",
+                            lambda *a, **k: (index, ["https://example.com/"], []))
+
+        def _delete(token, aid):
+            if delete_raises is not None:
+                raise delete_raises
+            deleted.append(aid)
+            return {}
+
+        monkeypatch.setattr(wc, "delete_asset", _delete)
+        bdir = tmp_path / "backup"
+        bdir.mkdir()
+        if backup:
+            (bdir / f"{AID_HERO}_hero.png").write_bytes(blob)
+        args = wc.build_parser().parse_args(
+            ["purge", "--site", "bv", "--quiet", "--backup-dir", str(bdir),
+             "--log-jsonl", str(tmp_path / "purge.jsonl"), *argv])
+        rc = wc.cmd_purge(args)
+        return rc, deleted
+
+    def test_all_four_satisfied_deletes_exactly_once(self, monkeypatch, tmp_path, capsys):
+        """The positive control. Without it every negative below could be
+        satisfied by a purge that deletes nothing, ever."""
+        rc, deleted = self._purge(monkeypatch, tmp_path, argv=["--apply"])
+        assert rc == 0 and deleted == [AID_HERO]
+        assert "DELETED" in capsys.readouterr().out
+
+    @pytest.mark.parametrize("label,kw,reason", [
+        ("2 — referenced in the CMS", {"cms": ["blog/post"]}, "referenced by CMS"),
+        ("3 — on a published page", {"page_hits": ["https://example.com/about"]},
+         "on published page"),
+        ("4 — no byte-identical backup", {"backup": False}, "no byte-identical backup"),
+        ("3 — the proof was switched off", {"argv": ["--apply", "--no-check-live-pages"]},
+         "--no-check-live-pages"),
+    ])
+    def test_any_single_unmet_condition_holds_and_deletes_nothing(
+            self, monkeypatch, tmp_path, capsys, label, kw, reason):
+        argv = kw.pop("argv", ["--apply"])
+        rc, deleted = self._purge(monkeypatch, tmp_path, argv=argv, **kw)
+        out = capsys.readouterr().out
+        assert deleted == [], f"condition {label} was unmet and the asset was DELETED anyway"
+        assert "HOLD" in out and reason in out, f"the hold reason must name condition {label}"
+        assert rc == 0, "a safety hold is the tool working, not a failure"
+
+    def test_condition_1_an_asset_with_no_reason_is_never_a_candidate(
+            self, monkeypatch, tmp_path, capsys):
+        """Condition 1 is enforced earlier than the others — at candidate
+        selection — so a clean asset must not even be considered."""
+        rc, deleted = self._purge(monkeypatch, tmp_path, blob=CLEAN_PNG, argv=["--apply"])
+        assert deleted == [] and rc == 0
+        assert "Nothing to purge" in capsys.readouterr().out
+
+    def test_a_dry_run_deletes_nothing_even_with_every_condition_met(
+            self, monkeypatch, tmp_path, capsys):
+        rc, deleted = self._purge(monkeypatch, tmp_path)
+        assert deleted == [] and rc == 0
+        assert "WOULD" in capsys.readouterr().out
+
+    def test_a_delete_the_api_refuses_moves_the_exit_code(self, monkeypatch, tmp_path, capsys):
+        """A run in which every delete failed must not exit 0. Folding the
+        failure into `held` printed "held 1" — indistinguishable from the tool
+        correctly refusing — and the cron read a green exit."""
+        err = wc.APIError(500, "boom", "https://api.webflow.com/v2/assets/x")
+        rc, deleted = self._purge(monkeypatch, tmp_path, argv=["--apply"], delete_raises=err)
+        out = capsys.readouterr().out
+        assert rc == 2, "a refused delete is the tool not working"
+        assert deleted == []
+        assert "FAILED" in out and "held 1" not in out, \
+            "a failed delete must not be reported as a safety hold"
+
+    def test_the_hold_reason_reaches_the_log(self, monkeypatch, tmp_path):
+        """The irreversible mode wrote no log at all while still accepting
+        --log-jsonl, so nothing recorded WHY an asset survived a purge."""
+        self._purge(monkeypatch, tmp_path, cms=["blog/post"], argv=["--apply"])
+        rows = [json.loads(x) for x in (tmp_path / "purge.jsonl").read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["held"]
+        assert rows[0]["asset_id"] == AID_HERO and rows[0]["cms_hits"] == ["blog/post"]
 
 
 # ── local file discovery ─────────────────────────────────────────────────────
@@ -1019,6 +1329,39 @@ class TestRepoint:
         assert arr[0]["fileId"] == AID_NEW
         assert arr[1]["fileId"] == AID_G1, "the sibling is a DIFFERENT image and must not move"
         assert arr[2]["fileId"] == AID_G2
+
+    def test_the_index_decides_when_no_entry_matches_the_url_EXACTLY(self, monkeypatch):
+        """The index path, isolated from the exact-match fallback.
+
+        test_multiimage_rewrites_only_the_indexed_entry passes an old_url whose
+        id is arr[0]'s own, so the `else` branch would find the same entry by
+        exact key and produce an identical result — the index was never what
+        decided anything. Here the old_url carries a THIRD id (the
+        WordPress-import shape: the CMS URL's id is not the site-asset id), so
+        `_exact` matches nothing and `_same` matches BOTH siblings by basename.
+        Without `Reference.index` the only honest answer is ref-ambiguous, and
+        the re-point that the index makes possible does not happen.
+        """
+        items = {"col1": [{"id": "i1", "isDraft": False, "isArchived": False, "fieldData": {
+            "slug": "post", "gallery": [
+                {"url": f"{CDN}/{AID_HERO}_hero.png", "fileId": AID_HERO},
+                {"url": f"{CDN}/{AID_G1}_hero.png", "fileId": AID_G1}]}}]}
+        api = _install_fake(monkeypatch, _FakeApi(
+            collections=[{"id": "col1", "slug": "blog"}],
+            fields={"col1": [{"slug": "gallery", "type": "MultiImage"}]}, items=items))
+        ref = wc.Reference(kind="multi", collection_id="col1", collection_slug="blog",
+                           item_id="i1", item_slug="post", field_slug="gallery", index=0,
+                           source_url=f"{CDN}/{AID_LOGO}_hero.png")
+        out = wc.repoint_reference("tok", ref, old_url=f"{CDN}/{AID_LOGO}_hero.png",
+                                   new_url=f"{CDN}/{AID_NEW}_hero.png",
+                                   new_file_id=AID_NEW, apply=True)
+        assert out["status"] == "repointed", (
+            "the recorded index says WHICH entry this reference is — ignoring it leaves "
+            f"two basename matches and no way to choose (got {out['status']})")
+        arr = api.patches[0]["data"]["fieldData"]["gallery"]
+        assert arr[0]["fileId"] == AID_NEW
+        assert arr[1] == {"url": f"{CDN}/{AID_G1}_hero.png", "fileId": AID_G1}, \
+            "the sibling is a DIFFERENT image and must be byte-identical afterwards"
 
     def test_multiimage_without_an_index_refuses_when_ambiguous(self, monkeypatch):
         items = {"col1": [{"id": "i1", "isDraft": False, "isArchived": False, "fieldData": {
@@ -1288,11 +1631,124 @@ class TestKnownCleanCache:
         log = tmp_path / "log.jsonl"
         log.write_text('{"asset_id": "ok", "mode": "scan-asset", "signals": []}\n'
                        "not json at all\n"
-                       '{"truncated": \n')
-        assert wc.load_known_clean(log) == {"ok"}
+                       '{"truncated": \n'
+                       # Valid JSON, shapes the reader never declared: a non-dict
+                       # `verify`, and a cms-shaped row that carries no asset_id
+                       # at all. Neither may raise and neither may stop the read.
+                       + json.dumps({"asset_id": "A", "new_asset_id": "B",
+                                     "mode": "replace", "action": "replaced",
+                                     "verify": ["clean"]}) + "\n"
+                       + json.dumps({"mode": "cms", "action": "replaced",
+                                     "url_key": f"{AID_HERO}_x.png",
+                                     "item": "blog/post"}) + "\n"
+                       + json.dumps({"asset_id": "ok2", "mode": "scan-asset", "signals": []})
+                       + "\n")
+        assert wc.load_known_clean(log) == {"ok", "ok2"}, \
+            "a malformed row must be skipped, never raise, and never stop the read"
 
     def test_missing_file_is_empty_not_an_error(self, tmp_path):
         assert wc.load_known_clean(tmp_path / "nope.jsonl") == set()
+
+
+class TestKnownCleanRoundTripsThroughItsProducers:
+    """Every case above hand-writes the JSONL, which tests the READER against a
+    shape a human BELIEVED the writer emits.
+
+    Reader and writer are separately mutable. Renaming the key `cmd_scan`
+    stamps on a scan-asset row (`asset_id`) silently disables
+    ``--skip-known-clean`` for the whole CEL nightly path without moving one
+    hand-written assertion, because nothing connected a log a real command
+    WROTE to the reader that consumes it. These drive the producers and then
+    read back exactly what they produced.
+    """
+
+    def _scan_log(self, monkeypatch, tmp_path, blobs: list[tuple[str, str, bytes]]) -> Path:
+        """Run `scan --site` over `(asset_id, name, bytes)` and return its log."""
+        assets = [{"id": aid, "originalFileName": f"{aid}_{name}", "displayName": name,
+                   "hostedUrl": f"{CDN}/{aid}_{name}", "contentType": "image/png"}
+                  for aid, name, _ in blobs]
+        by_url = {f"{CDN}/{aid}_{name}": data for aid, name, data in blobs}
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: assets)
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: by_url[u])
+        log = tmp_path / "scan.jsonl"
+        wc.cmd_scan(wc.build_parser().parse_args(
+            ["scan", "--site", "cel", "--quiet", "--log-jsonl", str(log)]))
+        assert log.is_file(), "cmd_scan wrote no log at all"
+        return log
+
+    # ── the scan producer ────────────────────────────────────────────────
+    def test_a_clean_asset_scan_credits_exactly_that_asset(self, monkeypatch, tmp_path):
+        """The join itself: the id `cmd_scan` writes is the id the cache reads."""
+        log = self._scan_log(monkeypatch, tmp_path, [(AID_HERO, "hero.png", CLEAN_PNG)])
+        assert wc.load_known_clean(log) == {AID_HERO}
+
+    def test_a_dirty_asset_scan_credits_nothing(self, monkeypatch, tmp_path):
+        log = self._scan_log(monkeypatch, tmp_path, [(AID_HERO, "hero.png", DIRTY_PNG)])
+        assert wc.load_known_clean(log) == set()
+
+    def test_an_asset_the_walk_could_not_finish_is_not_credited(self, monkeypatch, tmp_path):
+        """LOG-2, end to end. A truncated PNG yields ZERO signals — the same
+        shape a clean file yields — and the walk aborted before it could reach
+        the manifest. Crediting it makes the alarm self-clearing: night 1 exits
+        2 with the UNKNOWN warning, night 2 filters the asset out before the
+        fetch, so `unreadable` is 0, the warning vanishes and the manifest is
+        still there.
+        """
+        broken = ip._PNG_MAGIC + b"\x00\x00\x00\x0dIHDR"
+        log = self._scan_log(monkeypatch, tmp_path,
+                             [(AID_HERO, "hero.png", broken), (AID_G1, "ok.png", CLEAN_PNG)])
+        row = [json.loads(x) for x in log.read_text().splitlines()
+               if json.loads(x).get("asset_id") == AID_HERO][0]
+        assert row["container"] == "png" and row["parse_error"] and not row["signals"], (
+            "premise: the producer really does emit a zero-signal row with a "
+            "parse_error on a container it recognised")
+        known = wc.load_known_clean(log)
+        assert AID_HERO not in known, \
+            "an aborted walk proves nothing — 'no signals found' is not 'no signals'"
+        assert AID_G1 in known, "and the asset that WAS read must still be cached"
+
+    def test_a_font_is_still_credited_because_its_type_is_not_a_failure(
+            self, monkeypatch, tmp_path):
+        """Guard the guard for the clause above. A Webflow site holds fonts and
+        PDFs; those report `unsupported container`, which is a statement about
+        the file TYPE. Excluding them too would evict every font from the cache
+        and re-download the lot every night forever.
+        """
+        font = b"\x00\x01\x00\x00\x00\x0c\x00\x80\x00\x03\x00@"
+        log = self._scan_log(monkeypatch, tmp_path, [(AID_LOGO, "brand.ttf", font)])
+        row = [json.loads(x) for x in log.read_text().splitlines()][0]
+        assert row["container"] == "unknown" and row["parse_error"], "premise"
+        assert wc.load_known_clean(log) == {AID_LOGO}
+
+    # ── the replace producer ─────────────────────────────────────────────
+    def test_a_verified_replace_credits_the_NEW_id_and_only_that(
+            self, monkeypatch, tmp_path):
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        log = tmp_path / "replace.jsonl"
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                     backup_dir=str(tmp_path), log_jsonl=str(log)))
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["replaced"], "premise: the run succeeded"
+        assert wc.load_known_clean(log) == {AID_NEW}, (
+            "replace never touches the original — the id it proves clean is the "
+            "COPY it uploaded")
+
+    def test_a_no_verify_replace_credits_nothing(self, monkeypatch, tmp_path):
+        """`--no-verify` means nobody fetched the uploaded bytes. The next scan
+        confirms them for the price of one request; caching them on the word of
+        the uploader is the claim this tool exists not to make."""
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        log = tmp_path / "replace.jsonl"
+        wc.cmd_replace(_replace_args(apply=True, verify=False, allow_new_asset_id=True,
+                                     backup_dir=str(tmp_path), log_jsonl=str(log)))
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["replaced"] and rows[0]["verify"] == {}, "premise"
+        assert wc.load_known_clean(log) == set()
 
 
 class TestMarkdownSummary:
@@ -1364,7 +1820,30 @@ class TestSafetyGates:
         assert seen["apply"] is False
 
     def test_scan_requires_a_target(self, capsys):
-        assert wc.main(["scan"]) == 2
+        # 64 = usage error. It used to be 2, which is also "the run partially
+        # failed" — so a caller could not tell a typo from a real problem.
+        assert wc.main(["scan"]) == 64
+
+    def test_verify_requires_a_target(self, capsys):
+        """`verify` with nothing to verify printed nothing and exited 0 — the
+        one input shape that mapped 'checked nothing' onto 'clean'."""
+        assert wc.main(["verify"]) == 64
+        assert "verify needs" in capsys.readouterr().err
+
+    def test_a_usage_error_is_distinguishable_from_a_failed_run(self, tmp_path, capsys):
+        """The DECISION: these three outcomes must not share a code.
+
+        argparse's usage error, a run that found nothing to do, and a run that
+        read something it could not parse are three different things for the
+        cron to do, and all three answered 2 / 1 / 2.
+        """
+        bad = wc.main(["clean", "--local", str(tmp_path), "--nonexistent-flag"])
+        empty = wc.main(["clean", "--local", str(tmp_path)])
+        (tmp_path / "broken.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"\xff" * 40)
+        unreadable = wc.main(["clean", "--local", str(tmp_path)])
+        assert len({bad, empty, unreadable}) == 3, \
+            f"usage={bad} nothing-matched={empty} unreadable={unreadable} — collided"
+        assert (bad, empty, unreadable) == (64, 4, 2)
 
     def test_apply_proceeds_once_confirmed(self, monkeypatch):
         monkeypatch.setenv("WATERMARK_CLEANER_CONFIRM", "1")
@@ -2093,6 +2572,36 @@ class TestCmsSkipCacheActuallySkips:
             "the row it writes must be readable by the loader that consumes it"
 
 
+class TestCmsAlsoRespectsTheDefaultLogPath:
+    """The `cms` half of the same rule `TestTheDefaultLogPath` pins for `replace`.
+
+    `DEFAULT_LOG_PATH` is `data/watermark-clean-log.jsonl` — committed, and the
+    file the CEL nightly hands to `--skip-known-clean`. A dry run that appended
+    to it seeded the cache from a run that uploaded nothing, so the next REAL
+    run skipped assets it had never processed. `cmd_cms` carries its own copy of
+    the `if args.apply or args.log_jsonl:` guard, and every other cms test
+    passes an explicit `--log-jsonl` — which satisfies the second operand and
+    leaves the fallback unexercised.
+    """
+
+    def test_a_cms_dry_run_writes_nothing(self, monkeypatch, tmp_path,
+                                          _never_write_the_committed_log):
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        wc.cmd_cms(_cms_args(apply=False, log_jsonl="", backup_dir=str(tmp_path)))
+        assert not _never_write_the_committed_log.exists(), \
+            "a preview seeded the known-clean cache the next real run reads"
+
+    def test_a_cms_apply_does_write_the_default_log(self, monkeypatch, tmp_path,
+                                                    _never_write_the_committed_log):
+        """Guard the guard: never writing it would satisfy the test above and
+        lose the run record the whole idempotence layer is built on."""
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        wc.cmd_cms(_cms_args(apply=True, log_jsonl="", backup_dir=str(tmp_path)))
+        assert [json.loads(x) for x
+                in _never_write_the_committed_log.read_text().splitlines()], \
+            "an --apply run must leave a record"
+
+
 class TestNoPublishWithoutVerification:
     """CMS-2 — a failed verify still published the item.
 
@@ -2586,6 +3095,42 @@ class TestLineageCoversBothSurfaces:
         assert cms_url not in seen["downloaded"]
         assert "CMS images were NOT checked" in capsys.readouterr().out
 
+    def test_a_run_that_could_read_nothing_exits_two_and_says_so(
+            self, monkeypatch, tmp_path, capsys):
+        """`matched an AI original 0` on a run that fetched zero bytes is
+        indistinguishable from a site with no AI in it.
+
+        The corpus is fine, the credentials are fine, every fetch failed — and
+        the summary still prints a confident zero. Only the exit code and the
+        stderr warning separate 'we looked and found nothing' from 'we could
+        not look'; the CEL cron reads the exit code.
+        """
+        self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png"),
+                                           _asset(AID_G1, "two.png")],
+                      cms_items={"col2": []})
+
+        def boom(u, timeout=30):
+            raise urllib.error.HTTPError(u, 403, "Forbidden", {}, None)
+
+        monkeypatch.setattr(wc, "download_image", boom)
+        log = tmp_path / "l.jsonl"
+        rc = wc.cmd_lineage(wc.build_parser().parse_args(
+            ["lineage", "--site", "cel", "--quiet", "--log-jsonl", str(log)]))
+
+        assert rc == 2, "a lineage run that read nothing must not exit 0"
+        assert "UNKNOWN, not 'not AI'" in capsys.readouterr().err
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["error", "error"], \
+            "each unreadable asset must be named in the log, not just counted"
+
+    def test_a_run_that_read_everything_still_exits_zero(self, monkeypatch):
+        """Guard the guard: exiting 2 unconditionally would be the same as
+        never exiting 2."""
+        self._harness(monkeypatch, assets=[_asset(AID_HERO, "hero.png")],
+                      cms_items={"col2": []})
+        assert wc.cmd_lineage(wc.build_parser().parse_args(
+            ["lineage", "--site", "cel", "--quiet"])) == 0
+
     def test_rows_record_which_surface_each_image_came_from(self, monkeypatch, tmp_path):
         cms_url = f"{CDN}/{AID_BODY}_cms-only.png"
         items = {"col2": [{"id": "i2", "isDraft": False, "isArchived": False,
@@ -2848,3 +3393,1187 @@ class TestPublishBatching:
         monkeypatch.setattr(wc, "rate_limited_request", flaky)
         with pytest.raises(wc.APIError):
             wc.publish_items("tok", "col1", [f"i{n}" for n in range(242)])
+
+
+class TestVendoredRegistryRoutesToo:
+    """The CEL checkout vendors this script byte-for-byte; its registry is a
+    separate, hand-maintained file.
+
+    ``resolve_site_token`` reads ``ROOT / "sites" / "registry.json"`` and ``ROOT``
+    is ``parents[1]`` of the *running* file — so in the CEL checkout the lookup
+    hits the CEL mirror, not the monorepo SSOT. When the mirror carries no
+    ``webflow_connection`` the lookup misses and the function falls through to
+    the generic grant *silently*: nothing distinguishes "routing resolved" from
+    "this site has no routing entry", and that is the checkout the nightly cron
+    runs in.
+
+    The expected env-var name is derived from the monorepo registry, never from
+    the mirror under test — a check that sources its baseline from its own
+    target passes vacuously.
+    """
+
+    DEV = Path(__file__).resolve().parents[3]
+    CANONICAL = DEV / "webflow" / "sites" / "registry.json"
+    MIRROR = DEV / "englishcollege" / "sites" / "registry.json"
+
+    def _both_checkouts(self):
+        if not self.CANONICAL.is_file() or not self.MIRROR.is_file():
+            pytest.skip("needs both the monorepo and the CEL mirror checked out side by side")
+        if self.CANONICAL.resolve() == self.MIRROR.resolve():
+            pytest.skip("baseline and target resolved to the same file — the check would be vacuous")
+        canonical = json.loads(self.CANONICAL.read_text(encoding="utf-8"))
+        conn = ((canonical.get("sites") or {}).get("cel") or {}).get("webflow_connection") or {}
+        env_name = (conn.get("rest_token_env") or "").strip()
+        assert env_name, "monorepo SSOT lost cel.webflow_connection.rest_token_env — fix that first"
+        return env_name, conn
+
+    def test_mirror_routes_cel_instead_of_falling_through(self, monkeypatch):
+        """The decision under test: routed token vs. silent generic fallback.
+
+        Both branches return a usable string in production (CEL's routed env var
+        IS the generic one), so the fallback is invisible by value. The sentinels
+        make the branch observable.
+        """
+        env_name, _ = self._both_checkouts()
+        monkeypatch.setattr(wc, "ROOT", self.MIRROR.parent.parent)
+        monkeypatch.setenv(env_name, "ROUTED-BY-REGISTRY")
+        monkeypatch.setattr(wc, "get_api_token", lambda *a, **k: "SILENT-FALLBACK")
+        assert wc.resolve_site_token("cel") == "ROUTED-BY-REGISTRY"
+
+    def test_mirror_names_the_same_site_id_as_the_monorepo(self):
+        """A routing entry that resolves to the wrong site is worse than none."""
+        _, conn = self._both_checkouts()
+        mirror_conn = ((json.loads(self.MIRROR.read_text(encoding="utf-8")).get("sites") or {})
+                       .get("cel") or {}).get("webflow_connection") or {}
+        assert mirror_conn.get("webflow_site_id") == conn.get("webflow_site_id")
+
+
+# ── the CI scrub's backups ───────────────────────────────────────────────────
+_STEP_HEAD_RE = re.compile(r"^\s+-\s+(?:name|uses|run|id|if|with|env):")
+
+
+def _workflow_steps(text: str):
+    """Yield each GitHub Actions step as one block of text.
+
+    A step runs from its leading ``- <key>:`` to the next one, so the block
+    carries the step's ``if:``, ``with:`` and ``run:`` together — the guard and
+    the body have to be read against each other here.
+    """
+    cur: list[str] | None = None
+    for ln in text.split("\n"):
+        if _STEP_HEAD_RE.match(ln):
+            if cur is not None:
+                yield "\n".join(cur)
+            cur = [ln]
+        elif cur is not None:
+            cur.append(ln)
+    if cur is not None:
+        yield "\n".join(cur)
+
+
+class TestCiScrubBackupsOutliveTheRunner:
+    """`replace --apply` writes the pre-strip original of every asset it is about
+    to overwrite into ``--backup-dir``. On a GitHub runner that directory is
+    ephemeral: unless a step commits it or uploads it, the only copy of the bytes
+    as they were before an irreversible outward write is deleted with the VM.
+
+    The consequence is not abstract. ``cmd_purge`` requires four conditions and
+    the fourth is "a byte-identical backup exists on disk" — so every asset the
+    CI scrub touched is held by purge forever, and a scrub that went wrong has
+    nothing to roll back to.
+
+    The decision under test is *"do the backups leave the runner?"*, not *"is
+    there an upload-artifact step?"* — committing the directory satisfies it
+    equally well, and either fix must make these pass.
+    """
+
+    WORKFLOW = (Path(__file__).resolve().parents[3] / "englishcollege"
+                / ".github" / "workflows" / "blog-image-optimization.yml")
+
+    def _steps(self) -> list[str]:
+        if not self.WORKFLOW.is_file():
+            pytest.skip(f"the CEL workflow is not checked out at {self.WORKFLOW}")
+        return list(_workflow_steps(self.WORKFLOW.read_text(encoding="utf-8")))
+
+    def _backup_dir(self, steps: list[str]) -> str:
+        """Read the directory OUT of the workflow rather than pinning a literal.
+
+        A hard-coded ``data/watermark-backup`` would keep passing if someone
+        repointed ``--backup-dir`` somewhere nothing persists.
+        """
+        found = [m.group(1).rstrip("/")
+                 for s in steps if "watermark_cleaner.py replace" in s
+                 for m in [re.search(r"--backup-dir\s+(\S+)", s)] if m]
+        assert len(found) == 1, (
+            f"expected exactly one scrub step naming --backup-dir, found {found!r} — "
+            f"the rest of this class cannot know which directory to follow")
+        return found[0]
+
+    @staticmethod
+    def _guard(step: str) -> str:
+        """The step's ``if:`` expression, including a folded continuation."""
+        m = re.search(r"^(\s*)if:(.*)$", step, re.M)
+        if not m:
+            return ""
+        indent, out = m.group(1), [m.group(2)]
+        for ln in step[m.end():].split("\n")[1:]:
+            if ln.strip() and not ln.startswith(indent + " "):
+                break               # next key at the step's own indent
+            out.append(ln)
+        return "\n".join(out)
+
+    @staticmethod
+    def _persists(step: str, backup: str) -> bool:
+        """True only if THIS step moves `backup` off the runner — uploaded as an
+        artifact or staged for the commit. Writing into it does not count."""
+        here = re.compile(rf"(?:^|[\s'\"]){re.escape(backup)}/?(?:$|[\s'\"\\])", re.M)
+        if "actions/upload-artifact" in step:
+            m = re.search(r"^(\s*)path:(.*)$", step, re.M)
+            if m:
+                scalar, tail = m.group(2), []
+                if scalar.strip() in ("|", ">", "|-", ">-", "|+", ">+"):
+                    for ln in step[m.end():].split("\n")[1:]:
+                        if ln.strip() and not ln.startswith(m.group(1) + " "):
+                            break
+                        tail.append(ln)
+                if here.search(scalar + "\n" + "\n".join(tail)):
+                    return True
+        add = re.search(r"git\s+add\b((?:[^\n]*\\\n)*[^\n]*)", step)
+        if add and here.search(add.group(1)):
+            return True
+        return False
+
+    def test_the_scrub_backup_leaves_the_runner(self):
+        steps = self._steps()
+        backup = self._backup_dir(steps)
+        assert [s for s in steps if self._persists(s, backup)], (
+            f"nothing in blog-image-optimization.yml persists {backup}/ — the "
+            f"pre-strip originals die with the runner, purge's fourth condition "
+            f"(a byte-identical backup on disk) can never be met for a CI-scrubbed "
+            f"asset, and a bad scrub is unrollbackable. Add it to the `git add` "
+            f"list or upload it as an artifact.")
+
+    def test_the_backups_survive_a_half_finished_scrub(self):
+        """A scrub that dies part-way through has already overwritten some
+        assets; those originals are precisely the ones that must be kept. A
+        persistence step that only runs on success loses them exactly when they
+        matter (rules/remote-write-discipline.md)."""
+        steps = self._steps()
+        backup = self._backup_dir(steps)
+        persisting = [s for s in steps if self._persists(s, backup)]
+        assert persisting, "no persistence step at all — see the test above"
+        assert any("always()" in self._guard(s) for s in persisting), (
+            f"every step that persists {backup}/ is conditional on the scrub "
+            f"succeeding, so a partial scrub discards the originals it just "
+            f"superseded. Guard it with always().")
+
+    def test_writing_the_backups_does_not_count_as_persisting_them(self):
+        """Guard the guard: if merely naming the directory satisfied `_persists`,
+        the scrub step itself would pass and the two tests above would be
+        vacuous — the defect they exist to catch is that the *only* step naming
+        the directory is the one that writes it."""
+        steps = self._steps()
+        backup = self._backup_dir(steps)
+        scrub = [s for s in steps if "watermark_cleaner.py replace" in s]
+        assert scrub, "the scrub step disappeared from the workflow"
+        assert not any(self._persists(s, backup) for s in scrub), (
+            "the step that WRITES the backups is being counted as persisting "
+            "them; the check is vacuous")
+
+
+# ── audit 155: the known-clean cache must require POSITIVE proof ─────────────
+class TestKnownCleanRequiresPositiveProof:
+    """`is not False` credited two rows that prove nothing.
+
+    A `--no-verify` replace writes ``verify: {}``, so ``{}.get("clean")`` is
+    None — "not False" — and the new asset was cached as proven-clean without
+    anyone ever fetching it. A shape-corrupt row crashed the reader outright,
+    contradicting load_known_clean's own "costs time, never correctness".
+    """
+
+    def _row(self, tmp_path, **over):
+        log = tmp_path / "log.jsonl"
+        row = {"asset_id": "OLD", "new_asset_id": "NEW", "mode": "replace",
+               "action": "replaced"}
+        row.update(over)
+        log.write_text(json.dumps(row) + "\n")
+        return log
+
+    def test_an_unverified_replace_is_not_proof(self, tmp_path):
+        assert wc.load_known_clean(self._row(tmp_path, verify={})) == set(), \
+            "--no-verify means nobody looked; that is not proof the upload is clean"
+
+    def test_a_verified_replace_still_counts(self, tmp_path):
+        assert wc.load_known_clean(self._row(tmp_path, verify={"clean": True})) == {"NEW"}
+
+    def test_a_shape_corrupt_verify_costs_time_not_correctness(self, tmp_path):
+        # Valid JSON, wrong shape — the one corruption the old reader did NOT
+        # survive: `"clean".get` is an AttributeError, not a JSONDecodeError.
+        log = tmp_path / "log.jsonl"
+        log.write_text(json.dumps({"action": "replaced", "asset_id": "A",
+                                   "new_asset_id": "B", "verify": "clean"}) + "\n"
+                       + json.dumps({"asset_id": "ok", "mode": "scan-asset",
+                                     "signals": []}) + "\n")
+        assert wc.load_known_clean(log) == {"ok"}, \
+            "a malformed row must be skipped, not raise, and must not stop the read"
+
+    def test_a_keep_flag_run_does_not_seed_the_cache(self, tmp_path):
+        log = tmp_path / "log.jsonl"
+        log.write_text(json.dumps({"asset_id": "A", "mode": "replace",
+                                   "action": "already_clean",
+                                   "policy_narrowed": True}) + "\n")
+        assert wc.load_known_clean(log) == set(), (
+            "'carries nothing THIS policy wanted' is not 'carries nothing' — "
+            "crediting it evicts a genuinely C2PA-bearing asset forever")
+
+
+class TestRepointProvesTheBytesMoved:
+    def _api(self, monkeypatch, items):
+        return _install_fake(monkeypatch, _FakeApi(
+            collections=[{"id": "col1", "slug": "blog"}],
+            fields={"col1": [{"slug": "post-body", "type": "RichText"}]}, items=items))
+
+    def _ref(self):
+        return wc.Reference(kind="richtext", collection_id="col1", collection_slug="blog",
+                            item_id="i1", item_slug="post", field_slug="post-body")
+
+    def test_an_entity_encoded_src_is_actually_rewritten(self, monkeypatch):
+        """`&amp;` in a rich-text src used to make the rewrite a silent no-op.
+
+        HTMLParser hands back the DECODED src, so `str.replace` found nothing —
+        but `changed` came from the MATCH, so a byte-identical PATCH went out
+        and the status said "repointed".
+        """
+        body = f'<p>x</p><img src="{CDN}/{AID_HERO}_hero.png?w=800&amp;q=80" alt="h">'
+        api = self._api(monkeypatch, {"col1": [{"id": "i1", "isDraft": False,
+                                                "isArchived": False,
+                                                "fieldData": {"slug": "post", "post-body": body}}]})
+        out = wc.repoint_reference("tok", self._ref(), old_url=f"{CDN}/{AID_HERO}_hero.png",
+                                   new_url=f"{CDN}/{AID_NEW}_hero.png",
+                                   new_file_id=AID_NEW, apply=True)
+        assert out["status"] == "repointed"
+        patched = api.patches[0]["data"]["fieldData"]["post-body"]
+        assert f"{AID_NEW}_hero.png" in patched, "the field must actually point at the new asset"
+        assert patched != body, "a PATCH that changes no bytes is not a re-point"
+
+    def test_a_field_that_would_not_change_is_not_reported_as_repointed(self, monkeypatch):
+        """The image field already holds the new URL: nothing to do, and saying
+        'repointed' would count it toward n_ok and hide a half-finished run."""
+        items = {"col1": [{"id": "i1", "isDraft": False, "isArchived": False, "fieldData": {
+            "slug": "post", "main-image": {"url": f"{CDN}/{AID_NEW}_hero.png",
+                                           "fileId": AID_NEW}}}]}
+        api = _install_fake(monkeypatch, _FakeApi(
+            collections=[{"id": "col1", "slug": "blog"}],
+            fields={"col1": [{"slug": "main-image", "type": "Image"}]}, items=items))
+        ref = wc.Reference(kind="image", collection_id="col1", collection_slug="blog",
+                           item_id="i1", item_slug="post", field_slug="main-image")
+        out = wc.repoint_reference("tok", ref, old_url=f"{CDN}/{AID_NEW}_hero.png",
+                                   new_url=f"{CDN}/{AID_NEW}_hero.png",
+                                   new_file_id=AID_NEW, apply=True)
+        assert out["status"] == "no-op"
+        assert api.patches == [], "no bytes changed — there is nothing to PATCH"
+
+
+class TestRepointReadsLiveDraftState:
+    def test_the_live_value_wins_over_a_stale_index_value(self, monkeypatch):
+        """The Reference is a snapshot from index-build time. Echoing its flags
+        back un-archives an item somebody archived mid-run."""
+        items = {"col1": [{"id": "i1", "isDraft": True, "isArchived": True, "fieldData": {
+            "slug": "post", "main-image": {"url": f"{CDN}/{AID_HERO}_hero.png",
+                                           "fileId": AID_HERO}}}]}
+        api = _install_fake(monkeypatch, _FakeApi(
+            collections=[{"id": "col1", "slug": "blog"}],
+            fields={"col1": [{"slug": "main-image", "type": "Image"}]}, items=items))
+        ref = wc.Reference(kind="image", collection_id="col1", collection_slug="blog",
+                           item_id="i1", item_slug="post", field_slug="main-image",
+                           is_draft=False, is_archived=False)   # stale: says "live"
+        out = wc.repoint_reference("tok", ref, old_url=f"{CDN}/{AID_HERO}_hero.png",
+                                   new_url=f"{CDN}/{AID_NEW}_hero.png",
+                                   new_file_id=AID_NEW, apply=True)
+        body = api.patches[0]["data"]
+        assert body["isArchived"] is True, "a re-point must not un-archive an item"
+        assert body["isDraft"] is True, "a re-point must not publish a draft"
+        assert out["is_archived"] is True and out["is_draft"] is True, \
+            "the caller's publish gate reads these — they must be the live values"
+
+
+class TestMalformedSiteUrlDegradesInsteadOfCrashing:
+    def test_a_scheme_less_site_url_returns_no_evidence(self):
+        """`urllib.request.Request` raises ValueError, which was in none of the
+        caught types — so purge died with a traceback AFTER downloading and
+        scanning every asset. Degrading to 'no evidence' makes purge hold."""
+        index, fetched, failed = wc.build_live_page_index("englishcollege.com", progress=False)
+        assert (index, fetched, failed) == ({}, [], ["<sitemap>"])
+
+
+class TestCleanOutDirKeepsFilesApart:
+    def test_two_same_named_inputs_do_not_collapse(self, tmp_path):
+        """`out_dir / p.name` flattened the tree: coll/a/hero.png and
+        coll/b/hero.png both wrote to out/hero.png, the second silently
+        overwriting the first, while the summary counted two."""
+        src = tmp_path / "coll"
+        (src / "a").mkdir(parents=True)
+        (src / "b").mkdir(parents=True)
+        a = src / "a" / "hero.png"
+        b = src / "b" / "hero.png"
+        # Deliberately DIFFERENT pixel data: two images that strip to identical
+        # bytes could not detect an overwrite at all.
+        a.write_bytes(DIRTY_PNG)
+        b.write_bytes(_png([(b"caBX", C2PA_BLOB)], w=8, h=8))
+        out = tmp_path / "out"
+        # --backup-dir is NOT optional in a test: without it `cmd_clean` mirrors
+        # into DEFAULT_BACKUP_DIR = data/watermark-backup/, the PRODUCTION tree.
+        # This test alone deposited 192 files / 5.5 MB of pytest tmpdir paths
+        # there and tripped the production-write ratchet on every full-suite run.
+        wc.main(["clean", "--local", str(src), "--apply", "--out", str(out),
+                 "--backup-dir", str(tmp_path / "bk")])
+        written = sorted(p.relative_to(out).as_posix() for p in out.rglob("*.png"))
+        assert len(written) == 2, f"inputs collapsed onto one another: {written}"
+        assert len({p.read_bytes() for p in out.rglob("*.png")}) == 2, \
+            "two distinct images must survive as two distinct files"
+        assert a.read_bytes() == DIRTY_PNG, "--out must leave the originals alone"
+
+
+class TestScanAndCleanAgreeUnderTheSameFlags:
+    def test_keep_c2pa_is_honoured_by_scan_too(self, tmp_path, capsys):
+        """`scan` accepted the policy flags through common() and ignored them,
+        so `scan --keep-c2pa` reported bytes removable that `clean --keep-c2pa`
+        would never touch. Two commands, same flags, opposite conclusions."""
+        f = tmp_path / "a.png"
+        f.write_bytes(_png([(b"caBX", C2PA_BLOB)]))
+        wc.main(["scan", "--local", str(f), "--keep-c2pa"])
+        scan_out = capsys.readouterr().out
+        wc.main(["clean", "--local", str(f), "--keep-c2pa"])
+        clean_out = capsys.readouterr().out
+        assert "already clean 1" in clean_out, "fixture broke — clean must skip it"
+        assert "carry metadata       0" in scan_out, (
+            "scan says the file carries removable metadata while clean, under the "
+            "same flag, says it is already clean")
+
+    def test_the_default_policy_still_sees_it(self, tmp_path, capsys):
+        """Guard the guard: if scan reported 0 unconditionally the test above
+        would pass on a scanner that had simply stopped working."""
+        f = tmp_path / "a.png"
+        f.write_bytes(_png([(b"caBX", C2PA_BLOB)]))
+        wc.main(["scan", "--local", str(f)])
+        assert "carry metadata       1" in capsys.readouterr().out
+
+
+class TestScanLimitBoundsTheUncheckedWork:
+    def test_a_second_incremental_run_advances(self, monkeypatch, tmp_path, capsys):
+        """--limit went into list_assets BEFORE the known-clean filter, so an
+        incremental sweep re-fetched the same first N every night and, once they
+        were proven clean, scanned ZERO assets and still exited 0 green."""
+        assets = [_asset(f"6a7dad834766eebcddd96d{i:02d}", f"a{i}.png") for i in range(10)]
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets",
+                            lambda t, s, limit=None: assets[:limit] if limit else assets)
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: CLEAN_PNG)
+        log = tmp_path / "l.jsonl"
+        argv = ["scan", "--site", "bv", "--limit", "3", "--no-cms", "--quiet",
+                "--log-jsonl", str(log), "--skip-known-clean", str(log)]
+        wc.main(argv)
+        first = {json.loads(x)["asset_id"] for x in log.read_text().splitlines()}
+        capsys.readouterr()
+        wc.main(argv)
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        second = {r["asset_id"] for r in rows} - first
+        assert len(first) == 3, f"run 1 should scan 3 assets, scanned {len(first)}"
+        assert len(second) == 3, (
+            f"run 2 scanned {len(second)} NEW asset(s) — the limit is bounding the "
+            "whole site instead of the unchecked part, so the sweep never advances")
+
+
+class TestScopedCollectionsIsScopedEvidence:
+    def test_a_scoped_index_refuses_rather_than_repointing_nothing(
+            self, monkeypatch, tmp_path, capsys):
+        """--collections narrows the reference index, which IS the evidence the
+        id-change refusal decides on. Scoped to one collection, an asset
+        referenced by another looked unreferenced, so the run replaced it and
+        re-pointed nothing."""
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                            assets=[_asset(AID_LOGO, "nowhere.png")], live_index={})
+        rc = wc.cmd_replace(_replace_args(apply=True, collections="blog",
+                                          backup_dir=str(tmp_path),
+                                          log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.uploads == [], "a scoped run must not replace an asset it cannot vouch for"
+        assert "REFUSED before upload" in capsys.readouterr().out
+        assert rc == 2
+
+    def test_an_unscoped_run_still_proceeds(self, monkeypatch, tmp_path):
+        """Guard the guard: refusing always would be the same as never running."""
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                            assets=[_asset(AID_LOGO, "nowhere.png")], live_index={})
+        wc.cmd_replace(_replace_args(apply=True, backup_dir=str(tmp_path),
+                                     log_jsonl=str(tmp_path / "l.jsonl")))
+        assert len(h.uploads) == 1
+
+
+class TestRefusalReachesTheExitCode:
+    def test_a_run_that_refused_everything_does_not_exit_zero(self, monkeypatch, tmp_path):
+        """REFUSED was printed in the summary and appeared in no return
+        expression, so a run that re-pointed nothing read as a success."""
+        live = {wc._url_key(f"{CDN}/{AID_HERO}_hero.png"): ["https://example.com/about"]}
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index=live)
+        rc = wc.cmd_replace(_replace_args(apply=True, backup_dir=str(tmp_path),
+                                          log_jsonl=str(tmp_path / "l.jsonl")))
+        assert rc == 2, "the cron reads this — a refusal is not a success"
+
+
+class TestIncompleteRepointReachesTheExitCode:
+    """TQ-2 — the action was asserted, the resulting exit code was not, so the
+    `stats["errors"] += 1` on the incomplete branch survived mutation."""
+
+    def test_replace_exits_non_zero_on_an_incomplete_repoint(self, monkeypatch, tmp_path):
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index={},
+                        repoint_status="ref-ambiguous")
+        rc = wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                          backup_dir=str(tmp_path),
+                                          log_jsonl=str(tmp_path / "l.jsonl")))
+        assert rc == 2, "the CMS still points at the un-stripped file — that is not success"
+
+    def test_cms_exits_non_zero_on_an_incomplete_repoint(self, monkeypatch, tmp_path):
+        _CmsHarness(monkeypatch, upload_id=AID_NEW, repoint_status="ref-ambiguous")
+        rc = wc.cmd_cms(_cms_args(apply=True, backup_dir=str(tmp_path),
+                                  log_jsonl=str(tmp_path / "l.jsonl")))
+        assert rc == 2
+
+
+class TestTheLogSurvivesAnInterrupt:
+    def test_rows_for_writes_that_landed_are_already_on_disk(self, monkeypatch, tmp_path):
+        """Every row was buffered and flushed once after the loop, so Ctrl-C
+        after real uploads and CMS PATCHes left NO log at all — the old->new
+        mapping of what had already landed was simply gone."""
+        assets = [_asset(AID_HERO, "hero.png"), _asset(AID_LOGO, "other.png")]
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW, assets=assets, live_index={})
+        seen: list[str] = []
+        real = wc.download_image
+
+        def boom(u, timeout=30):
+            seen.append(u)
+            if len(seen) > 1:
+                raise KeyboardInterrupt
+            return real(u, timeout=timeout)
+
+        monkeypatch.setattr(wc, "download_image", boom)
+        log = tmp_path / "l.jsonl"
+        with pytest.raises(KeyboardInterrupt):
+            wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                         backup_dir=str(tmp_path), log_jsonl=str(log)))
+        assert len(h.uploads) == 1, "fixture did not actually land a write before the interrupt"
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["replaced"], \
+            "the upload that LANDED left no record of where it went"
+        assert rows[0]["new_asset_id"] == AID_NEW
+
+
+class TestPurgeLeavesARecord:
+    """LOG-6 / PL-7 / PL-5 — purge accepted --log-jsonl, wrote nothing, folded a
+    failed DELETE into `held`, and returned 0 when every delete had failed."""
+
+    def _wire(self, monkeypatch, tmp_path, *, delete_raises=None, pages=True):
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: DIRTY_PNG)
+        monkeypatch.setattr(wc, "asset_id_appears_in_cms", lambda *a, **k: {AID_HERO: []})
+        monkeypatch.setattr(wc, "evidence_domains", lambda *a, **k: ["https://example.com"])
+        monkeypatch.setattr(
+            wc, "crawl_evidence_domains",
+            lambda *a, **k: ({}, ["https://example.com/x"] if pages else [], []))
+
+        def _del(token, aid):
+            if delete_raises:
+                raise delete_raises
+            return {}
+
+        monkeypatch.setattr(wc, "delete_asset", _del)
+        # A byte-identical backup, so condition 4 is satisfied.
+        (tmp_path / "bk").mkdir()
+        (tmp_path / "bk" / f"{AID_HERO}_h.png").write_bytes(DIRTY_PNG)
+
+    def _args(self, tmp_path, log, **over):
+        a = wc.build_parser().parse_args(["purge", "--site", "bv", "--quiet"])
+        a.backup_dir = str(tmp_path / "bk")
+        a.log_jsonl = str(log)
+        for k, v in over.items():
+            assert hasattr(a, k), k
+            setattr(a, k, v)
+        return a
+
+    def test_a_delete_is_recorded(self, monkeypatch, tmp_path):
+        log = tmp_path / "purge.jsonl"
+        self._wire(monkeypatch, tmp_path)
+        rc = wc.cmd_purge(self._args(tmp_path, log, apply=True))
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert rc == 0
+        assert [r["action"] for r in rows] == ["deleted"], \
+            "the only irreversible mode must leave a durable record of what it removed"
+        assert rows[0]["asset_id"] == AID_HERO and rows[0]["mode"] == "purge"
+
+    def test_a_failed_delete_is_not_a_hold_and_does_not_exit_zero(self, monkeypatch, tmp_path,
+                                                                  capsys):
+        log = tmp_path / "purge.jsonl"
+        self._wire(monkeypatch, tmp_path, delete_raises=wc.APIError(403, "forbidden", "https://x"))
+        rc = wc.cmd_purge(self._args(tmp_path, log, apply=True))
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert rc == 2, "every delete failed and the run reported success"
+        assert [r["action"] for r in rows] == ["delete_failed"]
+        assert "DELETE FAILED        1" in capsys.readouterr().out, \
+            "a failed delete counted as a safety hold — the tool not working read as it working"
+
+    def test_disabling_the_page_check_holds_instead_of_deleting(self, monkeypatch, tmp_path,
+                                                               capsys):
+        """--no-check-live-pages DELETED precondition 3 rather than relaxing it:
+        both hold reasons were gated on the flag, so the asset went with zero
+        page evidence and nothing was printed about it."""
+        log = tmp_path / "purge.jsonl"
+        self._wire(monkeypatch, tmp_path)
+        rc = wc.cmd_purge(self._args(tmp_path, log, apply=True, check_live_pages=False))
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["held"]
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "condition 3" in out and "unproven" in out
+        assert "DELETED" not in out
+
+    def test_a_name_matched_backup_is_still_consulted(self, monkeypatch, tmp_path, capsys):
+        """PL-9 — `rglob(f"*{id}*") or rglob(name)` short-circuited: one file
+        whose NAME merely contains the id suppressed the name lookup entirely,
+        so a correct byte-identical backup sitting right there was never read."""
+        log = tmp_path / "purge.jsonl"
+        self._wire(monkeypatch, tmp_path)
+        # Remove the id-named backup; leave a name-only one plus a decoy whose
+        # filename contains the id but whose bytes differ.
+        (tmp_path / "bk" / f"{AID_HERO}_h.png").unlink()
+        (tmp_path / "bk" / "h.png").write_bytes(DIRTY_PNG)
+        (tmp_path / "bk" / f"{AID_NEW}_{AID_HERO}_h.png").write_bytes(CLEAN_PNG)
+        rc = wc.cmd_purge(self._args(tmp_path, log, apply=True))
+        assert rc == 0
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["deleted"], (
+            "the decoy suppressed the name lookup and the asset was held as "
+            "un-backed-up despite a byte-identical backup on disk")
+
+    def test_the_pixel_watermark_caveat_is_in_the_summary(self, monkeypatch, tmp_path, capsys):
+        log = tmp_path / "purge.jsonl"
+        self._wire(monkeypatch, tmp_path)
+        wc.cmd_purge(self._args(tmp_path, log))
+        assert "watermark-free" in capsys.readouterr().out
+
+
+class TestVerifyStatesTheClaimBoundary:
+    def test_a_clean_verdict_carries_the_caveat(self, tmp_path, capsys):
+        """CLEAN was the tool's last word on the file, with no mention of pixel
+        watermarks — and the caveat was driven by `undetectable_watermarks`,
+        which is empty after a successful strip, i.e. exactly when it matters."""
+        f = tmp_path / "clean.png"
+        f.write_bytes(CLEAN_PNG)
+        assert wc.main(["verify", "--file", str(f)]) == 0
+        out = capsys.readouterr().out
+        assert "CLEAN" in out
+        assert "SynthID" in out and "watermark-free" in out, \
+            "a bare CLEAN reads as 'watermark-free' to anyone quoting it back"
+
+
+class TestCmsSeedsTheCacheForImagesItProvedClean:
+    def test_a_second_run_skips_what_the_first_proved_clean(self, monkeypatch, tmp_path):
+        """cms `already_clean` rows carried no asset_id, and load_known_clean
+        requires one — so the images this command proved clean (the majority on
+        brightvalley) were re-downloaded on every run forever."""
+        log = tmp_path / "l.jsonl"
+        h1 = _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: CLEAN_PNG)
+        downloads: list[str] = []
+        real = wc.download_image
+        monkeypatch.setattr(wc, "download_image",
+                            lambda u, timeout=30: (downloads.append(u), real(u))[1])
+        wc.cmd_cms(_cms_args(apply=True, backup_dir=str(tmp_path), log_jsonl=str(log)))
+        assert h1.uploads == [] and downloads, "fixture: run 1 must prove the image clean"
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert rows[-1]["action"] == "already_clean"
+
+        n_first = len(downloads)
+        _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        monkeypatch.setattr(wc, "download_image",
+                            lambda u, timeout=30: (downloads.append(u), CLEAN_PNG)[1])
+        wc.cmd_cms(_cms_args(apply=True, backup_dir=str(tmp_path), log_jsonl=str(log),
+                             skip_known_clean=str(log)))
+        assert len(downloads) == n_first, \
+            "run 2 re-downloaded an image run 1 had already proved clean"
+
+
+class TestAutoPublishDoesNotShipSomeoneElsesEdits:
+    ITEM_WITH_PENDING_EDITS = {"col2": [{
+        "id": "i2", "isDraft": False, "isArchived": False,
+        "lastPublished": "2026-01-01T00:00:00Z", "lastUpdated": "2026-02-02T00:00:00Z",
+        "fieldData": {"slug": "jane",
+                      "headshot": {"url": f"{CDN}/{AID_HERO}_hero.png", "fileId": AID_HERO}},
+    }]}
+
+    def test_an_item_with_unpublished_edits_is_not_queued(self, monkeypatch, tmp_path, capsys):
+        """--auto-publish publishes the whole ITEM. The gate was 'has it ever
+        been published?', so an item carrying somebody's unfinished Editor work
+        was pushed live wholesale."""
+        h = _CmsHarness(monkeypatch, upload_id=AID_NEW, items=self.ITEM_WITH_PENDING_EDITS)
+        wc.cmd_cms(_cms_args(apply=True, auto_publish=True, backup_dir=str(tmp_path),
+                             log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.uploads, "fixture: the image must actually have been replaced"
+        assert h.published == [], "an item with pending edits was published wholesale"
+        assert "unpublished edits" in capsys.readouterr().out
+
+    def test_a_fully_published_item_is_still_queued(self, monkeypatch, tmp_path):
+        """Guard the guard: holding always would be the same as no --auto-publish."""
+        h = _CmsHarness(monkeypatch, upload_id=AID_NEW)
+        wc.cmd_cms(_cms_args(apply=True, auto_publish=True, backup_dir=str(tmp_path),
+                             log_jsonl=str(tmp_path / "l.jsonl")))
+        assert h.published, "nothing is ever published any more"
+
+    def test_a_run_with_errors_publishes_nothing(self, monkeypatch, tmp_path, capsys):
+        """Publishing is the irreversible half. A mixed run must not be made live."""
+        # One asset succeeds (so something IS queued), a second one errors.
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW, live_index={},
+                            assets=[_asset(AID_HERO, "hero.png"),
+                                    _asset(AID_LOGO, "boom.png")])
+
+        def _dl(u, timeout=30):
+            if AID_LOGO in u:
+                raise OSError("connection reset")
+            return DIRTY_PNG
+
+        monkeypatch.setattr(wc, "download_image", _dl)
+        rc = wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                          auto_publish=True, backup_dir=str(tmp_path),
+                                          log_jsonl=str(tmp_path / "l.jsonl")))
+        assert rc == 2
+        assert len(h.uploads) == 1, "fixture: one asset must have been replaced successfully"
+        assert h.published == [], "a run that recorded errors published anyway"
+        assert "NOT publishing" in capsys.readouterr().out
+
+
+class TestFingerprintDescribesTheRenderedImage:
+    """The hash opened the file and read it as stored, so three things that
+    change nothing a viewer sees moved it right past PHASH_MATCH_MAX."""
+
+    @pytest.fixture(autouse=True)
+    def _need_pillow(self):
+        pytest.importorskip("PIL")
+
+    def _photo(self, seed: int = 3, w: int = 160, h: int = 120):
+        """Smooth like a photograph, but with enough structure to clear
+        MIN_FINGERPRINT_BITS — a near-flat fixture is DEGENERATE, and every
+        assertion below would then be about the degeneracy guard instead."""
+        from PIL import Image
+        import math
+        im = Image.new("RGB", (w, h))
+        im.putdata([(int(128 + 110 * math.sin((x / w) * 6.0 + seed)),
+                     int(128 + 110 * math.sin((y / h) * 4.8 + seed * 0.7)),
+                     int(128 + 110 * math.sin(((x + y) / (w + h)) * 7.8 + seed * 1.3)))
+                    for y in range(h) for x in range(w)])
+        return im
+
+    def _png(self, im, **save):
+        buf = io.BytesIO()
+        im.save(buf, format="PNG", **save)
+        return buf.getvalue()
+
+    def test_a_baked_in_exif_orientation_still_matches(self):
+        """A derivative whose stored Orientation was applied downstream missed
+        its own original by 265 bits — measured on a real repo photo with
+        Orientation=5 — against a threshold of 40."""
+        from PIL import Image
+        im = self._photo()
+        exif = Image.Exif()
+        exif[0x0112] = 6                       # rotate 90 CW on display
+        buf = io.BytesIO()
+        im.save(buf, format="JPEG", quality=92, exif=exif)
+        stored = buf.getvalue()
+        # What a downstream tool produces: the SAME rendered picture, with the
+        # rotation baked into the pixels and no orientation tag left.
+        baked = io.BytesIO()
+        im.rotate(-90, expand=True).save(baked, format="JPEG", quality=92)
+        d = wc.fingerprint_distance(wc.perceptual_fingerprint(stored),
+                                    wc.perceptual_fingerprint(baked.getvalue()))
+        assert d <= wc.PHASH_MATCH_MAX, (
+            f"the same rendered image hashed {d} bits apart — the hash is reading "
+            "storage order rather than what anyone sees")
+
+    def test_the_guard_can_fail(self):
+        """Guard the guard: an unrelated image must still be far away, or the
+        assertion above would pass on a hash that had stopped discriminating."""
+        d = wc.fingerprint_distance(wc.perceptual_fingerprint(self._png(self._photo(3))),
+                                    wc.perceptual_fingerprint(self._png(self._photo(31))))
+        assert d > wc.PHASH_MATCH_MAX
+
+    def test_colour_under_full_transparency_does_not_change_the_hash(self):
+        """Three PNGs with an IDENTICAL visible circle and white / black / noise
+        under the alpha hashed 153-208 bits apart: two files that render
+        identically were reported unrelated."""
+        from PIL import Image, ImageDraw
+        import random
+        variants = []
+        for fill in ("white", "black", "noise"):
+            base = Image.new("RGBA", (120, 120), (0, 0, 0, 0))
+            if fill == "white":
+                under = Image.new("RGB", (120, 120), (255, 255, 255))
+            elif fill == "black":
+                under = Image.new("RGB", (120, 120), (0, 0, 0))
+            else:
+                rnd = random.Random(7)
+                under = Image.new("RGB", (120, 120))
+                under.putdata([(rnd.randrange(256), rnd.randrange(256), rnd.randrange(256))
+                               for _ in range(120 * 120)])
+            base.paste(under, (0, 0))
+            base.putalpha(0)                       # everything invisible…
+            d = ImageDraw.Draw(base)
+            d.ellipse((25, 25, 95, 95), fill=(20, 90, 200, 255))   # …except this
+            variants.append(self._png(base))
+        fps = [wc.perceptual_fingerprint(v) for v in variants]
+        worst = max(wc.fingerprint_distance(fps[i], fps[j])
+                    for i in range(3) for j in range(i + 1, 3))
+        assert worst <= wc.PHASH_MATCH_MAX, (
+            f"identical visible content hashed {worst} bits apart — the hash is "
+            "reading RGB nobody renders")
+        # The PLAIN leg specifically: _autotrim flattens too, so a missing
+        # composite in perceptual_hash itself hides behind the trimmed hash.
+        plain = [wc.perceptual_hash(v) for v in variants]
+        worst_plain = max(wc.hamming(plain[i], plain[j])
+                          for i in range(3) for j in range(i + 1, 3))
+        assert worst_plain <= wc.PHASH_MATCH_MAX, (
+            f"the untrimmed hash alone is {worst_plain} bits apart on identical "
+            "visible content")
+
+    def test_two_animations_with_the_same_intro_frame_stay_distinct(self):
+        """Frame 0 was hashed by accident of where the decoder was parked, so a
+        fade-in fingerprinted its black intro: two different GIFs both hashed
+        to 0 and matched at distance 0."""
+        from PIL import Image
+        gifs = []
+        for seed in (3, 31):
+            body = self._photo(seed).convert("P", palette=Image.ADAPTIVE)
+            # The intro must share the body's palette, or PIL quantises every
+            # later frame to the first frame's (all-black) one and the fixture
+            # tests nothing but its own encoding bug.
+            intro = Image.new("P", body.size, 0)
+            intro.putpalette(body.getpalette())
+            buf = io.BytesIO()
+            intro.save(buf, format="GIF", save_all=True, append_images=[body, body])
+            gifs.append(buf.getvalue())
+        fps = [wc.perceptual_fingerprint(g) for g in gifs]
+        assert not any(wc.fingerprint_is_degenerate(f) for f in fps), \
+            "the fingerprint still describes the flat intro frame"
+        assert wc.fingerprint_distance(*fps) > wc.PHASH_MATCH_MAX, \
+            "two different animations fingerprint to the same thing"
+
+
+class TestAutotrimPicksTheLeastDestructiveCrop:
+    @pytest.fixture(autouse=True)
+    def _need_pillow(self):
+        pytest.importorskip("PIL")
+
+    def test_the_largest_passing_bbox_wins_not_the_first(self):
+        """`return g.crop(bb)` inside the loop took the FIRST corner past the
+        30% floor. When that corner sits on CONTENT — a near-uniform tone
+        reaching the frame edge — a content-driven crop beat the pad-driven one
+        and cut real picture away."""
+        from PIL import Image
+        im = Image.new("RGB", (200, 200), (250, 250, 250))
+        # A large, near-white block anchored at the top-left corner: sampling
+        # (0,0) yields a bbox that excludes it, i.e. a CONTENT crop that still
+        # clears the 30% floor.
+        for x in range(0, 120):
+            for y in range(0, 120):
+                im.putpixel((x, y), (252, 252, 252))
+        for x in range(60, 200):
+            for y in range(60, 200):
+                im.putpixel((x, y), (10, 10, 200))
+        buf = io.BytesIO(); im.save(buf, format="PNG")
+        first = _first_passing_bbox(im)
+        largest = _largest_passing_bbox(im)
+        assert first is not None and largest is not None
+        assert first != largest, (
+            "premise: this fixture must actually offer two different passing "
+            "bboxes, or the assertion below is vacuous")
+        got = wc._autotrim(Image.open(io.BytesIO(buf.getvalue()))).size
+        want = (largest[2] - largest[0], largest[3] - largest[1])
+        assert got == want, (
+            f"_autotrim returned {got}, the FIRST passing corner's crop "
+            f"{(first[2] - first[0], first[3] - first[1])} — it must take the "
+            f"largest, which removes a border without ever removing content")
+
+
+def _passing_bboxes(im, tol: int = 12):
+    """Every corner-derived bbox that clears _autotrim's 30% floor, in order."""
+    from PIL import Image, ImageChops
+    g = im.convert("RGB")
+    out = []
+    for corner in ((0, 0), (g.width - 1, 0), (0, g.height - 1), (g.width - 1, g.height - 1)):
+        bg = Image.new("RGB", g.size, g.getpixel(corner))
+        mask = ImageChops.difference(g, bg).convert("L").point(lambda v: 255 if v > tol else 0)
+        bb = mask.getbbox()
+        if bb and (bb[2] - bb[0]) > g.width * 0.3 and (bb[3] - bb[1]) > g.height * 0.3:
+            out.append(bb)
+    return out
+
+
+def _first_passing_bbox(im):
+    got = _passing_bboxes(im)
+    return got[0] if got else None
+
+
+def _largest_passing_bbox(im):
+    got = _passing_bboxes(im)
+    return max(got, key=lambda b: (b[2] - b[0]) * (b[3] - b[1])) if got else None
+
+
+class TestPhashBitsIsDerivedAndUsed:
+    @pytest.fixture(autouse=True)
+    def _need_pillow(self):
+        pytest.importorskip("PIL")
+
+    def test_the_constant_describes_the_hash_it_names(self):
+        """PHASH_BITS was a bare 512 with one store and zero loads, while the
+        width was implied by `size=16` somewhere else — free to drift away from
+        the comment block that quotes distances on a 512-bit scale."""
+        from PIL import Image
+        import math
+        im = Image.new("RGB", (64, 64))
+        im.putdata([(int(128 + 120 * math.sin(x / 5)), (x * 3) % 256, (y * 7) % 256)
+                    for y in range(64) for x in range(64)])
+        buf = io.BytesIO(); im.save(buf, format="PNG")
+        h = wc.perceptual_hash(buf.getvalue())
+        assert 0 < h.bit_length() <= wc.PHASH_BITS, \
+            f"a {h.bit_length()}-bit hash under a constant claiming {wc.PHASH_BITS}"
+        # …and the constant must not merely be an upper bound it never
+        # approaches: a detailed image sets bits across the whole width, so a
+        # PHASH_BITS that drifted away from the real hash size fails here.
+        assert h.bit_length() > wc.PHASH_BITS - wc.PHASH_SIZE * 2, \
+            f"a {h.bit_length()}-bit hash under a constant claiming {wc.PHASH_BITS} — " \
+            "the constant no longer describes the hash it names"
+        other = wc.perceptual_hash(CLEAN_PNG)
+        assert wc.hamming(h, other) <= wc.PHASH_BITS
+        assert wc.PHASH_BITS == 2 * wc.PHASH_SIZE * wc.PHASH_SIZE
+
+
+# ── the default log path was reachable from the suite ────────────────────────
+@pytest.fixture(autouse=True)
+def _never_write_the_committed_log(monkeypatch, tmp_path_factory):
+    """No test may append to data/watermark-clean-log.jsonl.
+
+    `DEFAULT_LOG_PATH` had zero test coverage and zero isolation: any `--apply`
+    run without an explicit --log-jsonl wrote into the repo's own committed log,
+    which `--skip-known-clean` then reads. A test could seed the production
+    known-clean cache.
+    """
+    p = tmp_path_factory.mktemp("wclog") / "default-log.jsonl"
+    monkeypatch.setattr(wc, "DEFAULT_LOG_PATH", p)
+    return p
+
+
+class TestTheDefaultLogPath:
+    def test_apply_without_an_explicit_log_still_records(
+            self, monkeypatch, tmp_path, _never_write_the_committed_log):
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                     backup_dir=str(tmp_path), log_jsonl=""))
+        rows = [json.loads(x) for x in
+                _never_write_the_committed_log.read_text().splitlines()]
+        assert [r["action"] for r in rows] == ["replaced"]
+
+    def test_a_dry_run_without_an_explicit_log_writes_nothing(
+            self, monkeypatch, tmp_path, _never_write_the_committed_log):
+        """load_known_clean reads that file — a preview must never seed it."""
+        _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                        assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        wc.cmd_replace(_replace_args(backup_dir=str(tmp_path), log_jsonl=""))
+        assert not _never_write_the_committed_log.exists()
+
+
+class TestLineageRowsShareOneEnvelope:
+    def _wire(self, monkeypatch, tmp_path, *, corpus_ok=True):
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(
+            wc, "build_lineage_corpus",
+            lambda srcs, progress=True: ([{"path": f"sites/cel/x.png", "fp": (1, 1),
+                                           "generators": ["gpt-image"]}], []))
+
+        def boom(u, timeout=30):
+            raise OSError("connection reset")
+
+        monkeypatch.setattr(wc, "download_image", boom)
+
+    def test_the_fetch_error_row_carries_ts_and_mode_like_every_other(
+            self, monkeypatch, tmp_path):
+        """The error row omitted ts, mode and site while carrying an asset_id —
+        the only lineage row that could not be filtered by mode, and one key
+        away from being read as proof of cleanliness."""
+        self._wire(monkeypatch, tmp_path)
+        log = tmp_path / "l.jsonl"
+        a = wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet",
+                                          "--log-jsonl", str(log)])
+        wc.cmd_lineage(a)
+        rows = [json.loads(x) for x in log.read_text().splitlines()]
+        assert rows, "fixture produced no rows"
+        for r in rows:
+            assert "ts" in r and r.get("mode") == "lineage", \
+                f"row off-schema: {sorted(r)}"
+        assert wc.load_known_clean(log) == set(), \
+            "an error row must never be read as proof of anything"
+
+
+class TestLineageDoesNotCallAnUnreadableFileClean:
+    @pytest.fixture(autouse=True)
+    def _need_pillow(self):
+        pytest.importorskip("PIL")
+
+    def test_an_unparseable_match_is_reported_as_unknown(self, monkeypatch, tmp_path, capsys):
+        """`has_meta = any(s.removable …)` is a two-way split: a file Pillow can
+        decode but ip.scan cannot read has no signals AND no proof of
+        cleanliness, and was printed 'already clean'."""
+        from PIL import Image
+        import math
+        im = Image.new("RGB", (160, 120))
+        im.putdata([(int(128 + 110 * math.sin((x / 160) * 6.0)),
+                     int(128 + 110 * math.sin((y / 120) * 4.8)),
+                     int(128 + 110 * math.sin(((x + y) / 280) * 7.8)))
+                    for y in range(120) for x in range(160)])
+        buf = io.BytesIO(); im.save(buf, format="PNG")
+        good = buf.getvalue()
+        # Same pixels, but the PNG chunk walk aborts: ip.scan reports a
+        # parse_error with zero signals.
+        broken = good[:-12] + b"\xff" * 12
+
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: broken)
+        monkeypatch.setattr(
+            wc, "build_lineage_corpus",
+            lambda srcs, progress=True: ([{"path": "sites/cel/orig.png",
+                                           "fp": wc.perceptual_fingerprint(good),
+                                           "generators": ["gpt-image"]}], []))
+        assert ip.scan(broken).parse_error, "fixture: the walk must actually abort"
+
+        a = wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet"])
+        wc.cmd_lineage(a)
+        out = capsys.readouterr().out
+        assert "AI-DERIVED" in out, "fixture: the match must actually happen"
+        assert "already clean" not in out, \
+            "a file whose structure could not be read was reported metadata-clean"
+        assert "COULD NOT BE READ" in out
+
+    def test_a_residue_only_match_is_not_reported_clean(self, monkeypatch, capsys):
+        """The other half of the same defect: `any(s.removable …)` reads
+        STRUCTURAL signals only, so a `trainedAlgorithmicMedia` string the byte
+        backstop finds outside any declared record scored zero signals and was
+        printed 'already clean' — on a file `verify` calls DIRTY-AI."""
+        from PIL import Image
+        import math
+        im = Image.new("RGB", (160, 120))
+        im.putdata([(int(128 + 110 * math.sin((x / 160) * 6.0)),
+                     int(128 + 110 * math.sin((y / 120) * 4.8)),
+                     int(128 + 110 * math.sin(((x + y) / 280) * 7.8)))
+                    for y in range(120) for x in range(160)])
+        buf = io.BytesIO(); im.save(buf, format="PNG")
+        good = buf.getvalue()
+        residue_only = good + (b"http://cv.iptc.org/newscodes/digitalsourcetype/"
+                               b"trainedAlgorithmicMedia")
+        rep = ip.scan(residue_only)
+        assert not rep.parse_error and not rep.signals, \
+            "fixture: the structural walk must find NOTHING, which is the whole point"
+        assert wc.verdict(residue_only)[0] == "DIRTY-AI"
+
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
+        monkeypatch.setattr(wc, "build_reference_index", lambda *a, **k: ({}, []))
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: residue_only)
+        monkeypatch.setattr(
+            wc, "build_lineage_corpus",
+            lambda srcs, progress=True: ([{"path": "sites/cel/orig.png",
+                                           "fp": wc.perceptual_fingerprint(good),
+                                           "generators": ["gpt-image"]}], []))
+        wc.cmd_lineage(wc.build_parser().parse_args(["lineage", "--site", "cel", "--quiet"]))
+        out = capsys.readouterr().out
+        assert "AI-DERIVED" in out, "fixture: the match must actually happen"
+        assert "HAS METADATA" in out and "already clean" not in out, \
+            "an AI marker the byte backstop found was reported as metadata-clean"
+
+
+class TestUnreachablePagesAreNamed:
+    def test_the_failing_urls_are_printed_not_just_counted(self, monkeypatch, capsys):
+        """purge's own remedy — 'resolve the reason and re-run' — is not
+        actionable when the reason is a bare count."""
+        import io as _io
+        base = "https://example.com"
+        pages = {f"{base}/sitemap.xml":
+                 f"<urlset><url><loc>{base}/ok</loc></url>"
+                 f"<url><loc>{base}/gone</loc></url></urlset>",
+                 f"{base}/ok": "<html></html>"}
+
+        def fake_open(req, timeout=None):
+            u = req.full_url if hasattr(req, "full_url") else req
+            if u not in pages:
+                raise urllib.error.HTTPError(u, 404, "nope", {}, None)
+            return _io.BytesIO(pages[u].encode())
+
+        monkeypatch.setattr(wc.urllib.request, "urlopen", fake_open)
+        _index, fetched, failed = wc.build_live_page_index(base, progress=False)
+        assert fetched == [f"{base}/ok"] and failed == [f"{base}/gone"]
+        assert f"{base}/gone" in capsys.readouterr().out, \
+            "the operator was told a COUNT of unreadable pages, never which ones"
+
+
+class TestPaginateAnnotationIsAType:
+    def test_url_for_resolves_to_a_type_not_the_builtin(self):
+        """`url_for: "callable"` resolved to the builtin FUNCTION under
+        typing.get_type_hints, so any typing pass reads the contract wrong."""
+        import typing
+        hints = typing.get_type_hints(wc._paginate)
+        assert hints["url_for"] is not callable, \
+            "the annotation is the builtin `callable`, not a type"
+
+
+class TestReplaceAutoPublishAlsoRespectsPendingEdits:
+    """The same gate exists in `replace`; without its own test the cms one
+    locked only half the behaviour."""
+
+    def _ref(self, **over):
+        base = dict(kind="image", collection_id="col1", collection_slug="blog",
+                    item_id="i1", item_slug="post", field_slug="main-image",
+                    source_url=f"{CDN}/{AID_HERO}_hero.png", was_published=True,
+                    last_published="2026-01-01T00:00:00Z")
+        base.update(over)
+        return wc.Reference(**base)
+
+    def _run(self, monkeypatch, tmp_path, ref):
+        h = _ReplaceHarness(monkeypatch, upload_id=AID_NEW,
+                            assets=[_asset(AID_HERO, "hero.png")], live_index={})
+        monkeypatch.setattr(wc, "build_reference_index",
+                            lambda *a, **k: ({wc._url_key(ref.source_url): [ref]}, []))
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True,
+                                     auto_publish=True, backup_dir=str(tmp_path),
+                                     log_jsonl=str(tmp_path / "l.jsonl")))
+        return h
+
+    def test_pending_edits_are_not_published(self, monkeypatch, tmp_path, capsys):
+        h = self._run(monkeypatch, tmp_path,
+                      self._ref(last_updated="2026-02-02T00:00:00Z"))
+        assert len(h.uploads) == 1, "fixture: the replace itself must have happened"
+        assert h.published == [], "an item with unpublished edits was pushed live wholesale"
+        assert "unpublished edits" in capsys.readouterr().out
+
+    def test_a_settled_item_is_still_published(self, monkeypatch, tmp_path):
+        """Guard the guard: holding always is the same as no --auto-publish."""
+        h = self._run(monkeypatch, tmp_path,
+                      self._ref(last_updated="2025-12-01T00:00:00Z"))
+        assert h.published, "nothing is ever published any more"
+
+
+class TestCmsDoesNotPublishAMixedRun:
+    ITEMS = {"col2": [
+        {"id": "i2", "isDraft": False, "isArchived": False, "lastPublished": "2026-01-01",
+         "fieldData": {"slug": "jane",
+                       "headshot": {"url": f"{CDN}/{AID_HERO}_hero.png", "fileId": AID_HERO}}},
+        {"id": "i3", "isDraft": False, "isArchived": False, "lastPublished": "2026-01-01",
+         "fieldData": {"slug": "bob",
+                       "headshot": {"url": f"{CDN}/{AID_LOGO}_boom.png", "fileId": AID_LOGO}}},
+    ]}
+
+    def test_an_errored_run_publishes_nothing(self, monkeypatch, tmp_path, capsys):
+        """Publishing is the irreversible half of the command. A run in which
+        one image failed must not push the other half live and exit having
+        made a partial state permanent."""
+        h = _CmsHarness(monkeypatch, upload_id=AID_NEW, items=self.ITEMS)
+
+        def _dl(u, timeout=30):
+            if AID_LOGO in u:
+                raise OSError("connection reset")
+            return DIRTY_PNG
+
+        monkeypatch.setattr(wc, "download_image", _dl)
+        rc = wc.cmd_cms(_cms_args(apply=True, auto_publish=True, backup_dir=str(tmp_path),
+                                  log_jsonl=str(tmp_path / "l.jsonl")))
+        assert rc == 2
+        assert len(h.uploads) == 1, "fixture: one image must have been replaced successfully"
+        assert h.published == [], "a run that recorded errors published anyway"
+        assert "NOT publishing" in capsys.readouterr().out
+
+
+class TestATruncatedBodyIsOneAssetNotTheWholeRun:
+    def test_an_incomplete_read_is_logged_not_fatal(self, monkeypatch, tmp_path, capsys):
+        """`http.client.IncompleteRead`'s MRO is HTTPException -> Exception, NOT
+        OSError, so it was in none of the caught types: one CDN truncating one
+        body aborted the entire nightly sweep with a traceback."""
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets", lambda t, s, limit=None: [_asset(AID_HERO, "h.png")])
+
+        def _boom(url, timeout=30):
+            raise http.client.IncompleteRead(b"half")
+
+        monkeypatch.setattr(wc, "fetch_and_scan", _boom)
+        rc = wc.main(["scan", "--site", "bv", "--no-cms", "--quiet"])
+        out = capsys.readouterr()
+        assert rc == 2, "an unreadable asset must not exit 0"
+        assert "ERROR" in out.out and "IncompleteRead" in out.out
+        assert "UNKNOWN, not clean" in out.err
+
+
+class TestTheGenericTokenFallbackIsLoud:
+    @pytest.fixture
+    def fake_repo(self, tmp_path, monkeypatch):
+        (tmp_path / "sites").mkdir()
+        (tmp_path / "sites" / "registry.json").write_text(json.dumps({
+            "sites": {"cel": {"webflow_connection": {"rest_token_env": "WEBFLOW_API_TOKEN"}},
+                      "altus": {}}}))
+        monkeypatch.setattr(wc, "ROOT", tmp_path)
+        monkeypatch.setattr(wc, "get_api_token", lambda *a, **k: "generic")
+        return tmp_path
+
+    def test_a_site_with_no_token_of_its_own_says_so(self, fake_repo, capsys):
+        """The CEL grant has no authority on another site, so the run 404s on
+        every asset. Silently handing it back turned a named config error into
+        an unexplained stack trace."""
+        assert wc.resolve_site_token("altus") == "generic"
+        err = capsys.readouterr().err
+        assert "altus" in err and "rest_token_env" in err
+
+    def test_cel_itself_is_not_warned_about(self, fake_repo, capsys):
+        """Guard the guard: warning always would be the same as never."""
+        wc.resolve_site_token("cel")
+        assert capsys.readouterr().err == ""
+
+
+class TestReplaceLimitBoundsTheUncheckedWork:
+    def test_a_second_incremental_run_advances(self, monkeypatch, tmp_path):
+        """Same ordering defect as `scan`: --limit went into list_assets before
+        the known-clean / superseded filters, so once the first N were handled
+        an incremental run examined zero assets and exited 0."""
+        assets = [_asset(f"6a7dad834766eebcddd96d{i:02d}", f"a{i}.png") for i in range(6)]
+        log = tmp_path / "l.jsonl"
+        h1 = _ReplaceHarness(monkeypatch, upload_id=AID_NEW, assets=assets, live_index={})
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True, limit=2,
+                                     backup_dir=str(tmp_path), log_jsonl=str(log)))
+        first = {r["asset_id"] for r in
+                 (json.loads(x) for x in log.read_text().splitlines())}
+        assert len(h1.uploads) == 2 and len(first) == 2
+
+        h2 = _ReplaceHarness(monkeypatch, upload_id=AID_G1, assets=assets, live_index={})
+        wc.cmd_replace(_replace_args(apply=True, allow_new_asset_id=True, limit=2,
+                                     backup_dir=str(tmp_path), log_jsonl=str(log),
+                                     skip_known_clean=str(log)))
+        assert len(h2.uploads) == 2, (
+            f"run 2 replaced {len(h2.uploads)} asset(s) — the limit is bounding the "
+            "whole site instead of the unchecked part, so the sweep never advances")
+        second = {r["asset_id"] for r in
+                  (json.loads(x) for x in log.read_text().splitlines())} - first
+        assert len(second) == 2 and not (second & first)

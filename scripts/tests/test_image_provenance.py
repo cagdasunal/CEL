@@ -391,8 +391,54 @@ class TestSpecConformance:
         assert len(ip._C2PA_UUID) == 16
         assert len(ip._C2PA_UUID_ALT) == 16
 
+    def test_c2pa_alt_uuid_matches_the_jumbf_template(self):
+        """`len(...) == 16` accepts any sixteen bytes, so it guarded nothing.
+
+        The legacy form is the four-byte JUMBF type tag `c2pa` followed by the
+        ISO/IEC 14496-12 §A.1 extended-type template
+        ``XXXXXXXX-0011-0010-8000-00AA00389B71``. Pin both halves: a wrong value
+        here fails exactly as silently as a wrong `_C2PA_UUID` — every AVIF/HEIF
+        from a legacy JUMBF writer simply scans clean.
+        """
+        assert ip._C2PA_UUID_ALT == b"c2pa" + bytes.fromhex("00110010800000AA00389B71")
+
     def test_c2pa_uuid_is_derived_from_the_hyphenated_spec_string(self):
         assert ip._C2PA_UUID == bytes.fromhex(ip._C2PA_BMFF_UUID_STR.replace("-", ""))
+
+    # Spec literals, NOT ip._C2PA_UUID*. Building the fixture from the module
+    # constant would make the test self-fulfilling: a mistyped constant would
+    # produce a fixture carrying the same typo, scan would match it, and the
+    # test would pass on exactly the defect it exists to catch. Verified — the
+    # first version of this test did that and survived the 1->2 mutation.
+    SPEC_UUIDS = {
+        "primary": bytes.fromhex("D8FEC3D61B0E483C92975828877EC481"),
+        "legacy-jumbf": b"c2pa" + bytes.fromhex("00110010800000AA00389B71"),
+    }
+
+    @pytest.mark.parametrize("spec_name", sorted(SPEC_UUIDS))
+    def test_top_level_c2pa_uuid_box_is_detected_and_excised(self, spec_name):
+        """Exercise the constants against the spec, do not merely pin them.
+
+        Both spellings are consumed at the same two call sites, so the primary
+        UUID's fixture coverage says nothing about the alternate. Build one file
+        per spec-literal spelling and require the same outcome: scanned as c2pa,
+        mined for generators, and physically removed by strip().
+        """
+        uuid = self.SPEC_UUIDS[spec_name]
+        blob = b"jumb\x00jumdc2pa manifest softwareAgent gpt-image"
+        data = _bmff_uuid_only(uuid, blob)
+
+        rep = ip.scan(data)
+        assert rep.parse_error == ""
+        assert [(s.kind, s.where) for s in rep.signals] == [("c2pa", "ISOBMFF:uuid")], (
+            f"a {spec_name} C2PA manifest scanned CLEAN — the module constant does not "
+            "match the spec value this fixture was built from")
+        assert "OpenAI gpt-image" in rep.generators and rep.is_ai_flagged
+
+        res = ip.strip(data)
+        assert res.clean and res.changed
+        assert uuid not in res.data, "the uuid box survived the strip"
+        assert not ip.scan(res.data).signals
 
     def test_multi_segment_jpeg_app11_is_fully_removed(self):
         """A C2PA manifest over 64 KB spans several contiguous APP11 segments.
@@ -504,6 +550,18 @@ def _bmff(items: list[tuple[int, bytes, bytes, bytes]], *, brand: bytes = b"avif
         real.append(cur)
         cur += len(payload)
     return build(real)
+
+
+def _bmff_uuid_only(uuid: bytes, blob: bytes, *, brand: bytes = b"avif") -> bytes:
+    """An AVIF carrying nothing but a top-level C2PA `uuid` box.
+
+    Deliberately has no `meta`: _strip_iso's uuid excision is a straight
+    top-level cut that runs before any item reflow, so this isolates the
+    constant-matching decision from the remux machinery.
+    """
+    ftyp = struct.pack(">I", 24) + b"ftyp" + brand + b"\x00" * 4 + brand + b"mif1"
+    assert len(ftyp) == 24
+    return ftyp + struct.pack(">I", 8 + 16 + len(blob)) + b"uuid" + uuid + blob
 
 
 class TestIsobmffRefusesWhatItCannotAccountFor:
@@ -735,6 +793,35 @@ class TestAiGeneratorFlag:
         orphans = ip._AI_GENERATORS - emitted
         assert not orphans, f"_AI_GENERATORS names labels no pattern produces: {sorted(orphans)}"
 
+    def test_every_emitted_label_is_a_deliberate_ai_or_not_ai_decision(self):
+        """The reverse direction — the one that catches a NEW generator.
+
+        The orphan check above only finds dead labels. Adding a pattern without
+        a matching _AI_GENERATORS entry — a real generator that silently fails
+        to set is_ai_flagged — left the suite green. Every emitted label must
+        therefore be classified: AI, or explicitly listed here as not-AI.
+
+        These two are editors, not generators. A scanned photograph retouched in
+        Photoshop, or a poster laid out in Canva, is not AI-generated; flagging
+        either would make is_ai_flagged useless. Adding a label here is a
+        deliberate act, which is the entire point.
+        """
+        not_ai = {"Adobe Photoshop", "Canva"}
+        emitted = {label for _needle, label in ip._GENERATOR_PATTERNS}
+        unclassified = emitted - ip._AI_GENERATORS - not_ai
+        assert not unclassified, (
+            f"pattern(s) emit {sorted(unclassified)}, which is neither in _AI_GENERATORS "
+            "nor listed as a non-AI editor here — decide which, then record it")
+        # and the not-AI list must not rot into a shadow allowlist
+        assert not (not_ai & ip._AI_GENERATORS), "a label cannot be both AI and not-AI"
+        assert not_ai <= emitted, f"stale non-AI label(s): {sorted(not_ai - emitted)}"
+
+    def test_a_non_ai_editor_tag_does_not_set_the_ai_flag(self):
+        """The behavioural half: the classification above must actually bite."""
+        rep = ip.scan(_png(chunks=[(b"tEXt", b"Software\x00Canva")]))
+        assert rep.generators == ["Canva"]
+        assert rep.ai_generators == [] and not rep.is_ai_flagged
+
 
 class TestSvg:
     def _svg(self, metadata: bytes = b"") -> bytes:
@@ -923,6 +1010,46 @@ class TestInvariants:
         ok, note = ip.verify_lossless(a, b)
         assert not ok and "pixel payload changed" in note
 
+    def test_completeness_guard_catches_a_stripper_that_misses_a_record(self):
+        """The guard must be able to go red, or `res.clean` proves nothing.
+
+        Every other assertion in this file reads `res.clean` / `res.after`,
+        which is the same quantity strip()'s own completeness guard computes —
+        so deleting the guard changed no result. This installs a deliberately
+        incomplete handler (drops the FIRST removable record, keeps the rest
+        verbatim) and requires strip() to refuse the output and name the
+        survivor. Without the guard the incomplete file is returned as clean.
+        """
+        data = _png(chunks=[(b"tEXt", b"Software\x00Midjourney v6"),
+                            (b"tEXt", b"Comment\x00made with DALL-E")])
+        before = ip.scan(data)
+        assert len([s for s in before.signals if s.removable]) == 2, "fixture needs two records"
+
+        def drops_only_the_first(d: bytes, policy, rep) -> tuple[bytes, list]:
+            by_off = {s.offset: s for s in rep.signals}
+            skip = sorted(s.offset for s in rep.signals
+                          if s.removable and policy.wants(s.kind))[:1]
+            out, removed = bytearray(ip._PNG_MAGIC), []
+            for off, _ctype, _payload, total in ip._png_chunks(d):
+                if off in skip:
+                    removed.append(by_off[off])
+                    continue
+                out += d[off:off + total]
+            return bytes(out), removed
+
+        real = ip._STRIPPERS["png"]
+        ip._STRIPPERS["png"] = drops_only_the_first
+        try:
+            with pytest.raises(ProvenanceError) as e:
+                ip.strip(data)
+        finally:
+            ip._STRIPPERS["png"] = real
+        assert "did not remove everything it claimed" in str(e.value)
+        assert "generator_tag@PNG:tEXt" in str(e.value), "the survivor must be named"
+
+        # And the control is honest: the REAL stripper on the same fixture passes.
+        assert ip.strip(data).clean
+
     def test_verify_lossless_rejects_container_swap(self):
         ok, note = ip.verify_lossless(_png(), _jpeg())
         assert not ok and "container changed" in note
@@ -1090,6 +1217,40 @@ class TestOfficialSdkOracle:
         assert not survived, f"reference implementation still reads a manifest in: {survived[:5]}"
 
 
+def _pixel_identity_sweep(paths, pixels) -> tuple[int, int]:
+    """Compare decoded pixels before/after strip over ``paths``.
+
+    Returns ``(checked, undecodable)``. The split is load-bearing: "no file
+    needed stripping" and "no file could be decoded" are opposite worlds, and
+    collapsing them into one counter let the second report as the first.
+    """
+    checked = undecodable = 0
+    for p in paths:
+        data = p.read_bytes()
+        rep = ip.scan(data)
+        if rep.parse_error or not any(s.removable for s in rep.signals):
+            continue
+        res = ip.strip(data)
+        try:
+            before, after = pixels(data), pixels(res.data)
+        except Exception:
+            undecodable += 1                           # codec unavailable (e.g. AVIF)
+            continue
+        assert before == after, f"{p.name}: decoded pixels differ after strip"
+        checked += 1
+    return checked, undecodable
+
+
+def _pixel_identity_verdict(checked: int, undecodable: int) -> tuple[str, str]:
+    """Name the world we are actually in. Never report the reassuring one blind."""
+    if checked:
+        return "verified", f"{checked} file(s) pixel-identical after strip"
+    if undecodable:
+        return "xfail", (f"{undecodable} file(s) could not be decoded (codec unavailable) "
+                         "— pixel identity NOT verified")
+    return "skip", "nothing under sites/ needed stripping — corpus is clean"
+
+
 @pytest.mark.skipif(not _corpus(), reason="no sites/ image corpus in this checkout")
 def test_decoded_pixels_are_identical_after_strip():
     """The strongest check available: decode both files and compare raw pixels.
@@ -1104,21 +1265,59 @@ def test_decoded_pixels_are_identical_after_strip():
         im = Image.open(io.BytesIO(b))
         return b"".join(f.convert("RGBA").tobytes() for f in ImageSequence.Iterator(im))
 
-    checked = 0
-    for p in _corpus(limit=120):
-        data = p.read_bytes()
-        rep = ip.scan(data)
-        if rep.parse_error or not any(s.removable for s in rep.signals):
-            continue
-        res = ip.strip(data)
-        try:
-            before, after = pixels(data), pixels(res.data)
-        except Exception:
-            continue                                   # codec unavailable (e.g. AVIF)
-        assert before == after, f"{p.name}: decoded pixels differ after strip"
-        checked += 1
-    if checked == 0:
-        pytest.skip("nothing under sites/ needed stripping — corpus is clean")
+    verdict, note = _pixel_identity_verdict(*_pixel_identity_sweep(_corpus(limit=120), pixels))
+    if verdict == "xfail":
+        # xfail, not skip: an AVIF-less environment is visibly NOT covered here.
+        pytest.xfail(note)
+    if verdict == "skip":
+        pytest.skip(note)
+
+
+class TestPixelIdentitySweepReportsWhichWorldItIsIn:
+    """154 `pixel-identity-test-skip-reason-misattributes`.
+
+    With every decode failing, the sweep reported "corpus is clean" — the one
+    sentence that means the opposite of what had happened. These pin the
+    counting and the verdict separately, because only the pair is falsifiable.
+    """
+
+    @staticmethod
+    def _real_pixels(b: bytes) -> bytes:
+        from PIL import Image, ImageSequence
+        im = Image.open(io.BytesIO(b))
+        return b"".join(f.convert("RGBA").tobytes() for f in ImageSequence.Iterator(im))
+
+    def _stripworthy_png(self, tmp_path, name="x.png"):
+        p = tmp_path / name
+        p.write_bytes(_png(chunks=[(b"tEXt", b"Software\x00Midjourney v6")]))
+        return p
+
+    def test_a_decodable_file_counts_as_checked(self, tmp_path):
+        pytest.importorskip("PIL")
+        p = self._stripworthy_png(tmp_path)
+        assert _pixel_identity_sweep([p], self._real_pixels) == (1, 0)
+
+    def test_an_undecodable_file_counts_as_undecodable_not_as_clean(self, tmp_path):
+        """The exact defect: the same file, the only change being a dead codec."""
+        pytest.importorskip("PIL")
+        p = self._stripworthy_png(tmp_path)
+
+        def no_codec(_b: bytes) -> bytes:
+            raise OSError("cannot identify image file")
+
+        assert _pixel_identity_sweep([p], no_codec) == (0, 1)
+
+    def test_a_clean_file_is_neither_checked_nor_undecodable(self, tmp_path):
+        p = tmp_path / "clean.png"
+        p.write_bytes(_png())                          # nothing removable
+        assert _pixel_identity_sweep([p], self._real_pixels) == (0, 0)
+
+    def test_the_verdict_flips_between_the_two_zero_checked_worlds(self):
+        assert _pixel_identity_verdict(0, 3)[0] == "xfail"
+        assert "NOT verified" in _pixel_identity_verdict(0, 3)[1]
+        assert _pixel_identity_verdict(0, 0)[0] == "skip"
+        assert "corpus is clean" in _pixel_identity_verdict(0, 0)[1]
+        assert _pixel_identity_verdict(5, 3)[0] == "verified"
 
 
 class TestIsoMimeItemsAreClassifiedByTheirDeclaredType:
@@ -1243,3 +1442,792 @@ class TestIsoMimeItemsAreClassifiedByTheirDeclaredType:
         pass the test above too."""
         res = ip.strip(self._img(b"application/rdf+xml", self.PLAIN_XMP))
         assert self.PLAIN_XMP not in res.data and res.fully_stripped
+
+
+# =============================================================================
+# regressions fixed in the 2026-08 audit (trackers 153/154)
+# =============================================================================
+class TestJpegOrientationIdempotence:
+    """`_strip_jpeg` re-emitted its orientation APP1 unconditionally at out[2:2].
+
+    Consequences, all reachable from `watermark_cleaner.py clean`:
+      * a rotated JPEG grew +36 B on EVERY pass, stacking duplicate APP1 blocks
+      * JFIF APP0 was displaced out of its mandatory first-segment position
+      * bytes_removed went negative, and `Result.changed` (`bytes_removed > 0`)
+        then read False on a file that had demonstrably changed
+    """
+
+    def _rotated(self) -> bytes:
+        # A full Exif (padded, so NOT the orientation-only block) plus a COM, so
+        # pass 1 genuinely has something to strip.
+        exif = ip._minimal_exif_orientation(6) + b"\x00" * 8
+        return _jpeg(segments=[(0xE1, exif), (0xFE, b"a comment worth 27 bytes...")])
+
+    def _app1_count(self, data: bytes) -> int:
+        return sum(1 for _o, m, pl, _t in ip._jpeg_segments(data)
+                   if m == 0xE1 and ip._is_orientation_only_exif(pl))
+
+    def test_stripping_twice_is_a_fixpoint(self):
+        once = ip.strip(self._rotated()).data
+        twice = ip.strip(once).data
+        assert twice == once, "strip(strip(x)) must equal strip(x)"
+
+    def test_the_orientation_block_is_not_duplicated(self):
+        once = ip.strip(self._rotated()).data
+        assert self._app1_count(once) == 1
+        assert self._app1_count(ip.strip(once).data) == 1, \
+            "a second pass appended a second identical orientation APP1"
+
+    def test_orientation_survives_both_passes(self):
+        twice = ip.strip(ip.strip(self._rotated()).data).data
+        kept = [pl for _o, m, pl, _t in ip._jpeg_segments(twice) if m == 0xE1]
+        assert kept and ip._exif_orientation(kept[0]) == 6
+
+    def test_jfif_app0_stays_the_first_segment(self):
+        """JFIF requires APP0 immediately after SOI; inserting at out[2:2]
+        pushed it to second place on the very first pass."""
+        once = ip.strip(self._rotated()).data
+        markers = [m for _o, m, _pl, _t in ip._jpeg_segments(once) if 0xE0 <= m <= 0xEF]
+        assert markers[0] == 0xE0, f"APP0 is no longer first: {[hex(m) for m in markers]}"
+
+    def test_a_file_that_grew_is_never_reported_unchanged(self):
+        """The decision. `changed` drives the CLI's STRIP/already-clean split."""
+        res = ip.strip(self._rotated())
+        assert len(res.data) != len(self._rotated()), "fixture must actually change size"
+        assert res.changed, "a rewritten file reported itself unchanged"
+
+    def test_the_second_pass_reports_no_change(self):
+        once = ip.strip(self._rotated()).data
+        again = ip.strip(once)
+        assert again.data == once
+        assert not again.changed, "an untouched file must not report changed"
+
+    def test_keep_exif_does_not_add_a_second_orientation_block(self):
+        """Same defect via a different route: when the policy KEEPS the Exif,
+        the orientation already ships and re-emitting duplicates it."""
+        res = ip.strip(self._rotated(), policy=Policy(strip_exif=False))
+        app1 = [pl for _o, m, pl, _t in ip._jpeg_segments(res.data) if m == 0xE1]
+        assert len(app1) == 1, "kept the original Exif AND re-emitted an orientation block"
+
+    def test_changed_is_true_for_a_file_that_grew_with_nothing_removed(self):
+        """`bytes_removed > 0` is a PROXY for "changed" and it is wrong in one
+        direction: a rewrite that makes the file bigger yields a negative
+        bytes_removed, which is not > 0, so the Result claimed nothing happened.
+
+        The orientation fixpoint above closes the route that reached this in
+        practice; the property itself is asserted here directly so the guard
+        cannot rot back to the proxy unnoticed.
+        """
+        src = _jpeg()
+        grown = src + b"\x00" * 16
+        res = ip.Result(data=grown, container="jpeg",
+                        before=ip.scan(src), after=ip.scan(src),
+                        removed=[], bytes_removed=len(src) - len(grown))
+        assert res.bytes_removed < 0, "the fixture must model a file that grew"
+        assert res.changed, "a file that grew was reported unchanged"
+
+    def test_changed_is_false_for_a_true_no_op(self):
+        """Guard the guard: a `changed` that always returned True would pass above."""
+        src = _jpeg()
+        res = ip.Result(data=src, container="jpeg",
+                        before=ip.scan(src), after=ip.scan(src),
+                        removed=[], bytes_removed=0)
+        assert not res.changed
+
+
+class TestScanAndStripAgreeOnUnknownPngChunks:
+    """`_strip_png` dropped unrecognised ancillary chunks that `_scan_png` never
+    reported. Because `cmd_replace`/`cmd_cms` gate on the SCAN result, a PNG
+    whose only provenance was an unknown chunk was recorded "already_clean" and
+    the stripper written for exactly that case was never reached.
+    """
+
+    HIDDEN = b"hf-job-id=8812 trainedAlgorithmicMedia"
+
+    def _img(self) -> bytes:
+        return _png(chunks=[(b"hfJB", self.HIDDEN)])
+
+    def test_scan_reports_the_unknown_chunk(self):
+        rep = ip.scan(self._img())
+        assert [s.where for s in rep.signals if s.length > 0] == ["PNG:hfJB"]
+
+    def test_the_pipeline_no_longer_calls_it_already_clean(self):
+        """THE decision: cmd_replace/cmd_cms branch on exactly this."""
+        rep = ip.scan(self._img())
+        assert rep.is_ai_flagged, "an AI marker in an unknown chunk read as clean"
+        assert rep.removable_bytes > 0
+        assert "Higgsfield" in rep.ai_generators
+
+    def test_scan_and_strip_agree_offset_for_offset(self):
+        """The invariant that makes the two halves impossible to drift apart."""
+        d = self._img()
+        scanned = {s.offset for s in ip.scan(d).signals if s.length > 0}
+        stripped = {s.offset for s in ip.strip(d).removed}
+        assert scanned == stripped, f"scan {sorted(scanned)} != strip {sorted(stripped)}"
+
+    def test_the_bytes_really_go(self):
+        res = ip.strip(self._img())
+        assert self.HIDDEN not in res.data and res.clean and res.lossless
+
+    def test_render_and_animation_chunks_are_not_reported_as_metadata(self):
+        """Guard the guard: a scan that reported EVERY chunk would pass above
+        and would make every ordinary PNG look dirty."""
+        actl = struct.pack(">II", 1, 0)
+        clean = _png(chunks=[(b"gAMA", struct.pack(">I", 45455)), (b"acTL", actl),
+                             (b"iCCP", b"p\x00\x00" + zlib.compress(b"icc"))])
+        rep = ip.scan(clean)
+        assert [s for s in rep.signals if s.removable] == []
+        assert not ip.strip(clean).removed
+
+    def test_keeping_the_breadcrumbs_still_keeps_an_unknown_chunk(self):
+        """scan() now raises a Signal for these; the policy must still win."""
+        d = self._img()
+        res = ip.strip(d, policy=Policy(strip_generator_tags=False, strip_xmp=False,
+                                        strip_iptc=False))
+        assert res.data == d, "--keep-generator-tags silently lost an unknown chunk"
+
+
+APPENDED_XMP = (
+    b'<?xpacket begin="" id="W5M0Mp"?><x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF>'
+    b'<rdf:Description xmp:CreatorTool="Midjourney" Iptc4xmpExt:digitalSourceType='
+    b'"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"/>'
+    b"</rdf:RDF></x:xmpmeta><?xpacket end='w'?>"
+)
+
+
+class TestJpegTrailerAfterEoi:
+    """Everything from SOS onward was copied verbatim and inspected by nobody.
+
+    An XMP packet appended after FFD9 therefore survived a strip that reported
+    `clean=True, bytes_removed=0` — while `raw_residue()`, the backstop, found
+    it easily. The backstop existed; it just was not wired into scan().
+    """
+
+    def _with_trailer(self, trailer: bytes) -> bytes:
+        return _jpeg() + trailer
+
+    def test_scan_sees_the_appended_packet(self):
+        rep = ip.scan(self._with_trailer(APPENDED_XMP))
+        assert any(s.where == "JPEG:trailer" for s in rep.signals)
+
+    def test_the_appended_packet_flips_the_ai_verdict(self):
+        """THE decision — `--fail-on-flagged` and the crawler both read this."""
+        rep = ip.scan(self._with_trailer(APPENDED_XMP))
+        assert rep.is_ai_flagged, "an appended AI packet scanned as an ordinary photo"
+        assert "Midjourney" in rep.ai_generators
+
+    def test_strip_actually_removes_it(self):
+        res = ip.strip(self._with_trailer(APPENDED_XMP))
+        assert b"trainedAlgorithmicMedia" not in res.data
+        assert b"Midjourney" not in res.data
+        assert res.changed and res.bytes_removed > 0 and res.clean
+
+    def test_removing_the_trailer_still_verifies_lossless(self):
+        """The digest hashed data[SOS:] including the trailer. Dropping the
+        trailer without narrowing the digest would fail EVERY such strip."""
+        orig = self._with_trailer(APPENDED_XMP)
+        res = ip.strip(orig)
+        ok, note = ip.verify_lossless(orig, res.data)
+        assert ok, note
+        assert res.lossless
+
+    def test_a_plain_jpeg_is_unaffected(self):
+        """Guard the guard: no EOI-less or trailer-less file may gain a signal."""
+        rep = ip.scan(_jpeg())
+        assert not [s for s in rep.signals if s.where == "JPEG:trailer"]
+        assert ip.strip(_jpeg()).data == _jpeg()
+
+    def test_the_entropy_stream_is_still_copied_byte_for_byte(self):
+        res = ip.strip(self._with_trailer(APPENDED_XMP))
+        assert b"\xfe\xed\xfa\xce\xde\xad\xbe\xef" in res.data, "entropy data was cut"
+        assert res.data.endswith(b"\xff\xd9")
+
+
+class TestMultiPictureJpeg:
+    """An MPO's secondary image was copied verbatim past the first SOS and never
+    scanned, while the APP2 MPF index that addresses it was dropped as
+    'other_metadata' — orphaning the secondary AND leaving its provenance intact.
+    """
+
+    def _mpo(self) -> bytes:
+        primary = _jpeg(segments=[(0xE2, b"MPF\x00" + b"\x00" * 24)])
+        secondary = _jpeg(segments=[(0xE1, b"http://ns.adobe.com/xap/1.0/\x00" + APPENDED_XMP)])
+        return primary + secondary
+
+    def test_the_secondary_image_is_no_longer_invisible(self):
+        rep = ip.scan(self._mpo())
+        assert any(s.where.endswith("@secondary") for s in rep.signals), \
+            "the secondary image's own APP segments were never walked"
+
+    def test_the_secondarys_provenance_flips_the_verdict(self):
+        """THE decision. It scanned as `signals=[('other_metadata','JPEG:APP2')],
+        is_ai_flagged=False, generators=[]`."""
+        rep = ip.scan(self._mpo())
+        assert rep.is_ai_flagged
+        assert "Midjourney" in rep.ai_generators
+
+    def test_strip_refuses_rather_than_orphaning_the_secondary(self):
+        """The honest short path: dropping the MPF index leaves the secondary
+        unreachable and its XMP intact, and the old code called that clean=True."""
+        with pytest.raises(ProvenanceError, match="multi-picture"):
+            ip.strip(self._mpo())
+
+    def test_the_secondary_is_reported_as_not_removable(self):
+        """It is picture data. Claiming it is strippable would be the same lie
+        in the other direction."""
+        rep = ip.scan(self._mpo())
+        trailer = [s for s in rep.signals if s.where == "JPEG:trailer"]
+        assert trailer and not trailer[0].removable
+
+    def test_an_ordinary_two_segment_jpeg_is_not_mistaken_for_an_mpo(self):
+        assert ip.strip(_jpeg(segments=[(0xFE, b"just a comment")])).clean
+
+
+def _bmff_idat(exif_payload: bytes, *, pixels: bytes = b"\xa5" * 16) -> bytes:
+    """A still HEIF whose Exif item uses ``construction_method=1`` (idat-relative).
+
+    `_bmff` cannot express this: it emits iloc version 0, which has no
+    construction_method field at all — which is why no fixture in the suite ever
+    exercised the non-zero methods (grep 'construction' returned nothing).
+    """
+    def box(typ: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body) + 8) + typ + body
+
+    def full(typ: bytes, ver: int, flags: int, body: bytes) -> bytes:
+        return box(typ, bytes([ver]) + flags.to_bytes(3, "big") + body)
+
+    infes = (full(b"infe", 2, 0, struct.pack(">HH", 1, 0) + b"Exif" + b"exif\x00")
+             + full(b"infe", 2, 0, struct.pack(">HH", 2, 0) + b"av01" + b"pic\x00"))
+    iinf = full(b"iinf", 0, 0, struct.pack(">H", 2) + infes)
+    hdlr = full(b"hdlr", 0, 0, b"\x00" * 4 + b"pict" + b"\x00" * 12 + b"h\x00")
+    pitm = full(b"pitm", 0, 0, struct.pack(">H", 2))
+    idat = box(b"idat", exif_payload)
+
+    def build(pic_off: int) -> bytes:
+        body = bytes([(4 << 4) | 4, 0]) + struct.pack(">H", 2)
+        body += struct.pack(">HHH", 1, 1, 0) + struct.pack(">H", 1)     # item 1, method 1
+        body += struct.pack(">II", 0, len(exif_payload))                 # -> idat payload + 0
+        body += struct.pack(">HHH", 2, 0, 0) + struct.pack(">H", 1)     # item 2, method 0
+        body += struct.pack(">II", pic_off, len(pixels))                 # -> mdat
+        iloc = full(b"iloc", 1, 0, body)
+        meta = full(b"meta", 0, 0, hdlr + pitm + iinf + iloc + idat)
+        ftyp = box(b"ftyp", b"mif1" + b"\x00" * 4 + b"mif1heic")
+        return ftyp + meta + box(b"mdat", pixels)
+
+    return build(len(build(0)) - len(pixels))
+
+
+class TestIsobmffConstructionMethods:
+    """`_scan_iso` resolved every extent as ``base_offset + offset``, an absolute
+    file offset, with no construction_method check.
+
+    For a method-1 item that address is meaningless: the payload lives in the
+    meta-level ``idat`` box. The scanner therefore mined AI markers out of
+    whichever unrelated bytes sat at that position — reporting
+    ``generators=[], is_ai_flagged=False`` on a file where
+    ``b"Midjourney" in data`` was plainly True.
+    """
+
+    EXIF = (b"\x00\x00\x00\x06Exif\x00\x00MM\x00*\x00\x00\x00\x08"
+            b"Software\x00Midjourney v7 hf-job-id 8812")
+
+    def test_the_fixture_really_is_idat_relative(self):
+        """Derive it from the file, never assume the builder did its job."""
+        data = _bmff_idat(self.EXIF)
+        top = ip._iso_boxes(data, 0, len(data))
+        meta = next(b for b in top if b.typ == b"meta")
+        inner = ip._iso_boxes(data, meta.offset + meta.hdr + 4, meta.end)
+        iloc = next(b for b in inner if b.typ == b"iloc")
+        _info, entries = ip._parse_iloc(data, iloc)
+        assert {e["item_id"]: e["construction"] for e in entries} == {1: 1, 2: 0}
+        assert any(b.typ == b"idat" for b in inner)
+
+    def test_the_marker_is_no_longer_mined_from_the_wrong_bytes(self):
+        """THE decision. `b"Midjourney" in data` was True the whole time."""
+        data = _bmff_idat(self.EXIF)
+        assert b"Midjourney" in data
+        rep = ip.scan(data)
+        assert rep.parse_error == ""
+        assert "Midjourney" in rep.generators, "the idat payload was never read"
+        assert rep.is_ai_flagged
+        assert "Higgsfield" in rep.generators
+
+    def test_the_item_is_still_reported(self):
+        rep = ip.scan(_bmff_idat(self.EXIF))
+        assert [s.kind for s in rep.signals] == ["exif"]
+
+    def test_an_unresolvable_method_reads_nothing_rather_than_guessing(self):
+        """Method 2 is item-relative. Reading the absolute offset instead would
+        put arbitrary bytes into the report; reporting nothing at all would hide
+        the item. It must do neither."""
+        data = bytearray(_bmff_idat(self.EXIF))
+        at = data.find(struct.pack(">HHH", 1, 1, 0) + struct.pack(">H", 1))
+        assert at > 0, "fixture layout changed"
+        data[at:at + 6] = struct.pack(">HHH", 1, 2, 0)          # method 1 -> 2
+        rep = ip.scan(bytes(data))
+        assert [s.kind for s in rep.signals] == ["exif"], "the item vanished from the report"
+        assert "construction_method 2" in rep.signals[0].detail
+        assert rep.generators == [], "bytes were read from an unresolvable extent"
+
+    def test_method_0_still_resolves_exactly_as_before(self):
+        """Guard the guard: a resolver that returned b'' for everything would
+        satisfy the negative assertions above."""
+        rep = ip.scan(_bmff([(1, b"Exif", b"", b"Exif\x00\x00 Software Midjourney"),
+                             (2, b"av01", b"", b"\xa5" * 16)]))
+        assert "Midjourney" in rep.generators
+
+    def test_strip_still_refuses_the_idat_item(self):
+        """The strip half was already fail-safe; keep it that way."""
+        with pytest.raises(ProvenanceError, match="construction_method 1"):
+            ip.strip(_bmff_idat(self.EXIF))
+
+
+def _bmff_meta_no_index(mdat: bytes) -> bytes:
+    """ftyp + meta(hdlr only) + mdat — a `meta` with no iinf and no iloc.
+
+    Real files look like this when the item index sits in a box this parser does
+    not index, and `_iso_pixel_digest` bailed out on exactly this shape.
+    """
+    def box(typ: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body) + 8) + typ + body
+
+    hdlr = box(b"hdlr", b"\x00" * 4 + b"\x00" * 4 + b"pict" + b"\x00" * 12 + b"h\x00")
+    meta = box(b"meta", b"\x00\x00\x00\x00" + hdlr)
+    return box(b"ftyp", b"avif" + b"\x00" * 4 + b"avifmif1") + meta + box(b"mdat", mdat)
+
+
+class TestIsoDigestCannotBeSilentlyNarrow:
+    """`_iso_pixel_digest` returned the digest of the EMPTY STRING whenever a
+    `meta` existed but iinf/iloc did not — so two files differing in their
+    entire mdat verified as pixel-identical. A proof that cannot fail is not a
+    proof.
+    """
+
+    def test_two_files_differing_only_in_mdat_are_not_identical(self):
+        a = _bmff_meta_no_index(b"\x11" * 64)
+        b = _bmff_meta_no_index(b"\x22" * 64)
+        assert len(a) == len(b), "the fixtures must differ ONLY in mdat content"
+        assert ip._iso_pixel_digest(a) != ip._iso_pixel_digest(b)
+
+    def test_verify_lossless_rejects_that_pair(self):
+        """THE decision — this is the answer callers actually act on."""
+        ok, note = ip.verify_lossless(_bmff_meta_no_index(b"\x11" * 64),
+                                      _bmff_meta_no_index(b"\x22" * 64))
+        assert not ok, note
+
+    def test_the_digest_is_never_the_empty_sha256(self):
+        empty = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        assert ip._iso_pixel_digest(_bmff_meta_no_index(b"\x11" * 64)) != empty
+
+    def test_an_identical_pair_still_verifies(self):
+        """Guard the guard: a digest that just hashed the whole file would pass
+        every assertion above and reject every legitimate strip."""
+        d = _bmff_meta_no_index(b"\x11" * 64)
+        ok, _note = ip.verify_lossless(d, d)
+        assert ok
+
+    def test_mdat_bytes_no_extent_claims_are_still_hashed(self):
+        """The other half: with a full item index present, bytes inside mdat
+        that no iloc extent accounts for used to fall outside the digest."""
+        base = _bmff([(1, b"av01", b"", b"\xa5" * 16)])
+        assert base.endswith(b"\xa5" * 16)
+        a, b = base + b"\x01" * 8, base + b"\x02" * 8
+        # extend the mdat box header so the appended bytes are INSIDE mdat
+        def grow(d: bytes) -> bytes:
+            top = ip._iso_boxes(d, 0, len(d) - 8)
+            mdat = next(x for x in top if x.typ == b"mdat")
+            return (d[:mdat.offset] + struct.pack(">I", mdat.size + 8)
+                    + d[mdat.offset + 4:])
+        a, b = grow(a), grow(b)
+        assert ip._iso_pixel_digest(a) != ip._iso_pixel_digest(b)
+
+
+class TestTrailingC2paUuidIsNotRefusedOverAMovieBox:
+    """OR-5. The movie-box guard refused every uuid excision, including one that
+    provably shifts nothing: a uuid box beginning at or after the end of the
+    last mdat. Track samples live in mdat, and mdat does not move.
+    """
+
+    def _with_moov(self, *, trailing: bool) -> bytes:
+        def box(typ: bytes, body: bytes) -> bytes:
+            return struct.pack(">I", len(body) + 8) + typ + body
+        blob = b"jumb\x00jumdc2pa manifest softwareAgent gpt-image"
+        uuid = box(b"uuid", ip._C2PA_UUID + blob)
+        ftyp = box(b"ftyp", b"avif" + b"\x00" * 4 + b"avifmif1")
+        moov = box(b"moov", b"\x00" * 16)
+        mdat = box(b"mdat", b"\xa5" * 32)
+        return ftyp + moov + mdat + uuid if trailing else ftyp + moov + uuid + mdat
+
+    def test_a_trailing_uuid_is_excised(self):
+        data = self._with_moov(trailing=True)
+        res = ip.strip(data)
+        assert ip._C2PA_UUID not in res.data
+        assert res.clean and res.lossless and res.changed
+
+    def test_the_mdat_is_byte_identical_afterwards(self):
+        """Why it is safe at all: every byte a stco offset could address stays
+        exactly where it was."""
+        data = self._with_moov(trailing=True)
+        out = ip.strip(data).data
+        assert out == data[:data.find(b"uuid") - 4]
+
+    def test_a_uuid_BEFORE_mdat_is_still_refused(self):
+        """Guard the guard: cutting there shifts mdat, and the digest hashes
+        mdat bodies, so verify_lossless could not see the damage."""
+        with pytest.raises(ProvenanceError, match="movie box"):
+            ip.strip(self._with_moov(trailing=False))
+
+
+class TestSvgProvenanceOutsideMetadata:
+    """`_SVG_META_ELEMENTS` was ('metadata', 'c2pa:manifest'), so provenance
+    written anywhere else was neither reported nor stripped — and strip()
+    returned `clean=True, bytes_removed=0` on a file that plainly carried it.
+    """
+
+    DIRTY = (b'<!-- Generator: Recraft AI 2026, hf-job-id: 8812 -->\n'
+             b'<svg xmlns="http://www.w3.org/2000/svg">'
+             b'<title>A blue square</title>'
+             b'<desc>Generated with Midjourney v7</desc>'
+             b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF><rdf:Description '
+             b'Iptc4xmpExt:digitalSourceType="http://cv.iptc.org/newscodes/'
+             b'digitalsourcetype/trainedAlgorithmicMedia"/></rdf:RDF></x:xmpmeta>'
+             b'<rect width="10" height="10"/></svg>')
+
+    def test_the_verdict_flips(self):
+        """THE decision: scan reported signals=[], generators=[],
+        is_ai_flagged=False on this exact document."""
+        rep = ip.scan(self.DIRTY)
+        assert rep.is_ai_flagged
+        assert "Recraft" in rep.generators and "Higgsfield" in rep.generators
+        assert "Midjourney" in rep.generators
+
+    def test_each_hiding_place_is_reported_separately(self):
+        wheres = {s.where for s in ip.scan(self.DIRTY).signals}
+        assert "SVG:comment" in wheres
+        assert "SVG:<desc>" in wheres
+        assert "SVG:<x:xmpmeta>" in wheres
+
+    def test_strip_actually_removes_them(self):
+        res = ip.strip(self.DIRTY)
+        assert res.changed and res.bytes_removed > 0
+        assert b"Recraft" not in res.data
+        assert b"Midjourney" not in res.data
+        assert b"trainedAlgorithmicMedia" not in res.data
+        assert res.clean
+
+    def test_the_rendered_tree_survives(self):
+        res = ip.strip(self.DIRTY)
+        assert b'<rect width="10" height="10"/>' in res.data
+        assert b"<svg" in res.data and b"</svg>" in res.data
+        assert res.lossless
+
+    def test_the_accessible_name_is_never_deleted(self):
+        """<title> is what a screen reader announces. Mining it is right;
+        deleting it is an accessibility regression, not a strip."""
+        dirty = self.DIRTY.replace(b"<title>A blue square</title>",
+                                   b"<title>Made with Midjourney</title>")
+        rep = ip.scan(dirty)
+        title = [s for s in rep.signals if s.where == "SVG:<title>"]
+        assert title and not title[0].removable
+        assert b"<title>Made with Midjourney</title>" in ip.strip(dirty).data
+
+    def test_an_ordinary_svg_is_still_left_completely_alone(self):
+        """Guard the guard. Reporting EVERY comment/desc/title would make the
+        default policy delete licence headers and author descriptions."""
+        clean = (b'<!-- Copyright 2026 Acme Corp. All rights reserved. -->\n'
+                 b'<svg xmlns="http://www.w3.org/2000/svg">'
+                 b'<title>Logo</title><desc>The company logo, in blue.</desc>'
+                 b'<rect width="10" height="10"/></svg>')
+        rep = ip.scan(clean)
+        assert rep.signals == [] and not rep.is_ai_flagged
+        assert ip.strip(clean).data == clean
+
+    def test_a_document_level_xpacket_wrapper_is_caught(self):
+        doc = (b'<svg xmlns="http://www.w3.org/2000/svg"><rect/>'
+               b'<?xpacket begin="" id="W5M0Mp"?><rdf:RDF>CreatorTool Midjourney'
+               b"</rdf:RDF><?xpacket end='w'?></svg>")
+        rep = ip.scan(doc)
+        assert rep.is_ai_flagged
+        res = ip.strip(doc)
+        assert b"xpacket" not in res.data and b"Midjourney" not in res.data
+
+
+class TestGenericGeneratorNamesDoNotFlagCaptions:
+    """Bare 'Gemini', 'Imagen', 'Grok', 'Recraft', 'Ideogram' matched ANYWHERE
+    in a metadata record, free caption text included — so a photograph flipped
+    is_ai_flagged, and `--fail-on-flagged` would have failed CI on it.
+    """
+
+    CAPTION = (b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF><rdf:Description '
+               b'xmp:CreatorTool="Adobe Lightroom 14.2">'
+               b'<dc:description>Gemini constellation over Vancouver, shot on a '
+               b'Google Pixel</dc:description></rdf:Description></rdf:RDF></x:xmpmeta>')
+    TOOL = (b'<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF><rdf:Description '
+            b'xmp:CreatorTool="Gemini"/></rdf:RDF></x:xmpmeta>')
+
+    def _png_xmp(self, xmp: bytes) -> bytes:
+        return _png(chunks=[(b"iTXt", b"XML:com.adobe.xmp\x00\x00\x00\x00\x00" + xmp)])
+
+    def test_a_caption_mentioning_gemini_is_not_ai_flagged(self):
+        rep = ip.scan(self._png_xmp(self.CAPTION))
+        assert not rep.is_ai_flagged, "a photograph was reported AI-generated"
+        assert rep.ai_generators == []
+
+    def test_but_the_match_is_still_reported_to_the_operator(self):
+        """Suppressing the FLAG must not mean hiding the evidence."""
+        rep = ip.scan(self._png_xmp(self.CAPTION))
+        assert "Google Gemini" in rep.generators
+
+    def test_the_same_name_in_creatortool_does_flag(self):
+        """THE other half. A guard that never flagged would pass the test above."""
+        rep = ip.scan(self._png_xmp(self.TOOL))
+        assert rep.is_ai_flagged
+        assert rep.ai_generators == ["Google Gemini"]
+
+    @pytest.mark.parametrize("needle", [b"Grok", b"Imagen", b"Recraft", b"Ideogram"])
+    def test_every_generic_needle_behaves_the_same_way(self, needle):
+        caption = b"<dc:description>a photo of a " + needle + b" in the wild</dc:description>"
+        field = b'<rdf:Description xmp:CreatorTool="' + needle + b'"/>'
+        assert not ip.scan(self._png_xmp(caption)).is_ai_flagged
+        assert ip.scan(self._png_xmp(field)).is_ai_flagged
+
+    def test_an_unambiguous_name_flags_from_anywhere(self):
+        """Guard the guard: field-scoping must not be applied to needles that
+        were never ambiguous, or every non-XMP container stops flagging."""
+        rep = ip.scan(self._png_xmp(b"<dc:description>made with Midjourney</dc:description>"))
+        assert rep.is_ai_flagged and rep.ai_generators == ["Midjourney"]
+
+
+class TestGeneratorPatternCoverage:
+    """No pattern for the Stable-Diffusion / ComfyUI PNG text conventions or
+    most 2026 vendors, and 'Amazon Nova Canvas' resolved to the NON-AI editor
+    label 'Canva' — so an AWS-generated image scanned as merely edited.
+    """
+
+    @pytest.mark.parametrize("blob,label", [
+        (b"Software\x00Amazon Nova Canvas", "Amazon Nova"),
+        (b"parameters\x00a cat, Negative prompt: blurry, Steps: 20", "Stability AI"),
+        (b"Software\x00Model hash: a1b2c3d4", "Stability AI"),
+        (b"Software\x00ComfyUI", "ComfyUI"),
+        (b"Software\x00AUTOMATIC1111 webui", "AUTOMATIC1111"),
+        (b"Software\x00InvokeAI 5.4", "InvokeAI"),
+        (b"Software\x00Fooocus v2", "Fooocus"),
+        (b"Software\x00FLUX.2 [dev]", "Black Forest Labs FLUX"),
+        (b"Software\x00Runway Gen-4", "Runway"),
+        (b"Software\x00Sora", "OpenAI Sora"),
+        (b"Software\x00Kling 2.5", "Kuaishou Kling"),
+        (b"Software\x00Hunyuan Image", "Tencent Hunyuan"),
+        (b"Software\x00Krea", "Krea AI"),
+        (b"Software\x00Meta AI", "Meta AI"),
+        (b"Software\x00ideogram/2.0", "Ideogram"),
+        (b"Software\x00recraft v3", "Recraft"),
+    ])
+    def test_each_generator_is_recognised_and_flags(self, blob, label):
+        rep = ip.scan(_png(chunks=[(b"tEXt", blob)]))
+        assert label in rep.generators, f"{blob!r} produced {rep.generators}"
+        assert rep.is_ai_flagged, f"{label} did not set the AI flag"
+
+    def test_nova_canvas_is_not_the_canva_editor(self):
+        """THE decision. 'Canva' is a substring of 'Amazon Nova Canvas', so the
+        AWS generator resolved to the non-AI editor label and did not flag."""
+        rep = ip.scan(_png(chunks=[(b"tEXt", b"Software\x00Amazon Nova Canvas")]))
+        assert "Canva" not in rep.generators
+        assert rep.ai_generators == ["Amazon Nova"] and rep.is_ai_flagged
+
+    def test_the_canva_editor_itself_still_resolves(self):
+        """Guard the guard: an anchor that broke 'Canva' outright would pass."""
+        rep = ip.scan(_png(chunks=[(b"tEXt", b"Software\x00Canva")]))
+        assert rep.generators == ["Canva"] and not rep.is_ai_flagged
+
+    def test_flux_does_not_match_mid_word(self):
+        rep = ip.scan(_png(chunks=[(b"tEXt", b"Comment\x00measured the INFLUX. done")]))
+        assert "Black Forest Labs FLUX" not in rep.generators
+
+
+class TestIccProfileIsMined:
+    """`keep_icc` defaults True — dropping a profile shifts colours — so a
+    vendor name inside one SHIPS and survives every future run. The scanners
+    skipped the payload before the miner saw it, producing a confident
+    "clean, 0 signals, not AI-flagged".
+    """
+
+    DESC = b"desc\x00\x00\x00\x00Adobe Firefly generated profile hf-job-id 42"
+
+    def test_jpeg_icc_is_mined(self):
+        rep = ip.scan(_jpeg(segments=[(0xE2, b"ICC_PROFILE\x00\x01\x01" + self.DESC)]))
+        assert "Adobe Firefly" in rep.generators and "Higgsfield" in rep.generators
+
+    def test_it_flips_the_verdict(self):
+        """THE decision — the miner WOULD have found it; it was never handed
+        the payload."""
+        rep = ip.scan(_jpeg(segments=[(0xE2, b"ICC_PROFILE\x00\x01\x01" + self.DESC)]))
+        assert rep.is_ai_flagged
+
+    def test_the_profile_is_still_byte_identical_after_a_default_strip(self):
+        """Non-negotiable: dropping ICC shifts client colours. Reporting it must
+        not start removing it."""
+        orig = _jpeg(segments=[(0xE2, b"ICC_PROFILE\x00\x01\x01" + self.DESC)])
+        res = ip.strip(orig)
+        assert self.DESC in res.data
+        assert res.data == orig, "the retained profile must not move or change"
+
+    def test_it_is_reported_as_not_removable(self):
+        rep = ip.scan(_jpeg(segments=[(0xE2, b"ICC_PROFILE\x00\x01\x01" + self.DESC)]))
+        icc = [s for s in rep.signals if "ICC" in s.detail]
+        assert icc and not icc[0].removable
+
+    def test_png_iccp_is_decompressed_then_mined(self):
+        payload = b"p\x00\x00" + zlib.compress(self.DESC)
+        rep = ip.scan(_png(chunks=[(b"iCCP", payload)]))
+        assert "Adobe Firefly" in rep.generators and rep.is_ai_flagged
+
+    def test_webp_iccp_is_mined(self):
+        rep = ip.scan(_webp(chunks=[(b"ICCP", self.DESC)], vp8x_flags=0x20))
+        assert "Adobe Firefly" in rep.generators and rep.is_ai_flagged
+
+    def test_a_plain_profile_produces_no_signal(self):
+        """Guard the guard: every image with a colour profile must not become
+        'dirty' just because the profile now gets read."""
+        rep = ip.scan(_jpeg(segments=[(0xE2, b"ICC_PROFILE\x00\x01\x01desc\x00sRGB IEC61966")]))
+        assert rep.signals == [] and not rep.is_ai_flagged
+
+
+class TestOrientationSalvageIsNotJpegOnly:
+    """`keep_orientation` was implemented ONLY inside `_strip_jpeg`, while the
+    Policy docstring stated an unqualified contract. The same image stripped as
+    a WebP or PNG came out silently rotated — the exact harm the option exists
+    to prevent, and the reason it defaults True.
+    """
+
+    TIFF6 = staticmethod(lambda: ip._minimal_tiff_orientation(6))
+
+    def _png_rot(self) -> bytes:
+        # Padded, so it is NOT the module's own minimal block.
+        return _png(chunks=[(b"eXIf", ip._minimal_tiff_orientation(6) + b"\x00" * 8)])
+
+    def _webp_rot(self) -> bytes:
+        return _webp(chunks=[(b"EXIF", ip._minimal_tiff_orientation(6) + b"\x00" * 8)],
+                     vp8x_flags=ip._WEBP_VP8X_EXIF)
+
+    def _png_orientation(self, data: bytes) -> int:
+        for _off, ctype, payload, _t in ip._png_chunks(data):
+            if ctype == b"eXIf":
+                return ip._tiff_orientation(payload)
+        return 0
+
+    def _webp_orientation(self, data: bytes) -> int:
+        for _off, fourcc, payload, _t in ip._webp_chunks(data):
+            if fourcc == b"EXIF":
+                return ip._tiff_orientation(ip._webp_exif_tiff(payload))
+        return 0
+
+    def test_the_png_fixture_really_is_rotated(self):
+        assert self._png_orientation(self._png_rot()) == 6
+
+    def test_png_orientation_survives_the_strip(self):
+        """THE decision: removed=['exif'], clean=True, and the photo on its side."""
+        res = ip.strip(self._png_rot())
+        assert res.removed, "the fixture must actually have something stripped"
+        assert self._png_orientation(res.data) == 6, "the PNG was silently rotated"
+
+    def test_webp_orientation_survives_the_strip(self):
+        res = ip.strip(self._webp_rot())
+        assert res.removed
+        assert self._webp_orientation(res.data) == 6, "the WebP was silently rotated"
+
+    def test_the_webp_exif_feature_bit_stays_set(self):
+        """An EXIF chunk still ships, so clearing the VP8X bit makes the file
+        malformed to a strict decoder."""
+        out = ip.strip(self._webp_rot()).data
+        vp8x = next(pl for _o, fc, pl, _t in ip._webp_chunks(out) if fc == b"VP8X")
+        assert vp8x[0] & ip._WEBP_VP8X_EXIF
+
+    @pytest.mark.parametrize("kind", ["png", "webp"])
+    def test_stripping_twice_is_a_fixpoint(self, kind):
+        orig = self._png_rot() if kind == "png" else self._webp_rot()
+        once = ip.strip(orig).data
+        assert ip.strip(once).data == once
+
+    @pytest.mark.parametrize("kind", ["png", "webp"])
+    def test_the_provenance_still_goes(self, kind):
+        """Guard the guard: re-emitting must not mean keeping the original."""
+        pad = b"Software Midjourney" + ip._minimal_tiff_orientation(6)
+        orig = (_png(chunks=[(b"eXIf", pad)]) if kind == "png"
+                else _webp(chunks=[(b"EXIF", pad)], vp8x_flags=ip._WEBP_VP8X_EXIF))
+        res = ip.strip(orig)
+        assert b"Midjourney" not in res.data and res.clean and res.lossless
+
+    @pytest.mark.parametrize("kind", ["png", "webp"])
+    def test_orientation_1_is_not_reemitted(self, kind):
+        pad = ip._minimal_tiff_orientation(1) + b"\x00" * 8
+        orig = (_png(chunks=[(b"eXIf", pad)]) if kind == "png"
+                else _webp(chunks=[(b"EXIF", pad)], vp8x_flags=ip._WEBP_VP8X_EXIF))
+        got = ip.strip(orig).data
+        assert b"eXIf" not in got and b"EXIF" not in got
+
+    @pytest.mark.parametrize("kind", ["png", "webp"])
+    def test_the_policy_can_still_decline(self, kind):
+        orig = self._png_rot() if kind == "png" else self._webp_rot()
+        got = ip.strip(orig, policy=Policy(keep_orientation=False)).data
+        assert b"eXIf" not in got and b"EXIF" not in got
+
+    def test_png_pixels_are_untouched(self):
+        orig = self._png_rot()
+        res = ip.strip(orig)
+        assert res.lossless
+        ok, note = ip.verify_lossless(orig, res.data)
+        assert ok, note
+
+
+class TestNoDeadPrivateHelpers:
+    """`_png_rebuild_chunk` and `_iso_find` sat with zero call sites anywhere —
+    definitions only, 0% coverage, and `_iso_find`'s iinf version-1 branch was
+    unvalidated guesswork about a 2-vs-4-byte count field that had never
+    executed. CLAUDE.md's Script Creation Gate covers new exported functions
+    with no callers; nothing enforced it, so this does.
+    """
+
+    def _defs_and_refs(self):
+        import ast
+        src = (ROOT / "scripts" / "image_provenance.py").read_text()
+        tree = ast.parse(src)
+        defs = [n.name for n in tree.body
+                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and n.name.startswith("_") and not n.name.startswith("__")]
+        haystack = "\n".join(
+            (ROOT / "scripts" / f).read_text()
+            for f in ("image_provenance.py", "watermark_cleaner.py",
+                      "tests/test_image_provenance.py",
+                      "tests/test_image_provenance_stress.py")
+        )
+        return defs, haystack
+
+    def test_every_private_helper_has_a_caller(self):
+        defs, haystack = self._defs_and_refs()
+        assert defs, "found no helpers to check — the AST walk is broken"
+        dead = []
+        for name in defs:
+            # one hit is the `def` itself; anything more is a reference
+            if haystack.count(name) <= 1:
+                dead.append(name)
+        assert not dead, (
+            f"defined but never called: {sorted(dead)} — wire it in or delete it "
+            "(CLAUDE.md Script Creation Gate)")
+
+    def test_the_predicate_can_actually_fail(self):
+        """Verify the verifier. Run the SAME predicate over a haystack holding
+        nothing but a definition and require it to call that helper dead —
+        otherwise the test above would pass on a module full of dead code.
+
+        (Naming a sentinel string here would not work: this file is part of the
+        haystack, so the literal would find itself.)
+        """
+        name = "_orphan" + "ed_helper"
+        haystack = f"def {name}():\n    return 1\n"
+        assert haystack.count(name) <= 1, "the dead-code predicate cannot see a definition-only helper"
+
+    def test_a_helper_with_one_caller_is_not_reported_dead(self):
+        """The other direction, so the predicate is not merely always-true."""
+        name = "_liv" + "e_helper"
+        haystack = f"def {name}():\n    return 1\n\nx = {name}()\n"
+        assert haystack.count(name) > 1

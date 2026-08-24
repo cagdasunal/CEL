@@ -41,6 +41,20 @@ changed, re-points what it can and **refuses** any asset with references it
 cannot fix, unless ``--allow-new-asset-id`` is passed. It never leaves a page
 pointing at a broken URL to make a number look better.
 
+Exit codes
+----------
+Documented because the CEL cron branches on them, and code 2 used to mean both
+"a real run partially failed" and "you mistyped a flag" — indistinguishable to
+the caller that has to decide whether to alert.
+
+  0    success — everything asked for was done
+  1    findings present, nothing broken (`scan --fail-on-flagged`, `verify` DIRTY)
+  2    processing errors, unreadable input, an UNKNOWN verdict, or a refusal
+  3    refused for want of confirmation (WATERMARK_CLEANER_CONFIRM)
+  4    no input matched (no image files, no lineage corpus)
+  64   usage error — argparse, or a subcommand invoked with no target
+  130  interrupted
+
 Called by
 ---------
   CLI (operator, on request)
@@ -52,15 +66,19 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import fnmatch
+import http.client
 import io
 import json
 import pathlib
 import os
+import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
+from html import unescape as _html_unescape
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -160,8 +178,13 @@ def resolve_site_token(site_nickname: str, override: str | None = None) -> str |
     authenticate as CEL and 404 on every asset.
 
     Resolution order: explicit override -> the site's own env var -> that name in
-    .env -> the generic token. Returns None when nothing resolves, so the caller
-    can fail loudly rather than firing unauthenticated requests.
+    .env -> the generic (CEL) token. The generic fallback is NEVER silent: it is
+    the CEL grant, which has no authority on any other site, so a run that takes
+    it 404s on every asset. Saying so on stderr turns that into a named config
+    error instead of an unexplained stack trace.
+
+    It falls back rather than returning None because the fallback is correct for
+    CEL itself and for a checkout with no registry mirror.
     """
     if override:
         return override
@@ -188,6 +211,14 @@ def resolve_site_token(site_nickname: str, override: str | None = None) -> str |
                         val = val[1:-1]
                     if val:
                         return val
+    if env_name != "WEBFLOW_API_TOKEN" and site_nickname != "cel":
+        why = ("its registry entry names no webflow_connection.rest_token_env"
+               if not env_name
+               else f"{env_name} is set in neither the environment nor .env")
+        print(f"  ! no REST token of its own for site '{site_nickname}' ({why}); falling back "
+              f"to the generic CEL grant, which has NO authority there — expect 404 on every "
+              f"asset. Fix: add webflow_connection.rest_token_env to "
+              f"{ROOT / 'sites' / 'registry.json'} and set it in .env.", file=sys.stderr)
     return get_api_token()
 
 
@@ -243,6 +274,15 @@ def render_markdown_summary(summary: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+PIXEL_WATERMARK_CAVEAT = (
+    "\n  This tool reads and removes METADATA only. Nothing above is a statement\n"
+    "  about pixel-domain watermarks (SynthID, the watermark OpenAI declares via\n"
+    "  c2pa.watermarked): they live in the image samples, this tool cannot see or\n"
+    "  remove them, and no lossless operation can. Never describe an image these\n"
+    "  commands touched as watermark-free.\n"
+)
+
+
 def load_known_clean(path: Path) -> set[str]:
     """Asset ids a previous run proved carry no removable metadata.
 
@@ -272,10 +312,22 @@ def load_known_clean(path: Path) -> set[str]:
         # asset is the new one.
         if action == "replaced":
             new_id = row.get("new_asset_id")
-            if new_id and row.get("verify", {}).get("clean") is not False:
+            # POSITIVE proof only. `is not False` credited two rows that prove
+            # nothing: a --no-verify run (verify == {}, so .get() is None) and a
+            # shape-corrupt row. A replace that chose not to verify leaves the
+            # new asset to be confirmed by the next scan — one fetch, which is
+            # the correct price for the claim.
+            v = row.get("verify")
+            if new_id and isinstance(v, dict) and v.get("clean") is True:
                 known.add(new_id)
             continue
         # incomplete_repoint / verify_failed / refused_* / error prove nothing.
+        # Neither does a row produced under a --keep-* policy: "carries nothing
+        # this policy wanted to remove" is not "carries nothing". Crediting those
+        # let a single `--keep-c2pa` preview permanently evict a genuinely
+        # C2PA-bearing asset from every later nightly sweep.
+        if row.get("policy_narrowed"):
+            continue
         if action == "already_clean" and aid:
             known.add(aid)
         elif row.get("mode") == "scan-asset" and aid and not row.get("signals"):
@@ -337,6 +389,17 @@ def load_superseded(path: Path) -> dict[str, str]:
     return out
 
 
+def _row(mode: str, **kw) -> dict:
+    """Every log row carries the same envelope: ts + mode, then its payload.
+
+    Built as a helper because the three lineage rows drifted — the fetch-error
+    one carried an asset_id with no ts and no mode, so it could not be filtered
+    by mode and (before it gained an explicit action) sat one key away from
+    being read as proof of cleanliness.
+    """
+    return {"ts": utc_iso(), "mode": mode, **kw}
+
+
 def append_jsonl(path: Path, rows: list[dict]) -> None:
     if not rows:
         return
@@ -352,7 +415,7 @@ RETRY_BACKOFF = 0.75      # seconds; doubled per attempt (build_live_page_index.
 PAGE_HARD_CAP = 1000          # 100k records; a runaway-loop backstop, not a real bound
 
 
-def _paginate(token: str, url_for: "callable", key: str, *,
+def _paginate(token: str, url_for: Callable[[int, int], str], key: str, *,
               limit: int | None = None) -> list[dict]:
     """Page through a Webflow list endpoint until it is genuinely exhausted.
 
@@ -482,6 +545,8 @@ class Reference:
     is_draft: bool = False
     is_archived: bool = False
     was_published: bool = False
+    last_published: str = ""   # ISO; "" when never published
+    last_updated: str = ""     # ISO; "" when the API did not report one
 
 
 def _url_key(url: str) -> str:
@@ -600,6 +665,8 @@ def build_reference_index(token: str, site_id: str, *,
                 item_id=item.get("id", ""), item_slug=fd.get("slug", ""),
                 is_draft=bool(item.get("isDraft")), is_archived=bool(item.get("isArchived")),
                 was_published=bool(item.get("lastPublished")),
+                last_published=str(item.get("lastPublished") or ""),
+                last_updated=str(item.get("lastUpdated") or ""),
             )
             for slug in fields["image"]:
                 val = fd.get(slug)
@@ -628,6 +695,23 @@ def build_reference_index(token: str, site_id: str, *,
         if progress:
             print(f"    indexed {cslug:32} {len(items):>4} items  {n_refs:>4} image refs", flush=True)
     return index, summaries
+
+
+def has_unpublished_edits(ref: Reference) -> bool:
+    """True when the item was carrying somebody's pending edits before we touched it.
+
+    ``--auto-publish`` publishes the whole ITEM, not our one field. An item whose
+    ``lastUpdated`` is newer than its ``lastPublished`` holds unfinished Editor
+    work, and pushing that live is a content change nobody asked for — the gate
+    was "has it ever been published?", which is a different question.
+
+    When the API reports no ``lastUpdated`` we cannot tell, and an invented hold
+    would silently stop publishing everywhere. Unknown therefore means "no
+    pending edits", which is the pre-existing behaviour.
+    """
+    if not ref.last_updated:
+        return False
+    return ref.last_updated > (ref.last_published or "")
 
 
 def lookup_refs(index: dict[str, list], url: str) -> tuple[list, str]:
@@ -713,7 +797,13 @@ def build_live_page_index(site_url: str, *, limit: int = 0, progress: bool = Tru
 
     try:
         sitemap = _get(f"{base}/sitemap.xml")
-    except (urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError) as e:
+        # ValueError included deliberately: `urllib.request.Request` raises it
+        # for a URL with no scheme ("englishcollege.com/sitemap.xml"), which is
+        # a plausible --site-url typo. Uncaught it killed purge with a traceback
+        # AFTER every asset had been downloaded and scanned; caught, it degrades
+        # to "no evidence", which makes purge hold everything — the conservative
+        # outcome in front of an irreversible delete.
         print(f"    sitemap unreachable ({e}) — live-page index unavailable")
         return {}, [], ["<sitemap>"]
 
@@ -728,7 +818,7 @@ def build_live_page_index(site_url: str, *, limit: int = 0, progress: bool = Tru
         for sm in page_urls[:20]:
             try:
                 nested += _re.findall(r"<loc>\s*([^<\s]+)\s*</loc>", _get(sm))
-            except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+            except (urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError):
                 failures.append(sm)
         page_urls = nested
     if limit and len(page_urls) > limit:
@@ -750,7 +840,7 @@ def build_live_page_index(site_url: str, *, limit: int = 0, progress: bool = Tru
     for i, pu in enumerate(page_urls, 1):
         try:
             html = _get(pu)
-        except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+        except (urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError):
             failures.append(pu)
             continue
         fetched.append(pu)
@@ -767,7 +857,7 @@ def build_live_page_index(site_url: str, *, limit: int = 0, progress: bool = Tru
             if css_url not in css_cache:
                 try:
                     css_cache[css_url] = list(set(img_re.findall(_get(css_url))))
-                except (urllib.error.HTTPError, urllib.error.URLError, OSError):
+                except (urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError):
                     css_cache[css_url] = []
                     failures.append(css_url)
             for m in css_cache[css_url]:
@@ -777,7 +867,9 @@ def build_live_page_index(site_url: str, *, limit: int = 0, progress: bool = Tru
             print(f"    scanned {i}/{len(page_urls)} pages…", flush=True)
 
     if failures:
-        print(f"    ! {len(failures)} page(s) could not be fetched — their references are UNKNOWN")
+        shown = ", ".join(failures[:3]) + (f" (+{len(failures) - 3} more)" if len(failures) > 3 else "")
+        print(f"    ! {len(failures)} page(s) could not be fetched — their references are "
+              f"UNKNOWN: {shown}")
     return index, fetched, failures
 
 
@@ -789,6 +881,13 @@ def repoint_reference(token: str, ref: Reference, *, old_url: str, new_url: str,
     url = f"{WEBFLOW_API_BASE}/collections/{ref.collection_id}/items/{ref.item_id}"
     item = rate_limited_request("GET", url, token)
     fd = dict(item.get("fieldData", {}) or {})
+    # LIVE state, not the index's snapshot. The Reference was built when the run
+    # started; an editor who archived or un-published the item since then had
+    # that undone by a PATCH echoing the stale flags back — a re-point silently
+    # un-archiving a client's item is a content change we were never asked to make.
+    live_draft = bool(item.get("isDraft"))
+    live_archived = bool(item.get("isArchived"))
+    before_field = fd.get(ref.field_slug)
     changed = False
 
     def _same(candidate: str) -> bool:
@@ -872,18 +971,35 @@ def repoint_reference(token: str, ref: Reference, *, old_url: str, new_url: str,
             if not chosen and len(loose) > 1:
                 return {"status": "ref-ambiguous", "ref": dataclasses.asdict(ref),
                         "candidates": sorted(loose)}
-            out = html
-            for src in chosen:
-                out = out.replace(src, new_url)
+            # Rewrite the RAW attribute text, and derive `changed` from the
+            # RESULT rather than from the match. `_iter_richtext_srcs` returns
+            # HTML-DECODED srcs, so a body holding
+            #   <img src="…/hero.png?w=800&amp;q=80">
+            # yields "…?w=800&q=80", which `str.replace` never finds — yet
+            # `changed = True` was set from the match, so repoint_reference
+            # PATCHed byte-identical HTML back and returned "repointed". The
+            # CMS still pointed at the un-stripped file and the log said done.
+            def _swap(m: re.Match[str]) -> str:
+                return (f"{m.group(1)}{new_url}{m.group(3)}"
+                        if _html_unescape(m.group(2)) in chosen else m.group(0))
+
+            out = re.sub(r'(src=["\'])([^"\']*)(["\'])', _swap, html, flags=re.I) if chosen else html
+            if out != html:
                 changed = True
-            if changed:
                 fd[ref.field_slug] = out
 
     if not changed:
         return {"status": "ref-stale", "ref": dataclasses.asdict(ref)}
+    if fd.get(ref.field_slug) == before_field:
+        # Never PATCH bytes that did not move and call it a re-point. A no-op
+        # write is indistinguishable from success in the log, and the caller
+        # counts it toward n_ok — which is how a half-finished run reported
+        # "repointed 3/3".
+        return {"status": "no-op", "ref": dataclasses.asdict(ref)}
     patch_item(token, ref.collection_id, ref.item_id, fd,
-               is_draft=ref.is_draft, is_archived=ref.is_archived)
-    return {"status": "repointed", "ref": dataclasses.asdict(ref)}
+               is_draft=live_draft, is_archived=live_archived)
+    return {"status": "repointed", "ref": dataclasses.asdict(ref),
+            "is_draft": live_draft, "is_archived": live_archived}
 
 
 # ── verification ─────────────────────────────────────────────────────────────
@@ -992,6 +1108,12 @@ def _print_report(label: str, rep: ip.Report, *, verbose: bool) -> None:
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
+    # `scan` accepted the four policy flags through common() and then ignored
+    # them, so `scan --keep-c2pa` reported "1 AI-flagged, 81 B removable" on the
+    # very file `clean --keep-c2pa` called already clean. The two commands must
+    # answer the same question from the same flags.
+    policy = _policy_from_args(args)
+    narrowed = policy != Policy()
     rows: list[dict] = []
     totals = {"files": 0, "flagged": 0, "with_metadata": 0, "removable_bytes": 0,
               "undetectable": 0, "unreadable": 0}
@@ -1011,26 +1133,39 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 totals["unreadable"] += 1
             if rep.is_ai_flagged:
                 totals["flagged"] += 1
-            if any(s.removable for s in rep.signals):
+            wanted = [s for s in rep.signals if s.removable and policy.wants(s.kind)]
+            if wanted:
                 totals["with_metadata"] += 1
-            totals["removable_bytes"] += rep.removable_bytes
+            totals["removable_bytes"] += sum(s.length for s in wanted)
             if rep.undetectable_watermarks:
                 totals["undetectable"] += 1
             if rep.signals or args.all:
                 _print_report(str(p.relative_to(ROOT) if p.is_relative_to(ROOT) else p),
                               rep, verbose=args.verbose)
-            rows.append({"ts": utc_iso(), "mode": "scan-local", "path": str(p), **rep.as_dict()})
+            row = _row("scan-local", path=str(p), **rep.as_dict())
+            if narrowed:
+                row["policy_narrowed"] = True
+            rows.append(row)
 
     if args.site:
         cfg = load_site_config(args.site)
         token = resolve_site_token(args.site, getattr(args, "token", None))
         site_id = cfg["webflow_site_id"]
-        assets = list_assets(token, site_id, limit=args.limit)
+        # Fetch, THEN filter, THEN slice. Passing --limit into list_assets meant
+        # an incremental sweep (`--limit 200 --skip-known-clean`) filtered the
+        # SAME first 200 every night: once they were proven clean the run
+        # scanned 0 assets and still printed a green "AI-flagged 0". The limit
+        # must bound the UNCHECKED work, which is the only thing it is for.
+        assets = list_assets(token, site_id)
         known = load_known_clean(Path(args.skip_known_clean)) if args.skip_known_clean else set()
         if known:
             before_n = len(assets)
             assets = [a for a in assets if a.get("id") not in known]
             print(f"\n  {before_n - len(assets)} asset(s) already proven clean — skipping them.")
+        if args.limit and len(assets) > args.limit:
+            print(f"  --limit {args.limit}: examining {args.limit} of "
+                  f"{len(assets)} unchecked asset(s) this run.")
+            assets = assets[:args.limit]
 
         # BOTH surfaces. This is THE "is my site clean?" command, and it saw the
         # asset list only. `GET /sites/{id}/assets` does not return images
@@ -1076,7 +1211,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 continue
             try:
                 rep, size = fetch_and_scan(url)
-            except (urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
+            except (urllib.error.HTTPError, urllib.error.URLError,
+                    http.client.HTTPException, OSError) as e:
+                # http.client.IncompleteRead is an HTTPException, NOT an OSError
+                # — a CDN truncating one body aborted the entire nightly sweep
+                # with a traceback instead of logging one unreadable asset.
                 print(f"  ERROR       {name}: {type(e).__name__}: {e}")
                 totals["unreadable"] += 1
                 continue
@@ -1085,16 +1224,19 @@ def cmd_scan(args: argparse.Namespace) -> int:
                 totals["unreadable"] += 1
             if rep.is_ai_flagged:
                 totals["flagged"] += 1
-            if any(s.removable for s in rep.signals):
+            wanted = [s for s in rep.signals if s.removable and policy.wants(s.kind)]
+            if wanted:
                 totals["with_metadata"] += 1
-            totals["removable_bytes"] += rep.removable_bytes
+            totals["removable_bytes"] += sum(s.length for s in wanted)
             if rep.undetectable_watermarks:
                 totals["undetectable"] += 1
             if rep.signals or args.all:
                 _print_report(f"{name}  ({a.get('asset_id')})", rep, verbose=args.verbose)
-            rows.append({"ts": utc_iso(), "mode": "scan-asset", "asset_id": a.get("asset_id"),
-                         "surface": a["surface"],
-                         "name": name, "url": url, **rep.as_dict()})
+            row = _row("scan-asset", asset_id=a.get("asset_id"), surface=a["surface"],
+                       name=name, url=url, **rep.as_dict())
+            if narrowed:
+                row["policy_narrowed"] = True
+            rows.append(row)
 
     # The WARNING above scrolls; this block is what gets read. "AI-flagged 0" is
     # a clean bill of health, and printing it after reading 0 of 5 assets states
@@ -1113,7 +1255,8 @@ def cmd_scan(args: argparse.Namespace) -> int:
         cov = f"   of {read} read" + (f", {unread} NOT read" if unread else "")
         print(f"  AI-flagged (C2PA/IPTC){totals['flagged']:>4}   <- what a crawler reads as "
               f"'AI-generated'{cov}")
-    print(f"  removable            {_fmt_bytes(totals['removable_bytes'])}")
+    print(f"  removable{' under this policy' if narrowed else '           '} "
+          f"  {_fmt_bytes(totals['removable_bytes'])}")
     if totals["undetectable"]:
         print(f"  pixel watermark declared on {totals['undetectable']} image(s) — NOT removable by any lossless tool")
     print(f"{'─' * 70}\n")
@@ -1166,12 +1309,25 @@ def cmd_clean(args: argparse.Namespace) -> int:
     files = iter_local_images(args.local)
     if not files:
         print("No image files matched.")
-        return 1
+        return 4        # "nothing to do", not "something went wrong" — see the header
     out_dir = Path(args.out).expanduser() if args.out else None
     backup_dir = Path(args.backup_dir).expanduser() if args.backup_dir else None
     rows: list[dict] = []
     n_changed = n_skipped = n_error = n_unreadable = n_notimage = 0
     saved = 0
+
+    # Where --out mirrors FROM. `out_dir / p.name` flattened the tree, so
+    # coll/a/hero.png and coll/b/hero.png both wrote out/hero.png — the second
+    # silently overwriting the first while the summary counted two. Mirroring
+    # from the inputs' common ancestor keeps them apart without burying a
+    # single-file run under its own absolute path.
+    common: Path | None = None
+    if out_dir and files:
+        try:
+            common = (files[0].parent if len(files) == 1
+                      else Path(os.path.commonpath([str(f) for f in files])))
+        except ValueError:      # mixed absolute/relative, or different drives
+            common = None
 
     print(f"\n{'Cleaning' if args.apply else 'DRY RUN — would clean'} {len(files)} file(s)\n")
     for p in files:
@@ -1219,10 +1375,24 @@ def cmd_clean(args: argparse.Namespace) -> int:
                 dest = backup_dir / mirror
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
-            target = (out_dir / p.name) if out_dir else p
+            # MIRROR the tree, exactly as the backup branch above does. Writing
+            # `out_dir / p.name` collapsed coll/a/hero.png and coll/b/hero.png
+            # onto one file: the second silently overwrote the first while the
+            # summary counted both as stripped.
             if out_dir:
-                out_dir.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(res.data)
+                try:
+                    target = out_dir / p.relative_to(common) if common else out_dir / p.name
+                except ValueError:
+                    target = out_dir / p.name
+            else:
+                target = p
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # Temp file + os.replace: a plain write_bytes over the SOURCE leaves
+            # a truncated original if the process dies mid-write, and this is
+            # the one path with no backup of its own when --backup-dir is unset.
+            tmp = target.with_name(target.name + ".wc-tmp")
+            tmp.write_bytes(res.data)
+            os.replace(tmp, target)
 
     print(f"\n{'─' * 70}")
     print(f"  {'stripped' if args.apply else 'would strip'}  {n_changed}   "
@@ -1281,9 +1451,18 @@ def cmd_replace(args: argparse.Namespace) -> int:
         print("  ! --check-live-pages given but no domain on record for this site "
               "(pass --site-url, or add `live_url`/`staging_url` to site.json)\n")
     else:
-        print("  (live-page index skipped — pass --check-live-pages to enable)\n")
+        # This branch is only reachable by passing --no-check-live-pages, so
+        # "pass --check-live-pages to enable" advised re-running with a flag
+        # that is already the default and changes nothing. Say what it costs.
+        print("  (live-page index DISABLED by --no-check-live-pages — every asset whose id\n"
+              "   changes will be REFUSED, because nothing can prove a Designer page does\n"
+              "   not reference it. Pass --allow-new-asset-id to accept that risk.)\n")
 
-    assets = list_assets(token, site_id, limit=args.limit)
+    # Fetch, THEN filter, THEN slice — same ordering fix as cmd_scan. Passing
+    # --limit into list_assets bounded the WHOLE SITE, so once the first N were
+    # proven clean or superseded an incremental run examined zero assets and
+    # exited 0 green, night after night.
+    assets = list_assets(token, site_id)
     if getattr(args, "only_referenced", False):
         # `--collections` alone only narrows the REFERENCE index; without this the
         # tool would still walk every asset on the site and merely re-point fewer
@@ -1320,12 +1499,35 @@ def cmd_replace(args: argparse.Namespace) -> int:
     if args.asset_id:
         wanted = {a.strip() for a in args.asset_id.split(",") if a.strip()}
         assets = [a for a in assets if a.get("id") in wanted]
+    if args.limit and len(assets) > args.limit:
+        print(f"  --limit {args.limit}: examining {args.limit} of {len(assets)} "
+              "unchecked asset(s) this run.")
+        assets = assets[:args.limit]
     print(f"  Examining {len(assets)} asset(s)…\n")
 
     rows: list[dict] = []
     stats = {"examined": 0, "clean": 0, "stripped": 0, "repointed": 0,
              "refused": 0, "errors": 0, "bytes": 0, "undetectable": 0, "unreadable": 0}
     to_publish: dict[str, set[str]] = {}
+
+    def emit(row: dict) -> None:
+        """Persist each row AS IT HAPPENS.
+
+        Buffering the whole run and flushing once after the loop meant an
+        interrupt — Ctrl-C, a killed CI job — discarded the entire old->new
+        mapping of uploads and CMS PATCHes that had ALREADY landed, leaving the
+        site half-replaced with no record of which half. append_jsonl opens with
+        O_APPEND, so a row at a time costs nothing but the open.
+        """
+        rows.append(row)
+        if args.apply or args.log_jsonl:
+            append_jsonl(log_path, [row])
+
+    # `--collections` narrows the REFERENCE INDEX, which is the evidence the
+    # id-change refusal decides on. Scoped to one collection, an asset
+    # referenced by a DIFFERENT collection looks unreferenced, so the run
+    # replaced it and re-pointed nothing.
+    index_scoped = args.collections not in ("all", "")
 
     for a in assets:
         asset_id = a.get("id", "")
@@ -1355,12 +1557,17 @@ def cmd_replace(args: argparse.Namespace) -> int:
                 else:
                     print(f"  SKIP    {name}  (not an image format this tool handles)")
                 row["action"] = "skip_unparseable"
-                rows.append(row)
+                emit(row)
                 continue
             if not any(s.removable and policy.wants(s.kind) for s in rep.signals):
                 stats["clean"] += 1
                 row["action"] = "already_clean"
-                rows.append(row)
+                if policy != Policy():
+                    # "clean" here is POLICY-RELATIVE. load_known_clean credits
+                    # already_clean absolutely, so one --keep-c2pa run made every
+                    # later nightly skip a genuinely C2PA-bearing asset forever.
+                    row["policy_narrowed"] = True
+                emit(row)
                 if args.all:
                     print(f"  CLEAN   {name}")
                 continue
@@ -1371,7 +1578,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
             print(f"  ERROR   {name}: {type(e).__name__}: {e}")
             row["action"] = "error"
             row["error"] = f"{type(e).__name__}: {e}"
-            rows.append(row)
+            emit(row)
             continue
 
         refs, ref_how = lookup_refs(index, url)
@@ -1379,7 +1586,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
             stats["refused"] += 1
             print(f"  AMBIG   {name}: filename resolves to several distinct images — refusing.")
             row["action"] = "refused_ambiguous_basename"
-            rows.append(row)
+            emit(row)
             continue
         kinds = ",".join(sorted({s.kind for s in res.removed}))
         wm = res.before.undetectable_watermarks
@@ -1400,7 +1607,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
             stats["stripped"] += 1
             stats["bytes"] += res.bytes_removed
             row["action"] = "would_replace"
-            rows.append(row)
+            emit(row)
             continue
 
         # ---- decide BEFORE writing ---------------------------------------
@@ -1422,6 +1629,9 @@ def cmd_replace(args: argparse.Namespace) -> int:
             elif not live_known:
                 reason = ("cannot prove no Designer page references it "
                           "(live-page index unavailable)")
+            elif index_scoped:
+                reason = (f"the CMS index was scoped to --collections {args.collections}; "
+                          "cannot prove no other collection references it")
             else:
                 reason = ""
             if reason:
@@ -1434,7 +1644,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
                 row["refusal_reason"] = reason
                 row["page_refs"] = page_refs[:10]
                 row["orphan_created"] = False
-                rows.append(row)
+                emit(row)
                 continue
 
         # ---- writes begin here -------------------------------------------
@@ -1450,7 +1660,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
             print(f"          ! upload failed: {type(e).__name__}: {e}")
             row["action"] = "upload_error"
             row["error"] = f"{type(e).__name__}: {e}"
-            rows.append(row)
+            emit(row)
             continue
 
         new_id, new_url = up["asset_id"], up["hostedUrl"]
@@ -1477,7 +1687,7 @@ def cmd_replace(args: argparse.Namespace) -> int:
                 row.update({"action": "refused_id_change", "refusal_reason": reason,
                             "page_refs": page_refs[:10], "orphan_created": True,
                             "orphan_asset_id": new_id})
-                rows.append(row)
+                emit(row)
                 continue
 
         n_ok = 0
@@ -1492,7 +1702,12 @@ def cmd_replace(args: argparse.Namespace) -> int:
                     # once moved this line into the ambiguous branch, so
                     # successful re-points were never published while UNWRITTEN
                     # ones were queued — the precise inverse of correct.
-                    if ref.was_published and not ref.is_draft and not ref.is_archived:
+                    if has_unpublished_edits(ref):
+                        print(f"          · not queuing {ref.collection_slug}/{ref.item_slug} "
+                              "for publish — it had unpublished edits before this run "
+                              "(lastUpdated > lastPublished).")
+                    elif (ref.was_published and not out.get("is_draft", ref.is_draft)
+                            and not out.get("is_archived", ref.is_archived)):
                         # Staged, NOT queued. Publishing is the irreversible half
                         # of this command; doing it before the verify decision
                         # pushed bytes live that the very next line reported as
@@ -1550,9 +1765,16 @@ def cmd_replace(args: argparse.Namespace) -> int:
         status = ("verified clean" if verify.get("clean")
                   else "VERIFY FAILED" if args.verify else "not verified")
         print(f"          -> {new_url.rsplit('/', 1)[-1]}  repointed {n_ok}/{len(refs)}  [{status}]")
-        rows.append(row)
+        emit(row)
 
-    if args.apply and args.auto_publish and to_publish:
+    if args.apply and args.auto_publish and to_publish and stats["errors"]:
+        print(f"\n  NOT publishing {sum(len(v) for v in to_publish.values())} touched item(s): "
+              f"this run recorded {stats['errors']} error(s). Publishing is the irreversible")
+        print("  half of the command and a mixed run must not be made live. Resolve the")
+        print("  errors above and re-run, or publish those items yourself.")
+        for cid, ids in sorted(to_publish.items()):
+            print(f"    {cid}: {', '.join(sorted(ids)[:10])}")
+    elif args.apply and args.auto_publish and to_publish:
         print("\n  Publishing touched CMS items…")
         for cid, ids in to_publish.items():
             try:
@@ -1586,12 +1808,14 @@ def cmd_replace(args: argparse.Namespace) -> int:
         print("\n  This was a dry run. Get explicit approval, then re-run with --apply.")
     print(f"{'─' * 70}\n")
 
-    if args.apply or args.log_jsonl:
-        # Same rule as cmd_cms: a dry run must not append to the DEFAULT log,
-        # because load_known_clean() reads it — a preview would otherwise seed
-        # the known-clean cache and make a later real run skip that asset.
-        append_jsonl(log_path, rows)
-    return 0 if (stats["errors"] == 0 and stats["unreadable"] == 0) else 2
+    # Rows were flushed by emit() as they happened — see its docstring. The
+    # dry-run rule still holds: emit() writes only when --apply or an explicit
+    # --log-jsonl was given, so a preview never seeds the known-clean cache.
+    #
+    # `refused` reaches the exit code too. A run that refused every asset and
+    # re-pointed nothing printed REFUSED in the summary and exited 0, so the
+    # cron read the whole thing as a success.
+    return 0 if not (stats["errors"] or stats["unreadable"] or stats["refused"]) else 2
 
 
 # ── perceptual lineage ───────────────────────────────────────────────────────
@@ -1605,7 +1829,8 @@ def cmd_replace(args: argparse.Namespace) -> int:
 # resize and re-encode, so an uploaded derivative can be matched back to the
 # marked original it came from. That is positive evidence of AI origin for a file
 # that carries no trace of it.
-PHASH_BITS = 512
+PHASH_SIZE = 16                        # the grid perceptual_hash samples
+PHASH_BITS = 2 * PHASH_SIZE * PHASH_SIZE   # row plane + column plane = 512
 # Measured on a 512x512 structured image (scripts/tests/test_watermark_cleaner.py
 # ::TestLineageMatchBoundary keeps these numbers honest — they go red if the
 # descriptor changes and this comment is not updated):
@@ -1633,8 +1858,25 @@ def _px(img):
     return list(getter())
 
 
+def _flatten(im):
+    """Composite onto an opaque white ground when the image carries alpha.
+
+    A straight ``convert("L")`` reads the RGB *underneath* fully transparent
+    pixels, which nothing renders. Measured: three PNGs with an identical
+    visible circle and white / black / noise under the alpha hashed 153-208 bits
+    apart, against PHASH_MATCH_MAX 40 — two files that display identically were
+    reported unrelated. The ground colour is arbitrary but must be the same on
+    both sides of every comparison, which it is once it lives in here.
+    """
+    from PIL import Image
+    if im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info:
+        return Image.alpha_composite(
+            Image.new("RGBA", im.size, (255, 255, 255, 255)), im.convert("RGBA"))
+    return im
+
+
 def _autotrim(im, tol: int = 12):
-    """Remove a uniform border, so that padding does not change the hash.
+    """Remove a *uniform* border, so that constant-fill padding does not change the hash.
 
     Measured on the real team-headshot pipeline (`iod-report.json` scale+pad
     parameters, then a 700px WebP): padding of 92-284px moved the plain hash by
@@ -1643,36 +1885,64 @@ def _autotrim(im, tol: int = 12):
     to 3-8 bits. Unrelated images stay 228-270 apart either way, so this costs
     nothing in false positives.
 
+    Blur-extend, edge-replicate and generative outpainting leave NO uniform
+    border and are not covered: measured 175/512 bits on a blur-extend, against
+    PHASH_MATCH_MAX 40. Widening ``tol`` does not buy them (pad-then-JPEG
+    survives it); that needs a centre-weighted third fingerprint component.
+
     The bbox must keep >30% of each dimension, otherwise a near-uniform image
     (a flat colour block, a dark frame) would trim to almost nothing and every
     such image would collide with every other.
     """
     from PIL import Image, ImageChops
-    g = im.convert("RGB")
+    g = _flatten(im).convert("RGB")
+    # Take the LARGEST passing bbox, not the FIRST. Returning inside the loop
+    # meant a corner that happens to sit on CONTENT — a near-uniform tone
+    # reaching the frame edge — won over the pad-driven corner and cropped real
+    # picture away. A pad colour's bbox is always a superset of a content
+    # colour's, so "largest" removes a border without ever removing content.
+    best = None
     for corner in ((0, 0), (g.width - 1, 0), (0, g.height - 1), (g.width - 1, g.height - 1)):
         bg = Image.new("RGB", g.size, g.getpixel(corner))
         mask = ImageChops.difference(g, bg).convert("L").point(lambda v: 255 if v > tol else 0)
         bb = mask.getbbox()
         if bb and (bb[2] - bb[0]) > g.width * 0.3 and (bb[3] - bb[1]) > g.height * 0.3:
-            return g.crop(bb)
-    return g
+            area = (bb[2] - bb[0]) * (bb[3] - bb[1])
+            if best is None or area > best[0]:
+                best = (area, bb)
+    return g.crop(best[1]) if best else g
 
 
-def perceptual_hash(data: bytes, size: int = 16, *, trim: bool = False) -> int:
+def perceptual_hash(data: bytes, size: int = PHASH_SIZE, *, trim: bool = False) -> int:
     """512-bit row+column difference hash. Robust to resize and re-encode.
 
-    With ``trim=True`` a uniform border is removed first, which additionally
-    makes the hash robust to padding. Pillow is imported lazily so the rest of
-    this module keeps working on hosts without it (same pattern as
-    avif_optimizer.encode_avif).
+    With ``trim=True`` a *uniform* border is removed first, so constant-fill
+    padding does not change the hash — see ``_autotrim`` for what that does NOT
+    cover. Pillow is imported lazily so the rest of this module keeps working on
+    hosts without it (same pattern as avif_optimizer.encode_avif).
+
+    The hash describes the RENDERED image: EXIF Orientation is applied, alpha is
+    composited, and a multi-frame container is sampled at its middle frame.
     """
-    from PIL import Image
+    from PIL import Image, ImageOps
     try:
         import pillow_avif  # noqa: F401  (registers the AVIF plugin)
     except ImportError:
         pass
 
     im = Image.open(io.BytesIO(data))
+    # Frame choice made EXPLICITLY. Hashing whatever frame the decoder is parked
+    # on means a fade-in animation fingerprints its black intro — two unrelated
+    # GIFs hashed to 0 and 0. The middle frame is far more representative.
+    n_frames = getattr(im, "n_frames", 1)
+    if n_frames > 1:
+        im.seek(n_frames // 2)
+    # Storage order is not what anyone sees. A derivative whose orientation was
+    # baked in downstream missed its own original by 265 bits (measured on
+    # sites/cel/…/adults-16-testimonial-jihyun.jpg, stored Orientation=5),
+    # against a threshold of 40. One line removes the whole class.
+    im = ImageOps.exif_transpose(im) or im
+    im = _flatten(im)
     im = (_autotrim(im) if trim else im).convert("L")
     rows = _px(im.resize((size + 1, size), Image.LANCZOS))
     cols = _px(im.resize((size, size + 1), Image.LANCZOS))
@@ -1770,6 +2040,9 @@ def build_lineage_corpus(paths: list[str], *, progress: bool = True
 
 def cmd_lineage(args: argparse.Namespace) -> int:
     """Identify remote assets that are derivatives of known AI-generated sources."""
+    # Same reason as cmd_scan: lineage accepted the policy flags through
+    # common() and then answered a different question from the one they asked.
+    policy = _policy_from_args(args)
     cfg = load_site_config(args.site)
     token = resolve_site_token(args.site, getattr(args, "token", None))
     site_id = cfg["webflow_site_id"]
@@ -1797,7 +2070,7 @@ def cmd_lineage(args: argparse.Namespace) -> int:
     if not corpus:
         print("  No AI-marked originals found — nothing to match against.")
         print("  (If the sources were already stripped, point --source at data/watermark-backup.)")
-        return 1
+        return 4        # no input matched — same code as clean's empty file set
 
     # WHOSE originals are these? `data/watermark-backup` is a FLAT shared root,
     # so the default corpus silently mixes every site the tool has ever touched.
@@ -1866,6 +2139,7 @@ def cmd_lineage(args: argparse.Namespace) -> int:
           f"{n_assets} site asset(s) + {n_cms} CMS-only image(s)…\n")
     rows: list[dict] = []
     matched = clean_derivative = still_dirty = skipped_flat = 0
+    unreadable_derivative = 0
     fetch_errors = 0
 
     for a in targets:
@@ -1875,12 +2149,16 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             continue
         try:
             data = download_image(url)
-            rep = ip.scan(data)
+            v, rep, _residue = verdict(data, policy=policy)
             fp = perceptual_fingerprint(data)
         except Exception as e:  # noqa: BLE001 — fonts/SVG/unsupported all land here
             fetch_errors += 1
-            rows.append({"name": name, "asset_id": a.get("asset_id"), "surface": a["surface"],
-                         "action": "error", "error": f"{type(e).__name__}: {e}"})
+            # Same envelope as every other row. This one carried an asset_id
+            # with no ts and no mode, so it could not be filtered by mode and
+            # sat one key away from being read as proof of cleanliness.
+            rows.append(_row("lineage", site=args.site, name=name,
+                             asset_id=a.get("asset_id"), surface=a["surface"],
+                             action="error", error=f"{type(e).__name__}: {e}"))
             continue
 
         if fingerprint_is_degenerate(fp):
@@ -1897,8 +2175,14 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             continue
 
         matched += 1
-        has_meta = any(s.removable for s in rep.signals)
-        if has_meta:
+        # Three-way, from `verdict`, not `any(s.removable …)`. A file Pillow can
+        # decode but ip.scan cannot read (JP2/BMP: parse_error, zero signals)
+        # has no signals AND no proof of cleanliness — the old two-way label
+        # printed "already clean" and counted it as a clean derivative.
+        has_meta = v.startswith("DIRTY")
+        if v == "UNKNOWN":
+            unreadable_derivative += 1
+        elif has_meta:
             still_dirty += 1
         else:
             clean_derivative += 1
@@ -1906,10 +2190,11 @@ def cmd_lineage(args: argparse.Namespace) -> int:
             "ts": utc_iso(), "mode": "lineage", "site": args.site,
             "asset_id": a.get("asset_id"), "surface": a["surface"], "name": name, "url": url,
             "distance": dist, "source": best["path"], "generators": best["generators"],
-            "carries_metadata": has_meta,
+            "carries_metadata": has_meta, "verdict": v,
             "signals": [s.kind for s in rep.signals],
         })
-        flag = "HAS METADATA" if has_meta else "already clean"
+        flag = ("UNKNOWN" if v == "UNKNOWN"
+                else "HAS METADATA" if has_meta else "already clean")
         print(f"  AI-DERIVED  {name[:44]:44} [{a['surface']:5}] d={dist:>3}  {flag:13} "
               f"<- {pathlib_name(best['path'])}  [{','.join(best['generators'])}]")
 
@@ -1924,6 +2209,9 @@ def cmd_lineage(args: argparse.Namespace) -> int:
     print(f"  matched an AI original    {matched}")
     print(f"    of those, still carry removable metadata  {still_dirty}")
     print(f"    of those, already metadata-clean          {clean_derivative}")
+    if unreadable_derivative:
+        print(f"    of those, COULD NOT BE READ               {unreadable_derivative}"
+              "   <- UNKNOWN, not clean")
     print()
     print("  A clean derivative has nothing left to strip — the resize/convert that")
     print("  produced it already destroyed the metadata. It is still an AI-generated")
@@ -2166,11 +2454,33 @@ def cmd_purge(args: argparse.Namespace) -> int:
         if page_failures == ["<no-domain>"]:
             print("  ! No domain on record for this site — cannot prove any page is free of it.")
 
-    deleted = held = 0
+    rows: list[dict] = []
+    log_path = Path(args.log_jsonl) if args.log_jsonl else DEFAULT_LOG_PATH
+
+    def emit(row: dict) -> None:
+        """One row per candidate, flushed immediately.
+
+        This is the only IRREVERSIBLE mode and it was the only one writing no
+        log at all, while still accepting --log-jsonl through common(). Batching
+        would be wrong here for the same reason: the row must be on disk before
+        the next delete, not after the last one.
+        """
+        rows.append(row)
+        if args.apply or args.log_jsonl:
+            append_jsonl(log_path, [row])
+
+    deleted = held = failed = 0
     for c in candidates:
         cms = cms_hits.get(c["id"], [])
         page = [p for k, v in live_index.items() if c["id"] in k for p in v]
-        bk = list(backup_dir.rglob(f"*{c['id']}*")) or list(backup_dir.rglob(c["name"]))
+        # CONCATENATE, never short-circuit. `A or B` meant one file whose NAME
+        # merely contains the asset id (a `{new_id}_{old_id}_name` replacement)
+        # suppressed the name-based lookup entirely, so a correct byte-identical
+        # backup sitting right there was never consulted and the asset was held.
+        # There is no false-positive risk: the decision is still a byte compare.
+        bk = list(backup_dir.rglob(f"*{c['id']}*"))
+        if c["name"]:
+            bk += [b for b in backup_dir.rglob(c["name"]) if b not in bk]
         bk_ok = any(b.is_file() and b.read_bytes() == c["bytes"] for b in bk)
         reasons = []
         if cms:
@@ -2179,39 +2489,68 @@ def cmd_purge(args: argparse.Namespace) -> int:
             reasons.append(f"on published page {page[:1]}")
         if not bk_ok:
             reasons.append("no byte-identical backup on disk")
-        if args.check_live_pages and not pages:
+        if not args.check_live_pages:
+            # --no-check-live-pages used to DELETE precondition 3 rather than
+            # relax it: both hold reasons below were gated on the flag, so the
+            # run deleted with zero page evidence and said nothing. Turning the
+            # proof off is itself the reason to hold.
+            reasons.append("--no-check-live-pages: condition 3 (no published page uses it) "
+                           "is unproven")
+        elif not pages:
             reasons.append("could not read the published site to prove no page uses it")
-        elif args.check_live_pages and page_failures:
+        elif page_failures:
             # Partial coverage is not proof. One unreadable page is enough to
             # make "no page references this asset" an unsupported claim, and the
             # delete is irreversible.
-            reasons.append(f"{len(page_failures)} published page(s) unreadable — "
+            reasons.append(f"{len(page_failures)} of {len(pages) + len(page_failures)} published "
+                           f"page(s) unreadable ({', '.join(page_failures[:2])}) — "
                            "cannot prove no page uses it")
 
+        row = _row("purge", site=args.site, asset_id=c["id"], name=c["name"],
+                   applied=bool(args.apply), reasons=reasons, cms_hits=cms[:5],
+                   page_hits=page[:5], generators=c["generators"],
+                   backup_verified=bk_ok)
         if reasons:
             held += 1
+            row["action"] = "held"
+            emit(row)
             print(f"  HOLD    {c['name'][:46]:46} — {'; '.join(reasons)}")
             continue
         if not args.apply:
             print(f"  WOULD   {c['name'][:46]:46} delete {c['id']}  [{','.join(c['generators'])}]")
             deleted += 1
+            row["action"] = "would_delete"
+            emit(row)
             continue
         try:
             delete_asset(token, c["id"])
             deleted += 1
+            row["action"] = "deleted"
+            emit(row)
             print(f"  DELETED {c['name'][:46]:46} {c['id']}")
         except (APIError, NetworkError) as e:
-            held += 1
+            # NOT `held`. A safety hold is the tool working; a failed DELETE is
+            # the tool not working, and folding the two together let a run in
+            # which every delete failed print "held 1" and exit 0.
+            failed += 1
+            row["action"] = "delete_failed"
+            row["error"] = f"{type(e).__name__}: {e}"
+            emit(row)
             print(f"  FAILED  {c['name'][:46]:46} {type(e).__name__}: {e}")
 
     print(f"\n{'─' * 70}")
     print(f"  {'deleted' if args.apply else 'would delete'} {deleted}   held {held}")
+    if failed:
+        print(f"  DELETE FAILED        {failed}   <- the API refused; nothing was removed")
     if held:
         print("  Held assets were NOT touched. Resolve the reason above and re-run.")
     if not args.apply and deleted:
         print("\n  This was a dry run. Deletion is irreversible — re-run with --apply.")
-    print(f"{'─' * 70}\n")
-    return 0
+    print(f"{'─' * 70}")
+    print(PIXEL_WATERMARK_CAVEAT)
+    if args.json:
+        print(json.dumps(rows, indent=1, ensure_ascii=False))
+    return 0 if failed == 0 else 2
 
 
 def cmd_cms(args: argparse.Namespace) -> int:
@@ -2281,6 +2620,13 @@ def cmd_cms(args: argparse.Namespace) -> int:
             superseded = load_superseded(Path(args.skip_known_clean))
     rows: list[dict] = []
     pending_designer: list[dict] = []
+
+    def emit(row: dict) -> None:
+        """Persist each row as it happens — see cmd_replace.emit."""
+        rows.append(row)
+        if args.apply or args.log_jsonl:
+            append_jsonl(log_path, [row])
+
     stats = {"examined": 0, "clean": 0, "not_ai": 0, "stripped": 0, "repointed": 0,
              "errors": 0, "bytes": 0, "undetectable": 0, "skipped": 0,
              "unreadable": 0, "superseded": 0, "designer_refs": 0}
@@ -2308,8 +2654,12 @@ def cmd_cms(args: argparse.Namespace) -> int:
             continue
         stats["examined"] += 1
 
+        # asset_id set HERE, not only on the `replaced` branch: without it an
+        # `already_clean` cms row could never seed the known-clean cache
+        # (load_known_clean requires an id), so every image this command proved
+        # clean — the majority on brightvalley — was re-downloaded every run.
         row: dict = {"ts": utc_iso(), "mode": "cms-replace", "site": args.site,
-                     "name": name, "old_url": url, "refs": len(refs),
+                     "asset_id": aid, "name": name, "old_url": url, "refs": len(refs),
                      "applied": bool(args.apply)}
         try:
             data = download_image(url)
@@ -2326,7 +2676,7 @@ def cmd_cms(args: argparse.Namespace) -> int:
                 else:
                     print(f"  SKIP    {name[:52]}  (not an image format this tool handles)")
                 row["action"] = "skip_unparseable"
-                rows.append(row)
+                emit(row)
                 continue
             wants = [s for s in rep.signals if s.removable and policy.wants(s.kind)]
             if args.only_ai and not rep.is_ai_flagged:
@@ -2336,12 +2686,16 @@ def cmd_cms(args: argparse.Namespace) -> int:
                 # signal, 38 of which are not clean at all".
                 stats["not_ai"] += 1
                 row["action"] = "skip_not_ai"
-                rows.append(row)
+                emit(row)
                 continue
             if not wants:
                 stats["clean"] += 1
                 row["action"] = "already_clean"
-                rows.append(row)
+                if policy != Policy():
+                    # Policy-relative — see cmd_replace. load_known_clean skips
+                    # any row carrying this marker.
+                    row["policy_narrowed"] = True
+                emit(row)
                 if args.all:
                     print(f"  CLEAN   {name[:52]}")
                 continue
@@ -2352,7 +2706,7 @@ def cmd_cms(args: argparse.Namespace) -> int:
             print(f"  ERROR   {name[:52]}: {type(e).__name__}: {e}")
             row["action"] = "error"
             row["error"] = f"{type(e).__name__}: {e}"
-            rows.append(row)
+            emit(row)
             continue
 
         kinds = ",".join(sorted({s.kind for s in res.removed}))
@@ -2384,7 +2738,7 @@ def cmd_cms(args: argparse.Namespace) -> int:
                       f"{preview_pages[0]}")
                 print("            If that reference is set on the page itself rather than "
                       "driven by this CMS field, it will still serve the old file.")
-            rows.append(row)
+            emit(row)
             continue
 
         backup_dir.mkdir(parents=True, exist_ok=True)
@@ -2397,7 +2751,7 @@ def cmd_cms(args: argparse.Namespace) -> int:
             stats["errors"] += 1
             print(f"          ! upload failed: {type(e).__name__}: {e}")
             row.update({"action": "upload_error", "error": f"{type(e).__name__}: {e}"})
-            rows.append(row)
+            emit(row)
             continue
 
         n_ok = 0
@@ -2412,7 +2766,12 @@ def cmd_cms(args: argparse.Namespace) -> int:
                     # once moved this line into the ambiguous branch, so
                     # successful re-points were never published while UNWRITTEN
                     # ones were queued — the precise inverse of correct.
-                    if ref.was_published and not ref.is_draft and not ref.is_archived:
+                    if has_unpublished_edits(ref):
+                        print(f"          · not queuing {ref.collection_slug}/{ref.item_slug} "
+                              "for publish — it had unpublished edits before this run "
+                              "(lastUpdated > lastPublished).")
+                    elif (ref.was_published and not out.get("is_draft", ref.is_draft)
+                            and not out.get("is_archived", ref.is_archived)):
                         # Staged, NOT queued. Publishing is the irreversible half
                         # of this command; doing it before the verify decision
                         # pushed bytes live that the very next line reported as
@@ -2460,10 +2819,8 @@ def cmd_cms(args: argparse.Namespace) -> int:
                     "touched_items": sorted({f"{r.collection_id}:{r.item_id}"
                                              for r in refs})[:200]})
         if row["action"] == "replaced":
-            # `load_superseded` keys on the ORIGINAL asset id; cmd_cms works
-            # from URLs, so recover it here or the row records a supersession
-            # nothing can look up.
-            row["asset_id"] = asset_id_from_url_key(_url_key(url))
+            # `load_superseded` keys on the ORIGINAL asset id, which the row
+            # already carries from its creation above.
             row["superseded_by"] = up["asset_id"]
         stats["stripped"] += 1
         stats["repointed"] += n_ok
@@ -2483,9 +2840,16 @@ def cmd_cms(args: argparse.Namespace) -> int:
                                      "new_url": up["hostedUrl"], "pages": page_refs})
         elif args.check_live_pages and not live_known:
             row["designer_refs_unknown"] = True
-        rows.append(row)
+        emit(row)
 
-    if args.apply and args.auto_publish and to_publish:
+    if args.apply and args.auto_publish and to_publish and stats["errors"]:
+        print(f"\n  NOT publishing {sum(len(v) for v in to_publish.values())} touched item(s): "
+              f"this run recorded {stats['errors']} error(s). Publishing is the irreversible")
+        print("  half of the command and a mixed run must not be made live. Resolve the")
+        print("  errors above and re-run, or publish those items yourself.")
+        for cid, ids in sorted(to_publish.items()):
+            print(f"    {cid}: {', '.join(sorted(ids)[:10])}")
+    elif args.apply and args.auto_publish and to_publish:
         print("\n  Publishing touched CMS items…")
         for cid, ids in to_publish.items():
             try:
@@ -2526,6 +2890,12 @@ def cmd_cms(args: argparse.Namespace) -> int:
                 stats["designer_refs"] += len(still)
                 stats["errors"] += 1
                 item["row"]["designer_page_refs"] = still[:10]
+                # Its OWN row: the image's row was flushed when it happened, so
+                # a post-loop mutation would never reach the file.
+                emit(_row("cms-designer-refs", site=args.site,
+                          asset_id=item["row"].get("asset_id"), name=item["name"],
+                          action="designer_ref_remaining",
+                          designer_page_refs=still[:10]))
                 print(f"    ! STILL DIRTY  {item['name'][:44]}  on {len(still)} page(s): "
                       f"{still[0]}")
                 print("      That reference is set on the page itself, not in the CMS — "
@@ -2582,12 +2952,9 @@ def cmd_cms(args: argparse.Namespace) -> int:
     if not args.apply and stats["stripped"]:
         print("\n  This was a dry run. Get explicit approval, then re-run with --apply.")
     print(f"{'─' * 70}\n")
-    if args.apply or args.log_jsonl:
-        # A dry run must not append to the DEFAULT log: load_known_clean() reads
-        # that file, so a preview could seed the known-clean cache and cause a
-        # later real run to skip an asset it never actually processed. An
-        # explicit --log-jsonl is the caller asking for the write, so honour it.
-        append_jsonl(log_path, rows)
+    # Rows were flushed by emit() as they happened. The dry-run rule still
+    # holds: emit() writes only under --apply or an explicit --log-jsonl, so a
+    # preview never seeds the known-clean cache load_known_clean() reads.
     return 0 if (stats["errors"] == 0 and stats["unreadable"] == 0) else 2
 
 
@@ -2678,6 +3045,14 @@ def cmd_verify(args: argparse.Namespace) -> int:
         _print_report(str(p), rep, verbose=True)
     if args.json:
         print(json.dumps(results, indent=1, ensure_ascii=False))
+    if args.log_jsonl:
+        append_jsonl(Path(args.log_jsonl),
+                     [_row("verify", **r) for r in results])
+    # UNCONDITIONAL, not driven by `undetectable_watermarks`: after a successful
+    # strip that list is empty, so the caveat vanished exactly when the tool was
+    # printing the bare word CLEAN — its last word on the file, and the one a
+    # reader is most likely to quote back as "watermark-free".
+    print(PIXEL_WATERMARK_CAVEAT)
     # UNKNOWN must not exit 0: a caller scripting this needs "could not tell"
     # to be as loud as "found something".
     if any(str(r.get("verdict", "")).startswith("DIRTY") for r in results):
@@ -2697,13 +3072,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="command", required=True)
 
-    def common(sp: argparse.ArgumentParser) -> None:
-        sp.add_argument("--keep-c2pa", action="store_true", help="leave C2PA manifests in place")
-        sp.add_argument("--keep-exif", action="store_true", help="leave the EXIF IFD in place")
-        sp.add_argument("--strip-icc", action="store_true",
-                        help="also drop the ICC colour profile (default: keep — dropping shifts colour)")
-        sp.add_argument("--drop-orientation", action="store_true",
-                        help="do not re-emit EXIF Orientation (default: keep — dropping rotates photos)")
+    def common(sp: argparse.ArgumentParser, *, policy: bool = True) -> None:
+        # `policy=False` for the subcommands that strip nothing. Attaching the
+        # four policy flags to `purge` and `verify` let an operator pass
+        # --keep-c2pa to a command that cannot act on it and be answered as
+        # though it had — argparse rejecting the flag is the honest response.
+        if policy:
+            sp.add_argument("--keep-c2pa", action="store_true", help="leave C2PA manifests in place")
+            sp.add_argument("--keep-exif", action="store_true", help="leave the EXIF IFD in place")
+            sp.add_argument("--strip-icc", action="store_true",
+                            help="also drop the ICC colour profile (default: keep — dropping shifts colour)")
+            sp.add_argument("--drop-orientation", action="store_true",
+                            help="do not re-emit EXIF Orientation (default: keep — dropping rotates photos)")
         sp.add_argument("--log-jsonl", default="", help="append structured results here")
         sp.add_argument("--verbose", "-v", action="store_true", help="list every signal")
         sp.add_argument("--all", action="store_true", help="also report images that are already clean")
@@ -2753,7 +3133,11 @@ def build_parser() -> argparse.ArgumentParser:
     rp.add_argument("--asset-id", default="", help="comma-separated asset ids to limit to")
     rp.add_argument("--pattern", default="", help="fnmatch filter on asset filename")
     rp.add_argument("--collections", default="all",
-                    help="'all', or comma-separated collection slugs/IDs, to scope the reference index")
+                    help="'all', or comma-separated collection slugs/IDs, to scope the reference "
+                         "index. NOTE: a scoped index is also scoped EVIDENCE — an asset "
+                         "referenced by a collection outside the scope looks unreferenced, so "
+                         "any asset whose id would change is REFUSED unless "
+                         "--allow-new-asset-id is given")
     rp.add_argument("--only-referenced", action="store_true",
                     help="process ONLY assets referenced by --collections (not the whole site)")
     rp.add_argument("--limit", type=int, default=0, help="stop after N assets")
@@ -2804,7 +3188,7 @@ def build_parser() -> argparse.ArgumentParser:
     pg.add_argument("--backup-dir", default=str(DEFAULT_BACKUP_DIR))
     pg.add_argument("--quiet", action="store_true")
     pg.add_argument("--token", default=None)
-    common(pg)
+    common(pg, policy=False)
     pg.set_defaults(func=cmd_purge)
 
     ln = sub.add_parser("lineage",
@@ -2863,17 +3247,28 @@ def build_parser() -> argparse.ArgumentParser:
     vf = sub.add_parser("verify", help="report what a crawler would see at a URL or path")
     vf.add_argument("--url", action="append", default=[], help="live URL (repeatable)")
     vf.add_argument("--file", action="append", default=[], help="local path (repeatable)")
-    vf.add_argument("--json", action="store_true")
+    common(vf, policy=False)   # verify strips nothing; it reports what is there
     vf.set_defaults(func=cmd_verify)
 
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    try:
+        args = build_parser().parse_args(argv)
+    except SystemExit as e:
+        # argparse exits 2 for a usage error, which collided with "the run
+        # partially failed" — the caller could not tell a typo from a real
+        # problem. Usage errors get their own code; --help still exits 0.
+        return 64 if e.code == 2 else int(e.code or 0)
     if args.command == "scan" and not args.local and not args.site:
         print("scan needs --local and/or --site", file=sys.stderr)
-        return 2
+        return 64
+    if args.command == "verify" and not args.url and not args.file:
+        # `verify` with nothing to verify printed nothing and exited 0 — the one
+        # input shape that mapped "checked nothing" onto "clean".
+        print("verify needs --url and/or --file", file=sys.stderr)
+        return 64
     if args.command in ("replace", "cms", "purge") and getattr(args, "apply", False) \
             and os.environ.get("WATERMARK_CLEANER_CONFIRM") != "1":
         # A second, deliberate gate on top of the repo's deploy-gate hook: an

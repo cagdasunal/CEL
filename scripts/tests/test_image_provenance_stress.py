@@ -25,6 +25,7 @@ import struct
 import sys
 import time
 import zlib
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -99,6 +100,56 @@ C2PA = (b"jumb jumdc2pa c2pa.actions.v2 gpt-image digitalSourceType "
         b"http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia "
         b"c2pa.watermarked.unbound")
 
+# ── ISOBMFF (AVIF / HEIF) builder ────────────────────────────────────────────
+# The fuzz corpus carried no ISOBMFF seed at all, so _scan_iso / _strip_iso —
+# the most intricate handlers in the module, the only pair that re-lays a
+# payload (mdat) and rewrites the structures addressing it (iinf/iloc/pitm) —
+# were fuzzed by nothing but the magic-prefix garbage test, which never gets
+# past ftyp. Shape follows ISO/IEC 14496-12 §8.11: ftyp, meta{hdlr, pitm, iinf,
+# iloc}, an optional top-level C2PA uuid box, mdat.
+def _bx(typ: bytes, body: bytes) -> bytes:
+    return struct.pack(">I", len(body) + 8) + typ + body
+
+
+def _fullbx(typ: bytes, ver: int, flags: int, body: bytes) -> bytes:
+    return _bx(typ, bytes([ver]) + flags.to_bytes(3, "big") + body)
+
+
+_AV01 = bytes(range(200))
+
+
+def avif(items=((1, b"av01", b"", _AV01),), *, uuid=b"", payload=b"", brand=b"avif") -> bytes:
+    """A minimal still AVIF/HEIF. ``items`` is (item_id, item_type, content_type, bytes)."""
+    infes = b""
+    for iid, ityp, ctype, _p in items:
+        entry = struct.pack(">HH", iid, 0) + ityp + b"item\x00"
+        if ityp == b"mime":
+            entry += ctype + b"\x00"                       # §8.11.6 content_type
+        infes += _fullbx(b"infe", 2, 0, entry)
+    iinf = _fullbx(b"iinf", 0, 0, struct.pack(">H", len(items)) + infes)
+    hdlr = _fullbx(b"hdlr", 0, 0, b"\x00" * 4 + b"pict" + b"\x00" * 12 + b"h\x00")
+    pitm = _fullbx(b"pitm", 0, 0, struct.pack(">H", items[0][0]))
+    ubox = (struct.pack(">I", len(payload) + 24) + b"uuid" + uuid + payload) if uuid else b""
+
+    def build(offsets: list[int]) -> bytes:
+        body = bytes([(4 << 4) | 4, 0]) + struct.pack(">H", len(items))
+        for (iid, _t, _c, pay), off in zip(items, offsets, strict=True):
+            body += struct.pack(">HHH", iid, 0, 1) + struct.pack(">II", off, len(pay))
+        meta = _fullbx(b"meta", 0, 0, hdlr + pitm + iinf + _fullbx(b"iloc", 0, 0, body))
+        mdat = _bx(b"mdat", b"".join(pay for _i, _t, _c, pay in items))
+        return _bx(b"ftyp", brand + b"\x00" * 4 + brand + b"mif1") + meta + ubox + mdat
+
+    # iloc offsets are absolute file offsets into mdat: lay the file out once
+    # with placeholders to learn its size, then again with the real values.
+    stub = build([0] * len(items))
+    cur = len(stub) - sum(len(pay) for _i, _t, _c, pay in items)
+    offsets = []
+    for _i, _t, _c, pay in items:
+        offsets.append(cur)
+        cur += len(pay)
+    return build(offsets)
+
+
 SEEDS: list[tuple[str, bytes]] = [
     ("png-clean", png()),
     ("png-c2pa", png([(b"caBX", C2PA)])),
@@ -119,6 +170,17 @@ SEEDS: list[tuple[str, bytes]] = [
     ("gif-meta", gif(comment=b"OpenAI", app=b"C2PA_GIF")),
     ("svg-clean", svg()),
     ("svg-meta", svg(b"<c2pa:manifest>" + C2PA + b"</c2pa:manifest>")),
+    # The uuid values come from the module constants on purpose. Pinning the
+    # literals here would put a second copy of them in the repo that can
+    # disagree with the shipped one — and a seed built from a wrong constant
+    # would scan clean and prove nothing. test_image_provenance.py owns the
+    # pin against the C2PA spec; this file only needs the handlers exercised.
+    ("avif-clean", avif()),
+    ("avif-c2pa", avif(uuid=ip._C2PA_UUID, payload=C2PA)),
+    ("avif-items", avif([(1, b"av01", b"", _AV01),
+                         (2, b"mime", b"application/rdf+xml", b"<x:xmpmeta/>"),
+                         (3, b"Exif", b"", b"\x00\x00\x00\x00Exif\x00\x00MM\x00*\x00\x00\x00\x08")])),
+    ("heif-alt-uuid", avif(uuid=ip._C2PA_UUID_ALT, payload=C2PA, brand=b"heic")),
 ]
 
 
@@ -145,27 +207,71 @@ def _assert_invariants(name: str, data: bytes) -> str:
     return "stripped" if res.changed else "unchanged"
 
 
+# ── outcome accounting ───────────────────────────────────────────────────────
+# Four of the five fuzz tests used to throw the verdict above away, and the one
+# that kept it asserted a threshold of ONE across the whole mixed corpus. That
+# assertion is green when every PNG, JPEG, WebP, GIF and AVIF mutant is refused
+# before reaching the rewriting code, so long as a single SVG gets through.
+# Measured when this was written: 81% of the deletion corpus (244/300) never
+# reached strip() at all, and nothing would have noticed 100%.
+#
+# So: tally by (container family, outcome), assert per family, and refuse to
+# conclude anything from a family with too few samples.
+FUZZ_OUTCOMES: Counter[tuple[str, str]] = Counter()
+_FUZZ_PRODUCERS: set[str] = set()
+
+
+def _family(seed_name: str) -> str:
+    head = seed_name.split("-")[0]
+    return "isobmff" if head in ("avif", "heif") else head
+
+
+FAMILIES = {_family(n) for n, _ in SEEDS}
+
+
+def _fuzz(producer: str, seed_name: str, label: str, data: bytes) -> str:
+    """``_assert_invariants`` with the verdict recorded instead of discarded."""
+    outcome = _assert_invariants(label, data)
+    FUZZ_OUTCOMES[(_family(seed_name), outcome)] += 1
+    _FUZZ_PRODUCERS.add(producer)
+    return outcome
+
+
+def _reach(family: str, tally: Counter[tuple[str, str]]) -> tuple[int, int]:
+    """(mutants that reached strip() without refusal, mutants tried) for one family."""
+    got = tally[(family, "stripped")] + tally[(family, "unchanged")]
+    return got, got + tally[(family, "refused")]
+
+
 # ── fuzz: random byte mutation ───────────────────────────────────────────────
 class TestByteMutationFuzz:
     """Flip, insert and delete bytes in valid files. Nothing may crash or lie."""
 
     def test_single_byte_flips(self):
         rng = random.Random(SEED)
-        outcomes = {"stripped": 0, "unchanged": 0, "refused": 0}
-        for i in range(ITERATIONS):
+        local: Counter[tuple[str, str]] = Counter()
+        # At least four passes over the seed list, whatever STRESS_ITERATIONS
+        # says, so no family can end up with a sample too small to judge.
+        for i in range(max(ITERATIONS, 4 * len(SEEDS))):
             name, seed = SEEDS[i % len(SEEDS)]
             b = bytearray(seed)
             for _ in range(rng.randint(1, 4)):
                 b[rng.randrange(len(b))] = rng.randrange(256)
-            outcomes[_assert_invariants(f"{name}#flip{i}", bytes(b))] += 1
-        # A mutation corpus that never once reaches the stripper is not testing it.
-        assert outcomes["stripped"] + outcomes["unchanged"] > 0, \
-            f"every mutant was refused — the fuzzer is not exercising strip(): {outcomes}"
+            local[(_family(name), _fuzz("flips", name, f"{name}#flip{i}", bytes(b)))] += 1
+        # A mutation corpus that never reaches the stripper is not testing it —
+        # asserted per FAMILY, because one lenient container (SVG reaches ~82%)
+        # otherwise carries the whole assertion for containers reaching 0%.
+        for fam in sorted(FAMILIES):
+            got, total = _reach(fam, local)
+            assert total >= 4, f"{fam}: {total} mutants is too few to conclude anything"
+            assert got / total >= 0.25, (
+                f"{fam}: only {got}/{total} flip mutants reached strip() — the corpus "
+                f"is bouncing off the parser: {dict(local)}")
 
     def test_truncation_at_every_depth(self):
         for name, seed in SEEDS:
             for cut in range(1, len(seed), max(1, len(seed) // 24)):
-                _assert_invariants(f"{name}#trunc{cut}", seed[:cut])
+                _fuzz("trunc", name, f"{name}#trunc{cut}", seed[:cut])
 
     def test_random_insertions(self):
         rng = random.Random(SEED + 1)
@@ -173,7 +279,7 @@ class TestByteMutationFuzz:
             name, seed = SEEDS[i % len(SEEDS)]
             at = rng.randrange(len(seed))
             junk = bytes(rng.randrange(256) for _ in range(rng.randint(1, 24)))
-            _assert_invariants(f"{name}#ins{i}", seed[:at] + junk + seed[at:])
+            _fuzz("insert", name, f"{name}#ins{i}", seed[:at] + junk + seed[at:])
 
     def test_random_deletions(self):
         rng = random.Random(SEED + 2)
@@ -181,7 +287,7 @@ class TestByteMutationFuzz:
             name, seed = SEEDS[i % len(SEEDS)]
             at = rng.randrange(len(seed))
             n = rng.randint(1, 16)
-            _assert_invariants(f"{name}#del{i}", seed[:at] + seed[at + n:])
+            _fuzz("delete", name, f"{name}#del{i}", seed[:at] + seed[at + n:])
 
     def test_pure_random_noise_is_never_mistaken_for_an_image(self):
         rng = random.Random(SEED + 3)
@@ -201,7 +307,10 @@ class TestByteMutationFuzz:
         for i in range(ITERATIONS):
             pre = prefixes[i % len(prefixes)]
             body = bytes(rng.randrange(256) for _ in range(rng.randint(8, 256)))
-            _assert_invariants(f"magic{i}", pre + body)
+            # Tallied under its own family: a corpus that is garbage by
+            # construction SHOULD be refused, so it must not feed the
+            # per-family reach floor that the seed-driven tests answer to.
+            _fuzz("magic", "magic", f"magic{i}", pre + body)
 
 
 # ── hostile structure ────────────────────────────────────────────────────────
@@ -343,6 +452,8 @@ class TestVerifierCannotSilentlyPass:
         "webp": lambda: webp([(b"EXIF", b"x")]).replace(b"\x00" * 24, b"\x77" * 24),
         "gif": lambda: gif(comment=b"z").replace(b"\x02\x02\x44\x01\x00", b"\x02\x02\x21\x01\x00"),
         "svg": lambda: svg().replace(b'width="8"', b'width="9"'),
+        "avif": lambda: avif([(1, b"av01", b"", _AV01[::-1])]),
+        "heif": lambda: avif([(1, b"av01", b"", _AV01[::-1])], brand=b"heic"),
     }
 
     @pytest.mark.parametrize("name,data", SEEDS, ids=[n for n, _ in SEEDS])
@@ -396,3 +507,32 @@ class TestPolicyMatrix:
             assert ok, f"{name} {pol}: {note}"
             surviving = [s for s in res.after.signals if s.removable and pol.wants(s.kind)]
             assert not surviving, f"{name} {pol}: {[s.kind for s in surviving]}"
+
+
+# ── fuzz corpus coverage ─────────────────────────────────────────────────────
+class TestFuzzCorpusReachedTheStrippers:
+    """Reads the verdicts the fuzz tests above recorded.
+
+    pytest runs tests in definition order within a file, so FUZZ_OUTCOMES is
+    full by the time this runs. If any producer was deselected the tally is
+    partial, and this SKIPS loudly rather than passing green on it — a coverage
+    assertion evaluated over an empty tally is precisely the vacuous pass the
+    check exists to prevent.
+    """
+
+    _PRODUCERS = {"flips", "trunc", "insert", "delete"}
+
+    def test_every_container_family_reached_strip_across_the_corpus(self):
+        missing = self._PRODUCERS - _FUZZ_PRODUCERS
+        if missing:
+            pytest.skip(f"fuzz producers not in this selection: {sorted(missing)}")
+        report = {f: _reach(f, FUZZ_OUTCOMES) for f in sorted(FAMILIES)}
+        for fam, (got, total) in report.items():
+            assert total >= 20, f"{fam}: {total} mutants is too few to conclude anything — {report}"
+            assert FUZZ_OUTCOMES[(fam, "stripped")] > 0, (
+                f"{fam}: not one mutant was actually rewritten — the removal path never "
+                f"ran for this container: {report}")
+            assert got / total >= 0.10, (
+                f"{fam}: only {got}/{total} ({100 * got / total:.0f}%) mutants reached "
+                f"strip() — the corpus is bouncing off the parser before the code under "
+                f"test: {report}")

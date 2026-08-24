@@ -125,14 +125,26 @@ class Report:
     size: int
     signals: list[Signal] = dataclasses.field(default_factory=list)
     generators: list[str] = dataclasses.field(default_factory=list)
+    # The subset of `generators` we are willing to FLAG on: matched by a needle
+    # that is unambiguous ("Midjourney"), or by an ambiguous one ("Gemini",
+    # "Grok", "Imagen") found inside a provenance-bearing field rather than in
+    # free caption text. Kept as a parallel list, not a filter on `generators`,
+    # so a label seen weakly in one record and strongly in another still flags.
+    strong_generators: list[str] = dataclasses.field(default_factory=list)
     undetectable_watermarks: list[str] = dataclasses.field(default_factory=list)
     parse_error: str = ""
 
     # -- convenience -------------------------------------------------------
     @property
     def ai_generators(self) -> list[str]:
-        """The generators found that imply synthesis, not merely editing."""
-        return [g for g in self.generators if g in _AI_GENERATORS]
+        """The generators found that imply synthesis, not merely editing.
+
+        Field-scoped. A photograph captioned "Gemini constellation over
+        Vancouver, shot on a Google Pixel" reported is_ai_flagged=True, and
+        `--fail-on-flagged` would have failed CI on it.
+        """
+        return [g for g in self.generators
+                if g in _AI_GENERATORS and g in self.strong_generators]
 
     @property
     def is_ai_flagged(self) -> bool:
@@ -191,7 +203,11 @@ class Result:
 
     @property
     def changed(self) -> bool:
-        return self.bytes_removed > 0 or bool(self.removed)
+        # NOT `bytes_removed > 0`. A strip that re-emits an orientation block can
+        # make the file *grow*, driving bytes_removed negative — and a negative
+        # number is not > 0, so a rewritten file reported itself unchanged.
+        # `before.size` is len(the input), so this compares the real lengths.
+        return len(self.data) != self.before.size or bool(self.removed)
 
     @property
     def clean(self) -> bool:
@@ -234,7 +250,11 @@ class Policy:
     data, not provenance, and dropping it visibly shifts colours in wide-gamut
     images. ``keep_orientation`` re-emits a minimal EXIF IFD holding only
     ``Orientation`` when the original had a non-default value — otherwise
-    stripping EXIF silently rotates photographs.
+    stripping EXIF silently rotates photographs. Honoured for JPEG, PNG
+    (``eXIf``) and WebP (``EXIF``). NOT for ISOBMFF: evicting an Exif item
+    there goes through the meta/mdat remux, and re-registering a replacement
+    item is a different job from this salvage — an AVIF/HEIF Orientation is
+    dropped with the item, so say so rather than implying otherwise.
     """
 
     strip_c2pa: bool = True
@@ -298,7 +318,16 @@ def sniff(data: bytes) -> str:
         return "tiff"
     # lstrip() removes whitespace but NOT a UTF-8 BOM, so a BOM-prefixed SVG
     # sniffed as "unknown" and its <c2pa:manifest> was never parsed.
-    head = data[:1024].lstrip(b"\xef\xbb\xbf").lstrip()
+    head = data[:4096].lstrip(b"\xef\xbb\xbf").lstrip()
+    # An XML prologue may legally carry comments before the root element, and a
+    # generator breadcrumb is exactly the kind of thing that gets written there.
+    # Not skipping them made '<!-- Generator: Recraft AI -->\n<svg …>' sniff as
+    # "unknown", so the SVG scanner never ran on it at all.
+    while head[:4] == b"<!--":
+        at = head.find(b"-->")
+        if at < 0:
+            break
+        head = head[at + 3:].lstrip()
     if head[:5].lower() == b"<?xml" or head[:4].lower() == b"<svg":
         if b"<svg" in data[:4096].lower():
             return "svg"
@@ -320,6 +349,9 @@ _AI_GENERATORS: frozenset[str] = frozenset({
     "Google DeepMind", "Google Imagen", "Google Gemini", "Google", "Stability AI",
     "Black Forest Labs FLUX", "Ideogram", "Recraft", "Leonardo AI", "Higgsfield",
     "Amazon Titan", "xAI Grok", "Alibaba Qwen", "ByteDance Seedream",
+    "Amazon Nova", "ComfyUI", "AUTOMATIC1111", "InvokeAI", "Fooocus",
+    "OpenAI Sora", "Runway", "Luma AI", "Kuaishou Kling", "Tencent Hunyuan",
+    "Krea AI", "Meta AI",
 })
 
 _GENERATOR_PATTERNS: tuple[tuple[bytes, str], ...] = (
@@ -339,19 +371,95 @@ _GENERATOR_PATTERNS: tuple[tuple[bytes, str], ...] = (
     (b"stable-diffusion", "Stability AI"),
     (b"StabilityAI", "Stability AI"),
     (b"black-forest-labs", "Black Forest Labs FLUX"),
-    (b"FLUX.1", "Black Forest Labs FLUX"),
+    (b"FLUX.", "Black Forest Labs FLUX"),          # FLUX.1, FLUX.2 [dev], …
     (b"Ideogram", "Ideogram"),
+    (b"ideogram", "Ideogram"),
     (b"Recraft", "Recraft"),
+    (b"recraft", "Recraft"),
     (b"Leonardo.Ai", "Leonardo AI"),
     (b"hf-job-id", "Higgsfield"),
     (b"Higgsfield", "Higgsfield"),
     (b"higgsfield", "Higgsfield"),
+    # "Nova Canvas" must be tried BEFORE "Canva" — the AWS generator's own name
+    # contains the non-AI editor's, so it resolved to "Canva" and the image
+    # scanned as merely edited. The word anchor on "Canva" is what actually
+    # separates them; the ordering only makes the intent readable.
+    (b"Nova Canvas", "Amazon Nova"),
+    (b"amazon.nova-canvas", "Amazon Nova"),
     (b"Canva", "Canva"),
     (b"Titan Image Generator", "Amazon Titan"),
+    (b"amazon.titan-image", "Amazon Titan"),
     (b"Grok", "xAI Grok"),
     (b"Qwen-Image", "Alibaba Qwen"),
     (b"Seedream", "ByteDance Seedream"),
+    # ── local diffusion UIs. These write their generation parameters into PNG
+    # text chunks; the strings below are the ones those writers emit verbatim.
+    (b"Negative prompt:", "Stability AI"),
+    (b"Model hash:", "Stability AI"),
+    (b"ComfyUI", "ComfyUI"),
+    (b"AUTOMATIC1111", "AUTOMATIC1111"),
+    (b"InvokeAI", "InvokeAI"),
+    (b"invokeai", "InvokeAI"),
+    (b"Fooocus", "Fooocus"),
+    # ── 2026 vendors
+    (b"OpenAI Sora", "OpenAI Sora"),
+    (b"Sora", "OpenAI Sora"),
+    (b"Runway Gen-", "Runway"),
+    (b"runwayml", "Runway"),
+    (b"Luma Dream Machine", "Luma AI"),
+    (b"lumalabs", "Luma AI"),
+    (b"Kling", "Kuaishou Kling"),
+    (b"Hunyuan", "Tencent Hunyuan"),
+    (b"Krea", "Krea AI"),
+    (b"Meta AI", "Meta AI"),
 )
+
+# Needles that are also ordinary words, proper nouns or unrelated product names
+# in free caption text. They still MINE — the operator is entitled to see the
+# match — but they only reach `ai_generators` when they sit inside a
+# provenance-bearing field. Without this, a photograph captioned "Gemini
+# constellation over Vancouver, shot on a Google Pixel" was reported as
+# AI-generated, and `--fail-on-flagged` would have failed CI on it.
+_AMBIGUOUS_NEEDLES: frozenset[bytes] = frozenset({
+    b"Gemini", b"Imagen", b"Grok", b"Recraft", b"recraft", b"Ideogram", b"ideogram",
+    b"Firefly", b"Canva", b"Sora", b"Krea", b"Kling", b"Hunyuan",
+})
+
+# Needles that must not match inside a longer word. "Canva" is a substring of
+# "Amazon Nova Canvas"; "FLUX." of "INFLUX.". Anchored on both sides except
+# where the needle deliberately ends mid-token.
+_ANCHOR_BOTH: frozenset[bytes] = _AMBIGUOUS_NEEDLES
+_ANCHOR_LEFT: frozenset[bytes] = frozenset({b"FLUX."})
+_NEEDLE_RE: dict[bytes, re.Pattern[bytes]] = {
+    **{n: re.compile(rb"(?<![A-Za-z0-9])" + re.escape(n) + rb"(?![A-Za-z0-9])")
+       for n in _ANCHOR_BOTH},
+    **{n: re.compile(rb"(?<![A-Za-z0-9])" + re.escape(n)) for n in _ANCHOR_LEFT},
+}
+
+# The keys that introduce a provenance VALUE: C2PA claim_generator, XMP
+# CreatorTool / softwareAgent, EXIF Software (0x0131, whose PNG spelling is the
+# tEXt keyword "Software"), IPTC 2:65. Matching an ambiguous needle anywhere in
+# a record is what produced the false positive; matching it only inside the
+# value one of these introduces is the fix.
+_PROVENANCE_FIELD_RE = re.compile(
+    rb"(?:claim_generator(?:_info)?|CreatorTool|HistorySoftwareAgent|softwareAgent"
+    rb"|Software|OriginatingProgram|DerivedFrom|parameters)"
+    rb"""[^A-Za-z0-9]{0,6}([^<>"'\r\n\x00]{0,160})""", re.I)
+
+
+def _needle_in(needle: bytes, blob: bytes) -> bool:
+    # Substring first, always. `bytes.__contains__` is an order of magnitude
+    # faster than re.search, and an anchored needle can only match where the
+    # plain needle already does — so this is a pure win, not an approximation.
+    if needle not in blob:
+        return False
+    rx = _NEEDLE_RE.get(needle)
+    return rx.search(blob) is not None if rx is not None else True
+
+
+def _provenance_field_values(blob: bytes) -> bytes:
+    """Just the values a provenance key introduces, joined."""
+    return b"\n".join(m.group(1) for m in _PROVENANCE_FIELD_RE.finditer(blob))
 
 # C2PA action assertions that declare an *unremovable* pixel watermark.
 _WATERMARK_ACTIONS: tuple[tuple[bytes, str], ...] = (
@@ -371,12 +479,46 @@ _IPTC_AI_TOKENS: tuple[bytes, ...] = (
 )
 
 
+def _mine_generators_scoped(blob: bytes) -> tuple[list[str], list[str]]:
+    """``(everything seen, the subset safe to flag on)`` in ONE pass.
+
+    An ambiguous needle reaches the second list only when it also appears inside
+    a provenance field value. The field extraction is deferred until an
+    ambiguous needle actually matches, so an ordinary record never pays for it.
+    """
+    hits = [(n, lab) for n, lab in _GENERATOR_PATTERNS if _needle_in(n, blob)]
+    seen: list[str] = []
+    strong: list[str] = []
+    fields: bytes | None = None
+    for needle, label in hits:
+        if label not in seen:
+            seen.append(label)
+        if needle in _AMBIGUOUS_NEEDLES:
+            if fields is None:
+                fields = _provenance_field_values(blob)
+            if not _needle_in(needle, fields):
+                continue
+        if label not in strong:
+            strong.append(label)
+    return seen, strong
+
+
 def _mine_generators(blob: bytes) -> list[str]:
-    out: list[str] = []
-    for needle, label in _GENERATOR_PATTERNS:
-        if needle in blob and label not in out:
-            out.append(label)
-    return out
+    """Every vendor breadcrumb in a metadata record, for REPORTING."""
+    return _mine_generators_scoped(blob)[0]
+
+
+def _record_generators(rep: Report, blob: bytes) -> None:
+    """Mine `blob` into both generator lists. The single place that keeps
+    `generators` (what was seen) and `strong_generators` (what may flag) in
+    lockstep, so no scanner can populate one and forget the other."""
+    seen, strong = _mine_generators_scoped(blob)
+    for g in seen:
+        if g not in rep.generators:
+            rep.generators.append(g)
+    for g in strong:
+        if g not in rep.strong_generators:
+            rep.strong_generators.append(g)
 
 
 def _mine_watermark_declarations(blob: bytes) -> list[str]:
@@ -385,6 +527,30 @@ def _mine_watermark_declarations(blob: bytes) -> list[str]:
         if needle in blob and label not in out:
             out.append(label)
     return out
+
+
+def _record_retained_icc(rep: Report, payload: bytes, where: str, offset: int) -> None:
+    """Mine a colour profile the policy is going to KEEP.
+
+    ``keep_icc`` defaults True on purpose — dropping an ICC profile visibly
+    shifts colours — so a vendor name inside one ships and survives every future
+    run. The scanners used to skip these payloads before the miner ever saw
+    them, so a JPEG whose only marker was an ICC ``desc`` reading "Adobe Firefly
+    generated profile hf-job-id 42" reported "clean, 0 signals, not AI-flagged"
+    with total confidence.
+
+    ``length=0`` keeps the Signal out of the strippers' offset maps (they key on
+    ``length > 0``), and ``removable=False`` prints it under the NOT REMOVABLE
+    heading — so the operator can reach for ``--strip-icc`` knowingly instead of
+    being told there is nothing there.
+    """
+    gens = _mine_generators(payload)
+    if not gens:
+        return
+    _record_generators(rep, payload)
+    rep.signals.append(Signal(
+        kind="generator_tag", where=where, offset=offset, length=0, removable=False,
+        detail="inside a retained ICC profile: " + ", ".join(gens)))
 
 
 def _looks_iptc_ai(blob: bytes) -> str:
@@ -495,12 +661,47 @@ def _png_text_payload(ctype: bytes, payload: bytes) -> tuple[str, bytes]:
     return "", payload
 
 
+# The chunks _strip_png copies through unconditionally (or under a keep-policy).
+# Anything ancillary and NOT in here is dropped — so scan() has to report it, or
+# the two halves of the module disagree about what the file contains.
+_PNG_KEPT = _PNG_CRITICAL | _PNG_RENDER_ESSENTIAL | _PNG_ANIMATION | _PNG_ICC
+
+
+def _png_iccp_payload(payload: bytes) -> bytes:
+    """iCCP is ``name\0`` + 1 compression-method byte + a zlib-deflated profile.
+    Mining the compressed bytes finds nothing, which is why it found nothing."""
+    name, _, rest = payload.partition(b"\x00")
+    body = rest[1:] if rest else b""
+    try:
+        import zlib
+        body = zlib.decompress(body)
+    except Exception:
+        pass
+    return name + b"\x00" + body
+
+
 def _scan_png(data: bytes, rep: Report) -> None:
     for off, ctype, payload, total in _png_chunks(data):
         kind = _PNG_META_KINDS.get(ctype)
-        if kind is None:
-            continue
         detail = ""
+        if kind is None:
+            if ctype in _PNG_ICC:
+                _record_retained_icc(rep, _png_iccp_payload(payload),
+                                     f"PNG:{ctype.decode('latin1')}", off)
+            if ctype in _PNG_KEPT:
+                continue
+            # Unrecognised, non-rendering, non-animation, non-colour: exactly
+            # where a novel provenance marker hides, and exactly what _strip_png
+            # already drops. scan() used to stay silent about it, so a PNG whose
+            # only marker was an unknown chunk reported zero signals and
+            # is_ai_flagged=False — and cmd_replace/cmd_cms, which gate on the
+            # scan result, recorded "already_clean" and never called the
+            # stripper written for that case. Use the same predicate as the
+            # stripper so the two agree by construction.
+            kind = "other_metadata"
+            detail = "unrecognised ancillary chunk"
+        elif ctype == b"eXIf" and _is_orientation_only_tiff(payload):
+            continue                      # our own re-emitted orientation block
         blob = payload
         if ctype in (b"tEXt", b"zTXt", b"iTXt"):
             kw, body = _png_text_payload(ctype, payload)
@@ -518,7 +719,7 @@ def _scan_png(data: bytes, rep: Report) -> None:
             kind=kind, where=f"PNG:{ctype.decode('latin1')}",
             offset=off, length=total, removable=True, detail=detail,
         ))
-        rep.generators.extend(g for g in _mine_generators(blob) if g not in rep.generators)
+        _record_generators(rep, blob)
         for w in _mine_watermark_declarations(blob):
             if w not in rep.undetectable_watermarks:
                 rep.undetectable_watermarks.append(w)
@@ -532,9 +733,20 @@ def _strip_png(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
     out = bytearray(_PNG_MAGIC)
     removed: list[Signal] = []
     by_offset = {s.offset: s for s in rep.signals if s.length > 0}
+    orientation = 0
+    orientation_kept = False
+    insert_at = len(_PNG_MAGIC)          # bumped to just past IHDR
     for off, ctype, payload, total in _png_chunks(data):
+        if ctype == b"eXIf" and policy.keep_orientation:
+            orientation = _tiff_orientation(payload) or orientation
+            if _is_orientation_only_tiff(payload):
+                out += data[off:off + total]
+                orientation_kept = True
+                continue
         if ctype in _PNG_CRITICAL or ctype in _PNG_RENDER_ESSENTIAL:
             out += data[off:off + total]
+            if ctype == b"IHDR":
+                insert_at = len(out)
             continue
         if ctype in _PNG_ANIMATION and policy.keep_animation:
             out += data[off:off + total]
@@ -545,14 +757,21 @@ def _strip_png(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
         sig = by_offset.get(off)
         if sig is not None and not policy.wants(sig.kind):
             out += data[off:off + total]
+            if ctype == b"eXIf":
+                orientation_kept = True
+            continue
+        if ctype not in _PNG_META_KINDS and not policy.strip_generator_tags:
+            # An unrecognised ancillary chunk goes only on a full scrub. scan()
+            # now raises a Signal for these, so without this guard the caller
+            # who asked to keep the breadcrumbs would silently lose them.
+            out += data[off:off + total]
             continue
         if sig is None and ctype not in _PNG_META_KINDS:
-            # Unknown ancillary chunk. Anything unrecognised and non-rendering is
-            # exactly where a novel provenance marker would hide, so drop it —
-            # but only when the caller asked for a full scrub.
-            if not policy.strip_generator_tags:
-                out += data[off:off + total]
-                continue
+            # Reached only by a chunk scan() raised no Signal for and the guard
+            # above did not keep: an animation or colour chunk under a policy
+            # that declines to keep it. Report it rather than dropping it
+            # silently. (The full-scrub gate lives in the guard above now; a
+            # second copy here was unreachable.)
             removed.append(Signal(
                 kind="other_metadata", where=f"PNG:{ctype.decode('latin1', 'replace')}",
                 offset=off, length=total, removable=True, detail="unrecognised ancillary chunk",
@@ -560,6 +779,13 @@ def _strip_png(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
             continue
         if sig is not None:
             removed.append(sig)
+
+    # Re-emit orientation, exactly as _strip_jpeg does. Without this a rotated
+    # PNG came out of strip() silently rotated while the Policy docstring
+    # promised an unqualified guarantee. eXIf is legal anywhere after IHDR.
+    if policy.keep_orientation and orientation not in (0, 1) and not orientation_kept:
+        out[insert_at:insert_at] = _png_rebuild_chunk(
+            b"eXIf", _minimal_tiff_orientation(orientation))
     return bytes(out), removed
 
 
@@ -641,9 +867,12 @@ def _jpeg_identify(marker: int, payload: bytes) -> tuple[str, str]:
     return "", ""
 
 
-def _exif_orientation(payload: bytes) -> int:
-    """Read tag 0x0112 out of an ``Exif\\0\\0`` APP1 payload. 0 when absent."""
-    tiff = payload[6:]
+def _tiff_orientation(tiff: bytes) -> int:
+    """Read tag 0x0112 out of a bare TIFF header. 0 when absent.
+
+    Split out of _exif_orientation because PNG ``eXIf`` and WebP ``EXIF`` carry
+    the TIFF with no ``Exif\\0\\0`` prefix — that prefix is a JPEG APP1 wrapper.
+    """
     if len(tiff) < 8:
         return 0
     if tiff[:2] == b"II":
@@ -670,13 +899,32 @@ def _exif_orientation(payload: bytes) -> int:
     return 0
 
 
-def _minimal_exif_orientation(orientation: int) -> bytes:
-    """Build the smallest valid ``Exif\\0\\0`` APP1 payload carrying Orientation."""
+def _exif_orientation(payload: bytes) -> int:
+    """Read tag 0x0112 out of an ``Exif\\0\\0`` APP1 payload. 0 when absent."""
+    return _tiff_orientation(payload[6:])
+
+
+def _minimal_tiff_orientation(orientation: int) -> bytes:
+    """The smallest valid TIFF header carrying nothing but Orientation."""
     tiff = b"MM\x00*" + struct.pack(">I", 8)
     tiff += struct.pack(">H", 1)                              # 1 IFD entry
     tiff += struct.pack(">HHI", 0x0112, 3, 1) + struct.pack(">HH", orientation, 0)
     tiff += struct.pack(">I", 0)                              # next IFD = none
-    return b"Exif\x00\x00" + tiff
+    return tiff
+
+
+def _minimal_exif_orientation(orientation: int) -> bytes:
+    """The same block wrapped for a JPEG APP1 segment."""
+    return b"Exif\x00\x00" + _minimal_tiff_orientation(orientation)
+
+
+# The bare-TIFF spelling, for PNG eXIf and WebP EXIF. Derived from the writer,
+# exactly as _ORIENTATION_ONLY_EXIF is, so reader and writer cannot drift.
+_ORIENTATION_ONLY_TIFF = frozenset(_minimal_tiff_orientation(n) for n in range(1, 9))
+
+
+def _is_orientation_only_tiff(payload: bytes) -> bool:
+    return payload in _ORIENTATION_ONLY_TIFF
 
 
 # The eight payloads _strip_jpeg may legitimately re-emit. A surviving EXIF
@@ -695,10 +943,91 @@ def _is_orientation_only_exif(payload: bytes) -> bool:
     return payload in _ORIENTATION_ONLY_EXIF
 
 
-def _scan_jpeg(data: bytes, rep: Report) -> None:
+# MPO files in the wild hold 2-3 pictures; the cap simply bounds the recursion
+# so a crafted chain of SOIs cannot walk forever.
+_JPEG_MAX_PICTURES = 8
+
+
+def _jpeg_primary_end(data: bytes, sos_off: int) -> int:
+    """Index just past the EOI that terminates the primary image.
+
+    Entropy-coded data byte-stuffs 0xFF as ``FF 00`` and may only carry RSTn
+    markers, so the first ``FFD9`` at or after SOS is the real end of picture.
+    Returns ``len(data)`` when there is no EOI (a truncated file), which makes
+    every caller degrade to the old "copy the whole tail" behaviour.
+    """
+    at = data.find(b"\xff\xd9", sos_off)
+    return len(data) if at < 0 else at + 2
+
+
+def _scan_jpeg_trailer(data: bytes, rep: Report, sos_off: int, depth: int) -> None:
+    """Inspect the bytes after the primary image's EOI.
+
+    They were copied verbatim by _strip_jpeg and looked at by nobody, so an XMP
+    packet appended after FFD9 — digitalSourceType, CreatorTool and all —
+    survived a strip that reported clean=True with bytes_removed=0.
+    """
+    end = _jpeg_primary_end(data, sos_off)
+    if end >= len(data):
+        return
+    trailer = data[end:]
+    if trailer.startswith(b"\xff\xd8\xff"):
+        # A multi-picture (MPO) secondary image, addressed by the APP2 MPF index.
+        # It is picture data, so it is NOT droppable — but its own APPn segments
+        # are metadata, and reporting nothing about them is how a secondary
+        # carrying Midjourney/trainedAlgorithmicMedia scanned clean.
+        rep.signals.append(Signal(
+            kind="other_metadata", where="JPEG:trailer", offset=end,
+            length=len(trailer), removable=False,
+            detail="multi-picture secondary image; MPF offsets cannot be rewritten here",
+        ))
+        if depth + 1 >= _JPEG_MAX_PICTURES:
+            return
+        sub = Report(container="jpeg", size=len(trailer))
+        try:
+            _scan_jpeg(trailer, sub, _depth=depth + 1)
+        except ProvenanceError as e:
+            rep.parse_error = rep.parse_error or f"secondary image: {e}"
+            return
+        for sig in sub.signals:
+            rep.signals.append(dataclasses.replace(
+                sig, offset=end + sig.offset, removable=False,
+                where=f"{sig.where}@secondary",
+                detail=f"{sig.detail} — inside a multi-picture secondary image".strip()))
+        for g in sub.generators:
+            if g not in rep.generators:
+                rep.generators.append(g)
+        for g in sub.strong_generators:
+            if g not in rep.strong_generators:
+                rep.strong_generators.append(g)
+        for w in sub.undetectable_watermarks:
+            if w not in rep.undetectable_watermarks:
+                rep.undetectable_watermarks.append(w)
+        return
+
+    # Not a picture: nothing structural addresses these bytes, so they can go.
+    refined, extra = _classify_blob(trailer, "other_metadata")
+    rep.signals.append(Signal(
+        kind=refined, where="JPEG:trailer", offset=end, length=len(trailer),
+        removable=True, detail=f"{len(trailer)} B appended after EOI {extra}".strip(),
+    ))
+    _record_generators(rep, trailer)
+    for w in _mine_watermark_declarations(trailer):
+        if w not in rep.undetectable_watermarks:
+            rep.undetectable_watermarks.append(w)
+            rep.signals.append(Signal(kind="watermark_declared", where="JPEG:trailer",
+                                      offset=end, length=0, removable=False, detail=w))
+
+
+def _scan_jpeg(data: bytes, rep: Report, *, _depth: int = 0) -> None:
+    sos_off = len(data)
     for off, marker, payload, total in _jpeg_segments(data):
+        if marker == 0xDA:
+            sos_off = off
         kind, label = _jpeg_identify(marker, payload)
         if kind in ("", "jfif", "icc", "colour"):
+            if kind == "icc":
+                _record_retained_icc(rep, payload, f"JPEG:APP{marker - 0xE0}", off)
             continue
         if kind == "exif" and _is_orientation_only_exif(payload):
             continue                      # our own re-emitted orientation block
@@ -708,7 +1037,7 @@ def _scan_jpeg(data: bytes, rep: Report) -> None:
             kind=refined, where=f"JPEG:APP{marker - 0xE0}" if 0xE0 <= marker <= 0xEF else f"JPEG:{marker:#04x}",
             offset=off, length=total, removable=True, detail=detail,
         ))
-        rep.generators.extend(g for g in _mine_generators(payload) if g not in rep.generators)
+        _record_generators(rep, payload)
         for w in _mine_watermark_declarations(payload):
             if w not in rep.undetectable_watermarks:
                 rep.undetectable_watermarks.append(w)
@@ -716,6 +1045,7 @@ def _scan_jpeg(data: bytes, rep: Report) -> None:
                     kind="watermark_declared", where=f"JPEG:APP{marker - 0xE0}",
                     offset=off, length=0, removable=False, detail=w,
                 ))
+    _scan_jpeg_trailer(data, rep, sos_off, _depth)
 
 
 def _strip_jpeg(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Signal]]:
@@ -723,6 +1053,14 @@ def _strip_jpeg(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[S
     removed: list[Signal] = []
     by_offset = {s.offset: s for s in rep.signals if s.length > 0}
     orientation = 0
+    # True once an Exif APP1 has been COPIED INTO `out` — either our own
+    # orientation-only block from a previous pass, or a full Exif the policy
+    # declined to strip. Either way the orientation already ships, and adding a
+    # second block is pure growth.
+    orientation_kept = False
+    # Where a re-emitted APP1 goes. JFIF requires APP0 to sit immediately after
+    # SOI, so inserting at out[2:2] displaced it; track the end of APP0 instead.
+    insert_at = 2
     tail_from = len(data)
     for off, marker, payload, total in _jpeg_segments(data):
         if marker == 0xD8:
@@ -733,12 +1071,16 @@ def _strip_jpeg(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[S
         kind, _label = _jpeg_identify(marker, payload)
         if kind in ("jfif", "colour") or (kind == "icc" and policy.keep_icc):
             out += data[off:off + total]
+            if kind == "jfif":
+                insert_at = len(out)
             continue
         if kind == "exif" and policy.keep_orientation:
             orientation = _exif_orientation(payload) or orientation
         sig = by_offset.get(off)
         if sig is not None and not policy.wants(sig.kind):
             out += data[off:off + total]
+            if kind == "exif":
+                orientation_kept = True
             continue
         if sig is not None:
             removed.append(sig)
@@ -747,14 +1089,36 @@ def _strip_jpeg(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[S
             removed.append(Signal(kind="other_metadata", where=f"JPEG:APP{marker - 0xE0}",
                                   offset=off, length=total, removable=True, detail="ICC profile"))
             continue
+        if kind == "exif":
+            # Reached only by a segment scan() raised no Signal for — i.e. the
+            # orientation-only block this function emitted on an earlier pass.
+            orientation_kept = True
         out += data[off:off + total]
 
     # Re-emit orientation so stripping EXIF cannot silently rotate a photo.
-    if policy.keep_orientation and orientation not in (0, 1):
+    # Guarded by `orientation_kept`: without it a rotated JPEG grew +36 B on
+    # every pass, accumulating duplicate APP1 blocks and reporting a negative
+    # bytes_removed. strip(strip(x)) == strip(x) now holds.
+    if policy.keep_orientation and orientation not in (0, 1) and not orientation_kept:
         payload = _minimal_exif_orientation(orientation)
-        out[2:2] = b"\xff\xe1" + struct.pack(">H", len(payload) + 2) + payload
+        out[insert_at:insert_at] = b"\xff\xe1" + struct.pack(">H", len(payload) + 2) + payload
 
-    out += data[tail_from:]
+    # Everything from SOS onward used to be copied verbatim and inspected by
+    # nobody. Split it: the entropy stream up to EOI is picture data, whatever
+    # follows is not.
+    end = _jpeg_primary_end(data, tail_from)
+    trailer = data[end:]
+    if trailer.startswith(b"\xff\xd8\xff"):
+        raise ProvenanceError(
+            "multi-picture JPEG (MPO): the secondary image carries its own metadata and "
+            "the APP2 MPF index that addresses it cannot be rewritten by this stripper. "
+            "Refusing to rewrite.")
+    sig = by_offset.get(end)
+    if trailer and sig is not None and sig.removable and policy.wants(sig.kind):
+        removed.append(sig)
+        out += data[tail_from:end]
+    else:
+        out += data[tail_from:]
     return bytes(out), removed
 
 
@@ -774,6 +1138,17 @@ _WEBP_VP8X_ALPHA = 0x10
 _WEBP_VP8X_EXIF = 0x08
 _WEBP_VP8X_XMP = 0x04
 _WEBP_VP8X_ANIM = 0x02
+
+
+def _riff_chunk(fourcc: bytes, payload: bytes) -> bytes:
+    pad = b"\x00" if len(payload) & 1 else b""
+    return fourcc + struct.pack("<I", len(payload)) + payload + pad
+
+
+def _webp_exif_tiff(payload: bytes) -> bytes:
+    """The TIFF inside a WebP ``EXIF`` chunk. libwebp writes the bare TIFF;
+    some writers copy the JPEG APP1 wrapper across, ``Exif\\0\\0`` prefix and all."""
+    return payload[6:] if payload.startswith(b"Exif\x00\x00") else payload
 
 
 def _webp_chunks(data: bytes) -> Iterable[tuple[int, bytes, bytes, int]]:
@@ -796,13 +1171,17 @@ def _scan_webp(data: bytes, rep: Report) -> None:
     for off, fourcc, payload, total in _webp_chunks(data):
         kind = _WEBP_META_KINDS.get(fourcc)
         if kind is None:
+            if fourcc == b"ICCP":
+                _record_retained_icc(rep, payload, "WEBP:ICCP", off)
             continue
+        if fourcc == b"EXIF" and _is_orientation_only_tiff(_webp_exif_tiff(payload)):
+            continue                      # our own re-emitted orientation block
         refined, extra = _classify_blob(payload, kind)
         rep.signals.append(Signal(
             kind=refined, where=f"WEBP:{fourcc.decode('latin1').strip()}",
             offset=off, length=total, removable=True, detail=extra,
         ))
-        rep.generators.extend(g for g in _mine_generators(payload) if g not in rep.generators)
+        _record_generators(rep, payload)
         for w in _mine_watermark_declarations(payload):
             if w not in rep.undetectable_watermarks:
                 rep.undetectable_watermarks.append(w)
@@ -816,21 +1195,40 @@ def _strip_webp(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[S
     removed: list[Signal] = []
     by_offset = {s.offset: s for s in rep.signals if s.length > 0}
     body = bytearray()
-    dropped_flags = 0
+    dropped: set[bytes] = set()
+    orientation = 0
+    orientation_kept = False
     for off, fourcc, payload, total in _webp_chunks(data):
+        if fourcc == b"EXIF" and policy.keep_orientation:
+            orientation = _tiff_orientation(_webp_exif_tiff(payload)) or orientation
         if fourcc == b"ICCP" and not policy.keep_icc:
             removed.append(Signal(kind="other_metadata", where="WEBP:ICCP", offset=off,
                                   length=total, removable=True, detail="ICC profile"))
-            dropped_flags |= _WEBP_VP8X_ICC
+            dropped.add(b"ICCP")
             continue
         sig = by_offset.get(off)
         if sig is not None and policy.wants(sig.kind):
             removed.append(sig)
-            dropped_flags |= {b"EXIF": _WEBP_VP8X_EXIF, b"XMP ": _WEBP_VP8X_XMP}.get(fourcc, 0)
+            dropped.add(fourcc)
             continue
         body += data[off:off + total]
+        if fourcc == b"EXIF":
+            # Either a full EXIF the policy kept, or our own orientation block
+            # from an earlier pass. Both already carry the rotation.
+            orientation_kept = True
 
-    # Fix the VP8X feature flags for the chunks we just dropped.
+    # Re-emit orientation. Metadata chunks live at the end of a WebP, so this
+    # goes last; the VP8X EXIF bit deliberately stays SET, because an EXIF chunk
+    # still ships. Without this a rotated WebP came out silently rotated.
+    if policy.keep_orientation and orientation not in (0, 1) and not orientation_kept:
+        body += _riff_chunk(b"EXIF", _minimal_tiff_orientation(orientation))
+        dropped.discard(b"EXIF")
+
+    # Fix the VP8X feature flags for the chunks we actually dropped.
+    dropped_flags = 0
+    for fc in dropped:
+        dropped_flags |= {b"EXIF": _WEBP_VP8X_EXIF, b"XMP ": _WEBP_VP8X_XMP,
+                          b"ICCP": _WEBP_VP8X_ICC}.get(fc, 0)
     if dropped_flags:
         i = 0
         while i + 8 <= len(body):
@@ -902,7 +1300,7 @@ def _scan_gif(data: bytes, rep: Report) -> None:
             refined, extra = _classify_blob(payload, "comment")
             rep.signals.append(Signal(kind=refined, where="GIF:comment", offset=off,
                                       length=total, removable=True, detail=extra))
-            rep.generators.extend(g for g in _mine_generators(payload) if g not in rep.generators)
+            _record_generators(rep, payload)
         elif kind == "application":
             app = bytes(payload[1:12]) if len(payload) > 12 else b""
             if app.startswith(b"NETSCAPE") or app.startswith(b"ANIMEXTS"):
@@ -910,7 +1308,7 @@ def _scan_gif(data: bytes, rep: Report) -> None:
             refined, extra = _classify_blob(payload, "other_metadata")
             rep.signals.append(Signal(kind=refined, where=f"GIF:app:{app.decode('latin1', 'replace').strip()}",
                                       offset=off, length=total, removable=True, detail=extra))
-            rep.generators.extend(g for g in _mine_generators(payload) if g not in rep.generators)
+            _record_generators(rep, payload)
 
 
 def _strip_gif(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Signal]]:
@@ -945,7 +1343,22 @@ def _strip_gif(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
 # means it. Editor namespace attributes (inkscape:*, sodipodi:*) are left alone:
 # they are attributes on rendered elements, and rewriting those is a different
 # and riskier job than deleting a self-contained element.
-_SVG_META_ELEMENTS = ("metadata", "c2pa:manifest")
+_SVG_META_ELEMENTS = ("metadata", "c2pa:manifest", "x:xmpmeta", "rdf:RDF")
+
+# Non-rendered TEXT nodes. Deliberately not in _SVG_META_ELEMENTS: <title> is
+# the accessible name a screen reader announces, so it is mined for provenance
+# and reported, but never deleted. <desc> may go — under the policy its content
+# classifies into, exactly like a JPEG COM.
+_SVG_TEXT_ELEMENTS: tuple[tuple[str, bool], ...] = (("desc", True), ("title", False))
+
+# Provenance also hides in two places that are not elements at all: the XMP
+# packet's <?xpacket?> processing-instruction wrapper, and plain XML comments —
+# '<!-- Generator: Recraft AI 2026, hf-job-id: 8812 -->' scanned as a totally
+# clean file. Comments are reported only when something is actually MINED from
+# them: reporting every comment would make the default policy delete licence
+# headers, which is a different and much larger decision than this one.
+_SVG_XPACKET_RE = re.compile(rb"<\?xpacket\s+begin.*?<\?xpacket\s+end[^>]*\?>", re.S | re.I)
+_SVG_COMMENT_RE = re.compile(rb"<!--.*?-->", re.S)
 
 
 def _svg_elements(data: bytes, tag: str) -> list[tuple[int, int, bytes]]:
@@ -965,22 +1378,45 @@ def _svg_elements(data: bytes, tag: str) -> list[tuple[int, int, bytes]]:
     return out
 
 
+def _svg_has_marker(blob: bytes) -> bool:
+    return bool(_mine_generators(blob)) or bool(_looks_iptc_ai(blob))
+
+
 def _scan_svg(data: bytes, rep: Report) -> None:
     if b"<svg" not in data[:4096].lower():
         raise ProvenanceError("not an SVG")
+
+    def add(start: int, end: int, base: str, where: str, removable: bool, note: str) -> None:
+        blob = data[start:end]
+        refined, extra = _classify_blob(blob, base)
+        rep.signals.append(Signal(kind=refined, where=where, offset=start,
+                                  length=end - start, removable=removable,
+                                  detail=extra or note))
+        _record_generators(rep, blob)
+        for w in _mine_watermark_declarations(blob):
+            if w not in rep.undetectable_watermarks:
+                rep.undetectable_watermarks.append(w)
+
     for tag in _SVG_META_ELEMENTS:
         for start, end, inner in _svg_elements(data, tag):
             blob = data[start:end]
             base = "c2pa" if (tag == "c2pa:manifest" or b"c2pa" in blob.lower()) else "other_metadata"
-            refined, extra = _classify_blob(blob, base)
-            rep.signals.append(Signal(
-                kind=refined, where=f"SVG:<{tag}>", offset=start, length=end - start,
-                removable=True, detail=extra or f"{len(inner)} B of {tag}",
-            ))
-            rep.generators.extend(g for g in _mine_generators(blob) if g not in rep.generators)
-            for w in _mine_watermark_declarations(blob):
-                if w not in rep.undetectable_watermarks:
-                    rep.undetectable_watermarks.append(w)
+            add(start, end, base, f"SVG:<{tag}>", True, f"{len(inner)} B of {tag}")
+
+    for tag, removable in _SVG_TEXT_ELEMENTS:
+        for start, end, _inner in _svg_elements(data, tag):
+            if not _svg_has_marker(data[start:end]):
+                continue                      # ordinary author text; leave it alone
+            add(start, end, "comment" if removable else "generator_tag",
+                f"SVG:<{tag}>", removable,
+                "accessible name — reported, never deleted" if not removable else "")
+
+    for m in _SVG_XPACKET_RE.finditer(data):
+        add(m.start(), m.end(), "xmp", "SVG:<?xpacket?>", True, "XMP packet")
+
+    for m in _SVG_COMMENT_RE.finditer(data):
+        if _svg_has_marker(m.group(0)):
+            add(m.start(), m.end(), "comment", "SVG:comment", True, "XML comment")
 
 
 def _svg_outermost(signals: list[Signal]) -> list[Signal]:
@@ -1030,7 +1466,9 @@ def _svg_pixel_digest(data: bytes) -> str:
         _scan_svg(data, rep)
     except ProvenanceError:
         return hashlib.sha256(data).hexdigest()
-    spans = _svg_outermost([s for s in rep.signals if s.length > 0])
+    # `removable` only. <title> is reported but never deleted, so eliding it
+    # here would blind the proof to a change in the one text node that ships.
+    spans = _svg_outermost([s for s in rep.signals if s.length > 0 and s.removable])
     return hashlib.sha256(_svg_delete_spans(data, spans)).hexdigest()
 
 
@@ -1096,23 +1534,6 @@ def _iso_boxes(data: bytes, start: int, end: int) -> list[_Box]:
         out.append(_Box(typ, off, size, hdr, uuid))
         off += size
     return out
-
-
-def _iso_find(data: bytes, boxes: list[_Box], path: tuple[bytes, ...]) -> _Box | None:
-    """Walk a box path, e.g. (b"meta", b"iinf")."""
-    cur = boxes
-    box: _Box | None = None
-    for want in path:
-        box = next((b for b in cur if b.typ == want), None)
-        if box is None:
-            return None
-        inner = box.offset + box.hdr + (4 if box.typ in _ISO_FULLBOX_CONTAINERS else 0)
-        if box.typ == b"iinf":
-            # iinf FullBox: version 0 has a 2-byte count, version >=1 a 4-byte one.
-            ver = data[box.offset + box.hdr]
-            inner = box.offset + box.hdr + 4 + (2 if ver == 0 else 4)
-        cur = _iso_boxes(data, inner, box.end) if want in _ISO_CONTAINER_BOXES else []
-    return box
 
 
 def _parse_iinf(data: bytes, iinf: _Box) -> list[tuple[int, bytes, _Box]]:
@@ -1271,6 +1692,35 @@ def _build_iloc(info: dict, entries: list[dict]) -> bytes:
     return struct.pack(">I", len(body) + 8) + b"iloc" + bytes(body)
 
 
+def _iso_resolve_extents(data: bytes, ent: dict, idat: _Box | None) -> tuple[bytes, bool]:
+    """Resolve an iloc entry's extents to bytes, honouring construction_method.
+
+    Returns ``(payload, resolved)``. ``resolved`` is False when the extents
+    point somewhere this parser cannot follow — and the caller must NOT then
+    fall back to reading ``base_offset + offset`` as a file offset. That
+    fallback is what mined a construction_method=1 item's AI markers out of
+    whatever unrelated bytes happened to sit at that absolute position, so a
+    HEIF whose Exif lived in an `idat` box scanned clean while
+    ``b"Midjourney" in data`` was plainly True.
+
+    ISO/IEC 14496-12 §8.11.3: method 0 = file offset, 1 = offset into the
+    meta-level ``idat`` box's payload, 2 = offset into another item.
+    """
+    method = ent["construction"]
+    if method == 0:
+        base = ent["base_offset"]
+    elif method == 1:
+        if idat is None:
+            return b"", False
+        base = idat.offset + idat.hdr + ent["base_offset"]
+    else:
+        # method 2 is item-relative; anything else is unspecified. Report the
+        # item exists, say the payload could not be read, read nothing.
+        return b"", False
+    return b"".join(data[base + ex["offset"]: base + ex["offset"] + ex["length"]]
+                    for ex in ent["extents"]), True
+
+
 def _scan_iso(data: bytes, rep: Report) -> None:
     top = _iso_boxes(data, 0, len(data))
     for b in top:
@@ -1278,7 +1728,7 @@ def _scan_iso(data: bytes, rep: Report) -> None:
             blob = data[b.body]
             rep.signals.append(Signal(kind="c2pa", where="ISOBMFF:uuid", offset=b.offset,
                                       length=b.size, removable=True, detail="C2PA JUMBF store"))
-            rep.generators.extend(g for g in _mine_generators(blob) if g not in rep.generators)
+            _record_generators(rep, blob)
             for w in _mine_watermark_declarations(blob):
                 if w not in rep.undetectable_watermarks:
                     rep.undetectable_watermarks.append(w)
@@ -1291,6 +1741,7 @@ def _scan_iso(data: bytes, rep: Report) -> None:
     iloc = next((b for b in inner if b.typ == b"iloc"), None)
     if iinf is None or iloc is None:
         return
+    idat = next((b for b in inner if b.typ == b"idat"), None)
     items = _parse_iinf(data, iinf)
     _info, entries = _parse_iloc(data, iloc)
     by_id = {e["item_id"]: e for e in entries}
@@ -1300,13 +1751,15 @@ def _scan_iso(data: bytes, rep: Report) -> None:
             continue
         ent = by_id.get(item_id)
         blob = b""
+        resolved = True
         length = infe.size
         if ent:
-            for ex in ent["extents"]:
-                s = ent["base_offset"] + ex["offset"]
-                blob += data[s:s + ex["length"]]
-                length += ex["length"]
+            blob, resolved = _iso_resolve_extents(data, ent, idat)
+            length += sum(ex["length"] for ex in ent["extents"])
         detail_extra = ""
+        if ent and not resolved:
+            detail_extra = (f"payload not read: construction_method "
+                            f"{ent['construction']} is not resolvable here")
         if item_type == b"mime":
             # Decide from the DECLARED content_type, falling back to the payload
             # sniff only when the infe is malformed enough not to carry one.
@@ -1323,6 +1776,11 @@ def _scan_iso(data: bytes, rep: Report) -> None:
                 # and let the policy decide.
                 kind = "other_metadata"
                 detail_extra = f"content_type={ctype.decode('latin1', 'replace')}"
+            elif not resolved:
+                # No declared type AND an unreadable payload. Dropping through
+                # to `continue` here would hide the item entirely, which is the
+                # same silent miss in a different disguise.
+                kind = "other_metadata"
             elif b"xmpmeta" in blob or b"rdf:RDF" in blob:
                 kind = "xmp"
             elif b"c2pa" in blob or b"jumb" in blob:
@@ -1336,7 +1794,7 @@ def _scan_iso(data: bytes, rep: Report) -> None:
             offset=infe.offset, length=length, removable=True,
             detail=f"item_id={item_id} {extra}".strip(),
         ))
-        rep.generators.extend(g for g in _mine_generators(blob) if g not in rep.generators)
+        _record_generators(rep, blob)
         for w in _mine_watermark_declarations(blob):
             if w not in rep.undetectable_watermarks:
                 rep.undetectable_watermarks.append(w)
@@ -1361,21 +1819,36 @@ def _strip_iso(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
     drop_kinds = {s.kind for s in rep.signals if s.removable and policy.wants(s.kind)}
     if not drop_kinds:
         return data, removed
+
+    # 1. Top-level C2PA uuid boxes: a straight excision, no reflow needed beyond mdat.
+    drop_uuid = [b for b in top
+                 if b.typ == b"uuid" and b.uuid in (_C2PA_UUID, _C2PA_UUID_ALT) and policy.strip_c2pa]
+
+    # A uuid box that begins at or after the END of the last mdat can be cut
+    # without moving one byte that a moov/stco offset addresses: track sample
+    # data lives in mdat, and mdat does not move. When such a uuid is the ONLY
+    # thing to remove, do exactly that and return — the movie-box refusal below
+    # guards the meta/mdat remux, and applying it here refused a case that is
+    # provably safe.
+    last_mdat_end = max((b.end for b in top if b.typ == b"mdat"), default=0)
+    other_removable = [s for s in rep.signals if s.removable and policy.wants(s.kind)
+                       and s.where != "ISOBMFF:uuid"]
+    if drop_uuid and not other_removable and all(b.offset >= last_mdat_end for b in drop_uuid):
+        removed.extend(Signal(kind="c2pa", where="ISOBMFF:uuid", offset=b.offset,
+                              length=b.size, removable=True, detail="C2PA JUMBF store")
+                       for b in drop_uuid)
+        return b"".join(data[b.offset:b.end] for b in top if b not in drop_uuid), removed
+
     # A movie box means track samples live in mdat, addressed by moov/stco
-    # offsets this code neither reads nor rewrites. Checked FIRST: the two early
-    # returns below excise a top-level uuid box, which shifts every byte after
-    # it and invalidates those offsets just as thoroughly as a full remux — and
-    # _iso_pixel_digest hashes mdat bodies, so verify_lossless cannot see it.
+    # offsets this code neither reads nor rewrites. Anything reaching here needs
+    # either the meta/mdat remux or an excision that shifts bytes mdat-ward, and
+    # _iso_pixel_digest hashes mdat bodies, so verify_lossless cannot see the
+    # damage. Refuse.
     if any(b.typ in (b"moov", b"moof", b"mvex") for b in top):
         raise ProvenanceError(
             "ISOBMFF carries a movie box (animated AVIF / HEIF sequence); rewriting it "
             "would invalidate the track sample offsets. Refusing to rewrite.")
 
-
-
-    # 1. Top-level C2PA uuid boxes: a straight excision, no reflow needed beyond mdat.
-    drop_uuid = [b for b in top
-                 if b.typ == b"uuid" and b.uuid in (_C2PA_UUID, _C2PA_UUID_ALT) and policy.strip_c2pa]
     for b in drop_uuid:
         removed.append(Signal(kind="c2pa", where="ISOBMFF:uuid", offset=b.offset,
                               length=b.size, removable=True, detail="C2PA JUMBF store"))
@@ -1401,8 +1874,9 @@ def _strip_iso(data: bytes, policy: Policy, rep: Report) -> tuple[bytes, list[Si
     # would report lossless=True on a file that no longer decodes.
     #
     # Rather than teach the remux about tracks, refuse: a container we cannot
-    # fully account for is one we must not rewrite. Excising a top-level C2PA
-    # uuid box stays safe and is handled above, because it does not touch mdat.
+    # fully account for is one we must not rewrite. A C2PA uuid box that TRAILS
+    # the last mdat never reaches here — the fast path above already returned
+    # it, because that excision provably shifts nothing mdat addresses.
     _info_pre, entries_pre = _parse_iloc(data, iloc_box)
     covered = 0
     for e in entries_pre:
@@ -1674,7 +2148,11 @@ def _jpeg_pixel_digest(data: bytes) -> str:
             h.update(b"SOS"); h.update(payload)
             tail = off
             break
-    h.update(data[tail:])
+    # Up to EOI only. The post-EOI trailer is now droppable, and hashing it here
+    # would make verify_lossless reject every strip that removed one. With no
+    # EOI present _jpeg_primary_end returns len(data), so a truncated file
+    # hashes exactly as it did before.
+    h.update(data[tail:_jpeg_primary_end(data, tail)])
     return h.hexdigest()
 
 
@@ -1699,6 +2177,24 @@ def _gif_pixel_digest(data: bytes) -> str:
     return h.hexdigest()
 
 
+def _byte_gaps(lo: int, hi: int, claimed: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """``[lo, hi)`` minus every claimed range, as sorted disjoint spans."""
+    out: list[tuple[int, int]] = []
+    cur = lo
+    for st, en in sorted(claimed):
+        if en <= cur or st >= hi:
+            continue
+        st, en = max(st, lo), min(en, hi)
+        if st > cur:
+            out.append((cur, st))
+        cur = max(cur, en)
+        if cur >= hi:
+            break
+    if cur < hi:
+        out.append((cur, hi))
+    return out
+
+
 def _iso_pixel_digest(data: bytes) -> str:
     """Digest the *primary item's* coded bytes, resolved through iloc."""
     h = hashlib.sha256()
@@ -1713,16 +2209,40 @@ def _iso_pixel_digest(data: bytes) -> str:
     iinf = next((b for b in inner if b.typ == b"iinf"), None)
     iloc = next((b for b in inner if b.typ == b"iloc"), None)
     if iinf is None or iloc is None:
+        # NOT `return h.hexdigest()`. That handed back the digest of the empty
+        # string, so two files differing in their ENTIRE mdat verified as
+        # pixel-identical — a proof that cannot fail is not a proof. There is
+        # no item index to resolve, so fall back to the whole mdat, exactly as
+        # the `meta is None` branch above does.
+        for b in top:
+            if b.typ == b"mdat":
+                h.update(data[b.body])
         return h.hexdigest()
     meta_types = {b"Exif", b"mime", b"c2pa"}
     picture_ids = [iid for iid, ityp, _b in _parse_iinf(data, iinf) if ityp not in meta_types]
     _info, entries = _parse_iloc(data, iloc)
+    claimed: list[tuple[int, int]] = []
+    for e in entries:
+        if e["construction"] != 0:
+            continue
+        for ex in e["extents"]:
+            st = e["base_offset"] + ex["offset"]
+            claimed.append((st, st + ex["length"]))
     for e in sorted(entries, key=lambda x: x["item_id"]):
         if e["item_id"] not in picture_ids or e["construction"] != 0:
             continue
         for ex in e["extents"]:
             s = e["base_offset"] + ex["offset"]
             h.update(data[s:s + ex["length"]])
+    # Anything inside an mdat that NO extent accounts for is still file content.
+    # Leaving it out let the digest be silently narrower than the file it claims
+    # to prove. For a still image every mdat byte is claimed, so this hashes
+    # nothing and the digest is unchanged.
+    for b in top:
+        if b.typ != b"mdat":
+            continue
+        for st, en in _byte_gaps(b.offset + b.hdr, b.end, claimed):
+            h.update(data[st:en])
     return h.hexdigest()
 
 
@@ -1789,8 +2309,11 @@ def raw_residue(data: bytes, *, strict: bool = False,
 
     ``scan()`` is structure-aware and only looks where metadata is *supposed* to
     live. This finds it wherever it actually is — including places a malformed
-    or novel container hid it. Used by the test suite and by ``--paranoid`` to
-    assert that a stripped file contains no residue at all.
+    or novel container hid it. Used by the test suite and by the post-strip
+    assertions in this module to check that a stripped file contains no residue
+    at all. There is NO ``--paranoid`` CLI flag — ``strict=True`` is an
+    in-process check only, and this docstring advertised a flag that no
+    subcommand has ever defined.
 
     By default the orientation-only EXIF block that ``_strip_jpeg`` re-emits is
     not reported: it is 36 bytes holding a single Orientation tag, and flagging

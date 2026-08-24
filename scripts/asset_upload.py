@@ -183,7 +183,7 @@ def auto_alt_text(filename):
     Examples:
         >>> auto_alt_text("adults-16-hero-classroom.jpg")
         'Hero Classroom'
-        >>> auto_alt_text("how-long-to-study-campus-photo.png")
+        >>> auto_alt_text("how-long-to-learn-english-campus-photo.png")
         'Campus Photo'
         >>> auto_alt_text("hero.jpg")
         'Hero'
@@ -195,11 +195,11 @@ def auto_alt_text(filename):
     # Try to strip page slug prefix.
     # Page slugs follow the pattern: word(-word)*-  where last segment
     # before the descriptor is typically a page identifier.
-    # Known pattern: slug like "adults-16-" or "how-long-to-study-"
+    # Known pattern: slug like "adults-16-" or "how-long-to-learn-english-"
     # Strategy: look for common page slug patterns (word-number- or word-word-)
     # and strip the longest matching prefix that leaves a non-empty remainder.
     # Match page-slug prefix: one or more groups of (word or number) followed by hyphen,
-    # where total prefix is at least 2 segments (e.g., "adults-16-", "how-long-to-study-")
+    # where total prefix is at least 2 segments (e.g., "adults-16-", "how-long-to-learn-english-")
     match = re.match(r'^((?:[a-zA-Z]+[-_]\d+|[a-zA-Z]+[-_][a-zA-Z]+)[-_])', stem)
     if match:
         remainder = stem[match.end():]
@@ -327,15 +327,21 @@ def get_api_token(args_token=None):
     return token
 
 
-def api_request(method, url, token, data=None, content_type="application/json"):
+def api_request(method, url, token, data=None, content_type="application/json", extra_headers=None):
     """Make an authenticated API request to Webflow.
+
+    `extra_headers` lets a caller pass the header set from a build_*_request()
+    helper, so the helper's headers are the ones that actually go over the wire
+    (audit 151 B-107). Auth and the body's Content-Type are computed here and
+    always win — a caller cannot accidentally drop the bearer token.
 
     Returns parsed JSON response or raises on error.
     """
-    headers = {
+    headers = dict(extra_headers or {})
+    headers.update({
         "Authorization": f"Bearer {token}",
         "Accept": "application/json",
-    }
+    })
 
     body = None
     if data is not None:
@@ -588,16 +594,17 @@ def cmd_upload(files_arg, config, token, page=None, folder_name=None):
         md5 = compute_md5(f)
         size = f.stat().st_size
 
-        register_body = {
-            "fileName": f.name,
-            "fileHash": md5,
-        }
-        if folder_id:
-            register_body["parentFolder"] = folder_id
+        # The live path goes THROUGH build_register_request — until B-107 this
+        # step duplicated the body inline, so the 7 tests asserting Webflow's
+        # registration contract (fileName/fileHash/parentFolder, endpoint shape)
+        # covered a function no request ever passed through.
+        url, register_headers, register_body = build_register_request(
+            site_id, f.name, md5, folder_id
+        )
 
         try:
-            url = f"{WEBFLOW_API_BASE}/sites/{site_id}/assets"
-            resp = api_request("POST", url, token, register_body)
+            resp = api_request("POST", url, token, register_body,
+                               extra_headers=register_headers)
         except APIError as e:
             print(f"  FAIL  {f.name}: API error {e.status_code}")
             results["failed"] += 1
@@ -667,9 +674,9 @@ def cmd_list(config, token, as_json=False):
         print("Error: No webflow_site_id in site config", file=sys.stderr)
         sys.exit(1)
 
-    url = f"{WEBFLOW_API_BASE}/sites/{site_id}/assets"
+    url, list_headers = build_list_request(site_id)
     try:
-        resp = api_request("GET", url, token)
+        resp = api_request("GET", url, token, extra_headers=list_headers)
     except APIError as e:
         print(f"Error listing assets: HTTP {e.status_code}", file=sys.stderr)
         print(f"  {e.body}", file=sys.stderr)
