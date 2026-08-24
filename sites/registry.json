@@ -7,7 +7,11 @@
       "staging_url": "https://englishcollege.webflow.io",
       "production_url": null,
       "language": "en",
-      "path": "sites/cel"
+      "path": "sites/cel",
+      "webflow_connection": {
+        "webflow_site_id": "667453c576e8d35c454cc9ae",
+        "rest_token_env": "WEBFLOW_API_TOKEN"
+      }
     }
   },
   "default_site": "cel"

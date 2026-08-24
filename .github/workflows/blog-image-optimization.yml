@@ -258,6 +258,42 @@ jobs:
             --backup-dir data/watermark-backup \
             "${EXTRA[@]}"
 
+      # The pre-strip originals the step above wrote to data/watermark-backup/
+      # live on the runner's disk and die with it. That is the ONLY copy of the
+      # bytes as they were before an irreversible outward write, and `purge`'s
+      # fourth precondition — "a byte-identical backup exists on disk" — can
+      # never be satisfied for a CI-scrubbed asset without them, so purge holds
+      # every such asset forever.
+      #
+      # They are uploaded, not committed: these are the original client images
+      # WITH their AI-provenance metadata intact, and this repository is public.
+      # Committing them would republish, permanently and enumerably, the very
+      # metadata the scrub was run to remove — and would grow the history by the
+      # full byte size of every image ever replaced. An artifact keeps them
+      # retrievable (download, unzip into data/watermark-backup/, then run
+      # `watermark_cleaner.py purge --backup-dir data/watermark-backup`) without
+      # either cost. 90 days is the retention ceiling GitHub allows on a public
+      # repository.
+      #
+      # `always()` is load-bearing: a scrub that dies part-way through has
+      # already replaced some assets, and those are exactly the originals that
+      # must survive (rules/remote-write-discipline.md — a partial remote write
+      # must never leave the operator without the pre-write bytes).
+      - name: Upload pre-strip originals (scrub runs only)
+        if: >-
+          always() &&
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.scrub_provenance == 'true' &&
+          github.event.inputs.scrub_confirm == 'REPLACE'
+        uses: actions/upload-artifact@v7
+        with:
+          name: watermark-backup-${{ github.run_id }}
+          path: data/watermark-backup/
+          retention-days: 90
+          # `warn`, not `ignore`: a scrub that produced no backup at all is
+          # either a no-op or a broken backup path, and both are worth seeing.
+          if-no-files-found: warn
+
       - name: Regenerate /admin/#images dashboard page
         if: always()  # render even if the optimizer hit a non-fatal image error
         run: |
