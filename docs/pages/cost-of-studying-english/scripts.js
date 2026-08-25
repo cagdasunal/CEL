@@ -3,36 +3,13 @@
    v=5 | 2026-03-27
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Navbar scroll colour (local dev only — production uses celnavtoc3 + IX2)
-   CSS rule: .navbar_component           → background: var(--indigo-bright)  [base]
-             .navbar_component:where(w-variant-...) → background: transparent [variant]
-   Over hero  → remove inline style → variant CSS wins → transparent
-   Past hero  → set inline indigo   → overrides variant CSS → indigo ── */
-(function() {
-  if (window.__celNt || window.__costsNavLocal) return;
-  window.__costsNavLocal = true;
+/* ── Navbar scroll colour — REMOVED, now in shared/utils.js ──
+   This file used to carry its own copy of initNavbarTransparent. So did
+   pages/cost-of-studying-english/scripts.js. shared/utils.js carried a third. The San Diego pages
+   load these two, so san-diego.html and costs.html got the local copies and
+   how-long-to-learn-english.html got nothing at all — which is why the four pages disagreed about
+   the top navigation. One implementation now, in shared/utils.js, loaded by every page. ── */
 
-  let nav = document.querySelector('[data-wf--navbar--variant="transparent"]');
-  if (!nav) return;
-  let hero = document.querySelector('.section_hero');
-  if (!hero) return;
-
-  function check() {
-    if (hero.getBoundingClientRect().bottom > 80) {
-      nav.style.removeProperty('background-color');
-    } else {
-      nav.style.setProperty('background-color', 'rgb(93, 96, 238)', 'important'); /* --indigo-bright, beats IX2 inline */
-    }
-  }
-
-  check();
-  let raf = false;
-  window.addEventListener('scroll', function() {
-    if (raf) return;
-    raf = true;
-    requestAnimationFrame(function() { check(); raf = false; });
-  }, { passive: true });
-})();
 
 /* ── Swiper Slider init (accommodation only) ── */
 (function () {

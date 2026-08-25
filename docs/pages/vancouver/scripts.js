@@ -10,30 +10,13 @@
    - Scripts are for BEHAVIOR only, not styling
    ============================================================ */
 
-/* ── Navbar scroll colour (local dev only — production uses celnavtoc3 + IX2)
-   Over hero  → remove inline style → CSS transparent variant wins
-   Past hero  → set inline indigo   → overrides CSS transparent variant ── */
-(function() {
-  // CDN guard: celnavtoc3 handles this on Webflow. Skip if loaded.
-  if (window.__celNt || window.__a16NavLocal) return;
-  window.__a16NavLocal = true;
-  const nav = document.querySelector('[data-wf--navbar--variant="transparent"]');
-  const hero = document.querySelector('.section_hero');
-  if (!nav || !hero) return;
-  function check() {
-    if (hero.getBoundingClientRect().bottom > 80) {
-      nav.style.removeProperty('background-color');
-    } else {
-      nav.style.backgroundColor = 'rgb(93, 96, 238)';
-    }
-  }
-  check();
-  let raf = false;
-  window.addEventListener('scroll', function() {
-    if (raf) return; raf = true;
-    requestAnimationFrame(function() { check(); raf = false; });
-  }, { passive: true });
-})();
+/* ── Navbar scroll colour — REMOVED, now in shared/utils.js ──
+   This file used to carry its own copy of initNavbarTransparent. So did
+   pages/cost-of-studying-english/scripts.js. shared/utils.js carried a third. The San Diego pages
+   load these two, so san-diego.html and costs.html got the local copies and
+   how-long-to-learn-english.html got nothing at all — which is why the four pages disagreed about
+   the top navigation. One implementation now, in shared/utils.js, loaded by every page. ── */
+
 
 /* ── SVG Icons ──
    All SVG icons are now standalone .svg files in this page directory.
@@ -51,8 +34,14 @@
 
   const tocLinks = document.querySelectorAll('.stoc_link[data-target]');
   const sectIds = [].slice.call(tocLinks).map(function(l) { return l.dataset.target; });
-  const sections = sectIds.map(function(id) { return document.getElementById(id); }).filter(Boolean);
+  /* Spy in DOCUMENT order, not link order: detectActive() keeps the last section above the
+     reading line, which is only correct if the array is in document order. A TOC whose link
+     order differs from section order (San Diego §2: Courses before Location) would otherwise
+     highlight the wrong link. No-op where the two orders already agree. */
+  const sections = sectIds.map(function(id) { return document.getElementById(id); }).filter(Boolean)
+    .sort(function(a, b) { return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1; });
   const nav = document.querySelector('.navbar_component');
+  function shouldReduce() { return matchMedia('(prefers-reduced-motion: reduce)').matches; }
 
   if (!sections.length || !tocLinks.length) return;
 
@@ -118,13 +107,52 @@
     if (backdrop) backdrop.classList.remove('is-visible');
   }
 
+  /* Duration-capped smooth scroll that tracks a LIVE target. Native `behavior:'smooth'`
+     scales its duration with distance, so a 20,000px jump on this page animates for several
+     seconds and reads as broken, while a plain jump reads as a hard cut. Fixed ~700ms ease-out
+     instead. The destination MUST be recomputed every frame: a long jump crosses dozens of
+     lazy images, and each one that decodes mid-flight grows the page and moves the target
+     (an upward jump chasing a receding target used to land 10,000px off). After the ease we
+     converge on the live target, then keep re-snapping briefly while layout settles — unless
+     the reader takes over, in which case we get out of the way immediately. */
+  function smoothScrollToEl(el, offset) {
+    const want = function() { return el.getBoundingClientRect().top + window.scrollY - offset; };
+    if (shouldReduce()) { window.scrollTo(0, want()); return; }
+    const DUR = 700, MAX = 1800;
+    const t0 = performance.now();
+    let cancelled = false;
+    const stop = function() { cancelled = true; };
+    ['wheel', 'touchstart', 'keydown'].forEach(function(e) {
+      window.addEventListener(e, stop, { once: true, passive: true });
+    });
+    function release() {
+      ['wheel', 'touchstart', 'keydown'].forEach(function(e) { window.removeEventListener(e, stop); });
+    }
+    function settle() {
+      const t1 = performance.now();
+      (function s() {
+        if (cancelled) { release(); return; }
+        if (Math.abs(want() - window.scrollY) > 1) window.scrollTo(0, want());
+        if (performance.now() - t1 < 700) requestAnimationFrame(s);
+        else release();
+      })();
+    }
+    (function step(now) {
+      if (cancelled) { release(); return; }
+      const t = now - t0;
+      const cur = window.scrollY, gap = want() - cur;
+      if ((t >= DUR && Math.abs(gap) <= 2) || t >= MAX) { window.scrollTo(0, want()); settle(); return; }
+      const p = Math.min(1, t / DUR);
+      window.scrollTo(0, cur + gap * (0.1 + 0.22 * p));
+      requestAnimationFrame(step);
+    })(t0);
+  }
+
   function scrollToSection(link) {
     const target = document.getElementById(link.dataset.target);
     if (!target) return;
     setActive(link.dataset.target);
-    const navH = nav ? nav.offsetHeight : 90;
-    const y = target.getBoundingClientRect().top + window.scrollY - navH - 24;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    smoothScrollToEl(target, (nav ? nav.offsetHeight : 90) + 24);
   }
 
   tocLinks.forEach(function(link) {

@@ -24,6 +24,10 @@
    breakpoint: .stoc_nav{background-image:none} (its `background:` shorthand resets the
    image — measured `none`) and .stoc_dot.is-active{width/height:6px} (the live 991
    .stoc_dot is already 6px). */
+/* Rail CTA spans the rail (client, 25 Aug: "full width"). width only — no display change, so the
+   991 rule below still hides it on the pill stack; .stoc_cta-btn's own text-align:center centres
+   the label once the box is stretched. Declared ABOVE that media block on purpose. */
+.stoc_cta-btn.inline-cta-btn.is-primary{width:100%;padding-left:18px;padding-right:18px}
 @media screen and (max-width:991px){
 .stoc_component.is-visible{opacity:1}
 .stoc_link.is-active,.stoc_link.is-active:hover{color:#5d60ee;font-weight:500}
@@ -65,15 +69,10 @@
 .timeline_icon svg{width:100%;height:100%}
 .timeline_body{padding-top:12px}
 .timeline_body p+p{margin-top:6px}
-/* Scroll reveal — .is-inview toggled by the IntersectionObserver in san-diego.html, which also
-   sets .has-reveal on <html>. Every hidden start-state below is scoped to .has-reveal, so if
-   that script never runs (or IntersectionObserver never fires) the content is simply visible
-   instead of stuck at opacity 0. Animates in both directions. */
-.has-reveal .timeline_row .timeline_marker,.has-reveal .timeline_row .timeline_body{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s cubic-bezier(0.16,1,0.3,1)}
-.timeline_row .timeline_body{transition-delay:.1s}
-.has-reveal .timeline_row::before{transform:scaleY(0)}
-.timeline_row.is-inview .timeline_marker,.timeline_row.is-inview .timeline_body{opacity:1;transform:none}
-.timeline_row.is-inview::before{transform:scaleY(1)}
+/* Scroll reveal DELETED, 25 Aug (CLAUDE.md §4i). The .has-reveal start-states armed every
+   timeline marker and body to opacity:0 behind an observer that never fired in a preview frame,
+   so §4's seven rows rendered blank. The rail, markers and copy now paint unconditionally; the
+   .is-inview undo rules went with them, since nothing sets that class any more. */
 /* The .timeline_row .timeline_marker/.timeline_body{opacity:1;transform:none} pair that used to open
    this block is DELETED as DEAD (RESPONSIVE-BRIEF §1): san-diego.html returns early when
    matchMedia('(prefers-reduced-motion: reduce)') matches, so .has-reveal is never set and the hidden
@@ -100,8 +99,6 @@
    marker instead: (48 - 27.2 line-height) / 2 ≈ 10px, and 6px against the 40px mobile marker. */
 .timeline_list.is-fit .timeline_body{padding-top:10px}
 @media (max-width:767px){.timeline_list.is-fit .timeline_body{padding-top:6px}}
-.has-reveal .timeline_list.is-fit .timeline_icon svg path{stroke-dasharray:26;stroke-dashoffset:26;transition:stroke-dashoffset .55s cubic-bezier(0.16,1,0.3,1) .15s}
-.timeline_list.is-fit .timeline_row.is-inview .timeline_icon svg path{stroke-dashoffset:0}
 @media (max-width:479px){.fit_list-title{margin:-28px -20px 24px;padding:22px 20px}}
 /* §3 Overview tiles — 2 / 3 / 2 rhythm, no ragged rows. A 6-column grid lets the paired rows sit as
    equal halves (is-wide / is-after-wide, span 3) while the middle row keeps three equal thirds (span 2).
@@ -373,10 +370,6 @@
 .plan_fix:hover{color:var(--indigo-bright,#5D60EE)}
 .plan_note{margin:0;padding:14px 0 12px;border-top:1px solid rgba(95,89,80,.1);font-size:.875rem;line-height:1.6;color:#8D877B;text-wrap:pretty}
 .section_budget > .callout{margin-top:24px;width:100%}
-/* Reveal (shared .is-inview observer) */
-.has-reveal .plan_col{opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s cubic-bezier(0.16,1,0.3,1)}
-.has-reveal .plan_col.is-result{transition-delay:.12s}
-.plan_col.is-inview{opacity:1;transform:none}
 /* .has-reveal .plan_col{opacity:1;…} deleted here for the same reason: it can never match, because
    .has-reveal is only ever set by a script that has already returned on the same media query. */
 @media (prefers-reduced-motion:reduce){.plan_visa-state.is-on,.plan_chip.is-pop{animation:none}.plan_range::-webkit-slider-thumb{transition:none}}
@@ -398,6 +391,11 @@
      rule to hide them. */
 @media screen and (max-width:767px){.plan_visa-head{flex-wrap:wrap}}
 @media screen and (max-width:479px){.plan_col{padding:22px 18px 18px}}
+
+/* §3 now opens on the photo, so the section's own 96px padding-top would double the image's
+   clearance (client, 25 Aug). Same treatment the live sheet gives a photo-led section with
+   .section_page.section_fit.is-consecutive{padding-top:0}, expressed as base + one is- combo. */
+.section_overview.is-consecutive{padding-top:0}
 
 /* ============================================================
    §18 More Options — full-width city banners (citylist_*)
@@ -427,6 +425,11 @@
 @media (max-width:991px){.citylist_name{font-size:30px}}
 @media (max-width:767px){.citylist_row{aspect-ratio:4/3;min-height:320px}.citylist_body{padding:28px 24px;gap:18px}.citylist_text{gap:12px}.citylist_logo-mark{height:26px}.citylist_name{font-size:26px}}
 @media (max-width:479px){.citylist_name{font-size:23px}}
+/* One-line city descriptor under the name (copy SSOT §18). Body face on the veil, one step below
+   the ledger value so it sits clearly under the display-face city name; measure capped so it never
+   runs the full banner width. Flat single-class rules — no descendants. */
+.citylist_desc{font-family:"LibreFranklin",sans-serif;font-size:1.0625rem;font-weight:400;line-height:1.45;color:var(--cream, #f9f1df);opacity:.86;margin:0;max-width:44ch}
+@media (max-width:767px){.citylist_desc{font-size:.9375rem;max-width:34ch}}
 
 /* ============================================================
    §19 Related Guides — nextread_* link cluster
@@ -496,11 +499,12 @@
 /* §4 Who It's For — reuses the §9 timeline_* recipe verbatim (rail, dots, .is-inview reveal);
    only addition: the tick icon is an <img>, so mirror the svg sizing rule. */
 .timeline_icon img{width:100%;height:100%;display:block}
-.section_fit .timeline_list{margin-top:12px}
+/* §4 no longer carries section_fit (client, 25 Aug): the class only existed to zero the
+   section padding-top for the leading photo, which now opens §3. The descendant rule that used
+   to sit here (.section_fit .timeline_list) went with it — it was undeployable anyway. */
+.timeline_list.is-fit{margin-top:12px}
 
 /* ── Review fixes ──────────────────────────────────────────── */
-/* Small-classes comparison: drop the trailing 40px so it sits flush to the section end. */
-.campus_small-classes .compare_component{margin-bottom:0}
 
 /* Method grid (§8) — six equal-height cards, uniform text padding, no overflow. */
 .campus_method .photo-card{height:440px;border-radius:20px;overflow:hidden;background:#F9F1DF;border:1px solid var(--cream-medium,#E8DCC8)}
@@ -613,15 +617,8 @@
 .timeline_num{font-family:"Librefranklin",Arial,sans-serif;font-weight:600;font-size:.75rem;letter-spacing:1.5px;line-height:1;color:#8D877B}
 #book-with-confidence .timeline_list{margin-top:24px}
 
-/* Comparison table: the VS badge belongs on the divider between the two header columns.
-   The base rule pins it to right:-24px / top:50% of an unpositioned .compare_grid, so it
-   drifted outside the table and, once anchored, to the middle of all 5 rows. Place it as
-   a real grid item in row 1 instead — the two header cols are pinned explicitly so the 8
-   comparison cells still auto-place from row 2. */
-.campus_small-classes .compare_grid{position:relative}
-.campus_small-classes .compare_component:not(.is-scrollable) .compare_col.is-first{grid-column:1;grid-row:1}
-.campus_small-classes .compare_component:not(.is-scrollable) .compare_col.is-last{grid-column:2;grid-row:1}
-.campus_small-classes .compare_component:not(.is-scrollable) .compare_vs{position:relative;grid-column:1 / -1;grid-row:1;justify-self:center;align-self:center;left:auto;right:auto;top:auto;transform:none;margin:0}
+/* The §8 comparison table rules that used to sit here went with the small-classes block the
+   client removed on 25 Aug — .campus_small-classes no longer exists on this page. */
 
 /* §8 method cards: standard heading colour, not the indigo the live sheet ships — these are
    section-level card headings and read as body headings alongside .section-title. */
@@ -772,3 +769,16 @@
    this one rule replaces all three of theirs at every width. */
 .info-card-figure{font-size:1.0625rem}
 /* Heading bands are 22px top and bottom on every page — see the audit note in pacific-beach.css. */
+/* §3's photo now caps the section instead of hanging above it: the live sheet sets
+   .fit_hero-img{margin-top:-64px} at <=991 and -48px at <=767 for a section whose padding-top is
+   zero, which floated the image over the card's top border. landing.css loads last, so this one
+   flat rule covers both breakpoints. */
+@media (max-width:991px){.fit_hero-img{margin-top:0}}
+/* §7 closes on .campus_method, and the live sheet zeroes that block's padding-bottom while
+   .section_page.section_campus zeroes the section's own — so with the small-classes block removed
+   the method grid ran flush to the card's bottom edge. The section class STAYS: padding:0 is what
+   makes the bento hero full-bleed. Instead the last child carries the section's own bottom step,
+   96 / 64 / 48, so §7 ends on the same rhythm as every other section. */
+.campus_method{padding-bottom:96px}
+@media (max-width:991px){.campus_method{padding-bottom:64px}}
+@media (max-width:767px){.campus_method{padding-bottom:48px}}

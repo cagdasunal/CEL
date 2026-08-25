@@ -42,5 +42,21 @@
    ROOT CAUSE (about page, 11 Aug): no sheet in this project ever declares text-decoration on
    .navbar_link, so the BROWSER default underline wins on any page whose stylesheet set happens
    not to cover it — it looked page-specific but was a hole in the shared cascade. This file is
-   the navbar's shared home (CLAUDE.md), so the standard lives here once: link it, never copy it. */
-.navbar_component a.navbar_link, .navbar_component a.navbar_dropdown-link, .navbar_component a.navbar_logo-link, .navbar_component a.navbar_button { text-decoration: none; }
+   the navbar's shared home (CLAUDE.md), so the standard lives here once: link it, never copy it.
+
+   AUTHORED FLAT 2026-08-25 (CLAUDE.md §4a). The one rule here used to be
+   `.navbar_component a.navbar_link, .navbar_component a.navbar_dropdown-link, …` — four descendant
+   selectors in a single rule, i.e. four style objects the deploy drops and four focus rings that
+   never reach the site. Now one class, one rule, four rules.
+   Behaviour is identical, verified against the published cascade rather than assumed: the only
+   competing text-decoration declarations that can reach these elements are `.w-nav-link` /
+   `.w-nav-brand` / `.w-dropdown-link` (shared, 0-1-0), the `a, .w-nav-link, …{text-decoration:
+   inherit}` group in site-custom-code (0-1-0), `:is(h1…p) a{underline}` (0-0-2) and `.navbar_button`
+   in each opt sheet (0-1-0). All are ≤ 0-1-0 and ALL load before this file, so a flat class still
+   wins on source order. The classes appear only on anchors inside `.navbar_component`; the one
+   out-of-navbar user is the contact form's `navbar_button is-form` submit, where `text-decoration`
+   is inert. */
+.navbar_link{text-decoration:none}
+.navbar_dropdown-link{text-decoration:none}
+.navbar_logo-link{text-decoration:none}
+.navbar_button{text-decoration:none}
