@@ -60,6 +60,16 @@ LANGUAGE_ID_MAP = {
 
 HTTP_TIMEOUT = 60
 
+# 4xx codes that are transient and worth retrying. Everything else in the 4xx
+# range is a genuine client error (bad token, wrong id, bad payload) where a
+# retry just burns the backoff and delays a real signal.
+#   406 - what Webflow's edge/WAF returns when it blocks a request outright.
+#         Observed 2026-08-25 on api.webflow.com from a GitHub Actions runner
+#         (run 32902744831); the identical request succeeded from a laptop and
+#         on the very next pipeline run, so it is edge-side and transient.
+#   408 - request timeout.   425 - too early.   429 - rate limited.
+RETRYABLE_STATUS = frozenset({406, 408, 425, 429})
+
 # Required to bypass Cloudflare 1010 on api.weglot.com
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -102,7 +112,7 @@ def _http_request(
         except HTTPError as e:
             body_bytes = e.read()
             body_str = body_bytes.decode("utf-8", errors="replace")
-            if e.code < 500:
+            if e.code < 500 and e.code not in RETRYABLE_STATUS:
                 try:
                     return e.code, json.loads(body_str)
                 except json.JSONDecodeError:
@@ -300,6 +310,12 @@ def emit_github_output(
         error,
         delim,
     ]
+    # Every failure path in main() routes through here. Without this print the
+    # step exits 1 having logged nothing but its last progress line, which is
+    # what made run 32902744831 read as an unexplained failure.
+    if error:
+        print(f"[api_sync] ERROR: {error}", file=sys.stderr, flush=True)
+
     output_file = os.environ.get("GITHUB_OUTPUT", "")
     if output_file:
         with open(output_file, "a") as f:

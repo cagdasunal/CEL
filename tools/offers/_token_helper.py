@@ -9,6 +9,7 @@ No module-level I/O.
 from __future__ import annotations
 
 import json
+import time
 import os
 import urllib.error
 import urllib.request
@@ -38,6 +39,14 @@ def get_api_token(env_var: str = "WEBFLOW_API_TOKEN") -> str | None:
     return os.environ.get(env_var) or None
 
 
+# Transient statuses worth retrying on an idempotent read. 406 is what
+# Webflow's edge returns when it blocks a request outright — observed
+# 2026-08-25 in Content Pipeline run 32902744831, where the identical GET
+# succeeded from a laptop and on the next scheduled run.
+RETRYABLE_STATUS = frozenset({406, 408, 425, 429})
+_RETRY_ATTEMPTS = 4
+
+
 def api_request(
     method: str,
     url: str,
@@ -65,14 +74,27 @@ def api_request(
 
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
 
-    try:
-        with urllib.request.urlopen(req) as resp:
-            resp_body = resp.read().decode("utf-8")
-            if resp_body:
-                return json.loads(resp_body)
-            return {}
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="replace")
-        raise APIError(e.code, error_body, url)
-    except urllib.error.URLError as e:
-        raise NetworkError(str(e.reason), url)
+    # Retry only idempotent reads. A GET can be replayed safely; a PATCH/POST
+    # cannot, because a transient error may mask a write the server already
+    # applied, and a blind replay would double-apply it.
+    attempts = _RETRY_ATTEMPTS if method.upper() == "GET" else 1
+
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req) as resp:
+                resp_body = resp.read().decode("utf-8")
+                if resp_body:
+                    return json.loads(resp_body)
+                return {}
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8", errors="replace")
+            retryable = e.code in RETRYABLE_STATUS or e.code >= 500
+            if not retryable or attempt == attempts - 1:
+                raise APIError(e.code, error_body, url)
+        except urllib.error.URLError as e:
+            if attempt == attempts - 1:
+                raise NetworkError(str(e.reason), url)
+        time.sleep(2 ** attempt)
+
+    # Unreachable: the final attempt either returns or raises above.
+    raise NetworkError("retry loop exhausted without a result", url)
