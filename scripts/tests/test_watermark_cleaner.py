@@ -4577,3 +4577,289 @@ class TestReplaceLimitBoundsTheUncheckedWork:
         second = {r["asset_id"] for r in
                   (json.loads(x) for x in log.read_text().splitlines())} - first
         assert len(second) == 2 and not (second & first)
+
+
+class TestPurgeStagingCopies:
+    """`cms --apply` mints one Assets-panel copy per image and, until now, the
+    tool had no way to remove one. 145 were cleaned up by hand across three
+    live sites using throwaway scripts before this existed.
+
+    The trap this feature has to survive: Webflow re-hosts the file and STACKS
+    our id inside its own key, so a substring match sees the re-host and reports
+    the disposable copy as "on a published page" — purge would hold every
+    staging copy forever. The discriminator must be anchored.
+    """
+
+    LOG_CMS = {"action": "replaced", "mode": "cms-replace",
+               "asset_id": AID_HERO, "new_asset_id": AID_NEW, "name": "hero.png"}
+    LOG_PANEL = {"action": "replaced", "mode": "replace",
+                 "asset_id": AID_G1, "new_asset_id": AID_G2, "name": "other.png"}
+
+    def _log(self, tmp_path, *rows):
+        p = tmp_path / "l.jsonl"
+        p.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+        return p
+
+    def test_a_cms_replace_upload_is_a_candidate(self, tmp_path):
+        assert wc.load_staging_copies(self._log(tmp_path, self.LOG_CMS)) == {AID_NEW: "hero.png"}
+
+    def test_a_panel_replacement_is_NEVER_a_candidate(self, tmp_path):
+        """`mode=replace` means the ORIGINAL was purged and this upload IS the
+        asset now. Deleting it is permanent data loss, not cleanup."""
+        assert wc.load_staging_copies(self._log(tmp_path, self.LOG_PANEL)) == {}
+
+    def test_a_panel_replacement_wins_over_a_cms_row_for_the_same_id(self, tmp_path):
+        """If an id appears as both, the protective reading must win."""
+        both = dict(self.LOG_PANEL, new_asset_id=AID_NEW)
+        got = wc.load_staging_copies(self._log(tmp_path, self.LOG_CMS, both))
+        assert AID_NEW not in got, "a protected id survived as a deletion candidate"
+
+    @pytest.mark.parametrize("action", ["incomplete_repoint", "verify_failed",
+                                        "would_replace", "error"])
+    def test_only_a_successful_replace_counts(self, tmp_path, action):
+        assert wc.load_staging_copies(self._log(tmp_path, dict(self.LOG_CMS, action=action))) == {}
+
+    def test_a_corrupt_log_costs_time_never_correctness(self, tmp_path):
+        p = tmp_path / "l.jsonl"
+        p.write_text("not json\n" + json.dumps(self.LOG_CMS) + "\n{trunc", encoding="utf-8")
+        assert wc.load_staging_copies(p) == {AID_NEW: "hero.png"}
+
+    def test_a_missing_log_yields_no_candidates(self, tmp_path):
+        assert wc.load_staging_copies(tmp_path / "nope.jsonl") == {}
+
+    def test_purge_reads_the_flag(self):
+        """A candidate source the command never consults is decoration."""
+        src = inspect.getsource(wc.cmd_purge)
+        assert "staging_copies" in src and "load_staging_copies" in src
+        assert "staging_ids" in src
+        pr = wc.build_parser()
+        ns = pr.parse_args(["purge", "--site", "cel", "--staging-copies", "x.jsonl"])
+        assert ns.staging_copies == "x.jsonl"
+
+    def test_the_page_check_is_anchored_not_substring(self):
+        """THE trap. Webflow stacks our id inside its re-hosted key, so a
+        substring match reports the disposable copy as page-referenced and purge
+        holds it forever — which is exactly what made this feature necessary and
+        would silently make it useless."""
+        src = inspect.getsource(wc.cmd_purge)
+        assert 'if c["id"] in k for p in v' not in src, \
+            "purge is back to a substring page match; every staging copy will be held"
+        assert "startswith(c[\"id\"].lower()" in src
+        assert "page_via_rehost" in src, "the re-host signal must be named, not conflated"
+
+    def _drive(self, monkeypatch, tmp_path, *, log, live_index, backup=True):
+        """Drive cmd_purge for real.
+
+        The first version of the two tests below inspected cmd_purge's SOURCE
+        for a string. Both survived mutation: making the guarded branch
+        unreachable (`if False:`) leaves the string in place and the test green.
+        Only driving the command proves the DECISION flips.
+        """
+        monkeypatch.setattr(wc, "load_site_config", lambda s: {"webflow_site_id": SITE_ID})
+        monkeypatch.setattr(wc, "resolve_site_token", lambda s, t=None: "tok")
+        monkeypatch.setattr(wc, "list_assets",
+                            lambda t, s, limit=None: [_asset(AID_NEW, "hero.png")])
+        monkeypatch.setattr(wc, "download_image", lambda u, timeout=30: CLEAN_PNG)
+        monkeypatch.setattr(wc, "asset_id_appears_in_cms", lambda *a, **k: {AID_NEW: []})
+        monkeypatch.setattr(wc, "crawl_evidence_domains",
+                            lambda *a, **k: (live_index, ["https://example.com/p"], []))
+        bk = tmp_path / "bk"
+        bk.mkdir(exist_ok=True)
+        if backup:
+            (bk / f"{AID_NEW}_hero.png").write_bytes(CLEAN_PNG)
+        args = wc.build_parser().parse_args(
+            ["purge", "--site", "bv", "--quiet", "--staging-copies", str(log)])
+        args.backup_dir = str(bk)
+        return wc.cmd_purge(args)
+
+    REHOST = {f"{AID_G1}_{AID_NEW}_hero.png": ["https://example.com/p"]}
+
+    def test_a_staging_copy_with_a_live_rehost_is_a_DELETE_candidate(
+            self, monkeypatch, tmp_path, capsys):
+        """The happy path — and the control that makes the next test mean
+        something."""
+        self._drive(monkeypatch, tmp_path,
+                    log=self._log(tmp_path, self.LOG_CMS), live_index=self.REHOST)
+        out = capsys.readouterr().out
+        assert "WOULD" in out and "HOLD" not in out, out[-400:]
+
+    def test_a_staging_copy_with_NO_rehost_is_HELD(self, monkeypatch, tmp_path, capsys):
+        """The fifth precondition, driven. 'Webflow re-hosted the bytes' is the
+        entire argument for deleting the upload; with no re-host that argument
+        is unproven, and the delete is the only thing between the client and a
+        broken image."""
+        self._drive(monkeypatch, tmp_path,
+                    log=self._log(tmp_path, self.LOG_CMS), live_index={})
+        out = capsys.readouterr().out
+        assert "HOLD" in out and "NO re-hosted CMS copy found" in out
+
+    def test_the_rehost_is_NOT_counted_as_a_page_reference(
+            self, monkeypatch, tmp_path, capsys):
+        """THE trap, driven. The re-hosted key CONTAINS our id, so a substring
+        match reports 'on published page' and purge holds every staging copy
+        forever — making the whole feature a silent no-op."""
+        self._drive(monkeypatch, tmp_path,
+                    log=self._log(tmp_path, self.LOG_CMS), live_index=self.REHOST)
+        assert "on published page" not in capsys.readouterr().out, \
+            "the re-host was read as a page reference; every staging copy will be held"
+
+    def test_a_REAL_page_reference_still_holds_it(self, monkeypatch, tmp_path, capsys):
+        """Guard the guard: anchoring must not blind purge to a genuine
+        reference. A key that STARTS with our id is the asset itself."""
+        both = dict(self.REHOST)
+        both[f"{AID_NEW}_hero.png"] = ["https://example.com/real"]
+        self._drive(monkeypatch, tmp_path,
+                    log=self._log(tmp_path, self.LOG_CMS), live_index=both)
+        out = capsys.readouterr().out
+        assert "HOLD" in out and "on published page" in out
+
+    def test_without_the_flag_the_same_asset_is_not_a_candidate(
+            self, monkeypatch, tmp_path, capsys):
+        """Driven proof the flag is what admits it: the same clean, unreferenced
+        asset is invisible to purge with an empty log, because it carries no AI
+        signal of its own."""
+        empty = tmp_path / "empty.jsonl"
+        empty.write_text("", encoding="utf-8")
+        self._drive(monkeypatch, tmp_path, log=empty, live_index=self.REHOST)
+        out = capsys.readouterr().out
+        assert "WOULD" not in out, "an asset with no staging record became a candidate"
+
+    def test_the_other_four_preconditions_still_apply(self):
+        """A staging copy is an ADDITIONAL candidate source, not an exemption
+        from the checks that make purge safe."""
+        src = inspect.getsource(wc.cmd_purge)
+        # Match on fragments, not joined sentences: these live as implicitly
+        # concatenated string literals split across source lines, so asserting
+        # the rendered sentence fails on formatting rather than on substance.
+        for guard in ("referenced by CMS", "on published page",
+                      "no byte-identical backup on disk",
+                      "condition 3 (no published page uses it)"):
+            assert guard in src, f"purge lost the guard: {guard}"
+
+
+class TestCleanLogCompaction:
+    """The known-clean log is append-only and CI COMMITS it to a PUBLIC repo.
+
+    Measured 2026-08-25: 843 KB -> 1091 KB -> 1932 KB across three nights,
+    3,173 rows answering 2,067 ids. Left alone that is ~180 MB/year of
+    permanent git history for a cache whose entire content is "these ids were
+    clean".
+    """
+
+    def _log(self, tmp_path, rows):
+        p = tmp_path / "clean.jsonl"
+        p.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+        return p
+
+    def _row(self, aid, **kw):
+        return {"mode": "scan-asset", "asset_id": aid, "signals": [], **kw}
+
+    def test_duplicate_rows_collapse_to_one_per_asset(self, tmp_path):
+        p = self._log(tmp_path, [self._row(AID_HERO), self._row(AID_HERO),
+                                 self._row(AID_G1), self._row(AID_HERO)])
+        before, after = wc.compact_clean_log(p)
+        assert (before, after) == (4, 2)
+
+    def test_the_LAST_verdict_wins(self, tmp_path):
+        """Same rule load_known_clean applies reading in order — otherwise
+        compaction would change the cache's answer, not just its size."""
+        p = self._log(tmp_path, [self._row(AID_HERO, container="png"),
+                                 self._row(AID_HERO, container="webp")])
+        wc.compact_clean_log(p)
+        rows = [json.loads(x) for x in p.read_text().splitlines()]
+        assert len(rows) == 1 and rows[0]["container"] == "webp"
+
+    def test_compaction_preserves_the_ANSWER(self, tmp_path):
+        """The property that matters: same ids in, same ids out. A compaction
+        that shrinks the file but changes what it says is a data-loss bug."""
+        rows = [self._row(AID_HERO), self._row(AID_G1), self._row(AID_HERO),
+                self._row(AID_G2, signals=[{"kind": "exif", "removable": True}])]
+        p = self._log(tmp_path, rows)
+        before_ids = wc.load_known_clean(p)
+        wc.compact_clean_log(p)
+        assert wc.load_known_clean(p) == before_ids
+
+    def test_ids_no_longer_on_the_site_are_pruned(self, tmp_path):
+        p = self._log(tmp_path, [self._row(AID_HERO), self._row(AID_G1)])
+        before, after = wc.compact_clean_log(p, live_ids={AID_HERO})
+        assert (before, after) == (2, 1)
+        assert wc.load_known_clean(p) == {AID_HERO}
+
+    def test_without_live_ids_nothing_is_pruned(self, tmp_path):
+        """Guard the guard: pruning against a partial asset list would evict ids
+        that are still on the site and re-download them forever."""
+        p = self._log(tmp_path, [self._row(AID_HERO), self._row(AID_G1)])
+        wc.compact_clean_log(p, live_ids=None)
+        assert wc.load_known_clean(p) == {AID_HERO, AID_G1}
+
+    def test_a_file_already_minimal_is_not_rewritten(self, tmp_path):
+        p = self._log(tmp_path, [self._row(AID_HERO)])
+        mtime = p.stat().st_mtime_ns
+        before, after = wc.compact_clean_log(p)
+        assert (before, after) == (1, 1)
+        assert p.stat().st_mtime_ns == mtime, "rewrote a file that needed no change"
+
+    def test_unparseable_rows_are_dropped(self, tmp_path):
+        p = tmp_path / "clean.jsonl"
+        p.write_text("not json\n" + json.dumps(self._row(AID_HERO)) + "\n",
+                     encoding="utf-8")
+        wc.compact_clean_log(p)
+        assert wc.load_known_clean(p) == {AID_HERO}
+        assert "not json" not in p.read_text()
+
+    def test_a_missing_file_is_not_an_error(self, tmp_path):
+        assert wc.compact_clean_log(tmp_path / "nope.jsonl") == (0, 0)
+
+    def test_rows_with_no_asset_id_are_KEPT(self, tmp_path):
+        """`scan --local` writes `mode: scan-local` rows keyed by path, not by
+        asset id. They are real audit history and the real log contains them;
+        compaction is a size optimisation, not a licence to discard records it
+        has no index for."""
+        local = {"mode": "scan-local", "path": "/tmp/a.png", "signals": []}
+        p = self._log(tmp_path, [local, self._row(AID_HERO), self._row(AID_HERO)])
+        before, after = wc.compact_clean_log(p)
+        assert (before, after) == (3, 2)
+        kept = [json.loads(x) for x in p.read_text().splitlines()]
+        assert any(r.get("mode") == "scan-local" for r in kept), \
+            "an unkeyed audit row was silently discarded"
+
+    def test_it_actually_shrinks_a_realistic_log(self, tmp_path):
+        """The point of the exercise, at the measured ratio: 3,173 rows holding
+        2,067 distinct ids."""
+        rows = []
+        for n in range(2067):
+            rows.append(self._row(f"{n:024x}"))
+        for n in range(1106):
+            rows.append(self._row(f"{n:024x}"))
+        p = self._log(tmp_path, rows)
+        size_before = p.stat().st_size
+        before, after = wc.compact_clean_log(p)
+        assert before == 3173 and after == 2067
+        assert p.stat().st_size < size_before
+        assert len(wc.load_known_clean(p)) == 2067
+
+    def test_scan_only_compacts_when_asked(self):
+        pr = wc.build_parser()
+        assert pr.parse_args(["scan", "--site", "cel"]).compact_log is False
+        assert pr.parse_args(["scan", "--site", "cel", "--compact-log"]).compact_log is True
+        assert "compact_clean_log" in inspect.getsource(wc.cmd_scan)
+
+    def test_the_prune_basis_covers_BOTH_surfaces(self):
+        """`list_assets` is the Assets-panel walk only — CMS-uploaded images are
+        absent from it (rules/ai-provenance.md §6b). Pruning against it alone
+        would evict every CMS entry and re-download them every night, which is
+        the exact failure the prune exists to avoid. The basis must be what the
+        scan actually walked.
+        """
+        src = inspect.getsource(wc.cmd_scan)
+        assert 'live_ids = {t["asset_id"] for t in targets' in src, \
+            "the prune basis is not the walked target set"
+        assert '{a["id"] for a in assets}' not in src.split("compact_clean_log")[0][-900:], \
+            "prune basis reverted to the Assets-panel walk; CMS ids would be evicted nightly"
+
+    def test_a_narrowed_run_does_not_prune_at_all(self):
+        """--no-cms / --no-assets / --limit each make the walk partial, and a
+        partial walk cannot prove an id is gone."""
+        src = inspect.getsource(wc.cmd_scan)
+        for guard in ("not args.limit", "not args.no_cms", "not args.no_assets"):
+            assert guard in src, f"a narrowed run could still prune: missing {guard}"

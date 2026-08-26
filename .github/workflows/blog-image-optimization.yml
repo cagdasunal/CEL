@@ -39,6 +39,13 @@ on:
   # /repos/{owner}/{repo}/dispatches endpoint with event_type
   # `webflow_blog_published` and a JSON payload `{"slug": "<post-slug>"}`.
   # See docs/blog-image-optimization-setup.md for the receiver setup.
+  #
+  # STATUS 2026-08-26: NOT WIRED. No relay sends this event today — the
+  # nightly cron below is the only thing that actually runs. This trigger is
+  # kept (not deleted) because the runbook above is complete and this is the
+  # endpoint it targets; a declared trigger is not evidence of a live one.
+  #   Test by hand:  gh api repos/cagdasunal/CEL/dispatches -f event_type=webflow_blog_published \
+  #                    -F client_payload[slug]=<post-slug>
   repository_dispatch:
     types: [webflow_blog_published]
 
@@ -179,6 +186,7 @@ jobs:
             --site cel \
             --skip-known-clean data/watermark-clean-log.jsonl \
             --log-jsonl data/watermark-clean-log.jsonl \
+            --compact-log \
             --summary-out data/watermark-scan-summary.json \
             --markdown-out data/watermark-scan-summary.md \
             --verbose

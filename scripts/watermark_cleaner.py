@@ -400,6 +400,54 @@ def _row(mode: str, **kw) -> dict:
     return {"ts": utc_iso(), "mode": mode, **kw}
 
 
+def compact_clean_log(path: Path, live_ids: set[str] | None = None) -> tuple[int, int]:
+    """Collapse a known-clean log to one row per asset, dropping dead entries.
+
+    The log is append-only and is COMMITTED by the CEL nightly job. Measured
+    2026-08-25 on a public repo: 843 KB -> 1091 KB -> 1932 KB across three
+    nights, holding 3,173 rows to answer 2,067 ids. Left alone it is roughly
+    180 MB/year of permanent git history, in a repository anyone can clone, for
+    a cache whose whole content is "these ids were clean".
+
+    Keeps the LAST row per asset id — the newest verdict wins, which is the same
+    rule `load_known_clean` applies when it reads them in order. When
+    ``live_ids`` is given, rows for assets no longer on the site are dropped too:
+    a Webflow asset is immutable, so a departed id can never come back and be
+    wrong about it.
+
+    Returns (rows_before, rows_after). Writes nothing if nothing would change.
+    """
+    if not path.is_file():
+        return (0, 0)
+    raw = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    by_id: dict[str, str] = {}
+    keep_unkeyed: list[str] = []
+    before = 0
+    for line in raw:
+        line = line.strip()
+        if not line:
+            continue
+        before += 1
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            # Unparseable rows are DROPPED, not preserved: load_known_clean
+            # already skips them, so keeping them costs bytes and buys nothing.
+            continue
+        aid = row.get("asset_id")
+        if not aid:
+            keep_unkeyed.append(line)
+            continue
+        if live_ids is not None and aid not in live_ids:
+            continue
+        by_id[aid] = line          # last write wins, matching the reader
+    out = keep_unkeyed + [by_id[k] for k in sorted(by_id)]
+    if len(out) == before:
+        return (before, before)
+    path.write_text("\n".join(out) + ("\n" if out else ""), encoding="utf-8")
+    return (before, len(out))
+
+
 def append_jsonl(path: Path, rows: list[dict]) -> None:
     if not rows:
         return
@@ -1265,6 +1313,29 @@ def cmd_scan(args: argparse.Namespace) -> int:
         print(json.dumps(rows, indent=1, ensure_ascii=False))
     if args.log_jsonl:
         append_jsonl(Path(args.log_jsonl), rows)
+        if args.compact_log:
+            # The log is append-only and the CEL nightly COMMITS it to a public
+            # repo: 843 KB -> 1932 KB in three nights, 3,173 rows answering
+            # 2,067 ids. Unchecked that is ~180 MB/year of permanent history for
+            # a cache whose entire content is "these ids were clean".
+            #
+            # Compaction runs AFTER the append, so this run's verdicts are the
+            # ones kept. `live_ids` is only passed when the asset walk actually
+            # completed — pruning against a partial list would evict ids that
+            # are still on the site and silently re-download them forever.
+            # BOTH surfaces, or none. `assets` is the Assets-panel walk only —
+            # CMS-uploaded images are absent from it (§6b), so pruning against
+            # it alone would evict every CMS entry and silently re-download them
+            # every night, which is the exact failure this prune exists to avoid.
+            # `targets` is what the scan actually walked, so it is the only
+            # honest basis for "no longer on the site".
+            live_ids = None
+            if args.site and not args.limit and not args.no_cms and not args.no_assets:
+                live_ids = {t["asset_id"] for t in targets if t.get("asset_id")}
+            b, a2 = compact_clean_log(Path(args.log_jsonl), live_ids)
+            if b != a2:
+                print(f"  compacted the clean-log: {b} rows -> {a2}"
+                      f"{' (pruned ids no longer on the site)' if live_ids else ''}")
 
     # CI surfaces. `--summary-out` is written even when nothing was found: a
     # health surface that only appears on failure reads as "green" during an
@@ -2355,6 +2426,56 @@ def resolve_or_create_folder(token: str, site_id: str, name: str) -> str:
     return created.get("id") or created.get("_id") or ""
 
 
+def load_staging_copies(path: Path) -> dict[str, str]:
+    """Assets THIS TOOL uploaded to the Assets panel that Webflow then re-hosted.
+
+    `cms --apply` uploads the stripped bytes as a site asset, PATCHes a CMS image
+    field with that URL, and Webflow ingests the file into its CMS bucket under
+    its OWN key with our id stacked inside (rules/ai-provenance.md §6b). The
+    panel upload is a staging artifact from that moment on — nothing references
+    it — but the tool had no way to remove one, so every `cms --apply` left a
+    permanent pile behind. 145 were cleaned up by hand across three sites before
+    this existed.
+
+    ONLY `mode == "cms-replace"` rows qualify. A `mode == "replace"` row is an
+    Assets-panel replacement whose ORIGINAL was purged: that upload IS the asset
+    now, and deleting it is permanent data loss. They are returned separately so
+    the caller can refuse them explicitly rather than by omission.
+
+    That protection is PER-FILE. An id recorded as `cms-replace` in one log and
+    `replace` in another is only protected if both are read, so concatenate every
+    log for the site rather than passing one. Observed live: three brightvalley
+    ids appeared in both logs, and passing only the cms log admitted them as
+    candidates — purge then held all three anyway on "referenced by CMS" and "no
+    byte-identical backup". The layering is what makes an over-broad candidate
+    set survivable; it is not a licence to hand it one.
+    """
+    staging: dict[str, str] = {}
+    protected: set[str] = set()
+    if not path.is_file():
+        return staging
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if row.get("action") != "replaced":
+            continue
+        new_id = row.get("new_asset_id")
+        if not new_id:
+            continue
+        if row.get("mode") == "cms-replace":
+            staging[new_id] = row.get("name", "")
+        else:
+            protected.add(new_id)
+    for pid in protected:
+        staging.pop(pid, None)
+    return staging
+
+
 def delete_asset(token: str, asset_id: str) -> dict:
     return rate_limited_request("DELETE", f"{WEBFLOW_API_BASE}/assets/{asset_id}", token)
 
@@ -2409,6 +2530,12 @@ def cmd_purge(args: argparse.Namespace) -> int:
     # very leftovers the replace had just created. `--superseded <log>` sources
     # candidates from the replace log's `superseded_by` links instead; every
     # other safety check below is unchanged and still runs.
+    staging_ids: dict[str, str] = {}
+    if getattr(args, "staging_copies", ""):
+        staging_ids = load_staging_copies(Path(args.staging_copies))
+        print(f"  {len(staging_ids)} asset(s) recorded as cms-replace staging copies in "
+              f"{args.staging_copies}")
+
     superseded_ids: set[str] = set()
     if args.superseded:
         superseded_ids = set(load_superseded(Path(args.superseded)))
@@ -2417,7 +2544,8 @@ def cmd_purge(args: argparse.Namespace) -> int:
 
     assets = list_assets(token, site_id, limit=args.limit)
     candidates = []
-    why = "superseded-by-a-replacement" if superseded_ids else "AI-flagged"
+    why = ("staging-copy" if staging_ids else
+           "superseded-by-a-replacement" if superseded_ids else "AI-flagged")
     print(f"  Scanning {len(assets)} asset(s) for {why}, unreferenced originals…")
     for a in assets:
         url, aid = a.get("hostedUrl") or "", a.get("id", "")
@@ -2431,7 +2559,7 @@ def cmd_purge(args: argparse.Namespace) -> int:
         except Exception:
             continue
         rep = ip.scan(data)
-        if not (rep.is_ai_flagged or aid in superseded_ids):
+        if not (rep.is_ai_flagged or aid in superseded_ids or aid in staging_ids):
             continue
         candidates.append({"id": aid, "name": name, "url": url, "bytes": data,
                            "generators": rep.ai_generators, "kinds": rep.kinds})
@@ -2472,7 +2600,22 @@ def cmd_purge(args: argparse.Namespace) -> int:
     deleted = held = failed = 0
     for c in candidates:
         cms = cms_hits.get(c["id"], [])
-        page = [p for k, v in live_index.items() if c["id"] in k for p in v]
+        # ANCHORED, not a substring. Webflow RE-HOSTS a file when a CMS image
+        # field is written and stacks OUR id inside its own key
+        # (`{webflow_id}_{our_id}_{name}` — rules/ai-provenance.md §6b), so
+        # `c["id"] in k` matches the re-host as well as the asset itself. For an
+        # ordinary original that is harmless (no stacked key exists). For a
+        # staging copy it is fatal: purge sees its own re-host, calls it a
+        # published-page reference, and holds the asset forever.
+        #
+        # The two are kept as SEPARATE named signals rather than one ambiguous
+        # one: `page` holds a deletion, `page_via_rehost` is the evidence that
+        # the re-host exists and is what makes a staging copy disposable.
+        page = [p for k, v in live_index.items()
+                if k.lower().startswith(c["id"].lower() + "_") for p in v]
+        page_via_rehost = [p for k, v in live_index.items()
+                           if c["id"].lower() in k.lower()
+                           and not k.lower().startswith(c["id"].lower() + "_") for p in v]
         # CONCATENATE, never short-circuit. `A or B` meant one file whose NAME
         # merely contains the asset id (a `{new_id}_{old_id}_name` replacement)
         # suppressed the name-based lookup entirely, so a correct byte-identical
@@ -2489,6 +2632,25 @@ def cmd_purge(args: argparse.Namespace) -> int:
             reasons.append(f"on published page {page[:1]}")
         if not bk_ok:
             reasons.append("no byte-identical backup on disk")
+        if c["id"] in staging_ids:
+            # A FIFTH precondition, and it applies only to staging copies. The
+            # whole argument for deleting one is "Webflow re-hosted the bytes,
+            # so nothing needs this upload any more". If the re-host cannot be
+            # seen serving RIGHT NOW, that argument is unsupported and the
+            # delete would be the only thing standing between the client and a
+            # broken image.
+            if not page_via_rehost:
+                reasons.append("staging copy with NO re-hosted CMS copy found — "
+                               "the premise for deleting it is unproven")
+            else:
+                rehost_ok = False
+                for k, _v in live_index.items():
+                    if c["id"].lower() in k.lower() and not k.lower().startswith(
+                            c["id"].lower() + "_"):
+                        rehost_ok = True
+                        break
+                if not rehost_ok:
+                    reasons.append("staging copy whose re-host could not be confirmed serving")
         if not args.check_live_pages:
             # --no-check-live-pages used to DELETE precondition 3 rather than
             # relax it: both hold reasons below were gated on the flag, so the
@@ -3097,6 +3259,11 @@ def build_parser() -> argparse.ArgumentParser:
     sc.add_argument("--token", default=None, help="Webflow API token override")
     sc.add_argument("--quiet", action="store_true",
                     help="suppress per-collection index progress")
+    sc.add_argument("--compact-log", action="store_true",
+                    help="after writing, collapse --log-jsonl to one row per asset and drop "
+                         "ids no longer on the site. The log is append-only and CI COMMITS "
+                         "it: measured 843 KB -> 1932 KB in three nights on a public repo, "
+                         "3,173 rows answering 2,067 ids.")
     sc.add_argument("--collections", default="all",
                     help="comma-separated collection ids for the CMS surface (default: all)")
     sc.add_argument("--no-assets", action="store_true",
@@ -3174,6 +3341,13 @@ def build_parser() -> argparse.ArgumentParser:
                         help="delete AI-flagged assets that nothing references (irreversible)")
     pg.add_argument("--site", required=True)
     pg.add_argument("--apply", action="store_true", help="actually delete — IRREVERSIBLE")
+    pg.add_argument("--staging-copies", default="",
+                    help="a prior `cms --log-jsonl` file; also treat the Assets-panel copies "
+                         "that run uploaded as deletion candidates. Webflow re-hosts the file "
+                         "into its CMS bucket on write, so the panel upload is a staging "
+                         "artifact — but ONLY once its re-host is confirmed serving, which is "
+                         "an extra precondition on top of the four below. `mode=replace` rows "
+                         "are never candidates: those uploads ARE the asset.")
     pg.add_argument("--superseded", default="",
                     help="a replace/cms --log-jsonl file; also treat assets it records as "
                          "superseded_by a replacement as deletion candidates. Every other "
