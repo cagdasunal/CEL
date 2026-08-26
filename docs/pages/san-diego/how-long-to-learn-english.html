@@ -703,31 +703,6 @@
 </a>
 <div id="faq-8-body" class="faq-body"><div class="faq-body-inner"><p>The exam electives run for up to 8 weeks. Most TOEFL students start with General English and switch to exam preparation later in their stay, so total stays are usually longer than 8 weeks. Higher-level Cambridge candidates sometimes book only the 8-week exam block.</p></div></div>
 </div>
-</div>
-</section>
-
-
-<!-- ============================== §13 LONG-FORM SEO BLOCK ==============================
-     id="blog" per the copy doc, and it is the rail's eleventh anchor. Both options carry the same
-     strings — the five long-form answers, the four related guides, and the visible "Last updated"
-     line the copy's §0 Metadata table requires. They differ on measure, containment and whether a
-     photograph is spent here.
-     The related guides are four REAL internal destinations, not a post collection: the live
-     blog-bento_grid is CMS-bound and cel-featured-posts.min.js strips the rail's blog link when
-     the collection holds fewer than two posts. There is no San Diego post collection, and the copy
-     forbids empty teaser cards and dead "Continue reading" links. -->
-<!-- §14 — prose-with-pullquote: the answers at 66ch, one line pulled past the measure -->
-<section id="blog" data-lang="en,de,fr,it,ko" class="section_page section_faq">
-<h2 class="section-tagline">Timelines</h2>
-<h3 class="section-title">How Long Does It Take to Learn English in San Diego?</h3>
-<!-- The five long-form answers use §12's .faq-item accordion (client, 4 Aug: "it is an faq
-     section and you need to use the faq item styling"). ids are namespaced seo-* — two elements
-     sharing an id is invalid HTML and the accordion resolves aria-controls by id. The accordion
-     script is document-wide single-open, which is the live behaviour: opening an answer here closes
-     one in §12. DROPPED in the same edit: a .dur_callout above the academic-year answer whose text
-     was the first sentence of that answer verbatim — inside a collapsed panel it would have printed
-     the same sentence twice. -->
-<div class="faq-list">
 <div id="seo-1" data-faq-open="false" class="faq-item">
 <a role="button" aria-expanded="false" aria-controls="seo-1-body" tabindex="0" class="faq-q">
 <div class="faq-question-text"><p>Do beginners learn faster than advanced students?</p></div>
@@ -766,6 +741,33 @@
 <div id="seo-5-body" class="faq-body"><div class="faq-body-inner"><p>Both CEL cities teach the same methodology with the same approx. 10-weeks-per-level average — the difference is the setting and the paperwork. San Diego offers up to 12 visa-free weeks on ESTA (eligible nationalities; B1/B2 visitor visa otherwise) and TOEFL preparation for US universities; Vancouver suits students targeting Canada. Compare directly: <a href="/vancouver/how-long-to-learn-english" class="text-link">How long to learn English in Vancouver</a>.</p></div></div>
 </div>
 </div>
+</section>
+
+
+<!-- ============================== §13 LONG-FORM SEO BLOCK ==============================
+     id="blog" per the copy doc, and it is the rail's eleventh anchor. Both options carry the same
+     strings — the five long-form answers, the four related guides, and the visible "Last updated"
+     line the copy's §0 Metadata table requires. They differ on measure, containment and whether a
+     photograph is spent here.
+     The related guides are four REAL internal destinations, not a post collection: the live
+     blog-bento_grid is CMS-bound and cel-featured-posts.min.js strips the rail's blog link when
+     the collection holds fewer than two posts. There is no San Diego post collection, and the copy
+     forbids empty teaser cards and dead "Continue reading" links. -->
+<!-- §14 — prose-with-pullquote: the answers at 66ch, one line pulled past the measure -->
+<section id="blog" data-lang="en,de,fr,it,ko" class="section_page">
+<h2 class="section-tagline">Read Next</h2>
+<h3 class="section-title">Related Guides</h3>
+<!-- MERGED INTO §12 (client, 25 Aug: "move these to the faq section above. merge"). The five
+     long-form answers now sit at the end of §12's own .faq-list as items 9-13, keeping their seo-*
+     ids and aria-controls pairs; the accordion script is document-wide single-open, so nothing about
+     its behaviour changes. section_faq came off this section with them — it has no accordion left.
+     What remains is the four related guides, so the heading was retitled: the old "Timelines /
+     How Long Does It Take to Learn English in San Diego?" was a verbatim duplicate of the page H1
+     and introduced content that had just moved out.
+     OPEN, NOT BUILT: the visible "Last updated: [date]" line the copy doc's §0 Metadata table and
+     DECISIONS.md D-116 both require is absent from this page — it was never authored here, and the
+     merge did not remove it. costs.html implements it as p.hero_meta in the hero. Needs a freeze
+     date from the client before it can ship; do not invent one. -->
 <div class="nextread_grid is-2up">
 <a href="/san-diego-ca/cost-of-studying-english" class="nextread_card is-stacked">
 <p class="nextread_cat">Costs</p>

@@ -146,27 +146,29 @@
    keyboard or mobile picker; it is dressed in the ledger's vocabulary only: the panel's cream fill, the
    cream-medium hairline, the body face, and the indigo focus ring the page uses on every other control. */
 .compare-head.is-alt-head{padding:22px 24px;background-color:#f6eeda;border-bottom:1px solid #5f59501a}
-/* IT IS A COLUMN TITLE THAT HAPPENS TO BE A CONTROL (client, 4 Aug: "it should have the same styling as
-   with 'pacific beach' near the column so design consistency is the key. make it look super modern").
-   So the select carries .compare-area-name's exact rung — .75rem / 600 / 1.5px / uppercase / #5f5950 in the
-   body face — and drops the input chrome entirely: no fill, no box, just the title, a hairline under it and
-   the caret. The affordance is the caret plus that hairline going indigo on hover and focus; nothing else
-   moves, so the header row reads as two column titles of equal weight, one of which can be changed. */
+/* NOW THE DS FORM FIELD, NOT A BARE TITLE (client, 25 Aug: "too much minimalist. Difficult to recognize
+   it's a dropdown. Maybe we can use our regular selectbox style"). The 4 Aug version dropped all input
+   chrome so the select read as a second column title; that cost recognition, so it takes CEL's standard
+   field recipe instead — the same one the live /contact-cel form_input, the booking widget's
+   .custom-select and costs.css's .calc_select share: #fdf8ee fill, 3px cream-medium edge, 7px radius,
+   3rem min-height, body face, indigo focus ring. Type steps up from the .75rem uppercase title rung to
+   the field rung (.9375rem / 500 / sentence case) — a control that looks like a control cannot also be a
+   column heading, and readable options matter more than the symmetry did. */
 .compare-select-wrap{position:relative;display:inline-flex;align-items:center;width:100%;max-width:260px}
-.compare-select{appearance:none;-webkit-appearance:none;font-family:inherit;font-size:.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;line-height:1.35;color:#5f5950;background-color:#0000;border:0;border-bottom:1px solid rgba(95,89,80,.3);border-radius:0;padding:4px 24px 6px 0;width:100%;cursor:pointer;transition:color .15s ease,border-color .15s ease}
-.compare-select:hover{color:#37332c;border-bottom-color:#5d60ee}
-/* The caret is a real element, not a ::after (banned by this sheet's contract) and not a background image
-   (the library's only chevron points right and a background cannot be rotated). Same rotated 1.5px corner
-   costs.css draws on its disclosure toggle. pointer-events:none so the whole control stays clickable. */
-.compare-select-caret{position:absolute;right:6px;width:6px;height:6px;border-right:1.5px solid #8d877b;border-bottom:1.5px solid #8d877b;transform:translateY(-3px) rotate(45deg);pointer-events:none}
-.compare-select:focus-visible{outline:none;border-bottom-color:#5d60ee;box-shadow:0 3px 0 -1px rgba(93,96,238,.35)}
+.compare-select{appearance:none;-webkit-appearance:none;width:100%;min-height:3rem;padding:.6rem 2.75rem .6rem 1.1rem;font-family:'LibreFranklin',sans-serif;font-size:.9375rem;font-weight:500;letter-spacing:normal;text-transform:none;line-height:1.3;color:var(--brown-deep,#37332c);background-color:#fdf8ee;border:3px solid var(--cream-medium,#e9deca);border-radius:7px;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease}
+.compare-select:hover{border-color:#ddd0b6}
+/* The caret stays a real element rather than this sheet's banned ::after or the gradient pair
+   .calc_select uses — the div is already in the markup and a 3px border needs it inset further. */
+.compare-select-caret{position:absolute;right:18px;width:7px;height:7px;border-right:1.5px solid #9a8f80;border-bottom:1.5px solid #9a8f80;transform:translateY(-3px) rotate(45deg);pointer-events:none}
+.compare-select:focus-visible{outline:none;border-color:var(--indigo-bright,#5d60ee);box-shadow:0 0 0 3px rgba(93,96,238,.16)}
 /* 768-991 is the one tier with no rail and no phone: three columns fit unscrolled, so the overflow
    and the grab cursor are restated OFF here — they are the base value now, not an inherited one. */
 @media screen and (max-width:991px){.compare-table.is-duo{grid-template-columns:minmax(150px,210px) minmax(0,1fr) minmax(0,1fr);overflow:hidden;cursor:auto}}
 @media screen and (max-width:767px){
   .compare-table.is-duo{grid-template-columns:minmax(126px,150px) minmax(150px,1fr) minmax(150px,1fr);overflow:auto hidden;cursor:grab}
   .compare-head.is-alt-head{padding:22px 18px}
-  .compare-select{padding-right:20px}
+  .compare-select{min-height:2.75rem;padding:.5rem 2.5rem .5rem .9rem;font-size:.9375rem}
+  .compare-select-caret{right:16px}
 }
 
 /* ============ 2. COMBOS THE COPY FORCES ============ */
