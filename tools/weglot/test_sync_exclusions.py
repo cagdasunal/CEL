@@ -10,6 +10,10 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+# This module exercises the real `requests`-backed session. Skip cleanly when
+# the optional dependency is absent instead of erroring every test in the file.
+pytest.importorskip("requests")
+
 # Add the tools/weglot directory to path
 sys.path.insert(0, str(Path(__file__).parent))
 import sync_exclusions

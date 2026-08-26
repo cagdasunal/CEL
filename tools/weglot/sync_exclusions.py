@@ -24,6 +24,8 @@ Usage:
   python3 tools/weglot/sync_exclusions.py --status  # show current state
 """
 
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -32,13 +34,36 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+# `requests` is a hard runtime requirement but NOT an import-time one. Calling
+# sys.exit() here used to abort the entire pytest session with an INTERNALERROR
+# the moment test_sync_exclusions.py imported this module on a machine without
+# requests installed — which silently zeroed the tools/_stress regression
+# baseline guard. Record the failure and raise it at the point of use instead.
+# See rules/quality.md 12 (module-level code must be side-effect-free).
 try:
     import requests
     from requests.adapters import HTTPAdapter
     from urllib3.util.retry import Retry
-except ImportError:
-    print("ERROR: 'requests' package required. Install: pip install requests", file=sys.stderr)
-    sys.exit(1)
+
+    REQUESTS_IMPORT_ERROR: str | None = None
+except ImportError as _exc:  # pragma: no cover - exercised only without requests
+    requests = None  # type: ignore[assignment]
+    HTTPAdapter = None  # type: ignore[assignment]
+    Retry = None  # type: ignore[assignment]
+    REQUESTS_IMPORT_ERROR = str(_exc)
+
+
+def require_requests() -> None:
+    """Raise if the optional `requests` dependency is missing.
+
+    Called from every entry point that performs HTTP. Keeps the failure loud and
+    actionable without making module import fatal.
+    """
+    if REQUESTS_IMPORT_ERROR is not None:
+        raise RuntimeError(
+            "the 'requests' package is required for this command "
+            f"(install: pip install requests) - import failed: {REQUESTS_IMPORT_ERROR}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -63,6 +88,7 @@ def create_robust_session() -> requests.Session:
     scheduled run (see run 24404045978 on 2026-04-14 14:15 UTC — Webflow
     took >30s on offset=0 and the whole sync exited with ReadTimeout).
     """
+    require_requests()
     session = requests.Session()
     retry = Retry(
         total=4,
@@ -79,7 +105,26 @@ def create_robust_session() -> requests.Session:
     return session
 
 
-HTTP = create_robust_session()
+# The session used to be built at import time. That made merely importing this
+# module perform work and, without `requests` installed, abort the whole pytest
+# session. It is now built on first use. `HTTP` stays a module attribute so the
+# existing contract holds: `from sync_exclusions import HTTP` and
+# `patch.object(sync_exclusions.HTTP, "get")` both resolve to this one object.
+_HTTP_SESSION = None
+
+
+def _http():
+    """Return the shared retrying session, building it on first use."""
+    global _HTTP_SESSION
+    if _HTTP_SESSION is None:
+        _HTTP_SESSION = create_robust_session()
+    return _HTTP_SESSION
+
+
+def __getattr__(name):  # PEP 562
+    if name == "HTTP":
+        return _http()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -150,7 +195,7 @@ def fetch_all_blog_posts(token: str) -> list[dict]:
 
     while True:
         url = f"{WEBFLOW_API_BASE}/collections/{BLOG_COLLECTION_ID}/items"
-        resp = HTTP.get(url, headers=headers, params={"limit": limit, "offset": offset}, timeout=HTTP_TIMEOUT)
+        resp = _http().get(url, headers=headers, params={"limit": limit, "offset": offset}, timeout=HTTP_TIMEOUT)
         resp.raise_for_status()
         data = resp.json()
         items = data.get("items", [])
@@ -204,7 +249,7 @@ def extract_post_data(items: list[dict]) -> list[dict]:
 
 def fetch_weglot_exclusions(api_key: str) -> list[dict]:
     url = f"{WEGLOT_API_BASE}/projects/settings"
-    resp = HTTP.get(url, params={"api_key": api_key}, timeout=HTTP_TIMEOUT)
+    resp = _http().get(url, params={"api_key": api_key}, timeout=HTTP_TIMEOUT)
     resp.raise_for_status()
     return resp.json().get("excluded_paths", [])
 
@@ -459,6 +504,12 @@ if __name__ == "__main__":
         sys.exit(0)
 
     dry_run = "--dry-run" in args
+    try:
+        require_requests()
+    except RuntimeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+
     try:
         sync(dry_run=dry_run)
     except requests.HTTPError as e:
