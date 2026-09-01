@@ -87,6 +87,11 @@
   document.addEventListener('click', function (e) {
     var q = e.target.closest && e.target.closest('.faq-q');
     if (!q) return;
+    /* The deploy added href="#" to these triggers, which the comment above says they
+       must not have. It is inert today only because Webflow's own a[href^="#"] handler
+       cancels it — a third-party handler this bundle does not control. Cancel it here so
+       the accordion does not depend on that, and so a click cannot push "#" onto history. */
+    if (q.tagName === 'A' && (q.getAttribute('href') || '') === '#') e.preventDefault();
     var item = q.closest('.faq-item');
     if (!item) return;
     var wasOpen = item.dataset.faqOpen === 'true';
