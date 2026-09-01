@@ -145,6 +145,33 @@
   });
   if (!keys.length) return;
 
+  /* The deploy shipped this <select> EMPTY: data_whtml_builder drops <option> children
+     unconditionally (measured 2026-09-01 on both this page and sd-costs, inside a valid
+     FormWrapper), and no MCP surface can write a select's choices — set_settings returns
+     "Setting \"choices\" is not applicable to this element". With zero options the control
+     is inert and 24 of the 32 alternative cells are unreachable.
+
+     This repopulates it from the cells' own data-area values, so the option list cannot
+     drift from the data it filters. It is deliberately SELF-DISABLING: the moment real
+     options exist in the Designer, options.length is non-zero and this does nothing. */
+  var LABELS = {
+    'downtown': 'Downtown / Gaslamp',
+    'la-jolla': 'La Jolla / UTC',
+    'point-loma': 'Point Loma',
+    'mission-valley': 'Mission Valley'
+  };
+  if (!sel.options.length) {
+    keys.forEach(function (k, i) {
+      var o = document.createElement('option');
+      o.value = k;
+      o.textContent = LABELS[k] || k.replace(/-/g, ' ').replace(/\b\w/g, function (c) {
+        return c.toUpperCase();
+      });
+      if (i === 0) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
   function keyFor() {
     var v = sel.value;
     if (keys.indexOf(v) !== -1) return v;            // honour explicit option values if added later
