@@ -156,3 +156,110 @@
     q.click();
   });
 })();
+
+/* 5. Swiper loader — the site serves Swiper 11 from the CEL scripts host and the
+   Vancouver bundle uses the same `swiperReady` handshake. Loading it here keeps the
+   San Diego page independent of which other bundle happens to be on the page. */
+(function () {
+  if (window.__swR) return;
+  window.__swR = 1;
+  var s = document.createElement('script');
+  s.src = 'https://cel.englishcollege.com/scripts/vendor/swiper@11/swiper-bundle.min.js';
+  s.onload = function () {
+    window.__swOK = true;
+    document.dispatchEvent(new Event('swiperReady'));
+  };
+  document.head.appendChild(s);
+})();
+
+/* 6. Card sliders — showcase (#city), testimonials, activities.
+   Contract copied from pages/vancouver/scripts.js: the section ids and the
+   .card-slider_* nav classes are identical on this page. */
+(function () {
+  if (window.__celSdSliders) return;
+  window.__celSdSliders = true;
+
+  var autoBreakpoints = {
+    480: { spaceBetween: 16 },
+    768: { spaceBetween: 18 },
+    992: { spaceBetween: 20 },
+    1400: { spaceBetween: 22 }
+  };
+
+  function initCardSlider(sectionSel, opts) {
+    if (typeof Swiper === 'undefined') return null;
+    var section = document.querySelector(sectionSel);
+    if (!section) return null;
+    var swiperEl = opts.swiper ? document.querySelector(opts.swiper) : section.querySelector('.card-slider.swiper');
+    if (!swiperEl) swiperEl = section.querySelector('.swiper');
+    if (!swiperEl) return null;
+    /* The deploy can drop a second class silently, so make the Swiper root
+       self-healing rather than trusting the class list that shipped. */
+    if (!swiperEl.classList.contains('swiper')) swiperEl.classList.add('swiper');
+    var wrap = swiperEl.querySelector('.swiper-wrapper');
+    if (!wrap) return null;
+    var navEl = opts.nav ? document.querySelector(opts.nav) : section.querySelector('.card-slider_nav');
+
+    var swiper = new Swiper(swiperEl, {
+      slidesPerView: opts.slidesPerView || 'auto',
+      spaceBetween: opts.spaceBetween || 16,
+      speed: opts.speed || 600,
+      breakpoints: opts.breakpoints || autoBreakpoints,
+      watchOverflow: true
+    });
+    if (!navEl) return swiper;
+
+    var prevBtn = navEl.querySelector('.card-slider_arrow.is-prev');
+    var nextBtn = navEl.querySelector('.card-slider_arrow.is-next');
+    var progressFill = navEl.querySelector('.card-slider_progress-fill');
+    if (prevBtn) prevBtn.addEventListener('click', function () { swiper.slidePrev(); });
+    if (nextBtn) nextBtn.addEventListener('click', function () { swiper.slideNext(); });
+
+    function updateProgress() {
+      if (!progressFill || !swiper.slides || !swiper.slides.length) return;
+      var p = swiper.progress;
+      if (isNaN(p)) p = 0;
+      progressFill.style.width = Math.max(8, Math.min(100, p * 100)) + '%';
+    }
+    swiper.on('progress', updateProgress);
+    swiper.on('slideChange', updateProgress);
+    updateProgress();
+    return swiper;
+  }
+
+  function go() {
+    if (typeof Swiper === 'undefined') return;
+    initCardSlider('#city', { swiper: '#showcaseSlider', nav: '#showcaseSliderNav', speed: 800 });
+    initCardSlider('#testimonials', { swiper: '#testimonials-col', nav: '#testimonialsSliderNav' });
+    initCardSlider('#activities', { swiper: '#activitiesSlider', nav: '#activitiesSliderNav' });
+  }
+
+  if (typeof Swiper !== 'undefined') go();
+  else document.addEventListener('swiperReady', go);
+})();
+
+/* 7. Vimeo lazy-load facade (same contract as the Vancouver page). */
+(function () {
+  if (window.__a16VimeoDone || window.__celSdVimeo) return;
+  window.__celSdVimeo = true;
+  var player = document.querySelector('.video_player[data-vimeo-id]');
+  if (!player) return;
+  var btn = player.querySelector('.video_play-btn');
+  var thumb = player.querySelector('.video_thumbnail');
+  if (!btn && !thumb) return;
+  function loadVideo() {
+    var id = player.getAttribute('data-vimeo-id');
+    if (!id || player.classList.contains('is-playing')) return;
+    var iframe = document.createElement('iframe');
+    iframe.className = 'video_embed';
+    iframe.src = 'https://player.vimeo.com/video/' + id + '?autoplay=1&color=FAF3E8&title=0&byline=0&portrait=0';
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'autoplay; fullscreen; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.title = 'CEL San Diego — English Language School';
+    player.appendChild(iframe);
+    player.classList.add('is-playing');
+  }
+  if (btn) btn.addEventListener('click', loadVideo);
+  if (thumb) thumb.addEventListener('click', loadVideo);
+})();
