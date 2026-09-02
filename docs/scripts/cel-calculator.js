@@ -349,13 +349,40 @@
       var panel = panelFor(key);
       if (!panel) return;
       panel.hidden = !open;
+      /* Webflow drops attribute selectors, so `[hidden]` and `[aria-expanded]` cannot be
+         styled from once deployed. Mirror the same state onto `is-open` classes, which can.
+         `hidden` and `aria-expanded` stay — they are the accessibility contract. */
+      panel.classList.toggle('is-open', open);
       Array.prototype.forEach.call(menuToggles, function (t) {
         if (t.getAttribute('data-calc-menu-toggle') === key) {
           t.setAttribute('aria-expanded', open ? 'true' : 'false');
+          t.classList.toggle('is-open', open);
+          var caret = t.querySelector('[data-calc-mark]');
+          if (caret) caret.classList.toggle('is-open', open);
         }
       });
       if (open) document.addEventListener('click', onOutside, true);
       else document.removeEventListener('click', onOutside, true);
+    }
+
+    /* <details> flips `open` with no JS, and `[open]` is an attribute selector the deploy
+       drops. Mirror it to `is-open` on the details and its summary/caret, and seed the
+       initial state so a details that ships open is styled correctly on first paint. */
+    function bindDetails() {
+      var ds = document.querySelectorAll('details.plan_details');
+      Array.prototype.forEach.call(ds, function (d) {
+        if (d.__celDetailsBound) return;
+        d.__celDetailsBound = true;
+        var sync = function () {
+          d.classList.toggle('is-open', d.open);
+          var sm = d.querySelector('summary');
+          if (sm) sm.classList.toggle('is-open', d.open);
+          var mk = d.querySelector('summary [data-calc-mark]');
+          if (mk) mk.classList.toggle('is-open', d.open);
+        };
+        d.addEventListener('toggle', sync);
+        sync();
+      });
     }
 
     function closeMenus() {
@@ -443,6 +470,7 @@
     };
 
     root.__celCalc = this;
+    bindDetails();
     render();
     return this;
   }

@@ -19,7 +19,7 @@
  *     above queues onto window.CELCalculator when the engine has not landed yet.
  *
  * Guard flags are disjoint from the Vancouver bundle's (__celToc/__celFq/__costsPriceBarDone
- * vs __celFxDone/__costsAllPriceBarsDone/__costsStickyCtaDone/__costsTocCloseOnJumpDone),
+ * vs __celFxDone/__costsAllPriceBarsDone/__costsStickyCtaDone),
  * so nothing double-binds.
  */
 /* ═══════════════════════════════════════════════════════════
@@ -427,7 +427,10 @@
     compute: function (s, h) {
       var w = s.weeks;
       var weeks = h.plural(w, 'week', 'weeks');
-      var tRate = h.bracket(TUITION[s.course], w);
+      /* Guarded like ROOMS below: an empty or unknown course key must degrade to the
+         documented default (state.course) rather than throw inside h.bracket() and take
+         every later IIFE in this bundle down with it. */
+      var tRate = h.bracket(TUITION[s.course] || TUITION.ge20, w);
       /* An unknown key renders NOTHING rather than silently borrowing Standard's rate —
          a tile without a published rate must not print another residence's figure. */
       var room = ROOMS[s.room] || ROOMS.none;
@@ -514,6 +517,47 @@
       };
     }
   };
+
+  /* ── PUBLISHING REPAIR ────────────────────────────────────────────────
+     Webflow blanks the FIRST <option> value of a Select field, treating it as a
+     placeholder: #calcCourse shipped value="" for "ge20", #calcRoom "" for "std".
+     The engine reads the DOM over its own state defaults, so TUITION[""] was
+     undefined and h.bracket() threw on .length — killing this bundle on load, and
+     with it every IIFE that follows. Option values are not reachable through the
+     Designer API (a FormSelect exposes no choices setting), so repair them here.
+
+     Reconciles the SET of values, never a position or a label: a reordered list or
+     an edited option label cannot mislabel a rate, and anything ambiguous is left
+     exactly as authored. */
+  function repairSelect(id, expected) {
+    var el = document.getElementById(id);
+    if (!el || !el.options) return;
+    var present = {}, blanks = [], i;
+    for (i = 0; i < el.options.length; i++) {
+      if (el.options[i].value) present[el.options[i].value] = true;
+      else blanks.push(el.options[i]);
+    }
+    var missing = [];
+    for (i = 0; i < expected.length; i++) if (!present[expected[i]]) missing.push(expected[i]);
+    if (blanks.length !== 1 || missing.length !== 1) return;   /* ambiguous → leave as authored */
+    var wasSelected = el.selectedIndex === blanks[0].index;
+    blanks[0].value = missing[0];
+    if (wasSelected) el.value = missing[0];
+  }
+  repairSelect('calcCourse', ['ge20', 'ge24']);
+  repairSelect('calcRoom', ['std', 'prm', 'sup', 'hss', 'hsd', 'hpr', 'none']);
+
+  /* The 43 menu options ship with src="" — Webflow drops external image URLs on publish.
+     The picker's own flag recovers through out.fxFlag, but the menu's do not, so rebuild
+     them from each option's currency code. An existing src is never overwritten. */
+  var fxOpts = document.querySelectorAll('.fx_option[data-calc-value]');
+  for (var fi = 0; fi < fxOpts.length; fi++) {
+    var fImg = fxOpts[fi].querySelector('img.fx_flag');
+    var fCc = FLAG[fxOpts[fi].getAttribute('data-calc-value')];
+    if (!fImg || !fCc || fImg.getAttribute('src')) continue;
+    fImg.src = 'https://flagcdn.com/w40/' + fCc + '.png';
+    fImg.srcset = 'https://flagcdn.com/w80/' + fCc + '.png 2x';
+  }
 
   /* Mount now if the engine is loaded, otherwise queue — the engine flushes the
      queue when it evaluates, so script order can never break the page. */
@@ -687,23 +731,11 @@
   window.addEventListener('resize', function () { measure(); apply(); }, { passive: true });
 })();
 
-/* ── §2 TOC — close the mobile drawer after a jump ────────────
-   ../cost-of-studying-english/scripts.js closes .is-menu-open only for clicks OUTSIDE
-   .stoc_component, so tapping a link left the drawer open on top of the section it had
-   just jumped to (it is position:fixed at ≤991px). Own guard flag; the VC script is
-   never edited. Desktop is untouched — the drawer classes only exist ≤991px.
+/* ── §2 TOC — the mobile drawer closes itself now ────────────
+   celtocmob2 put `is-menu-open` on #tocSidebar (the .stoc_component), so this
+   page carried a patch that stripped it after a jump. celtocmob3 v2.0.0 —
+   shipped in cel-cost-of-studying-english.min.js, which this page also loads —
+   puts the class on .stoc_label/.stoc_nav where the stylesheet actually
+   defines it, and closes on link click itself. The patch removed 2026-09-02:
+   it listened for a class that is no longer set anywhere.
    ── */
-(function () {
-  if (window.__costsTocCloseOnJumpDone) return;
-  window.__costsTocCloseOnJumpDone = true;
-
-  var sidebar = document.getElementById('tocSidebar');
-  if (!sidebar) return;
-
-  sidebar.addEventListener('click', function (e) {
-    var link = e.target.closest ? e.target.closest('.stoc_link') : null;
-    if (!link) return;
-    if (window.innerWidth > 991) return;
-    sidebar.classList.remove('is-menu-open');
-  });
-})();
