@@ -372,6 +372,17 @@
 (function () {
   if (document.getElementById('cel-wa-glyph')) return;
   const css =
+    /* The 12 timeline icons are now real HtmlEmbed elements in the Designer, so the
+       head block's background-image data-URIs are redundant. They paint the SAME
+       glyph at the same size and colour, so today they overlay pixel-for-pixel and
+       nothing looks wrong — but the moment anyone edits an icon in the Designer the
+       old one shows through behind it as a ghost. Neutralised here rather than by
+       rewriting the 9KB head block, which would mean re-transmitting CSS that is
+       working. Specificity must match the head rules to win on source order:
+       #fit .timeline_icon is (1,1,0) and
+       #typical-day .timeline_row:nth-child(N) .timeline_icon is (1,3,0). */
+    "#fit .timeline_icon{background-image:none}" +
+    "#typical-day .timeline_row:nth-child(n) .timeline_icon{background-image:none}" +
     /* .callout publishes margin:0 although the Designer holds margin-top/bottom:32px —
        a per-property publish defect on that one global style object, confirmed against
        a fresh sheet and reproduced on a sibling page. The head block already restores
