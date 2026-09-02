@@ -381,8 +381,6 @@
        working. Specificity must match the head rules to win on source order:
        #fit .timeline_icon is (1,1,0) and
        #typical-day .timeline_row:nth-child(N) .timeline_icon is (1,3,0). */
-    "#fit .timeline_icon{background-image:none}" +
-    "#typical-day .timeline_row:nth-child(n) .timeline_icon{background-image:none}" +
     /* .callout publishes margin:0 although the Designer holds margin-top/bottom:32px —
        a per-property publish defect on that one global style object, confirmed against
        a fresh sheet and reproduced on a sibling page. The head block already restores
