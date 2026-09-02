@@ -255,3 +255,85 @@
   window.addEventListener('resize', frame);
   frame();
 })();
+
+/* 7. Mobile TOC drawer (<=991px) — celtocmob3 v2.0.0, the same block the
+   Vancouver-family bundles carry. Replaces celtocmob2 v1.0.0, which put `is-menu-open` on
+   .stoc_component. No stylesheet has ever defined
+   `.stoc_component.is-menu-open`; the rules are `.stoc_label.is-menu-open`
+   and `.stoc_nav.is-menu-open`, so tapping the pill did nothing on every
+   page that shipped v1. Measured 2026-09-02 on
+   /vancouver/cost-of-studying-english at 375px with transitions disabled:
+   v1's class left .stoc_nav at visibility:hidden/opacity:0; label+nav gave
+   visibility:visible/opacity:1.
+   v1 also appended a `.stoc_backdrop` div that no stylesheet styles, so it
+   had zero height and could never receive the outside click it existed for;
+   a document-level listener replaces it.
+   `is-visible` on .stoc_component is carried over unchanged — that half
+   always worked. */
+(function () {
+  if (window.__celTocMob) return;
+  window.__celTocMob = true;
+
+  var comp = document.querySelector('.stoc_component');
+  var label = document.querySelector('.stoc_label');
+  var nav = document.querySelector('.stoc_nav');
+  if (!comp || !label || !nav) return;
+
+  var navbar = document.querySelector('.navbar_component');
+  var hero = document.querySelector('.section_hero');
+  var links = [].slice.call(document.querySelectorAll('.stoc_link[data-target]'));
+  var sections = links.map(function (l) {
+    return document.getElementById(l.dataset.target);
+  }).filter(Boolean);
+  var last = sections[sections.length - 1];
+  var navH = navbar ? navbar.offsetHeight : 80;
+
+  label.setAttribute('aria-expanded', 'false');
+
+  function close() {
+    label.classList.remove('is-menu-open');
+    nav.classList.remove('is-menu-open');
+    label.setAttribute('aria-expanded', 'false');
+  }
+  function open() {
+    label.classList.add('is-menu-open');
+    nav.classList.add('is-menu-open');
+    label.setAttribute('aria-expanded', 'true');
+  }
+  function toggle() {
+    if (label.classList.contains('is-menu-open')) close(); else open();
+  }
+
+  /* Offer the rail only between the end of the hero and the end of the last
+     TOC target: above the hero it repeats the page title, past the last
+     section it points at nothing. */
+  function updateVisibility() {
+    var heroBottom = hero ? hero.getBoundingClientRect().bottom : -1;
+    var lastBottom = last ? last.getBoundingClientRect().bottom : Infinity;
+    if (heroBottom < navH + 20 && lastBottom > navH + 40) {
+      comp.classList.add('is-visible');
+    } else {
+      comp.classList.remove('is-visible');
+      close();
+    }
+  }
+
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  window.addEventListener('resize', updateVisibility, { passive: true });
+  updateVisibility();
+
+  label.addEventListener('click', function (e) { e.preventDefault(); toggle(); });
+  label.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+  links.forEach(function (l) { l.addEventListener('click', close); });
+
+  document.addEventListener('click', function (e) {
+    if (!label.classList.contains('is-menu-open')) return;
+    if (comp.contains(e.target)) return;
+    close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();

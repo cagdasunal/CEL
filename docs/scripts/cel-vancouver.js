@@ -11,7 +11,7 @@
    3. celnavtoc3 v1.0.0
    4. celfaq1 v1.0.0
    5. celtoc1 v1.0.0
-   6. celtocmob2 v1.0.0
+   6. celtocmob3 v2.0.0
    7. cefrbarinit v5.0.0
    8. a16swiperretry v10.0.0
    9. a16extras v2.0.0
@@ -66,10 +66,88 @@
 (function(){if(window.__celToc)return;window.__celToc=window.__celTocDone=true;var tl=[].slice.call(document.querySelectorAll('.stoc_link[data-target]'));if(!tl.length)return;var si=tl.map(function(l){return l.dataset.target});var ss=si.map(function(id){return document.getElementById(id)}).filter(Boolean);if(!ss.length)return;var nv=document.querySelector('.navbar_component'),sl=document.querySelector('.stoc_label');tl.forEach(function(l){l.removeAttribute('href');l.setAttribute('tabindex','0')});function sa(id){tl.forEach(function(l){var a=l.dataset.target===id,d=l.querySelector('.stoc_dot'),t=l.querySelector('.stoc_text');l.classList.toggle('is-active',a);if(d)d.classList.toggle('is-active',a);if(t)t.classList.toggle('is-active',a)});if(sl){var a=tl.find(function(l){return l.dataset.target===id});if(a){var t=a.querySelector('.stoc_text');sl.textContent=t?t.textContent.trim():a.textContent.trim()}}}function da(){var r=(nv?nv.offsetHeight:90)+40,ai=ss[0].id;ss.forEach(function(s){if(s.getBoundingClientRect().top<=r)ai=s.id});sa(ai)}var rp=0;window.addEventListener('scroll',function(){if(rp)return;rp=1;requestAnimationFrame(function(){da();rp=0})},{passive:true});tl.forEach(function(l){l.addEventListener('click',function(e){e.preventDefault();var t=document.getElementById(l.dataset.target);if(!t)return;sa(l.dataset.target);window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-(nv?nv.offsetHeight:90)-24,behavior:'smooth'})});l.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();l.click()}})});var h=location.hash.replace('#','');if(si.indexOf(h)!==-1)sa(h);else da()})();
 
 /* ============================================================
-   6. celtocmob2 v1.0.0
-   Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ce76bdaf1388e4c4f64191%2Fceltocmob2-1.0.0.js
+   6. celtocmob3 v2.0.0 — mobile TOC drawer (<=991px)
+   Replaces celtocmob2 v1.0.0, which put `is-menu-open` on
+   .stoc_component. No stylesheet has ever defined
+   `.stoc_component.is-menu-open`; the rules are `.stoc_label.is-menu-open`
+   and `.stoc_nav.is-menu-open`, so tapping the pill did nothing on every
+   page that shipped v1. Measured 2026-09-02 on
+   /vancouver/cost-of-studying-english at 375px with transitions disabled:
+   v1's class left .stoc_nav at visibility:hidden/opacity:0; label+nav gave
+   visibility:visible/opacity:1.
+   v1 also appended a `.stoc_backdrop` div that no stylesheet styles, so it
+   had zero height and could never receive the outside click it existed for;
+   a document-level listener replaces it.
+   `is-visible` on .stoc_component is carried over unchanged — that half
+   always worked.
    ============================================================ */
-(function(){var sc=document.querySelector('.stoc_component'),sl=document.querySelector('.stoc_label');if(!sc||!sl)return;var nv=document.querySelector('.navbar_component'),hs=document.querySelector('.section_hero'),tl=[].slice.call(document.querySelectorAll('.stoc_link[data-target]')),ss=tl.map(function(l){return document.getElementById(l.dataset.target);}).filter(Boolean),ls=ss[ss.length-1],bd=document.createElement('div'),nh=nv?nv.offsetHeight:80;bd.className='stoc_backdrop';document.body.appendChild(bd);function cm(){sc.classList.remove('is-menu-open');bd.classList.remove('is-visible');}function uv(){var hb=hs?hs.getBoundingClientRect().bottom:-1,lb=ls?ls.getBoundingClientRect().bottom:1e9;if(hb<nh+20&&lb>nh+40)sc.classList.add('is-visible');else{sc.classList.remove('is-visible');cm();}}window.addEventListener('scroll',uv,{passive:true});uv();sl.addEventListener('click',function(){var o=sc.classList.toggle('is-menu-open');bd.classList.toggle('is-visible',o);});bd.addEventListener('click',cm);tl.forEach(function(l){l.addEventListener('click',cm);});})();
+(function () {
+  if (window.__celTocMob) return;
+  window.__celTocMob = true;
+
+  var comp = document.querySelector('.stoc_component');
+  var label = document.querySelector('.stoc_label');
+  var nav = document.querySelector('.stoc_nav');
+  if (!comp || !label || !nav) return;
+
+  var navbar = document.querySelector('.navbar_component');
+  var hero = document.querySelector('.section_hero');
+  var links = [].slice.call(document.querySelectorAll('.stoc_link[data-target]'));
+  var sections = links.map(function (l) {
+    return document.getElementById(l.dataset.target);
+  }).filter(Boolean);
+  var last = sections[sections.length - 1];
+  var navH = navbar ? navbar.offsetHeight : 80;
+
+  label.setAttribute('aria-expanded', 'false');
+
+  function close() {
+    label.classList.remove('is-menu-open');
+    nav.classList.remove('is-menu-open');
+    label.setAttribute('aria-expanded', 'false');
+  }
+  function open() {
+    label.classList.add('is-menu-open');
+    nav.classList.add('is-menu-open');
+    label.setAttribute('aria-expanded', 'true');
+  }
+  function toggle() {
+    if (label.classList.contains('is-menu-open')) close(); else open();
+  }
+
+  /* Offer the rail only between the end of the hero and the end of the last
+     TOC target: above the hero it repeats the page title, past the last
+     section it points at nothing. */
+  function updateVisibility() {
+    var heroBottom = hero ? hero.getBoundingClientRect().bottom : -1;
+    var lastBottom = last ? last.getBoundingClientRect().bottom : Infinity;
+    if (heroBottom < navH + 20 && lastBottom > navH + 40) {
+      comp.classList.add('is-visible');
+    } else {
+      comp.classList.remove('is-visible');
+      close();
+    }
+  }
+
+  window.addEventListener('scroll', updateVisibility, { passive: true });
+  window.addEventListener('resize', updateVisibility, { passive: true });
+  updateVisibility();
+
+  label.addEventListener('click', function (e) { e.preventDefault(); toggle(); });
+  label.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+  links.forEach(function (l) { l.addEventListener('click', close); });
+
+  document.addEventListener('click', function (e) {
+    if (!label.classList.contains('is-menu-open')) return;
+    if (comp.contains(e.target)) return;
+    close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
 
 /* ============================================================
    7. cefrbarinit v5.0.0
