@@ -487,5 +487,29 @@
     reducedMotion: reduce
   };
 
+  /* ── Select chevron position.
+     .plan_select draws its arrow as two linear-gradient triangles and places them
+     with `background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%`.
+     Webflow's style engine cannot hold a MULTI-LAYER background-position built from
+     calc(), so the deploy drops it and the layers fall back to `0% 0%` — both
+     triangles land in the top-left corner of the field. background-size (6px 6px)
+     and background-repeat survive; only the position is lost, which is why the
+     arrow is present but mispositioned rather than missing.
+
+     Lives in the ENGINE, not a page bundle: .plan_select is the calculator's own
+     control and this file loads on every page that mounts a plan tool, so one rule
+     covers sd-san-diego and sd-costs together. Same defect class as the banned
+     linear-gradient dash recipe in rules/webflow-elements.md §9 ("publish truncates
+     background-position"). */
+  (function injectCalcChrome() {
+    if (document.getElementById('cel-calc-chrome')) return;
+    const css =
+      '.plan_select{background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%}';
+    const st = document.createElement('style');
+    st.id = 'cel-calc-chrome';
+    st.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(st);
+  })();
+
   for (var i = 0; i < queued.length; i++) window.CELCalculator.mount(queued[i]);
 })();
