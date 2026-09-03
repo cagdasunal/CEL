@@ -26,6 +26,10 @@
   var goals = [].slice.call(root.querySelectorAll('.chooser_goal'));
   var cards = [].slice.call(root.querySelectorAll('.chooser_card'));
   if (!goals.length || !cards.length) return;
+  /* The <=767 picker (styles.css .chooser_control). Same state, second control — NOT a second
+     mode: nothing here reads the viewport, so both controls stay in sync at every width and a
+     resize can never reveal a stale selection. A matchMedia branch here would be a regression. */
+  var picker = root.querySelector('.chooser_control select');
   var current = 0;
 
   function select(i, moveFocus){
@@ -38,6 +42,7 @@
       x.setAttribute('tabindex', on ? '0' : '-1');
     });
     cards.forEach(function(c){ c.classList.toggle('is-active', c.getAttribute('data-course') === course); });
+    if (picker && picker.value !== course) picker.value = course;
     if (moveFocus) goals[current].focus();
   }
 
@@ -50,6 +55,12 @@
       else if (k === 'Home'){ e.preventDefault(); select(0, true); }
       else if (k === 'End'){ e.preventDefault(); select(goals.length - 1, true); }
     });
+  });
+
+  if (picker) picker.addEventListener('change', function(){
+    for (var i = 0; i < goals.length; i++){
+      if (goals[i].getAttribute('data-course') === picker.value){ select(i); return; }
+    }
   });
 
   select(0);
