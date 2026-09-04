@@ -338,49 +338,11 @@
   });
 })();
 
-/* Navbar-over-hero — the site-standard scroll behaviour (celnavtoc3 / __celNt).
-   Present on vancouver, vs-toronto, cost-of-studying-english and
-   how-long-to-learn-english since the original build; never ported to the five
-   pages added in the 2026-09 San Diego + About round, even though
-   rules/webflow-javascript.md §9 lists it as a standard script for EVERY page.
-
-   What it does: the navbar ships a `transparent` variant whose background Webflow
-   applies as an INLINE style. This keeps that inline background off while the hero
-   is still under the navbar, and lets it return once the hero has scrolled past —
-   so the bar reads as transparent over the hero and solid over the content.
-
-   Two deliberate choices:
-   - The hero selector covers `.section_hero` AND `.abouthero`. /about has no
-     .section_hero at all, so a single-selector port would have silently no-opped
-     there — the failure mode is invisible, which is why it is spelled out.
-   - Guard is __celNavHero, and it also defers to __celNt. If the full celnavtoc3
-     ever loads on these pages it does this job plus more, so this must stand down
-     rather than claim its flag (rules/webflow-javascript.md §12). */
-(function () {
-  if (window.__celNt || window.__celNavHero) return;
-  window.__celNavHero = true;
-
-  const nav = document.querySelector('[data-wf--navbar--variant="transparent"]');
-  const hero = document.querySelector('.section_hero, .abouthero');
-  if (!nav || !hero) return;
-
-  const OPTS = { attributes: true, attributeFilter: ['style'] };
-  const overHero = function () { return hero.getBoundingClientRect().bottom > 80; };
-  /* Re-observing after each write avoids reacting to our own mutation. */
-  const clear = function () {
-    mo.disconnect();
-    nav.style.removeProperty('background-color');
-    mo.observe(nav, OPTS);
-  };
-  const mo = new MutationObserver(function () { if (overHero()) clear(); });
-  mo.observe(nav, OPTS);
-
-  let queued = 0;
-  window.addEventListener('scroll', function () {
-    if (queued) return;
-    queued = 1;
-    requestAnimationFrame(function () { if (overHero()) clear(); queued = 0; });
-  }, { passive: true });
-
-  if (overHero()) nav.style.removeProperty('background-color');
-})();
+/* Navbar-over-hero (celnavtoc3 / __celNavHero) is DELIBERATELY ABSENT from this page.
+   Removed 2026-09-05 at the operator's request: "we don't need it on about page".
+   rules/webflow-javascript.md §9 lists it as a standard block for every page — /about is
+   the documented exception, so do NOT port it back in. It was inert here in any case: the
+   block selects [data-wf--navbar--variant="transparent"] and this page's navbar carries
+   variant="base" (measured on the published page 2026-09-05, 0 matching nodes), so it set
+   its guard flag and returned before touching anything. See the Navbar note in
+   sites/cel/pages/about-cel/styles.css for why this page opts out. */
