@@ -39,6 +39,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -66,6 +67,53 @@ MIME_TYPES = {
 }
 
 WEBFLOW_API_BASE = "https://api.webflow.com/v2"
+
+# ── Rate limiting ────────────────────────────────────────────────────────────
+# Measured from the API's own headers (2026-09-04):
+#   x-ratelimit-limit: 150   x-ratelimit-remaining: <n>   retry-after: 60
+# i.e. 150 requests/minute per site. A bulk upload spends TWO calls per file
+# (register + S3 POST), so ~28 files alone gets within reach of the ceiling —
+# and the caller that pays for it is usually the NEXT one: query_elements
+# fetches /v2/assets internally and starts returning 429 on a page it never
+# uploaded to. Slow down near the floor instead of discovering the wall.
+RATE_LIMIT_PER_MIN = 150
+RATE_LIMIT_FLOOR = 15          # start pacing once fewer than this remain
+RATE_LIMIT_RESERVE = 5         # hard pause below this, so callers after us survive
+_RATE = {"remaining": None, "limit": RATE_LIMIT_PER_MIN}
+
+
+def _note_rate_limit(headers):
+    """Record the quota the API just reported. Silent when headers are absent."""
+    try:
+        rem = headers.get("x-ratelimit-remaining")
+        lim = headers.get("x-ratelimit-limit")
+        if rem is not None:
+            _RATE["remaining"] = int(rem)
+        if lim is not None:
+            _RATE["limit"] = int(lim)
+    except (TypeError, ValueError):
+        pass
+
+
+def _retry_after_seconds(headers, default=60):
+    try:
+        v = headers.get("retry-after") if headers else None
+        return max(1, min(120, int(v))) if v is not None else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _throttle():
+    """Pace requests as the reported quota runs down, before it hits zero."""
+    rem = _RATE.get("remaining")
+    if rem is None:
+        return
+    if rem <= RATE_LIMIT_RESERVE:
+        print(f"  … {rem} API calls left this minute; pausing 60s", flush=True)
+        time.sleep(60)
+        _RATE["remaining"] = None
+    elif rem < RATE_LIMIT_FLOOR:
+        time.sleep(0.6)
 
 
 # ── Site Config Loading ──────────────────────────────────────────────────────
@@ -354,13 +402,30 @@ def api_request(method, url, token, data=None, content_type="application/json", 
 
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
 
+    _throttle()
     try:
         with urllib.request.urlopen(req) as resp:
+            _note_rate_limit(resp.headers)
             resp_body = resp.read().decode('utf-8')
             if resp_body:
                 return json.loads(resp_body)
             return {}
     except urllib.error.HTTPError as e:
+        if e.code == 429:
+            # Webflow Data API: 150 req/min per site, Retry-After: 60.
+            # A bulk upload burns two calls per file (register + S3), so a
+            # 28-file run alone approaches the ceiling and leaves the NEXT
+            # caller — query_elements, which fetches /v2/assets — getting 429s.
+            wait = _retry_after_seconds(e.headers)
+            print(f"  … rate limited (429); waiting {wait}s then retrying", flush=True)
+            time.sleep(wait)
+            _RATE["remaining"] = None
+            with urllib.request.urlopen(
+                urllib.request.Request(url, data=body, headers=headers, method=method)
+            ) as resp:
+                _note_rate_limit(resp.headers)
+                resp_body = resp.read().decode('utf-8')
+                return json.loads(resp_body) if resp_body else {}
         error_body = e.read().decode('utf-8', errors='replace')
         raise APIError(e.code, error_body, url)
     except urllib.error.URLError as e:
