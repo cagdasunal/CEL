@@ -110,3 +110,17 @@
 .plan_weeks{left:clamp(52px,calc(14px + var(--calc-fill,21.57%) - 28px * var(--calc-frac,.2157)),calc(100% - 52px))}
 .plan_weeks.is-compact{left:clamp(52px,calc(14px + var(--calc-fill,31.43%) - 28px * var(--calc-frac,.3143)),calc(100% - 52px))}
 .plan_select{background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%}
+
+/* ---- RESTORED 2026-09-06 — conversion NOT verified in the browser ----------
+ * These two were converted to native combos and their CSS twins deleted. The
+ * combos ARE published with the correct values and the element DOES match them
+ * (`el.matches('.fx_pick.is-open')` is true, no !important anywhere, base media
+ * active) -- yet the computed background stayed at the BASE class value. I could
+ * not explain that from the cascade, so the rules are restored.
+ *
+ * The other five in that batch (fx_menu display, plan_details-toggle radius,
+ * both carets, plan_add-tick transform) WERE verified correct in the browser and
+ * stay converted. Unexplained evidence is a reason to restore, not to reason.
+ * -------------------------------------------------------------------------- */
+.fx_pick.is-open{background-color:#f9f1df;color:#37332c;box-shadow:inset 0 0 0 1px rgba(95,89,80,.22)}
+.plan_add.is-on{background:#e9deca;border-color:#b6a88c;color:#37332c;font-weight:600}
