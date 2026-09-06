@@ -167,3 +167,15 @@
  * invisible to selector analysis, which is why it must be recorded, not retried.
  */
 .section_page .callout:not(.accred_regulatory) { margin-top: 32px; }
+
+
+/* ======================================================================
+ * FROM THE PAGE FOOTER CUSTOM CODE BLOCK, merged 2026-09-06.
+ * BLOCKER 14: --calc-fill and --calc-frac are written by cel-calculator.min.js
+ * on every slider input. A style object stores a LITERAL, so converting these
+ * freezes the slider track at its initial percentage. Named as the sole token
+ * exception in the design system's DESIGN-RULES.md 0.
+ * ====================================================================== */
+.plan_range{background:linear-gradient(90deg,var(--plan-fillc,var(--indigo-bright,#5D60EE)) var(--calc-fill,21.57%),#e9deca var(--calc-fill,21.57%))}
+.plan_weeks{left:clamp(52px,calc(14px + var(--calc-fill,21.57%) - 28px * var(--calc-frac,.2157)),calc(100% - 52px))}
+.plan_select{background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%}
