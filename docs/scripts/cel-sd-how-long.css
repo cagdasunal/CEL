@@ -1,0 +1,37 @@
+/* cel-sd-how-long.css — page CSS for /san-diego-ca/how-long-to-learn-english
+ *
+ * SOURCE OF TRUTH. Edit here, never Webflow page settings, never the CEL mirror.
+ * Built + mirrored by tools/cel-page-scripts/build.sh; served at
+ * https://cel.englishcollege.com/scripts/cel-sd-how-long.min.css
+ *
+ * Every rule is a Webflow style object BY DEFAULT. This file holds only rules
+ * whose SHAPE cannot be a class + one pseudo + one Webflow breakpoint, and each
+ * one names the limit that forced it here. Comments are free: the served file is
+ * minified. Verify with:
+ *     python3 scripts/page_css_audit.py --file <this file>   # must report 0 convertible
+ */
+
+/* ==== NOT YET CONVERTED — these BELONG IN THE DESIGNER =================
+ * They are real CSS below, not commented out: behaviour must be preserved
+ * exactly while the debt stays visible. page_css_audit.py will keep
+ * reporting them as convertible until each one is moved to a style object
+ * (add a class to the target element), and the deploy-gate ratchet ensures
+ * the count can only fall.
+ * ==================================================================== */
+.timeline_meta .timeline_when{margin:0}
+.plan_details[open] .plan_details-caret{transform:translateY(1px) rotate(-135deg)}
+.plan_details[open] .plan_details-toggle{border-color:rgba(95,89,80,.3);border-radius:16px 16px 0 0;border-bottom-color:transparent}
+.plan_details-body .feetable{margin-bottom:8px}
+.plan_details-body .feetable_headcell.is-inset-r{padding-right:0}
+.plan_details-body .feetable_val.is-inset-r{padding-right:0}
+.body-intro{font-size:1.125rem}
+
+/* ---- BLOCKER 2: non-Webflow media query — Webflow emits only min-width 1920/1440/1280 and max-width 991/767/479 ---- */
+@media (prefers-reduced-motion:reduce){.nextread_card{transition:none}}
+
+/* ---- BLOCKER 7: vendor pseudo-element — outside the 15-value pseudo enum ---- */
+.plan_details-toggle::-webkit-details-marker{display:none}
+
+/* ---- BLOCKER 12: the publisher DROPS properties for this object — reads back correct, publishes wrong ---- */
+.callout{margin-top:32px;margin-bottom:32px}
+

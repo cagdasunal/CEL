@@ -1,0 +1,29 @@
+/* cel-sd-pacific-beach.css — page CSS for /san-diego-ca/why-learn-english-pacific-beach
+ *
+ * SOURCE OF TRUTH. Edit here, never Webflow page settings, never the CEL mirror.
+ * Built + mirrored by tools/cel-page-scripts/build.sh; served at
+ * https://cel.englishcollege.com/scripts/cel-sd-pacific-beach.min.css
+ *
+ * Every rule is a Webflow style object BY DEFAULT. This file holds only rules
+ * whose SHAPE cannot be a class + one pseudo + one Webflow breakpoint, and each
+ * one names the limit that forced it here. Comments are free: the served file is
+ * minified. Verify with:
+ *     python3 scripts/page_css_audit.py --file <this file>   # must report 0 convertible
+ */
+
+/* ==== NOT YET CONVERTED — these BELONG IN THE DESIGNER =================
+ * They are real CSS below, not commented out: behaviour must be preserved
+ * exactly while the debt stays visible. page_css_audit.py will keep
+ * reporting them as convertible until each one is moved to a style object
+ * (add a class to the target element), and the deploy-gate ratchet ensures
+ * the count can only fall.
+ * ==================================================================== */
+.section_page .body-intro{margin-bottom:1.4em}
+
+/* ---- BLOCKER 5: attribute selector — not expressible as a class ---- */
+#cta .inline-cta-btn[href*='wa.me']{font-weight:600}
+#cta .inline-cta-btn[href*='wa.me']:hover{background-color:#0F8F46;border-color:#0F8F46}
+
+/* ---- BLOCKER 12: the publisher DROPS properties for this object — reads back correct, publishes wrong ---- */
+.callout{display:flex;margin-top:32px;margin-bottom:32px}
+
