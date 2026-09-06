@@ -84,3 +84,36 @@
 .plan_range{-webkit-appearance:none}
 .plan_select{-webkit-appearance:none}
 
+
+
+/* ======================================================================
+ * FROM THE PAGE FOOTER CUSTOM CODE BLOCK, merged 2026-09-06.
+ * The head-only conversion missed this: page custom code has TWO locations
+ * and only `head` was swapped, leaving 1,557 bytes live in `footer`.
+ * A page's CSS belongs in ONE file regardless of which Webflow box it was
+ * pasted into.
+ *
+ * The runtime-variable rules below are the genuine exception named in the
+ * design system's DESIGN-RULES.md §0: --calc-fill and --calc-frac are written
+ * by cel-calculator.min.js on every slider input. Baking them to a literal
+ * freezes the control. They can never be style objects.
+ * ====================================================================== */
+.fx_pick.is-open{background-color:#f9f1df;color:#37332c;box-shadow:inset 0 0 0 1px rgba(95,89,80,.22)}
+.fx_pick-caret.is-open{transform:translateY(1px) rotate(-135deg)}
+.fx_menu.is-open{display:flex}
+.plan_add.is-on{background:#e9deca;border-color:#b6a88c;color:#37332c;font-weight:600}
+.plan_add-tick.is-on{transform:rotate(40deg) scale(1)}
+.plan_chip.is-b1b2{background:#5d60ee1f;color:#4e51be}
+.plan_details-caret.is-open{transform:translateY(1px) rotate(-135deg)}
+.plan_details-toggle.is-open{border-color:rgba(95,89,80,.3);border-radius:16px 16px 0 0;border-bottom-color:transparent}
+.overview_col-title{color:#5f5950}
+.plan_details-body .feetable_headcell.is-inset-l,
+.plan_details-body .feetable_key.is-inset-l{padding-left:0}
+.plan_details-body .feetable_headcell.is-inset-r,
+.plan_details-body .feetable_val.is-inset-r{padding-right:0}
+.plan_details-body .feetable_val.is-span2{padding-right:0}
+.plan_range{background:linear-gradient(90deg,var(--calc-route,var(--indigo-bright,#5d60ee)) var(--calc-fill,21.57%),#e9deca var(--calc-fill,21.57%))}
+.plan_range.is-compact{background:linear-gradient(90deg,var(--calc-route,var(--indigo-bright,#5d60ee)) var(--calc-fill,31.43%),var(--cream-medium,#e9deca) var(--calc-fill,31.43%))}
+.plan_weeks{left:clamp(52px,calc(14px + var(--calc-fill,21.57%) - 28px * var(--calc-frac,.2157)),calc(100% - 52px))}
+.plan_weeks.is-compact{left:clamp(52px,calc(14px + var(--calc-fill,31.43%) - 28px * var(--calc-frac,.3143)),calc(100% - 52px))}
+.plan_select{background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%}
