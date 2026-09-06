@@ -1,0 +1,169 @@
+/* cel-sd-san-diego.css — page CSS for /san-diego-ca/san-diego
+ *
+ * SOURCE OF TRUTH. Edit here, never the Webflow page-settings custom code and
+ * never the CEL repo mirror. Built + mirrored by tools/cel-page-scripts/build.sh
+ * and served at https://cel.englishcollege.com/scripts/cel-sd-san-diego.min.css
+ *
+ * WHY THIS FILE EXISTS
+ * The design system's rule (claude-design-export/project/README.md) is that every
+ * rule is a Webflow style object by DEFAULT, with exactly two escapes: a modifier
+ * combo when a page needs a shared class to differ, then page CSS only when the
+ * rule's SHAPE cannot be a class + one pseudo + one Webflow breakpoint -- and then
+ * it carries a comment naming which limit forced it.
+ *
+ * That comment convention was the only compliance trail and it was never machine
+ * checked, so it decayed. Two things fix it permanently:
+ *   1. scripts/page_css_audit.py now machine-checks every rule against the twelve
+ *      blockers, enforced as a ratchet in hooks/deploy-gate.py.
+ *   2. This file. Comments cost nothing here because the SERVED artifact is
+ *      minified -- so the reason for every rule can live next to the rule, which
+ *      was impossible when the CSS was pasted into Webflow's page settings.
+ *
+ * EVERY RULE BELOW NAMES ITS BLOCKER. A rule with no named blocker does not
+ * belong in this file -- it belongs in the Designer.
+ *
+ * VERIFY THIS FILE:  python3 scripts/page_css_audit.py --file <this file>
+ * It must report 0 convertible. It currently reports 3, all listed under
+ * "NOT YET CONVERTED" below -- recorded honestly rather than mislabelled as
+ * blocked, because a file that lies about its own debt is how the last 19,000
+ * bytes accumulated.
+ */
+
+/* ==== NOT YET CONVERTED — 3 rules, tracked, NOT blocked ===================
+ * These are convertible and belong in the Designer. They are here only because
+ * the conversion has not been done yet, and the audit will keep reporting them
+ * until it is:
+ *
+ *  .timeline_row::before  (base and @767)
+ *      `before` IS in Webflow's pseudo enum, so this is deployable -- but
+ *      .timeline_row is SITE-GLOBAL and shared with sd-how-long, which draws its
+ *      rail as a real .timeline_rail element. A bare write shipped 7 spurious
+ *      2px lines there on 2026-09-02. Correct fix: a page-scoped combo
+ *      `.timeline_row.is-sd-rail`, then the ::before goes on that chain.
+ *      (The :last-child::before cancel stays here -- blocker 9, chained pseudos.)
+ *
+ *  .nextread_card:not(.is-feature) .nextread_title { margin-top: auto }
+ *      The ancestor :not() is not the blocker -- the CHILD can carry a combo.
+ *      Correct fix: tag the 3 non-feature .nextread_title elements.
+ * ========================================================================= */
+
+/* ---- BLOCKER 7: vendor pseudo-element. -----------------------------------
+ * ::-webkit-slider-thumb / ::-moz-range-* are outside Webflow's 15-value pseudo
+ * enum (noPseudo, nth-child(odd|even), first-child, last-child, hover, active,
+ * visited, focus, focus-visible, focus-within, placeholder, empty, before,
+ * after). ::before/::after being deployable does NOT generalise to these.
+ * .plan_range also needs -webkit-appearance:none for the custom thumb to render
+ * at all, and sync/properties.filter_properties strips that property before it
+ * reaches Webflow -- so it cannot be native either.
+ */
+.plan_range { -webkit-appearance: none; }
+.plan_select { -webkit-appearance: none; }
+.plan_range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #fdf8ee;
+  border: 2px solid var(--plan-fillc, var(--indigo-bright, #5D60EE));
+  box-shadow: 0 2px 8px rgba(55, 51, 44, .28);
+  transition: transform .2s, border-color .3s;
+}
+.plan_range:hover::-webkit-slider-thumb  { transform: scale(1.07); }
+.plan_range:active::-webkit-slider-thumb { transform: scale(1.15); }
+.plan_range::-moz-range-track { height: 14px; border-radius: 7px; background: transparent; }
+.plan_range::-moz-range-thumb {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: #fdf8ee;
+  border: 2px solid var(--plan-fillc, var(--indigo-bright, #5D60EE));
+  box-shadow: 0 2px 8px rgba(55, 51, 44, .28);
+}
+
+/* ---- BLOCKER 2: non-Webflow media query. ---------------------------------
+ * Webflow emits ONLY min-width 1920/1440/1280 and max-width 991/767/479.
+ * prefers-reduced-motion is not a viewport tier and has no Webflow equivalent.
+ * These are accessibility overrides -- never delete them because a probe reports
+ * them "dead": matchMedia('(prefers-reduced-motion: reduce)') is false in a
+ * normal browser, so the rule CANNOT fire during measurement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .timeline_row::before               { transform: none; }
+  .chooser_goal-dot::after            { transition: none; }
+  .plan_range::-webkit-slider-thumb   { transition: none; }
+}
+
+/* ---- BLOCKER 1: ancestor STATE selector. ---------------------------------
+ * `.a:hover .b` styles a CHILD from the parent's hover. Webflow expresses this
+ * only through IX2 interactions, which have no API -- data_style_tool can set a
+ * pseudo on the SUBJECT, never on an ancestor. Rebuilding these as IX2 by hand in
+ * the Designer is possible but is a behaviour change, not a refactor.
+ */
+.chooser_goal:hover .chooser_goal-dot { border-color: rgba(95, 89, 80, .5); }
+.citylist_row:hover .citylist_img     { transform: scale(1.055); }
+.citylist_row:hover .citylist_veil    { opacity: .88; }
+.nextread_card:hover .nextread_img    { transform: scale(1.03); }
+.nextread_card:hover .cta-pill-indigo { opacity: .85; }
+
+/* ---- BLOCKER 11: ancestor gate is a JS-owned class. ----------------------
+ * `is-active` is toggled at runtime by cel-sd-san-diego.min.js. Tagging the dot
+ * with a combo to make it reachable would pin that state permanently on.
+ */
+.chooser_goal.is-active .chooser_goal-dot        { border-color: var(--orange-gold, #e78b10); }
+.chooser_goal.is-active .chooser_goal-dot::after { transform: scale(1); }
+
+/* ---- BLOCKER 9: two pseudos chained on the subject. ----------------------
+ * `.timeline_row:last-child::before` needs last-child AND before on one write;
+ * data_style_tool takes a single `pseudo`. The ::before rail itself is a
+ * subject pseudo and IS deployable, but it is positioned for THIS page's 48px
+ * column and .timeline_row is shared with sd-how-long, which draws its rail as a
+ * real .timeline_rail element -- a bare write there shipped 7 spurious lines on
+ * 2026-09-02. Kept together so the pair stays coherent.
+ */
+.timeline_row::before {
+  content: "";
+  position: absolute;
+  left: 23px; top: 48px; bottom: 0;
+  width: 2px;
+  background: var(--cream-medium, #e9deca);
+  transform-origin: top;
+  transition: transform .7s cubic-bezier(0.16, 1, 0.3, 1) .15s;
+}
+.timeline_row:last-child::before { content: none; }
+@media (max-width: 767px) { .timeline_row::before { left: 19px; top: 40px; } }
+
+/* ---- BLOCKER 8: subject is a bare tag with no class. ---------------------
+ * These <svg> and <img> nodes live inside HtmlEmbed blocks, so a class cannot be
+ * added to them through the Designer or the API at all.
+ */
+.timeline_icon svg  { width: 100%; height: 100%; }
+.cta_stars-row img  { display: block; width: 13px; height: 13px; }
+
+/* ---- BLOCKER 3: sibling combinator. --------------------------------------
+ * `+` and `~` have no Webflow equivalent; a style object addresses one element's
+ * own classes, never its position relative to a sibling.
+ */
+.timeline_body p + p                     { margin-top: 6px; }
+.card-slider_clip + *                    { margin-top: 48px; }
+.plan_line + .plan_line:not(.is-total)   { border-top: 1px solid rgba(95, 89, 80, .1); }
+
+/* ---- BLOCKER 4: :not() on the subject. -----------------------------------
+ * Webflow has no negation. The positive form would need a combo on every card
+ * that is NOT .is-feature, which is a markup change the Designer cannot express
+ * as a single object.
+ */
+.nextread_card:not(.is-feature) {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 26px 28px;
+}
+.nextread_card:not(.is-feature) .nextread_title { margin-top: auto; }
+@media (max-width: 991px) { .nextread_card:not(.is-feature) { grid-column: 1; } }
+
+/* ---- BLOCKER 12: the publisher DROPS properties for this object. ---------
+ * .callout's style object holds display:flex plus flex-only properties, and the
+ * publisher emits display:block;margin:0. Four writes and three publishes never
+ * cleared it. A native write here reads back correct and publishes wrong --
+ * invisible to selector analysis, which is why it must be recorded, not retried.
+ */
+.section_page .callout:not(.accred_regulatory) { margin-top: 32px; }
