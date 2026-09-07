@@ -343,16 +343,30 @@
     ge24: [[6, 410], [12, 400], [19, 380], [29, 340], [999, 320]]
   };
 
-  /* Accommodation US$/week by bracket + the one-time placement fee (§4, §7). */
+  /* Accommodation US$/week by bracket + the one-time placement fee (§4, §7).
+     Standard-season (low-season) rates from CEL Prices 2026 (agents), San Diego /
+     Accommodation. Shared-apartment rows are the TWIN room — the rate the page quotes;
+     the single-room rate is a different product and is not offered by this tool.
+     Homestay rows are the shared-bathroom tiers the page publishes: hss/hsd breakfast,
+     hpr breakfast and dinner. Shared apartments bracket at 1-11 / 12-23 / 24+, homestay
+     at 1-4 / 5-11 / 12+ — the two are NOT the same ladder, which is why each carries its
+     own tier list rather than a shared one.
+     2026 update: every short-stay bracket is now PUBLISHED, so the old flat homestay
+     rates (which quoted the 12+ figure at every length and under-quoted short stays) and
+     the old prm/sup ladders are gone. No figure here is interpolated. */
   var ROOMS = {
     std:  { label: 'Shared apt Standard', fee: 100, tiers: [[11, 290], [23, 280], [999, 270]] },
-    prm:  { label: 'Shared apt Premium',  fee: 100, tiers: [[23, 350], [999, 320]] },
-    sup:  { label: 'Shared apt Superior', fee: 100, tiers: [[23, 400], [999, 380]] },
-    hss:  { label: 'Homestay single',     fee: 200, tiers: [[999, 320]] },
-    hsd:  { label: 'Homestay double',     fee: 200, tiers: [[999, 290]] },
-    hpr:  { label: 'Premium homestay',    fee: 200, tiers: [[999, 420]] },
+    prm:  { label: 'Shared apt Premium',  fee: 100, tiers: [[11, 360], [23, 350], [999, 340]] },
+    sup:  { label: 'Shared apt Superior', fee: 100, tiers: [[11, 410], [23, 400], [999, 390]] },
+    hss:  { label: 'Homestay single',     fee: 200, tiers: [[4, 360], [11, 340], [999, 320]] },
+    hsd:  { label: 'Homestay double',     fee: 200, tiers: [[4, 330], [11, 310], [999, 290]] },
+    hpr:  { label: 'Premium homestay',    fee: 200, tiers: [[4, 490], [11, 470], [999, 450]] },
     none: { label: 'Own accommodation',   fee: 0,   tiers: [[999, 0]] }
   };
+
+  /* Which residences are homestays — drives the meal/diet caveat in note() and nothing else.
+     Kept as a set beside ROOMS so adding a residence cannot leave the caveat behind. */
+  var HOMESTAY = { hss: true, hsd: true, hpr: true };
 
   /* Resolve a flag from the DOM first: the currency menu ships one <img> per currency, so those
      bytes survive bundling. Falls back to the CDN URL when the menu is absent. */
@@ -408,15 +422,21 @@
     return { key: 'b1b2', chip: 'B1/B2 visa', label: 'Visa application (MRV)', cost: MRV };
   }
 
-  /* One honest caveat at a time — never a stack of warnings. */
+  /* One honest caveat at a time — never a stack of warnings.
+     The old first branch ("stays under 12 weeks pay slightly higher weekly housing rates —
+     your written quote confirms the exact figure") existed only because the short-stay
+     brackets were not published. The 2026 price list publishes all of them and the tiers
+     above now price them exactly, so that sentence is no longer true and is gone. The
+     branch it leaves behind carries the homestay surcharge, which IS published and which
+     this tool does not model. */
   function note(state) {
-    if (state.weeks < 12 && state.room !== 'none' && ROOMS[state.room]) {
-      return 'Stays under 12 weeks pay slightly higher weekly housing rates \u2014 your written quote confirms the exact figure.';
+    if (HOMESTAY[state.room]) {
+      return 'Homestay rates include the meals shown below. A lactose-free, gluten-free or vegan diet adds US$50 a week and a halal diet US$75 \u2014 neither is counted above.';
     }
     if (state.weeks > ESTA_WEEKS && state.course === 'ge20') {
       return 'Past about 12 weeks you are beyond ESTA\u2019s 90 days, so this budget assumes a B1/B2 visitor visa.';
     }
-    return 'Standard-season rates. Flights, food outside homestay and personal spending are not included.';
+    return 'Standard-season rates \u2014 accommodation carries a supplement from May 30 to September 26, 2026. Flights, food outside homestay and personal spending are not included.';
   }
 
   var config = {
