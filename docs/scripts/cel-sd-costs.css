@@ -324,12 +324,14 @@
   .section_page{padding:clamp(72px,calc(7.5vw - 24px),96px) clamp(40px,calc(13.75vw - 136px),84px)}
 }
 
-/* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
+/* ---- BLOCKER 2: non-Webflow media query (min-width:768px).
    `.brackets_foot` paints a background AND a top border but carries
    `max-width:66ch` — a leftover of the measure-cap family the operator retired on
    2026-09-06. On prose a cap is invisible; on a painted band it is a half-drawn
-   strip. Measured shortfall against its own parent: 65px at 1440. ---- */
-@media (min-width:992px){
+   strip. Measured shortfall against its own parent: 171px at 991, 65px at 1440.
+   Scoped >=768 because the cap binds hardest at 768-991, where the panel is
+   widest relative to it; below 768 the panel is narrower than the cap. ---- */
+@media (min-width:768px){
   .brackets_foot{max-width:none}
 }
 

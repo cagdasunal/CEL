@@ -212,15 +212,16 @@ section[id]{scroll-margin-top:114px}
   .navbar_menu{max-height:calc(100vh - 72px);overflow-y:auto;overscroll-behavior:contain}
 }
 
-/* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
+/* ---- BLOCKER 2: non-Webflow media query (min-width:768px).
    `.brackets_foot` is the CEFR panel's footnote band — it paints a background
    AND a top border — but it carries `max-width:66ch` (681.12px), a leftover of
    the same measure-cap family the operator retired on 2026-09-06. On prose a cap
    is invisible; on a painted band it is a half-drawn strip. Measured shortfall
-   against its own parent: 171px at 991, 106px at 1440, 427px at 1920 (2px at
-   <=768, which is just the panel border). Scoped >=992 because the cap never
-   binds below that. ---- */
-@media (min-width:992px){
+   against its own parent: 171px at 991, 106px at 1440, 427px at 1920.
+   Scoped >=768, not >=992: below 768 the panel is narrower than the 681px cap so
+   it never binds, but at 768-991 it binds HARDEST of all — the first pass shipped
+   a >=992 scope and left the 171px shortfall at 991 in place. ---- */
+@media (min-width:768px){
   .brackets_foot{max-width:none}
 }
 
