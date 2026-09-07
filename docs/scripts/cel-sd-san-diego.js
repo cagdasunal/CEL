@@ -163,8 +163,19 @@
      code change. Deleting the elements would have to be undone by hand. */
   allLinks.forEach(function (l) {
     if (links.indexOf(l) !== -1) return;
-    l.style.display = 'none';
-    l.setAttribute('aria-hidden', 'true');
+    /* REMOVE, not display:none — and that is not a preference.
+       The #offers row carries data-geo="sandiego", and cel-offers.min.js runs
+       `document.querySelectorAll('[data-geo]').forEach(t => t.style.display = i ? "" : "none")`.
+       Setting `style.display=''` CLEARS an inline hide, so whichever of us runs
+       last wins and the row came back. Measured on the published page after the
+       first attempt: #accommodation (no data-geo) stayed hidden, #offers
+       (data-geo) computed `flex` again — one worked, one did not, from the same
+       line of code. Detaching the node is order-independent: a script that
+       cannot find the element cannot re-show it, and writing `.style` on a
+       detached node is harmless if one holds a stale reference.
+       Still not a markup change — the source HTML is untouched and the row
+       returns on the next load if its section is ever built. */
+    l.remove();
   });
   const sections = links.map(function (l) { return document.getElementById(l.dataset.target); });
   const targets = links.map(function (l) { return l.dataset.target; });
