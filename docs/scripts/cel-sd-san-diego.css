@@ -337,3 +337,71 @@
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
   html{scroll-padding-bottom:120px}
 }
+
+
+/* ====================================================================
+   RESPONSIVE REPAIR — cross-page pass, 2026-09-08
+   The same defect classes measured and fixed on
+   /san-diego-ca/how-long-to-learn-english reproduce here. Evidence and method:
+   docs/reviews/responsive-sd-how-long-2026-09-08/REPORT.md
+   Every block names the page_css_audit blocker that keeps it out of the Designer.
+   ==================================================================== */
+
+/* ---- CONVERTIBLE, AND DELIBERATELY SO.
+   `@media (max-width:767px){.section_hero{z-index:1002}}` paints the hero above
+   `.mobilecta` (z-index:1000), so the page's only persistent mobile CTA is
+   invisible AND unclickable for the whole first screen on every phone. Measured
+   here at 375: elementsFromPoint at the bar's own centre returns hero content,
+   not the bar. Correct at 768-991, where the hero carries no z-index.
+   The right home is a Webflow style object on `.mobilecta` — it is a site-wide
+   component and every CEL page with this hero has the bug. Convert and delete
+   this block in the next Designer pass. ---- */
+@media (max-width:767px){
+  .mobilecta{z-index:1003}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (768-991.9).
+   At <=991 the panel drops its radius, its top/bottom border and all padding, but
+   the base `border:1px solid #e9deca` leaves the LEFT and RIGHT hairlines standing
+   at zero padding — two orphan vertical rules hugging the text, closed at neither
+   end. Measured borderLeftStyle:solid / padding:0 at 768; at <=767
+   `border-style:none` removes all four. ---- */
+@media (min-width:768px) and (max-width:991px){
+  .section_page{border-left-style:none;border-right-style:none}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (height).
+   `.navbar_menu` is `max-height:none` / `overflow:visible`, anchored under a fixed
+   72px navbar; its open height is ~482px, so it overflows every landscape phone
+   and clears a 568px portrait phone by 14px. The height guard is what keeps this
+   out of the Designer and makes it a better rule — the clamp is pointless on a
+   tall viewport, and Webflow has no height breakpoint at all. ---- */
+@media (max-width:991px) and (max-height:820px){
+  .navbar_menu{max-height:calc(100vh - 72px);overflow-y:auto;overscroll-behavior:contain}
+}
+
+/* ---- BLOCKER 5: attribute selector.
+   Every in-page anchor landed its target at y=0, i.e. completely under the fixed
+   navbar (72px at <=991, 90px above). Measured `scroll-margin-top: 0px` on every
+   section. ---- */
+section[id]{scroll-margin-top:114px}
+@media (max-width:991px){section[id]{scroll-margin-top:96px}}
+
+/* ---- BLOCKER 2: non-Webflow media query (height).
+   `.stoc_nav` has `max-height:none` and `overflow:hidden`, anchored 130px below
+   the top of a FIXED component. On a 320x568 phone the open drawer runs past the
+   viewport bottom and the last entry is unreachable, because the box does not
+   scroll. ---- */
+@media (max-width:991px) and (max-height:820px){
+  .stoc_nav{max-height:calc(100vh - 150px);overflow-y:auto;overscroll-behavior:contain}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
+   Webflow emits no tier between 992 and 1279, and the page's own band fix stops
+   at 1279 — so the band ends up WIDER than the >=1280 tier and the layout jumps
+   backwards at 1280. These clamps are continuous by construction and top out at
+   the values Webflow already ships at >=1600, so 1600/1920 render identically. ---- */
+@media (min-width:992px){
+  .page_body-layout{grid-template-columns:clamp(200px,17.2vw,272px) minmax(0,1fr);gap:clamp(32px,3.2vw,50px)}
+  .section_page{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
+}
