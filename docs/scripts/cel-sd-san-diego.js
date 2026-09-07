@@ -17,19 +17,85 @@
   clean();
 })();
 
-/* 2. Course chooser (verbatim from the design source, wrapped with a guard flag). */
+/* 2. Course chooser — static goal tablist + a Courses Collection List for the cards.
+   Migrated off the static #static-cards block on 2026-09-07; the cards now come from the
+   Courses collection, filtered to "Available in: San Diego" and sorted by "San Diego - Order".
+
+   PAIRING CONTRACT — the key is the course SLUG, never the position.
+   Each goal carries data-course="<slug>"; each card carries the same slug, bound from the
+   collection. Position would be the obvious key (the list is ordered by San Diego - Order,
+   which was authored to match the goal order) and it would be wrong: five more Courses items
+   are flagged for San Diego and held as drafts, so publishing any one of them inserts a card
+   and shifts every index after it — silently, and with no way to notice from the page.
+
+   The key is carried by the collection card's DOM id, bound to the item Slug. That surface was
+   chosen by elimination, all measured on 2026-09-07:
+     · a CMS-bound custom ATTRIBUTE is rejected by the Webflow API on every element tried
+       ("value must be a string or a binding") — the Designer UI supports it, data_element_settings_tool
+       does not, so data-course cannot be bound here even though the static markup used it;
+     · DOM position is unsafe — an empty "San Diego - Order" sorts FIRST, not last, and five more
+       Courses items are flagged for San Diego and held as drafts, so publishing any one of them
+       would land it at position 1 and shift every goal by one;
+     · the "View Course" href is unsafe — Weglot TRANSLATES some course slugs
+       (/courses/private-lessons becomes /es/cursos/clases-particulares), so it would silently
+       hide goals on those locales.
+   DOM ids survive all three: verified 57 ids identical between /vancouver and /es/vancouver, and
+   no course slug collides with an id already on this page. */
 (function () {
   if (window.__celSdChooser) return;
   window.__celSdChooser = true;
   var root = document.querySelector('#courses .chooser_component');
   if (!root) return;
-  var goals = [].slice.call(root.querySelectorAll('.chooser_goal'));
+  var allGoals = [].slice.call(root.querySelectorAll('.chooser_goal'));
   var cards = [].slice.call(root.querySelectorAll('.chooser_card'));
-  if (!goals.length || !cards.length) return;
+  if (!allGoals.length || !cards.length) return;
+
+  function keyOf(el) {
+    /* 1. data-course, on the element or inside it — the static block's shape, and the shape a
+          bound attribute would take if the API ever gains that capability. */
+    var n = el.hasAttribute('data-course') ? el : el.querySelector('[data-course]');
+    if (n && n.getAttribute('data-course')) return n.getAttribute('data-course');
+    /* 2. the collection card's DOM id, bound to the item Slug. This is the live path. */
+    var i = el.id ? el : el.querySelector('[id]');
+    if (i && i.id) return i.id;
+    /* 3. last resort only, and NEVER trustworthy on a translated locale — see the note above. */
+    var a = el.querySelector('a[href]');
+    if (!a) return '';
+    var p = a.getAttribute('href').split('?')[0].split('#')[0].replace(/\/+$/, '');
+    return p.slice(p.lastIndexOf('/') + 1);
+  }
+
+  /* Last card wins a duplicate slug. That only happens in the window between this bundle
+     going live on the CDN and the Designer change being published — both card lists are on
+     the page then, and the static block ships after the collection list, so last-wins keeps
+     the not-yet-published page rendering exactly what it renders today. */
+  var byCourse = {};
+  cards.forEach(function (c) {
+    var k = keyOf(c);
+    if (k) byCourse[k] = c;
+  });
+
+  /* A goal whose course is not in the collection is a dead control: it would highlight and
+     then show nothing. Drop it instead of offering it — same rule the TOC below applies to
+     links whose section was never deployed. */
+  var goals = allGoals.filter(function (g) { return !!byCourse[g.getAttribute('data-course')]; });
+  allGoals.forEach(function (g) {
+    if (goals.indexOf(g) !== -1) return;
+    g.style.display = 'none';
+    g.setAttribute('aria-hidden', 'true');
+  });
+  if (!goals.length) return;
+
   /* The <=767 picker (styles.css .chooser_control). Same state, second control — NOT a second
      mode: nothing here reads the viewport, so both controls stay in sync at every width and a
      resize can never reveal a stale selection. A matchMedia branch here would be a regression. */
   var picker = root.querySelector('.chooser_control select');
+  if (picker) {
+    [].slice.call(picker.options).forEach(function (o) {
+      if (!byCourse[o.value]) o.remove();
+    });
+    if (!picker.options.length) picker = null;
+  }
   var current = 0;
 
   function select(i, moveFocus){
@@ -41,7 +107,7 @@
       x.setAttribute('aria-selected', on ? 'true' : 'false');
       x.setAttribute('tabindex', on ? '0' : '-1');
     });
-    cards.forEach(function(c){ c.classList.toggle('is-active', c.getAttribute('data-course') === course); });
+    cards.forEach(function(c){ c.classList.toggle('is-active', c === byCourse[course]); });
     if (picker && picker.value !== course) picker.value = course;
     if (moveFocus) goals[current].focus();
   }

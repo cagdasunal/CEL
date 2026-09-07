@@ -110,6 +110,23 @@
 .chooser_goal.is-active .chooser_goal-dot        { border-color: var(--orange-gold, #e78b10); }
 .chooser_goal.is-active .chooser_goal-dot::after { transform: scale(1); }
 
+/* ---- BLOCKERS 4 + 10 + 11: `:not()` + `:has()` on the subject, gated on a
+ * JS-owned class. -----------------------------------------------------------
+ * The course cards moved from a static block to a Courses Collection List on
+ * 2026-09-07. The static markup hard-coded `is-active` on the first card, so a
+ * blocked or erroring bundle still left one card on screen; a Collection List
+ * cannot hard-code a per-item class, so without this rule the stage renders
+ * EMPTY whenever the JS does not run. This shows the first card until the
+ * script marks one. Because "San Diego - Order" 1 is General English, which is
+ * also goal 0's course, the fallback card and the hydrated card are the same
+ * element -- so there is no swap on load, only a card that was already there.
+ * `:has()` is outside the 15-value pseudo enum, `:not()` is blocker 4, and the
+ * gate is `is-active`, which cel-sd-san-diego.min.js owns (blocker 11).
+ */
+#courses .chooser_cards:not(:has(.chooser_card.is-active)) > .chooser_card:first-child {
+  visibility: visible; opacity: 1; transform: none;
+}
+
 /* ---- BLOCKER 9: two pseudos chained on the subject. ----------------------
  * `.timeline_row:last-child::before` needs last-child AND before on one write;
  * data_style_tool takes a single `pseudo`. The ::before rail itself is a
