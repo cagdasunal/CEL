@@ -151,3 +151,20 @@ section[id]{scroll-margin-top:114px}
 @media (min-width:480px) and (max-width:991.9px){
   .ladder_bar{grid-template-columns:minmax(0,1fr) max-content}
 }
+
+/* ---- CONVERTIBLE, AND DELIBERATELY SO — see note.
+   `@media (max-width:767px){.section_hero{z-index:1002}}` paints the hero above
+   `.mobilecta` (z-index:1000 at max-991 and max-479), so the page's only
+   persistent mobile CTA is invisible AND unclickable for the whole first screen
+   on every phone. Measured at 375: elementsFromPoint at the bar's own centre
+   returns hero_cta-primary / hero_actions / hero_wrapper — .mobilecta is not in
+   the top six. At 768-991 the hero has no z-index and the bar shows correctly.
+   The correct home is a Webflow style object on `.mobilecta` at Mobile-landscape
+   and Mobile-portrait, because .mobilecta is a site-wide component and every CEL
+   page with this hero has the same bug. That is a Designer change plus a publish;
+   this page-scoped rule fixes the page now. Convert and delete this block in the
+   next Designer pass — it is the one rule in this file that page_css_audit is
+   right to call convertible. ---- */
+@media (max-width:767px){
+  .mobilecta{z-index:1003}
+}
