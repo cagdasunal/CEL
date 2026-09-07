@@ -1,11 +1,11 @@
 {
- "ts": "2026-09-06T13:58:46Z",
- "scanned": 2631,
- "with_metadata": 547,
+ "ts": "2026-09-07T16:28:20Z",
+ "scanned": 704,
+ "with_metadata": 549,
  "ai_flagged": 0,
- "removable_bytes": 8093010,
+ "removable_bytes": 8093046,
  "pixel_watermark_declared": 0,
  "unreadable": 0,
- "coverage": "2631/2631",
+ "coverage": "704/704",
  "flagged_names": []
 }
