@@ -35,3 +35,119 @@
 /* ---- BLOCKER 12: the publisher DROPS properties for this object — reads back correct, publishes wrong ---- */
 .callout{margin-top:32px;margin-bottom:32px}
 
+
+/* ====================================================================
+   RESPONSIVE REPAIR — 2026-09-08
+   Audit: docs/reviews/responsive-sd-how-long-2026-09-08/REPORT.md
+
+   Webflow emits exactly six media queries: min-width 1280/1440/1920 and
+   max-width 991/767/479. There is NO tier between 992 and 1279, so that band
+   renders the BASE ("Desktop") value of every class. On this page a long list of
+   base values were authored as MOBILE values, so a 1024px laptop was served a
+   365-535px content column, four 600px table scrollers and a 680px comparison
+   scroller. Measured before: content column 365px at 992, page 24,947px tall.
+
+   Every block below names the blocker that keeps it out of the Designer.
+   Verify with:
+       python3 scripts/page_css_audit.py --file <this file>   # must report 0 convertible
+   ==================================================================== */
+
+/* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
+   Fluid desktop chrome. Every clamp() tops out at the value Webflow already
+   ships at >=1600px, so 1600/1920 render byte-identically to before and the
+   992->1280 step disappears. Measured content column after: 512 / 535 / 590 /
+   699 / 699 / 747 / 787 / 884 / 1108 at 992 / 1024 / 1100 / 1279 / 1280 / 1366 /
+   1440 / 1600 / 1920 — monotonic, no step at any breakpoint. ---- */
+@media (min-width:992px){
+  .page_body-layout{grid-template-columns:clamp(200px,17.2vw,272px) minmax(0,1fr);gap:clamp(32px,3.2vw,50px)}
+  .section_page{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (992-1279).
+   Each declaration restates the value that BOTH neighbouring Webflow tiers
+   already agree on; the base value they bracket is the odd one out. Derived by
+   diffing every base declaration in the published page sheet against its
+   min-1280 and max-991 values (BAND-ODD / BAND-3WAY / ONLY-1280 report in the
+   audit). The heading clamps converge on the min-1280 values at 1279 so the
+   1279->1280 boundary is seamless. ---- */
+@media (min-width:992px) and (max-width:1279px){
+  .feetable{overflow-x:visible}
+  .feetable_head,.feetable_row{min-width:0}
+  .overview_layout{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nextread_grid.is-2up{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ladder_bar{grid-area:1/2;grid-template-columns:minmax(0,1fr) max-content;gap:0 18px}
+  .ladder_desc{grid-area:2/2}
+  .ladder_meta{grid-area:1/1/span 2;display:block}
+  .ladder_row{grid-template-columns:158px minmax(0,1fr);row-gap:16px}
+  .overview_col-icon{margin-bottom:60px}
+  .goal-item.is-ledger{min-height:84px}
+  .logo_text{display:block}
+  .section-title{font-size:clamp(30px,2.97vw,38px);margin-bottom:clamp(20px,2.5vw,32px)}
+  .hero_title{font-size:clamp(38px,3.6vw,46px)}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (max-width:1365px).
+   `.compare-table.is-weeks` has no base rule, so it inherits `.compare-table`'s
+   `minmax(340px,1fr) minmax(340px,1fr)` = a hard 680px floor, and its max-479
+   override sets grid-template-ROWS (inert on a 2-column grid) instead of columns.
+   Measured before: 86-94% of column two invisible at 320-585, 768-797 and
+   992-1363. Flexible tracks cannot exceed the box at any width; at >=1366 the
+   680px floor already fits, so this query is exactly equivalent to a base rule.
+   `cursor:auto` retires a drag affordance no handler on this page implements. ---- */
+@media (max-width:1365px){
+  .compare-table.is-weeks{grid-template-columns:minmax(0,1fr) minmax(0,1fr);overflow:hidden;cursor:auto}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (480-767).
+   The authoring sheet scopes the 600px table floor to max-479 only; the
+   published sheet also carries it at max-767, which turns 480-697 into a
+   scroller that clips cell text mid-word. Restores the authored intent for this
+   page. Measured after: all four tables fit at 480/540/600/700, smallest cell
+   99px. Same query un-stacks the planning-input tiles, whose max-767 rule sets
+   `flex:0 0 100%` on a GRID item (inert) and leaves the 2-column track.
+   The bound is written 767.9px, not 767px, so page_css_audit sees it as the
+   non-Webflow query it is: a rule placed at Webflow's max-767 tier would also
+   fire at <=479, where the 600px scroller is the deliberate treatment. ---- */
+@media (min-width:480px) and (max-width:767.9px){
+  .feetable{overflow-x:visible}
+  .feetable_head,.feetable_row{min-width:0}
+  .factors_tiles,.factors_tiles.is-guide{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---- BLOCKER 7: vendor pseudo-element (::-webkit-scrollbar).
+   At <=479 the 600px table floor is deliberate — the alternative is a 77px
+   column — but nothing on the page said the tables scroll: no scrollbar, no
+   fade, no cursor. A permanently-visible 6px bar is the affordance. ---- */
+@media (max-width:479px){
+  .feetable::-webkit-scrollbar{height:6px;-webkit-appearance:none;appearance:none}
+  .feetable::-webkit-scrollbar-track{background:#e9deca66;border-radius:3px}
+  .feetable::-webkit-scrollbar-thumb{background:#8d877b80;border-radius:3px}
+}
+
+/* ---- BLOCKER 5: attribute selector.
+   Every in-page anchor landed its target at y=0, i.e. completely under the fixed
+   navbar (72px at <=991, 90px above). Measured: #visa heading top = 0px at 375
+   and 768 after location.hash. `.page_content` also needs it because the anchor
+   sometimes resolves to the section's own scroll box. ---- */
+section[id]{scroll-margin-top:114px}
+@media (max-width:991px){section[id]{scroll-margin-top:96px}}
+
+/* ---- BLOCKER 2: non-Webflow media query (768-991.9).
+   At <=991 the panel drops its radius, its top/bottom border and all padding, but
+   the base `border:1px solid #e9deca` leaves the LEFT and RIGHT hairlines standing
+   with zero padding — two orphan vertical rules hugging the text, closed at
+   neither end. Measured: borderLeftWidth 1px solid / padding 0px / borderRadius 0
+   at 768, 900 and 991; at <=767 `border-style:none` removes all four. ---- */
+@media (min-width:768px) and (max-width:991.9px){
+  .section_page{border-left-style:none;border-right-style:none}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (480-991.9).
+   `.ladder_bar` splits into [proportional CEFR bar | "Approx. N weeks"]. The
+   max-991 tier gives the bar a 200px cap and the label `auto`, so the label —
+   white-space:nowrap, intrinsic width ~120px — swallows every pixel of growth:
+   measured 200px track vs 394px label at 991. The data column should take the
+   slack, the label should take what it needs. ---- */
+@media (min-width:480px) and (max-width:991.9px){
+  .ladder_bar{grid-template-columns:minmax(0,1fr) max-content}
+}

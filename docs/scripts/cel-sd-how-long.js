@@ -135,6 +135,23 @@
     e.preventDefault();
     q.click();
   });
+  /* RESPONSIVE REPAIR 2026-09-08: max-height is written once, in pixels, from the
+     answer's height at click time. Narrow the window afterwards and the answer
+     reflows taller than that frozen number, so the tail is clipped for good — the
+     user has to close and reopen the item. Re-measure the open item on resize. */
+  var reQueued = 0;
+  window.addEventListener('resize', function () {
+    if (reQueued) return;
+    reQueued = 1;
+    requestAnimationFrame(function () {
+      reQueued = 0;
+      var open = document.querySelector('.faq-item[data-faq-open="true"]');
+      if (!open) return;
+      var body = open.querySelector('.faq-body');
+      var inner = open.querySelector('.faq-body-inner');
+      if (body && inner) body.style.maxHeight = inner.scrollHeight + 'px';
+    });
+  }, { passive: true });
 })();
 
 /* 4. Mobile TOC drawer (<=991px) — celtocmob3 v2.0.0, the same block the
@@ -169,6 +186,13 @@
   var last = sections[sections.length - 1];
   var navH = navbar ? navbar.offsetHeight : 80;
 
+  /* RESPONSIVE REPAIR 2026-09-08: the toggle is a <p>, so it could never receive
+     focus and the keydown handler below could never fire — the whole TOC drawer,
+     and with it the page's 10 section links, were keyboard-dead at <=991px.
+     Measured before: document.querySelector('.stoc_label').tabIndex === -1 at
+     320 / 375 / 768 / 991. */
+  if (!label.hasAttribute('tabindex')) label.setAttribute('tabindex', '0');
+  if (!label.hasAttribute('role')) label.setAttribute('role', 'button');
   label.setAttribute('aria-expanded', 'false');
 
   function close() {
@@ -264,4 +288,50 @@
   }, { passive: true });
 
   if (overHero()) nav.style.removeProperty('background-color');
+})();
+
+/* RESPONSIVE REPAIR 2026-09-08 — keyboard-reachable horizontal scrollers.
+   The four .feetable data tables keep a deliberate 600px floor at <=479px, which
+   makes them horizontal scroll containers. A scroll container with no focusable
+   descendant and no tabindex cannot be reached or scrolled from the keyboard, so
+   up to 319px of every table was unreachable without a pointer (measured at 320:
+   clientWidth 273 vs scrollWidth 600). Marking only the boxes that ACTUALLY
+   overflow keeps the tab order clean at the widths where they fit — the CSS above
+   makes them fit from 480px up, so on desktop this adds no tab stops at all.
+   Re-evaluated on resize because the same element flips between the two states. */
+(function () {
+  if (window.__celScrollA11y) return;
+  window.__celScrollA11y = true;
+  var boxes = [].slice.call(document.querySelectorAll('.feetable, .compare-table'));
+  if (!boxes.length) return;
+  function label(box) {
+    var head = box.querySelector('.feetable_headcell, .compare-duration');
+    var txt = head ? (head.textContent || '').trim() : '';
+    return txt ? 'Table: ' + txt + ' — scrollable' : 'Scrollable table';
+  }
+  function sync() {
+    boxes.forEach(function (box) {
+      var scrolls = box.scrollWidth > box.clientWidth + 1;
+      if (scrolls) {
+        if (box.getAttribute('tabindex') !== '0') {
+          box.setAttribute('tabindex', '0');
+          box.setAttribute('role', 'region');
+          box.setAttribute('aria-label', label(box));
+        }
+      } else if (box.getAttribute('tabindex') === '0') {
+        box.removeAttribute('tabindex');
+        box.removeAttribute('role');
+        box.removeAttribute('aria-label');
+      }
+    });
+  }
+  var queued = 0;
+  window.addEventListener('resize', function () {
+    if (queued) return;
+    queued = 1;
+    requestAnimationFrame(function () { sync(); queued = 0; });
+  }, { passive: true });
+  sync();
+  /* Fonts land after first paint and change scrollWidth, so re-measure once. */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(sync);
 })();
