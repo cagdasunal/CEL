@@ -48,6 +48,38 @@
 .accred_row:hover .accred_title{transform:translateX(3px)}
 
 /* ---- BLOCKER 2: non-Webflow media query — Webflow emits only min-width 1920/1440/1280 and max-width 991/767/479 ---- */
+
+/* ---- BLOCKER 6: declares a custom property (--x:) — no style object can hold one ---- */
+
+.section_flow.is-panel .container{--section-pad-x:clamp(48px,4vw + 16px,84px)}
+
+/* ---- BLOCKER 8: subject is a bare tag with no class to attach a style object to ---- */
+.accred_intro > *:last-child{margin-bottom:0}
+
+/* ---- BLOCKER 10: subject pseudo-class outside the enum (only nth-child(odd|even)) ---- */
+
+.feature_cell:nth-child(-n+2){border-top:none}
+
+/* ---- BLOCKER 11: ancestor gate is a JS-owned class — tagging would pin runtime state ---- */
+.stoc_link.is-active .stoc_dot{border-color:var(--orange-gold,#e78b10);background-color:var(--orange-gold,#e78b10)}
+.stoc_link.is-active .stoc_text{color:var(--indigo-bright,#5d60ee);font-weight:600}
+.timeline_item.is-active .timeline_dot{background-color:var(--orange-gold,#e78b10);border-color:var(--orange-gold,#e78b10);transform:scale(1.2)}
+.timeline_item.is-active .timeline_title{transform:translateX(3px)}
+
+/* ======================================================================
+ * RESPONSIVE — every @media rule in this file lives here, LAST.
+ *
+ * This bundle is the last stylesheet the page loads, so a @media rule placed ABOVE an
+ * unconditional rule that also matches the element loses the equal-specificity tie to it at every
+ * width. Four rules were dead that way (2026-09-08 cross-page responsiveness pass):
+ *   - the three `--section-pad-x` steps (24/20/16px) never applied; the custom property computed
+ *     `clamp(48px,4vw + 16px,84px)` at EVERY width, so the panel slider bled 48px each side on a
+ *     375px phone instead of 20px and its left edge sat at -9px at 320px.
+ *   - `.feature_cell:nth-child(2){border-top}` @<=767 lost to the later
+ *     `.feature_cell:nth-child(-n+2){border-top:none}`, which also matches child 2.
+ * Keep this section last, and never add a @media block further up.
+ * ====================================================================== */
+
 @media screen and (max-width:1200px){.stoc_label:hover{background-color:rgba(243,231,211,0.98)}}
 @media screen and (max-width:1200px){.stoc_label::before{content:"";flex-shrink:0;width:6px;height:6px;border-radius:50%;background-color:var(--orange-gold,#e78b10)}}
 @media screen and (max-width:1200px){.stoc_label::after{content:"";flex-shrink:0;width:5px;height:5px;margin-left:2px;border-right:1.5px solid var(--brown-dark,#5f5950);border-bottom:1.5px solid var(--brown-dark,#5f5950);opacity:0.4;transform:rotate(45deg);transition:transform 0.25s ease,opacity 0.2s ease}}
@@ -70,23 +102,15 @@
 @media (prefers-reduced-motion: reduce){.timeline_beam{animation:none}}
 @media (prefers-reduced-motion: reduce){.timeline_ring.is-now{animation:none}}
 @media (prefers-reduced-motion: reduce){.abouthero_frame{animation:none}}
-
-/* ---- BLOCKER 6: declares a custom property (--x:) — no style object can hold one ---- */
 @media screen and (max-width:991px){.section_flow.is-panel .container{--section-pad-x:24px}}
 @media screen and (max-width:767px){.section_flow.is-panel .container{--section-pad-x:20px}}
 @media screen and (max-width:479px){.section_flow.is-panel .container{--section-pad-x:16px}}
-.section_flow.is-panel .container{--section-pad-x:clamp(48px,4vw + 16px,84px)}
-
-/* ---- BLOCKER 8: subject is a bare tag with no class to attach a style object to ---- */
-.accred_intro > *:last-child{margin-bottom:0}
-
-/* ---- BLOCKER 10: subject pseudo-class outside the enum (only nth-child(odd|even)) ---- */
 @media screen and (max-width:767px){.feature_cell:nth-child(2){border-top:1px solid var(--cream-medium,#e9deca)}}
-.feature_cell:nth-child(-n+2){border-top:none}
 
-/* ---- BLOCKER 11: ancestor gate is a JS-owned class — tagging would pin runtime state ---- */
-.stoc_link.is-active .stoc_dot{border-color:var(--orange-gold,#e78b10);background-color:var(--orange-gold,#e78b10)}
-.stoc_link.is-active .stoc_text{color:var(--indigo-bright,#5d60ee);font-weight:600}
-.timeline_item.is-active .timeline_dot{background-color:var(--orange-gold,#e78b10);border-color:var(--orange-gold,#e78b10);transform:scale(1.2)}
-.timeline_item.is-active .timeline_title{transform:translateX(3px)}
-
+/* the mobile TOC drawer has no max-height and cannot scroll, so on a short viewport its lower
+   links are unreachable; and focus must not land under the fixed bottom chrome (navbar 72px +
+   the site-wide .mobilecta 48px measured at <=991). */
+@media (max-width:991px){
+  .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
+  html{scroll-padding-bottom:120px}
+}

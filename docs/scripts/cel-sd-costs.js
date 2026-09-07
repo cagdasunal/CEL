@@ -840,7 +840,16 @@
     if (next === shown) return;
     shown = next;
     bar.classList.toggle('is-visible', next);
+    /* The bar is hidden with opacity:0 + pointer-events:none, which leaves its two links in the
+       tab order and the accessibility tree — measured 2 focusable links inside an opacity:0
+       ancestor at every width <=991. `inert` removes both without touching any visual property,
+       so the fade is unchanged. */
+    bar.inert = !next;
   }
+
+  /* apply() early-returns when the state has not changed, so the initial hidden state has to be
+     stamped here or the bar ships focusable on first paint. */
+  bar.inert = true;
 
   measure();
   apply();
@@ -900,5 +909,41 @@
     if (label.getAttribute('aria-expanded') !== 'true') return;
     label.click();
     label.focus();
+  });
+})();
+
+
+/* ── §4 FAQ — collapsed answers must leave the tab order ─────────────────────
+   The accordion collapses an answer with `max-height:0; overflow:hidden` and leaves
+   `visibility:visible`, so every link inside a closed panel stays focusable and stays in the
+   accessibility tree. Measured on the live page (2026-09-08): 9 of 9 panels closed, 4 focusable
+   links inside three of them — a keyboard user tabs into links they cannot see.
+
+   `inert` is used rather than `visibility:hidden` because `.faq-body` animates `max-height` over
+   .38s; toggling visibility would either hide the text abruptly on close or force this file to
+   restate Webflow's whole `transition` shorthand, which would then drift if that value changed.
+   `inert` touches no visual property at all.
+
+   The open-state hook is `data-faq-open` on `.faq-item`. Measured: the attribute does NOT exist
+   until the first interaction, so "absent" has to be read as closed — hence the `!== 'true'` test
+   rather than `=== 'false'`. The accordion itself lives in cel-cost-of-studying-english.min.js,
+   which is why this observes rather than hooks the toggle. */
+(function () {
+  if (window.__costsFaqInertDone) return;
+  window.__costsFaqInertDone = true;
+
+  var items = [].slice.call(document.querySelectorAll('.faq-item'));
+  if (!items.length) return;
+
+  function sync(item) {
+    var body = item.querySelector('.faq-body');
+    if (!body) return;
+    body.inert = item.getAttribute('data-faq-open') !== 'true';
+  }
+
+  items.forEach(function (item) {
+    sync(item);
+    new MutationObserver(function () { sync(item); })
+      .observe(item, { attributes: true, attributeFilter: ['data-faq-open'] });
   });
 })();

@@ -1,1 +1,1 @@
-#cta .inline-cta-btn[href*='wa.me']{font-weight:600}#cta .inline-cta-btn[href*='wa.me']:hover{background-color:#0F8F46;border-color:#0F8F46}.callout{display:flex;margin-top:32px;margin-bottom:32px}
+#cta .inline-cta-btn[href*='wa.me']{font-weight:600}#cta .inline-cta-btn[href*='wa.me']:hover{background-color:#0F8F46;border-color:#0F8F46}.callout{display:flex;margin-top:32px;margin-bottom:32px}@media (max-width:991px){.stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}html{scroll-padding-bottom:120px}}

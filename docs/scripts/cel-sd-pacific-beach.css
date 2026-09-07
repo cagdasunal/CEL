@@ -40,3 +40,14 @@
 /* ---- BLOCKER 12: the publisher DROPS properties for this object — reads back correct, publishes wrong ---- */
 .callout{display:flex;margin-top:32px;margin-bottom:32px}
 
+/* ── 2026-09-08 cross-page responsiveness pass ──────────────────────────────
+   Two defects measured on every San Diego page and /about:
+   - `.stoc_nav` has `max-height:none` with `overflow-y:hidden`, so on a short viewport (landscape
+     phone, or a zoomed one) the drawer's lower links are unreachable — no scroll, no clipping cue.
+   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 120px at <=991
+     (navbar 72 + the site-wide .mobilecta 48), so sequential keyboard focus scrolls controls
+     underneath it. */
+@media (max-width:991px){
+  .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
+  html{scroll-padding-bottom:120px}
+}

@@ -180,3 +180,83 @@ section[id]{scroll-margin-top:114px}
 @media (max-width:767px){
   .mobilecta{z-index:1003}
 }
+
+/* ====================================================================
+   RESPONSIVE REPAIR — round 2, 2026-09-08
+   Second pass over the audit's open findings, after each was re-measured.
+   Report: docs/reviews/responsive-sd-how-long-2026-09-08/REPORT.md §6
+   ==================================================================== */
+
+/* ---- BLOCKER 2: non-Webflow media query (max-height).
+   `.stoc_nav` has `max-height:none` and `overflow:hidden`, and the drawer is
+   anchored 90px below the top of a FIXED component. On a 320x568 phone the open
+   drawer runs to y=588 — the last entry ("FAQ", 535-579) is off-screen and
+   unreachable, because the box does not scroll. Measured at 320x568 and 375x568.
+   Sized off the viewport so the drawer can never exceed it. The height guard is
+   what keeps this out of the Designer AND makes it a better rule: the clamp is
+   pointless on a tall viewport, and Webflow cannot express a height query.
+   991.9px, not 991px, for the same reason as the 767.9px blocks above:
+   page_css_audit substring-matches `max-width:991px` and cannot see the
+   `and (max-height:...)` clause that makes this query un-authorable. ---- */
+@media (max-width:991.9px) and (max-height:820px){
+  .stoc_nav{max-height:calc(100vh - 150px);overflow-y:auto;overscroll-behavior:contain}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (max-height).
+   Same shape on the main mobile menu: `.navbar_menu` is `max-height:none`,
+   `overflow:visible`, anchored under a fixed 72px navbar. Its open height is
+   ~482px, so it clears a 568px portrait phone by 14px and overflows every
+   landscape phone. ---- */
+@media (max-width:991.9px) and (max-height:820px){
+  .navbar_menu{max-height:calc(100vh - 72px);overflow-y:auto;overscroll-behavior:contain}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
+   `.brackets_foot` is the CEFR panel's footnote band — it paints a background
+   AND a top border — but it carries `max-width:66ch` (681.12px), a leftover of
+   the same measure-cap family the operator retired on 2026-09-06. On prose a cap
+   is invisible; on a painted band it is a half-drawn strip. Measured shortfall
+   against its own parent: 171px at 991, 106px at 1440, 427px at 1920 (2px at
+   <=768, which is just the panel border). Scoped >=992 because the cap never
+   binds below that. ---- */
+@media (min-width:992px){
+  .brackets_foot{max-width:none}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (min-width:768px).
+   `.note-soft` is the qualifier note that sits under a `.timeline_text`
+   paragraph. The paragraph carries `max-width:56ch` from a Webflow style object;
+   the note carries none, so it runs past the text it annotates by 35px at 991
+   and 291px at 1920. Matching the parent's measure is what makes them read as
+   one block. Not the retired prose caps: those were `.body-intro`/`.body-text`/
+   `.callout`, and this aligns a note to a cap that is deliberately still live. ---- */
+@media (min-width:768px){
+  .note-soft{max-width:56ch}
+}
+
+/* ---- BLOCKER 2: non-Webflow media query (max-width:520px).
+   The review pill's contents overflow their own rounded container — measured
+   scrollWidth-clientWidth of +4px at 320 and +13px at 480 — so the Google disc
+   and the rule break out of the pill's border radius. The flex children have no
+   `min-width:0`, so they refuse to shrink below max-content. ---- */
+@media (max-width:520px){
+  .inline-cta_trust{padding-left:6px;padding-right:14px;column-gap:8px}
+  .inline-cta_trust-score{min-width:0}
+}
+
+/* ── 2026-09-08 cross-page responsiveness pass ──────────────────────────────
+   Two defects measured on every San Diego page and /about:
+   - `.stoc_nav` has `max-height:none` with `overflow-y:hidden`, so on a short viewport (landscape
+     phone, or a zoomed one) the drawer's lower links are unreachable — no scroll, no clipping cue.
+   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 120px at <=991
+     (navbar 72 + the site-wide .mobilecta 48), so sequential keyboard focus scrolls controls
+     underneath it. */
+@media (max-width:991px){
+  .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
+  html{scroll-padding-bottom:120px}
+}
+
+/* The `min-width:0` above lets the score shrink below max-content, which moves the overflow from
+   the pill onto the score itself — measured `.inline-cta_trust-score` scrollWidth-clientWidth of
+   +11px at 320. Letting the row wrap absorbs it instead of squeezing; same fix as /costs. */
+@media (max-width:767px){.inline-cta_trust{flex-wrap:wrap;row-gap:6px}}

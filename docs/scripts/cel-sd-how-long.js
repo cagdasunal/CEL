@@ -95,6 +95,11 @@
   if (window.__celFq) return;
   window.__celFq = true;
   if (!document.querySelector('.faq-item')) return;
+  document.querySelectorAll('.faq-item').forEach(function (it) {
+    if (it.dataset.faqOpen === 'true') return;
+    var b = it.querySelector('.faq-body');
+    if (b) b.inert = true;
+  });
   document.addEventListener('click', function (e) {
     var q = e.target.closest && e.target.closest('.faq-q');
     if (!q) return;
@@ -114,7 +119,12 @@
       it.classList.remove('is-open');
       if (qq) { qq.classList.remove('is-open'); qq.setAttribute('aria-expanded', 'false'); }
       if (ic) ic.classList.remove('is-open');
-      if (body) body.style.maxHeight = '0px';
+      /* RESPONSIVE REPAIR 2026-09-08: a collapsed answer is max-height:0 with
+         visibility:visible, so its links stay in the tab order — measured 7 links
+         focusable while clipped to zero height, which walks keyboard focus into
+         nothing. `inert` removes the subtree from the tab order and the a11y tree
+         without touching layout, so the max-height transition is unaffected. */
+      if (body) { body.style.maxHeight = '0px'; body.inert = true; }
     });
     if (!wasOpen) {
       var body2 = item.querySelector('.faq-body');
@@ -125,6 +135,7 @@
       q.classList.add('is-open');
       q.setAttribute('aria-expanded', 'true');
       if (ic2) ic2.classList.add('is-open');
+      if (body2) body2.inert = false;
       if (body2 && inner) body2.style.maxHeight = inner.scrollHeight + 'px';
     }
   });
@@ -334,4 +345,106 @@
   sync();
   /* Fonts land after first paint and change scrollWidth, so re-measure once. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(sync);
+})();
+
+
+/* ── FAQ — collapsed answers must leave the tab order ────────────────────────
+   The accordion collapses an answer with `max-height:0; overflow:hidden` and leaves
+   `visibility:visible`, so every link inside a closed panel stays focusable and stays in the
+   accessibility tree. Measured live 2026-09-08 on this page: 13 of 13 panels closed, 7 focusable links inside them.
+
+   `inert` is used rather than `visibility:hidden` because `.faq-body` animates `max-height`;
+   toggling visibility would either hide the text abruptly on close or force this file to restate
+   Webflow's whole `transition` shorthand, which would then drift. `inert` touches no visual
+   property at all.
+
+   The open-state hook is `data-faq-open` on `.faq-item`, and it does NOT exist until the first
+   interaction — so "absent" must read as closed, hence `!== 'true'` rather than `=== 'false'`. */
+(function () {
+  if (window.__hlFaqInertDone) return;
+  window.__hlFaqInertDone = true;
+
+  var items = [].slice.call(document.querySelectorAll('.faq-item'));
+  if (!items.length) return;
+
+  function sync(item) {
+    var body = item.querySelector('.faq-body');
+    if (!body) return;
+    body.inert = item.getAttribute('data-faq-open') !== 'true';
+  }
+
+  items.forEach(function (item) {
+    sync(item);
+    new MutationObserver(function () { sync(item); })
+      .observe(item, { attributes: true, attributeFilter: ['data-faq-open'] });
+  });
+})();
+
+/* RESPONSIVE REPAIR 2026-09-08 — hero backdrop resolution on tall/narrow boxes.
+   The hero image is `object-fit:cover` in a `min-height:100vh` box, but Webflow
+   generates `sizes="(max-width:2560px) 100vw, 2560px"` — which describes the box's
+   WIDTH only. Cover scales the source by max(boxW/srcW, boxH/srcH), so on a
+   portrait viewport the height drives the scale and the width-derived candidate is
+   far too small. Measured at 375x900 on a 16:9 source: the browser picks the 500w
+   candidate (real file 500x281) and paints it at 3.2x, cropped to a 117px-wide
+   strip of the original. The needed source is ~1600w.
+   This computes the width cover actually needs, and only intervenes when the
+   current pick is materially short — so it is a no-op at 1440 and 1920, where the
+   width-derived candidate is already correct. It also promotes the LCP image out
+   of `loading="lazy"`, which Webflow puts on every image including this one. */
+(function () {
+  if (window.__celHeroImg) return;
+  window.__celHeroImg = true;
+  var hero = document.querySelector('.section_hero, .abouthero');
+  if (!hero) return;
+  var img = hero.querySelector('img.hero_bg-image, img.abouthero_bg-image')
+         || hero.querySelector('img');
+  if (!img || !img.srcset) return;
+
+  /* Real candidate widths, from the srcset itself — naturalWidth is
+     density-corrected for a srcset image and cannot be compared against them. */
+  var cands = img.srcset.split(',').map(function (c) {
+    var m = c.trim().match(/(\S+)\s+(\d+)w$/);
+    return m ? { url: m[1], w: +m[2] } : null;
+  }).filter(Boolean).sort(function (a, b) { return a.w - b.w; });
+  if (!cands.length) return;
+
+  img.setAttribute('fetchpriority', 'high');
+  if (img.getAttribute('loading') === 'lazy') img.setAttribute('loading', 'eager');
+
+  function need() {
+    var r = img.getBoundingClientRect();
+    if (!r.width || !r.height) return 0;
+    var aspect = img.naturalWidth && img.naturalHeight
+      ? img.naturalWidth / img.naturalHeight : 16 / 9;   /* ratio survives density correction */
+    var dpr = window.devicePixelRatio || 1;
+    return Math.ceil(Math.max(r.width, r.height * aspect) * dpr);
+  }
+
+  function apply() {
+    var w = need();
+    if (!w) return;
+    var r = img.getBoundingClientRect();
+    /* Only when the cover crop needs materially more than the box width — i.e.
+       exactly the portrait case Webflow's `sizes` cannot describe. */
+    if (w < r.width * (window.devicePixelRatio || 1) * 1.15) return;
+    /* 5% tolerance: a 1600w candidate for a 1608px need is a 0.5% shortfall no one
+       can see, and the next step up is a 2000px JPEG on a phone. */
+    var pick = cands.filter(function (c) { return c.w >= w * 0.95; })[0] || cands[cands.length - 1];
+    var cur = (img.currentSrc || '').split('/').pop();
+    var have = (cands.filter(function (c) { return c.url.split('/').pop() === cur; })[0] || {}).w || 0;
+    if (have >= pick.w) return;                 /* already good enough */
+    /* Write the CANDIDATE's width, not the raw need: `sizes:1608px` makes the
+       browser reach past a 1600w file to a 2000w one for a 0.5% gain. */
+    img.setAttribute('sizes', pick.w + 'px');
+  }
+
+  apply();
+  if (img.complete) apply(); else img.addEventListener('load', apply, { once: true });
+  var queued = 0;
+  window.addEventListener('resize', function () {
+    if (queued) return;
+    queued = 1;
+    requestAnimationFrame(function () { queued = 0; apply(); });
+  }, { passive: true });
 })();

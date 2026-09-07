@@ -349,3 +349,36 @@
 
   if (overHero()) nav.style.removeProperty('background-color');
 })();
+
+
+/* ── FAQ — collapsed answers must leave the tab order ────────────────────────
+   The accordion collapses an answer with `max-height:0; overflow:hidden` and leaves
+   `visibility:visible`, so every link inside a closed panel stays focusable and stays in the
+   accessibility tree. Measured live 2026-09-08 on this page: 6 of 6 panels closed, 1 focusable link inside them.
+
+   `inert` is used rather than `visibility:hidden` because `.faq-body` animates `max-height`;
+   toggling visibility would either hide the text abruptly on close or force this file to restate
+   Webflow's whole `transition` shorthand, which would then drift. `inert` touches no visual
+   property at all.
+
+   The open-state hook is `data-faq-open` on `.faq-item`, and it does NOT exist until the first
+   interaction — so "absent" must read as closed, hence `!== 'true'` rather than `=== 'false'`. */
+(function () {
+  if (window.__pbFaqInertDone) return;
+  window.__pbFaqInertDone = true;
+
+  var items = [].slice.call(document.querySelectorAll('.faq-item'));
+  if (!items.length) return;
+
+  function sync(item) {
+    var body = item.querySelector('.faq-body');
+    if (!body) return;
+    body.inert = item.getAttribute('data-faq-open') !== 'true';
+  }
+
+  items.forEach(function (item) {
+    sync(item);
+    new MutationObserver(function () { sync(item); })
+      .observe(item, { attributes: true, attributeFilter: ['data-faq-open'] });
+  });
+})();
