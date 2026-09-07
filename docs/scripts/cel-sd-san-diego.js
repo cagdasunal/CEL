@@ -251,6 +251,14 @@
   function go() {
     if (typeof Swiper === 'undefined') return;
     initCardSlider('#city', { swiper: '#showcaseSlider', nav: '#showcaseSliderNav', speed: 800 });
+    /* Testimonials: the CMS Collection List (#testimonials-col) is the swiper root, and the
+       static Google-Reviews hero (#testimonial-hero) ships as a sibling before it. Move it
+       into .swiper-wrapper as slide 0 BEFORE init, so Swiper counts it as a real slide.
+       Same contract as pages/vancouver/scripts.js. */
+    var testCol = document.getElementById('testimonials-col');
+    var testWrap = testCol ? testCol.querySelector('.swiper-wrapper') : null;
+    var testHero = document.getElementById('testimonial-hero');
+    if (testHero && testWrap && testHero.parentNode !== testWrap) testWrap.insertBefore(testHero, testWrap.firstChild);
     initCardSlider('#testimonials', { swiper: '#testimonials-col', nav: '#testimonialsSliderNav' });
     initCardSlider('#activities', { swiper: '#activitiesSlider', nav: '#activitiesSliderNav' });
   }
