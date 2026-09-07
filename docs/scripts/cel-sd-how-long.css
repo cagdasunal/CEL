@@ -114,6 +114,18 @@
   .factors_tiles,.factors_tiles.is-guide{grid-template-columns:minmax(0,1fr)}
 }
 
+/* ---- BLOCKER 2: non-Webflow media query (max-width:767.9px).
+   `.factors_tile` carries `min-height:150px` at every width — sized for the 2x2
+   desktop grid. One-up it holds 44px of content in a 150px box, 71% empty, four
+   times over. Measured at 479/480/600/767: height 150, content 44. Letting the
+   tile size to its content turns four empty panels into a four-row list. Written
+   at 767.9px so page_css_audit sees the non-Webflow query it is: the same rule at
+   Webflow's max-767 tier is correct here only because the tiles are one-up, which
+   is itself a non-Webflow-tier decision made in the block above. ---- */
+@media (max-width:767.9px){
+  .factors_tile{min-height:0}
+}
+
 /* ---- BLOCKER 7: vendor pseudo-element (::-webkit-scrollbar).
    At <=479 the 600px table floor is deliberate — the alternative is a 77px
    column — but nothing on the page said the tables scroll: no scrollbar, no
