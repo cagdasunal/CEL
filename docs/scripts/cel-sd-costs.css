@@ -18,13 +18,12 @@
  * (add a class to the target element), and the deploy-gate ratchet ensures
  * the count can only fall.
  * ==================================================================== */
-@media (max-width:991px){.page_content .section_page{scroll-margin-top:96px}}
-@media (max-width:991px){.page_content .section_inline-cta{scroll-margin-top:96px}}
-@media (max-width:991px){.sticky-cta_bar .inline-cta-btn{flex:1 1 0;min-height:48px;justify-content:center;text-align:center;padding:12px 14px}}
-@media (max-width:991px){.page-wrapper .section_footer{padding-bottom:96px}}
-@media (max-width:991px){.price-table_wrap .price-row{padding-left:26px;padding-right:26px}}
-@media (max-width:479px){.price-table_wrap .price-row{padding-left:20px;padding-right:20px}}
-@media (max-width:479px){.plan_col{padding-top:20px}}
+/* The seven @media rules that used to sit here have MOVED to the RESPONSIVE section at the
+ * end of this file. They were placed BEFORE the unconditional rules below, and CSS resolves
+ * an equal-specificity tie by source order — so every one of them whose selector reappears
+ * unconditionally further down was DEAD at every width. Measured on the live page:
+ * scroll-margin-top computed 120px (not 96) and .price-table_wrap .price-row computed 32px
+ * (not 26/20) at EVERY width. A @media block in this file must come after its base rule. */
 .section_page .body-text{margin-bottom:1.4em}
 .section_page .body-intro{margin-bottom:1.4em}
 .nextread_card .cta-pill-indigo{margin-top:auto;align-self:flex-start}
@@ -61,9 +60,17 @@
 .nextread_card:hover .nextread_img{transform:scale(1.03)}
 .nextread_card:hover .cta-pill-indigo{opacity:.85}
 
-/* ---- BLOCKER 4: :not() on the subject — Webflow has no negation ---- */
-@media (max-width:991px){.nextread_card:not(.is-feature){grid-column:1}}
-.nextread_card:not(.is-feature){grid-column:2;display:flex;flex-direction:column;gap:8px;padding:26px 28px}
+/* ---- BLOCKER 4: :not() on the subject — Webflow has no negation ----
+ * The box styling and the grid placement are now SEPARATE rules, because the placement must
+ * exclude .is-wide and the box styling must not. While they were one rule, `grid-column:2` also
+ * captured .nextread_card.is-wide and beat Webflow's own
+ * `@media(min-width:1280px){.nextread_card.is-wide{grid-area:3/1/auto/-1}}` — measured 340px wide
+ * inside a 746px grid at 1440, i.e. the full-width card was never full width at ANY width >=992.
+ * .is-wide is now placed explicitly here rather than relying on the Webflow sheet, so the intent
+ * is readable in one file. The <=991 and 992-1279 placements live in the RESPONSIVE section. */
+.nextread_card:not(.is-feature){display:flex;flex-direction:column;gap:8px;padding:26px 28px}
+.nextread_card:not(.is-feature):not(.is-wide){grid-column:2}
+.nextread_card.is-wide{grid-column:1/-1;grid-row:3}
 
 /* ---- BLOCKER 7: vendor pseudo-element — outside the 15-value pseudo enum ---- */
 .plan_range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fdf8ee;border:2px solid var(--calc-route,var(--indigo-bright,#5d60ee));box-shadow:0 2px 8px rgba(55,51,44,.24);transition:transform .18s ease}
@@ -124,3 +131,97 @@
  * -------------------------------------------------------------------------- */
 .fx_pick.is-open{background-color:#f9f1df;color:#37332c;box-shadow:inset 0 0 0 1px rgba(95,89,80,.22)}
 .plan_add.is-on{background:#e9deca;border-color:#b6a88c;color:#37332c;font-weight:600}
+
+
+/* ======================================================================
+ * RESPONSIVE — every @media rule in this file lives here, LAST.
+ *
+ * Why the whole section is at the bottom: this file is the last stylesheet the page loads, so its
+ * rules already win equal-specificity ties against Webflow's sheet. That also means a @media rule
+ * placed ABOVE an unconditional rule with the same selector loses to it at every width. Five rules
+ * were dead that way (2026-09-08 responsiveness audit, docs/reviews/responsive-sd-costs-2026-09-08/).
+ * Keep this section last, and never add a @media block further up.
+ *
+ * Webflow's breakpoint model here is BASE = 992px and up, plus min-width 1280/1440/1920 and
+ * max-width 991/767/479. There is NO band for 992-1279, so BASE desktop values land unmodified on
+ * laptop widths. `@media (max-width:1279px)` is NOT a substitute — it reaches 320px too (tested:
+ * it drove .price-row overflow from 14px to 82px). The band is always min-width:992 AND max-width:1279.
+ * ====================================================================== */
+
+/* ---- revived: the five rules that were dead while they sat at the top of this file ---- */
+@media (max-width:991px){
+  .page_content .section_page{scroll-margin-top:96px}
+  .page_content .section_inline-cta{scroll-margin-top:96px}
+  .price-table_wrap .price-row{padding-left:26px;padding-right:26px}
+  .nextread_card:not(.is-feature):not(.is-wide){grid-column:1}
+  .nextread_card.is-wide{grid-column:1;grid-row:auto}
+}
+@media (max-width:479px){
+  .price-table_wrap .price-row{padding-left:20px;padding-right:20px}
+  /* the fixed 110px first track + 32px padding overflowed .price-table by 18px at 320px and
+     truncated the tier note mid-word ("...up to ~12 weeks (90 day"). */
+  .price-row{grid-template-columns:minmax(0,auto) minmax(0,1fr)}
+  .plan_col{padding-top:20px}
+}
+
+/* ---- the 992-1279 rail band ----------------------------------------------------------------
+ * At 992px the effective text column measured 365px — narrower than a 414px phone gets, on a
+ * viewport 2.4x as wide, because the 272px TOC rail, the 7% page gutter and the 84px section
+ * padding all apply at full desktop value. Crossing 992->991 widened the column by 133%.
+ * These values take the column to 569px @992 and 833px @1279 while keeping the rail. */
+@media (min-width:992px) and (max-width:1279px){
+  .padding-global{padding-left:4%;padding-right:4%}
+  .page_body-layout{grid-template-columns:minmax(180px,232px) minmax(0,1fr);gap:32px}
+  .section_page{padding:72px 40px}
+
+  /* one column below 1280 — the composition sites/cel/pages/sd-costs/styles.css:131 authored */
+  .nextread_grid{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .nextread_card.is-feature,.nextread_card.is-wide{grid-area:auto/1}
+  .nextread_card:not(.is-feature):not(.is-wide){grid-column:1}
+
+  /* the band was the only place still carrying the mobile 600px table scroller: min-width:0 is
+     restored at >=1280 and again at <=991, but not in between. Cuts were 56px @1279 -> 303px @992.
+     overflow-x:auto stays on .feetable as the safety net. */
+  .feetable_head,.feetable_row{min-width:0}
+  .feetable_headcell.is-inset-l,.feetable_key.is-inset-l,.feetable_key.is-withchip{padding-left:26px}
+  .feetable_headcell.is-inset-r,.feetable_val.is-inset-r,.feetable_val.is-span2{padding-right:26px}
+  .feetable_head.is-drivers,.feetable_row.is-drivers{grid-template-columns:minmax(0,1fr) 170px}
+  .feetable_head.is-weekly,.feetable_row.is-weekly{grid-template-columns:34% 20% 22% minmax(0,1fr)}
+  /* all six .is-nowrap cells are labels ("General English 20", "ESTA or B1/B2"), never prices,
+     so wrapping them here is safe and beats a 10px overflow. */
+  .feetable_val.is-nowrap{white-space:normal}
+
+  /* the slide width guard is min(700px,80vw) — keyed to the VIEWPORT, so it does nothing in a band
+     where the container is far narrower. Measured a 700px slide inside a 531px clip at 992. */
+  .swiper-slide.is-activity{width:min(560px,88%);max-width:min(560px,88%)}
+}
+
+/* ---- two fixed bottom bars were stacked on top of each other ----
+ * The site-wide .mobilecta (z-index 1000, bottom:0, 48px) painted over this page's own
+ * .sticky-cta_bar (z-index 880, bottom:0, 74px). Hit-testing 20 points down each button found
+ * 18/20 blocked at 991/768/375/320 — "Get a Quote" and "WhatsApp" were both effectively untappable.
+ * Lifting this page's bar above it keeps BOTH bars usable; nothing is removed. The footer reserve
+ * grows to clear 64px (mobilecta + its 1rem margin) + 74px (this bar). */
+@media (max-width:991px){
+  .sticky-cta_bar{bottom:64px;z-index:1001}
+  .sticky-cta_bar .inline-cta-btn{flex:1 1 0;min-height:48px;justify-content:center;text-align:center;padding:12px 14px}
+  .page-wrapper .section_footer{padding-bottom:168px}
+  /* the TOC drawer is 370-374px tall with max-height:none and overflow-y:hidden, so on a landscape
+     phone 3 of its 8 links sat below the viewport with no way to reach them. */
+  .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
+}
+/* 10px is below this page's own 12px floor, and only in this window — 12px on both sides of it. */
+@media (min-width:480px) and (max-width:767px){.stoc_label{font-size:12px}}
+
+/* the authored BASE is flex:0 0 45% (sites/cel/pages/sd-costs/styles.css:79); the live sheet ships
+   the <=479 value (180px) at BASE, so the photo rendered 180x480 at 1440 instead of ~45%. */
+@media (min-width:768px){.costs_act_pano-photo{flex:0 0 45%}}
+
+/* the review row is flex-wrap:nowrap and overflowed its container by 13px at 480 and 4px at 320. */
+@media (max-width:767px){.inline-cta_trust.is-edge{flex-wrap:wrap;row-gap:6px}}
+
+/* 241 elements on this page carry a transition and no live sheet ships a reduced-motion guard. */
+@media (prefers-reduced-motion:reduce){
+  .nextread_card,.nextread_img,.costs_act_pano-card,.costs_act_pano-img,.sticky-cta_bar,
+  .stoc_nav,.card-slider_arrow,.plan_range{transition-duration:.01ms;animation-duration:.01ms}
+}

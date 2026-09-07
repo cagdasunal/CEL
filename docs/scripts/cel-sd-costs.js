@@ -336,12 +336,56 @@
   /* ── published rates ──────────────────────────────────────────────────────
      Tuition US$/week by duration bracket, as [[maxWeeks, rate], …] (§6 tiers).
      GE24 also prices GE23 — §6: "priced the same as General English 24". */
-  var COURSE_NAME = { ge20: 'General English 20', ge24: 'General English 24 / GE23' };
+  /* CEL Prices 2026 (agents), San Diego / Courses. Seventeen San Diego courses are
+     published there and they collapse to exactly FOUR per-week ladders, because the
+     price is set by lessons per week and nothing else:
 
-  var TUITION = {
-    ge20: [[6, 370], [12, 360], [19, 340], [999, 300]],
-    ge24: [[6, 410], [12, 400], [19, 380], [29, 340], [999, 320]]
+       20 lessons, no elective          GE20                                    370/360
+       23 lessons, 1 elective           GE23 · CD3 · AE3 · TOEFL3 · CAE3        410/400
+       24 lessons, 1 elective           GE24 · CD4 · AE4 · TOEFL4 · CAE4        410/400/380/340/320
+       28 lessons, 2 electives          GE28 · CD8 · AE8 · TOEFL28 · CAE28      460/450/430/390/370
+
+     So the four options below ARE the whole San Diego course list, not a subset —
+     each label names the specialisations that share its ladder. Listing the tracks
+     separately would add twelve entries that all compute the same number.
+
+     `visa` is the price list's own VISA TYPE column, not an inference: the 20- and
+     23-lesson courses are sold on ESTA/Tourist, the 24- and 28-lesson courses are
+     F-1 Student Visa. That column is why GE23 and GE24 could not stay merged behind
+     one option — they carry the same 410/400 short-stay rate but different routes,
+     so the merged option sent an ESTA student down the F-1 path.
+
+     The list marks the ESTA ladders n/a past 12 weeks (they are not sold that long).
+     Per this file's standing convention the nearest PUBLISHED bracket is held rather
+     than a rate being invented, and note() says the stay has left ESTA's 90 days.
+     GE20's 13+ week brackets are the ones this page's own §6 tuition table publishes.
+
+     NOT modelled here, and deliberately: Global Pathway 28 is a flat US$6,880 for a
+     fixed 16 weeks with two start dates a year — a weeks-slider cannot price it
+     without lying. Private lessons (US$85/lesson) and the optional Cambridge exam fee
+     (US$425) need a quantity input this tool does not have. */
+  var COURSES = {
+    ge20: { name: 'General English 20', visa: 'esta',
+            option: 'General English 20',
+            tiers: [[6, 370], [12, 360], [19, 340], [999, 300]] },
+    ge23: { name: 'General English 23', visa: 'esta',
+            option: 'General English 23 \u00b7 or Career / Academic / Exam 23',
+            tiers: [[6, 410], [999, 400]] },
+    ge24: { name: 'General English 24', visa: 'f1',
+            option: 'General English 24 \u00b7 or Career / Academic / Exam 24',
+            tiers: [[6, 410], [12, 400], [19, 380], [29, 340], [999, 320]] },
+    ge28: { name: 'General English 28', visa: 'f1',
+            option: 'General English 28 \u00b7 or Career / Academic / Exam 28',
+            tiers: [[6, 460], [12, 450], [19, 430], [29, 390], [999, 370]] }
   };
+  var COURSE_ORDER = ['ge20', 'ge23', 'ge24', 'ge28'];
+
+  /* True when the course is sold on ESTA/Tourist rather than F-1 — the one question
+     three separate call sites used to answer by testing for the string 'ge20'. */
+  function isEsta(key) {
+    var c = COURSES[key] || COURSES.ge20;
+    return c.visa === 'esta';
+  }
 
   /* Accommodation US$/week by bracket + the one-time placement fee (§4, §7).
      Standard-season (low-season) rates from CEL Prices 2026 (agents), San Diego /
@@ -401,7 +445,7 @@
 
   /* Why THIS route — one sentence per case, from §6 (course/stay rules) and §9 (fees). */
   var ROUTE_WHY = {
-    f1: 'General English 24 is a full-time academic course, so it needs an F-1 student visa \u2014 that is also the route for stays past about 6 months.',
+    f1: 'The 24- and 28-lesson courses are full-time academic study, so they need an F-1 student visa \u2014 that is also the route for stays past about 6 months.',
     esta: 'Up to about 12 weeks you can study on ESTA or a B1/B2 visitor visa; no student visa is needed.',
     b1b2: 'Past about 12 weeks you are beyond ESTA\u2019s 90 days, so this length of stay assumes a B1/B2 visitor visa.'
   };
@@ -411,9 +455,12 @@
     b1b2: 'Visa application (MRV) US$185'
   };
 
-  /* Visa route follows the course and the length of stay (§6 + §9). */
+  /* Visa route follows the course's published VISA TYPE and the length of stay (§6 + §9).
+     Reads COURSES[].visa rather than testing one course key, so adding a course cannot
+     leave it silently on the ESTA path. */
   function route(state) {
-    if (state.course === 'ge24') {
+    var c = COURSES[state.course] || COURSES.ge20;
+    if (c.visa === 'f1') {
       return { key: 'f1', chip: 'F-1 visa', label: 'SEVIS I-901 + visa application', cost: SEVIS + MRV };
     }
     if (state.weeks <= ESTA_WEEKS) {
@@ -433,7 +480,7 @@
     if (HOMESTAY[state.room]) {
       return 'Homestay rates include the meals shown below. A lactose-free, gluten-free or vegan diet adds US$50 a week and a halal diet US$75 \u2014 neither is counted above.';
     }
-    if (state.weeks > ESTA_WEEKS && state.course === 'ge20') {
+    if (state.weeks > ESTA_WEEKS && isEsta(state.course)) {
       return 'Past about 12 weeks you are beyond ESTA\u2019s 90 days, so this budget assumes a B1/B2 visitor visa.';
     }
     return 'Standard-season rates \u2014 accommodation carries a supplement from May 30 to September 26, 2026. Flights, food outside homestay and personal spending are not included.';
@@ -450,7 +497,8 @@
       /* Guarded like ROOMS below: an empty or unknown course key must degrade to the
          documented default (state.course) rather than throw inside h.bracket() and take
          every later IIFE in this bundle down with it. */
-      var tRate = h.bracket(TUITION[s.course] || TUITION.ge20, w);
+      var course = COURSES[s.course] || COURSES.ge20;
+      var tRate = h.bracket(course.tiers, w);
       /* An unknown key renders NOTHING rather than silently borrowing Standard's rate —
          a tile without a published rate must not print another residence's figure. */
       var room = ROOMS[s.room] || ROOMS.none;
@@ -503,7 +551,7 @@
           visa: h.money(r.cost),
           visaSub: r.label,
           /* the tiles show what THIS length of stay costs per week, not a from-price */
-          courseName: COURSE_NAME[s.course] || COURSE_NAME.ge20,
+          courseName: course.name,
           courseRate: h.money(tRate) + '/wk',
           roomNote: hasRoom
             ? h.money(rRate) + '/wk + ' + h.money(room.fee) + ' placement fee'
@@ -519,8 +567,8 @@
         },
         rows: { room: hasRoom, insurance: s.insurance, visa: s.visa },
         flags: {
-          'is-over': w > ESTA_WEEKS && s.course === 'ge20',
-          'is-esta-limit': s.course === 'ge20',      /* the tick only means something on GE20 */
+          'is-over': w > ESTA_WEEKS && isEsta(s.course),
+          'is-esta-limit': isEsta(s.course),         /* the 12-week tick only means something on an ESTA course */
           'is-f1': r.key === 'f1',
           /* One root flag per route so the SLIDER can wear the verdict's colour (client, 4 Aug:
              "the progress bar color and the visa color should match"). The chip styles itself from
@@ -566,6 +614,55 @@
   }
   repairSelect('calcCourse', ['ge20', 'ge24']);
   repairSelect('calcRoom', ['std', 'prm', 'sup', 'hss', 'hsd', 'hpr', 'none']);
+
+  /* ── Add the course options the Designer's Select does not carry ──────
+     The 2026 price list has four San Diego ladders (COURSES above); the Webflow
+     Select carries two, from when GE23 was merged into the GE24 option. A FormSelect
+     exposes NO option-list setting over the Designer API — the same wall that forces
+     repairSelect() above — so an option cannot be added by MCP at all. It is added
+     here, before mount, or it does not exist.
+
+     Runs AFTER repairSelect so the blanked first option already holds its value and
+     is seen as present. Reconciles by VALUE and inserts in COURSE_ORDER, so an option
+     added by hand in the Designer later is detected and left alone rather than
+     duplicated, and running twice changes nothing. */
+  function ensureOptions(id, order, spec) {
+    var el = document.getElementById(id);
+    if (!el || !el.options) return;
+    var have = {}, i;
+    for (i = 0; i < el.options.length; i++) {
+      if (el.options[i].value) have[el.options[i].value] = el.options[i];
+    }
+    var prev = null;
+    for (i = 0; i < order.length; i++) {
+      var key = order[i];
+      if (have[key]) { prev = have[key]; continue; }   /* already authored — never touch it */
+      if (!spec[key]) continue;
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = spec[key].option;
+      /* after the previous option in COURSE_ORDER; nextSibling === null appends */
+      if (prev && prev.parentNode === el) el.insertBefore(opt, prev.nextSibling);
+      else el.insertBefore(opt, el.firstChild);
+      have[key] = opt;
+      prev = opt;
+    }
+  }
+  ensureOptions('calcCourse', COURSE_ORDER, COURSES);
+
+  /* The GE24 option's label still reads "· or GE23" on the live page — true when the two
+     shared one option, wrong now that GE23 is its own entry with its own ESTA route.
+     Same wall: a Select option's TEXT is not writable over MCP either. */
+  (function () {
+    var el = document.getElementById('calcCourse');
+    if (!el || !el.options) return;
+    for (var i = 0; i < el.options.length; i++) {
+      var o = el.options[i];
+      if (COURSES[o.value] && o.textContent !== COURSES[o.value].option) {
+        o.textContent = COURSES[o.value].option;
+      }
+    }
+  })();
 
   /* The 43 menu options ship with src="" — Webflow drops external image URLs on publish.
      The picker's own flag recovers through out.fxFlag, but the menu's do not, so rebuild
@@ -759,3 +856,49 @@
    defines it, and closes on link click itself. The patch removed 2026-09-02:
    it listened for a class that is no longer set anywhere.
    ── */
+
+/* ── §3 TOC toggle — make the <=991 drawer reachable by keyboard ─────────────
+   The drawer's trigger ships from Webflow as `<p class="stoc_label">On this page</p>`.
+   celtocmob3 (in cel-cost-of-studying-english.min.js) writes `aria-expanded` onto it and binds a
+   keydown handler — but a <p> has no role and no tab stop, so that handler can never fire and the
+   element is never announced. Measured on the live page (2026-09-08 responsiveness audit): a full
+   focus walk finds 8 TOC stops at 1440 and ZERO at 375, because the <=991 rule
+   `.stoc_nav{visibility:hidden}` also removes all eight links from the tab order. Below 992px the
+   table of contents for an ~18,000px document was therefore pointer-only — WCAG 2.1.1, Level A.
+
+   This only promotes the existing element to a real control; it does not re-implement opening.
+   celtocmob3 still owns the click handler, and Enter/Space here are forwarded to it as a click so
+   there is exactly one code path for opening the drawer.
+
+   Not fixed here: the element should be a Button or Link Block in the Designer. That is an element
+   rebuild, so the runtime promotion is the page-scoped half of it. */
+(function () {
+  if (window.__costsTocA11yDone) return;
+  window.__costsTocA11yDone = true;
+
+  var label = document.querySelector('.stoc_label');
+  var nav = document.querySelector('.stoc_nav');
+  if (!label || !nav) return;
+  /* If Webflow is ever changed to ship a real control, leave it alone. */
+  if (/^(a|button)$/i.test(label.tagName)) return;
+
+  if (!nav.id) nav.id = 'stoc-nav';
+  label.setAttribute('role', 'button');
+  label.setAttribute('tabindex', '0');
+  label.setAttribute('aria-controls', nav.id);
+  if (!label.hasAttribute('aria-expanded')) label.setAttribute('aria-expanded', 'false');
+
+  label.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    e.preventDefault();          /* stop Space from scrolling the page */
+    label.click();               /* one owner for open/close: celtocmob3's click handler */
+  });
+
+  /* Escape closes the drawer and returns focus to the trigger. */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (label.getAttribute('aria-expanded') !== 'true') return;
+    label.click();
+    label.focus();
+  });
+})();
