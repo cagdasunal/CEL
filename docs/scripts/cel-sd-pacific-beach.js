@@ -117,6 +117,24 @@
       if (body2 && inner) body2.style.maxHeight = inner.scrollHeight + 'px';
     }
   });
+  /* RESPONSIVE AUDIT 2026-09-07: maxHeight above is an inline px value frozen at the
+     width the item was opened at, and .faq-body is overflow:hidden with no resize
+     listener. MEASURED on the published page: opened at 767 (max-height 61px), resized
+     to 320 (the answer then needs 100px) -> 39px, about two lines, clipped. Any
+     portrait/landscape rotation with an item open truncates the answer. Recompute the
+     one open item; debounced because resize fires continuously during a drag. */
+  var faqResizeTimer;
+  window.addEventListener('resize', function () {
+    clearTimeout(faqResizeTimer);
+    faqResizeTimer = setTimeout(function () {
+      var open = document.querySelector('.faq-item[data-faq-open="true"]');
+      if (!open) return;
+      var body = open.querySelector('.faq-body');
+      var inner = open.querySelector('.faq-body-inner');
+      if (body && inner) body.style.maxHeight = inner.scrollHeight + 'px';
+    }, 120);
+  }, { passive: true });
+
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var q = e.target.closest && e.target.closest('.faq-q');
@@ -222,8 +240,18 @@
     return document.getElementById(l.dataset.target);
   }).filter(Boolean);
   var last = sections[sections.length - 1];
-  var navH = navbar ? navbar.offsetHeight : 80;
+  /* RESPONSIVE AUDIT 2026-09-07: read per call, not once. The navbar is 72px at
+     <=991 and 90px at >=992, so a value cached at IIFE time is 18px stale after any
+     resize across that line. */
+  function navHeight() { return navbar ? navbar.offsetHeight : 80; }
 
+  /* RESPONSIVE AUDIT 2026-09-07: the trigger is a <p class="stoc_label">, which cannot
+     take focus, so the keydown handler registered below was unreachable and keyboard
+     users could not open the mobile TOC drawer at <=991. */
+  if (label.tagName !== 'BUTTON' && label.tagName !== 'A') {
+    if (!label.hasAttribute('tabindex')) label.setAttribute('tabindex', '0');
+    if (!label.hasAttribute('role')) label.setAttribute('role', 'button');
+  }
   label.setAttribute('aria-expanded', 'false');
 
   function close() {
@@ -246,6 +274,7 @@
   function updateVisibility() {
     var heroBottom = hero ? hero.getBoundingClientRect().bottom : -1;
     var lastBottom = last ? last.getBoundingClientRect().bottom : Infinity;
+    var navH = navHeight();
     if (heroBottom < navH + 20 && lastBottom > navH + 40) {
       comp.classList.add('is-visible');
     } else {

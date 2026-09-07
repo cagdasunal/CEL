@@ -18,7 +18,20 @@
  * (add a class to the target element), and the deploy-gate ratchet ensures
  * the count can only fall.
  * ==================================================================== */
-.section_page .body-intro{margin-bottom:1.4em}
+/* REMOVED 2026-09-07 (responsive audit):
+ *   .section_page .body-intro{margin-bottom:1.4em}
+ * This was not a rule that needed converting — it was SHADOWING one that is
+ * already native and already published. At (0,2,0) it outranked the Webflow
+ * style object `.body-intro` (0,1,0) at every width, so
+ *   @media (max-width:991px){.body-intro{margin-bottom:32px}}
+ * has never rendered on this page. MEASURED computed margin-bottom before
+ * removal: 23.8px at 1440 and 992, 22.4px at 767, 21px at <=479 — i.e. 1.4em
+ * throughout, never the designed 32px on mobile.
+ * Nothing had to be written in the Designer first: base (1.35rem) and <=991
+ * (32px) are both already live on the .body-intro style object, so deleting
+ * this line UNCOVERS them rather than leaving a gap. Elements that genuinely
+ * want the looser rhythm have the `.body-intro.is-flow` combo for it.
+ * Net effect: convertible count falls by one. */
 
 /* ---- BLOCKER 5: attribute selector — not expressible as a class ---- */
 #cta .inline-cta-btn[href*='wa.me']{font-weight:600}
