@@ -23,6 +23,16 @@
 .card-slider_nav .card-slider_arrow{background:transparent;border:1.5px solid var(--cream-medium,#e9deca);color:var(--brown-dark,#5f5950);transition:border-color 0.2s ease,background-color 0.2s ease,color 0.2s ease}
 .card-slider_nav .card-slider_arrow:hover{border-color:var(--indigo-bright,#5d60ee);background:var(--cream-soft,#f9f1df);color:var(--indigo-bright,#5d60ee)}
 
+/* ---- BLOCKER 4: vendor pseudo-element — no Webflow style object can hold it ----
+   The scroll itself is NATIVE: `.card-slider_row.is-team-track { overflow-x:auto; scrollbar-width:none }`
+   is a real style object on a combo only this page's three team tracks wear. Only the WebKit
+   scrollbar pseudo has to live here.
+   Why the scroll exists at all: `.swiper-wrapper` computes `overflow-x: visible`, so `scrollLeft`
+   was permanently 0 and the arrows' `scrollBy` was a no-op; Swiper is never loaded on /about (this
+   bundle ships no __swR loader). On mobile `.swiper-slide.is-team` is `width:90%`, so roughly four
+   of five cards were unreachable by any input, on every tab. */
+.card-slider_row.is-team-track::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
 /* ---- BLOCKER 1: ancestor STATE selector (.a:hover .b) — IX2 only, no API ---- */
 .stoc_link:hover .stoc_dot{border-color:var(--brown-deep,#37332c)}
 .stoc_link:hover .stoc_text{color:var(--brown-deep,#37332c)}

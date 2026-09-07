@@ -78,91 +78,66 @@
   if (targets.indexOf(hash) !== -1) setActive(hash); else spy();
 })();
 
-/* 3. Team tabs. DUAL-MODE, so this bundle is correct both before and after the Webflow
-   structure change.
-   - CMS mode (current): #team holds one Collection List per tab, each an element carrying
-     [data-tab-panel="management|admission|teachers"]. A tab shows its own panel and hides the
-     others; nothing inside a list is touched, so Webflow owns the item markup end to end.
-   - Legacy mode: the 24 hand-written .swiper-slide.is-team cards lived in ONE track and were
-     filtered per slide by [data-cat]. Kept as a fallback so a stale cached bundle, or a rollback
-     of the page structure, still filters correctly instead of showing all three groups at once.
-   The design's CSS filter — .team-slider_el.is-tab-<cat> .swiper-slide.is-team:not([data-cat=...])
-   — is a descendant + :not() + attribute selector, three separate reasons Webflow cannot express
-   it as a style, which is why the state is applied inline here in both modes. */
+/* 3. Native Webflow Tabs integration.
+   #team was rebuilt on a native Tabs component (TabsWrapper > TabsMenu/TabsLink + TabsContent >
+   TabsPane), so WEBFLOW owns tab switching now. The block that used to do it here is gone: it
+   selected `.team_tab[data-tab]` and native tabs carry `data-w-tab`, so after the rebuild it
+   matched 0 elements and returned at its first guard.
+   What still has to happen on a tab change is measurement. An inactive TabsPane is display:none,
+   so its track reports clientWidth 0 and any progress computed while hidden is meaningless. Webflow
+   fades the panes over ~300ms (data-duration-in), so re-measure once the swap has settled.
+   Note for anyone testing this in automation: Webflow's pane swap is requestAnimationFrame-driven,
+   and rAF does not run in a hidden/background tab — the tabs will look stuck. That is the harness,
+   not the page. */
 (function () {
   if (window.__celAboutTeamTabs) return;
   window.__celAboutTeamTabs = true;
-  var tabs = [].slice.call(document.querySelectorAll('.team_tab[data-tab]'));
-  if (!tabs.length) return;
-  var panels = [].slice.call(document.querySelectorAll('[data-tab-panel]'));
-  var legacy = document.querySelector('.team-slider_el');
-  if (!panels.length && !legacy) return;
+  var menu = document.querySelector('.team_tabs');
+  if (!menu) return;
 
-  function show(cat) {
-    tabs.forEach(function (t) { t.classList.toggle('is-active', t.dataset.tab === cat); });
-
-    if (panels.length) {
-      panels.forEach(function (p) {
-        var on = p.getAttribute('data-tab-panel') === cat;
-        /* '' restores the stylesheet's display:flex on .card-slider — never hard-code it. */
-        p.style.display = on ? '' : 'none';
-        p.setAttribute('aria-hidden', on ? 'false' : 'true');
-        if (on && p.swiper) { p.swiper.update(); p.swiper.slideTo(0, 0); }
-      });
-    } else {
-      legacy.setAttribute('data-tab-active', cat);
-      [].slice.call(legacy.querySelectorAll('.swiper-slide.is-team')).forEach(function (s) {
-        s.style.display = (s.getAttribute('data-cat') === cat) ? '' : 'none';
-      });
-      if (legacy.swiper) { legacy.swiper.update(); legacy.swiper.slideTo(0, 0); }
-    }
-
-    document.dispatchEvent(new CustomEvent('cel:teamTabChange', { detail: { cat: cat } }));
+  function announce() {
+    var pane = document.querySelector('.w-tab-pane.w--tab-active');
+    var slider = pane && pane.querySelector('.team-slider_el');
+    document.dispatchEvent(new CustomEvent('cel:teamTabChange', {
+      detail: { tab: pane ? pane.getAttribute('data-w-tab') : null, slider: slider || null }
+    }));
   }
 
-  tabs.forEach(function (t) {
-    t.setAttribute('tabindex', '0');
-    t.addEventListener('click', function (e) { e.preventDefault(); show(t.dataset.tab); });
-    t.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t.click(); }
-    });
+  menu.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('.w-tab-link')) return;
+    /* once for an instant swap, once after the fade Webflow declares on the wrapper */
+    setTimeout(announce, 60);
+    setTimeout(announce, 420);
   });
-
-  var initial = (tabs.filter(function (t) { return t.classList.contains('is-active'); })[0]
-    || tabs[0]).dataset.tab;
-  show(initial);
+  window.addEventListener('resize', announce);
 })();
 
-/* 4. Team card slider — arrows + progress bar, shared by all three tab panels.
-   There is ONE .card-slider_nav for the whole section, so every read and every scroll resolves
-   the ACTIVE track at call time rather than closing over one element: in CMS mode that is the
-   visible [data-tab-panel]'s .swiper-wrapper, in legacy mode the single .team-slider_el's.
-   Uses Swiper when the library is present (the markup carries .swiper / .swiper-wrapper /
-   .swiper-slide) and falls back to native scroll otherwise. */
+/* 4. Team card sliders — arrows + progress bar, ONE PER TAB PANE.
+   The rebuild duplicated .card-slider_nav into every pane (three of them). This block used to do
+   `document.querySelector('.card-slider_nav')`, which wired only the first: measured on the live
+   page, the Admission and Teachers progress fills were never set and their arrows had no listeners
+   at all. Each nav is now bound to the slider inside ITS OWN pane.
+   Movement is native scroll on the track (see the `#team .swiper-wrapper` rule in
+   cel-about-cel.css). Swiper is used instead when the library is present — this bundle does not
+   ship the __swR loader, but the swiperReady guard means the panes upgrade themselves if one is
+   ever added. */
 (function () {
   if (window.__celAboutSlider) return;
   window.__celAboutSlider = true;
-  var nav = document.querySelector('.card-slider_nav');
-  if (!nav) return;
-  var prev = nav.querySelector('[data-slide="prev"]');
-  var next = nav.querySelector('[data-slide="next"]');
-  var fill = document.querySelector('.team-slider_fill');
 
-  function sliders() {
-    var panels = [].slice.call(document.querySelectorAll('[data-tab-panel]'));
-    if (panels.length) return panels;
-    var one = document.querySelector('.team-slider_el');
-    return one ? [one] : [];
-  }
-  function activeEl() {
-    var all = sliders();
-    if (!all.length) return null;
-    return all.filter(function (s) { return s.style.display !== 'none'; })[0] || all[0];
-  }
-  function activeTrack() {
-    var el = activeEl();
-    return el ? el.querySelector('.swiper-wrapper') : null;
-  }
+  var sliders = [].slice.call(document.querySelectorAll('.card-slider_nav')).map(function (nav) {
+    var scope = (nav.closest && nav.closest('.w-tab-pane')) || nav.parentNode;
+    return {
+      nav: nav,
+      el: scope.querySelector('.team-slider_el'),
+      track: scope.querySelector('.swiper-wrapper'),
+      prev: nav.querySelector('[data-slide="prev"]'),
+      next: nav.querySelector('[data-slide="next"]'),
+      fill: nav.querySelector('.team-slider_fill')
+    };
+  }).filter(function (s) { return s.el && s.track; });
+  if (!sliders.length) return;
+
   function visible(track) {
     return [].slice.call(track.querySelectorAll('.swiper-slide.is-team'))
       .filter(function (s) { return s.style.display !== 'none'; });
@@ -171,38 +146,45 @@
     var v = visible(track);
     return v.length > 1 ? (v[1].offsetLeft - v[0].offsetLeft) : (v[0] ? v[0].offsetWidth + 16 : 300);
   }
-  function progress() {
-    var track = activeTrack();
-    if (!track) return;
-    var max = track.scrollWidth - track.clientWidth;
-    var p = max > 0 ? (track.scrollLeft / max) : 0;
-    if (fill) fill.style.width = Math.max(4, Math.min(100, p * 100)) + '%';
-    if (prev) prev.classList.toggle('is-disabled', track.scrollLeft <= 1);
-    if (next) next.classList.toggle('is-disabled', track.scrollLeft >= max - 1);
+  function progress(s) {
+    /* A pane that is still display:none measures 0 for both — leave its nav untouched rather
+       than painting a bogus 4% fill and a wrongly-disabled arrow. */
+    if (!s.track.clientWidth) return;
+    var max = s.track.scrollWidth - s.track.clientWidth;
+    var p = max > 0 ? (s.track.scrollLeft / max) : 0;
+    if (s.fill) s.fill.style.width = Math.max(4, Math.min(100, p * 100)) + '%';
+    if (s.prev) s.prev.classList.toggle('is-disabled', s.track.scrollLeft <= 1);
+    if (s.next) s.next.classList.toggle('is-disabled', max <= 0 || s.track.scrollLeft >= max - 1);
   }
-  function go(dir) {
-    var el = activeEl();
-    if (el && el.swiper) { dir < 0 ? el.swiper.slidePrev() : el.swiper.slideNext(); return; }
-    var track = activeTrack();
-    if (track) track.scrollBy({ left: dir * step(track), behavior: 'smooth' });
+  function go(s, dir) {
+    if (s.el.swiper) { dir < 0 ? s.el.swiper.slidePrev() : s.el.swiper.slideNext(); return; }
+    s.track.scrollBy({ left: dir * step(s.track), behavior: 'smooth' });
   }
+  function refresh() { sliders.forEach(progress); }
 
-  /* JAVASCRIPT.md (handoff): Swiper is injected at RUNTIME by a page bundle's __swR loader and is
-     never in the page HTML, so a one-shot `if (window.Swiper)` can only miss it. This bundle does
-     not ship that loader — measured on the published page, `typeof window.Swiper === "undefined"`
-     — which is why #team runs on the native-scroll fallback today. Gate on the documented
-     swiperReady event too, so the panels initialise the moment a loader is added, without
-     touching this block again. */
+  sliders.forEach(function (s) {
+    if (s.prev) s.prev.addEventListener('click', function (e) { e.preventDefault(); go(s, -1); });
+    if (s.next) s.next.addEventListener('click', function (e) { e.preventDefault(); go(s, 1); });
+    [s.prev, s.next].forEach(function (b) {
+      if (!b) return;
+      b.setAttribute('tabindex', '0');
+      b.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
+      });
+    });
+    s.track.addEventListener('scroll', function () { progress(s); }, { passive: true });
+  });
+
   function initSwipers() {
     if (!window.Swiper) return;
-    sliders().forEach(function (el) {
-      if (el.swiper) return;
+    sliders.forEach(function (s) {
+      if (s.el.swiper) return;
       try {
-        new window.Swiper(el, {
+        new window.Swiper(s.el, {
           slidesPerView: 'auto',
           spaceBetween: 16,
           watchOverflow: true,
-          on: { init: progress, slideChange: progress, resize: progress }
+          on: { init: refresh, slideChange: refresh, resize: refresh }
         });
       } catch (err) { /* fall through to native scroll */ }
     });
@@ -210,22 +192,9 @@
   if (window.Swiper) initSwipers();
   else document.addEventListener('swiperReady', initSwipers);
 
-  if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); go(-1); });
-  if (next) next.addEventListener('click', function (e) { e.preventDefault(); go(1); });
-  [prev, next].forEach(function (b) {
-    if (!b) return;
-    b.setAttribute('tabindex', '0');
-    b.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
-    });
-  });
-  sliders().forEach(function (el) {
-    var t = el.querySelector('.swiper-wrapper');
-    if (t) t.addEventListener('scroll', progress, { passive: true });
-  });
-  window.addEventListener('resize', progress);
-  document.addEventListener('cel:teamTabChange', progress);
-  progress();
+  window.addEventListener('resize', refresh);
+  document.addEventListener('cel:teamTabChange', refresh);
+  refresh();
 })();
 
 /* 5. Timeline — mark the entry nearest the viewport centre as active. Purely additive: the
