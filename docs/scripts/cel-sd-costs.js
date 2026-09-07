@@ -708,7 +708,8 @@
    (document.querySelector('.price-table')), so Table 2 — General English 24 — shipped
    with flat bars. That file is the Vancouver page's and must never be edited, so the
    fix lives here: run the same scaleX reveal over EVERY .price-table on the page.
-   · data-tier / data-w are already authored on all 9 rows (both tables), and Table 2's
+   · data-tier / data-w are authored on all 14 rows (three tables since the GE28 ladder
+     was added 2026-09-08 — the querySelectorAll below picks it up for free), and Table 2's
      price-bar-wrap > price-bar markup was added in the same review — the JS had nothing
      to drive there before that
    · existing WAAPI animations are cancelled first, exactly as the VC file does, so a
@@ -946,4 +947,114 @@
     new MutationObserver(function () { sync(item); })
       .observe(item, { attributes: true, attributeFilter: ['data-faq-open'] });
   });
+})();
+
+/* RESPONSIVE REPAIR 2026-09-08 — hero backdrop resolution on tall/narrow boxes.
+   The hero image is `object-fit:cover` in a `min-height:100vh` box, but Webflow
+   generates `sizes="(max-width:2560px) 100vw, 2560px"` — which describes the box's
+   WIDTH only. Cover scales the source by max(boxW/srcW, boxH/srcH), so on a
+   portrait viewport the height drives the scale and the width-derived candidate is
+   far too small. Measured at 375x900 on a 16:9 source: the browser picks the 500w
+   candidate (real file 500x281) and paints it at 3.2x, cropped to a 117px-wide
+   strip of the original. The needed source is ~1600w.
+   This computes the width cover actually needs, and only intervenes when the
+   current pick is materially short — so it is a no-op at 1440 and 1920, where the
+   width-derived candidate is already correct. It also promotes the LCP image out
+   of `loading="lazy"`, which Webflow puts on every image including this one. */
+(function () {
+  if (window.__celHeroImg) return;
+  window.__celHeroImg = true;
+  var hero = document.querySelector('.section_hero, .abouthero');
+  if (!hero) return;
+  var img = hero.querySelector('img.hero_bg-image, img.abouthero_bg-image')
+         || hero.querySelector('img');
+  if (!img || !img.srcset) return;
+
+  /* Real candidate widths, from the srcset itself — naturalWidth is
+     density-corrected for a srcset image and cannot be compared against them. */
+  var cands = img.srcset.split(',').map(function (c) {
+    var m = c.trim().match(/(\S+)\s+(\d+)w$/);
+    return m ? { url: m[1], w: +m[2] } : null;
+  }).filter(Boolean).sort(function (a, b) { return a.w - b.w; });
+  if (!cands.length) return;
+
+  img.setAttribute('fetchpriority', 'high');
+  if (img.getAttribute('loading') === 'lazy') img.setAttribute('loading', 'eager');
+
+  function need() {
+    var r = img.getBoundingClientRect();
+    if (!r.width || !r.height) return 0;
+    var aspect = img.naturalWidth && img.naturalHeight
+      ? img.naturalWidth / img.naturalHeight : 16 / 9;   /* ratio survives density correction */
+    var dpr = window.devicePixelRatio || 1;
+    return Math.ceil(Math.max(r.width, r.height * aspect) * dpr);
+  }
+
+  function apply() {
+    var w = need();
+    if (!w) return;
+    var r = img.getBoundingClientRect();
+    /* Only when the cover crop needs materially more than the box width — i.e.
+       exactly the portrait case Webflow's `sizes` cannot describe. */
+    if (w < r.width * (window.devicePixelRatio || 1) * 1.15) return;
+    /* 5% tolerance: a 1600w candidate for a 1608px need is a 0.5% shortfall no one
+       can see, and the next step up is a 2000px JPEG on a phone. */
+    var pick = cands.filter(function (c) { return c.w >= w * 0.95; })[0] || cands[cands.length - 1];
+    var cur = (img.currentSrc || '').split('/').pop();
+    var have = (cands.filter(function (c) { return c.url.split('/').pop() === cur; })[0] || {}).w || 0;
+    if (have >= pick.w) return;                 /* already good enough */
+    /* Write the CANDIDATE's width, not the raw need: `sizes:1608px` makes the
+       browser reach past a 1600w file to a 2000w one for a 0.5% gain. */
+    img.setAttribute('sizes', pick.w + 'px');
+  }
+
+  apply();
+  if (img.complete) apply(); else img.addEventListener('load', apply, { once: true });
+  var queued = 0;
+  window.addEventListener('resize', function () {
+    if (queued) return;
+    queued = 1;
+    requestAnimationFrame(function () { queued = 0; apply(); });
+  }, { passive: true });
+})();
+
+/* RESPONSIVE REPAIR 2026-09-08 — keyboard-reachable horizontal scrollers.
+   A scroll container with no focusable descendant and no tabindex cannot be
+   reached or scrolled from the keyboard, so whatever it hides is pointer-only.
+   Only the boxes that ACTUALLY overflow are marked, re-evaluated on resize, so
+   this adds no tab stops at the widths where they fit. */
+(function () {
+  if (window.__celScrollA11y) return;
+  window.__celScrollA11y = true;
+  var boxes = [].slice.call(document.querySelectorAll('.feetable, .compare-table'));
+  if (!boxes.length) return;
+  function label(box) {
+    var head = box.querySelector('.feetable_headcell, .compare-duration');
+    var txt = head ? (head.textContent || '').trim() : '';
+    return txt ? 'Table: ' + txt + ' \u2014 scrollable' : 'Scrollable table';
+  }
+  function sync() {
+    boxes.forEach(function (box) {
+      var scrolls = box.scrollWidth > box.clientWidth + 1;
+      if (scrolls) {
+        if (box.getAttribute('tabindex') !== '0') {
+          box.setAttribute('tabindex', '0');
+          box.setAttribute('role', 'region');
+          box.setAttribute('aria-label', label(box));
+        }
+      } else if (box.getAttribute('tabindex') === '0') {
+        box.removeAttribute('tabindex');
+        box.removeAttribute('role');
+        box.removeAttribute('aria-label');
+      }
+    });
+  }
+  var queued = 0;
+  window.addEventListener('resize', function () {
+    if (queued) return;
+    queued = 1;
+    requestAnimationFrame(function () { sync(); queued = 0; });
+  }, { passive: true });
+  sync();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(sync);
 })();

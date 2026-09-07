@@ -114,3 +114,14 @@
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
   html{scroll-padding-bottom:120px}
 }
+
+
+/* ---- BLOCKER 2: non-Webflow media query (height). RESPONSIVE REPAIR 2026-09-08.
+   `.navbar_menu` is `max-height:none` / `overflow:visible`, anchored under a fixed
+   72px navbar; its open height is ~482px, so it overflows every landscape phone.
+   The same block ships on the four San Diego pages. `.stoc_nav` already has its
+   clamp above, and this page's hero is a gallery of sized images rather than a
+   cover-cropped backdrop, so neither of those repairs applies here. ---- */
+@media (max-width:991px) and (max-height:820px){
+  .navbar_menu{max-height:calc(100vh - 72px);overflow-y:auto;overscroll-behavior:contain}
+}
