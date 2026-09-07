@@ -78,28 +78,46 @@
   if (targets.indexOf(hash) !== -1) setActive(hash); else spy();
 })();
 
-/* 3. Team tabs. The design's CSS filtered slides with
-   `.team-slider_el.is-tab-<cat> .swiper-slide.is-team:not([data-cat="<cat>"]) { display:none }` —
-   a :not([attr]) descendant selector Webflow cannot express as a style. The tab state therefore
-   lives on the slider as data-tab-active and the filtering is applied here, directly on the
-   slides, so no attribute-selector CSS is required. */
+/* 3. Team tabs. DUAL-MODE, so this bundle is correct both before and after the Webflow
+   structure change.
+   - CMS mode (current): #team holds one Collection List per tab, each an element carrying
+     [data-tab-panel="management|admission|teachers"]. A tab shows its own panel and hides the
+     others; nothing inside a list is touched, so Webflow owns the item markup end to end.
+   - Legacy mode: the 24 hand-written .swiper-slide.is-team cards lived in ONE track and were
+     filtered per slide by [data-cat]. Kept as a fallback so a stale cached bundle, or a rollback
+     of the page structure, still filters correctly instead of showing all three groups at once.
+   The design's CSS filter — .team-slider_el.is-tab-<cat> .swiper-slide.is-team:not([data-cat=...])
+   — is a descendant + :not() + attribute selector, three separate reasons Webflow cannot express
+   it as a style, which is why the state is applied inline here in both modes. */
 (function () {
   if (window.__celAboutTeamTabs) return;
   window.__celAboutTeamTabs = true;
-  var slider = document.querySelector('.team-slider_el');
   var tabs = [].slice.call(document.querySelectorAll('.team_tab[data-tab]'));
-  if (!slider || !tabs.length) return;
-  var slides = [].slice.call(slider.querySelectorAll('.swiper-slide.is-team'));
-  if (!slides.length) return;
+  if (!tabs.length) return;
+  var panels = [].slice.call(document.querySelectorAll('[data-tab-panel]'));
+  var legacy = document.querySelector('.team-slider_el');
+  if (!panels.length && !legacy) return;
 
   function show(cat) {
-    slider.setAttribute('data-tab-active', cat);
     tabs.forEach(function (t) { t.classList.toggle('is-active', t.dataset.tab === cat); });
-    slides.forEach(function (s) {
-      s.style.display = (s.getAttribute('data-cat') === cat) ? '' : 'none';
-    });
-    if (slider.swiper) { slider.swiper.update(); slider.swiper.slideTo(0, 0); }
-    slider.dispatchEvent(new CustomEvent('cel:teamTabChange', { bubbles: true, detail: { cat: cat } }));
+
+    if (panels.length) {
+      panels.forEach(function (p) {
+        var on = p.getAttribute('data-tab-panel') === cat;
+        /* '' restores the stylesheet's display:flex on .card-slider — never hard-code it. */
+        p.style.display = on ? '' : 'none';
+        p.setAttribute('aria-hidden', on ? 'false' : 'true');
+        if (on && p.swiper) { p.swiper.update(); p.swiper.slideTo(0, 0); }
+      });
+    } else {
+      legacy.setAttribute('data-tab-active', cat);
+      [].slice.call(legacy.querySelectorAll('.swiper-slide.is-team')).forEach(function (s) {
+        s.style.display = (s.getAttribute('data-cat') === cat) ? '' : 'none';
+      });
+      if (legacy.swiper) { legacy.swiper.update(); legacy.swiper.slideTo(0, 0); }
+    }
+
+    document.dispatchEvent(new CustomEvent('cel:teamTabChange', { detail: { cat: cat } }));
   }
 
   tabs.forEach(function (t) {
@@ -110,35 +128,52 @@
     });
   });
 
-  var initial = slider.getAttribute('data-tab-active')
-    || (tabs.filter(function (t) { return t.classList.contains('is-active'); })[0] || tabs[0]).dataset.tab;
+  var initial = (tabs.filter(function (t) { return t.classList.contains('is-active'); })[0]
+    || tabs[0]).dataset.tab;
   show(initial);
 })();
 
-/* 4. Team card slider — arrows + progress bar. Uses Swiper when the library is present (the
-   markup carries .swiper / .swiper-wrapper / .swiper-slide) and falls back to native scroll so
-   the arrows still work if Swiper never loads. */
+/* 4. Team card slider — arrows + progress bar, shared by all three tab panels.
+   There is ONE .card-slider_nav for the whole section, so every read and every scroll resolves
+   the ACTIVE track at call time rather than closing over one element: in CMS mode that is the
+   visible [data-tab-panel]'s .swiper-wrapper, in legacy mode the single .team-slider_el's.
+   Uses Swiper when the library is present (the markup carries .swiper / .swiper-wrapper /
+   .swiper-slide) and falls back to native scroll otherwise. */
 (function () {
   if (window.__celAboutSlider) return;
   window.__celAboutSlider = true;
-  var el = document.querySelector('.team-slider_el');
-  if (!el) return;
   var nav = document.querySelector('.card-slider_nav');
-  var prev = nav && nav.querySelector('[data-slide="prev"]');
-  var next = nav && nav.querySelector('[data-slide="next"]');
+  if (!nav) return;
+  var prev = nav.querySelector('[data-slide="prev"]');
+  var next = nav.querySelector('[data-slide="next"]');
   var fill = document.querySelector('.team-slider_fill');
-  var track = el.querySelector('.swiper-wrapper');
-  if (!track) return;
 
-  function visible() {
+  function sliders() {
+    var panels = [].slice.call(document.querySelectorAll('[data-tab-panel]'));
+    if (panels.length) return panels;
+    var one = document.querySelector('.team-slider_el');
+    return one ? [one] : [];
+  }
+  function activeEl() {
+    var all = sliders();
+    if (!all.length) return null;
+    return all.filter(function (s) { return s.style.display !== 'none'; })[0] || all[0];
+  }
+  function activeTrack() {
+    var el = activeEl();
+    return el ? el.querySelector('.swiper-wrapper') : null;
+  }
+  function visible(track) {
     return [].slice.call(track.querySelectorAll('.swiper-slide.is-team'))
       .filter(function (s) { return s.style.display !== 'none'; });
   }
-  function step() {
-    var v = visible();
+  function step(track) {
+    var v = visible(track);
     return v.length > 1 ? (v[1].offsetLeft - v[0].offsetLeft) : (v[0] ? v[0].offsetWidth + 16 : 300);
   }
   function progress() {
+    var track = activeTrack();
+    if (!track) return;
     var max = track.scrollWidth - track.clientWidth;
     var p = max > 0 ? (track.scrollLeft / max) : 0;
     if (fill) fill.style.width = Math.max(4, Math.min(100, p * 100)) + '%';
@@ -146,34 +181,37 @@
     if (next) next.classList.toggle('is-disabled', track.scrollLeft >= max - 1);
   }
   function go(dir) {
-    track.scrollBy({ left: dir * step(), behavior: 'smooth' });
+    var el = activeEl();
+    if (el && el.swiper) { dir < 0 ? el.swiper.slidePrev() : el.swiper.slideNext(); return; }
+    var track = activeTrack();
+    if (track) track.scrollBy({ left: dir * step(track), behavior: 'smooth' });
   }
 
-  if (window.Swiper && !el.swiper) {
-    try {
-      new window.Swiper(el, {
-        slidesPerView: 'auto',
-        spaceBetween: 16,
-        watchOverflow: true,
-        on: {
-          init: progress,
-          slideChange: progress,
-          resize: progress
-        }
-      });
-    } catch (err) { /* fall through to native scroll */ }
+  /* JAVASCRIPT.md (handoff): Swiper is injected at RUNTIME by a page bundle's __swR loader and is
+     never in the page HTML, so a one-shot `if (window.Swiper)` can only miss it. This bundle does
+     not ship that loader — measured on the published page, `typeof window.Swiper === "undefined"`
+     — which is why #team runs on the native-scroll fallback today. Gate on the documented
+     swiperReady event too, so the panels initialise the moment a loader is added, without
+     touching this block again. */
+  function initSwipers() {
+    if (!window.Swiper) return;
+    sliders().forEach(function (el) {
+      if (el.swiper) return;
+      try {
+        new window.Swiper(el, {
+          slidesPerView: 'auto',
+          spaceBetween: 16,
+          watchOverflow: true,
+          on: { init: progress, slideChange: progress, resize: progress }
+        });
+      } catch (err) { /* fall through to native scroll */ }
+    });
   }
+  if (window.Swiper) initSwipers();
+  else document.addEventListener('swiperReady', initSwipers);
 
-  if (prev) prev.addEventListener('click', function (e) {
-    e.preventDefault();
-    if (el.swiper) { el.swiper.slidePrev(); return; }
-    go(-1);
-  });
-  if (next) next.addEventListener('click', function (e) {
-    e.preventDefault();
-    if (el.swiper) { el.swiper.slideNext(); return; }
-    go(1);
-  });
+  if (prev) prev.addEventListener('click', function (e) { e.preventDefault(); go(-1); });
+  if (next) next.addEventListener('click', function (e) { e.preventDefault(); go(1); });
   [prev, next].forEach(function (b) {
     if (!b) return;
     b.setAttribute('tabindex', '0');
@@ -181,9 +219,12 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); }
     });
   });
-  track.addEventListener('scroll', progress, { passive: true });
+  sliders().forEach(function (el) {
+    var t = el.querySelector('.swiper-wrapper');
+    if (t) t.addEventListener('scroll', progress, { passive: true });
+  });
   window.addEventListener('resize', progress);
-  el.addEventListener('cel:teamTabChange', progress);
+  document.addEventListener('cel:teamTabChange', progress);
   progress();
 })();
 
