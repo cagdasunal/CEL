@@ -176,12 +176,20 @@
     sections.forEach(function (s) { if (s.getBoundingClientRect().top <= edge) id = s.id; });
     setActive(id);
   }
-  var queued = 0;
-  window.addEventListener('scroll', function () {
+  let queued = 0;
+  function schedule() {
     if (queued) return;
     queued = 1;
     requestAnimationFrame(function () { spy(); queued = 0; });
-  }, { passive: true });
+  }
+  window.addEventListener('scroll', schedule, { passive: true });
+  /* RESPONSIVE FIX 2026-09-07 — spy() reads section offsets, and every section on
+     this page changes height across a breakpoint (the page is 27.5k tall at 991
+     and 36.4k at 992). With only a scroll listener, a rotation or resize left the
+     rail's orange dot — and the mobile pill's LABEL, which names the current
+     section — pointing at the pre-rotation section until the user scrolled. */
+  window.addEventListener('resize', schedule, { passive: true });
+  window.addEventListener('orientationchange', schedule, { passive: true });
   links.forEach(function (l) {
     l.addEventListener('click', function (e) {
       e.preventDefault();
@@ -237,11 +245,39 @@
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    var q = e.target.closest && e.target.closest('.faq-q');
+    const q = e.target.closest && e.target.closest('.faq-q');
     if (!q) return;
     e.preventDefault();
     q.click();
   });
+
+  /* RESPONSIVE FIX 2026-09-07 — maxHeight is a LITERAL measured once at open time,
+     and .faq-body is overflow:hidden. Any width change reflows the answer taller
+     while maxHeight stays frozen, so the tail of the text is silently gone with no
+     scrollbar and no cue. Measured: opened at 900px -> maxHeight 88px; resized to
+     360px -> content 184px, maxHeight still 88px, 96px of the answer unreachable.
+     A phone rotation with an FAQ open is the everyday trigger.
+     Re-measure the OPEN item only; closed items keep maxHeight 0px. */
+  function resyncOpenFaq() {
+    const open = document.querySelector('.faq-item[data-faq-open="true"]');
+    if (!open) return;
+    const body = open.querySelector('.faq-body');
+    const inner = open.querySelector('.faq-body-inner');
+    if (body && inner) body.style.maxHeight = inner.scrollHeight + 'px';
+  }
+  let faqRaf = 0;
+  function scheduleResync() {
+    if (faqRaf) return;
+    faqRaf = requestAnimationFrame(function () { faqRaf = 0; resyncOpenFaq(); });
+  }
+  window.addEventListener('resize', scheduleResync, { passive: true });
+  window.addEventListener('orientationchange', scheduleResync, { passive: true });
+  /* A ResizeObserver on the inner element catches reflows a resize event cannot:
+     a webfont landing late, or a CMS answer whose links wrap differently. */
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(scheduleResync);
+    document.querySelectorAll('.faq-body-inner').forEach(function (el) { ro.observe(el); });
+  }
 })();
 
 /* 5. Swiper loader — the site serves Swiper 11 from the CEL scripts host and the
@@ -299,8 +335,31 @@
     var prevBtn = navEl.querySelector('.card-slider_arrow.is-prev');
     var nextBtn = navEl.querySelector('.card-slider_arrow.is-next');
     var progressFill = navEl.querySelector('.card-slider_progress-fill');
-    if (prevBtn) prevBtn.addEventListener('click', function () { swiper.slidePrev(); });
-    if (nextBtn) nextBtn.addEventListener('click', function () { swiper.slideNext(); });
+    /* RESPONSIVE/A11Y FIX 2026-09-07 — the arrows are bare <div>s. The #city and
+       #activities pairs carry no role, no tabindex and no label, so 13 of the 21
+       cards in those two sliders had NO keyboard route at all. The testimonials
+       pair does carry role="button" tabindex="0" aria-label, which is worse: it
+       announces as a button, takes focus, and Enter did nothing, because only a
+       'click' listener was ever bound. Verified before the fix: click() moved the
+       track translate3d(0) -> translate3d(-262px); a synthetic keydown Enter left
+       it at translate3d(0).
+       Promote every arrow to a real button and bind Enter/Space. setAttribute is
+       idempotent, so the arrows that already have the attributes are unchanged. */
+    function wireArrow(btn, label, move) {
+      if (!btn) return;
+      if (!btn.getAttribute('role')) btn.setAttribute('role', 'button');
+      if (!btn.hasAttribute('tabindex')) btn.setAttribute('tabindex', '0');
+      if (!btn.getAttribute('aria-label')) btn.setAttribute('aria-label', label);
+      btn.addEventListener('click', move);
+      btn.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        e.preventDefault();
+        move();
+      });
+    }
+    const label = (section.getAttribute('aria-label') || section.id || 'carousel').replace(/[-_]/g, ' ');
+    wireArrow(prevBtn, 'Previous ' + label, function () { swiper.slidePrev(); });
+    wireArrow(nextBtn, 'Next ' + label, function () { swiper.slideNext(); });
 
     function updateProgress() {
       if (!progressFill || !swiper.slides || !swiper.slides.length) return;
@@ -389,7 +448,24 @@
     return document.getElementById(l.dataset.target);
   }).filter(Boolean);
   var last = sections[sections.length - 1];
-  var navH = navbar ? navbar.offsetHeight : 80;
+  /* RESPONSIVE FIX 2026-09-07 — navbar height is breakpoint-dependent (90px at
+     >=992, 72px at <=991). Reading it once at load and then using it inside a
+     resize handler means the pill appears/disappears 18px of scroll early or late
+     after any resize across 991/992. Read it per call instead. */
+  function navHeight() { return navbar ? navbar.offsetHeight : 80; }
+
+  /* RESPONSIVE/A11Y FIX 2026-09-07 — below 992 this <p> IS the disclosure trigger
+     for the whole "On this page" menu, and a <p> is not focusable: verified that
+     label.focus() does not move document.activeElement, so a keyboard or switch
+     user could not open the menu and none of its 12 section links was reachable
+     (.stoc_nav is visibility:hidden while closed, correctly removing them from the
+     tab order — which is exactly what left no route in). The keydown handler for
+     Enter/Space below already existed; it simply could never fire.
+     The markup cannot change (Webflow component), so promote it here. */
+  if (!label.hasAttribute('tabindex')) label.setAttribute('tabindex', '0');
+  if (!label.getAttribute('role')) label.setAttribute('role', 'button');
+  if (nav.id) label.setAttribute('aria-controls', nav.id);
+  else { nav.id = 'stoc-nav-menu'; label.setAttribute('aria-controls', nav.id); }
 
   label.setAttribute('aria-expanded', 'false');
 
@@ -411,8 +487,9 @@
      TOC target: above the hero it repeats the page title, past the last
      section it points at nothing. */
   function updateVisibility() {
-    var heroBottom = hero ? hero.getBoundingClientRect().bottom : -1;
-    var lastBottom = last ? last.getBoundingClientRect().bottom : Infinity;
+    const navH = navHeight();
+    const heroBottom = hero ? hero.getBoundingClientRect().bottom : -1;
+    const lastBottom = last ? last.getBoundingClientRect().bottom : Infinity;
     if (heroBottom < navH + 20 && lastBottom > navH + 40) {
       comp.classList.add('is-visible');
     } else {

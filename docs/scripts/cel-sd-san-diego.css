@@ -47,6 +47,20 @@
  *      Correct fix: tag the 3 non-feature .nextread_title elements.
  * ========================================================================= */
 
+/* ==== AUDIT DISAGREEMENT — 1 rule the audit calls convertible and is not ====
+ *  .nextread_card.is-wide { grid-column: 1 / -1 }   (added 2026-09-07)
+ *      page_css_audit.py sees a base + one-combo selector and scores it
+ *      convertible. It is not, and the reason is invisible to selector analysis:
+ *      the rule exists ONLY to outrank `.nextread_card:not(.is-feature)` in this
+ *      same file. Both are specificity 0,2,0, so the winner is decided by SOURCE
+ *      ORDER -- and a Webflow style object lives in the page stylesheet, which
+ *      <link>s BEFORE this sheet. Converting it therefore reinstates exactly the
+ *      defect it fixes (`.is-wide` pinned to column 2 at every width >= 992).
+ *      It can only be converted together with the :not() shim, i.e. by tagging
+ *      the three non-feature cards with a real combo -- the same markup change
+ *      the .nextread_title entry above is waiting on. Tracked with it.
+ * ========================================================================= */
+
 /* ---- BLOCKER 7: vendor pseudo-element. -----------------------------------
  * ::-webkit-slider-thumb / ::-moz-range-* are outside Webflow's 15-value pseudo
  * enum (noPseudo, nth-child(odd|even), first-child, last-child, hover, active,
@@ -168,14 +182,42 @@
  * as a single object.
  */
 .nextread_card:not(.is-feature) {
-  grid-column: 2;
+  grid-column: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 26px 28px;
 }
 .nextread_card:not(.is-feature) .nextread_title { margin-top: auto; }
-@media (max-width: 991px) { .nextread_card:not(.is-feature) { grid-column: 1; } }
+
+/* RESPONSIVE FIX 2026-09-07 — `grid-column: 2` used to sit at BASE with a
+ * `@media (max-width:991px)` reset back to 1. That put the two-column composition
+ * in force across 992-1279, the "rail band" where the 272px TOC and the section's
+ * own 84px inset both apply and the content column is only 533-779px wide. The
+ * tracks came out 186px + 161px at 992 and `.nextread_title` was clipped 38px
+ * mid-word ("Pacific Beach vs Downtown"), `.nextread_cat` 14px, `.nextread_card`
+ * 10px — measured, and visible in the 1024 screenshot as "Neighborho".
+ * Every other grid on this page took the documented "narrow at base, wide restated
+ * at large" inversion (see sites/cel/pages/sd-san-diego/styles.css:866-898); this
+ * one was missed. The column pin now belongs to the tier that owns the composition.
+ * The <=991 reset is gone because BASE already is 1.
+ *
+ * The paired change is `.nextread_grid` at MAIN: 1.15fr 1fr -> 1fr, deployed as a
+ * Webflow style object (single class, single breakpoint — it is not a blocker).
+ * sites/cel/pages/sd-san-diego/styles.css:519 already said so and had never shipped.
+ */
+@media screen and (min-width: 1280px) { .nextread_card:not(.is-feature) { grid-column: 2; } }
+
+/* BLOCKER 4 (same :not() shim) — `.nextread_card.is-wide` carries
+ * `grid-area: 3 / 1 / auto / -1` on its Webflow object, but the shim above is also
+ * specificity 0,2,0 and THIS SHEET LOADS LAST, so the shim won on source order and
+ * pinned the full-width row into column 2 at every width >= 992. Measured at 1440:
+ * grid 746px wide, `.is-wide` computed `grid-column: 2` and rendered 340px, leaving
+ * a ~390x280 empty rectangle under the feature card. Restated here, after the shim,
+ * so the row spans again. Not deployable as an object: the thing it has to outrank
+ * is a `:not()` selector that only exists in this file.
+ */
+.nextread_card.is-wide { grid-column: 1 / -1; }
 
 /* ---- BLOCKER 12: the publisher DROPS properties for this object. ---------
  * .callout's style object holds display:flex plus flex-only properties, and the
