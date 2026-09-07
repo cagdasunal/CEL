@@ -162,3 +162,75 @@
    Original CDN: https://cdn.prod.website-files.com/667453c576e8d35c454cc9ae%2F689e5ba67671442434f3ca35%2F69ea49589152839d8d25a714%2Fceltochov1-2.0.0.js
    ============================================================ */
 (function(){if(window.__celToh)return;window.__celToh=true;function init(){var ls=document.querySelectorAll('.stoc_link');if(!ls.length){setTimeout(init,200);return}ls.forEach(function(l){var d=l.querySelector('.stoc_dot');if(!d)return;l.addEventListener('mouseenter',function(){if(!l.classList.contains('is-active'))d.classList.add('is-hover')});l.addEventListener('mouseleave',function(){d.classList.remove('is-hover')})})}if(document.readyState!=='loading')init();else document.addEventListener('DOMContentLoaded',init)})();
+
+/* ============================================================
+   RESPONSIVE AUDIT 2026-09-07 — two repairs, both additive.
+
+   This bundle serves BOTH /vancouver/cost-of-studying-english and
+   /san-diego-ca/costs, so each fix lands on two pages. Both defects were
+   measured on the live San Diego costs page, not inferred.
+
+   1. FAQ answers are cut after any width change. The accordion above writes
+      `b.style.maxHeight = m.scrollHeight + 'px'` once, at open time, onto a
+      box that is `overflow-y:hidden`. Nothing recomputes it, so a narrower
+      viewport reflows the answer taller while the cap stays where it was and
+      the tail is simply gone — no scrollbar, no cue. Measured on /costs:
+      opened at 390px -> maxHeight 121px; resized to 320px -> content 142px,
+      cap still 121px, 21px of the answer unreachable. A phone rotation with
+      an FAQ open is the everyday trigger.
+
+   2. The slider arrows announce as buttons and ignore the keyboard. The
+      Swiper block above binds `click` only, while the markup already carries
+      role="button" and tabindex="0" — so the control takes focus, tells a
+      screen reader it is a button, and does nothing on Enter or Space.
+      Measured on /costs: focus lands, Enter leaves the track at
+      translate3d(0,0,0). That is worse than an unfocusable div, which at
+      least makes no promise.
+
+   Written as separate IIFEs with their own guard flags rather than edited
+   into the dense blocks above, so nothing existing changes shape.
+   ============================================================ */
+(function () {
+  if (window.__celFqResync) return;
+  window.__celFqResync = true;
+  if (!document.querySelector('.faq-item')) return;
+  function resync() {
+    const open = document.querySelector('.faq-item[data-faq-open="true"]');
+    if (!open) return;
+    const body = open.querySelector('.faq-body');
+    const inner = open.querySelector('.faq-body-inner');
+    if (body && inner) body.style.maxHeight = inner.scrollHeight + 'px';
+  }
+  let raf = 0;
+  function schedule() {
+    if (raf) return;
+    raf = requestAnimationFrame(function () { raf = 0; resync(); });
+  }
+  window.addEventListener('resize', schedule, { passive: true });
+  window.addEventListener('orientationchange', schedule, { passive: true });
+  /* Catches reflows a resize event cannot: a webfont landing late, or a CMS
+     answer whose inline links wrap differently after a width change. */
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(schedule);
+    document.querySelectorAll('.faq-body-inner').forEach(function (el) { ro.observe(el); });
+  }
+})();
+
+(function () {
+  if (window.__celArrowKeys) return;
+  window.__celArrowKeys = true;
+  const arrows = document.querySelectorAll('.card-slider_arrow');
+  if (!arrows.length) return;
+  arrows.forEach(function (btn) {
+    /* setAttribute is idempotent — an arrow that already carries these keeps them. */
+    if (!btn.getAttribute('role')) btn.setAttribute('role', 'button');
+    if (!btn.hasAttribute('tabindex')) btn.setAttribute('tabindex', '0');
+    btn.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      /* Re-uses whatever click handler the slider block bound, so this stays
+         correct whether the slider is Swiper-driven or a native scroller. */
+      btn.click();
+    });
+  });
+})();
