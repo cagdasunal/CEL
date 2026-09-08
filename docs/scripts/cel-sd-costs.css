@@ -246,19 +246,23 @@
   .stoc_nav,.card-slider_arrow,.plan_range{transition-duration:.01ms;animation-duration:.01ms}
 }
 
-/* ---- BLOCKER 2 + 6: id selector with a descendant (added 2026-09-07) -----
- * Same defect as cel-sd-san-diego.css: `.plan_tick` ships opacity:0 +
- * pointer-events:none on its style object, and the only rule that reveals it
- * is `#plan-tool.is-part .plan_tick` — an id + descendant chain no Webflow
- * style object can express, so it was never deployed. Measured live on this
- * page: opacity 0 at 320/390/768/844/1024/1440, on the one .plan_tick element.
- * The rule above already recolours the tick to indigo, which is why this was
- * easy to miss — the tick is styled and invisible.
- * Effect: a part-time student dragging the week slider past 12 weeks gets no
- * marker for where the visa verdict flips from ESTA to over-limit. `.is-part`
- * is written onto #plan-tool by cel-calculator.js, so gating on it is correct.
+/* ---- .plan_tick NEVER RENDERS ON THIS PAGE EITHER — and the sd-san-diego fix
+ * does NOT transfer. Recorded rather than guessed at (added 2026-09-08).
+ *
+ * `.plan_tick` ships `opacity:0; pointer-events:none` on its style object here as
+ * well, so the ESTA-limit marker on the week slider is invisible at every width
+ * (measured 320-1440). On /san-diego-ca/san-diego the reveal is
+ * `#plan-tool.is-part .plan_tick{opacity:1}` and that rule shipped here too for a
+ * day — as DEAD CODE. This page has no `#plan-tool` and no part-time concept at
+ * all: its calculator root is `#calcTool` (`plan_sheet is-esta-limit is-route-esta`)
+ * and its controls are `calcWeeks` / `calcCourse` / `calcRoom`, not a pace select.
+ * `is-esta-limit` is already present on the root at load while the tick is still
+ * opacity 0, so it is not the trigger either.
+ *
+ * The correct hook is whatever state this page's calculator sets when calcWeeks
+ * crosses 12, and that belongs to whoever owns this page's calculator — writing a
+ * selector here on a guess is how the dead rule got shipped in the first place.
  */
-#plan-tool.is-part .plan_tick { opacity: 1; pointer-events: auto; }
 
 
 /* ====================================================================
