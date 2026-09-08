@@ -196,15 +196,15 @@
 }
 
 /* ---- two fixed bottom bars were stacked on top of each other ----
- * The site-wide .mobilecta (z-index 1000, bottom:0, 48px) painted over this page's own
+ * The site-wide .mobile-cta_component (z-index 1000, bottom:0, 44px) painted over this page's own
  * .sticky-cta_bar (z-index 880, bottom:0, 74px). Hit-testing 20 points down each button found
  * 18/20 blocked at 991/768/375/320 — "Get a Quote" and "WhatsApp" were both effectively untappable.
  * Lifting this page's bar above it keeps BOTH bars usable; nothing is removed. The footer reserve
- * grows to clear 64px (mobilecta + its 1rem margin) + 74px (this bar). */
+ * grows to clear 56px (mobile-cta_component + its gutter) + 74px (this bar). */
 @media (max-width:991px){
-  .sticky-cta_bar{bottom:64px;z-index:1001}
+  .sticky-cta_bar{bottom:56px;z-index:1001}
   .sticky-cta_bar .inline-cta-btn{flex:1 1 0;min-height:48px;justify-content:center;text-align:center;padding:12px 14px}
-  .page-wrapper .section_footer{padding-bottom:168px}
+  .page-wrapper .section_footer{padding-bottom:160px}
   /* the TOC drawer is 370-374px tall with max-height:none and overflow-y:hidden, so on a landscape
      phone 3 of its 8 links sat below the viewport with no way to reach them. */
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
@@ -232,12 +232,12 @@
 
 /* ---- very short viewports: two stacked bars is the wrong trade ----
    Stacking the bars (round 1) fixed tappability but costs 48px. At the WCAG 400%-zoom target
-   (320x256) navbar+bar+mobilecta measured 194px of 256px -- 76% of the viewport. Below 450px of
-   height this page's own bar stands down; the site-wide .mobilecta still carries a CTA. */
+   (320x256) navbar+bar+mobile-cta_component measured 194px of 256px -- 76% of the viewport. Below 450px of
+   height this page's own bar stands down; the site-wide .mobile-cta_component still carries a CTA. */
 @media (max-width:991px) and (max-height:450px){
   .sticky-cta_bar{display:none}
-  html{scroll-padding-bottom:72px}
-  .page-wrapper .section_footer{padding-bottom:84px}
+  html{scroll-padding-bottom:64px}
+  .page-wrapper .section_footer{padding-bottom:76px}
 }
 
 /* 241 elements on this page carry a transition and no live sheet ships a reduced-motion guard. */
@@ -275,15 +275,15 @@
 
 /* ---- CONVERTIBLE, AND DELIBERATELY SO.
    `@media (max-width:767px){.section_hero{z-index:1002}}` paints the hero above
-   `.mobilecta` (z-index:1000), so the page's only persistent mobile CTA is
+   `.mobile-cta_component` (z-index:1000), so the page's only persistent mobile CTA is
    invisible AND unclickable for the whole first screen on every phone. Measured
    here at 375: elementsFromPoint at the bar's own centre returns hero content,
    not the bar. Correct at 768-991, where the hero carries no z-index.
-   The right home is a Webflow style object on `.mobilecta` — it is a site-wide
+   The right home is a Webflow style object on `.mobile-cta_component` — it is a site-wide
    component and every CEL page with this hero has the bug. Convert and delete
    this block in the next Designer pass. ---- */
 @media (max-width:767px){
-  .mobilecta{z-index:1003}
+  .mobile-cta_component{z-index:1003}
 }
 
 /* ---- BLOCKER 2: non-Webflow media query (768-991.9).

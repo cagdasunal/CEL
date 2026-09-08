@@ -168,19 +168,19 @@ section[id]{scroll-margin-top:114px}
 
 /* ---- CONVERTIBLE, AND DELIBERATELY SO — see note.
    `@media (max-width:767px){.section_hero{z-index:1002}}` paints the hero above
-   `.mobilecta` (z-index:1000 at max-991 and max-479), so the page's only
+   `.mobile-cta_component` (z-index:1000 at max-991 and max-479), so the page's only
    persistent mobile CTA is invisible AND unclickable for the whole first screen
    on every phone. Measured at 375: elementsFromPoint at the bar's own centre
-   returns hero_cta-primary / hero_actions / hero_wrapper — .mobilecta is not in
+   returns hero_cta-primary / hero_actions / hero_wrapper — .mobile-cta_component is not in
    the top six. At 768-991 the hero has no z-index and the bar shows correctly.
-   The correct home is a Webflow style object on `.mobilecta` at Mobile-landscape
-   and Mobile-portrait, because .mobilecta is a site-wide component and every CEL
+   The correct home is a Webflow style object on `.mobile-cta_component` at Mobile-landscape
+   and Mobile-portrait, because .mobile-cta_component is a site-wide component and every CEL
    page with this hero has the same bug. That is a Designer change plus a publish;
    this page-scoped rule fixes the page now. Convert and delete this block in the
    next Designer pass — it is the one rule in this file that page_css_audit is
    right to call convertible. ---- */
 @media (max-width:767px){
-  .mobilecta{z-index:1003}
+  .mobile-cta_component{z-index:1003}
 }
 
 /* ====================================================================
@@ -250,12 +250,12 @@ section[id]{scroll-margin-top:114px}
    Two defects measured on every San Diego page and /about:
    - `.stoc_nav` has `max-height:none` with `overflow-y:hidden`, so on a short viewport (landscape
      phone, or a zoomed one) the drawer's lower links are unreachable — no scroll, no clipping cue.
-   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 120px at <=991
-     (navbar 72 + the site-wide .mobilecta 48), so sequential keyboard focus scrolls controls
+   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 116px at <=991
+     (navbar 72 + the site-wide .mobile-cta_component 44), so sequential keyboard focus scrolls controls
      underneath it. */
 @media (max-width:991px){
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
-  html{scroll-padding-bottom:120px}
+  html{scroll-padding-bottom:116px}
 }
 
 /* The `min-width:0` above lets the score shrink below max-content, which moves the overflow from

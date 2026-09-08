@@ -305,12 +305,12 @@
    Two defects measured on every San Diego page and /about:
    - `.stoc_nav` has `max-height:none` with `overflow-y:hidden`, so on a short viewport (landscape
      phone, or a zoomed one) the drawer's lower links are unreachable — no scroll, no clipping cue.
-   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 120px at <=991
-     (navbar 72 + the site-wide .mobilecta 48), so sequential keyboard focus scrolls controls
+   - `scroll-padding-bottom` is `auto` while fixed bottom chrome occupies 116px at <=991
+     (navbar 72 + the site-wide .mobile-cta_component 44), so sequential keyboard focus scrolls controls
      underneath it. */
 @media (max-width:991px){
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
-  html{scroll-padding-bottom:120px}
+  html{scroll-padding-bottom:116px}
 }
 
 
@@ -324,15 +324,15 @@
 
 /* ---- CONVERTIBLE, AND DELIBERATELY SO.
    `@media (max-width:767px){.section_hero{z-index:1002}}` paints the hero above
-   `.mobilecta` (z-index:1000), so the page's only persistent mobile CTA is
+   `.mobile-cta_component` (z-index:1000), so the page's only persistent mobile CTA is
    invisible AND unclickable for the whole first screen on every phone. Measured
    here at 375: elementsFromPoint at the bar's own centre returns hero content,
    not the bar. Correct at 768-991, where the hero carries no z-index.
-   The right home is a Webflow style object on `.mobilecta` — it is a site-wide
+   The right home is a Webflow style object on `.mobile-cta_component` — it is a site-wide
    component and every CEL page with this hero has the bug. Convert and delete
    this block in the next Designer pass. ---- */
 @media (max-width:767px){
-  .mobilecta{z-index:1003}
+  .mobile-cta_component{z-index:1003}
 }
 
 /* ---- BLOCKER 2: non-Webflow media query (768-991.9).

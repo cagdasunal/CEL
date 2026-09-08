@@ -109,10 +109,10 @@
 
 /* the mobile TOC drawer has no max-height and cannot scroll, so on a short viewport its lower
    links are unreachable; and focus must not land under the fixed bottom chrome (navbar 72px +
-   the site-wide .mobilecta 48px measured at <=991). */
+   the site-wide .mobile-cta_component 44px measured at <=991). */
 @media (max-width:991px){
   .stoc_nav{max-height:calc(100dvh - 200px);overflow-y:auto;overscroll-behavior:contain}
-  html{scroll-padding-bottom:120px}
+  html{scroll-padding-bottom:116px}
 }
 
 
