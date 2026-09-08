@@ -405,3 +405,31 @@ section[id]{scroll-margin-top:114px}
   .page_body-layout{grid-template-columns:clamp(200px,17.2vw,272px) minmax(0,1fr);gap:clamp(32px,3.2vw,50px)}
   .section_page{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
 }
+
+/* ---- the full-bleed children must follow the FLUID section padding ------------------------
+   `.section_page` became `padding: clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)` — but three
+   elements bleed out of it with a hardcoded `margin:-84px` + `width:calc(100% + 168px)`, which
+   only lined up while the padding was a constant 84px. Measured after that change went live:
+   they overshoot the container by 6px at 1440, 15px at 1279, 29px at 1024 and 30px at 992, which
+   showed up as #main-content / #activities / #city / #overview clipping (177 -> 210 elements
+   across the 20-width sweep).
+   Keying the bleed to the same clamp restores the alignment at every width without giving up the
+   fluid padding. Scoped >=992 so the <=991 edge-to-edge treatment (its own -48px rules) is
+   untouched.
+   A DOM sweep for `margin-left <= -30px` inside `.section_page` found FIVE elements pinned to
+   -84px (plus `.fit_list-title` at -40px, which matches a different inset and is left alone).
+   Enumerating them by eye missed two on the first pass — hence the sweep. */
+@media (min-width:992px){
+  .card-slider_clip.act-slider_clip,
+  .card-slider_clip.testimonial-slider_clip,
+  .showcase_slider-wrap,
+  .campus_bento-hero.is-top,
+  .fit_hero-img{
+    width:calc(100% + clamp(40px,5.4vw,84px) * 2);
+    margin-left:calc(clamp(40px,5.4vw,84px) * -1);
+    margin-right:calc(clamp(40px,5.4vw,84px) * -1);
+  }
+  .card-slider_clip.act-slider_clip,
+  .card-slider_clip.testimonial-slider_clip,
+  .showcase_slider-wrap{padding-left:clamp(40px,5.4vw,84px)}
+}
