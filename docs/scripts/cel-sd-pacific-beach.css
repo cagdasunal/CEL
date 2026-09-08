@@ -142,3 +142,31 @@ section[id]{scroll-margin-top:114px}
      — measured: still -32px/-52px with the shorter selector injected. */
   .quickfacts_row.is-head,.quickfacts_row.is-head.is-wide{margin-left:-24px;margin-right:-24px}
 }
+
+/* the Google-review pill is flex-wrap:nowrap and overflows its own rounded container at narrow
+   widths (measured 13px at 480 and 4px at 320) — the disc and the hairline rule break out of the
+   border radius. Same fix already shipped on /costs and /how-long. */
+@media (max-width:767px){.inline-cta_trust{flex-wrap:wrap;row-gap:6px}}
+
+/* `.cta_stars-row.is-full` carries an explicit width (73.9px) that is 3px narrower than its own
+   five 13px stars plus four 3px gaps (77px), and it clips with overflow:hidden — the fifth star
+   loses a sliver at EVERY width. Sizing it to its content costs nothing. */
+.cta_stars-row.is-full{width:max-content}
+
+/* ---- the quickfacts footer row bleeds further than the panel it sits in ----
+   `.quickfacts_panel` has 24px of padding at every width >=992, and `.quickfacts_row.is-head.is-wide`
+   correctly bleeds -24px to match it. `.is-foot` bleeds -52px at >=1280 and -32px at 992-1279, so it
+   overshoots by 28px and 8px and the panel's overflow:hidden CLIPS the footer content. At <=991 the
+   foot already matches the padding (-32/-24), so this is scoped >=992. */
+@media (min-width:992px){
+  .quickfacts_panel .quickfacts_row.is-foot{margin-left:-24px;margin-right:-24px;width:calc(100% + 48px)}
+}
+
+/* ---- the comparison table's area name escapes its column at phone widths ----
+   "Pacific Beach" needs 58px but the header column measures 52px at 375 and 29px at 320, and with
+   overflow-wrap:normal the word cannot break — so it spills over the neighbouring column
+   (measured 6px at 375, 12px at 360, 29px at 320). Breaking the word keeps it inside. */
+@media (max-width:479px){
+  .compare-head-row{min-width:0}
+  .compare-area-name{overflow-wrap:anywhere;hyphens:auto}
+}
