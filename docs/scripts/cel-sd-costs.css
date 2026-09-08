@@ -237,7 +237,7 @@
 @media (max-width:991px) and (max-height:450px){
   .sticky-cta_bar{display:none}
   html{scroll-padding-bottom:72px}
-  .page-wrapper .section_footer{padding-bottom:96px}
+  .page-wrapper .section_footer{padding-bottom:84px}
 }
 
 /* 241 elements on this page carry a transition and no live sheet ships a reduced-motion guard. */
@@ -325,7 +325,7 @@
    clamps already resolve to the base values there. ---- */
 @media (min-width:1280px) and (max-width:1599px){
   .page_body-layout{grid-template-columns:clamp(232px,calc(12.5vw + 72px),272px) minmax(0,1fr);gap:clamp(32px,calc(5.625vw - 40px),50px)}
-  .section_page{padding:clamp(72px,calc(7.5vw - 24px),96px) clamp(40px,calc(13.75vw - 136px),84px)}
+  .section_page{padding:clamp(72px,calc(7.5vw - 24px),84px) clamp(40px,calc(13.75vw - 136px),84px)}
 }
 
 /* ---- BLOCKER 2: non-Webflow media query (min-width:768px).

@@ -60,7 +60,7 @@
    1440 / 1600 / 1920 — monotonic, no step at any breakpoint. ---- */
 @media (min-width:992px){
   .page_body-layout{grid-template-columns:clamp(200px,17.2vw,272px) minmax(0,1fr);gap:clamp(32px,3.2vw,50px)}
-  .section_page{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
+  .section_page{padding:clamp(64px,6.2vw,84px) clamp(40px,5.4vw,84px)}
 }
 
 /* ---- BLOCKER 2: non-Webflow media query (992-1279).

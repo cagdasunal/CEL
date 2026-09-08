@@ -378,11 +378,11 @@ section[id]{scroll-margin-top:114px}
    the values Webflow already ships at >=1600, so 1600/1920 render identically. ---- */
 @media (min-width:992px){
   .page_body-layout{grid-template-columns:clamp(200px,17.2vw,272px) minmax(0,1fr);gap:clamp(32px,3.2vw,50px)}
-  .section_page{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
+  .section_page{padding:clamp(64px,6.2vw,84px) clamp(40px,5.4vw,84px)}
 }
 
 /* ---- the full-bleed children must follow the FLUID section padding ------------------------
-   `.section_page` became `padding: clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)` — but three
+   `.section_page` became `padding: clamp(64px,6.2vw,84px) clamp(40px,5.4vw,84px)` — but three
    elements bleed out of it with a hardcoded `margin:-84px` + `width:calc(100% + 168px)`, which
    only lined up while the padding was a constant 84px. Measured after that change went live:
    they overshoot the container by 6px at 1440, 15px at 1279, 29px at 1024 and 30px at 992, which

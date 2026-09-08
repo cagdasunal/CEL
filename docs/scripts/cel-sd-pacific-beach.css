@@ -123,7 +123,7 @@ section[id]{scroll-margin-top:114px}
      loses to it at every source position, so the clamp had no effect at all until
      the combo was named — measured 64px 40px still computing at 1024 with the
      single-class version injected. */
-  .section_page,.section_page.is-pb{padding:clamp(64px,6.2vw,96px) clamp(40px,5.4vw,84px)}
+  .section_page,.section_page.is-pb{padding:clamp(64px,6.2vw,84px) clamp(40px,5.4vw,84px)}
 }
 
 /* ---- BLOCKER 2: non-Webflow media query (min-width:992px).
