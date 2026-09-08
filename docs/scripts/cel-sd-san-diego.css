@@ -92,31 +92,6 @@
   box-shadow: 0 2px 8px rgba(55, 51, 44, .28);
 }
 
-/* ---- BLOCKER 2: non-Webflow media query. ---------------------------------
- * Webflow emits ONLY min-width 1920/1440/1280 and max-width 991/767/479.
- * prefers-reduced-motion is not a viewport tier and has no Webflow equivalent.
- * These are accessibility overrides -- never delete them because a probe reports
- * them "dead": matchMedia('(prefers-reduced-motion: reduce)') is false in a
- * normal browser, so the rule CANNOT fire during measurement.
- */
-@media (prefers-reduced-motion: reduce) {
-  .timeline_row::before               { transform: none; }
-  .chooser_goal-dot::after            { transition: none; }
-  .plan_range::-webkit-slider-thumb   { transition: none; }
-  /* RESPONSIVE AUDIT 2026-09-07 — the block above named 5 selectors while the page
-   * carries 233 transitioning elements and 2 animations (counted live from the CSSOM
-   * at every width). Everything below is a LARGE movement: a transform or an opacity
-   * ramp over 0.35s or more, the class of motion that actually triggers vestibular
-   * symptoms. The remaining ~228 are colour/border/background fades under 0.3s and
-   * are deliberately left alone — blanket `* { transition: none }` also kills the
-   * FAQ accordion's max-height animation, which is how the answer opens at all.
-   * Only rules that live in THIS sheet can be guarded here; the Webflow-authored
-   * hover transforms and the six IX2 interactions are unreachable from CSS
-   * (recorded in REPORT.md section 6 item 7). */
-  .citylist_row:hover .citylist_img   { transform: none; }
-  .citylist_row:hover .citylist_veil  { transition: none; }
-  .nextread_card:hover .nextread_img  { transform: none; }
-  .plan_range:hover::-webkit-slider-thumb { transform: none; }
 }
 
 /* ---- BLOCKER 1: ancestor STATE selector. ---------------------------------
@@ -468,9 +443,45 @@ section[id]{scroll-margin-top:114px}
 /* the Google-review pill is flex-wrap:nowrap and overflows its own rounded container at narrow
    widths (measured 13px at 480 and 4px at 320) — the disc and the hairline rule break out of the
    border radius. Same fix already shipped on /costs and /how-long. */
-@media (max-width:767px){.inline-cta_trust{flex-wrap:wrap;row-gap:6px}}
-
 /* `.cta_stars-row.is-full` carries an explicit width (73.9px) that is 3px narrower than its own
    five 13px stars plus four 3px gaps (77px), and it clips with overflow:hidden — the fifth star
-   loses a sliver at EVERY width. Sizing it to its content costs nothing. */
+   loses a sliver at EVERY width. Sizing it to its content costs nothing.
+   Unconditional, so it goes ABOVE the media block below (see rules/page-css-destination.md). */
 .cta_stars-row.is-full{width:max-content}
+
+@media (max-width:767px){.inline-cta_trust{flex-wrap:wrap;row-gap:6px}}
+
+/* ---- MOVED TO THE END 2026-09-08 ------------------------------------------
+ * This block used to sit ABOVE the unconditional `.a:hover .b` rules further down. Two of its
+ * declarations — `.citylist_row:hover .citylist_img{transform:none}` and
+ * `.nextread_card:hover .nextread_img{transform:none}` — were therefore beaten on source order by
+ * the later `transform: scale(1.055)` / `scale(1.03)`, so a visitor with "reduce motion" still got
+ * both hover zooms. Found by the static source-order check in rules/page-css-destination.md, NOT by
+ * a runtime probe: the original comment below is right that matchMedia() is false during
+ * measurement, which is exactly why this class of defect has to be caught in the source.
+ * ------------------------------------------------------------------------- */
+/* ---- BLOCKER 2: non-Webflow media query. ---------------------------------
+ * Webflow emits ONLY min-width 1920/1440/1280 and max-width 991/767/479.
+ * prefers-reduced-motion is not a viewport tier and has no Webflow equivalent.
+ * These are accessibility overrides -- never delete them because a probe reports
+ * them "dead": matchMedia('(prefers-reduced-motion: reduce)') is false in a
+ * normal browser, so the rule CANNOT fire during measurement.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .timeline_row::before               { transform: none; }
+  .chooser_goal-dot::after            { transition: none; }
+  .plan_range::-webkit-slider-thumb   { transition: none; }
+  /* RESPONSIVE AUDIT 2026-09-07 — the block above named 5 selectors while the page
+   * carries 233 transitioning elements and 2 animations (counted live from the CSSOM
+   * at every width). Everything below is a LARGE movement: a transform or an opacity
+   * ramp over 0.35s or more, the class of motion that actually triggers vestibular
+   * symptoms. The remaining ~228 are colour/border/background fades under 0.3s and
+   * are deliberately left alone — blanket `* { transition: none }` also kills the
+   * FAQ accordion's max-height animation, which is how the answer opens at all.
+   * Only rules that live in THIS sheet can be guarded here; the Webflow-authored
+   * hover transforms and the six IX2 interactions are unreachable from CSS
+   * (recorded in REPORT.md section 6 item 7). */
+  .citylist_row:hover .citylist_img   { transform: none; }
+  .citylist_row:hover .citylist_veil  { transition: none; }
+  .nextread_card:hover .nextread_img  { transform: none; }
+  .plan_range:hover::-webkit-slider-thumb { transform: none; }
