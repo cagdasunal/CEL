@@ -455,6 +455,23 @@
     b1b2: 'Visa application (MRV) US$185'
   };
 
+  /* Currency symbol for the total's prefix slot. Derived from Intl rather than a hand-kept
+     table of 43 symbols; USD is special-cased because the page writes "US$", not "$". Any
+     engine that rejects narrowSymbol throws in the constructor and falls through to the ISO
+     code, which is always meaningful. */
+  function symbolFor(code) {
+    if (code === 'USD') return 'US$';
+    try {
+      var parts = new Intl.NumberFormat('en-US', {
+        style: 'currency', currency: code, currencyDisplay: 'narrowSymbol'
+      }).formatToParts(0);
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === 'currency') return parts[i].value;
+      }
+    } catch (e) { /* unknown code or no narrowSymbol support */ }
+    return code;
+  }
+
   /* Visa route follows the course's published VISA TYPE and the length of stay (§6 + §9).
      Reads COURSES[].visa rather than testing one course key, so adding a course cannot
      leave it silently on the ESTA path. */
@@ -560,8 +577,14 @@
           visaWhy: ROUTE_WHY[r.key],
           visaFees: ROUTE_FEES[r.key],
           totalAmount: totalAmount,
-          /* "from" only qualifies the US$ figure; a converted one is already approximate */
-          totalPrefix: fxRate ? '\u2248' : 'from',
+          /* The CURRENCY sits immediately left of the figure (client, 8 Sep) — the slot that
+             used to say "from" now carries it. "from" is also no longer true: the 2026 list
+             publishes every bracket, so this tool prices a stay exactly rather than quoting a
+             from-price. USD keeps the page's own "US$" form; a converted total shows its narrow
+             symbol behind an approximation mark, because the rate is indicative and CEL bills in
+             US$ either way. Falls back to US$ when a currency is picked but no rate is available,
+             which is the same branch that leaves totalValue in dollars. */
+          totalPrefix: fxRate ? '\u2248' + symbolFor(s.fx) : 'US$',
           month: h.money(total / (w / 4.345)),
           note: note(s)
         },
