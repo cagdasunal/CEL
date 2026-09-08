@@ -537,8 +537,12 @@
       var fx = window.CELFxRates;
       var fxRate = s.fx && s.fx !== 'USD' && fx && fx.get ? fx.get(s.fx) : null;
       var totalValue = fxRate ? total * fxRate : total;
-      /* The symbol is the select's own label, so the figure is the NUMBER only. */
-      var totalAmount = Math.round(totalValue).toLocaleString('en-US');
+      /* The currency belongs to the FIGURE, not to a separate slot: the old "from" element sits
+         on the far side of the currency picker, so a symbol placed there renders two elements
+         away from the number it qualifies ("US$  [USD v]  8,050") and duplicates the picker's
+         own label. Prefixing the digits gives "US$8,050" (client, 8 Sep). */
+      var totalAmount = (fxRate ? '\u2248' + symbolFor(s.fx) : 'US$') +
+                        Math.round(totalValue).toLocaleString('en-US');
       var fxNote = fxRate
         ? '1 US$ = ' + fxRate.toLocaleString(undefined, { maximumFractionDigits: 4 }) + ' ' + s.fx +
           ' \u00b7 ' + ((fx.liveFor ? fx.liveFor(s.fx) : fx.live) ? 'live mid-market rate, ' : 'indicative rate, ') + fx.date +
@@ -577,14 +581,12 @@
           visaWhy: ROUTE_WHY[r.key],
           visaFees: ROUTE_FEES[r.key],
           totalAmount: totalAmount,
-          /* The CURRENCY sits immediately left of the figure (client, 8 Sep) — the slot that
-             used to say "from" now carries it. "from" is also no longer true: the 2026 list
-             publishes every bracket, so this tool prices a stay exactly rather than quoting a
-             from-price. USD keeps the page's own "US$" form; a converted total shows its narrow
-             symbol behind an approximation mark, because the rate is indicative and CEL bills in
-             US$ either way. Falls back to US$ when a currency is picked but no rate is available,
-             which is the same branch that leaves totalValue in dollars. */
-          totalPrefix: fxRate ? '\u2248' + symbolFor(s.fx) : 'US$',
+          /* "from" is gone (client, 8 Sep) and is no longer true either: the 2026 list publishes
+             every bracket, so this tool prices a stay exactly rather than quoting a from-price.
+             The slot is left empty rather than deleted — its live min-width is 0, so an empty
+             element collapses to nothing but its 6px margin, and keeping it means the markup can
+             carry a prefix again without a rebuild. */
+          totalPrefix: '',
           month: h.money(total / (w / 4.345)),
           note: note(s)
         },
