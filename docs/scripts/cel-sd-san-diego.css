@@ -423,7 +423,6 @@ section[id]{scroll-margin-top:114px}
   .card-slider_clip.act-slider_clip,
   .card-slider_clip.testimonial-slider_clip,
   .showcase_slider-wrap,
-  .campus_bento-hero.is-top,
   .fit_hero-img{
     width:calc(100% + clamp(40px,5.4vw,84px) * 2);
     margin-left:calc(clamp(40px,5.4vw,84px) * -1);
@@ -432,6 +431,38 @@ section[id]{scroll-margin-top:114px}
   .card-slider_clip.act-slider_clip,
   .card-slider_clip.testimonial-slider_clip,
   .showcase_slider-wrap{padding-left:clamp(40px,5.4vw,84px)}
+
+  /* `.campus_bento-hero.is-top` WAS in the group above and must not be: it is the one
+     element of the five whose parent is ALREADY at the section border box, so keying it
+     to the clamp made it bleed a SECOND time.
+     `.section_campus` is the only section on the page with `padding:0` — its inset lives
+     on `.campus_bento-text` instead — so `.campus_bento-top` already spans the full
+     section. Measured on the published page: hero right edge 54px past its own section at
+     1024 and 53px at 992, and 13px past the VIEWPORT at both, which made it the only
+     element on the page still escaping. At 1440 it overshot by 77px and merely ate into
+     the gutter, which is why it read as "a wider photo" rather than a defect.
+     One instance on this page, `.is-top`, parent `.campus_bento-top`. sd-pacific-beach
+     shares the class name but has no `.campus_bento-hero` element on the live page, so
+     the blast radius is this page only — checked, not assumed. */
+  .campus_bento-hero.is-top{width:100%;margin-left:0;margin-right:0}
+
+  /* the campus copy is the last fixed inset on the page. Every other section indents its
+     text by the fluid `clamp(40px,5.4vw,84px)`; this one still used a hardcoded 84px, so
+     at 1024 the campus paragraphs sat 29px further in than every other section's — the
+     kind of misalignment that reads as sloppy without being locatable. */
+  .campus_bento-text{padding-left:clamp(40px,5.4vw,84px);padding-right:clamp(40px,5.4vw,84px)}
+
+  /* the first card of the two `slidesPerView:'auto'` sliders is a FIXED 720px/700px while
+     its clip is now fluid, so in the rail band the card was cut: 41px at 992, 13px at 1024.
+     `max-width:100%` resolves against `.swiper-wrapper`'s content box — exactly the clip
+     minus its padding — so it binds only where the card genuinely does not fit and is inert
+     from ~1100 up. Two earlier attempts at this failed and are worth not repeating: a flat
+     `max-width:100%` before the layout went fluid pulled the slide to 693px at 1280 (a width
+     that was already fine), and a stepped `vw` basis shrank it to 456px at 992 and moved the
+     clipping INSIDE the card. Verified here at every width >=992: the slide lands at
+     625-652px where it binds and the deepest inner scrollWidth overflow is 0. */
+  .swiper-slide.is-showcase,
+  .swiper-slide.is-activity{max-width:100%}
 }
 
 /* the Google-review pill is flex-wrap:nowrap and overflows its own rounded container at narrow
