@@ -1,6 +1,6 @@
 # College of English Language
 
-> English language schools in San Diego, Los Angeles and Vancouver.
+> English language schools in San Diego and Vancouver.
 
 ## Sitemaps
 - https://cel.englishcollege.com/sitemap.xml
@@ -40,7 +40,6 @@
 - [Shared Apartment Premium in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-premium-san-diego): Premium shared apartments in San Diego with modern rooms, kitchens, Wi-Fi, pool, and gym. Comfortable student housing near CEL.
 - [Shared Apartment Standard – Housing in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-standard-san-diego): Furnished shared apartments in San Diego with kitchens, Wi-Fi, and easy access to CEL.
 - [Shared Apartment Superior in San Diego | CEL](https://www.englishcollege.com/housing/cel-shared-apartment-superior-pacific-beach-san-diego): Superior shared apartments in San Diego with bright rooms, Wi-Fi, kitchen, pool, and study areas. Student housing near CEL.
-- [Homestay – Stay with Local Families in Los Angeles | CEL](https://www.englishcollege.com/housing/homestay-los-angeles): Stay with local families in Los Angeles. Single or shared rooms, meals, Wi-Fi, and a welcoming home life.
 - [Homestay – Student Housing with Families in San Diego | CEL](https://www.englishcollege.com/housing/homestay-san-diego): Live with local families in San Diego. Rooms, Wi-Fi, meals, and a supportive home environment for international students.
 - [Homestay in Vancouver – Live with a Local Family | CEL](https://www.englishcollege.com/housing/homestay-vancouver): Stay with local families in Vancouver homestays. Single or shared rooms, Wi-Fi, and a 30–70 minute bus ride to CEL Vancouver.
 - [Premium Homestay – Student Housing in San Diego | CEL](https://www.englishcollege.com/housing/premium-homestay-san-diego): Premium homestay in San Diego with single rooms, meals, Wi-Fi, and daily support, just a short ride from CEL San Diego.
@@ -87,16 +86,12 @@
 - [Policies and Student Guidelines – CEL Vancouver](https://www.englishcollege.com/vancouver/policies): Official CEL Vancouver policies and guidelines for students. Access academic, housing, and compliance documents.
 - [Student Services in Vancouver – CEL](https://www.englishcollege.com/vancouver/student-services): Official student support documents for CEL Vancouver. Health and safety, financial assistance, daily life info, tenant rights in BC, and crisis guidance.
 - [How Long Does It Take to Learn English in Vancouver?](https://www.englishcollege.com/vancouver/how-long-to-learn-english): Realistic timelines for learning English in Vancouver from beginner to fluent, based on your level, intensity, and goals.
-- [301 Moved Permanently](https://www.englishcollege.com/vancouver/cost-of-studying-english)
+- [Cost of Studying English in Vancouver 2026 | CEL](https://www.englishcollege.com/vancouver/cost-of-studying-english): Tuition, accommodation, food, transit, and extras: the real cost of studying English in Vancouver to help plan your budget.
 - [Vancouver vs Toronto: Where to Study English in Canada?](https://www.englishcollege.com/vancouver/vs-toronto): Vancouver vs Toronto compared on cost, climate, lifestyle, and student life. Choose the right city for your English studies.
 
 ## Faq
 
 - [FAQs on Studying in USA & Canada | CEL](https://www.englishcollege.com/faq): Answers to common student questions on studying, living, visas, housing, and courses in the USA and Canada.
-
-## About
-
-- [About CEL — English Language Schools Since 1981](https://www.englishcollege.com/about): CEL has taught English by the Pacific since 1981: independently owned, average 6-7 students per class, campuses in San Diego, Los Angeles and Vancouver.
 
 ## Post
 
@@ -265,9 +260,8 @@
 - [Preguntas frecuentes sobre estudiar en EE. UU. y Canadá | CEL](https://www.englishcollege.com/es/faq): Respuestas a preguntas comunes sobre estudiar, vivir, visas, alojamiento y cursos en EE. UU. y Canadá.
 - [Servicios para estudiantes en Vancouver – CEL](https://www.englishcollege.com/es/vancouver/student-services): Documentos oficiales de apoyo al estudiante para CEL Vancouver. Salud y seguridad, ayuda económica, información sobre la vida cotidiana, derechos de los inquilinos en Columbia Británica y orientación en caso de crisis.
 - [¿Cuánto tiempo se tarda en aprender inglés en Vancouver?](https://www.englishcollege.com/es/vancouver/cuanto-tiempo-aprender-ingles): Plazos realistas para aprender inglés en Vancouver de principiante a fluido, según tu nivel, intensidad y objetivos.
-- [301 Moved Permanently](https://www.englishcollege.com/es/vancouver/costo-curso-de-ingles)
+- [Costo de estudiar inglés en Vancouver 2026 | CEL](https://www.englishcollege.com/es/vancouver/costo-curso-de-ingles): Matrícula, alojamiento, comida, transporte y extras: el costo real de estudiar inglés en Vancouver para ayudarte a planificar tu presupuesto.
 - [Vancouver vs Toronto: ¿Dónde estudiar inglés en Canadá?](https://www.englishcollege.com/es/vancouver/vancouver-o-toronto): Vancouver vs. Toronto comparados en costo, clima, estilo de vida y vida estudiantil. Elige la ciudad adecuada para tus estudios de inglés.
-- [Sobre CEL: escuelas de inglés desde 1981](https://www.englishcollege.com/es/about): CEL lleva impartiendo clases de inglés a orillas del Pacífico desde 1981: es una empresa independiente, con una media de 6-7 alumnos por clase, y cuenta con centros en San Diego, Los Ángeles y Vancouver.
 - [Inglés y habilidades académicas en EE. UU. y Canadá | CEL](https://www.englishcollege.com/es/cursos/english-academic-skills): Mejora tu inglés académico avanzado en San Diego, Los Ángeles o Vancouver con el curso optativo de CEL para estudiantes de nivel intermedio-alto.
 - [Inglés y desarrollo profesional en EE. UU. y Canadá | CEL](https://www.englishcollege.com/es/cursos/english-career-development): Mejora tu inglés para el ámbito laboral en San Diego, Los Ángeles o Vancouver con el curso de CEL enfocado a la carrera profesional en inteligencia artificial
 - [Inglés más preparación para los exámenes de Cambridge | CEL](https://www.englishcollege.com/es/cursos/english-plus-cambridge-prep): Prepárate para el FCE o el CAE de Cambridge en San Diego, Los Ángeles o Vancouver con el curso de preparación para exámenes en grupos reducidos de CEL.
@@ -282,7 +276,6 @@
 - [Piso Compartido Premium en San Diego | CEL](https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-premium-san-diego): Apartamentos compartidos de lujo en San Diego con habitaciones modernas, cocina, wifi, piscina y gimnasio. Cómodo alojamiento para estudiantes cerca del CEL.
 - [Normativa sobre pisos compartidos - Housing in San | CEL](https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-estandar-san-diego): Pisos compartidos amueblados en San Diego con cocina, Wi-Fi y fácil acceso al CEL.
 - [Piso Compartido Superior en San Diego | CEL](https://www.englishcollege.com/es/alojamiento/cel-apartamento-compartido-superior-pacific-beach-san-diego): Pisos compartidos de primera categoría en San Diego con habitaciones luminosas, wifi, cocina, piscina y zonas de estudio. Alojamiento para estudiantes cerca
-- [Alojamiento en casa de familia en Los Ángeles | CEL](https://www.englishcollege.com/es/alojamiento/familia-anfitriona-los-angeles): Vive con familias locales en Los Ángeles. Habitaciones individuales o compartidas, comidas, Wi-Fi y un ambiente acogedor.
 - [Casa de familia en San Diego para estudiantes | CEL](https://www.englishcollege.com/es/alojamiento/familia-anfitriona-san-diego): Alójate con familias locales en San Diego. Habitaciones, wifi, comidas y un ambiente acogedor para estudiantes internacionales.
 - [Alojamiento en familia en Vancouver: vive con una | CEL](https://www.englishcollege.com/es/alojamiento/familia-anfitriona-vancouver): Vive con familias locales en Vancouver. Habitaciones individuales o compartidas, Wi-Fi y a 30–70 minutos en autobús del CEL.
 - [Familia Anfitriona Premium – Alojamiento en San Diego | CEL](https://www.englishcollege.com/es/alojamiento/familia-anfitriona-premium-san-diego): Alojamiento en familia de primera categoría en San Diego con habitaciones individuales, comidas, wifi y asistencia diaria, a un paso de CEL San Diego.
@@ -314,9 +307,8 @@
 - [FAQs zum Studium in den USA & Kanada | CEL](https://www.englishcollege.com/de/faq): Antworten auf häufige Fragen zu Studium, Leben, Visa, Unterkunft und Kursen in den USA und Kanada.
 - [Studierendenservice in Vancouver – CEL](https://www.englishcollege.com/de/vancouver/student-services): Offizielle Unterlagen zur Unterstützung von Studierenden für CEL Vancouver. Gesundheit und Sicherheit, finanzielle Unterstützung, Infos zum Alltag, Mieterrechte in British Columbia und Hilfe in Krisensituationen.
 - [Wie lange dauert es, in Vancouver Englisch zu lernen?](https://www.englishcollege.com/de/vancouver/wie-lange-sprachaufenthalt): Realistische Zeitpläne, um in Vancouver Englisch vom Anfänger bis fließend zu lernen, basierend auf Ihrem Niveau, der Intensität und Ihren Zielen.
-- [301 Moved Permanently](https://www.englishcollege.com/de/vancouver/kosten-sprachaufenthalt)
+- [Kosten für das Englischlernen in Vancouver 2026 | CEL](https://www.englishcollege.com/de/vancouver/kosten-sprachaufenthalt): Studiengebühren, Unterkunft, Verpflegung, Nahverkehr und Extras: die tatsächlichen Kosten für das Englischlernen in Vancouver, um Ihnen bei der Planung Ihres
 - [Vancouver vs. Toronto: Wo sollte man in Kanada Englisch](https://www.englishcollege.com/de/vancouver/vancouver-oder-toronto): Vancouver vs. Toronto im Vergleich hinsichtlich Kosten, Klima, Lebensstil und Studentenleben. Wähle die richtige Stadt für dein Englischstudium.
-- [Über CEL – Englischschulen seit 1981](https://www.englishcollege.com/de/about): CEL unterrichtet seit 1981 Englisch an der Pazifikküste: ein unabhängiges Unternehmen mit durchschnittlich 6–7 Schülern pro Klasse und Standorten in San Diego, Los Angeles und Vancouver.
 - [Englisch plus akademische Fähigkeiten in den USA und | CEL](https://www.englishcollege.com/de/kurse/english-academic-skills): Verbessere deine akademischen Englischkenntnisse in San Diego, Los Angeles oder Vancouver mit dem Wahlfach von CEL für Schüler der oberen Mittelstufe.
 - [Englisch plus Karriereförderung in den USA und Kanada | CEL](https://www.englishcollege.com/de/kurse/english-career-development): Verbessere dein Englisch für den Beruf in San Diego, Los Angeles oder Vancouver mit dem berufsorientierten Kurs von CEL zu den Themen KI, Wirtschaft und
 - [Englisch plus Cambridge-Vorbereitung in den USA und | CEL](https://www.englishcollege.com/de/kurse/english-plus-cambridge-prep): Bereite dich in San Diego, Los Angeles oder Vancouver mit dem Prüfungsvorbereitungskurs in kleinen Gruppen von CEL auf das Cambridge FCE oder CAE vor.
@@ -370,7 +362,6 @@
 - [Sprachaufenthalt Kanada vs. USA - Dein Vergleich | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-kanada-oder-usa-was-wirklich-besser-ist): Kanada oder USA? Finde heraus, welches Land besser zu deinem Englisch Sprachaufenthalt passt - inkl. Tipps & Insiderinfos!
 - [Sprachaufenthalt in Kanada: Dauer, Kosten & Planung | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-kanada-planen): Sprachaufenthalt in Kanada planen: Dauer, Kosten, Visum, Unterkunft und Sprachschule in Vancouver leicht verständlich erklärt
 - [Sprachaufenthalt Kanada: So fühlt sich Vancouver an | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-kanada-vancouver-jahreszeiten): Wie ist ein Sprachaufenthalt in Kanada wirklich? Entdecke Vancouver zu jeder Jahreszeit – ehrlich, inspirierend und praxisnah
-- [Sprachaufenthalt in Kanada: Warum Vancouver? | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-kanada-vancouver-wachstum): Warum ein Sprachaufenthalt in Vancouver oft besser funktioniert: echte Routinen, Alltagssprache und langfristiger Lernerfolg.
 - [Sprachaufenthalt in San Diego: Lohnt es sich wirklich? | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-san-diego-englisch-lernen): Ist San Diego ideal zum Englischlernen? Finde heraus, wie Alltag, Schule und Umgebung deinen Lernfortschritt beeinflussen
 - [Sprachaufenthalt in San Diego: meine Erfahrungen | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-san-diego-erfahrung): Eine Studentin erzählt von ihrem Sprachaufenthalt in San Diego – kleine Klassen, internationale Freunde und mehr Selbstvertrauen i
 - [Warum San Diego der perfekte Ort für deinen Sprachaufenthalt ist | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-san-diego-jenseits-des-strands): Warum ein Sprachaufenthalt in San Diego echt gute Fortschritte bringt – durch Alltag, Balance und echtes Sprachenlernen.
@@ -389,7 +380,6 @@
 - [Sprachaufenthalt: San Diego oder Vancouver? | CEL | CEL](https://www.englishcollege.com/de/post/sprachaufenthalt-vancouver-san-diego-tagesrhythmus): Sprachaufenthalt in Vancouver oder San Diego? Schau mal, wie dein Tagesrhythmus deine Motivation, deinen Lernerfolg und deine Entwicklung beeinflusst.
 - [Sprachaufenthalte für internationale Karrieren 2026 | CEL](https://www.englishcollege.com/de/post/sprachaufenthalte-internationale-karriere-2026): Was Chefs heute erwarten – und wie Sprachaufenthalte Englisch zu einer echten Karrierekompetenz machen.
 - [Sprachreise: Englisch schneller lernen | CEL](https://www.englishcollege.com/de/post/sprachreise-englisch-sprechen-lernen): Warum das Sprechen beim Englischlernen entscheidend ist. Erfahre, wie Sprachreisen deinen Fortschritt deutlich beschleunigen.
-- [Sprachreise nach San Diego: Ednas Erfahrung | CEL](https://www.englishcollege.com/de/post/sprachreise-san-diego-edna-erfahrung): Ednas Sprachreise in San Diego: Fortschritte, Freunde und echte Erlebnisse während ihres Englischkurses im Ausland.
 - [Ist Vancouver eine gute Stadt, um Englisch zu lernen? | CEL](https://www.englishcollege.com/de/post/sprachschule-vancouver-englisch-lernen): Sprachschule Vancouver: Erfahre, warum Vancouver ideal für einen Sprachaufenthalt ist und wie du dort Englisch lernst.
 - [Eine typische Woche beim Sprachaufenthalt in San Diego | CEL](https://www.englishcollege.com/de/post/typische-woche-sprachaufenthalt-san-diego): Wie sieht eine typische Woche während eines Sprachaufenthalts in San Diego aus? Alltag, Unterricht und Freizeit
 - [Der unterschätzte Grund für einen Sprachaufenthalt | CEL](https://www.englishcollege.com/de/post/unterschatzter-grund-sprachaufenthalt-im-ausland): Warum ein Sprachaufenthalt im Ausland mehr verändert als nur dein Englisch – und für wen er wirklich sinnvoll ist.
@@ -410,7 +400,6 @@
 - [Premium-Wohngemeinschaft in San Diego | CEL](https://www.englishcollege.com/de/unterkunft/cel-wg-premium-san-diego): Hochwertige Wohngemeinschaften in San Diego mit modernen Zimmern, Küchen, WLAN, Pool und Fitnessraum. Komfortable Studentenunterkünfte in der Nähe des CEL.
 - [Standard für Wohngemeinschaften - Wohnen in San Diego | CEL](https://www.englishcollege.com/de/unterkunft/cel-wg-standard-san-diego): Möblierte Wohngemeinschaften in San Diego mit Küchen, Wi-Fi und einfachem Zugang zum CEL.
 - [Superior-Wohngemeinschaft in San Diego | CEL](https://www.englishcollege.com/de/unterkunft/cel-wg-superior-pacific-beach-san-diego): Hervorragende Wohngemeinschaften in San Diego mit hellen Zimmern, Wi-Fi, Küche, Pool und Lernbereichen. Studentenwohnungen in der Nähe von CEL.
-- [Gastfamilie – Wohnen in Los Angeles | CEL](https://www.englishcollege.com/de/unterkunft/gastfamilie-los-angeles): Lebe bei Gastfamilien in Los Angeles. Einzel- oder Mehrbettzimmer, Mahlzeiten, WLAN und ein herzliches Zuhause.
 - [Gastfamilienunterkunft – Unterkunft bei Gastfamilien | CEL](https://www.englishcollege.com/de/unterkunft/gastfamilie-san-diego): Wohn bei Gastfamilien in San Diego. Zimmer, WLAN, Verpflegung und ein herzliches Zuhause für internationale Studierende.
 - [Gastfamilie in Vancouver – Bei einer einheimischen | CEL](https://www.englishcollege.com/de/unterkunft/gastfamilie-vancouver): Wohne bei Gastfamilien in Vancouver. Einzel- oder Doppelzimmer, WLAN und 30–70 Minuten mit dem Bus bis zum CEL.
 - [Premium Gastfamilie – Studentenunterkünfte San Diego | CEL](https://www.englishcollege.com/de/unterkunft/gastfamilie-premium-san-diego): Erstklassige Gastfamilie in San Diego mit Einzelzimmern, Mahlzeiten, Wi-Fi und täglicher Unterstützung, nur eine kurze Fahrt vom CEL San Diego entfernt.
@@ -442,9 +431,8 @@
 - [FAQ Étudier aux États-Unis et au Canada | CEL](https://www.englishcollege.com/fr/faq): Réponses aux questions fréquentes des étudiants sur les études, la vie, les visas, le logement et les cours aux États-Unis et au Canada.
 - [Services aux étudiants à Vancouver – CEL](https://www.englishcollege.com/fr/vancouver/student-services): Documents officiels d'aide aux étudiants pour CEL Vancouver. Santé et sécurité, aide financière, infos sur la vie de tous les jours, droits des locataires en Colombie-Britannique et conseils en cas de crise.
 - [Combien de temps faut-il pour apprendre l'anglais à Vancouver ?](https://www.englishcollege.com/fr/vancouver/combien-de-temps-pour-apprendre-anglais): Délais réalistes pour apprendre l'anglais à Vancouver, du niveau débutant au niveau courant, selon votre niveau, l'intensité et vos objectifs.
-- [301 Moved Permanently](https://www.englishcollege.com/fr/vancouver/cout-sejour-linguistique)
+- [Coût des études d'anglais à Vancouver 2026 | CEL](https://www.englishcollege.com/fr/vancouver/cout-sejour-linguistique): Frais de scolarité, hébergement, nourriture, transports et extras : le coût réel pour étudier l'anglais à Vancouver afin de vous aider à planifier votre budget.
 - [Vancouver vs Toronto : Où étudier l'anglais au Canada ?](https://www.englishcollege.com/fr/vancouver/vancouver-ou-toronto): Vancouver vs Toronto comparés sur le coût, le climat, le mode de vie et la vie étudiante. Choisissez la bonne ville pour vos études d'anglais.
-- [À propos de CEL — Écoles d'anglais depuis 1981](https://www.englishcollege.com/fr/about): CEL enseigne l'anglais au bord du Pacifique depuis 1981 : c'est un établissement privé, avec en moyenne 6 à 7 élèves par classe, et des campus à San Diego, Los Angeles et Vancouver.
 - [Cours d'anglais et de compétences académiques aux | CEL](https://www.englishcollege.com/fr/cours/english-academic-skills): Perfectionne ton anglais académique à San Diego, Los Angeles ou Vancouver grâce au cours optionnel de CEL destiné aux étudiants de niveau intermédiaire avancé.
 - [Cours d'anglais et développement de carrière aux | CEL](https://www.englishcollege.com/fr/cours/english-career-development): Perfectionne ton anglais professionnel à San Diego, Los Angeles ou Vancouver grâce au cours de CEL axé sur la carrière, qui porte sur l'IA, le monde des
 - [Cours d'anglais et préparation aux examens de | CEL](https://www.englishcollege.com/fr/cours/english-plus-cambridge-prep): Prépare-toi au FCE ou au CAE de Cambridge à San Diego, Los Angeles ou Vancouver grâce au cours de préparation aux examens en petits groupes proposé par CEL.
@@ -535,7 +523,6 @@
 - [Appartement partagé Premium à San Diego | CEL](https://www.englishcollege.com/fr/logements/cel-shared-apartment-premium-san-diego): Appartements en colocation haut de gamme à San Diego, avec des chambres et des cuisines modernes, le Wi-Fi, une piscine et une salle de sport. Logements
 - [Appartement en colocation – Logement à San Diego | CEL](https://www.englishcollege.com/fr/logements/cel-shared-apartment-standard-san-diego): Appartements partagés meublés à San Diego avec cuisines, Wi-Fi et accès facile à CEL.
 - [Appartement partagé Supérieur à San Diego | CEL](https://www.englishcollege.com/fr/logements/cel-shared-apartment-superior-pacific-beach-san-diego): Des appartements en colocation haut de gamme à San Diego, avec des chambres lumineuses, le Wi-Fi, une cuisine, une piscine et des espaces d'étude. Logements
-- [Séjour en famille d’accueil à Los Angeles | CEL](https://www.englishcollege.com/fr/logements/homestay-los-angeles): Vivez avec des familles locales à Los Angeles. Chambres simples ou partagées, repas, Wi-Fi et ambiance conviviale.
 - [Hébergement chez l'habitant – Logement étudiant en | CEL](https://www.englishcollege.com/fr/logements/homestay-san-diego): Viens vivre chez des familles d'accueil à San Diego. Chambres, Wi-Fi, repas et un cadre familial accueillant pour les étudiants étrangers.
 - [Hébergement chez l'habitant à Vancouver – Vis chez | CEL](https://www.englishcollege.com/fr/logements/homestay-vancouver): Séjournez chez des familles locales à Vancouver. Chambres simples ou partagées, Wi-Fi et 30–70 minutes en bus jusqu’au CEL.
 - [Hébergement chez l'habitant haut de gamme – Logement | CEL](https://www.englishcollege.com/fr/logements/premium-homestay-san-diego): Hébergement en famille d'accueil de première qualité à San Diego avec chambres individuelles, repas, Wi-Fi et assistance quotidienne, à quelques minutes de
@@ -568,9 +555,8 @@
 - [미국·캐나다 유학 FAQ | CEL](https://www.englishcollege.com/ko/faq): 미국과 캐나다에서의 학업, 생활, 비자, 숙소, 과정에 대한 학생들의 자주 묻는 질문 답변.
 - [밴쿠버 학생 서비스 – CEL](https://www.englishcollege.com/ko/vancouver/student-services): CEL 밴쿠버 공식 학생 지원 문서. 건강 및 안전, 재정 지원, 일상 생활 정보, BC주 세입자 권리, 위기 상황 안내.
 - [밴쿠버에서 영어를 배우는 데 얼마나 걸릴까요?](https://www.englishcollege.com/ko/vancouver/how-long-to-learn-english): 본인의 수준, 학습 강도 및 목표에 따라 Vancouver에서 초급부터 유창해질 때까지 영어를 배우는 데 걸리는 현실적인 기간.
-- [301 Moved Permanently](https://www.englishcollege.com/ko/vancouver/cost-of-studying-english)
+- [Vancouver 영어 어학연수 비용 2026 | CEL](https://www.englishcollege.com/ko/vancouver/cost-of-studying-english): 학비, 숙박비, 식비, 교통비 및 기타 비용: 예산 계획을 돕기 위한 Vancouver에서의 실제 영어 공부 비용.
 - [Vancouver vs 토론토: 캐나다 어디에서 영어를 공부할까요?](https://www.englishcollege.com/ko/vancouver/vs-toronto): Vancouver와 토론토의 비용, 기후, 라이프스타일, 학생 생활을 비교했습니다. 영어 공부에 알맞은 도시를 선택하세요.
-- [CEL 소개 — 1981년부터 운영해 온 영어 어학원](https://www.englishcollege.com/ko/about): CEL은 1981년부터 태평양 연안 지역에서 영어 교육을 제공해 왔습니다. 독립적으로 운영되는 이 기관은 한 반당 평균 6~7명의 학생으로 구성되어 있으며, 샌디에이고, 로스앤젤레스, 밴쿠버에 캠퍼스를 두고 있습니다.
 - [미국 및 캐나다의 영어 및 학업 능력 향상 과정 | CEL](https://www.englishcollege.com/ko/courses/english-academic-skills): CEL의 중상급 학습자 대상 선택 과정을 통해 샌디에이고, 로스앤젤레스 또는 밴쿠버에서 고급 학술 영어 실력을 쌓아보세요.
 - [미국 및 캐나다 영어 및 진로 개발 과정 | CEL](https://www.englishcollege.com/ko/courses/english-career-development): 샌디에이고, 로스앤젤레스, 또는 밴쿠버에서 CEL의 AI, 비즈니스, 경영 분야를 다루는 취업 중심 과정을 통해 실무 영어 실력을 쌓아보세요.
 - [미국 및 캐나다의 잉글리시 플러스 캠브리지 준비 과정 | CEL](https://www.englishcollege.com/ko/courses/english-plus-cambridge-prep): CEL의 소규모 그룹 시험 대비 과정을 통해 샌디에이고, 로스앤젤레스 또는 밴쿠버에서 캠브리지 FCE 또는 CAE 시험을 준비하세요.
@@ -591,7 +577,6 @@
 - [샌디에이고의 공유 아파트 프리미엄 | CEL](https://www.englishcollege.com/ko/housing/cel-shared-apartment-premium-san-diego): 현대적인 객실, 주방, Wi-Fi, 수영장, 헬스장을 갖춘 샌디에이고의 프리미엄 공유 아파트. CEL 근처의 편안한 학생 숙소.
 - [공유 아파트 표준 - 샌디에이고의 주택 | CEL](https://www.englishcollege.com/ko/housing/cel-shared-apartment-standard-san-diego): 샌디에이고에 위치한 가구가 완비된 공유 아파트로 주방, Wi-Fi, CEL에 쉽게 액세스할 수 있습니다.
 - [샌디에이고의 공유 아파트 슈페리어 | CEL](https://www.englishcollege.com/ko/housing/cel-shared-apartment-superior-pacific-beach-san-diego): 밝은 객실, Wi-Fi, 주방, 수영장, 학습 공간을 갖춘 샌디에이고의 우수한 공유 아파트. CEL 근처의 학생 숙소.
-- [홈스테이 – 로스앤젤레스 현지 가족과 생활 | CEL](https://www.englishcollege.com/ko/housing/homestay-los-angeles): 로스앤젤레스 현지 가족과 함께 생활하세요. 1인실 또는 공유룸, 식사, Wi-Fi, 따뜻한 가정 분위기.
 - [홈스테이 - 샌디에이고의 가족과 함께하는 학생 숙소 | CEL](https://www.englishcollege.com/ko/housing/homestay-san-diego): 샌디에이고에서 현지 가족과 함께 생활해 보세요. 객실, Wi-Fi, 식사, 유학생을 위한 지원적인 가정 환경이 제공됩니다.
 - [밴쿠버 홈스테이 – 현지 가정과 함께 생활하기 | CEL](https://www.englishcollege.com/ko/housing/homestay-vancouver): 밴쿠버 현지 가정과 함께 생활하세요. 1인실·공유룸, 와이파이 제공, CEL까지 버스로 30~70분 소요.
 - [프리미엄 홈스테이 – 유학생 숙소 샌디에이고 | CEL](https://www.englishcollege.com/ko/housing/premium-homestay-san-diego): 샌디에이고의 프리미엄 홈스테이로 싱글룸, 식사, 와이파이, 일일 지원을 제공하며 CEL 샌디에이고에서 차로 가까운 거리에 있습니다.
@@ -622,9 +607,8 @@
 - [Perguntas frequentes sobre estudar nos EUA e Canadá | CEL](https://www.englishcollege.com/pt/faq): Respostas às dúvidas comuns dos alunos sobre estudar, viver, vistos, moradia e cursos nos EUA e Canadá.
 - [Serviços para estudantes em Vancouver – CEL](https://www.englishcollege.com/pt/vancouver/student-services): Documentos oficiais de apoio ao estudante para a CEL Vancouver. Saúde e segurança, ajuda financeira, informações sobre a vida diária, direitos dos inquilinos na Colúmbia Britânica e orientação em situações de crise.
 - [Quanto tempo demora a aprender inglês em Vancouver?](https://www.englishcollege.com/pt/vancouver/quanto-tempo-aprender-ingles): Cronogramas realistas para aprender inglês em Vancouver de iniciante a fluente, com base no seu nível, intensidade e objetivos.
-- [301 Moved Permanently](https://www.englishcollege.com/pt/vancouver/preco-intercambio-ingles)
+- [Custo de Estudar Inglês em Vancouver 2026 | CEL](https://www.englishcollege.com/pt/vancouver/preco-intercambio-ingles): Mensalidade, acomodação, alimentação, transporte e extras: o custo real de estudar inglês em Vancouver para ajudar a planejar seu orçamento.
 - [Vancouver vs Toronto: Onde estudar inglês no Canadá?](https://www.englishcollege.com/pt/vancouver/vancouver-ou-toronto): Vancouver vs Toronto comparadas quanto a custo, clima, estilo de vida e vida estudantil. Escolha a cidade certa para os seus estudos de inglês.
-- [Sobre a CEL — Escolas de Inglês desde 1981](https://www.englishcollege.com/pt/about): A CEL ensina inglês na costa do Pacífico desde 1981: é uma instituição independente, com uma média de 6 a 7 alunos por turma e campus em San Diego, Los Angeles e Vancouver.
 - [Inglês + Competências Académicas nos EUA e no Canadá | CEL](https://www.englishcollege.com/pt/cursos/english-academic-skills): Aprimora o teu inglês académico avançado em San Diego, Los Angeles ou Vancouver com a disciplina opcional da CEL para alunos de nível intermédio-avançado.
 - [Inglês + Desenvolvimento Profissional nos EUA e no | CEL](https://www.englishcollege.com/pt/cursos/english-career-development): Aprende inglês para o ambiente de trabalho em San Diego, Los Angeles ou Vancouver com o curso da CEL focado na carreira nas áreas da IA, negócios e gestão.
 - [Inglês Plus Preparação para os Exames de Cambridge | CEL](https://www.englishcollege.com/pt/cursos/english-plus-cambridge-prep): Prepara-te para o Cambridge FCE ou CAE em San Diego, Los Angeles ou Vancouver com o curso de preparação para exames em pequenos grupos da CEL.
@@ -639,7 +623,6 @@
 - [Apartamento partilhado Premium em San Diego | CEL](https://www.englishcollege.com/pt/housing/cel-shared-apartment-premium-san-diego): Apartamentos partilhados de luxo em San Diego, com quartos modernos, cozinhas, Wi-Fi, piscina e ginásio. Alojamento confortável para estudantes perto do CEL.
 - [Apartamento partilhado Padrão - Habitação em San Diego | CEL](https://www.englishcollege.com/pt/housing/cel-shared-apartment-standard-san-diego): Apartamentos partilhados mobilados em San Diego com cozinhas, Wi-Fi e fácil acesso ao CEL.
 - [Apartamento partilhado Superior em San Diego | CEL](https://www.englishcollege.com/pt/housing/cel-shared-apartment-superior-pacific-beach-san-diego): Apartamentos partilhados de alta qualidade em San Diego, com quartos luminosos, Wi-Fi, cozinha, piscina e áreas de estudo. Alojamento para estudantes perto do
-- [Homestay – Fique com famílias locais em Los Angeles | CEL](https://www.englishcollege.com/pt/housing/homestay-los-angeles): Hospede-se com famílias locais em Los Angeles. Quartos individuais ou compartilhados, refeições, Wi-Fi e lar acolhedor.
 - [Alojamento em casa de família – Alojamento para | CEL](https://www.englishcollege.com/pt/housing/homestay-san-diego): Viva com famílias locais em San Diego. Quartos, Wi-Fi, refeições e um ambiente familiar de apoio para estudantes internacionais.
 - [Hospedagem em casa de família em Vancouver – Vive com | CEL](https://www.englishcollege.com/pt/housing/homestay-vancouver): More com famílias locais em Vancouver. Quartos individuais ou compartilhados, Wi-Fi e 30–70 minutos de ônibus até o CEL.
 - [Homestay Premium – Acomodação em San Diego | CEL](https://www.englishcollege.com/pt/housing/premium-homestay-san-diego): Hospedagem em casa de família premium em San Diego, com quartos individuais, refeições, Wi-Fi e apoio diário, a uma curta distância do CEL San Diego.
@@ -671,9 +654,8 @@
 - [FAQ sullo studio in USA e Canada | CEL](https://www.englishcollege.com/it/faq): Risposte alle domande comuni su studio, vita, visti, alloggi e corsi negli USA e in Canada.
 - [Servizi per gli studenti a Vancouver – CEL](https://www.englishcollege.com/it/vancouver/student-services): Documenti ufficiali di supporto agli studenti per CEL Vancouver. Salute e sicurezza, assistenza finanziaria, info sulla vita quotidiana, diritti degli inquilini nella Columbia Britannica e guida in caso di crisi.
 - [Quanto tempo ci vuole per imparare l'inglese a Vancouver?](https://www.englishcollege.com/it/vancouver/quanto-tempo-imparare-inglese): Tempistiche realistiche per imparare l'inglese a Vancouver da principiante a fluente, in base al tuo livello, all'intensità e ai tuoi obiettivi.
-- [301 Moved Permanently](https://www.englishcollege.com/it/vancouver/costo-soggiorno-linguistico)
+- [Costo per studiare inglese a Vancouver 2026 | CEL](https://www.englishcollege.com/it/vancouver/costo-soggiorno-linguistico): Retta, alloggio, vitto, trasporti ed extra: il costo reale per studiare l'inglese a Vancouver per aiutarti a pianificare il tuo budget.
 - [Vancouver vs Toronto: Dove studiare l'inglese in Canada?](https://www.englishcollege.com/it/vancouver/vancouver-o-toronto): Vancouver vs Toronto a confronto su costi, clima, stile di vita e vita studentesca. Scegli la città giusta per i tuoi studi di inglese.
-- [Informazioni su CEL — Scuole di inglese dal 1981](https://www.englishcollege.com/it/about): CEL insegna inglese sulla costa del Pacifico dal 1981: è un’istituzione indipendente, con una media di 6-7 studenti per classe e sedi a San Diego, Los Angeles e Vancouver.
 - [Inglese e competenze accademiche negli Stati Uniti e | CEL](https://www.englishcollege.com/it/corsi/english-academic-skills): Migliora il tuo inglese accademico avanzato a San Diego, Los Angeles o Vancouver con il corso opzionale di CEL per studenti di livello intermedio-avanzato.
 - [Inglese più sviluppo professionale negli Stati Uniti | CEL](https://www.englishcollege.com/it/corsi/english-career-development): Migliora il tuo inglese professionale a San Diego, Los Angeles o Vancouver con il corso di CEL incentrato sulla carriera nei settori dell'intelligenza
 - [Corso di inglese con preparazione all'esame Cambridge | CEL](https://www.englishcollege.com/it/corsi/english-plus-cambridge-prep): Preparati all'esame FCE o CAE di Cambridge a San Diego, Los Angeles o Vancouver con il corso di preparazione agli esami in piccoli gruppi del CEL.
@@ -733,7 +715,6 @@
 - [Appartamento condiviso Premium a San Diego | CEL](https://www.englishcollege.com/it/housing/cel-shared-apartment-premium-san-diego): Appartamenti condivisi di lusso a San Diego con camere moderne, cucina, Wi-Fi, piscina e palestra. Confortevoli alloggi per studenti vicino al CEL.
 - [Appartamento condiviso standard - Alloggi a San Diego | CEL](https://www.englishcollege.com/it/housing/cel-shared-apartment-standard-san-diego): Appartamenti ammobiliati in condivisione a San Diego con cucina, Wi-Fi e facile accesso alla CEL.
 - [Appartamento condiviso Superior a San Diego | CEL](https://www.englishcollege.com/it/housing/cel-shared-apartment-superior-pacific-beach-san-diego): Appartamenti condivisi di alta qualità a San Diego con stanze luminose, Wi-Fi, cucina, piscina e aree studio. Alloggi per studenti vicino al CEL.
-- [Homestay – Vivi con famiglie locali a Los Angeles | CEL](https://www.englishcollege.com/it/housing/homestay-los-angeles): Alloggia con famiglie locali a Los Angeles. Camere singole o condivise, pasti, Wi-Fi e ambiente familiare.
 - [Alloggio in famiglia – Alloggi per studenti presso | CEL](https://www.englishcollege.com/it/housing/homestay-san-diego): Vivere con famiglie locali a San Diego. Camere, Wi-Fi, pasti e un ambiente familiare di supporto per gli studenti internazionali.
 - [Soggiorno in famiglia a Vancouver – Vivi con una | CEL](https://www.englishcollege.com/it/housing/homestay-vancouver): Vivi con famiglie locali a Vancouver. Camere singole o condivise, Wi-Fi e 30–70 minuti di autobus per raggiungere il CEL.
 - [Famiglia ospitante Premium – Alloggi a San Diego | CEL](https://www.englishcollege.com/it/housing/premium-homestay-san-diego): Famiglia premium a San Diego con camere singole, pasti, Wi-Fi e assistenza giornaliera, a breve distanza dal CEL di San Diego.
@@ -764,9 +745,8 @@
 - [アメリカ・カナダ留学FAQ | CEL](https://www.englishcollege.com/ja/faq): アメリカとカナダでの留学、生活、ビザ、住居、コースに関する学生のよくある質問への回答。
 - [バンクーバーの学生サービス – CEL](https://www.englishcollege.com/ja/vancouver/student-services): CELバンクーバー公式学生支援書類。健康と安全、経済的支援、日常生活情報、BC州における賃借人の権利、危機対応ガイダンス。
 - [バンクーバーで英語を習得するにはどれくらい時間がかかるか？](https://www.englishcollege.com/ja/vancouver/how-long-to-learn-english): レベル、学習ペース、目標に基づいた、Vancouverで英語を初心者から流暢になるまで習得するための現実的な期間。
-- [301 Moved Permanently](https://www.englishcollege.com/ja/vancouver/cost-of-studying-english)
+- [Vancouverでの英語留学費用 2026 | CEL](https://www.englishcollege.com/ja/vancouver/cost-of-studying-english): 授業料、滞在費、食費、交通費、雑費：予算計画に役立つ、Vancouverでの英語留学の実際の費用。
 - [Vancouver vs トロント：カナダで英語を学ぶならどこ？](https://www.englishcollege.com/ja/vancouver/vs-toronto): Vancouverとトロントの費用、気候、ライフスタイル、学生生活を比較。英語学習に最適な都市を選びましょう。
-- [CELについて — 1981年創業の英語学校](https://www.englishcollege.com/ja/about): CELは1981年以来、太平洋沿岸で英語教育を行ってきた。独立系学校であり、1クラスあたりの平均生徒数は6～7名で、サンディエゴ、ロサンゼルス、バンクーバーにキャンパスがある。
 - [米国・カナダでの英語＋アカデミックスキル | CEL](https://www.englishcollege.com/ja/courses/english-academic-skills): CELの上級中級者向け選択コースで、サンディエゴ、ロサンゼルス、またはバンクーバーにて、高度なアカデミック・イングリッシュを習得しよう。
 - [米国・カナダでの英語学習とキャリア開発 | CEL](https://www.englishcollege.com/ja/courses/english-career-development): サンディエゴ、ロサンゼルス、またはバンクーバーで、CELのAI、ビジネス、マネジメントに特化したキャリア重視のコースを通じて、ビジネス英語を身につけよう。
 - [米国・カナダでの英語＋ケンブリッジ試験対策コース | CEL](https://www.englishcollege.com/ja/courses/english-plus-cambridge-prep): サンディエゴ、ロサンゼルス、またはバンクーバーで、CELの少人数制試験対策コースを利用して、ケンブリッジFCEまたはCAEの受験準備をしよう。
@@ -781,7 +761,6 @@
 - [サンディエゴのシェアアパートメントプレミアム｜CEL](https://www.englishcollege.com/ja/housing/cel-shared-apartment-premium-san-diego): モダンな部屋、キッチン、Wi-Fi、プール、ジムを備えたサンディエゴのプレミアムシェアアパートメント。CEL近くの快適な学生寮。
 - [シェアアパートメント - サンディエゴの住まい｜CEL](https://www.englishcollege.com/ja/housing/cel-shared-apartment-standard-san-diego): サンディエゴにある家具付きシェアアパートメントで、キッチン、Wi-Fi、CELへのアクセスが便利です。
 - [サンディエゴのシェアアパートメント スーペリア｜CEL](https://www.englishcollege.com/ja/housing/cel-shared-apartment-superior-pacific-beach-san-diego): 明るい部屋、Wi-Fi、キッチン、プール、自習室完備のサンディエゴの高級シェアアパートメント。CEL近くの学生寮。
-- [ホームステイ – ロサンゼルスで現地家庭に滞在 | CEL](https://www.englishcollege.com/ja/housing/homestay-los-angeles): ロサンゼルスの現地家庭に滞在。個室またはシェアルーム、食事、Wi-Fi、温かい家庭生活。
 - [ホームステイ - サンディエゴのホームステイ｜CEL](https://www.englishcollege.com/ja/housing/homestay-san-diego): サンディエゴで地元の家族と一緒に暮らしましょう。部屋、Wi-Fi、食事、留学生をサポートする家庭環境。
 - [バンクーバーでのホームステイ – 現地の家庭で暮らす | CEL](https://www.englishcollege.com/ja/housing/homestay-vancouver): バンクーバーの現地家庭で暮らそう。個室やシェアルーム、Wi-Fi付き、CELまでバスで30〜70分。
 - [プレミアムホームステイ – 学生向け住まい サンディエゴ | CEL](https://www.englishcollege.com/ja/housing/premium-homestay-san-diego): 一人部屋、食事、Wi-Fi、毎日のサポートが付いたサンディエゴのプレミアムホームステイ。
@@ -812,9 +791,8 @@
 - [الأسئلة الشائعة حول الدراسة في أمريكا وكندا | CEL](https://www.englishcollege.com/ar/faq): إجابات عن الأسئلة المتكررة للطلاب حول الدراسة، المعيشة، التأشيرات، السكن والدورات في أمريكا وكندا.
 - [خدمات الطلاب في فانكوفر – CEL](https://www.englishcollege.com/ar/vancouver/student-services): وثائق الدعم الرسمية لطلاب CEL فانكوفر: الصحة والسلامة، المساعدة المالية، الحياة اليومية، حقوق المستأجرين، وإرشادات الطوارئ.
 - [كم من الوقت يستغرق تعلم اللغة الإنجليزية في فانكوفر؟](https://www.englishcollege.com/ar/vancouver/how-long-to-learn-english): جداول زمنية واقعية لتعلم اللغة الإنجليزية في Vancouver من مستوى المبتدئ إلى الطلاقة، بناءً على مستواك وكثافة دراستك وأهدافك.
-- [301 Moved Permanently](https://www.englishcollege.com/ar/vancouver/cost-of-studying-english)
+- [تكلفة دراسة اللغة الإنجليزية في Vancouver 2026 | CEL](https://www.englishcollege.com/ar/vancouver/cost-of-studying-english): الرسوم الدراسية، والإقامة، والطعام، والمواصلات، والنفقات الإضافية: التكلفة الحقيقية لدراسة اللغة الإنجليزية في Vancouver للمساعدة في تخطيط ميزانيتك.
 - [Vancouver مقابل تورونتو: أين تدرس اللغة الإنجليزية في كندا؟](https://www.englishcollege.com/ar/vancouver/vs-toronto): مقارنة بين Vancouver وتورونتو من حيث التكلفة، والمناخ، ونمط الحياة، والحياة الطلابية. اختر المدينة المناسبة لدراسة اللغة الإنجليزية.
-- [نبذة عن CEL — مدارس لتعليم اللغة الإنجليزية منذ عام 1981](https://www.englishcollege.com/ar/about): تقوم مؤسسة CEL بتدريس اللغة الإنجليزية في منطقة المحيط الهادئ منذ عام 1981: وهي مؤسسة مستقلة، ويبلغ متوسط عدد الطلاب في كل فصل 6-7 طلاب، ولديها فروع في سان دييغو ولوس أنجلوس وفانكوفر.
 - [اللغة الإنجليزية بلس: المهارات الأكاديمية | CEL](https://www.englishcollege.com/ar/courses/english-academic-skills): طوّر مهاراتك في الإنجليزية الأكاديمية في سان دييغو أو لوس أنجلوس أو فانكوفر مع المقرر الاختياري من CEL لطلاب المستوى المتوسط المتقدم.
 - [اللغة الإنجليزية بلس: التطوير الوظيفي | CEL](https://www.englishcollege.com/ar/courses/english-career-development): طوّر إنجليزيتك المهنية في سان دييغو أو لوس أنجلوس أو فانكوفر مع دورة CEL للتطوير الوظيفي في الذكاء الاصطناعي والأعمال والإدارة.
 - [اللغة الإنجليزية بلس: التحضير لكامبريدج | CEL](https://www.englishcollege.com/ar/courses/english-plus-cambridge-prep): استعد لامتحانات كامبريدج FCE أو CAE في سان دييغو أو لوس أنجلوس أو فانكوفر من خلال دورة CEL للتحضير للامتحانات التي تُعقد في مجموعات صغيرة.
@@ -829,7 +807,6 @@
 - [شقة مشتركة ممتازة في سان دييغو | CEL](https://www.englishcollege.com/ar/housing/cel-shared-apartment-premium-san-diego): شقق مشتركة ممتازة في سان دييغو مع غرف عصرية ومطابخ وخدمة الواي فاي وحوض سباحة وصالة ألعاب رياضية. سكن طلابي مريح بالقرب من CEL.
 - [شقة مشتركة قياسية - السكن في سان دييغو | CEL](https://www.englishcollege.com/ar/housing/cel-shared-apartment-standard-san-diego): شقق مشتركة مفروشة في سان دييغو مع مطابخ وخدمة واي فاي وسهولة الوصول إلى CEL.
 - [شقة سوبيريور مشتركة في سان دييغو | CEL](https://www.englishcollege.com/ar/housing/cel-shared-apartment-superior-pacific-beach-san-diego): شقق مشتركة ممتازة في سان دييغو مع غرف مشرقة وخدمة الواي فاي ومطبخ ومسبح ومناطق للدراسة. سكن طلابي بالقرب من CEL.
-- [الإقامة مع عائلات محلية في لوس أنجلوس | CEL](https://www.englishcollege.com/ar/housing/homestay-los-angeles): أقم مع عائلات محلية في لوس أنجلوس. غرف فردية أو مشتركة، وجبات، واي فاي، وأجواء منزلية مريحة.
 - [الإقامة مع عائلة - سكن الطلاب مع العائلات في سان دييغو | CEL](https://www.englishcollege.com/ar/housing/homestay-san-diego): عِش مع عائلات محلية في سان دييغو. غرف، وخدمة واي فاي، ووجبات طعام، وبيئة منزلية داعمة للطلاب الدوليين.
 - [الإقامة مع عائلة في فانكوفر – العيش مع عائلة محلية | CEL](https://www.englishcollege.com/ar/housing/homestay-vancouver): أقم مع عائلات محلية في فانكوفر. غرف فردية أو مشتركة، إنترنت Wi-Fi ورحلة حافلة من 30–70 دقيقة إلى CEL.
 - [سكن عائلي مميز – سكن الطلاب في سان دييغو | CEL](https://www.englishcollege.com/ar/housing/premium-homestay-san-diego): إقامة منزلية ممتازة في سان دييغو مع غرف فردية ووجبات وخدمة واي فاي ودعم يومي، على بُعد مسافة قصيرة من CEL سان دييغو.
