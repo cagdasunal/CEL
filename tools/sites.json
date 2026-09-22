@@ -3,7 +3,7 @@
     {
       "id": "englishcollege",
       "name": "College of English Language",
-      "description": "English language schools in San Diego, Los Angeles and Vancouver.",
+      "description": "English language schools in San Diego and Vancouver.",
       "sitemap_url": "https://cel.englishcollege.com/sitemap.xml",
       "output": "docs/llms.txt"
     }

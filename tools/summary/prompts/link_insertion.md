@@ -28,8 +28,8 @@ Think of it as highlighting: you are wrapping existing words in links, nothing e
 
 The candidate list includes our **accommodation pages** (`/housing` and `/housing/<residence>` — homestays, shared apartments, student houses, organized by city). These are new pages that need inbound internal links, so **prioritize linking the relevant ones**:
 
-- When the post relates to a **city** (Vancouver, San Diego, Los Angeles), **moving / arrival**, **student life**, **budget / cost of living**, or **studying abroad**, link the matching `/housing` page(s).
-- **Match the city**: the city is in the housing URL slug (e.g. `…-vancouver`, `…-san-diego`, `…-los-angeles`). A Vancouver post should link Vancouver housing, not San Diego housing.
+- When the post relates to a **city** (Vancouver, San Diego), **moving / arrival**, **student life**, **budget / cost of living**, or **studying abroad**, link the matching `/housing` page(s).
+- **Match the city**: the city is in the housing URL slug (e.g. `…-vancouver`, `…-san-diego`). A Vancouver post should link Vancouver housing, not San Diego housing.
 - Housing links **count toward** the 6–8 total — they don't add extra; pick them over a less-relevant candidate when accommodation genuinely fits the post.
 - Only skip housing entirely when the post truly has nothing to do with living/cities/student life (e.g. a pure grammar tip). Never force a housing link onto an unrelated post.
 

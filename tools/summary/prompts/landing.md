@@ -10,7 +10,7 @@ Static landing pages live at fixed URLs (e.g., `/courses`, `/san-diego-ca/langua
 
 By page type:
 - `/` (home): 750–1050
-- City landing (`/san-diego-ca/...`, `/los-angeles-ca/...`): 750–1050
+- City landing (`/san-diego-ca/...`): 750–1050
 - Country landing (`/learn-english-usa`, `/learn-english-canada`): 800–1100
 - `/courses` listing: 750–1050
 - `/housing` hub: 650–900

@@ -115,7 +115,6 @@ STATIC_PAGES = (
     "https://www.englishcollege.com/",
     "https://www.englishcollege.com/courses",  # tracker-098 follow-up: course catalogue index (→ 17 total)
     "https://www.englishcollege.com/san-diego-ca/language-school",
-    "https://www.englishcollege.com/los-angeles-ca/language-courses",
     "https://www.englishcollege.com/summer-camp-san-diego",
     "https://www.englishcollege.com/learn-english-usa",
     "https://www.englishcollege.com/learn-english-canada",
