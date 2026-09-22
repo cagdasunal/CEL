@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # main's CURRENT tip, not the event SHA. A run that queued behind another
+          # (concurrency push-to-main) otherwise regenerated on the commit from before
+          # it queued and conflicted with that run's push (run 35751814921, 2026-09-22).
+          ref: main
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -79,6 +84,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          BASE=$(git rev-parse HEAD)
           git commit -m "Auto-update sitemap.xml and llms.txt ($TIMESTAMP)"
           # 5-attempt push retry w/ exponential backoff — guards transient
           # actions/checkout@v6 credential-read flakes. Matches offers-*.yml.
@@ -86,6 +92,14 @@ jobs:
           until [ $n -ge 5 ]; do
             if ! git pull --rebase --autostash origin main; then
               git rebase --abort 2>/dev/null || true
+              # All three files are regenerated wholesale, so a conflict on them means
+              # another run published after BASE. Retrying replays the same conflict 5x
+              # and opens a false ci-failure issue; that run's output is live — stop green.
+              if git rev-parse -q --verify FETCH_HEAD >/dev/null && \
+                 ! git diff --quiet "$BASE" FETCH_HEAD -- docs/sitemap.xml docs/llms.txt docs/log.txt; then
+                echo "Superseded: main changed sitemap.xml/llms.txt/log.txt after $BASE (another run published). Nothing to push."
+                exit 0
+              fi
               echo "pull/rebase failed (attempt $((n+1))) — retrying"
               n=$((n+1))
               sleep $((n * n))
