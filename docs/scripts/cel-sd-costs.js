@@ -389,28 +389,40 @@
 
   /* Accommodation US$/week by bracket + the one-time placement fee (§4, §7).
      Standard-season (low-season) rates from CEL Prices 2026 (agents), San Diego /
-     Accommodation. Shared-apartment rows are the TWIN room — the rate the page quotes;
-     the single-room rate is a different product and is not offered by this tool.
-     Homestay rows are the shared-bathroom tiers the page publishes: hss/hsd breakfast,
-     hpr breakfast and dinner. Shared apartments bracket at 1-11 / 12-23 / 24+, homestay
-     at 1-4 / 5-11 / 12+ — the two are NOT the same ladder, which is why each carries its
-     own tier list rather than a shared one.
-     2026 update: every short-stay bracket is now PUBLISHED, so the old flat homestay
-     rates (which quoted the 12+ figure at every length and under-quoted short stays) and
-     the old prm/sup ladders are gone. No figure here is interpolated. */
-  var ROOMS = {
-    std:  { label: 'Shared apt Standard', fee: 100, tiers: [[11, 290], [23, 280], [999, 270]] },
-    prm:  { label: 'Shared apt Premium',  fee: 100, tiers: [[11, 360], [23, 350], [999, 340]] },
-    sup:  { label: 'Shared apt Superior', fee: 100, tiers: [[11, 410], [23, 400], [999, 390]] },
-    hss:  { label: 'Homestay single',     fee: 200, tiers: [[4, 360], [11, 340], [999, 320]] },
-    hsd:  { label: 'Homestay double',     fee: 200, tiers: [[4, 330], [11, 310], [999, 290]] },
-    hpr:  { label: 'Premium homestay',    fee: 200, tiers: [[4, 490], [11, 470], [999, 450]] },
-    none: { label: 'Own accommodation',   fee: 0,   tiers: [[999, 0]] }
+     Accommodation, pp. 12-13 — EVERY room row of that list, one option each (client,
+     BugHerd #5, 8 Sep: "the user needs to be able to also select the room type"; operator
+     15 Sep: keep it in the same dropdown, all in one place, the PDF is the source).
+     Shared apartments sell twin and single rooms; homestay sells double and single rooms
+     with breakfast or breakfast and dinner, plus a private-bathroom single; premium
+     homestay is single rooms with breakfast and dinner. Shared apartments bracket at
+     1-11 / 12-23 / 24+, homestay at 1-4 / 5-11 / 12+ — the two are NOT the same ladder,
+     which is why each carries its own tier list rather than a shared one.
+     The original seven keys keep their meaning (std/prm/sup = twin, hss/hsd = breakfast),
+     because the Designer's Select still ships those values. No figure here is interpolated.
+     `option` is the dropdown text — kept to ~220px at 15.2px because the Select's text box is
+     225px on a 375px phone and 246px at 1280 (measured 15 Sep); `label` is the ledger line;
+     `detail` is the list's own wording for what the option includes and who shares the room,
+     shown under the Select. "Half board" = breakfast and dinner, spelled out in `detail`. */
+  const ROOMS = {
+    std:  { option: 'Shared apt Standard \u00b7 twin',    label: 'Shared apt Standard, twin',    fee: 100, detail: 'shared with a student of the same gender', tiers: [[11, 290], [23, 280], [999, 270]] },
+    stds: { option: 'Shared apt Standard \u00b7 single',  label: 'Shared apt Standard, single',  fee: 100, tiers: [[11, 530], [23, 520], [999, 510]] },
+    prm:  { option: 'Shared apt Premium \u00b7 twin',     label: 'Shared apt Premium, twin',     fee: 100, detail: 'shared with a student of the same gender', tiers: [[11, 360], [23, 350], [999, 340]] },
+    prms: { option: 'Shared apt Premium \u00b7 single',   label: 'Shared apt Premium, single',   fee: 100, tiers: [[11, 720], [23, 710], [999, 700]] },
+    sup:  { option: 'Shared apt Superior \u00b7 twin',    label: 'Shared apt Superior, twin',    fee: 100, detail: 'shared with a student of the same gender', tiers: [[11, 410], [23, 400], [999, 390]] },
+    sups: { option: 'Shared apt Superior \u00b7 single',  label: 'Shared apt Superior, single',  fee: 100, tiers: [[11, 820], [23, 810], [999, 800]] },
+    hsd:  { option: 'Homestay double \u00b7 breakfast',   label: 'Homestay double, breakfast',   fee: 200, detail: 'breakfast, for two students traveling together', tiers: [[4, 330], [11, 310], [999, 290]] },
+    hss:  { option: 'Homestay single \u00b7 breakfast',   label: 'Homestay single, breakfast',   fee: 200, detail: 'breakfast included', tiers: [[4, 360], [11, 340], [999, 320]] },
+    hsdd: { option: 'Homestay double \u00b7 half board',  label: 'Homestay double, half board',  fee: 200, detail: 'breakfast and dinner, for two students traveling together', tiers: [[4, 360], [11, 340], [999, 320]] },
+    hssd: { option: 'Homestay single \u00b7 half board',  label: 'Homestay single, half board',  fee: 200, detail: 'breakfast and dinner included', tiers: [[4, 390], [11, 370], [999, 350]] },
+    hspb: { option: 'Homestay single \u00b7 private bath', label: 'Homestay single, private bath', fee: 200, detail: 'private bathroom, breakfast and dinner', tiers: [[4, 490], [11, 470], [999, 450]] },
+    hpr:  { option: 'Premium homestay \u00b7 single',     label: 'Premium homestay, single',     fee: 200, detail: 'max. 35 min by bus, breakfast and dinner', tiers: [[4, 490], [11, 470], [999, 450]] },
+    none: { option: 'I arrange my own',              label: 'Own accommodation',            fee: 0,   tiers: [[999, 0]] }
   };
+  const ROOM_ORDER = ['std', 'stds', 'prm', 'prms', 'sup', 'sups', 'hsd', 'hss', 'hsdd', 'hssd', 'hspb', 'hpr', 'none'];
 
   /* Which residences are homestays — drives the meal/diet caveat in note() and nothing else.
      Kept as a set beside ROOMS so adding a residence cannot leave the caveat behind. */
-  var HOMESTAY = { hss: true, hsd: true, hpr: true };
+  const HOMESTAY = { hsd: true, hss: true, hsdd: true, hssd: true, hspb: true, hpr: true };
 
   /* Resolve a flag from the DOM first: the currency menu ships one <img> per currency, so those
      bytes survive bundling. Falls back to the CDN URL when the menu is absent. */
@@ -575,7 +587,8 @@
           courseName: course.name,
           courseRate: h.money(tRate) + '/wk',
           roomNote: hasRoom
-            ? h.money(rRate) + '/wk + ' + h.money(room.fee) + ' placement fee'
+            ? h.money(rRate) + '/wk + ' + h.money(room.fee) + ' placement fee' +
+              (room.detail ? ' \u00b7 ' + room.detail : '')
             : 'No CEL accommodation in this budget',
           visaHint: r.cost === ESTA ? 'US$40.27' : h.money(r.cost),
           visaWhy: ROUTE_WHY[r.key],
@@ -674,6 +687,35 @@
     }
   }
   ensureOptions('calcCourse', COURSE_ORDER, COURSES);
+
+  /* ── Every room type in the ONE accommodation Select (BugHerd #5) ─────
+     The Designer's Select carries seven residences; the price list sells thirteen room
+     options. Same wall as above — options are not writable over MCP — so the list is set
+     here, before mount. Reuses the authored <option> for a known value (its selection
+     survives), creates the missing ones, applies ROOMS[].option as the text and puts them
+     in ROOM_ORDER. An option whose value ROOMS does not know is left in place at the end,
+     never deleted. Running twice changes nothing. */
+  (function () {
+    const el = document.getElementById('calcRoom');
+    if (!el || !el.options) return;
+    const selected = el.value;
+    const have = {};
+    const unknown = [];
+    for (let i = 0; i < el.options.length; i++) {
+      const o = el.options[i];
+      if (o.value && ROOMS[o.value]) have[o.value] = o;
+      else unknown.push(o);
+    }
+    for (let k = 0; k < ROOM_ORDER.length; k++) {
+      const key = ROOM_ORDER[k];
+      const opt = have[key] || document.createElement('option');
+      opt.value = key;
+      if (opt.textContent !== ROOMS[key].option) opt.textContent = ROOMS[key].option;
+      el.appendChild(opt);            /* appendChild MOVES an existing option into order */
+    }
+    for (let u = 0; u < unknown.length; u++) el.appendChild(unknown[u]);
+    if (selected && ROOMS[selected]) el.value = selected;
+  })();
 
   /* The GE24 option's label still reads "· or GE23" on the live page — true when the two
      shared one option, wrong now that GE23 is its own entry with its own ESTA route.
