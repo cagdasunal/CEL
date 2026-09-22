@@ -68,3 +68,38 @@ def test_tm_update_existing_key_does_not_evict(monkeypatch):
     assert len(m) == 2
     assert m.get("a", "de", "v1") == "A2"
     assert m.get("b", "de", "v1") == "B"
+
+
+# --- regressions found while executing the CEL localization plan -------------
+
+def test_prompt_version_changes_the_key():
+    """The locale prompt files carry the register rules. Without this term,
+    swapping *Sie* for *du* in de.md regenerates byte-identical copy and reports
+    success -- the exact way the plan's highest-yield fix would have no-opped."""
+    assert tm_key("hello", "de", "v1", "", "p1") != tm_key("hello", "de", "v1", "", "p2")
+
+
+def test_prompt_version_defaults_are_backward_compatible():
+    assert tm_key("hello", "de", "v1") == tm_key("hello", "de", "v1", "", "")
+
+
+def test_prompt_version_is_actually_wired_through_get_and_put(tmp_path):
+    """A parameter accepted by the signature and dropped before the key is a
+    dead parameter -- it looks fixed and behaves exactly as before."""
+    tm = TranslationMemory(tmp_path / "tm.json")
+    tm.put("hello", "de", "v1", "hallo (old prompt)", prompt_version="p1")
+    assert tm.get("hello", "de", "v1", prompt_version="p1") == "hallo (old prompt)"
+    assert tm.get("hello", "de", "v1", prompt_version="p2") is None
+
+
+def test_nbsp_is_not_collapsed_into_a_plain_space():
+    """Python's \\s matches U+00A0, so a \\s+ normaliser folds these onto one key
+    and serves one translation for both. French requires a non-breaking space
+    before ':' ';' '?' '!' -- the locale with the strictest typography rule is
+    the one such a collision corrupts."""
+    assert tm_key("Tarifs : 100", "fr", "v1") != tm_key("Tarifs : 100", "fr", "v1")
+    assert tm_key("a b", "fr", "v1") != tm_key("a b", "fr", "v1")
+
+
+def test_ascii_whitespace_still_collapses():
+    assert tm_key("hello   world", "de", "v1") == tm_key("hello\n\tworld", "de", "v1")

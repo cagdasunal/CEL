@@ -1568,6 +1568,7 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # block is already translated is rebuilt for FREE; only pages with a new block hit
     # Gemini. Live runs only. Self-fills from each run's model output.
     from tools.summary import block_reuse
+    from tools.summary.prompt_version import prompt_version
     block_tm = None if args.dry_run else TranslationMemory(config.BLOCK_TM_FILE)
 
     # tracker-107: the source text we translate MUST equal what is DEPLOYED on the page
@@ -1632,7 +1633,8 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
                 u_cid = u_parts[2] if len(u_parts) >= 3 else ""
                 en_blocks = structure.summary_page_blocks(u.text)
                 cached = block_reuse.lookup_page_blocks(
-                    en_blocks, locale, block_tm, glossary.version
+                    en_blocks, locale, block_tm, glossary.version,
+                    prompt_version=prompt_version(locale),
                 )
                 if u_cid and cached is not None:
                     reused_block_pairs.append((u_cid, list(zip(en_blocks, cached))))
@@ -1780,7 +1782,9 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             loc_words += sum(len(b.split()) for b in tr_blocks)
             loc_links += _count_internal_md_links(manifest_md)
             # Self-fill the block-TM so these blocks are reused (free) next run.
-            block_reuse.store_page_blocks(block_tm, en_blocks, tr_blocks, locale, glossary.version)
+            block_reuse.store_page_blocks(block_tm, en_blocks, tr_blocks, locale,
+                                          glossary.version,
+                                          prompt_version=prompt_version(locale))
 
         # Block-reused pages (every block already in the block-TM → no Gemini): emit
         # their pairs directly. Each pair is the block's OWN stored translation, so the

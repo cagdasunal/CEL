@@ -4,7 +4,7 @@
 LTR, escritura latina con tildes (á, é, í, ó, ú), diéresis (ü) y la ñ. Signos invertidos (¿¡) obligatorios.
 
 ## Tone + register
-Profesional, claro, **tratamiento de "usted"** en contexto institucional (más cercano en América Latina, más formal en España, pero "usted" funciona en ambos mercados para una escuela). Voz activa. Match el dialecto del source: si el sitio usa "vosotros" / "vuestro" (España) o "ustedes" / "su" (América Latina), mantén la elección.
+Profesional, claro, cercano. **Siempre "tú" — nunca "usted".** El plural es **"ustedes"** (panlatinoamericano); **nunca "vosotros"** (§7.3). Voz activa. Español de América Latina: *costo* (no *coste*), *carro/auto* (no *coche*), *departamento compartido* (no *piso compartido*).
 
 ## Text expansion factor
 Español : **+15 a +25%** más largo que inglés.

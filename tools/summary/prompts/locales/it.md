@@ -4,7 +4,7 @@
 LTR, scrittura latina con accenti gravi (à, è, ì, ò, ù) e acuti (é, ó). Apostrofo tipografico (') per elisioni.
 
 ## Tone + register
-Professionale, caloroso, fluido. **Forma di cortesia "Lei"** per studenti prospettivi su sito istituzionale. "Tu" solo se il source lo stabilisce. Voce attiva; evitare il nominale eccessivo ("la valutazione del livello" → "valutiamo il livello").
+Professionale, caloroso, fluido. **Sempre "tu" — mai la forma di cortesia "Lei"** (§7.5). Voce attiva; evitare il nominale eccessivo ("la valutazione del livello" → "valutiamo il livello").
 
 ## Text expansion factor
 Italiano : **+15 a +20%** più lungo dell'inglese.

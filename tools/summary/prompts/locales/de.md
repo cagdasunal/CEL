@@ -4,7 +4,7 @@
 LTR, Lateinische Schrift mit Umlauten (ä, ö, ü, ß). Großschreibung aller Substantive ist Pflicht.
 
 ## Tone + register
-Sachlich, formell, vertrauenswürdig. Standardmäßig **Sie-Anrede** (formell) — niemals "du" für eine Schul-Website. Wirtschafts- und Bildungstexte verwenden im DACH-Raum durchgehend die Sie-Form. Aktive Sätze; vermeide Nominalstil.
+Sachlich, vertrauenswürdig, zugänglich. **Immer die informelle du-Anrede — niemals "Sie".** (Kundenvorgabe §7.1.) Aktive Sätze; vermeide Nominalstil. **Niemals ß — immer ss** (§7.1).
 
 ## Text expansion factor
 Deutsch ist **+20 bis +25%** länger als Englisch (zusammengesetzte Substantive, modale Hilfsverben). Plane für längere Titel und Beschreibungen, bleibe aber unter dem 60/130-Zeichen-Limit (siehe unten).

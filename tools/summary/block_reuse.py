@@ -25,7 +25,8 @@ Each EN block is only ever stored against its OWN translation (same index, same
 page, same call) and only ever looked up by its own exact text. Blocks are never
 zipped across pages or sources, so the tracker-114 source↔target mis-pairing
 class cannot arise here. The block-TM reuses ``tools.translator.tm`` verbatim
-(``tm_key`` includes locale + glossary_version), so a glossary change still
+(``tm_key`` includes locale + glossary_version + prompt_version), so a glossary or
+locale-prompt change still
 invalidates stale block hits exactly like the page-level TM.
 """
 from __future__ import annotations
@@ -39,6 +40,7 @@ def lookup_page_blocks(
     block_tm,
     glossary_version: str,
     tone: str = "",
+    prompt_version: str = "",
 ) -> Optional[list[str]]:
     """Return stored target blocks for ``en_blocks`` IFF every block is present.
 
@@ -52,7 +54,7 @@ def lookup_page_blocks(
         return None
     out: list[str] = []
     for block in en_blocks:
-        target = block_tm.get(block, locale, glossary_version, tone)
+        target = block_tm.get(block, locale, glossary_version, tone, prompt_version)
         if not target:
             return None
         out.append(target)
@@ -66,6 +68,7 @@ def store_page_blocks(
     locale: str,
     glossary_version: str,
     tone: str = "",
+    prompt_version: str = "",
 ) -> int:
     """Store each ``en_block -> tr_block`` pair for future reuse; return the count
     stored. No-op (returns 0) when ``block_tm`` is falsy, lists are empty, or
@@ -76,6 +79,6 @@ def store_page_blocks(
     stored = 0
     for en, tr in zip(en_blocks, tr_blocks):
         if en.strip() and tr.strip():
-            block_tm.put(en, locale, glossary_version, tr, tone)
+            block_tm.put(en, locale, glossary_version, tr, tone, prompt_version)
             stored += 1
     return stored
