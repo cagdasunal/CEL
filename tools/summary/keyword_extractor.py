@@ -27,7 +27,7 @@ _ENTITY_TERMS = (
     "Cambridge English", "FCE", "CAE", "B2 First",
     "PGWPP", "DLI", "GIC",
     "ACCET", "CEA", "Languages Canada",
-    "San Diego", "Los Angeles", "Vancouver",
+    "San Diego", "Vancouver",
     "California", "British Columbia",
 )
 

@@ -1631,3 +1631,24 @@ def test_resolve_item_locale_blog_language_reference():
     assert cli._resolve_item_locale({}, "native_per_item") == "en"
     # Non-native target (courses/housing summarized in English) → forced en.
     assert cli._resolve_item_locale({"language": fr_id}, "en") == "en"
+
+
+def test_link_candidate_pool_drops_retired_campus_urls():
+    """2026-09-22: CEL no longer operates in Los Angeles. No LA URL — any locale, the LA
+    homestay, LA blog posts — may be offered as a link candidate, for any source."""
+    from tools.summary import llms_parser
+
+    la = [
+        "https://www.englishcollege.com/los-angeles-ca/language-courses",
+        "https://www.englishcollege.com/housing/homestay-los-angeles",
+        "https://www.englishcollege.com/post/things-to-do-in-los-angeles",
+    ]
+    keep = "https://www.englishcollege.com/housing/homestay-san-diego"
+    idx = llms_parser.LlmsIndex(entries=[
+        llms_parser.LlmsEntry(url=u, title="x", description="", section="S", locale="en")
+        for u in la + [keep]
+    ])
+    for ct in ("landing", "housing", "course", "blog_post"):
+        pool = cli._build_link_candidate_pool(ct, idx, "en")
+        assert not [u for u in pool if u in la], f"retired LA URL offered for {ct}: {pool}"
+    assert keep in cli._build_link_candidate_pool("landing", idx, "en")

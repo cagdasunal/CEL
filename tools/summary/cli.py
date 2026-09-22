@@ -2329,8 +2329,10 @@ def _build_link_candidate_pool(
         housing.sort(key=lambda u: 0 if (city in u.lower() or u.rstrip("/").endswith("/housing")) else 1)
     seen: set[str] = set()
     out: list[str] = []
+    from tools.summary.qa import is_retired_campus_link
+
     for u in static + housing + non_housing:
-        if u in seen:
+        if u in seen or is_retired_campus_link(u):
             continue
         seen.add(u)
         out.append(u)

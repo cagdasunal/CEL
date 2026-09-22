@@ -369,6 +369,15 @@ def qa_checks(
         f"external (non-englishcollege.com) link target(s): {external_domain_links}",
     )
 
+    # 21. Retired-campus links — CRITICAL (2026-09-22). CEL no longer operates in Los
+    #     Angeles; a link to an LA page (any locale) or LA content never ships.
+    retired_links = [u for u in target_links if is_retired_campus_link(u)]
+    report.add(
+        "links_no_retired_campus",
+        not retired_links,
+        f"link(s) to a retired campus page: {retired_links}",
+    )
+
     # Aggregate score over the STABLE original-10 set only. The tracker-092
     # guards (checks 11-17) gate `passed` and surface in notes, but they do NOT
     # enter the score — that keeps the audit-phase REGENERATE/MANUAL_REVIEW/KEEP
@@ -384,7 +393,7 @@ def qa_checks(
     critical = {
         "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
         "fact_grounding_prices", "no_faq_schema", "no_link_stuffing",
-        "links_locale_matched", "links_internal_domain",
+        "links_locale_matched", "links_internal_domain", "links_no_retired_campus",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -578,6 +587,14 @@ def _qa_checks_four_part(
         f"external (non-englishcollege.com) link target(s): {external_domain_links}",
     )
 
+    # links_no_retired_campus — CRITICAL (2026-09-22). Same rule as the single-block path.
+    retired_links = [u for u in target_links if is_retired_campus_link(u)]
+    report.add(
+        "links_no_retired_campus",
+        not retired_links,
+        f"link(s) to a retired campus page: {retired_links}",
+    )
+
     scored = [report.checks[c] for c in _SCORED_CHECKS_FOUR_PART if c in report.checks]
     report.score = (sum(scored) / len(scored)) * 100 if scored else 0
     # CRITICAL set for 4-part: AI-tell formatting + the structure invariants the user
@@ -591,7 +608,7 @@ def _qa_checks_four_part(
         "no_em_dashes", "no_lists", "keyword_in_title", "keyword_in_paragraph",
         "fact_grounding_prices", "no_faq_schema", "tagline_word_count",
         "no_links_in_tagline_title", "content_starts_with_h4", "no_link_stuffing",
-        "links_internal_domain",
+        "links_internal_domain", "links_no_retired_campus",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
@@ -763,6 +780,26 @@ def _link_locale_ok(url: str, locale: str) -> bool:
         return first == locale
     # EN: reject any path that starts with another locale's prefix.
     return first not in _PREFIXED_LOCALES
+
+
+# Retired campus (2026-09-22): CEL no longer operates in Los Angeles; its pages 301 to San
+# Diego. A link whose lower-cased URL path CONTAINS one of these never ships. Substring, not
+# segment: it covers the localized LA slugs (/de/los-angeles-ca/sprachkurse,
+# /es/los-angeles-ca/curso-de-ingles, …), the LA homestay (/housing/homestay-los-angeles) and
+# blog slugs about LA. Lives here (qa.py stays config-free); cli's link pool reads it too.
+RETIRED_LINK_PATH_SUBSTRINGS = ("los-angeles",)
+
+
+def is_retired_campus_link(url: str) -> bool:
+    """True if `url` points at a retired campus page (RETIRED_LINK_PATH_SUBSTRINGS).
+
+    Shared by the link-candidate pool (cli) and the critical `links_no_retired_campus`
+    check, so the pool never offers what QA would reject.
+    """
+    import urllib.parse
+
+    path = urllib.parse.urlparse((url or "").strip()).path.lower()
+    return any(s in path for s in RETIRED_LINK_PATH_SUBSTRINGS)
 
 
 def _link_internal_domain_ok(url: str) -> bool:

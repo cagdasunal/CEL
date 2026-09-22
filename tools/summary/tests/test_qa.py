@@ -772,3 +772,68 @@ def test_links_target_locale():
     assert not ok and bad == ["https://claude.ai/y"]
     # No links → passes.
     assert links_target_locale("no links here", "de") == (True, [])
+
+
+# ---- 2026-09-22: retired campus (Los Angeles) links never ship ----
+#
+# CEL no longer operates in Los Angeles; its pages 301 to San Diego. A summary linking any
+# LA page — in any locale — or LA content is a CRITICAL fail, under both structures.
+
+
+def test_is_retired_campus_link_covers_every_la_slug():
+    from tools.summary.qa import is_retired_campus_link
+
+    for url in (
+        "https://www.englishcollege.com/los-angeles-ca/language-courses",
+        "/los-angeles-ca/language-courses",
+        "https://www.englishcollege.com/de/los-angeles-ca/sprachkurse",
+        "https://www.englishcollege.com/es/los-angeles-ca/curso-de-ingles",
+        "https://www.englishcollege.com/pt/los-angeles-ca/curso-de-ingles",
+        "https://www.englishcollege.com/fr/los-angeles-ca/cours-de-langues",
+        "https://www.englishcollege.com/it/los-angeles-ca/corsi-di-lingua",
+        "https://www.englishcollege.com/housing/homestay-los-angeles",
+        "https://www.englishcollege.com/post/things-to-do-in-los-angeles",
+    ):
+        assert is_retired_campus_link(url), url
+    for url in (
+        "https://www.englishcollege.com/san-diego-ca/language-school",
+        "https://www.englishcollege.com/vancouver",
+        "https://www.englishcollege.com/housing/homestay-san-diego",
+        "",
+    ):
+        assert not is_retired_campus_link(url), url
+
+
+def test_retired_campus_link_is_critical_single_block():
+    draft = _PASSING_DRAFT.replace(
+        "https://www.englishcollege.com/vancouver",
+        "https://www.englishcollege.com/los-angeles-ca/language-courses",
+    )
+    assert draft != _PASSING_DRAFT, "fixture no longer carries the link this test swaps"
+    report = qa_checks(draft, _PRIMARY_KW, "en", [])
+    assert not report.checks["links_no_retired_campus"], report.notes
+    assert not report.passed
+
+
+def test_retired_campus_link_is_critical_four_part():
+    draft = _FOUR_PART_PASS.replace(
+        "https://www.englishcollege.com/vancouver",
+        "https://www.englishcollege.com/de/los-angeles-ca/sprachkurse",
+    )
+    assert draft != _FOUR_PART_PASS, "fixture no longer carries the link this test swaps"
+    r = qa_checks(
+        draft, _FP_KW, "en", [],
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert not r.checks["links_no_retired_campus"], r.notes
+    assert not r.passed
+
+
+def test_passing_drafts_satisfy_retired_campus_check():
+    single = qa_checks(_PASSING_DRAFT, _PRIMARY_KW, "en", _INVENTORY)
+    assert single.checks["links_no_retired_campus"] and single.passed, single.notes
+    four = qa_checks(
+        _FOUR_PART_PASS, _FP_KW, "en", _FP_INV,
+        excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
+    )
+    assert four.checks["links_no_retired_campus"], four.notes
