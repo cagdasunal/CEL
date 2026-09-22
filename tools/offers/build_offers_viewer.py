@@ -46,11 +46,11 @@ OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "offers" / "index.html"
 
 DEFAULT_EXTEND_DAYS = 14
 
-# Campus collection ID → display name (sites/cel/docs/offers/cms.md)
+# Campus collection ID → display name (sites/cel/docs/offers/cms.md).
+# Los Angeles (69284a28e38a8c5f736359cb) closed 2026-09-22; its offers were archived.
 CAMPUS_NAMES: dict[str, str] = {
     "69284a1fdd88ce50865499ee": "San Diego",
     "69284a3658a8a030e4124ff6": "Vancouver",
-    "69284a28e38a8c5f736359cb": "Los Angeles",
 }
 
 def _load_country_names() -> dict[str, str]:
@@ -263,6 +263,9 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
         items = []
     if log_events is None:
         log_events = []
+    # Archived items are out of the collection (auto_extend skips them too) — e.g. the
+    # 13 Los Angeles offers archived 2026-09-22 until the operator deletes them.
+    items = [i for i in items if not i.get("isArchived")]
 
     # Status banner
     last_ts = log_events[-1].get("ts") if log_events else None

@@ -25,7 +25,7 @@ from pathlib import Path
 
 from tools.offers._log import append_event
 
-VALID_REGIONS = {"offers", "sandiego", "losangeles", "vancouver", "usa", "canada"}
+VALID_REGIONS = {"offers", "sandiego", "vancouver", "usa", "canada"}  # losangeles retired 2026-09-22
 VALID_CSV_RE = re.compile(r"^[A-Z]{2}(,[A-Z]{2})*$")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

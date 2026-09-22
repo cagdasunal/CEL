@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       region:
-        description: 'Region key (offers, sandiego, losangeles, vancouver, usa, canada)'
+        description: 'Region key (offers, sandiego, vancouver, usa, canada)'
         required: true
         type: string
       countries:

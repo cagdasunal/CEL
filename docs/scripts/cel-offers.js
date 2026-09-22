@@ -49,8 +49,21 @@
  *   - Geotargetly install snippet — stays in Webflow Site Settings → Head.
  *   - dayjs + dayjs/utc + dayjs/duration — only needed by v1.2.0.
  *
- * Version: 1.6.0
- * Last update: 2026-07-10
+ * Version: 1.7.0
+ * Last update: 2026-09-22
+ *
+ * v1.7.0 (2026-09-22): Los Angeles removed — CEL no longer runs the LA campus and
+ *                      its 13 offers left the CMS the same day. Section 1: the
+ *                      `losangeles` region is gone (no element on the site carries
+ *                      data-geo="losangeles"; the only matches are two inert
+ *                      selectors in the Site Settings head CSS), and `usa` drops the
+ *                      15 countries it held only for LA offers (AD,AT,DE,DK,FI,GR,IS,
+ *                      KU,LI,LU,NL,NO,PT,SE,SM) — otherwise /learn-english-usa showed
+ *                      them its "Special Offers for USA" section with no card in it.
+ *                      `usa` is now exactly the countries a San Diego offer targets.
+ *                      Section 5: `losangeles` left ORDER/ALIASES; the sequence is
+ *                      Vancouver then San Diego, and a stray LA card would still sort
+ *                      last (UNKNOWN), where it sorted before.
  *
  * v1.6.0 (2026-07-10): Section 5 added — campus display-order sort. Renders the
  *                      offer grid in a fixed campus sequence Vancouver, San Diego,
@@ -308,12 +321,8 @@
       countries: "AE,AL,AM,AR,AZ,BA,BD,BE,BG,BH,BO,BR,BZ,CL,CN,CO,CR,CU,CY,CZ,DO,DZ,EC,EE,EG,ES,FR,GE,GT,HN,HR,HT,ID,IQ,IR,IT,JM,JO,JP,KG,KH,KR,KW,KZ,LB,LT,LV,MD,ME,MK,MN,MX,MY,NI,OM,PA,PE,PL,PY,QA,RO,RS,RU,SA,SI,SK,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE",
       action: 'show'
     },
-    'losangeles': {
-      countries: "AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE",
-      action: 'show'
-    },
     'usa': {
-      countries: "AD,AE,AL,AM,AR,AT,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CL,CN,CO,CR,CU,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,FI,FR,GE,GR,GT,HN,HR,HT,ID,IQ,IR,IS,IT,JM,JO,JP,KG,KH,KR,KU,KW,KZ,LB,LI,LT,LU,LV,MD,ME,MK,MN,MX,MY,NI,NL,NO,OM,PA,PE,PL,PT,PY,QA,RO,RS,RU,SA,SE,SI,SK,SM,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE",
+      countries: "AE,AL,AM,AR,AZ,BA,BD,BE,BG,BH,BO,BR,BY,BZ,CL,CN,CO,CR,CU,CY,CZ,DO,DZ,EC,EE,EG,ES,FR,GE,GT,HN,HR,HT,ID,IQ,IR,IT,JM,JO,JP,KG,KH,KR,KW,KZ,LB,LT,LV,MD,ME,MK,MN,MX,MY,NI,OM,PA,PE,PL,PY,QA,RO,RS,RU,SA,SI,SK,SV,TH,TJ,TR,TW,UA,UY,VE,VN,YE",
       action: 'show'
     },
     'vancouver': {
@@ -786,17 +795,17 @@
 /* ============================================================
  * Section 5 — campus display-order sort (v1.6.0)
  * ============================================================
- * Renders the offer grid in the fixed campus sequence Vancouver, San Diego,
- * Los Angeles. Any campus with no cards on the page is skipped, so the sequence
- * degrades cleanly to any subset (Vancouver -> Los Angeles, San Diego alone,
- * none). Cards of an unrecognised campus keep their CMS order and sort after
- * every known campus, so a fourth school can be added to the CMS without this
- * section breaking.
+ * Renders the offer grid in the fixed campus sequence Vancouver, San Diego
+ * (Los Angeles closed 2026-09 and left the sequence in v1.7.0). Any campus with
+ * no cards on the page is skipped, so the sequence degrades cleanly to any
+ * subset (Vancouver alone, San Diego alone, none). Cards of an unrecognised
+ * campus keep their CMS order and sort after every known campus, so a new
+ * school can be added to the CMS without this section breaking.
  *
  * SIGNAL PRIORITY (per card):
  *   1. `data-campus` attribute — added to the Offers CMS collection 2026-07-10.
  *      Webflow renders it verbatim and Weglot does NOT translate data-* attrs,
- *      so it stays "Los Angeles"/"San Diego"/"Vancouver" on every locale
+ *      so it stays "San Diego"/"Vancouver" on every locale
  *      (verified ko/ja/ar/es/de). The robust, locale-stable primary signal.
  *   2. The visible `.offer-bento_location` badge — Weglot-translated, but every
  *      localised string is in the alias table below. This is the SOLE signal on
@@ -827,14 +836,13 @@
 
   /* The spec. Reorder this array, drop a campus, or append one, and the grid
    * follows — no other change needed. */
-  const ORDER = ['vancouver', 'sandiego', 'losangeles'];
+  const ORDER = ['vancouver', 'sandiego'];
 
   /* Every string a live locale can render for each campus badge. "Pacific
    * Beach" is CEL's San Diego campus name and appears in some image filenames. */
   const ALIASES = {
     vancouver:  ['Vancouver', '밴쿠버', 'バンクーバー', 'فانكوفر'],
-    sandiego:   ['San Diego', 'Pacific Beach', '샌디에이고', 'サンディエゴ', 'سان دييغو'],
-    losangeles: ['Los Angeles', 'Los Ángeles', '로스앤젤레스', 'ロサンゼルス', 'لوس أنجلوس']
+    sandiego:   ['San Diego', 'Pacific Beach', '샌디에이고', 'サンディエゴ', 'سان دييغو']
   };
 
   const ITEM_SELECTOR  = '.offer_item, .offer-item';
@@ -842,8 +850,8 @@
   const CAMPUS_ATTRS   = ['data-campus'];
   const SWIPER_SKIP    = '.swiper, .swiper-wrapper, .w-slider, .w-slider-mask';
 
-  /* Fold a label to bare lowercase letters/digits so "Los Ángeles",
-   * "LOS ANGELES" and "CEL%20Los%20Angeles.avif" all contain `losangeles`.
+  /* Fold a label to bare lowercase letters/digits so "San Diego",
+   * "SAN DIEGO" and "CEL%20San%20Diego.avif" all contain `sandiego`.
    * NFKD + combining-mark removal also strips the Arabic hamza (أ -> ا) and the
    * Japanese dakuten (ゼ -> セ); aliases go through the same function, so both
    * sides always agree. */
