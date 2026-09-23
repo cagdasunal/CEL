@@ -1077,25 +1077,41 @@
   .desk-btn.is-flagged { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
 
   /* Rows. Dense on purpose -- this is a few hundred rows of triage, not a form. */
-  /* A machine proposal sits BESIDE what it would replace, never on top of it --
-     accepting without seeing what is being replaced is not review. */
-  .desk-proposed {
-    display: block; margin-top: 6px; padding: 7px 10px;
-    background: rgba(93,96,238,0.08); border-left: 3px solid var(--accent);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  /* Why this row is worth a second look. Advice, so it is quiet: one line, warm
+     colour, under the text it is about. It never proposes a replacement. */
+  .desk-why {
+    margin: 5px 0 0; font-size: var(--fs-sm); color: var(--notice-fg);
+    padding-left: 16px; position: relative;
   }
-  .desk-proposed[hidden] { display: none; }
-  .desk-proposed-label {
-    display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em;
-    text-transform: uppercase; color: var(--accent); margin-bottom: 2px;
+  .desk-why::before {
+    content: "!"; position: absolute; left: 0; top: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 12px; height: 12px; margin-top: 3px; border-radius: 50%;
+    background: var(--warn); color: var(--bg);
+    font-size: 9px; font-weight: 700; line-height: 1;
   }
-  .desk-proposed-text { display: block; }
-  .desk-row.is-proposed > td { background: rgba(93,96,238,0.04); }
-  .badge-proposed {
-    display: inline-block; border-radius: 3px; padding: 1px 6px;
-    font-size: var(--fs-xs); font-weight: 600;
-    background: rgba(93,96,238,0.14); color: var(--accent);
+
+  /* Language strip. Switching language while keeping the page, filter and search is
+     the reviewer's most frequent move; it used to mean a trip back to the index. */
+  .desk-locales-strip { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0 10px; }
+  .desk-loc {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 5px 12px; border-radius: 999px; text-decoration: none;
+    border: 1px solid transparent; color: var(--muted); font-size: var(--fs-sm);
   }
+  .desk-loc:hover { background: var(--stripe); color: var(--fg); }
+  .desk-loc:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  .desk-loc.is-active { background: var(--accent); color: #fff; font-weight: 600; }
+  .desk-loc.is-active .desk-loc-name { color: rgba(255,255,255,0.85); }
+  .desk-loc-code { text-transform: uppercase; font-weight: 600; letter-spacing: 0.03em; }
+  .desk-loc-name { font-size: var(--fs-xs); }
+  .desk-loc-flag {
+    font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 0 5px; border-radius: 999px; background: var(--border); color: var(--fg);
+  }
+  .desk-loc-flag[hidden] { display: none; }
+  .desk-loc.is-active .desk-loc-flag { background: rgba(255,255,255,0.25); color: #fff; }
+  @media (max-width: 720px) { .desk-loc-name { display: none; } }
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
   .desk-row.is-done { opacity: 0.55; }
