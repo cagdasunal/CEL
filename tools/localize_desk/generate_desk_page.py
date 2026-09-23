@@ -510,6 +510,8 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('        <span class="desk-savebar-spacer"></span>')
     parts.append('        <button type="button" class="desk-btn" id="open-draft">Review re-translate tray</button>')
     parts.append('        <button type="button" class="desk-btn" id="open-csv">Review CSV tray</button>')
+    parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden>Save</button>')
+    parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
     parts.append("      </div>")
     parts.append("    </div>")
 
@@ -732,9 +734,12 @@ def _desk_js(code: str, rtl: bool) -> str:
     function paintBar() {
       var c = counts();
       var n = pickedIds().length;
+      var unsaved = delta().n;
       selCount.textContent = n;
       barSelect.hidden = n === 0;
-      barTrays.hidden = (c.csv + c.draft) === 0;
+      // Clearing every decision leaves both trays empty and is still unsaved work,
+      // so the row has to survive an empty tray count.
+      barTrays.hidden = (c.csv + c.draft) === 0 && unsaved === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
       if (c.csv) bits.push(c.csv + ' ready for CSV');
@@ -742,6 +747,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       trayLine.textContent = bits.join('  ·  ');
       document.getElementById('open-csv').disabled = !c.csv;
       document.getElementById('open-draft').disabled = !c.draft;
+      paintSave();
     }
 
     // ── Filters ────────────────────────────────────────────────────────
@@ -1092,6 +1098,138 @@ def _desk_js(code: str, rtl: bool) -> str:
     window.deskIngest = ingest;
 
 
+    // ── Saving ─────────────────────────────────────────────────────────
+    // `saved` is what the repo is known to hold. Everything that differs from it is
+    // unsaved work, and only the difference is sent -- a whole locale is ~40 KB base64
+    // against a 65 KB workflow_dispatch ceiling, and sending deltas also means two
+    // people reviewing different pages of one language merge instead of clobbering.
+    var SAVEDKEY = 'cel-desk-saved-' + CODE;
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(SAVEDKEY) || '{}') || {}; } catch (e) { saved = {}; }
+
+    var btnSave = document.getElementById('btn-save');
+    var saveStatus = document.getElementById('save-status');
+    var saving = false;
+
+    function sameDecision(a, b) {
+      if (!a && !b) return true;
+      if (!a || !b) return false;
+      return a.tray === b.tray && a.text === b.text &&
+             JSON.stringify(a.rejected || null) === JSON.stringify(b.rejected || null);
+    }
+
+    function delta() {
+      var out = {}, n = 0;
+      var ids = {};
+      for (var k in state) ids[k] = 1;
+      for (var k2 in saved) ids[k2] = 1;
+      for (var uid in ids) {
+        var mine = state[uid] && state[uid].tray ? state[uid] : null;
+        var theirs = saved[uid] || null;
+        if (sameDecision(mine, theirs)) continue;
+        // null is how the server is told to forget a unit.
+        out[uid] = mine ? { tray: mine.tray, text: mine.text, rejected: mine.rejected } : null;
+        n++;
+      }
+      return { body: out, n: n };
+    }
+
+    function paintSave() {
+      var d = delta();
+      btnSave.hidden = d.n === 0 || saving;
+      btnSave.textContent = 'Save ' + d.n + (d.n === 1 ? ' change' : ' changes');
+      btnSave.disabled = saving;
+    }
+
+    async function encodePayload(body) {
+      var doc = { schema: 'cel-localization-desk/1', locale: CODE, decisions: body };
+      var bytes = new TextEncoder().encode(JSON.stringify(doc));
+      var gz = new Response(
+        new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))
+      );
+      var buf = new Uint8Array(await gz.arrayBuffer());
+      var bin = '';
+      for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+      return btoa(bin);
+    }
+
+    function callProxy(payload) {
+      var url = window.CEL_DISPATCH_URL;
+      if (!url) return Promise.reject(new Error('Saving is not configured on this site yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (resp) {
+        return resp.json().catch(function () { return {}; }).then(function (j) {
+          return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+        });
+      });
+    }
+
+    function awaitRun(workflow) {
+      var start = Date.now();
+      function tick() {
+        return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
+          var run = r.ok && r.body && r.body.run ? r.body.run : null;
+          if (run && run.status === 'completed') return run;
+          if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
+          saveStatus.textContent = run ? run.status + '…' : 'queueing…';
+          return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
+        });
+      }
+      return tick();
+    }
+
+    async function save() {
+      if (saving) return;                    // one save in flight, never two
+      var d = delta();
+      if (!d.n) return;
+      saving = true; paintSave();
+      saveStatus.textContent = 'saving…';
+      saveStatus.className = 'desk-status';
+      var snapshot = JSON.parse(JSON.stringify(state));   // what this save covers
+      try {
+        var payload = await encodePayload(d.body);
+        var r = await callProxy({
+          action: 'dispatch', workflow: 'localization-save.yml',
+          inputs: { locale: CODE, payload: payload }
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
+        var run = await awaitRun('localization-save.yml');
+        if (!run) throw new Error('timed out waiting for the run');
+        if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
+
+        // Only now is the repo known to hold it. Recording `saved` from the SNAPSHOT
+        // rather than from current state keeps anything decided mid-save unsaved,
+        // instead of marking it clean without ever having sent it.
+        var nextSaved = {};
+        for (var uid in snapshot) {
+          if (snapshot[uid] && snapshot[uid].tray) nextSaved[uid] = snapshot[uid];
+        }
+        saved = nextSaved;
+        try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
+        note('save', null, String(d.n), null);
+        saveStatus.textContent = '';
+        toast('Saved ' + d.n + (d.n === 1 ? ' change' : ' changes'), {
+          level: 'ok', detail: 'Your work is in the repository now.'
+        });
+      } catch (err) {
+        saveStatus.textContent = 'not saved';
+        saveStatus.className = 'desk-status is-error';
+        note('save-failed', null, err.message, null);
+        toast('Could not save', {
+          level: 'err',
+          detail: err.message + ' — your decisions are still here; try again.'
+        });
+      } finally {
+        saving = false; paintSave();
+      }
+    }
+    btnSave.addEventListener('click', save);
+
     // ── Toasts ─────────────────────────────────────────────────────────
     // Confirmation for things that already happen and currently say nothing:
     // approving 48 rows in one click gave no feedback at all. Errors stay until
@@ -1186,8 +1324,30 @@ def _desk_js(code: str, rtl: bool) -> str:
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
-      .then(function (units) {
+      .then(async function (units) {
         buildRows(units);
+        // What the repo holds is the baseline. Anything decided in THIS browser and
+        // not yet saved stays exactly as it is and still counts as unsaved -- the
+        // server copy fills in only the units this browser has never touched, which
+        // is what makes a second machine useful instead of blank.
+        try {
+          var dr = await fetch('decisions.json', { cache: 'no-cache' });
+          if (dr.ok) {
+            var ddoc = await dr.json();
+            var server = (ddoc && ddoc.decisions) || {};
+            var adopted = 0;
+            for (var uid in server) {
+              if (!server[uid] || !server[uid].tray) continue;
+              saved[uid] = server[uid];
+              if (!state[uid] || !state[uid].tray) { state[uid] = JSON.parse(JSON.stringify(server[uid])); adopted++; }
+            }
+            try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
+            persist();
+            if (adopted) note('adopted', null, String(adopted), null);
+          }
+        } catch (e) {
+          // No decisions file yet is the normal first-run case, not an error.
+        }
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
