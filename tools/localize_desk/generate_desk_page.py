@@ -113,9 +113,12 @@ def load_units() -> list[dict]:
     unioned so the page filter still finds it from either page.
     """
     by_id: dict[str, dict] = {}
+    in_scope: set[str] = set()
     for path in sorted(UNITS_DIR.glob("*.json")):
         doc = json.loads(path.read_text(encoding="utf-8"))
         page = doc["page"]
+        if doc.get("path"):
+            in_scope.add(doc["path"])
         for unit in doc["units"]:
             if unit.get("noise") or unit.get("summary_owned"):
                 continue
@@ -127,6 +130,15 @@ def load_units() -> list[dict]:
                 by_id[uid] = unit
             else:
                 existing["_pages"].add(page)
+    # A unit's `pages` is every page on the SITE that carries the same English (the
+    # manifest reads it from the site index, and it agrees with gate 12's
+    # `outside_scope` on all 1,246 units). Weglot keeps one translation per English
+    # string, so a wording approved here would change those pages too -- which is
+    # exactly why gate 12 refuses it. 254 of the 823 importable units per locale are
+    # like that, and the desk used to present them as ordinary rows: approvals that
+    # could never reach a file.
+    for unit in by_id.values():
+        unit["_outside"] = sorted(p for p in unit.get("pages") or [] if p not in in_scope)
     return list(by_id.values())
 
 
@@ -155,7 +167,28 @@ def locale_payload(code: str, units: list[dict]) -> list[dict]:
         # git re-stores on every rebuild.
         if level == LEVEL_CHECK:
             row["why"] = why
+        outside = unit.get("_outside") or []
+        if outside:
+            row["shared"] = len(outside)
+            row["sharedEg"] = outside[0]
         out.append(row)
+    return out
+
+
+def worth_a_look(code: str, units: list[dict]) -> list[str]:
+    """Unit ids the desk puts in "Worth a look first" for one locale.
+
+    One definition, used by the locale page's filter, its language-tab badges and the
+    index card, so the three cannot disagree. A site-wide row is not in it: a finding
+    on it is real, but no decision made here can reach the website (gate 12).
+    """
+    out = []
+    for unit in units:
+        current = (unit.get("current") or {}).get(code)
+        if not current or unit.get("_outside"):
+            continue
+        if recommend(unit["word_from"], current.get("word_to", ""), code)[0] == LEVEL_CHECK:
+            out.append(unit["unit_id"])
     return out
 
 
@@ -296,12 +329,7 @@ def render_index(units: list[dict]) -> str:
         # The recommendation count is the only number that is useful on a FIRST visit:
         # decisions all start at zero, so without this every card said the same thing
         # and the index answered nothing.
-        flagged = sum(
-            1 for u in units
-            if (u.get("current") or {}).get(code)
-            and recommend(u["word_from"],
-                          (u["current"][code] or {}).get("word_to", ""), code)[0] == LEVEL_CHECK
-        )
+        flagged = len(worth_a_look(code, units))
         parts.append(
             f'        <div class="desk-locale-card" data-locale="{code}" '
             f'data-name="{escape(name)}" '
@@ -332,14 +360,45 @@ def render_index(units: list[dict]) -> str:
     )
     parts.append("    </main>")
     parts.append("  </div>")
-    parts.append(_index_js())
+    parts.append(_index_js(_worth_js(units)))
     parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
 
 
-def _index_js() -> str:
+# The ONE decider of what a row is (process doc §1). It is emitted into the locale
+# pages AND the index from this single string: the index used to carry its own copy
+# that knew nothing about `liveAt`/`exportedAt`, so the two pages could disagree about
+# the same record.
+_STAGE_JS = """\
+    function stageOf(s) {
+      s = s || {};
+      // A live row the reviewer has decided about again is NOT live any more from
+      // their point of view -- the new decision is what is outstanding. So anything
+      // in flight or freshly decided outranks where the text currently sits.
+      if (s.failed) return 'failed';
+      if (s.sentAt && !s.arrivedAt) return 'sending';
+      if (s.arrivedAt && !s.tray) return 'arrived';
+      if (s.tray === 'draft') return 'queued';
+      if (s.tray === 'csv') {
+        if (s.liveAt) return 'live';          // confirmed on the site by reconciliation
+        if (s.exportedAt) return 'exported';  // in a file, waiting to be imported
+        return s.text != null ? 'edited' : 'approved';
+      }
+      if (s.liveAt) return 'live';
+      return 'todo';
+    }
+"""
+
+
+def _worth_js(units: list[dict]) -> str:
+    """`{locale: [unit ids worth a look]}` for every locale, as a JS literal."""
+    return json.dumps({c: worth_a_look(c, units) for c, *_ in LOCALES},
+                      separators=(",", ":"))
+
+
+def _index_js(worth_js: str = "{}") -> str:
     """Fill each card's progress and tray chips from that locale's saved decisions.
 
     The server cannot know any of this -- decisions live in the reviewer's browser --
@@ -354,6 +413,8 @@ def _index_js() -> str:
   <script>
   (function () {
     'use strict';
+    var WORTH = __WORTH__;
+__STAGE_JS__
     function read(code) {
       try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
       catch (e) { return {}; }
@@ -368,21 +429,23 @@ def _index_js() -> str:
     Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), function (card) {
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
-      // Same stages the desk itself uses, so the index cannot disagree with the page
-      // it links to.
+      // The desk's own stageOf(), emitted from the same string, so the index cannot
+      // disagree with the page it links to.
       var st = read(code);
-      var csv = 0, draft = 0, arrived = 0, sending = 0, failed = 0;
+      var csv = 0, draft = 0, arrived = 0, sending = 0, failed = 0, done = 0;
       for (var k in st) {
-        var v = st[k];
-        if (!v) continue;
-        if (v.failed) { failed++; continue; }
-        if (v.sentAt && !v.arrivedAt) { sending++; continue; }
-        if (v.arrivedAt && !v.tray) { arrived++; continue; }
-        if (v.tray === 'csv') csv++;
-        else if (v.tray === 'draft') draft++;
+        var stg = stageOf(st[k]);
+        if (stg === 'todo') continue;
+        done++;
+        if (stg === 'failed') failed++;
+        else if (stg === 'sending') sending++;
+        else if (stg === 'arrived') arrived++;
+        else if (stg === 'approved' || stg === 'edited') csv++;
+        else if (stg === 'queued') draft++;
       }
-      var done = csv + draft;
-      var flagged = parseInt(card.getAttribute('data-flagged'), 10) || 0;
+      var flagged = (WORTH[code] || []).filter(function (uid) {
+        return stageOf(st[uid]) === 'todo';
+      }).length;
       var pct = total ? Math.round(100 * done / total) : 0;
       card.querySelector('.desk-meter-fill').style.width = pct + '%';
       // Once there is progress, progress is the more useful number; before that, the
@@ -436,7 +499,7 @@ def _index_js() -> str:
     });
   })();
   </script>
-"""
+""".replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js)
 
 
 def render_locale(code: str, name: str, endonym: str, direction: str,
@@ -574,14 +637,14 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>')
     parts.append(HOW_MODAL)
     parts.append(REVIEW_MODAL)
-    parts.append(_desk_js(code, direction == "rtl"))
+    parts.append(_desk_js(code, direction == "rtl", _worth_js(units)))
     parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
 
 
-def _desk_js(code: str, rtl: bool) -> str:
+def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
     """Per-locale desk behaviour. IIFE, no globals but the debug hook, no framework."""
     return """\
   <script>
@@ -647,6 +710,9 @@ def _desk_js(code: str, rtl: bool) -> str:
     }
 
     var LOCALES = __LOCALES__;
+    // Per locale, the ids "Worth a look first" starts from -- the same list the index
+    // card counts, so a tab badge, the filter and the index say one number.
+    var WORTH = __WORTH__;
     var CODE = '__CODE__';
     var KEY = 'cel-desk-' + CODE;
     var LOGKEY = 'cel-desk-log-' + CODE;
@@ -654,6 +720,11 @@ def _desk_js(code: str, rtl: bool) -> str:
     var RTL = __RTL__;
 
     var state = {};
+    // What the website serves for each row, as loaded -- never what is on screen. The
+    // `.desk-live` span shows the reviewer's edit when there is one, and reading the
+    // wording back from it recorded a DISCARDED edit as the text an approval was given
+    // to (audit 2026-09-23): export then refused the row as "moved since approval".
+    var liveText = Object.create(null);
     try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
     var hist = [];
     try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
@@ -724,7 +795,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       s.at = new Date().toISOString();
       if (s.text == null) {
         // A bare approval: record the live wording it was given to.
-        s.approvedAgainst = tr.querySelector('.desk-live').textContent;
+        s.approvedAgainst = liveText[uid];
       }
     }
 
@@ -759,9 +830,13 @@ def _desk_js(code: str, rtl: bool) -> str:
         var tr = document.createElement('tr');
         tr.className = 'desk-row';
         tr.setAttribute('data-uid', u.id);
+        liveText[u.id] = u.tgt;
         tr.setAttribute('data-pages', u.pages.join(' '));
         tr.setAttribute('data-q', (u.src + ' ' + u.tgt).toLowerCase());
-        if (u.why) tr.setAttribute('data-why', '1');
+        // A site-wide row keeps its finding on screen but is not "worth a look first":
+        // nothing decided here can reach the website for it (see `shared` below).
+        if (u.why && !u.shared) tr.setAttribute('data-why', '1');
+        if (u.shared) tr.setAttribute('data-shared', String(u.shared));
 
         var tdPick = document.createElement('td');
         tdPick.className = 'desk-col-pick';
@@ -790,6 +865,11 @@ def _desk_js(code: str, rtl: bool) -> str:
         if (RTL) tdTgt.setAttribute('dir', 'rtl');
         var live = document.createElement('span');
         live.className = 'desk-live';
+        // `auto`, not the column's rtl: an English string in the Arabic column was laid
+        // out right-to-left, so "5 Things That Surprise..." read "Things That
+        // Surprise... 5" and a sentence's full stop jumped to the front. The reviewer
+        // was being shown a defect that is not on the website.
+        live.setAttribute('dir', 'auto');
         live.textContent = u.tgt;
         // The recommendation is advice, not an action: it says why a row is worth a
         // second look and does nothing else. Computed at build time from the text
@@ -798,7 +878,22 @@ def _desk_js(code: str, rtl: bool) -> str:
         if (u.why) {
           why = document.createElement('p');
           why.className = 'desk-why';
+          why.setAttribute('dir', 'auto');   // English advice in an RTL column
           why.textContent = u.why;
+        }
+        // Weglot keeps ONE translation per English string, so this wording is also the
+        // wording on those other pages -- and gate 12 keeps it out of the import file
+        // for exactly that reason. Say so where the decision is made, in what-happens-
+        // next words, instead of letting an approval disappear at export.
+        var shared = null;
+        if (u.shared) {
+          shared = document.createElement('p');
+          shared.className = 'desk-shared';
+          shared.setAttribute('dir', 'auto');
+          var eg = u.sharedEg === '/' ? 'the home page' : u.sharedEg;
+          shared.textContent = 'Shared with ' + u.shared + (u.shared === 1 ? ' other page' : ' other pages') +
+            ' (' + eg + (u.shared > 1 ? ', …' : '') + '). Weglot keeps one wording for all of ' +
+            'them, so a decision here cannot reach the website yet.';
         }
         var editWrap = document.createElement('div');
         editWrap.className = 'desk-editor';
@@ -806,6 +901,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         var ta = document.createElement('textarea');
         ta.className = 'desk-edit';
         ta.setAttribute('aria-label', 'Your wording');
+        ta.setAttribute('dir', 'auto');
         ta.value = u.tgt;
         // Seeded here as well as on open, so `editorDirty` answers honestly for a
         // box the reviewer never touched. Without it a never-opened editor reads
@@ -834,6 +930,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         editWrap.appendChild(editBar);
         tdTgt.appendChild(live);
         if (why) tdTgt.appendChild(why);
+        if (shared) tdTgt.appendChild(shared);
         tdTgt.appendChild(editWrap);
 
         var tdState = document.createElement('td');
@@ -886,23 +983,8 @@ def _desk_js(code: str, rtl: bool) -> str:
     //   queued        marked for a new translation, NOT sent yet
     //   sending       sent to Gemini, waiting
     //   failed        Gemini could not do it
-    function stage(uid) {
-      var s = state[uid] || {};
-      // A live row the reviewer has decided about again is NOT live any more from
-      // their point of view -- the new decision is what is outstanding. So anything
-      // in flight or freshly decided outranks where the text currently sits.
-      if (s.failed) return 'failed';
-      if (s.sentAt && !s.arrivedAt) return 'sending';
-      if (s.arrivedAt && !s.tray) return 'arrived';
-      if (s.tray === 'draft') return 'queued';
-      if (s.tray === 'csv') {
-        if (s.liveAt) return 'live';          // confirmed on the site by reconciliation
-        if (s.exportedAt) return 'exported';  // in a file, waiting to be imported
-        return s.text != null ? 'edited' : 'approved';
-      }
-      if (s.liveAt) return 'live';
-      return 'todo';
-    }
+__STAGE_JS__
+    function stage(uid) { return stageOf(state[uid]); }
 
     var STAGE_BADGE = {
       todo:     ['Not reviewed', 'badge-partial'],
@@ -963,10 +1045,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       var cb = tr.querySelector('[data-pick]');
       if (cb) cb.checked = !!picked[uid];
 
-      if (s.text != null) {
-        var live = tr.querySelector('.desk-live');
-        if (live.textContent !== s.text) live.textContent = s.text;
-      }
+      // The reviewer's wording while there is one; the website's again once it is cleared.
+      var live = tr.querySelector('.desk-live');
+      var shown = s.text != null ? s.text : liveText[uid];
+      if (live.textContent !== shown) live.textContent = shown;
     }
 
     function counts() {
@@ -982,6 +1064,7 @@ def _desk_js(code: str, rtl: bool) -> str:
     function pickedIds() { return Object.keys(picked); }
 
     function paintBar() {
+      paintLocaleCounts();
       var c = counts();
       var n = pickedIds().length;
       var all = unsavedByLocale();
@@ -1153,7 +1236,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       if (open) {
         var uid = tr.getAttribute('data-uid');
         var s = state[uid] || {};
-        ta.value = s.text != null ? s.text : live.textContent;
+        ta.value = s.text != null ? s.text : liveText[uid];
         ta.setAttribute('data-opened-with', ta.value);
         wrap.hidden = false;
         live.hidden = true;
@@ -1181,11 +1264,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       var tr = ta.closest('.desk-row');
       if (!tr) return false;
       var uid = tr.getAttribute('data-uid');
-      var live = tr.querySelector('.desk-live');
       var val = ta.value.trim();
       var s = rec(uid);
       var changed = false;
-      if (val && val !== live.textContent && val !== s.text) {
+      if (val && val !== liveText[uid] && val !== s.text) {
         s.text = val;
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
@@ -1196,7 +1278,8 @@ def _desk_js(code: str, rtl: bool) -> str:
         s.at = new Date().toISOString();
         delete s.approvedAgainst;   // the wording is the reviewer's own, not the live one
         changed = true;
-      } else if (!val && s.text != null) {
+      } else if ((!val || val === liveText[uid]) && s.text != null) {
+        // Emptying the box, or typing the website's wording back, both mean "no edit".
         delete s.text;
         note('edit-cleared', uid, null, null);
         // Clearing the box leaves a bare approval, and a bare approval has to record
@@ -1480,9 +1563,10 @@ def _desk_js(code: str, rtl: bool) -> str:
         src.textContent = tr.querySelector('.desk-srctext').textContent;
         var tgt = document.createElement('p');
         tgt.className = 'desk-review-tgt';
-        if (RTL) tgt.setAttribute('dir', 'rtl');
+        // Paragraph direction follows the text, as in the table (see `.desk-live`).
+        tgt.setAttribute('dir', 'auto');
         var st = state[uid] || {};
-        tgt.textContent = st.text != null ? st.text : tr.querySelector('.desk-live').textContent;
+        tgt.textContent = st.text != null ? st.text : liveText[uid];
         texts.appendChild(src); texts.appendChild(tgt);
 
         var rm = document.createElement('button');
@@ -1626,9 +1710,10 @@ def _desk_js(code: str, rtl: bool) -> str:
 
     // ── Saving ─────────────────────────────────────────────────────────
     // `saved` is what the repo is known to hold. Everything that differs from it is
-    // unsaved work, and only the difference is sent -- a whole locale is ~40 KB base64
-    // against a 65 KB workflow_dispatch ceiling, and sending deltas also means two
-    // people reviewing different pages of one language merge instead of clobbering.
+    // unsaved work, and only the difference is sent -- a whole locale of approvals is
+    // 61-66 KB base64 against a 65,536-byte workflow_dispatch ceiling (chunksFor splits
+    // it), and sending deltas also means two people reviewing different pages of one
+    // language merge instead of clobbering.
     var SAVEDKEY = 'cel-desk-saved-' + CODE;
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(SAVEDKEY) || '{}') || {}; } catch (e) { saved = {}; }
@@ -1785,7 +1870,10 @@ def _desk_js(code: str, rtl: bool) -> str:
     // run that is not that one.
     function latestRunId(workflow) {
       return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
-        var run = r.ok && r.body && r.body.run ? r.body.run : null;
+        // A failed poll is NOT "no runs yet": that answer means "any run is ours", and
+        // on the fallback path it let another reviewer's run confirm this save.
+        if (!r.ok) return undefined;
+        var run = r.body && r.body.run ? r.body.run : null;
         if (!run) return null;                       // no runs yet; any run is ours
         return run.id != null ? run.id : undefined;  // undefined = worker too old
       }).catch(function () { return undefined; });
@@ -1811,6 +1899,20 @@ def _desk_js(code: str, rtl: bool) -> str:
       }
       if (baselineId === undefined) {
         return Promise.reject(new Error('this site cannot confirm the save yet'));
+      }
+      return tick();
+    }
+
+    function awaitRunId(workflow, runId) {
+      var start = Date.now();
+      function tick() {
+        return callProxy({ action: 'poll', workflow: workflow, run_id: runId }).then(function (r) {
+          var run = r.ok && r.body && r.body.run ? r.body.run : null;
+          if (run && run.status === 'completed') return run;
+          if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
+          saveStatus.textContent = run ? (RUN_WORDS[run.status] || 'saving…') : 'starting…';
+          return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
+        });
       }
       return tick();
     }
@@ -1861,13 +1963,25 @@ def _desk_js(code: str, rtl: bool) -> str:
           saveStatus.textContent = 'saving ' + locale.toUpperCase() +
                                    ' (part ' + (i + 1) + ' of ' + parts.length + ')…';
         }
+        // Probe BEFORE dispatching. A Worker that cannot name runs answers the poll
+        // without an id; dispatching anyway let the save land in the repo and then
+        // told the reviewer "Not saved -- try again", and every retry dispatched it
+        // once more. Refusing here is the honest version of "cannot confirm".
         var baseline = await latestRunId('localization-save.yml');
+        if (baseline === undefined) throw new Error('this site cannot confirm the save yet');
         var r = await callProxy({
           action: 'dispatch', workflow: 'localization-save.yml',
           inputs: { locale: locale, payload: parts[i] }
         });
         if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
-        var run = await awaitRun('localization-save.yml', baseline);
+        // The dispatch names the run it created. Follow THAT run: "the newest run
+        // that is not the baseline" is another reviewer's run whenever two people
+        // save one language, and GitHub's concurrency group can cancel ours while
+        // theirs succeeds. The baseline is only the fallback for a Worker that
+        // cannot say which run it started.
+        var runId = r.body && r.body.run_id != null ? r.body.run_id : null;
+        var run = runId !== null ? await awaitRunId('localization-save.yml', runId)
+                                 : await awaitRun('localization-save.yml', baseline);
         if (!run) throw new Error('timed out waiting for the run');
         if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
       }
@@ -2008,19 +2122,23 @@ def _desk_js(code: str, rtl: bool) -> str:
       });
     }
 
-    // Each language tab carries its own outstanding count, read from that locale's
-    // saved decisions -- so "where is there work left" is answerable without visiting
-    // all eight.
+    // Each language tab carries its OUTSTANDING count -- rows worth a look that nobody
+    // has decided yet -- so "where is there work left" is answerable without visiting
+    // all eight. It used to count rows already DECIDED, the opposite: a tab you had
+    // finished showed a number and a tab you had not started showed nothing.
     function paintLocaleCounts() {
       Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
         var lc = el.getAttribute('data-loc-count');
-        var n = 0;
-        try {
-          var raw = JSON.parse(localStorage.getItem('cel-desk-' + lc) || '{}') || {};
-          for (var k in raw) { if (raw[k] && raw[k].tray) n++; }
-        } catch (e) { return; }
+        var recs = lc === CODE ? state : readLocale(lc);
+        var n = (WORTH[lc] || []).filter(function (uid) {
+          return stageOf(recs[uid]) === 'todo';
+        }).length;
         el.textContent = n ? String(n) : '';
         el.hidden = !n;
+        var link = el.parentNode;
+        var nm = link && link.querySelector('.desk-loc-name');
+        // The name is visually hidden on inactive tabs; a hover says it, and the count.
+        if (nm) link.title = nm.textContent + (n ? ' — ' + n + ' worth a look' : '');
       });
     }
 
@@ -2117,7 +2235,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       });
   })();
   </script>
-""".replace("__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
+""".replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
+    "__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES]))
 
 

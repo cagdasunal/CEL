@@ -71,12 +71,19 @@ jobs:
           # The 15-minute content pipeline commits to this branch too, so a push can
           # lose a race through no fault of this run. Rebase and retry rather than
           # failing a save the reviewer believes succeeded.
+          # Under `set -e` a bare failing `git pull` aborted the step before either
+          # message below could print. The run still failed -- and the desk reports a
+          # failed run as "Not saved" -- but the log said nothing about why.
           for attempt in 1 2 3; do
             if git push; then
               echo "pushed on attempt ${attempt}"
               exit 0
             fi
-            git pull --rebase --autostash origin main
+            if ! git pull --rebase --autostash origin main; then
+              git rebase --abort 2>/dev/null || true
+              echo "ERROR: rebasing the save onto origin/main failed (attempt ${attempt})" >&2
+              exit 1
+            fi
           done
           echo "ERROR: could not push after 3 attempts" >&2
           exit 1

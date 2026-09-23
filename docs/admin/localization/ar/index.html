@@ -61,7 +61,7 @@
     <header class="dashboard-header">
       <div class="brand-text">
         <p class="eyebrow">LOCALIZATION DESK &middot; ARABIC</p>
-        <p class="subtitle"><bdi>العربية</bdi> &middot; 990 units</p>
+        <p class="subtitle"><bdi>العربية</bdi> &middot; 823 units</p>
       </div>
       <button type="button" class="desk-btn desk-header-btn" id="how-open">How this works</button>
     </header>
@@ -291,6 +291,9 @@
     }
 
     var LOCALES = ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"];
+    // Per locale, the ids "Worth a look first" starts from -- the same list the index
+    // card counts, so a tab badge, the filter and the index say one number.
+    var WORTH = {"de":["0401c147c6cea028","bbecd9e441a04e56","04c298199071772f","add0890afab68bb2","bdc5c12484a76834","3791422231fde31c","a18c11df8bacbf2e","a7fcb1c8aa9b4655","04e1a04336e1b918","382f66cd3c832916","63a5987a5db6b756"],"fr":["9574cffbab746184","afe89dd8d7fe5fd5","ca04ce9053f938cc","d18da433f7f35f9d","63a5987a5db6b756","68623cd832a9022f"],"es":["c841b6a883c68780"],"pt":[],"it":["2a5bef000a5bf45e","983ee7294906d0ae","63a5987a5db6b756"],"ja":["0dd727f0dbc06548","c5693562ab686a39","daa2fa38d6fca623","4c10377a101ea591","bbecd9e441a04e56","f4615f92165c8240","04c298199071772f","add0890afab68bb2","a4dad39e19e918fc","03fff5fca5487287","2d254cc30b4ac69f","bdc5c12484a76834","15565447bc814bb4","c9c1fac2f8f8d5bf","ce3147f8103beb3f","d5ff4ebd29f766cd","90b30c742b95f4bb","9ca3e44fce7d9a4a","abaf56c38d8855f5","9fb22239b1c2bfa0","c1dce9f8abaeca5a","ca04ce9053f938cc","d18da433f7f35f9d","312b38b1b15cb2c4","0190e7d9534cef5d","51147166d8635e43","978e350ae35a63c2","9b0b998c7b64c219","be241471bf946548"],"ko":["bbecd9e441a04e56","04c298199071772f","add0890afab68bb2","2a5bef000a5bf45e","a4dad39e19e918fc","2d254cc30b4ac69f","9fb22239b1c2bfa0","c1dce9f8abaeca5a","ca04ce9053f938cc","d18da433f7f35f9d","0190e7d9534cef5d","63a5987a5db6b756","51147166d8635e43"],"ar":["8a624fe2a3aa898b","983ee7294906d0ae","5b60fc4a0bab94f0","be10255fc15fa6c9","d18da433f7f35f9d","186afd033f2e0abd","63a5987a5db6b756"]};
     var CODE = 'ar';
     var KEY = 'cel-desk-' + CODE;
     var LOGKEY = 'cel-desk-log-' + CODE;
@@ -298,6 +301,11 @@
     var RTL = true;
 
     var state = {};
+    // What the website serves for each row, as loaded -- never what is on screen. The
+    // `.desk-live` span shows the reviewer's edit when there is one, and reading the
+    // wording back from it recorded a DISCARDED edit as the text an approval was given
+    // to (audit 2026-09-23): export then refused the row as "moved since approval".
+    var liveText = Object.create(null);
     try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
     var hist = [];
     try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
@@ -368,7 +376,7 @@
       s.at = new Date().toISOString();
       if (s.text == null) {
         // A bare approval: record the live wording it was given to.
-        s.approvedAgainst = tr.querySelector('.desk-live').textContent;
+        s.approvedAgainst = liveText[uid];
       }
     }
 
@@ -403,9 +411,13 @@
         var tr = document.createElement('tr');
         tr.className = 'desk-row';
         tr.setAttribute('data-uid', u.id);
+        liveText[u.id] = u.tgt;
         tr.setAttribute('data-pages', u.pages.join(' '));
         tr.setAttribute('data-q', (u.src + ' ' + u.tgt).toLowerCase());
-        if (u.why) tr.setAttribute('data-why', '1');
+        // A site-wide row keeps its finding on screen but is not "worth a look first":
+        // nothing decided here can reach the website for it (see `shared` below).
+        if (u.why && !u.shared) tr.setAttribute('data-why', '1');
+        if (u.shared) tr.setAttribute('data-shared', String(u.shared));
 
         var tdPick = document.createElement('td');
         tdPick.className = 'desk-col-pick';
@@ -434,6 +446,11 @@
         if (RTL) tdTgt.setAttribute('dir', 'rtl');
         var live = document.createElement('span');
         live.className = 'desk-live';
+        // `auto`, not the column's rtl: an English string in the Arabic column was laid
+        // out right-to-left, so "5 Things That Surprise..." read "Things That
+        // Surprise... 5" and a sentence's full stop jumped to the front. The reviewer
+        // was being shown a defect that is not on the website.
+        live.setAttribute('dir', 'auto');
         live.textContent = u.tgt;
         // The recommendation is advice, not an action: it says why a row is worth a
         // second look and does nothing else. Computed at build time from the text
@@ -442,7 +459,22 @@
         if (u.why) {
           why = document.createElement('p');
           why.className = 'desk-why';
+          why.setAttribute('dir', 'auto');   // English advice in an RTL column
           why.textContent = u.why;
+        }
+        // Weglot keeps ONE translation per English string, so this wording is also the
+        // wording on those other pages -- and gate 12 keeps it out of the import file
+        // for exactly that reason. Say so where the decision is made, in what-happens-
+        // next words, instead of letting an approval disappear at export.
+        var shared = null;
+        if (u.shared) {
+          shared = document.createElement('p');
+          shared.className = 'desk-shared';
+          shared.setAttribute('dir', 'auto');
+          var eg = u.sharedEg === '/' ? 'the home page' : u.sharedEg;
+          shared.textContent = 'Shared with ' + u.shared + (u.shared === 1 ? ' other page' : ' other pages') +
+            ' (' + eg + (u.shared > 1 ? ', …' : '') + '). Weglot keeps one wording for all of ' +
+            'them, so a decision here cannot reach the website yet.';
         }
         var editWrap = document.createElement('div');
         editWrap.className = 'desk-editor';
@@ -450,6 +482,7 @@
         var ta = document.createElement('textarea');
         ta.className = 'desk-edit';
         ta.setAttribute('aria-label', 'Your wording');
+        ta.setAttribute('dir', 'auto');
         ta.value = u.tgt;
         // Seeded here as well as on open, so `editorDirty` answers honestly for a
         // box the reviewer never touched. Without it a never-opened editor reads
@@ -478,6 +511,7 @@
         editWrap.appendChild(editBar);
         tdTgt.appendChild(live);
         if (why) tdTgt.appendChild(why);
+        if (shared) tdTgt.appendChild(shared);
         tdTgt.appendChild(editWrap);
 
         var tdState = document.createElement('td');
@@ -530,8 +564,8 @@
     //   queued        marked for a new translation, NOT sent yet
     //   sending       sent to Gemini, waiting
     //   failed        Gemini could not do it
-    function stage(uid) {
-      var s = state[uid] || {};
+    function stageOf(s) {
+      s = s || {};
       // A live row the reviewer has decided about again is NOT live any more from
       // their point of view -- the new decision is what is outstanding. So anything
       // in flight or freshly decided outranks where the text currently sits.
@@ -547,6 +581,8 @@
       if (s.liveAt) return 'live';
       return 'todo';
     }
+
+    function stage(uid) { return stageOf(state[uid]); }
 
     var STAGE_BADGE = {
       todo:     ['Not reviewed', 'badge-partial'],
@@ -607,10 +643,10 @@
       var cb = tr.querySelector('[data-pick]');
       if (cb) cb.checked = !!picked[uid];
 
-      if (s.text != null) {
-        var live = tr.querySelector('.desk-live');
-        if (live.textContent !== s.text) live.textContent = s.text;
-      }
+      // The reviewer's wording while there is one; the website's again once it is cleared.
+      var live = tr.querySelector('.desk-live');
+      var shown = s.text != null ? s.text : liveText[uid];
+      if (live.textContent !== shown) live.textContent = shown;
     }
 
     function counts() {
@@ -626,6 +662,7 @@
     function pickedIds() { return Object.keys(picked); }
 
     function paintBar() {
+      paintLocaleCounts();
       var c = counts();
       var n = pickedIds().length;
       var all = unsavedByLocale();
@@ -797,7 +834,7 @@
       if (open) {
         var uid = tr.getAttribute('data-uid');
         var s = state[uid] || {};
-        ta.value = s.text != null ? s.text : live.textContent;
+        ta.value = s.text != null ? s.text : liveText[uid];
         ta.setAttribute('data-opened-with', ta.value);
         wrap.hidden = false;
         live.hidden = true;
@@ -825,11 +862,10 @@
       var tr = ta.closest('.desk-row');
       if (!tr) return false;
       var uid = tr.getAttribute('data-uid');
-      var live = tr.querySelector('.desk-live');
       var val = ta.value.trim();
       var s = rec(uid);
       var changed = false;
-      if (val && val !== live.textContent && val !== s.text) {
+      if (val && val !== liveText[uid] && val !== s.text) {
         s.text = val;
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
@@ -840,7 +876,8 @@
         s.at = new Date().toISOString();
         delete s.approvedAgainst;   // the wording is the reviewer's own, not the live one
         changed = true;
-      } else if (!val && s.text != null) {
+      } else if ((!val || val === liveText[uid]) && s.text != null) {
+        // Emptying the box, or typing the website's wording back, both mean "no edit".
         delete s.text;
         note('edit-cleared', uid, null, null);
         // Clearing the box leaves a bare approval, and a bare approval has to record
@@ -1124,9 +1161,10 @@
         src.textContent = tr.querySelector('.desk-srctext').textContent;
         var tgt = document.createElement('p');
         tgt.className = 'desk-review-tgt';
-        if (RTL) tgt.setAttribute('dir', 'rtl');
+        // Paragraph direction follows the text, as in the table (see `.desk-live`).
+        tgt.setAttribute('dir', 'auto');
         var st = state[uid] || {};
-        tgt.textContent = st.text != null ? st.text : tr.querySelector('.desk-live').textContent;
+        tgt.textContent = st.text != null ? st.text : liveText[uid];
         texts.appendChild(src); texts.appendChild(tgt);
 
         var rm = document.createElement('button');
@@ -1270,9 +1308,10 @@
 
     // ── Saving ─────────────────────────────────────────────────────────
     // `saved` is what the repo is known to hold. Everything that differs from it is
-    // unsaved work, and only the difference is sent -- a whole locale is ~40 KB base64
-    // against a 65 KB workflow_dispatch ceiling, and sending deltas also means two
-    // people reviewing different pages of one language merge instead of clobbering.
+    // unsaved work, and only the difference is sent -- a whole locale of approvals is
+    // 61-66 KB base64 against a 65,536-byte workflow_dispatch ceiling (chunksFor splits
+    // it), and sending deltas also means two people reviewing different pages of one
+    // language merge instead of clobbering.
     var SAVEDKEY = 'cel-desk-saved-' + CODE;
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(SAVEDKEY) || '{}') || {}; } catch (e) { saved = {}; }
@@ -1429,7 +1468,10 @@
     // run that is not that one.
     function latestRunId(workflow) {
       return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
-        var run = r.ok && r.body && r.body.run ? r.body.run : null;
+        // A failed poll is NOT "no runs yet": that answer means "any run is ours", and
+        // on the fallback path it let another reviewer's run confirm this save.
+        if (!r.ok) return undefined;
+        var run = r.body && r.body.run ? r.body.run : null;
         if (!run) return null;                       // no runs yet; any run is ours
         return run.id != null ? run.id : undefined;  // undefined = worker too old
       }).catch(function () { return undefined; });
@@ -1455,6 +1497,20 @@
       }
       if (baselineId === undefined) {
         return Promise.reject(new Error('this site cannot confirm the save yet'));
+      }
+      return tick();
+    }
+
+    function awaitRunId(workflow, runId) {
+      var start = Date.now();
+      function tick() {
+        return callProxy({ action: 'poll', workflow: workflow, run_id: runId }).then(function (r) {
+          var run = r.ok && r.body && r.body.run ? r.body.run : null;
+          if (run && run.status === 'completed') return run;
+          if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
+          saveStatus.textContent = run ? (RUN_WORDS[run.status] || 'saving…') : 'starting…';
+          return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
+        });
       }
       return tick();
     }
@@ -1505,13 +1561,25 @@
           saveStatus.textContent = 'saving ' + locale.toUpperCase() +
                                    ' (part ' + (i + 1) + ' of ' + parts.length + ')…';
         }
+        // Probe BEFORE dispatching. A Worker that cannot name runs answers the poll
+        // without an id; dispatching anyway let the save land in the repo and then
+        // told the reviewer "Not saved -- try again", and every retry dispatched it
+        // once more. Refusing here is the honest version of "cannot confirm".
         var baseline = await latestRunId('localization-save.yml');
+        if (baseline === undefined) throw new Error('this site cannot confirm the save yet');
         var r = await callProxy({
           action: 'dispatch', workflow: 'localization-save.yml',
           inputs: { locale: locale, payload: parts[i] }
         });
         if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
-        var run = await awaitRun('localization-save.yml', baseline);
+        // The dispatch names the run it created. Follow THAT run: "the newest run
+        // that is not the baseline" is another reviewer's run whenever two people
+        // save one language, and GitHub's concurrency group can cancel ours while
+        // theirs succeeds. The baseline is only the fallback for a Worker that
+        // cannot say which run it started.
+        var runId = r.body && r.body.run_id != null ? r.body.run_id : null;
+        var run = runId !== null ? await awaitRunId('localization-save.yml', runId)
+                                 : await awaitRun('localization-save.yml', baseline);
         if (!run) throw new Error('timed out waiting for the run');
         if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
       }
@@ -1652,19 +1720,23 @@
       });
     }
 
-    // Each language tab carries its own outstanding count, read from that locale's
-    // saved decisions -- so "where is there work left" is answerable without visiting
-    // all eight.
+    // Each language tab carries its OUTSTANDING count -- rows worth a look that nobody
+    // has decided yet -- so "where is there work left" is answerable without visiting
+    // all eight. It used to count rows already DECIDED, the opposite: a tab you had
+    // finished showed a number and a tab you had not started showed nothing.
     function paintLocaleCounts() {
       Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
         var lc = el.getAttribute('data-loc-count');
-        var n = 0;
-        try {
-          var raw = JSON.parse(localStorage.getItem('cel-desk-' + lc) || '{}') || {};
-          for (var k in raw) { if (raw[k] && raw[k].tray) n++; }
-        } catch (e) { return; }
+        var recs = lc === CODE ? state : readLocale(lc);
+        var n = (WORTH[lc] || []).filter(function (uid) {
+          return stageOf(recs[uid]) === 'todo';
+        }).length;
         el.textContent = n ? String(n) : '';
         el.hidden = !n;
+        var link = el.parentNode;
+        var nm = link && link.querySelector('.desk-loc-name');
+        // The name is visually hidden on inactive tabs; a hover says it, and the count.
+        if (nm) link.title = nm.textContent + (n ? ' — ' + n + ' worth a look' : '');
       });
     }
 

@@ -1180,6 +1180,9 @@ DESK_CSS = """
     background: var(--warn); color: var(--bg);
     font-size: 9px; font-weight: 700; line-height: 1;
   }
+  /* A row whose English is also on pages outside the four. A fact, not a warning:
+     muted, no icon, so it cannot be mistaken for something the reviewer must fix. */
+  .desk-shared { margin: 5px 0 0; font-size: var(--fs-sm); color: var(--muted); }
 
   /* Language strip. Switching language while keeping the page, filter and search is
      the reviewer's most frequent move; it used to mean a trip back to the index.
@@ -1473,7 +1476,12 @@ DESK_CSS = """
      into the German column -- the cell rectangles did not overlap, so a check that
      compared cell boxes reported everything fine while the text was plainly on top of
      itself. Fixed columns plus wrapping make that unrepresentable at any width. */
-  .desk-table { min-width: 900px; table-layout: fixed; }
+  /* `display: table` and `white-space: normal` restated because the dashboard's
+     narrow-viewport rule (`@media (max-width: 820px) { table { display: block;
+     white-space: nowrap } }`, meant for the data tables) reached this one too: at
+     760px the table measured 5,012px, every cell on one line, and the translation
+     column sat thousands of pixels off-screen -- on a tablet held upright. */
+  .desk-table { min-width: 900px; table-layout: fixed; display: table; white-space: normal; }
   .desk-table col.col-pick  { width: 40px; }
   .desk-table col.col-src   { width: 32%; }
   .desk-table col.col-tgt   { width: 32%; }

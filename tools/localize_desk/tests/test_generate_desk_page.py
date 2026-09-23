@@ -357,3 +357,97 @@ class TestAuditRegressions2026_09_23:
         """Clearing the box left `tray:'csv'` with no `approvedAgainst`, so the
         export skipped its drift check and shipped whatever Weglot served that day."""
         assert "if (s.tray === 'csv') stampApproval(uid, tr, true);" in page
+
+
+class TestFourthAudit:
+    """Audit 2026-09-23 (sites/cel/docs/translation-engine-audit-2026-09-23.md in the
+    monorepo). Each test was run against the pre-fix generator first and failed."""
+
+    def _units(self, units_dir):
+        _write(units_dir, "vancouver", [
+            _unit("site", word_from="12 weeks only C$3,368",
+                  current={"de": {"word_to": "Nur 12 Wochen für 3.369 C$"}}),
+            _unit("here", word_from="4 weeks only C$1,092",
+                  current={"de": {"word_to": "Nur 4 Wochen für 1.093 C$"}}),
+        ])
+        units = G.load_units()
+        for u in units:   # the manifest's `pages` is every page on the SITE
+            u["pages"] = ["/vancouver", "/learn-english-canada"] if u["unit_id"] == "site" else ["/vancouver"]
+        units = [dict(u, _outside=[p for p in u["pages"] if p != "/vancouver"]) for u in units]
+        return units
+
+    def test_a_site_wide_row_is_marked_and_is_not_worth_a_look_first(self, units_dir):
+        """254 of 823 importable units were shared with pages outside the four; gate
+        12 refuses every one, and the desk offered them as ordinary rows."""
+        units = self._units(units_dir)
+        rows = {r["id"]: r for r in G.locale_payload("de", units)}
+        assert rows["site"]["shared"] == 1 and rows["site"]["sharedEg"] == "/learn-english-canada"
+        assert "shared" not in rows["here"]
+        # both carry a changed number -- only the page-unique one is worth a look
+        assert G.worth_a_look("de", units) == ["here"]
+
+    def test_load_units_records_what_lies_outside_the_four_pages(self, units_dir):
+        _write(units_dir, "vancouver", [dict(_unit("s"), pages=["/vancouver", "/housing"])])
+        assert G.load_units()[0]["_outside"] == ["/housing"]
+
+    def test_the_index_and_the_desk_share_one_stage_function(self, units_dir):
+        units = self._units(units_dir)
+        page = G.render_locale("de", "German", "Deutsch", "ltr", units)
+        index = G.render_index(units)
+        assert "function stageOf(s)" in page and "function stageOf(s)" in index
+        # the index's private copy knew nothing about exportedAt / liveAt
+        assert "if (v.failed) { failed++; continue; }" not in index
+
+    def test_stage_of_is_the_documented_lifecycle(self):
+        import shutil
+        import subprocess
+        if not shutil.which("node"):
+            pytest.skip("node not installed")
+        js = G._STAGE_JS + """
+        const cases = [[{}, 'todo'], [{tray:'csv'}, 'approved'], [{tray:'csv', text:'x'}, 'edited'],
+          [{tray:'csv', exportedAt:'t'}, 'exported'], [{tray:'csv', liveAt:'t'}, 'live'],
+          [{tray:'draft'}, 'queued'], [{sentAt:'t'}, 'sending'], [{arrivedAt:'t'}, 'arrived'],
+          [{failed:'x', tray:'csv'}, 'failed'], [undefined, 'todo']];
+        const bad = cases.filter(([s, want]) => stageOf(s) !== want);
+        console.log(JSON.stringify(bad));
+        """
+        out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True)
+        assert out.stdout.strip() == "[]", out.stdout
+
+    def test_the_language_badge_counts_work_left_not_work_done(self, units_dir):
+        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        body = page.split("function paintLocaleCounts()")[1].split("\n    }\n")[0]
+        assert "WORTH[lc]" in body and "=== 'todo'" in body
+        assert "raw[k].tray" not in body          # it used to count decided rows
+        assert '"de":["here"]' in page             # the baked list excludes the site-wide row
+
+    def test_text_takes_its_own_direction_in_a_right_to_left_column(self, units_dir):
+        """English in the Arabic column read "Things That Surprise ... 5"."""
+        page = G.render_locale("ar", "Arabic", "العربية", "rtl", self._units(units_dir))
+        assert "live.setAttribute('dir', 'auto')" in page
+        assert "ta.setAttribute('dir', 'auto')" in page
+        assert "tgt.setAttribute('dir', 'rtl')" not in page
+
+    def test_a_save_follows_the_run_its_own_dispatch_created(self, units_dir):
+        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        save_one = page.split("async function saveOne(locale, d)")[1].split("async function save()")[0]
+        assert "function awaitRunId(workflow, runId)" in page
+        assert "r.body.run_id" in save_one
+        # with a Worker that cannot name runs, refuse BEFORE dispatching: the old
+        # order let the save land and then reported "Not saved"
+        assert save_one.index("cannot confirm the save yet") < save_one.index("action: 'dispatch'")
+
+    def test_an_approval_records_the_websites_wording_never_the_screen(self, units_dir):
+        """Independent review: `.desk-live` shows the reviewer's edit, and stamping from
+        it recorded a DISCARDED edit as `approvedAgainst` after the edit was cleared."""
+        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        stamp = page.split("function stampApproval(uid, tr, approving)")[1].split("\n    }\n")[0]
+        assert "liveText[uid]" in stamp and ".desk-live" not in stamp
+        assert "liveText[u.id] = u.tgt;" in page
+        # and the row shows the website's wording again once the edit is gone
+        assert "var shown = s.text != null ? s.text : liveText[uid];" in page
+
+    def test_a_failed_probe_is_not_read_as_no_runs_yet(self, units_dir):
+        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        probe = page.split("function latestRunId(workflow)")[1].split("function awaitRun(")[0]
+        assert probe.index("if (!r.ok) return undefined;") < probe.index("return null;")

@@ -142,11 +142,21 @@ class TestApply:
         with pytest.raises(Invalid, match="over the"):
             apply("de", payload("de", big), tmp_path)
 
-    def test_a_corrupt_existing_file_does_not_lose_the_incoming_save(self, tmp_path):
+    def test_a_corrupt_existing_file_fails_the_save_and_is_left_untouched(self, tmp_path):
+        """Starting from empty wrote back only the delta: every committed decision for
+        the locale vanished, the run went green and the desk said "Saved"."""
         (tmp_path / "de").mkdir()
-        (tmp_path / "de" / "decisions.json").write_text("{ this is not json")
-        r = apply("de", payload("de", {"u1": {"tray": "csv"}}), tmp_path)
-        assert r["total"] == 1
+        bad = "{ this is not json"
+        (tmp_path / "de" / "decisions.json").write_text(bad)
+        with pytest.raises(Invalid, match="refusing to overwrite"):
+            apply("de", payload("de", {"u1": {"tray": "csv"}}), tmp_path)
+        assert (tmp_path / "de" / "decisions.json").read_text() == bad
+
+    def test_a_file_without_a_decisions_object_is_not_overwritten(self, tmp_path):
+        (tmp_path / "de").mkdir()
+        (tmp_path / "de" / "decisions.json").write_text('{"decisions": []}')
+        with pytest.raises(Invalid, match="no decisions object"):
+            apply("de", payload("de", {"u1": {"tray": "csv"}}), tmp_path)
 
     def test_output_is_stable_across_identical_saves(self, tmp_path):
         """Sorted keys, so a re-save produces no git diff and no noise commit."""

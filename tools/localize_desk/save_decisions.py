@@ -24,8 +24,9 @@ MERGE, NEVER REPLACE
 --------------------
 The browser sends only what changed since its last successful save, and this merges
 into what is already committed. Two consequences, both wanted: the payload stays small
-(a typical save is a handful of rows, against ~40 KB for a whole locale — close enough
-to the 65 KB workflow_dispatch ceiling to matter), and two people reviewing different
+(a typical save is a handful of rows; a whole locale of approvals is 61-66 KB base64,
+over the 65,536-byte workflow_dispatch ceiling for Arabic, which is why the desk splits
+it into parts), and two people reviewing different
 pages of the same locale do not overwrite each other. Per unit it is last-writer-wins,
 which the history log makes traceable.
 """
@@ -208,14 +209,19 @@ def apply(locale: str, payload_b64: str, out_dir: Path | None = None) -> dict:
     target = decisions_path(locale, out_dir)
     existing = {}
     if target.is_file():
+        # An unreadable file FAILS the save. Starting from empty looked forgiving, but
+        # the merge below then wrote back only this delta -- every decision already
+        # committed for the locale vanished in one commit, the run went green, and the
+        # desk told the reviewer "Saved". Git still holds the old file; a human should
+        # repair it, not the next save.
         try:
             prev = json.loads(target.read_text(encoding="utf-8"))
-            existing = prev.get("decisions", {}) if isinstance(prev, dict) else {}
-        except ValueError:
-            # A corrupt file is not a reason to throw away this save, but it IS a
-            # reason to say so loudly rather than quietly starting from empty.
-            print(f"WARNING: {target} was unreadable; starting from an empty set",
-                  file=sys.stderr)
+        except ValueError as exc:
+            raise Invalid(f"{target} is not valid JSON ({exc}); refusing to overwrite "
+                          "the committed decisions -- repair it from git history") from exc
+        existing = prev.get("decisions") if isinstance(prev, dict) else None
+        if not isinstance(existing, dict):
+            raise Invalid(f"{target} has no decisions object; refusing to overwrite it")
 
     merged, counts = merge(existing, delta)
 

@@ -123,12 +123,30 @@ class TestFlagsRealDefects:
         level, why = recommend("Learn English in Vancouver at our campus.",
                                "Lernen Sie Englisch in Vancouver an unserem Campus.", "de")
         assert level == LEVEL_CHECK
-        assert "informal" in why
+        assert "du" in why
 
     def test_spanish_usted_is_flagged(self):
         level, why = recommend("You can study here", "Usted puede estudiar aquí", "es")
         assert level == LEVEL_CHECK
         assert "usted" in why.lower()
+
+    def test_spanish_plural_ustedes_is_the_clients_own_form(self):
+        """The client: "Never usted. Plural is ustedes (pan-LatAm)." It was flagged."""
+        assert recommend("You can all study here", "Ustedes pueden estudiar aquí", "es")[0] == LEVEL_FINE
+
+    def test_french_tu_is_flagged_because_the_client_asks_for_vous(self):
+        """French is the one language where the client wants the FORMAL address, and it
+        had no check; the live render has 6 informal units. Measured 2026-09-23."""
+        level, why = recommend("If you plan to study", "Si tu prévois d'étudier", "fr")
+        assert level == LEVEL_CHECK and "vous" in why
+        assert recommend("Get ready for the exam", "Prépare-toi pour l'examen", "fr")[0] == LEVEL_CHECK
+
+    def test_french_vous_is_fine(self):
+        assert recommend("If you plan to study", "Si vous prévoyez d'étudier", "fr")[0] == LEVEL_FINE
+
+    def test_portuguese_o_senhor_is_flagged(self):
+        level, why = recommend("You can study here", "O senhor pode estudar aqui", "pt")
+        assert level == LEVEL_CHECK and "você" in why
 
 
 class TestContract:

@@ -40,14 +40,27 @@ _DIGIT_RUN = re.compile("\\d+(?:[.,'\u2019\u00a0\u202f ]\\d{3}(?!\\d))*(?:[.,]\\
 _ANCHOR = re.compile(r"<a wg-(\d+)=\"\">")
 _WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
 
-# Forms of address the client's per-language rules forbid (their §7.1/§7.3/§7.5).
+# Forms of address the client's per-language rules forbid (their guidelines §7.1-7.5).
 # Matched as whole words, case-sensitively where case is what distinguishes them:
 # German lowercase "sie" is "she/they" and is perfectly fine; capital "Sie" mid-
 # sentence is the formal address. Italian "Lei" likewise.
+#
+# The client's rule is NOT "informal everywhere", and this table used to assume it
+# was: French is always *vous* ("never tu, even though Weglot defaults to tu") and had
+# no check at all, while Spanish flagged *ustedes*, which the client names as the
+# correct plural. Each message now says what the client actually asks for.
+# Measured 2026-09-23 on the live French render: all 6 tu/toi hits are real.
 _FORMAL = {
-    "de": (re.compile(r"(?<![.!?]\s)(?<!^)\b(Sie|Ihnen|Ihre[mnrs]?|Ihr)\b"), "formal Sie-Anrede"),
-    "es": (re.compile(r"\b(usted|ustedes)\b", re.IGNORECASE), "formal usted"),
-    "it": (re.compile(r"(?<![.!?]\s)(?<!^)\bLei\b"), "formal Lei"),
+    "de": (re.compile(r"(?<![.!?]\s)(?<!^)\b(Sie|Ihnen|Ihre[mnrs]?|Ihr)\b"),
+           "formal Sie-Anrede — the client's rules ask for du"),
+    "es": (re.compile(r"\busted\b", re.IGNORECASE),
+           "formal usted — the client's rules ask for tú (plural ustedes is right)"),
+    "it": (re.compile(r"(?<![.!?]\s)(?<!^)\bLei\b"),
+           "formal Lei — the client's rules ask for tu"),
+    "fr": (re.compile(r"\b(tu|toi)\b|\bt['’](?=[a-zàâéèêëîïôûùüç])", re.IGNORECASE),
+           "informal tu — the client's rules ask for vous"),
+    "pt": (re.compile(r"\b(o senhor|a senhora|os senhores|as senhoras)\b", re.IGNORECASE),
+           "formal o senhor / a senhora — the client's rules ask for você"),
 }
 
 
@@ -128,6 +141,6 @@ def recommend(source: str, target: str, locale: str) -> tuple[str, str]:
 
     formal = _FORMAL.get(locale)
     if formal and formal[0].search(target):
-        return LEVEL_CHECK, f"{formal[1]} — the client's rules ask for the informal form"
+        return LEVEL_CHECK, formal[1]
 
     return LEVEL_FINE, ""
