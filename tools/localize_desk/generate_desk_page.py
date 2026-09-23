@@ -63,6 +63,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from localize_desk.copy_text import JS_HELPERS, block_html, js_table, t, tn  # noqa: E402
 from localize_desk.recommend import LEVEL_CHECK, recommend  # noqa: E402
 
 from dashboard import (  # noqa: E402
@@ -80,29 +81,30 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 UNITS_DIR = REPO_ROOT / "data" / "localize" / "units"
 OUT_ROOT = EXTERNAL_REPO_ROOT / "admin" / "localization"
 
-# Locale code -> (English name, endonym, direction). Codes are the ones the unit files
-# carry (`pt`, not `pt-BR`) so the desk and the data cannot drift apart.
-# code, English name, endonym, direction, flag.
-# `pt` is Brazilian Portuguese for CEL, hence Brazil rather than Portugal. Arabic has
-# no country, so it takes the one the client's own locale list implies; the language
-# NAME is always shown beside the flag precisely because a flag is not a language.
+# code, endonym, direction, flag. The English NAME is copy and lives in COPY.md
+# (`lang.<code>`), like every other word on screen. Codes are the ones the unit files
+# carry (`pt`, not `pt-BR`) so the desk and the data cannot drift apart. `pt` is
+# Brazilian Portuguese for CEL, hence Brazil rather than Portugal. Arabic has no
+# country, so it takes the one the client's own locale list implies; the language name
+# is always available beside the flag precisely because a flag is not a language.
 LOCALES = [
-    ("de", "German", "Deutsch", "ltr", "\U0001F1E9\U0001F1EA"),
-    ("fr", "French", "Français", "ltr", "\U0001F1EB\U0001F1F7"),
-    ("es", "Spanish", "Español", "ltr", "\U0001F1EA\U0001F1F8"),
-    ("pt", "Portuguese", "Português", "ltr", "\U0001F1E7\U0001F1F7"),
-    ("it", "Italian", "Italiano", "ltr", "\U0001F1EE\U0001F1F9"),
-    ("ja", "Japanese", "日本語", "ltr", "\U0001F1EF\U0001F1F5"),
-    ("ko", "Korean", "한국어", "ltr", "\U0001F1F0\U0001F1F7"),
-    ("ar", "Arabic", "العربية", "rtl", "\U0001F1F8\U0001F1E6"),
+    ("de", "Deutsch", "ltr", "\U0001F1E9\U0001F1EA"),
+    ("fr", "Français", "ltr", "\U0001F1EB\U0001F1F7"),
+    ("es", "Español", "ltr", "\U0001F1EA\U0001F1F8"),
+    ("pt", "Português", "ltr", "\U0001F1E7\U0001F1F7"),
+    ("it", "Italiano", "ltr", "\U0001F1EE\U0001F1F9"),
+    ("ja", "日本語", "ltr", "\U0001F1EF\U0001F1F5"),
+    ("ko", "한국어", "ltr", "\U0001F1F0\U0001F1F7"),
+    ("ar", "العربية", "rtl", "\U0001F1F8\U0001F1E6"),
 ]
+_LOCALE = {code: (endonym, direction, flag) for code, endonym, direction, flag in LOCALES}
 
-PAGE_LABELS = {
-    "vancouver": "Vancouver",
-    "vs-toronto": "Vancouver vs Toronto",
-    "cost-of-studying-english": "Cost of studying English",
-    "how-long-to-learn-english": "How long to learn English",
-}
+# The four pages, by the key the unit files carry; their labels are copy (`page.<key>`).
+PAGE_KEYS = ["vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english"]
+
+
+def lang_name(code: str) -> str:
+    return t(f"lang.{code}")
 
 
 def load_units() -> list[dict]:
@@ -211,61 +213,25 @@ def _head(title: str, description: str) -> list[str]:
     ]
 
 
-HOW_MODAL = """\
-  <div class="cpw-overlay" id="how-overlay" hidden>
-    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="how-title">
-      <h2 class="cpw-title" id="how-title">How this works</h2>
-      <div class="desk-modal-body">
-        <h3>What you are looking at</h3>
-        <p>Every row is one piece of text from the live website. On the left is the
-        English; on the right is what visitors in this language see today. All of it was
-        translated by machine, and none of it has been checked by a person.</p>
-
-        <h3>Your three choices</h3>
-        <ul>
-          <li><strong>Approve</strong> &mdash; the wording is right. It will go to the
-          website as it is.</li>
-          <li><strong>Edit</strong> &mdash; type what it should say. Saving your wording
-          approves the row, with your text instead.</li>
-          <li><strong>Needs a new translation</strong> &mdash; the wording is wrong and
-          you would like Gemini to try again.</li>
-        </ul>
-        <p>A row can only be one of these. Choosing one clears the other, and clicking a
-        choice you have already made undoes it.</p>
-
-        <h3>Start with the rows worth a look</h3>
-        <p>The desk checks every translation for things that are almost always wrong:
-        English left untranslated, a price or date that changed, a missing link, a
-        formal &ldquo;Sie&rdquo; where the client asked for the informal form. Those rows
-        say why underneath, and <em>Worth a look first</em> shows only them. It is a few
-        dozen rows per language rather than a thousand.</p>
-
-        <h3>Working quickly</h3>
-        <p>Tick any row, or the box in the header to take everything on screen, and the
-        bar at the bottom applies one choice to all of them. <code>J</code> and
-        <code>K</code> move between rows; <code>A</code> approves, <code>E</code> edits,
-        <code>R</code> asks for a new translation, <code>X</code> ticks the box.</p>
-
-        <h3>Nothing leaves this page by itself</h3>
-        <p>Approved rows wait until you make the import file. Rows needing a new
-        translation wait until you send them, and you will see how many and roughly what
-        it costs before anything is spent. Both lists are openable from the bottom bar,
-        and you can undo anything in them.</p>
-
-        <h3>Saving</h3>
-        <p>Your choices are kept on this page as you make them. <strong>Save</strong>
-        stores them properly, so you can close the tab, come back tomorrow, or carry on
-        from a different computer.</p>
-      </div>
-      <div class="cpw-actions">
-        <button type="button" class="cpw-btn cpw-save" id="how-close">Close</button>
-      </div>
-    </div>
-  </div>
-"""
+def _how_modal() -> str:
+    """The help window. Its body is the `how.body` block in COPY.md."""
+    return (
+        '  <div class="cpw-overlay" id="how-overlay" hidden>\n'
+        '    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="how-title">\n'
+        f'      <h2 class="cpw-title" id="how-title">{escape(t("how.title"))}</h2>\n'
+        f'      <div class="desk-modal-body">\n{block_html("how.body")}\n      </div>\n'
+        '      <div class="cpw-actions">\n'
+        f'        <button type="button" class="cpw-btn cpw-save" id="how-close">{escape(t("how.close"))}</button>\n'
+        '      </div>\n'
+        '    </div>\n'
+        '  </div>\n'
+    )
 
 
-REVIEW_MODAL = """\
+def _review_modal() -> str:
+    """The approved / requested list window. Its moving parts are filled in by the page."""
+    close = escape(t("list.close"))
+    return f"""\
   <div class="cpw-overlay" id="tray-overlay" hidden>
     <div class="desk-review" role="dialog" aria-modal="true" aria-labelledby="tray-title">
       <header class="desk-review-head">
@@ -274,23 +240,23 @@ REVIEW_MODAL = """\
           <p class="desk-review-sub" id="tray-summary"></p>
         </div>
         <button type="button" class="desk-icon-btn desk-review-x" id="tray-close"
-                title="Close" aria-label="Close">&#215;</button>
+                title="{close}" aria-label="{close}">&#215;</button>
       </header>
       <div class="desk-review-toolbar">
         <label class="desk-review-all">
           <input type="checkbox" class="desk-pick" id="tray-all"
-                 aria-label="Select every row listed">
-          <span id="tray-selcount">Select all</span>
+                 aria-label="{escape(t("list.select_all.label"))}">
+          <span id="tray-selcount">{escape(t("list.select_all"))}</span>
         </label>
         <span class="desk-savebar-spacer"></span>
-        <button type="button" class="desk-btn" id="tray-remove-sel" disabled>Undo</button>
-        <button type="button" class="desk-btn" id="tray-empty">Undo all</button>
+        <button type="button" class="desk-btn" id="tray-remove-sel" disabled>{escape(t("list.undo"))}</button>
+        <button type="button" class="desk-btn" id="tray-empty">{escape(t("list.undo_all"))}</button>
       </div>
       <ul class="desk-review-list" id="tray-list"></ul>
       <footer class="desk-review-foot">
         <p class="desk-notice" id="tray-notice"></p>
         <div class="desk-review-actions">
-          <button type="button" class="desk-btn" id="tray-done">Close</button>
+          <button type="button" class="desk-btn" id="tray-done">{close}</button>
           <button type="button" class="desk-btn is-primary" id="tray-save" hidden></button>
         </div>
       </footer>
@@ -301,63 +267,57 @@ REVIEW_MODAL = """\
 
 def render_index(units: list[dict]) -> str:
     total = len(units)
-    parts = _head(
-        "Localization Desk — English College",
-        "Review the machine translations served on the four Vancouver pages, per locale.",
-    )
+    parts = _head(t("meta.index.title"), t("meta.index.description"))
     parts.append(render_admin_open("localization"))
     parts.append('  <div class="dashboard-shell">')
-    parts.append(
-        render_page_chrome(
-            "LOCALIZATION DESK",
-            "Review what Weglot serves on the four Vancouver pages, one language at a time.",
-        )
-    )
+    parts.append(render_page_chrome(escape(t("index.eyebrow")), escape(t("index.subtitle"))))
     parts.append('    <main class="dashboard-main">')
     parts.append('      <section class="status status-ok">')
-    parts.append('        <p class="status-label">Ready for review</p>')
-    parts.append(
-        f"        <p><strong>{total}</strong> reviewable units across "
-        f"<strong>{len(PAGE_LABELS)}</strong> pages and <strong>{len(LOCALES)}</strong> "
-        "languages. Pick a language to start.</p>"
-    )
+    parts.append(f'        <p class="status-label">{escape(t("index.intro.title"))}</p>')
+    parts.append(f'        <p>{escape(t("index.intro.text", total=total, pages=len(PAGE_KEYS)))}</p>')
     parts.append("      </section>")
 
+    # The WHOLE card opens the language. It used to be a card of plain-looking text with
+    # one link hidden in the heading, and nothing on it looked clickable (operator,
+    # 2026-09-23). The heading link is stretched over the card (`.desk-locale-open::after`)
+    # and a real button says what the click does; the chips stay separately clickable.
     parts.append('      <div class="desk-locales">')
-    for code, name, endonym, _dir, flag in LOCALES:
+    for code, endonym, _dir, flag in LOCALES:
+        name = lang_name(code)
         have = sum(1 for u in units if (u.get("current") or {}).get(code))
-        # The recommendation count is the only number that is useful on a FIRST visit:
-        # decisions all start at zero, so without this every card said the same thing
-        # and the index answered nothing.
+        # The flagged count is the only number that is useful on a FIRST visit:
+        # decisions all start at zero, so without it every card said the same thing.
         flagged = len(worth_a_look(code, units))
+        start = f"/admin/localization/{code}/?show={'check' if flagged else 'todo'}"
+        stat = (tn("index.card.flagged", flagged) if flagged else t("index.card.flagged.none"))
         parts.append(
             f'        <div class="desk-locale-card" data-locale="{code}" '
             f'data-name="{escape(name)}" '
             f'data-total="{have}" data-flagged="{flagged}">'
         )
         parts.append(
-            f'          <a class="desk-locale-open" href="/admin/localization/{code}/?show=check">'
+            f'          <a class="desk-locale-open" href="{start}" '
+            f'aria-label="{escape(t("index.card.open", language=name))}">'
             f'<span class="desk-loc-flag" aria-hidden="true">{flag}</span> '
             f'<span class="desk-locale-name">{escape(name)}</span></a>'
         )
         parts.append(
             f'          <p class="desk-locale-sub"><bdi>{escape(endonym)}</bdi> '
-            f'&middot; {have} units</p>'
+            f'&middot; {escape(t("index.card.texts", total=have))}</p>'
         )
         parts.append('          <div class="desk-meter" role="presentation">')
-        parts.append('            <div class="desk-meter-fill" style="width:0%"></div>')
+        parts.append('            <div class="desk-meter-fill"></div>')
         parts.append("          </div>")
-        parts.append(
-            f'          <p class="desk-locale-stat">{flagged} need attention</p>'
-        )
+        parts.append(f'          <p class="desk-locale-stat">{escape(stat)}</p>')
         parts.append('          <div class="desk-trays"></div>')
+        parts.append(
+            f'          <span class="desk-btn desk-locale-cta" aria-hidden="true">'
+            f'{escape(t("index.card.start"))}</span>'
+        )
         parts.append("        </div>")
     parts.append("      </div>")
 
-    parts.append(
-        '      <p class="subtle">Nothing on these pages writes to the live site. '
-        "Approving records a decision; it does not re-publish anything.</p>"
-    )
+    parts.append(f'      <p class="subtle">{escape(t("index.footnote"))}</p>')
     parts.append("    </main>")
     parts.append("  </div>")
     parts.append(_index_js(_worth_js(units)))
@@ -399,20 +359,18 @@ def _worth_js(units: list[dict]) -> str:
 
 
 def _index_js(worth_js: str = "{}") -> str:
-    """Fill each card's progress and tray chips from that locale's saved decisions.
+    """Fill each card's progress and links from that locale's saved decisions.
 
     The server cannot know any of this -- decisions live in the reviewer's browser --
     so the card ships with the honest static number and this upgrades it in place.
-    Without it the meter showed translation COVERAGE, which is 100% for every locale
-    because Weglot machine-translates everything: a full bar that means nothing.
-
-    The chips link straight into the matching filter, and "undo" empties that tray for
-    that locale, so the index is a place to fix a mistake and not only to read one.
+    Every word comes from COPY.md through `t()` / `tn()`.
     """
     return """\
   <script>
   (function () {
     'use strict';
+    var COPY = __COPY__;
+__HELPERS__
     var WORTH = __WORTH__;
 __STAGE_JS__
     function read(code) {
@@ -420,9 +378,9 @@ __STAGE_JS__
       catch (e) { return {}; }
     }
     function chip(cls, label, href) {
-      var a = document.createElement(href ? 'a' : 'span');
+      var a = document.createElement('a');
       a.className = 'desk-tray ' + cls;
-      if (href) a.href = href;
+      a.href = href;
       a.textContent = label;
       return a;
     }
@@ -448,135 +406,119 @@ __STAGE_JS__
       }).length;
       var pct = total ? Math.round(100 * done / total) : 0;
       card.querySelector('.desk-meter-fill').style.width = pct + '%';
-      // Once there is progress, progress is the more useful number; before that, the
-      // number of rows actually asking for attention is.
-      card.querySelector('.desk-locale-stat').textContent =
-        done ? (done + ' of ' + total + ' decided (' + pct + '%)')
-             : (flagged === 1 ? '1 worth a look' : flagged + ' worth a look');
+      card.classList.toggle('is-started', done > 0);
+      // Before anything is decided, the number of flagged texts is the useful one;
+      // after, progress is.
+      card.querySelector('.desk-locale-stat').textContent = done
+        ? t('index.card.progress', { done: done, total: total })
+        : (flagged ? tn('index.card.flagged', flagged) : t('index.card.flagged.none'));
+      card.querySelector('.desk-locale-cta').textContent =
+        t(done ? 'index.card.continue' : 'index.card.start');
 
+      // Only what is waiting on the reviewer or already decided, each a real link into
+      // that filter. The old "nothing decided yet" pill said nothing and led nowhere.
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
-      if (!csv && !draft && !arrived && !sending && !failed) {
-        trays.appendChild(chip('desk-tray-none', 'nothing decided yet', null));
-        return;
-      }
-      // Ordered by what is waiting on the reviewer, not by what the system did.
-      if (arrived) trays.appendChild(chip('desk-tray-arrived', arrived + ' new to read', base + '?show=arrived'));
-      if (failed) trays.appendChild(chip('desk-tray-failed',
-        failed + (failed === 1 ? ' translation failed' : ' translations failed'),
-        base + '?show=failed'));
-      if (sending) trays.appendChild(chip('desk-tray-sending', sending + ' being translated', base + '?show=sending'));
-      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
-      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
+      if (arrived) trays.appendChild(chip('desk-tray-arrived', tn('index.chip.arrived', arrived), base + '?show=arrived'));
+      if (failed) trays.appendChild(chip('desk-tray-failed', tn('index.chip.failed', failed), base + '?show=failed'));
+      if (sending) trays.appendChild(chip('desk-tray-sending', t('index.chip.sending', { n: sending }), base + '?show=sending'));
+      if (csv) trays.appendChild(chip('desk-tray-csv', t('index.chip.approved', { n: csv }), base + '?show=csv'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', tn('index.chip.requested', draft), base + '?show=draft'));
+      trays.hidden = !trays.firstChild;
 
-      // This used to say "Undo all" and warn "This cannot be undone" -- both wrong.
-      // It removed one browser key, so anything already saved came straight back
-      // from the server on the next visit, and the warning frightened the reviewer
-      // about an action that had almost no effect. What it can honestly offer is
-      // throwing away the work this browser has not sent yet.
+      // It can honestly offer only one thing: throwing away what this browser has not
+      // sent yet. Anything saved comes back from the server on the next visit.
       var unsaved = 0, base0 = read('saved-' + code);
       for (var uk in st) { if (JSON.stringify(st[uk]) !== JSON.stringify(base0[uk])) unsaved++; }
       if (unsaved) {
         var undo = document.createElement('button');
         undo.type = 'button';
-        undo.className = 'desk-btn';
-        undo.textContent = 'Discard ' + unsaved + ' unsaved';
-        undo.title = 'Throw away what this browser has not saved. Anything already saved stays.';
+        undo.className = 'desk-btn desk-locale-discard';
+        undo.textContent = t('index.discard.button', { n: unsaved });
+        undo.title = t('index.discard.hint');
         undo.addEventListener('click', function () {
           var nm = card.getAttribute('data-name') || code;
-          if (!window.confirm('Throw away ' + unsaved + ' unsaved change' +
-                              (unsaved === 1 ? '' : 's') + ' in ' + nm +
-                              '? Anything already saved stays where it is.')) return;
+          if (!window.confirm(tn('index.discard.confirm', unsaved, { language: nm }))) return;
           try {
             localStorage.setItem('cel-desk-' + code,
                                  localStorage.getItem('cel-desk-saved-' + code) || '{}');
           } catch (e) {}
           location.reload();
         });
+        trays.hidden = false;
         trays.appendChild(undo);
       }
     });
   })();
   </script>
-""".replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js)
+""".replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
+        "__HELPERS__", JS_HELPERS).replace("__COPY__", js_table())
 
 
-def render_locale(code: str, name: str, endonym: str, direction: str,
-                  units: list[dict]) -> str:
+def render_locale(code: str, units: list[dict]) -> str:
+    endonym, direction, _flag = _LOCALE[code]
+    name = lang_name(code)
     rows = [u for u in units if (u.get("current") or {}).get(code)]
-    parts = _head(
-        f"{name} — Localization Desk — English College",
-        f"Review the {name} machine translations served on the four Vancouver pages.",
-    )
+    parts = _head(t("meta.locale.title", language=name),
+                  t("meta.locale.description", language=name))
     parts.append(render_admin_open("localization"))
     parts.append('  <div class="dashboard-shell">')
     # Same markup and classes as render_page_chrome(), written out here so the help
-    # control can live IN the header rather than down among the filters. It is not a
-    # filter, and sitting next to Page/Show/Search it read like one.
+    # control can live IN the header rather than down among the filters.
     parts.append('    <header class="dashboard-header">')
     parts.append('      <div class="brand-text">')
-    parts.append(f'        <p class="eyebrow">LOCALIZATION DESK &middot; {escape(name.upper())}</p>')
+    parts.append(f'        <p class="eyebrow">{escape(t("locale.eyebrow", LANGUAGE=name.upper()))}</p>')
     parts.append(
-        f'        <p class="subtitle"><bdi>{escape(endonym)}</bdi> &middot; {len(rows)} units</p>'
+        f'        <p class="subtitle"><bdi>{escape(endonym)}</bdi> &middot; '
+        f'{escape(t("locale.subtitle", total=len(rows)))}</p>'
     )
     parts.append("      </div>")
     parts.append('      <button type="button" class="desk-btn desk-header-btn" id="how-open">'
-                 "How this works</button>")
+                 f'{escape(t("locale.help"))}</button>')
     parts.append("    </header>")
 
     # Toolbar. The locale strip comes FIRST because switching language while staying
-    # on the same page and filter is the move the reviewer makes most: the old desk
-    # forced a trip back to the index and lost the filters on the way.
+    # on the same page and filter is the move the reviewer makes most.
     parts.append('    <div class="controls">')
-    parts.append('      <nav class="desk-locales-strip" aria-label="Language">')
-    for lcode, lname, _endo, _dir, lflag in LOCALES:
+    parts.append(f'      <nav class="desk-locales-strip" aria-label="{escape(t("locale.langs.label"))}">')
+    for lcode, _endo, _dir, lflag in LOCALES:
+        lname = lang_name(lcode)
         cls = "desk-loc is-active" if lcode == code else "desk-loc"
         aria = ' aria-current="page"' if lcode == code else ""
         parts.append(
             f'        <a class="{cls}" href="/admin/localization/{lcode}/" '
-            f'data-loc="{lcode}"{aria}>'
+            f'data-loc="{lcode}" title="{escape(t("locale.langs.hover", language=lname))}"{aria}>'
             f'<span class="desk-loc-flag" aria-hidden="true">{lflag}</span>'
             f'<span class="desk-loc-name">{escape(lname)}</span>'
             f'<span class="desk-loc-count" data-loc-count="{lcode}" hidden></span></a>'
         )
     parts.append("      </nav>")
     parts.append('      <div class="desk-toolbar">')
-    parts.append('        <label class="desk-field">Page')
+    parts.append(f'        <label class="desk-field">{escape(t("filter.page"))}')
     parts.append('          <select class="desk-select" id="f-page">')
-    parts.append('            <option value="">All pages</option>')
-    for slug, label in PAGE_LABELS.items():
-        parts.append(f'            <option value="{slug}">{escape(label)}</option>')
+    parts.append(f'            <option value="">{escape(t("filter.page.all"))}</option>')
+    for slug in PAGE_KEYS:
+        parts.append(f'            <option value="{slug}">{escape(t("page." + slug))}</option>')
     parts.append("          </select>")
     parts.append("        </label>")
-    parts.append('        <label class="desk-field">Show')
+    parts.append(f'        <label class="desk-field">{escape(t("filter.show"))}')
     parts.append('          <select class="desk-select" id="f-state">')
-    # Ordered by what the reviewer should do next, and every label carries a live
-    # count -- so the dropdown answers "where is the work" without selecting anything.
-    for value, label in [
-        ("check", "Worth a look first"),
-        ("arrived", "New translations — read these first"),
-        ("todo", "Not reviewed"),
-        ("", "Everything"),
-        ("csv", "Approved"),
-        ("edited", "Approved \u00b7 your wording"),
-        ("draft", "Needs a new translation"),
-        ("sending", "Being translated"),
-        ("failed", "Translation failed"),
-        ("exported", "In the export file"),
-        ("live", "Already on the website"),
-    ]:
-        parts.append(f'            <option value="{value}" data-base="{escape(label)}">{escape(label)}</option>')
+    # Ordered by what the reviewer should do next. The labels (with their live counts)
+    # are written by the page from COPY.md `show.*`, so they are never two copies.
+    for value, key in [("check", "check"), ("arrived", "arrived"), ("todo", "todo"),
+                       ("", "all"), ("csv", "csv"), ("edited", "edited"), ("draft", "draft"),
+                       ("sending", "sending"), ("failed", "failed"), ("exported", "exported"),
+                       ("live", "live")]:
+        parts.append(f'            <option value="{value}" data-copy="show.{key}">'
+                     f'{escape(t("show." + key, n="…"))}</option>')
     parts.append("          </select>")
     parts.append("        </label>")
-    parts.append('        <label class="desk-field">Search')
-    parts.append('          <input class="desk-select" id="f-q" type="search" '
-                 'placeholder="source or translation" autocomplete="off">')
+    parts.append(f'        <label class="desk-field">{escape(t("filter.search"))}')
+    parts.append('          <input class="desk-select desk-search" id="f-q" type="search" '
+                 f'placeholder="{escape(t("filter.search.placeholder", language=name))}" '
+                 'autocomplete="off">')
     parts.append("        </label>")
-    # Neither Import nor Download: the reviewer imports nothing, and asking them to
-    # take backups is asking them to spend the time this project exists to save.
-    # Durability is the system's job, not a button. "How this works" moved up into the
-    # header — it is help, not a filter.
     parts.append("      </div>")
     parts.append('      <p class="subtle" id="count-line"></p>')
     parts.append("    </div>")
@@ -584,9 +526,7 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('    <main class="dashboard-main">')
     parts.append('      <div class="scroll-x">')
     parts.append('        <table class="doc-table desk-table">')
-    # Explicit columns, because the table is `table-layout: fixed`. Under `auto`,
-    # max-width on a cell clamps the BOX but not the content, so at 820px the English
-    # ran 66px into the German column -- boxes that did not overlap, text that did.
+    # Explicit columns, because the table is `table-layout: fixed`.
     parts.append("          <colgroup>")
     parts.append('            <col class="col-pick"><col class="col-src"><col class="col-tgt">')
     parts.append('            <col class="col-state"><col class="col-act">')
@@ -594,40 +534,35 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("          <thead><tr>")
     parts.append('            <th scope="col" class="desk-col-pick">'
                  '<input type="checkbox" class="desk-pick" id="pick-all" '
-                 'aria-label="Select every row shown"></th>')
-    parts.append('            <th scope="col">English source</th>')
-    parts.append(f'            <th scope="col">{escape(name)} (live today)</th>')
-    parts.append('            <th scope="col" class="desk-col-state">State</th>')
-    parts.append('            <th scope="col" class="desk-col-act">Decision</th>')
+                 f'aria-label="{escape(t("table.pick_all"))}"></th>')
+    parts.append(f'            <th scope="col">{escape(t("table.col.source"))}</th>')
+    parts.append(f'            <th scope="col">{escape(t("table.col.target", language=name))}</th>')
+    parts.append(f'            <th scope="col" class="desk-col-state">{escape(t("table.col.status"))}</th>')
+    parts.append(f'            <th scope="col" class="desk-col-act">{escape(t("table.col.actions"))}</th>')
     parts.append("          </tr></thead>")
-    # Rows are built in the browser from units.json, not baked in here. Server-rendering
-    # 990 rows x 8 locales produced 11 MB of HTML that git had to store again on EVERY
-    # regeneration; the same content as JSON is ~292 KB per locale and the page shell
-    # stays ~31 KB.
+    # Rows are built in the browser from units.json, not baked in here.
     parts.append('          <tbody id="desk-body"></tbody>')
     parts.append("        </table>")
-    parts.append('        <p class="empty" id="no-rows" hidden>Nothing matches these filters.</p>')
+    parts.append(f'        <p class="empty" id="no-rows" hidden>{escape(t("table.empty"))}</p>')
     parts.append("      </div>")
     parts.append("    </main>")
 
     # Sticky two-zone action bar
     parts.append('    <div class="desk-savebar" id="savebar" hidden>')
     parts.append('      <div class="desk-bar-row" id="bar-select" hidden>')
-    parts.append('        <p class="desk-savebar-text"><strong id="sel-count">0</strong> selected</p>')
+    parts.append('        <p class="desk-savebar-text" id="sel-count"></p>')
     parts.append('        <span class="desk-savebar-spacer"></span>')
-    parts.append('        <button type="button" class="desk-btn" id="bulk-clear">Clear</button>')
-    parts.append('        <button type="button" class="desk-btn" id="bulk-draft">Needs a new translation</button>')
-    parts.append('        <button type="button" class="desk-btn is-strong" id="bulk-approve">Approve</button>')
+    parts.append(f'        <button type="button" class="desk-btn" id="bulk-clear">{escape(t("bar.clear"))}</button>')
+    parts.append(f'        <button type="button" class="desk-btn" id="bulk-draft">{escape(t("bar.queue"))}</button>')
+    parts.append(f'        <button type="button" class="desk-btn is-strong" id="bulk-approve">{escape(t("bar.approve"))}</button>')
     parts.append("      </div>")
     parts.append('      <div class="desk-bar-row" id="bar-trays" hidden>')
     parts.append('        <p class="desk-savebar-text" id="tray-line"></p>')
     parts.append('        <span class="desk-savebar-spacer"></span>')
-    # These OPEN a list; the two in the row above ACT on the selection. They used to
-    # read "Needs a new translation" and "Approved" -- byte-identical to, and one
-    # letter from, the action buttons sitting directly above them in the same bar.
-    parts.append('        <button type="button" class="desk-btn" id="open-draft">See marked</button>')
-    parts.append('        <button type="button" class="desk-btn" id="open-csv">See approved</button>')
-    parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden>Save</button>')
+    # These OPEN a list; the two in the row above ACT on the selection.
+    parts.append(f'        <button type="button" class="desk-btn" id="open-draft">{escape(t("bar.view.requested"))}</button>')
+    parts.append(f'        <button type="button" class="desk-btn" id="open-csv">{escape(t("bar.view.approved"))}</button>')
+    parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden></button>')
     parts.append('        <span class="desk-status" id="save-elsewhere" hidden></span>')
     parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
     parts.append("      </div>")
@@ -635,8 +570,8 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
 
     parts.append("  </div>")
     parts.append('  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>')
-    parts.append(HOW_MODAL)
-    parts.append(REVIEW_MODAL)
+    parts.append(_how_modal())
+    parts.append(_review_modal())
     parts.append(_desk_js(code, direction == "rtl", _worth_js(units)))
     parts.append(render_admin_close())
     parts.append("</body>")
@@ -710,6 +645,28 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
     }
 
     var LOCALES = __LOCALES__;
+    // Every word on this page comes from COPY.md (operator, 2026-09-23: all text lives in
+    // one document and the code pulls it from there). t() / tn() read it.
+    var COPY = __COPY__;
+__HELPERS__
+    // Weglot keeps each link inside a text as <a wg-N="">words</a>. Showing that raw made
+    // the reviewer read markup; the linked words are shown underlined instead. DOM only.
+    var MARK = new RegExp('(<a wg-[0-9]+="">|</a>)');
+    function renderMarked(el, text) {
+      el.textContent = '';
+      var inLink = null;
+      String(text).split(MARK).forEach(function (part) {
+        if (!part) return;
+        if (part.indexOf('<a wg-') === 0) {
+          inLink = document.createElement('span');
+          inLink.className = 'desk-linktext';
+          el.appendChild(inLink);
+          return;
+        }
+        if (part === '</a>') { inLink = null; return; }
+        (inLink || el).appendChild(document.createTextNode(part));
+      });
+    }
     // Per locale, the ids "Worth a look first" starts from -- the same list the index
     // card counts, so a tab badge, the filter and the index say one number.
     var WORTH = __WORTH__;
@@ -725,6 +682,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
     // wording back from it recorded a DISCARDED edit as the text an approval was given
     // to (audit 2026-09-23): export then refused the row as "moved since approval".
     var liveText = Object.create(null);
+    var sourceText = Object.create(null);   // the English, markers included
     try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
     var hist = [];
     try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
@@ -760,9 +718,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         // once, then stop repeating it.
         if (!storageBroken) {
           storageBroken = true;
-          toast('This browser will not store your work', { level: 'err',
-            detail: 'What you see is still correct, but a reload would lose it. ' +
-                    'Save now so it reaches the server.' });
+          toast(t('toast.storage.title'), { level: 'err', detail: t('toast.storage.detail') });
         }
         return false;
       }
@@ -831,6 +787,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         tr.className = 'desk-row';
         tr.setAttribute('data-uid', u.id);
         liveText[u.id] = u.tgt;
+        sourceText[u.id] = u.src;
         tr.setAttribute('data-pages', u.pages.join(' '));
         tr.setAttribute('data-q', (u.src + ' ' + u.tgt).toLowerCase());
         // A site-wide row keeps its finding on screen but is not "worth a look first":
@@ -844,7 +801,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         cb.type = 'checkbox';
         cb.className = 'desk-pick';
         cb.setAttribute('data-pick', '');
-        cb.setAttribute('aria-label', 'Select this row');
+        cb.setAttribute('aria-label', t('row.pick'));
         tdPick.appendChild(cb);
 
         var tdSrc = document.createElement('td');
@@ -857,7 +814,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         }
         var srcText = document.createElement('span');
         srcText.className = 'desk-srctext';
-        srcText.textContent = u.src;
+        renderMarked(srcText, u.src);
         tdSrc.appendChild(srcText);
 
         var tdTgt = document.createElement('td');
@@ -870,7 +827,8 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         // Surprise... 5" and a sentence's full stop jumped to the front. The reviewer
         // was being shown a defect that is not on the website.
         live.setAttribute('dir', 'auto');
-        live.textContent = u.tgt;
+        renderMarked(live, u.tgt);
+        live.setAttribute('data-shown', u.tgt);
         // The recommendation is advice, not an action: it says why a row is worth a
         // second look and does nothing else. Computed at build time from the text
         // already on the page, so it costs nothing and no model was asked.
@@ -890,17 +848,15 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
           shared = document.createElement('p');
           shared.className = 'desk-shared';
           shared.setAttribute('dir', 'auto');
-          var eg = u.sharedEg === '/' ? 'the home page' : u.sharedEg;
-          shared.textContent = 'Shared with ' + u.shared + (u.shared === 1 ? ' other page' : ' other pages') +
-            ' (' + eg + (u.shared > 1 ? ', …' : '') + '). Weglot keeps one wording for all of ' +
-            'them, so a decision here cannot reach the website yet.';
+          var eg = u.sharedEg === '/' ? t('row.shared.home') : u.sharedEg;
+          shared.textContent = tn('row.shared', u.shared, { example: eg });
         }
         var editWrap = document.createElement('div');
         editWrap.className = 'desk-editor';
         editWrap.hidden = true;
         var ta = document.createElement('textarea');
         ta.className = 'desk-edit';
-        ta.setAttribute('aria-label', 'Your wording');
+        ta.setAttribute('aria-label', t('editor.label'));
         ta.setAttribute('dir', 'auto');
         ta.value = u.tgt;
         // Seeded here as well as on open, so `editorDirty` answers honestly for a
@@ -915,18 +871,27 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         bCancel.type = 'button';
         bCancel.className = 'desk-btn';
         bCancel.setAttribute('data-edit', 'cancel');
-        bCancel.textContent = 'Cancel';
+        bCancel.textContent = t('editor.cancel');
         var bSave = document.createElement('button');
         bSave.type = 'button';
         // Ghost, not filled. Save in the bottom bar is the page's one primary, and a
         // second filled pill inline in a table row competes with it for the same job.
         bSave.className = 'desk-btn is-strong';
         bSave.setAttribute('data-edit', 'save');
-        bSave.textContent = 'Save changes';
+        bSave.textContent = t('editor.save');
         editBar.appendChild(editHint);
         editBar.appendChild(bCancel);
         editBar.appendChild(bSave);
         editWrap.appendChild(ta);
+        // A text with a link carries its markers into the edit box; say what they are
+        // for, once, where the reviewer meets them.
+        if (u.tgt.indexOf('<a wg-') !== -1 || u.src.indexOf('<a wg-') !== -1) {
+          var linkNote = document.createElement('p');
+          linkNote.className = 'desk-editor-note';
+          linkNote.setAttribute('dir', 'auto');
+          linkNote.textContent = t('editor.links');
+          editWrap.appendChild(linkNote);
+        }
         editWrap.appendChild(editBar);
         tdTgt.appendChild(live);
         if (why) tdTgt.appendChild(why);
@@ -937,7 +902,7 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         tdState.className = 'desk-col-state';
         var badge = document.createElement('span');
         badge.className = 'desk-state badge-partial';
-        badge.textContent = 'Not reviewed';
+        badge.textContent = t('status.todo');
         tdState.appendChild(badge);
 
         var tdAct = document.createElement('td');
@@ -949,9 +914,9 @@ def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
         // so they inherit) -- colour here means STATE, never identity, and a decided row
         // is the only place indigo appears. Every one keeps a title and an aria-label,
         // so the meaning survives a screen reader and a hover.
-        [['approve', 'Approve', 'tick'],
-         ['edit', 'Edit wording', 'pencil'],
-         ['queue', 'Needs a new translation', 'spark']]
+        [['approve', t('action.approve'), 'tick'],
+         ['edit', t('action.edit'), 'pencil'],
+         ['queue', t('action.queue'), 'spark']]
           .forEach(function (spec) {
             var b = document.createElement('button');
             b.type = 'button';
@@ -987,15 +952,15 @@ __STAGE_JS__
     function stage(uid) { return stageOf(state[uid]); }
 
     var STAGE_BADGE = {
-      todo:     ['Not reviewed', 'badge-partial'],
-      arrived:  ['New translation', 'badge-proposed'],
-      approved: ['Approved', 'badge-ok'],
-      edited:   ['Approved · your wording', 'badge-ok'],
-      queued:   ['Needs a new translation', 'badge-failed'],
-      sending:  ['Being translated…', 'badge-partial'],
-      failed:   ['Translation failed', 'badge-failed'],
-      exported: ['In the export file', 'badge-ok'],
-      live:     ['On the website', 'badge-ok']
+      todo:     [t('status.todo'), 'badge-partial'],
+      arrived:  [t('status.arrived'), 'badge-proposed'],
+      approved: [t('status.approved'), 'badge-ok'],
+      edited:   [t('status.edited'), 'badge-ok'],
+      queued:   [t('status.queued'), 'badge-failed'],
+      sending:  [t('status.sending'), 'badge-partial'],
+      failed:   [t('status.failed'), 'badge-failed'],
+      exported: [t('status.exported'), 'badge-ok'],
+      live:     [t('status.live'), 'badge-ok']
     };
 
     function paint(tr) {
@@ -1031,14 +996,11 @@ __STAGE_JS__
       // with no text has nowhere else to say what it currently means. Neither is ever
       // disabled: the active one IS the undo.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.title = s.tray === 'csv' ? 'Approved — click to undo'
-        : 'Approve — this wording goes to the website when the import file is made';
+      bApprove.title = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
       bApprove.setAttribute('aria-label', bApprove.title);
       bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.title = s.tray === 'draft'
-        ? 'Needs a new translation — click to undo'
-        : 'Needs a new translation — ask Gemini to try again';
+      bQueue.title = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
       bQueue.setAttribute('aria-label', bQueue.title);
       bQueue.disabled = false;
 
@@ -1048,7 +1010,10 @@ __STAGE_JS__
       // The reviewer's wording while there is one; the website's again once it is cleared.
       var live = tr.querySelector('.desk-live');
       var shown = s.text != null ? s.text : liveText[uid];
-      if (live.textContent !== shown) live.textContent = shown;
+      if (live.getAttribute('data-shown') !== shown) {
+        renderMarked(live, shown);
+        live.setAttribute('data-shown', shown);
+      }
     }
 
     function counts() {
@@ -1070,22 +1035,22 @@ __STAGE_JS__
       var all = unsavedByLocale();
       var unsaved = 0;
       for (var lc in all) unsaved += all[lc].n;
-      selCount.textContent = n;
+      selCount.textContent = t('bar.selected', { n: n });
       barSelect.hidden = n === 0;
       // The bar stays while ANY language has unsaved work, so switching language can
       // never make pending work disappear from view.
       barTrays.hidden = (c.csv + c.draft) === 0 && unsaved === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
-      if (c.csv) bits.push(c.csv + ' approved');
-      if (c.draft) bits.push(c.draft + (c.draft === 1 ? ' needs' : ' need') + ' a new translation');
+      if (c.csv) bits.push(t('bar.summary.approved', { n: c.csv }));
+      if (c.draft) bits.push(tn('bar.summary.requested', c.draft));
       trayLine.textContent = bits.join('  ·  ');
       var oc = document.getElementById('open-csv');
       var od = document.getElementById('open-draft');
       oc.disabled = !c.csv;
       od.disabled = !c.draft;
-      oc.textContent = c.csv ? 'See ' + c.csv + ' approved' : 'See approved';
-      od.textContent = c.draft ? 'See ' + c.draft + ' marked' : 'See marked';
+      oc.textContent = c.csv ? t('bar.view.approved_n', { n: c.csv }) : t('bar.view.approved');
+      od.textContent = c.draft ? t('bar.view.requested_n', { n: c.draft }) : t('bar.view.requested');
       paintSave();
     }
 
@@ -1142,10 +1107,10 @@ __STAGE_JS__
         else if (st === 'live') tally.live++;
       });
       Array.prototype.forEach.call(fState.options, function (opt) {
-        var base = opt.getAttribute('data-base') || opt.textContent;
-        if (opt.value === '') { opt.textContent = base + ' (' + rows.length + ')'; return; }
+        var key = opt.getAttribute('data-copy');
+        if (opt.value === '') { opt.textContent = t(key, { n: rows.length }); return; }
         var n = tally[opt.value] || 0;
-        opt.textContent = base + ' (' + n + ')';
+        opt.textContent = t(key, { n: n });
         // Never disable the option currently selected, or the select goes blank.
         opt.disabled = n === 0 && opt.value !== fState.value;
       });
@@ -1156,7 +1121,7 @@ __STAGE_JS__
       paintFilterCounts();
       var vis = shown();
       noRows.hidden = vis.length !== 0;
-      countLine.textContent = vis.length + ' of ' + rows.length + ' units shown';
+      countLine.textContent = t('count.line', { shown: vis.length, total: rows.length });
       syncPickAll();
       if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
     }
@@ -1256,7 +1221,7 @@ __STAGE_JS__
 
     function paintEditor(tr) {
       var dirty = editorDirty(tr);
-      tr.querySelector('.desk-editor-hint').textContent = dirty ? 'unsaved' : '';
+      tr.querySelector('.desk-editor-hint').textContent = dirty ? t('editor.unsaved') : '';
       tr.querySelector('[data-edit="save"]').disabled = !dirty;
     }
 
@@ -1327,14 +1292,13 @@ __STAGE_JS__
       if (btn.getAttribute('data-edit') === 'save') {
         if (commitEditor(tr.querySelector('.desk-edit'))) {
           applyFilters();
-          toast('Your wording saved', { level: 'ok',
-            detail: 'This row is approved and will use your wording.' });
+          toast(t('toast.edited.title'), { level: 'ok', detail: t('toast.edited.detail') });
         }
         toggleEditor(tr, false);
       } else {
         // Closing with changes is allowed, but never silently.
         if (editorDirty(tr) &&
-            !window.confirm('Discard your changes to this wording?')) return;
+            !window.confirm(t('editor.discard'))) return;
         toggleEditor(tr, false);
       }
     });
@@ -1361,10 +1325,7 @@ __STAGE_JS__
       var inFlight = ids.filter(function (uid) { return stage(uid) === 'sending'; });
       ids = ids.filter(function (uid) { return stage(uid) !== 'sending'; });
       if (!ids.length) {
-        toast('Nothing changed', { level: 'warn',
-          detail: inFlight.length + (inFlight.length === 1
-            ? ' row is out for translation. It can be decided when it comes back.'
-            : ' rows are out for translation. They can be decided when they come back.') });
+        toast(t('toast.inflight.title'), { level: 'warn', detail: tn('toast.inflight', inFlight.length) });
         return;
       }
       var changed = 0;
@@ -1383,13 +1344,10 @@ __STAGE_JS__
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters();
-      var extra = changed !== ids.length ? (ids.length - changed) + ' were already set. ' : '';
-      toast(changed + (changed === 1 ? ' row ' : ' rows ') +
-            (tray === 'csv' ? 'approved' : 'marked for a new translation'), {
+      var extra = changed !== ids.length ? tn('toast.already', ids.length - changed) + ' ' : '';
+      toast(tn(tray === 'csv' ? 'toast.approved' : 'toast.requested', changed), {
         level: 'ok',
-        detail: extra + (tray === 'csv'
-          ? 'They go to the website when you make the file.'
-          : 'Nothing is sent to Gemini yet.')
+        detail: extra + t(tray === 'csv' ? 'toast.approved.detail' : 'toast.requested.detail')
       });
     }
     document.getElementById('bulk-approve').addEventListener('click', function () { bulk('csv', 'approve'); });
@@ -1462,25 +1420,7 @@ __STAGE_JS__
     // button and a make-the-file button, each with a confirmation step -- none of
     // which exists. A reviewer went looking for controls that were never built, and
     // the standing rule is to say what is not switched on, in their words.
-    var TRAY_COPY = {
-      draft: {
-        title: 'Needs a new translation',
-        one: 'row is marked for a fresh translation.',
-        many: 'rows are marked for a fresh translation.',
-        notice: 'Save keeps these marks so nobody has to find them again. ' +
-                'Sending them to Gemini is not switched on yet — when it is, they go ' +
-                'in one request and you see the count and the cost before anything is ' +
-                'spent.'
-      },
-      csv: {
-        title: 'Approved',
-        one: 'row is approved and waiting to go to the website.',
-        many: 'rows are approved and waiting to go to the website.',
-        notice: 'Nothing reaches the website on its own. Save stores these approvals ' +
-                'for everyone. Making the Weglot import file is not switched on yet; ' +
-                'your approvals are kept and waiting for it.'
-      }
-    };
+    // COPY.md `list.<draft|csv>.*`: what each list IS, not what is planned.
 
     // The review list is a working screen, not a confirmation dialog: the reviewer
     // came here to take things back out, so it supports the same multi-select the main
@@ -1501,10 +1441,10 @@ __STAGE_JS__
       all.checked = listed > 0 && sel === listed;
       all.indeterminate = sel > 0 && sel < listed;
       document.getElementById('tray-selcount').textContent =
-        sel ? sel + ' selected' : 'Select all';
+        sel ? t('list.selected', { n: sel }) : t('list.select_all');
       var rm = document.getElementById('tray-remove-sel');
       rm.disabled = sel === 0;
-      rm.textContent = sel ? 'Undo ' + sel : 'Undo';
+      rm.textContent = sel ? t('list.undo_n', { n: sel }) : t('list.undo');
       document.getElementById('tray-empty').disabled = listed === 0;
 
       // The list used to offer nothing but Undo and Close: a basket with no way to
@@ -1516,9 +1456,8 @@ __STAGE_JS__
       for (var pc in allPending) pending += allPending[pc].n;
       ts.hidden = pending === 0;
       ts.disabled = saving;
-      ts.textContent = saving ? 'Saving…'
-                              : 'Save ' + pending + (pending === 1 ? ' change' : ' changes');
-      ts.title = 'Store your decisions so they survive this tab and reach anyone else reviewing';
+      ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
+      ts.title = t('save.button.hint');
     }
 
     function removeFromTray(uids) {
@@ -1526,19 +1465,16 @@ __STAGE_JS__
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters(); paintTray();
-      toast('Undone', { level: 'warn',
-        detail: uids.length + (uids.length === 1 ? ' row is' : ' rows are') + ' back to Not reviewed.' });
+      toast(t('toast.undone.title'), { level: 'warn', detail: tn('toast.undone', uids.length) });
     }
 
     function paintTray() {
       if (!openTray) return;
-      var copy = TRAY_COPY[openTray];
       var listed = trayRows();
       var n = listed.length;
-      document.getElementById('tray-title').textContent = copy.title;
-      document.getElementById('tray-summary').textContent =
-        n + ' ' + (n === 1 ? copy.one : copy.many);
-      document.getElementById('tray-notice').textContent = copy.notice;
+      document.getElementById('tray-title').textContent = t('list.' + openTray + '.title');
+      document.getElementById('tray-summary').textContent = tn('list.' + openTray + '.summary', n);
+      document.getElementById('tray-notice').textContent = t('list.' + openTray + '.notice');
 
       trayList.textContent = '';
       listed.forEach(function (tr) {
@@ -1550,7 +1486,7 @@ __STAGE_JS__
         cb.type = 'checkbox';
         cb.className = 'desk-pick';
         cb.checked = !!trayPicked[uid];
-        cb.setAttribute('aria-label', 'Select this row');
+        cb.setAttribute('aria-label', t('row.pick'));
         cb.addEventListener('change', function () {
           if (cb.checked) trayPicked[uid] = 1; else delete trayPicked[uid];
           paintTrayFooter();
@@ -1560,20 +1496,20 @@ __STAGE_JS__
         texts.className = 'desk-review-texts';
         var src = document.createElement('p');
         src.className = 'desk-review-src';
-        src.textContent = tr.querySelector('.desk-srctext').textContent;
+        renderMarked(src, sourceText[uid]);
         var tgt = document.createElement('p');
         tgt.className = 'desk-review-tgt';
         // Paragraph direction follows the text, as in the table (see `.desk-live`).
         tgt.setAttribute('dir', 'auto');
         var st = state[uid] || {};
-        tgt.textContent = st.text != null ? st.text : liveText[uid];
+        renderMarked(tgt, st.text != null ? st.text : liveText[uid]);
         texts.appendChild(src); texts.appendChild(tgt);
 
         var rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'desk-btn desk-icon-btn';
-        rm.title = 'Undo — back to Not reviewed';
-        rm.setAttribute('aria-label', 'Undo this row');
+        rm.title = t('list.row.undo');
+        rm.setAttribute('aria-label', t('list.row.undo.label'));
         rm.appendChild(icon('undo'));
         rm.addEventListener('click', function () { removeFromTray([uid]); });
 
@@ -1621,15 +1557,14 @@ __STAGE_JS__
     document.getElementById('tray-empty').addEventListener('click', function () {
       if (!openTray) return;
       var listed = trayRows().length;
-      if (!window.confirm('Undo all ' + listed + ' rows? They go back to Not reviewed.')) return;
+      if (!window.confirm(t('list.undo_all.confirm', { n: listed }))) return;
       var n = 0;
       for (var k in state) {
         if (state[k] && state[k].tray === openTray) { setTray(k, null, 'empty-tray'); n++; }
       }
       note('empty-tray', null, openTray, String(n));
       persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
-      toast('Undone', { level: 'warn',
-        detail: n + (n === 1 ? ' row is back to Not reviewed.' : ' rows are back to Not reviewed.') });
+      toast(t('toast.undone.title'), { level: 'warn', detail: tn('toast.undone', n) });
     });
 
     // ── Export / import ────────────────────────────────────────────────
@@ -1694,14 +1629,10 @@ __STAGE_JS__
       rows.forEach(paint); paintBar(); applyFilters();
       if (n) {
         var said = [];
-        if (nArrived) said.push(nArrived + (nArrived === 1 ? ' new translation to read.'
-                                                          : ' new translations to read.'));
-        if (nFailed) said.push(nFailed + (nFailed === 1 ? ' translation failed.'
-                                                        : ' translations failed.'));
-        if (nLive) said.push(nLive + (nLive === 1 ? ' is now on the website.'
-                                                 : ' are now on the website.'));
-        toast(n + (n === 1 ? ' row updated' : ' rows updated'),
-              { level: nFailed ? 'warn' : 'ok', detail: said.join(' ') });
+        if (nArrived) said.push(tn('toast.updated.arrived', nArrived));
+        if (nFailed) said.push(tn('toast.updated.failed', nFailed));
+        if (nLive) said.push(tn('toast.updated.live', nLive));
+        toast(tn('toast.updated', n), { level: nFailed ? 'warn' : 'ok', detail: said.join(' ') });
       }
       return { ok: true, rows: n };
     }
@@ -1809,45 +1740,42 @@ __STAGE_JS__
       var total = 0, others = 0;
       for (var c in all) { total += all[c].n; if (c !== CODE) others += all[c].n; }
       btnSave.hidden = total === 0 || saving;
-      btnSave.textContent = 'Save ' + total + (total === 1 ? ' change' : ' changes');
+      btnSave.textContent = tn('save.button', total);
       btnSave.disabled = saving;
-      btnSave.title = others
-        ? others + ' of them are in another language — Save stores every language at once'
-        : '';
+      btnSave.title = others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint');
       var note = document.getElementById('save-elsewhere');
       if (note) {
         note.hidden = others === 0;
-        note.textContent = others ? '· ' + others + ' unsaved in other languages' : '';
+        note.textContent = others ? t('save.elsewhere', { n: others }) : '';
       }
     }
 
     // A reviewer has no model of a workflow run, an underscored status or an HTTP
     // code. The raw value still goes to note('save-failed'), where it can be read
     // when something needs diagnosing; it does not go on screen.
-    var FAILURE_WORDS = {
-      'startup_failure': 'the save could not be started',
-      'cancelled': 'the save was cancelled',
-      'timed_out': 'the save took too long',
-      'failure': 'the server could not store it'
-    };
+    // Internal error codes -> the reason words in COPY.md `save.reason.*`. The raw
+    // message still goes to note('save-failed') for diagnosis; it never goes on screen.
+    var FAILURE_KEYS = [
+      ['startup_failure', 'startup'], ['cancelled', 'cancelled'], ['timed_out', 'timeout'],
+      ['failure', 'server'], ['timed out', 'slow'], ['HTTP 4', 'refused'],
+      ['HTTP 5', 'trouble'], ['cannot confirm', 'unconfirmed'],
+      ['not configured', 'not_configured'], ['too large', 'too_large']
+    ];
     function humanFailure(msg) {
       msg = String(msg || '');
-      for (var k in FAILURE_WORDS) if (msg.indexOf(k) !== -1) return FAILURE_WORDS[k];
-      if (msg.indexOf('timed out') !== -1) return 'the save is taking longer than expected';
-      if (msg.indexOf('HTTP 4') !== -1) return 'the server refused the save';
-      if (msg.indexOf('HTTP 5') !== -1) return 'the server is having trouble';
-      if (msg.indexOf('cannot confirm') !== -1) return msg;
-      return 'the save did not complete';
+      for (var i = 0; i < FAILURE_KEYS.length; i++) {
+        if (msg.indexOf(FAILURE_KEYS[i][0]) !== -1) return t('save.reason.' + FAILURE_KEYS[i][1]);
+      }
+      return t('save.reason.unknown');
     }
 
-    var RUN_WORDS = {
-      'queued': 'starting…', 'waiting': 'starting…', 'pending': 'starting…',
-      'in_progress': 'saving…', 'requested': 'starting…'
-    };
+    function runWords(status) {
+      return t(status === 'in_progress' ? 'save.status.saving' : 'save.status.starting');
+    }
 
     function callProxy(payload) {
       var url = window.CEL_DISPATCH_URL;
-      if (!url) return Promise.reject(new Error('Saving is not configured on this site yet.'));
+      if (!url) return Promise.reject(new Error('not configured'));
       var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
       payload.token = m ? m[1] : '';
       return fetch(url, {
@@ -1892,8 +1820,7 @@ __STAGE_JS__
           var isOurs = run && (baselineId === null || run.id !== baselineId);
           if (isOurs && run.status === 'completed') return run;
           if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
-          saveStatus.textContent = isOurs ? (RUN_WORDS[run.status] || 'saving…')
-                                          : 'starting…';
+          saveStatus.textContent = isOurs ? runWords(run.status) : t('save.status.starting');
           return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
         });
       }
@@ -1910,7 +1837,7 @@ __STAGE_JS__
           var run = r.ok && r.body && r.body.run ? r.body.run : null;
           if (run && run.status === 'completed') return run;
           if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
-          saveStatus.textContent = run ? (RUN_WORDS[run.status] || 'saving…') : 'starting…';
+          saveStatus.textContent = run ? runWords(run.status) : t('save.status.starting');
           return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
         });
       }
@@ -1960,8 +1887,8 @@ __STAGE_JS__
       var parts = await chunksFor(locale, d.body);
       for (var i = 0; i < parts.length; i++) {
         if (parts.length > 1) {
-          saveStatus.textContent = 'saving ' + locale.toUpperCase() +
-                                   ' (part ' + (i + 1) + ' of ' + parts.length + ')…';
+          saveStatus.textContent = t('save.status.part',
+            { language: t('lang.' + locale), i: i + 1, count: parts.length });
         }
         // Probe BEFORE dispatching. A Worker that cannot name runs answers the poll
         // without an id; dispatching anyway let the save land in the repo and then
@@ -1996,7 +1923,7 @@ __STAGE_JS__
       codes.forEach(function (c) { total += all[c].n; });
 
       saving = true; paintSave();
-      saveStatus.textContent = 'saving…';
+      saveStatus.textContent = t('save.status.saving');
       saveStatus.className = 'desk-status';
 
       // Snapshot BEFORE sending. Anything decided while the run is in flight stays
@@ -2011,8 +1938,8 @@ __STAGE_JS__
         for (var i = 0; i < codes.length; i++) {
           var c = codes[i];
           if (codes.length > 1) {
-            saveStatus.textContent = 'saving ' + c.toUpperCase() +
-                                     ' (' + (i + 1) + ' of ' + codes.length + ')…';
+            saveStatus.textContent = t('save.status.language',
+              { language: t('lang.' + c), i: i + 1, count: codes.length });
           }
           await saveOne(c, all[c]);
           // Bank each language as it lands. A failure on the fourth must not throw
@@ -2035,21 +1962,20 @@ __STAGE_JS__
       if (!failed) {
         note('save', null, String(total), codes.join(','));
         saveStatus.textContent = '';
-        toast('Saved', { level: 'ok',
-          detail: total + (total === 1 ? ' change is' : ' changes are') +
-                  ' stored' + (codes.length > 1 ? ' across ' + codes.length + ' languages' : '') +
-                  '. Safe to close this page or carry on from another computer.' });
+        toast(t('save.done.title'), { level: 'ok',
+          detail: codes.length > 1
+            ? t('save.done.detail_langs', { n: total, count: codes.length })
+            : tn('save.done.detail', total) });
       } else {
-        saveStatus.textContent = 'not saved';
+        saveStatus.textContent = t('save.status.failed');
         saveStatus.className = 'desk-status is-error';
         note('save-failed', null, failed.message, done.join(','));
-        toast(done.length ? 'Saved ' + done.length + ' of ' + codes.length + ' languages'
-                          : 'Not saved',
+        var reason = humanFailure(failed.message);
+        toast(done.length ? t('save.partial.title', { done: done.length, count: codes.length })
+                          : t('save.failed.title'),
               { level: 'err',
-                detail: 'Nothing was lost — ' +
-                        (done.length ? 'the rest is' : 'your work is') +
-                        ' still on this page. Try Save again. (' +
-                        humanFailure(failed.message) + ')' });
+                detail: t(done.length ? 'save.partial.detail' : 'save.failed.detail',
+                          { reason: reason }) });
       }
     }
 
@@ -2081,7 +2007,7 @@ __STAGE_JS__
       var x = document.createElement('button');
       x.type = 'button';
       x.className = 'toast-close';
-      x.setAttribute('aria-label', 'Dismiss');
+      x.setAttribute('aria-label', t('toast.close'));
       x.textContent = '\u00d7';
       var timer = null;
       function close() {
@@ -2138,7 +2064,8 @@ __STAGE_JS__
         var link = el.parentNode;
         var nm = link && link.querySelector('.desk-loc-name');
         // The name is visually hidden on inactive tabs; a hover says it, and the count.
-        if (nm) link.title = nm.textContent + (n ? ' — ' + n + ' worth a look' : '');
+        if (nm) link.title = n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
+                               : t('locale.langs.hover', { language: nm.textContent });
       });
     }
 
@@ -2196,9 +2123,7 @@ __STAGE_JS__
           if (!(e instanceof TypeError && !navigator.onLine)) {
             note('decisions-load-failed', null, String(e && e.message || e), null);
           }
-          toast('Could not read what is already saved', { level: 'warn',
-            detail: 'This page may not be showing decisions made elsewhere. ' +
-                    'Reload before you review, or your save could overwrite them.' });
+          toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
         }
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
@@ -2224,20 +2149,18 @@ __STAGE_JS__
       .catch(function (err) {
         // Say so in the page. A desk that silently shows zero rows looks like
         // "nothing to review", which is the opposite of what has happened.
-        countLine.textContent = 'Could not load the units (' + err.message + ').';
+        countLine.textContent = t('count.failed', { error: err.message });
         countLine.className = 'subtle desk-status is-error';
         noRows.hidden = true;
         note('load-failed', null, err.message, null);
-        toast('Could not load this language', {
-          level: 'err',
-          detail: err.message + ' — reload, and tell us if it keeps happening.'
-        });
+        toast(t('toast.load.title'), { level: 'err', detail: t('toast.load.detail', { error: err.message }) });
       });
   })();
   </script>
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
     "__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
-    "__LOCALES__", json.dumps([c for c, *_ in LOCALES]))
+    "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
+    "__HELPERS__", JS_HELPERS).replace("__COPY__", js_table())
 
 
 def main() -> int:
@@ -2260,7 +2183,7 @@ def main() -> int:
     index.write_text(render_index(units), encoding="utf-8")
     written.append(index)
 
-    for code, name, endonym, direction, _flag in LOCALES:
+    for code, _endonym, _direction, _flag in LOCALES:
         out_dir = OUT_ROOT / code
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2274,7 +2197,7 @@ def main() -> int:
         written.append(data_file)
 
         target = out_dir / "index.html"
-        target.write_text(render_locale(code, name, endonym, direction, units), encoding="utf-8")
+        target.write_text(render_locale(code, units), encoding="utf-8")
         written.append(target)
 
     print(f"{len(units)} reviewable units")

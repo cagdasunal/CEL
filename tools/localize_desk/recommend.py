@@ -28,6 +28,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from localize_desk.copy_text import t
+
 # A recommendation is (level, reason). Levels, worst first — the desk sorts on this.
 LEVEL_CHECK = "check"   # a concrete, near-certain defect
 LEVEL_FINE = "fine"     # nothing detected; not a promise that it is good
@@ -51,16 +53,12 @@ _WORD = re.compile(r"[^\W\d_]+", re.UNICODE)
 # correct plural. Each message now says what the client actually asks for.
 # Measured 2026-09-23 on the live French render: all 6 tu/toi hits are real.
 _FORMAL = {
-    "de": (re.compile(r"(?<![.!?]\s)(?<!^)\b(Sie|Ihnen|Ihre[mnrs]?|Ihr)\b"),
-           "formal Sie-Anrede — the client's rules ask for du"),
-    "es": (re.compile(r"\busted\b", re.IGNORECASE),
-           "formal usted — the client's rules ask for tú (plural ustedes is right)"),
-    "it": (re.compile(r"(?<![.!?]\s)(?<!^)\bLei\b"),
-           "formal Lei — the client's rules ask for tu"),
-    "fr": (re.compile(r"\b(tu|toi)\b|\bt['’](?=[a-zàâéèêëîïôûùüç])", re.IGNORECASE),
-           "informal tu — the client's rules ask for vous"),
-    "pt": (re.compile(r"\b(o senhor|a senhora|os senhores|as senhoras)\b", re.IGNORECASE),
-           "formal o senhor / a senhora — the client's rules ask for você"),
+    # The wording of each reason lives in COPY.md as `why.register.<locale>`.
+    "de": re.compile(r"(?<![.!?]\s)(?<!^)\b(Sie|Ihnen|Ihre[mnrs]?|Ihr)\b"),
+    "es": re.compile(r"\busted\b", re.IGNORECASE),
+    "it": re.compile(r"(?<![.!?]\s)(?<!^)\bLei\b"),
+    "fr": re.compile(r"\b(tu|toi)\b|\bt['’](?=[a-zàâéèêëîïôûùüç])", re.IGNORECASE),
+    "pt": re.compile(r"\b(o senhor|a senhora|os senhores|as senhoras)\b", re.IGNORECASE),
 }
 
 
@@ -120,27 +118,27 @@ def recommend(source: str, target: str, locale: str) -> tuple[str, str]:
     source = source or ""
 
     if not target.strip():
-        return LEVEL_CHECK, "nothing translated"
+        return LEVEL_CHECK, t("why.empty")
 
     if _looks_untranslated(source, target):
-        return LEVEL_CHECK, "still in English"
+        return LEVEL_CHECK, t("why.english")
 
     # Anchor placeholders are how Weglot re-attaches links. A dropped one means the
     # imported row would render without its link, silently.
     src_anchors = sorted(_ANCHOR.findall(source))
     tgt_anchors = sorted(_ANCHOR.findall(target))
     if src_anchors != tgt_anchors:
-        return LEVEL_CHECK, "link placeholder missing or changed"
+        return LEVEL_CHECK, t("why.link")
 
     src_digits, tgt_digits = _digits(source), _digits(target)
     if sorted(src_digits) != sorted(tgt_digits):
         missing = [d for d in src_digits if d not in tgt_digits]
         if missing:
-            return LEVEL_CHECK, f"number changed or dropped ({', '.join(missing[:3])})"
-        return LEVEL_CHECK, "numbers do not match the source"
+            return LEVEL_CHECK, t("why.number", numbers=", ".join(missing[:3]))
+        return LEVEL_CHECK, t("why.numbers")
 
     formal = _FORMAL.get(locale)
-    if formal and formal[0].search(target):
-        return LEVEL_CHECK, formal[1]
+    if formal and formal.search(target):
+        return LEVEL_CHECK, t(f"why.register.{locale}")
 
     return LEVEL_FINE, ""

@@ -1037,21 +1037,32 @@
 
   /* Locale index cards */
   .desk-locales { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 18px 0 0; }
-  /* The card is a container, not a link: it holds a link AND an Undo button, and a
-     button inside an anchor is invalid and unreachable by keyboard. Only the title
-     is the link, so the whole card is not one giant tap target that swallows Undo. */
+  /* The card is a container, not a link: it holds a link AND a Discard button, and a
+     button inside an anchor is invalid and unreachable by keyboard. But it must LOOK and
+     ACT clickable (operator 2026-09-23: "there is nothing clickable in here"), so the
+     title link is stretched over the whole card, the chips and Discard sit above that
+     layer and stay separately clickable, and a button-styled label says what a click
+     does. */
   .desk-locale-card {
+    position: relative; cursor: pointer;
     display: block; padding: 18px; color: inherit;
     background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); transition: border-color 120ms ease, background 120ms ease;
   }
   .desk-locale-card:hover { border-color: var(--border-strong); background: var(--stripe); }
   .desk-locale-open { text-decoration: none; color: inherit; }
-  .desk-locale-open:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); border-radius: var(--radius-sm); }
-  .desk-locale-open:hover .desk-locale-name { color: var(--accent); }
+  .desk-locale-open::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); }
+  .desk-locale-open:focus-visible { outline: 0; }
+  .desk-locale-open:focus-visible::after { box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  .desk-locale-card:hover .desk-locale-name { color: var(--accent); }
+  .desk-locale-card .desk-tray, .desk-locale-discard { position: relative; z-index: 1; }
+  .desk-locale-cta { display: inline-flex; margin-top: 14px; pointer-events: none; }
+  .desk-locale-card:hover .desk-locale-cta { border-color: var(--fg); }
   .desk-locale-name { display: inline-block; margin: 0; font-size: var(--fs-lg); font-weight: 600; }
   .desk-locale-sub { margin: 2px 0 12px; font-size: var(--fs-sm); color: var(--muted); }
   .desk-meter { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  /* An empty bar before any decision says nothing; the bar appears with the first one. */
+  .desk-locale-card:not(.is-started) .desk-meter { display: none; }
   .desk-meter-fill { height: 100%; background: var(--accent); border-radius: 999px; }
   .desk-locale-stat { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
 
@@ -1210,6 +1221,13 @@
     text-transform: uppercase; letter-spacing: 0.04em; color: var(--warn);
   }
   .desk-editor-bar .desk-btn { font-size: var(--fs-xs); padding: 5px 12px; }
+  /* Under the edit box, only when the text carries link markers. */
+  .desk-editor-note { margin: 6px 0 0; font-size: var(--fs-xs); color: var(--muted); }
+  .desk-search { min-width: 210px; }
+  /* Words that are a link on the website. Weglot's <a wg-N=""> markers are not shown in
+     reading view; a dotted underline says "this is a link" without the markup. No
+     accent colour -- that is reserved for focus and the one primary (ruling 21). */
+  .desk-linktext { text-decoration: underline dotted; text-underline-offset: 3px; }
 
   /* Selection */
   .desk-col-pick { width: 1%; }
@@ -1266,9 +1284,9 @@
   .desk-tray-arrived { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
   .desk-tray-sending { background: var(--stripe); color: var(--muted); }
   .desk-tray-failed  { background: rgba(160,38,36,0.10); color: var(--err); border-color: rgba(160,38,36,0.28); }
-  .desk-tray-none  { background: var(--stripe); color: var(--faint); }
   a.desk-tray:hover { border-color: currentColor; }
   .desk-trays { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+  .desk-trays[hidden] { display: none; }
   .desk-status { min-height: 18px; font-size: var(--fs-md); color: var(--muted); }
   .desk-status.is-ok { color: var(--ok); }
   .desk-status.is-error { color: var(--err); }

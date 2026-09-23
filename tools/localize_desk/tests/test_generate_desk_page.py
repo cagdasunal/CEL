@@ -106,7 +106,7 @@ class TestRenderedPage:
     def page(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={"de": {"word_to": "Hallo"}})])
         units = G.load_units()
-        return G.render_locale("de", "German", "Deutsch", "ltr", units)
+        return G.render_locale("de", units)
 
     def test_chrome_is_emitted_exactly_once(self, page):
         # render_admin_close() already emits the account modal, the closing div AND
@@ -167,9 +167,10 @@ class TestRenderedPage:
         # bare prefix "s.approved" also matches s.approvedAgainst, which is a
         # legitimate field recording the wording an approval was given to.
         import re
-        assert not re.search(r"s\.approved\s*=", page)
-        assert not re.search(r"s\.approved\b(?!Against)", page)
-        assert not re.search(r"s\.queued\b", page)
+        # (?<!\w): "status.approved" -- a COPY.md key -- is not the variable s.approved.
+        assert not re.search(r"(?<!\w)s\.approved\s*=", page)
+        assert not re.search(r"(?<!\w)s\.approved\b(?!Against)", page)
+        assert not re.search(r"(?<!\w)s\.queued\b", page)
 
     def test_editing_counts_as_approving(self, page):
         # Typing the wording you want IS the decision; a follow-up Approve click
@@ -199,7 +200,7 @@ class TestRenderedPage:
 
     def test_rtl_is_flagged_to_the_row_builder(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={"ar": {"word_to": "مرحبا"}})])
-        page = G.render_locale("ar", "Arabic", "العربية", "rtl", G.load_units())
+        page = G.render_locale("ar", G.load_units())
         # Without <bdi> the subtitle renders as "990 — العربية units."
         assert "<bdi>العربية</bdi>" in page
         assert "var RTL = true;" in page
@@ -221,8 +222,12 @@ class TestRenderedPage:
         """
         script = page[page.index("var KEY = "):]
         assert "innerHTML" not in script
-        assert "srcText.textContent = u.src;" in script
-        assert "live.textContent = u.tgt;" in script
+        assert "renderMarked(srcText, u.src);" in script
+        assert "renderMarked(live, u.tgt);" in script
+        # the link-marker renderer builds text nodes, never markup
+        render = page[page.index("function renderMarked("):]
+        render = render[:render.index("\n    }\n")]
+        assert "createTextNode(part)" in render and "innerHTML" not in render
 
     def test_payload_carries_raw_text_not_escaped_text(self, units_dir):
         # The JSON is data. Escaping it here would double-escape once textContent
@@ -254,7 +259,7 @@ class TestAuditRegressions2026_09_23:
     @pytest.fixture()
     def page(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={"de": {"word_to": "Hallo"}})])
-        return G.render_locale("de", "German", "Deutsch", "ltr", G.load_units())
+        return G.render_locale("de", G.load_units())
 
     """Every test here went RED before the 2026-09-23 audit fixes.
 
@@ -336,7 +341,7 @@ class TestAuditRegressions2026_09_23:
         """persist() swallowed the quota error and commitEditor toasted
         "Your wording saved." anyway."""
         assert "catch (e) { /* private mode */ }" not in page
-        assert "This browser will not store your work" in page
+        assert "t('toast.storage.title')" in page
 
     def test_adoption_only_fills_units_this_browser_has_never_touched(self, page):
         """The guard was "no tray", which is not the same thing. A row back from
@@ -351,7 +356,7 @@ class TestAuditRegressions2026_09_23:
         colleague's decisions -- and the next save, merged last-writer-wins, erased
         them."""
         assert "else if (dr.status !== 404)" in page
-        assert "Could not read what is already saved" in page
+        assert "t('toast.saved_load.title')" in page
 
     def test_clearing_an_edit_restores_the_wording_the_approval_is_against(self, page):
         """Clearing the box left `tray:'csv'` with no `approvedAgainst`, so the
@@ -392,7 +397,7 @@ class TestFourthAudit:
 
     def test_the_index_and_the_desk_share_one_stage_function(self, units_dir):
         units = self._units(units_dir)
-        page = G.render_locale("de", "German", "Deutsch", "ltr", units)
+        page = G.render_locale("de", units)
         index = G.render_index(units)
         assert "function stageOf(s)" in page and "function stageOf(s)" in index
         # the index's private copy knew nothing about exportedAt / liveAt
@@ -415,7 +420,7 @@ class TestFourthAudit:
         assert out.stdout.strip() == "[]", out.stdout
 
     def test_the_language_badge_counts_work_left_not_work_done(self, units_dir):
-        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        page = G.render_locale("de", self._units(units_dir))
         body = page.split("function paintLocaleCounts()")[1].split("\n    }\n")[0]
         assert "WORTH[lc]" in body and "=== 'todo'" in body
         assert "raw[k].tray" not in body          # it used to count decided rows
@@ -423,13 +428,13 @@ class TestFourthAudit:
 
     def test_text_takes_its_own_direction_in_a_right_to_left_column(self, units_dir):
         """English in the Arabic column read "Things That Surprise ... 5"."""
-        page = G.render_locale("ar", "Arabic", "العربية", "rtl", self._units(units_dir))
+        page = G.render_locale("ar", self._units(units_dir))
         assert "live.setAttribute('dir', 'auto')" in page
         assert "ta.setAttribute('dir', 'auto')" in page
         assert "tgt.setAttribute('dir', 'rtl')" not in page
 
     def test_a_save_follows_the_run_its_own_dispatch_created(self, units_dir):
-        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        page = G.render_locale("de", self._units(units_dir))
         save_one = page.split("async function saveOne(locale, d)")[1].split("async function save()")[0]
         assert "function awaitRunId(workflow, runId)" in page
         assert "r.body.run_id" in save_one
@@ -440,7 +445,7 @@ class TestFourthAudit:
     def test_an_approval_records_the_websites_wording_never_the_screen(self, units_dir):
         """Independent review: `.desk-live` shows the reviewer's edit, and stamping from
         it recorded a DISCARDED edit as `approvedAgainst` after the edit was cleared."""
-        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        page = G.render_locale("de", self._units(units_dir))
         stamp = page.split("function stampApproval(uid, tr, approving)")[1].split("\n    }\n")[0]
         assert "liveText[uid]" in stamp and ".desk-live" not in stamp
         assert "liveText[u.id] = u.tgt;" in page
@@ -448,6 +453,6 @@ class TestFourthAudit:
         assert "var shown = s.text != null ? s.text : liveText[uid];" in page
 
     def test_a_failed_probe_is_not_read_as_no_runs_yet(self, units_dir):
-        page = G.render_locale("de", "German", "Deutsch", "ltr", self._units(units_dir))
+        page = G.render_locale("de", self._units(units_dir))
         probe = page.split("function latestRunId(workflow)")[1].split("function awaitRun(")[0]
         assert probe.index("if (!r.ok) return undefined;") < probe.index("return null;")

@@ -24,6 +24,7 @@ from localize_desk.recommend import (  # noqa: E402
     _digits,
     recommend,
 )
+from localize_desk.copy_text import t  # noqa: E402
 
 
 class TestDigits:
@@ -99,7 +100,7 @@ class TestFlagsRealDefects:
     def test_empty_target_is_flagged(self):
         level, why = recommend("Anything at all here", "   ", "de")
         assert level == LEVEL_CHECK
-        assert "nothing" in why
+        assert why == t("why.empty")
 
     def test_a_dropped_number_is_flagged(self):
         level, why = recommend("An additional C$35 per week applies",
@@ -117,7 +118,7 @@ class TestFlagsRealDefects:
         tgt = '<a wg-1="">+1 604 685 0291</a><a wg-1="">アクセス</a>'
         level, why = recommend(src, tgt, "ja")
         assert level == LEVEL_CHECK
-        assert "placeholder" in why
+        assert why == t("why.link")
 
     def test_german_formal_address_is_flagged(self):
         level, why = recommend("Learn English in Vancouver at our campus.",
