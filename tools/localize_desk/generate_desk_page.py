@@ -184,78 +184,82 @@ HOW_MODAL = """\
       <h2 class="cpw-title" id="how-title">How this works</h2>
       <div class="desk-modal-body">
         <h3>What you are looking at</h3>
-        <p>Every row is one translation unit &mdash; a single string Weglot serves on the
-        live site. The left column is the English source, the right is what visitors in
-        this language see today. All of it is machine translation.</p>
+        <p>Every row is one piece of text from the live website. On the left is the
+        English; on the right is what visitors in this language see today. All of it was
+        translated by machine, and none of it has been checked by a person.</p>
 
-        <h3>Every row leaves in one of two directions</h3>
+        <h3>Your three choices</h3>
         <ul>
-          <li><strong>Approve</strong> &mdash; the wording is right. The row joins the
-          <em>ready for CSV</em> tray, which becomes the Weglot import file.</li>
-          <li><strong>Edit</strong> &mdash; type the wording you want. Saving counts as
-          approving, so the row joins the same tray with your text instead.</li>
-          <li><strong>Re-translate</strong> &mdash; the wording is wrong and you would
-          like the machine to try again. The row joins the <em>re-translate</em> tray.</li>
+          <li><strong>Approve</strong> &mdash; the wording is right. It will go to the
+          website as it is.</li>
+          <li><strong>Edit</strong> &mdash; type what it should say. Saving your wording
+          approves the row, with your text instead.</li>
+          <li><strong>Needs a new translation</strong> &mdash; the wording is wrong and
+          you would like Gemini to try again.</li>
         </ul>
-        <p>A row can only be in one tray. Approving something you had queued takes it
-        out of the re-translate tray, and vice versa &mdash; you never have to
-        remember to undo the other one.</p>
+        <p>A row can only be one of these. Choosing one clears the other, and clicking a
+        choice you have already made undoes it.</p>
 
-        <h3>Working in bulk</h3>
-        <p>Tick the box on any row, or the box in the header to take everything
-        currently shown. A bar appears at the bottom with the same two actions applied
-        to the whole selection. Filter first &mdash; <em>Show: Needs review</em> plus a
-        search term, then select all &mdash; and a few hundred rows go quickly.</p>
+        <h3>Start with the rows worth a look</h3>
+        <p>The desk checks every translation for things that are almost always wrong:
+        English left untranslated, a price or date that changed, a missing link, a
+        formal &ldquo;Sie&rdquo; where the client asked for the informal form. Those rows
+        say why underneath, and <em>Worth a look first</em> shows only them. It is a few
+        dozen rows per language rather than a thousand.</p>
 
-        <h3>The trays are sent separately</h3>
-        <p>Nothing leaves this screen on its own. Each tray has its own review screen
-        where you can take rows back out, and its own confirmation. The re-translate
-        tray goes to the machine as one batch; the CSV tray becomes a file you import
-        into Weglot. Clicking a tray button repeatedly cannot send anything twice.</p>
+        <h3>Working quickly</h3>
+        <p>Tick any row, or the box in the header to take everything on screen, and the
+        bar at the bottom applies one choice to all of them. <code>J</code> and
+        <code>K</code> move between rows; <code>A</code> approves, <code>E</code> edits,
+        <code>R</code> asks for a new translation, <code>X</code> ticks the box.</p>
 
-        <h3>When the machine sends drafts back</h3>
-        <p>Rows you queued come back marked <em>needs your review</em>, and that is where
-        this page opens &mdash; you see what changed while you were away without looking
-        for it. Each one shows the English, what is live today, and the new suggestion
-        side by side, so you are never accepting something without seeing what it
-        replaces. <strong>Accept</strong> takes it, <strong>Edit</strong> takes your
-        wording instead, and <strong>Reject</strong> sends it back to be tried again
-        &mdash; remembering what was refused, so you do not get the same suggestion
-        twice.</p>
+        <h3>Nothing leaves this page by itself</h3>
+        <p>Approved rows wait until you make the import file. Rows needing a new
+        translation wait until you send them, and you will see how many and roughly what
+        it costs before anything is spent. Both lists are openable from the bottom bar,
+        and you can undo anything in them.</p>
 
-        <h3>Your decisions are kept in this browser</h3>
-        <p>They apply instantly and survive a reload, but not a different computer.
-        <strong>Download a backup</strong> writes them to a file you can keep. You never
-        need to load anything back by hand &mdash; machine drafts arrive on their own.</p>
-        <p>Sending the batch and building the CSV are not wired up yet &mdash; the desk
-        is being built before the machine translation is connected, so the review flow
-        can be judged first.</p>
-
-        <h3>Keyboard</h3>
-        <p><code>J</code> / <code>K</code> move between rows, <code>A</code> approves,
-        <code>R</code> queues a re-translation, <code>E</code> edits, <code>X</code>
-        ticks the box, <code>Esc</code> closes this box.</p>
+        <h3>Saving</h3>
+        <p>Your choices are kept on this page as you make them. <strong>Save</strong>
+        stores them properly, so you can close the tab, come back tomorrow, or carry on
+        from a different computer.</p>
       </div>
       <div class="cpw-actions">
-        <button type="button" class="cpw-btn cpw-save" id="how-close">Got it</button>
+        <button type="button" class="cpw-btn cpw-save" id="how-close">Close</button>
       </div>
     </div>
   </div>
 """
 
-TRAY_MODAL = """\
+
+REVIEW_MODAL = """\
   <div class="cpw-overlay" id="tray-overlay" hidden>
-    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="tray-title">
-      <h2 class="cpw-title" id="tray-title"></h2>
-      <div class="desk-modal-body">
-        <p id="tray-summary"></p>
-        <ul class="desk-queue-list" id="tray-list"></ul>
+    <div class="desk-review" role="dialog" aria-modal="true" aria-labelledby="tray-title">
+      <header class="desk-review-head">
+        <div>
+          <h2 class="desk-review-title" id="tray-title"></h2>
+          <p class="desk-review-sub" id="tray-summary"></p>
+        </div>
+        <button type="button" class="desk-icon-btn desk-review-x" id="tray-close"
+                title="Close" aria-label="Close">&#215;</button>
+      </header>
+      <div class="desk-review-toolbar">
+        <label class="desk-review-all">
+          <input type="checkbox" class="desk-pick" id="tray-all"
+                 aria-label="Select every row listed">
+          <span id="tray-selcount">Select all</span>
+        </label>
+        <span class="desk-savebar-spacer"></span>
+        <button type="button" class="desk-btn" id="tray-remove-sel" disabled>Undo</button>
+        <button type="button" class="desk-btn" id="tray-empty">Undo all</button>
+      </div>
+      <ul class="desk-review-list" id="tray-list"></ul>
+      <footer class="desk-review-foot">
         <p class="desk-notice" id="tray-notice"></p>
-      </div>
-      <div class="cpw-actions">
-        <button type="button" class="cpw-btn cpw-cancel" id="tray-empty">Empty this tray</button>
-        <button type="button" class="cpw-btn cpw-save" id="tray-close">Close</button>
-      </div>
+        <div class="desk-review-actions">
+          <button type="button" class="desk-btn is-primary" id="tray-done">Close</button>
+        </div>
+      </footer>
     </div>
   </div>
 """
@@ -383,18 +387,19 @@ def _index_js() -> str:
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
       if (!csv && !draft) {
-        trays.appendChild(chip('desk-tray-none', 'nothing queued', null));
+        trays.appendChild(chip('desk-tray-none', 'not started', null));
         return;
       }
-      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' ready for CSV', base + '?show=csv'));
-      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' to re-translate', base + '?show=draft'));
+      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
       var undo = document.createElement('button');
       undo.type = 'button';
       undo.className = 'desk-btn';
       undo.textContent = 'Undo all';
       undo.addEventListener('click', function () {
-        if (!window.confirm('Clear every decision recorded for ' + code + ' in this browser?')) return;
+        if (!window.confirm('Clear every decision for ' + code.toUpperCase() +
+                            '? This cannot be undone.')) return;
         try { localStorage.removeItem('cel-desk-' + code); } catch (e) {}
         location.reload();
       });
@@ -454,12 +459,12 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Show')
     parts.append('          <select class="desk-select" id="f-state">')
-    parts.append('            <option value="check">Needs attention</option>')
-    parts.append('            <option value="todo">Not yet decided</option>')
+    parts.append('            <option value="check">Worth a look first</option>')
+    parts.append('            <option value="todo">Not reviewed</option>')
     parts.append('            <option value="">Everything</option>')
-    parts.append('            <option value="csv">Ready for CSV</option>')
-    parts.append('            <option value="draft">To re-translate</option>')
-    parts.append('            <option value="edited">Edited by me</option>')
+    parts.append('            <option value="csv">Approved</option>')
+    parts.append('            <option value="draft">Needs a new translation</option>')
+    parts.append('            <option value="edited">Approved with my wording</option>')
     parts.append("          </select>")
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Search')
@@ -477,6 +482,13 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('    <main class="dashboard-main">')
     parts.append('      <div class="scroll-x">')
     parts.append('        <table class="doc-table desk-table">')
+    # Explicit columns, because the table is `table-layout: fixed`. Under `auto`,
+    # max-width on a cell clamps the BOX but not the content, so at 820px the English
+    # ran 66px into the German column -- boxes that did not overlap, text that did.
+    parts.append("          <colgroup>")
+    parts.append('            <col class="col-pick"><col class="col-src"><col class="col-tgt">')
+    parts.append('            <col class="col-state"><col class="col-act">')
+    parts.append("          </colgroup>")
     parts.append("          <thead><tr>")
     parts.append('            <th scope="col" class="desk-col-pick">'
                  '<input type="checkbox" class="desk-pick" id="pick-all" '
@@ -501,15 +513,15 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('      <div class="desk-bar-row" id="bar-select" hidden>')
     parts.append('        <p class="desk-savebar-text"><strong id="sel-count">0</strong> selected</p>')
     parts.append('        <span class="desk-savebar-spacer"></span>')
-    parts.append('        <button type="button" class="desk-btn" id="bulk-clear">Clear selection</button>')
-    parts.append('        <button type="button" class="desk-btn" id="bulk-draft">Re-translate these</button>')
-    parts.append('        <button type="button" class="desk-btn is-primary" id="bulk-approve">Approve these</button>')
+    parts.append('        <button type="button" class="desk-btn" id="bulk-clear">Clear</button>')
+    parts.append('        <button type="button" class="desk-btn" id="bulk-draft">Needs a new translation</button>')
+    parts.append('        <button type="button" class="desk-btn is-primary" id="bulk-approve">Approve</button>')
     parts.append("      </div>")
     parts.append('      <div class="desk-bar-row" id="bar-trays" hidden>')
     parts.append('        <p class="desk-savebar-text" id="tray-line"></p>')
     parts.append('        <span class="desk-savebar-spacer"></span>')
-    parts.append('        <button type="button" class="desk-btn" id="open-draft">Review re-translate tray</button>')
-    parts.append('        <button type="button" class="desk-btn" id="open-csv">Review CSV tray</button>')
+    parts.append('        <button type="button" class="desk-btn" id="open-draft">Needs a new translation</button>')
+    parts.append('        <button type="button" class="desk-btn" id="open-csv">Approved</button>')
     parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden>Save</button>')
     parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
     parts.append("      </div>")
@@ -518,7 +530,7 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("  </div>")
     parts.append('  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>')
     parts.append(HOW_MODAL)
-    parts.append(TRAY_MODAL)
+    parts.append(REVIEW_MODAL)
     parts.append(_desk_js(code, direction == "rtl"))
     parts.append(render_admin_close())
     parts.append("</body>")
@@ -546,6 +558,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       pencil: { stroke: 1.6, d: ['M11.2 2.3a1.6 1.6 0 0 1 2.3 2.3L5.6 12.4 2.5 13.5l1.1-3.1z',
                                  'M10.2 3.4 12.6 5.8'] },
       // Gemini's mark is a four-pointed star.
+      // An arrow curving back on itself: take this row back out.
+      undo:   { stroke: 1.7, d: ['M3 8a5 5 0 1 1 1.6 3.7', 'M3 4.5V8h3.5'] },
       spark:  { fill: true, d: ['M8 1c.28 2.2 1.1 3.9 2.4 5.1C11.7 7.3 13.2 7.9 15 8c-1.8.1-3.3.7-4.6 1.9' +
                                 'C9.1 11.1 8.28 12.8 8 15c-.28-2.2-1.1-3.9-2.4-5.1C4.3 8.7 2.8 8.1 1 8' +
                                 'c1.8-.1 3.3-.7 4.6-1.9C6.9 4.9 7.72 3.2 8 1z'] }
@@ -731,7 +745,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         // so the meaning survives a screen reader and a hover.
         [['approve', 'Approve', 'tick'],
          ['edit', 'Edit wording', 'pencil'],
-         ['queue', 'Ask for a new translation', 'spark']]
+         ['queue', 'Needs a new translation', 'spark']]
           .forEach(function (spec) {
             var b = document.createElement('button');
             b.type = 'button';
@@ -760,28 +774,33 @@ def _desk_js(code: str, rtl: bool) -> str:
       // The badge says what YOU decided; the reason line under the translation says
       // what the system noticed. They are different questions, so the badge must not
       // repeat "needs attention" directly beside a line already explaining why.
-      var label = 'not reviewed', cls = 'badge-partial';
-      if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
-      else if (s.tray === 'draft') { label = 'to re-translate'; cls = 'badge-failed'; }
+      // "Reworded" described what the reviewer DID; it said nothing about what
+      // happens next, and what happens next is identical either way -- the wording
+      // goes to the website. So both are Approved, and the edit is a note on it.
+      var label = 'Not reviewed', cls = 'badge-partial';
+      if (s.tray === 'csv') { label = s.text != null ? 'Approved · your wording' : 'Approved'; cls = 'badge-ok'; }
+      else if (s.tray === 'draft') { label = 'Needs a new translation'; cls = 'badge-failed'; }
       badge.className = 'desk-state ' + cls;
       badge.textContent = label;
-      tr.classList.toggle('is-done', s.tray === 'csv');
+      tr.classList.toggle('is-approved', s.tray === 'csv');
+      tr.classList.toggle('is-queued', s.tray === 'draft');
       tr.classList.toggle('is-picked', !!picked[uid]);
 
       var bApprove = tr.querySelector('[data-act="approve"]');
       var bQueue = tr.querySelector('[data-act="queue"]');
-      // The label lives in title/aria-label now, so state has to be said there too --
-      // an icon button with no text has nowhere else to say "already done".
+      // The label lives in title/aria-label, so state is said there -- an icon button
+      // with no text has nowhere else to say what it currently means. Neither is ever
+      // disabled: the active one IS the undo.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.title = s.tray === 'csv' ? 'Approved' : 'Approve';
+      bApprove.title = s.tray === 'csv' ? 'Approved — click to undo' : 'Approve — send this wording to the website';
       bApprove.setAttribute('aria-label', bApprove.title);
-      bApprove.disabled = s.tray === 'csv';
+      bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.title = s.tray === 'draft' ? 'Queued for a new translation' : 'Ask for a new translation';
+      bQueue.title = s.tray === 'draft'
+        ? 'Needs a new translation — click to undo'
+        : 'Needs a new translation — ask Gemini to try again';
       bQueue.setAttribute('aria-label', bQueue.title);
-      // Nothing left to do on a row already in that tray: adding again is a no-op,
-      // and taking it back out belongs on the tray screen.
-      bQueue.disabled = s.tray === 'draft';
+      bQueue.disabled = false;
 
       var cb = tr.querySelector('[data-pick]');
       if (cb) cb.checked = !!picked[uid];
@@ -815,8 +834,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       barTrays.hidden = (c.csv + c.draft) === 0 && unsaved === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
-      if (c.csv) bits.push(c.csv + ' ready for CSV');
-      if (c.draft) bits.push(c.draft + ' to re-translate');
+      if (c.csv) bits.push(c.csv + (c.csv === 1 ? ' approved' : ' approved'));
+      if (c.draft) bits.push(c.draft + (c.draft === 1 ? ' needs' : ' need') + ' a new translation');
       trayLine.textContent = bits.join('  ·  ');
       document.getElementById('open-csv').disabled = !c.csv;
       document.getElementById('open-draft').disabled = !c.draft;
@@ -860,12 +879,19 @@ def _desk_js(code: str, rtl: bool) -> str:
     // ── Actions ────────────────────────────────────────────────────────
     function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
+      var cur = (state[uid] || {}).tray;
+      // Clicking the decision a row already carries UNDOES it. The earlier add-only
+      // rule made a mis-click harmless but left no way back except the tray screen,
+      // which is not where anyone looks. Undoing costs nothing -- nothing is sent
+      // until a tray is explicitly submitted -- and a stray double-click is now
+      // visible rather than silent, because the row loses its colour wash and the
+      // icon stops being filled.
       if (what === 'approve') {
-        if (setTray(uid, 'csv', 'approve')) { persist(); paint(tr); }
+        if (setTray(uid, cur === 'csv' ? null : 'csv',
+                    cur === 'csv' ? 'un-approve' : 'approve')) { persist(); paint(tr); }
       } else if (what === 'queue') {
-        // ADD, never toggle -- see the module docstring. Idempotent under any number
-        // of clicks; removal is deliberate, from the tray screen.
-        if (setTray(uid, 'draft', 'queue')) { persist(); paint(tr); }
+        if (setTray(uid, cur === 'draft' ? null : 'draft',
+                    cur === 'draft' ? 'un-queue' : 'queue')) { persist(); paint(tr); }
       } else if (what === 'edit') {
         toggleEditor(tr, tr.querySelector('.desk-editor').hidden);
         return;
@@ -988,13 +1014,14 @@ def _desk_js(code: str, rtl: bool) -> str:
       if (btn.getAttribute('data-edit') === 'save') {
         if (commitEditor(tr.querySelector('.desk-edit'))) {
           applyFilters();
-          toast('Wording saved', { level: 'ok', detail: 'This row is ready for CSV.' });
+          toast('Your wording saved', { level: 'ok',
+            detail: 'This row is approved and will use your wording.' });
         }
         toggleEditor(tr, false);
       } else {
         // Closing with changes is allowed, but never silently.
         if (editorDirty(tr) &&
-            !window.confirm('Close without keeping your changes to this wording?')) return;
+            !window.confirm('Discard your changes to this wording?')) return;
         toggleEditor(tr, false);
       }
     });
@@ -1026,12 +1053,13 @@ def _desk_js(code: str, rtl: bool) -> str:
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters();
-      var where = tray === 'csv' ? 'ready for CSV' : 'queued for re-translation';
-      toast(changed + (changed === 1 ? ' row ' : ' rows ') + where, {
+      var extra = changed !== ids.length ? (ids.length - changed) + ' were already set. ' : '';
+      toast(changed + (changed === 1 ? ' row ' : ' rows ') +
+            (tray === 'csv' ? 'approved' : 'marked for a new translation'), {
         level: 'ok',
-        detail: changed !== ids.length
-          ? (ids.length - changed) + ' were already there'
-          : null
+        detail: extra + (tray === 'csv'
+          ? 'They go to the website when you make the file.'
+          : 'Nothing is sent to Gemini yet.')
       });
     }
     document.getElementById('bulk-approve').addEventListener('click', function () { bulk('csv', 'approve'); });
@@ -1098,73 +1126,150 @@ def _desk_js(code: str, rtl: bool) -> str:
 
     var TRAY_COPY = {
       draft: {
-        title: 'Re-translate tray',
-        one: 'unit is queued for a fresh machine draft.',
-        many: 'units are queued for a fresh machine draft.',
-        notice: 'Sending is not connected yet. When it is, this tray goes to the ' +
-                'machine as ONE batch — cheaper than a call per row, and it will ask ' +
-                'you to confirm the count and the estimated cost first.'
+        title: 'Needs a new translation',
+        one: 'row will be sent to Gemini for a fresh translation.',
+        many: 'rows will be sent to Gemini for a fresh translation.',
+        notice: 'Nothing has been sent. When you send them, they go in one request ' +
+                '— cheaper than one at a time — and you will see the count and the ' +
+                'cost first.'
       },
       csv: {
-        title: 'CSV tray',
-        one: 'unit is approved and ready for the Weglot import file.',
-        many: 'units are approved and ready for the Weglot import file.',
-        notice: 'Building the file is not connected yet. When it is, this tray becomes ' +
-                'one Weglot import CSV, and you confirm before it is written. The ' +
-                'import into Weglot stays a manual step.'
+        title: 'Approved',
+        one: 'row is approved and waiting to go to the website.',
+        many: 'rows are approved and waiting to go to the website.',
+        notice: 'Nothing reaches the website on its own. These become one file you ' +
+                'import into Weglot, and you confirm before it is made.'
       }
     };
+
+    // The review list is a working screen, not a confirmation dialog: the reviewer
+    // came here to take things back out, so it supports the same multi-select the main
+    // table does and puts Remove on every row as an icon rather than a word.
+    var trayPicked = Object.create(null);
+
+    function trayRows() {
+      return rows.filter(function (tr) {
+        var s = state[tr.getAttribute('data-uid')];
+        return s && s.tray === openTray;
+      });
+    }
+
+    function paintTrayFooter() {
+      var listed = trayRows().length;
+      var sel = Object.keys(trayPicked).length;
+      var all = document.getElementById('tray-all');
+      all.checked = listed > 0 && sel === listed;
+      all.indeterminate = sel > 0 && sel < listed;
+      document.getElementById('tray-selcount').textContent =
+        sel ? sel + ' selected' : 'Select all';
+      var rm = document.getElementById('tray-remove-sel');
+      rm.disabled = sel === 0;
+      rm.textContent = sel ? 'Undo ' + sel : 'Undo';
+      document.getElementById('tray-empty').disabled = listed === 0;
+    }
+
+    function removeFromTray(uids) {
+      uids.forEach(function (uid) { setTray(uid, null, 'take-back'); delete trayPicked[uid]; });
+      persist();
+      rows.forEach(paint);
+      paintBar(); applyFilters(); paintTray();
+      toast('Undone', { level: 'warn',
+        detail: uids.length + (uids.length === 1 ? ' row is' : ' rows are') + ' back to Not reviewed.' });
+    }
 
     function paintTray() {
       if (!openTray) return;
       var copy = TRAY_COPY[openTray];
-      var c = counts();
-      var n = openTray === 'csv' ? c.csv : c.draft;
+      var listed = trayRows();
+      var n = listed.length;
       document.getElementById('tray-title').textContent = copy.title;
       document.getElementById('tray-summary').textContent =
         n + ' ' + (n === 1 ? copy.one : copy.many);
       document.getElementById('tray-notice').textContent = copy.notice;
+
       trayList.textContent = '';
-      rows.forEach(function (tr) {
+      listed.forEach(function (tr) {
         var uid = tr.getAttribute('data-uid');
-        if (!state[uid] || state[uid].tray !== openTray) return;
         var li = document.createElement('li');
-        li.className = 'desk-queue-item';
-        var span = document.createElement('span');
-        span.className = 'desk-queue-src';
-        span.textContent = tr.querySelector('.desk-srctext').textContent;
+        li.className = 'desk-review-item';
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'desk-pick';
+        cb.checked = !!trayPicked[uid];
+        cb.setAttribute('aria-label', 'Select this row');
+        cb.addEventListener('change', function () {
+          if (cb.checked) trayPicked[uid] = 1; else delete trayPicked[uid];
+          paintTrayFooter();
+        });
+
+        var texts = document.createElement('div');
+        texts.className = 'desk-review-texts';
+        var src = document.createElement('p');
+        src.className = 'desk-review-src';
+        src.textContent = tr.querySelector('.desk-srctext').textContent;
+        var tgt = document.createElement('p');
+        tgt.className = 'desk-review-tgt';
+        if (RTL) tgt.setAttribute('dir', 'rtl');
+        var st = state[uid] || {};
+        tgt.textContent = st.text != null ? st.text : tr.querySelector('.desk-live').textContent;
+        texts.appendChild(src); texts.appendChild(tgt);
+
         var rm = document.createElement('button');
         rm.type = 'button';
-        rm.className = 'desk-btn';
-        rm.textContent = 'Remove';
-        rm.addEventListener('click', function () {
-          setTray(uid, null, 'remove');
-          persist(); paint(tr); paintBar(); applyFilters(); paintTray();
-        });
-        li.appendChild(span); li.appendChild(rm);
+        rm.className = 'desk-btn desk-icon-btn';
+        rm.title = 'Undo — back to Not reviewed';
+        rm.setAttribute('aria-label', 'Undo this row');
+        rm.appendChild(icon('undo'));
+        rm.addEventListener('click', function () { removeFromTray([uid]); });
+
+        li.appendChild(cb); li.appendChild(texts); li.appendChild(rm);
         trayList.appendChild(li);
       });
+
+      paintTrayFooter();
       if (!n) closeOverlays();
     }
 
+    document.getElementById('tray-all').addEventListener('change', function (ev) {
+      trayPicked = Object.create(null);
+      if (ev.target.checked) trayRows().forEach(function (tr) {
+        trayPicked[tr.getAttribute('data-uid')] = 1;
+      });
+      Array.prototype.forEach.call(trayList.querySelectorAll('.desk-pick'), function (cb) {
+        cb.checked = ev.target.checked;
+      });
+      paintTrayFooter();
+    });
+
+    document.getElementById('tray-remove-sel').addEventListener('click', function () {
+      removeFromTray(Object.keys(trayPicked));
+    });
+
+    document.getElementById('tray-done').addEventListener('click', closeOverlays);
+
     function showTray(which) {
       openTray = which;
+      trayPicked = Object.create(null);   // a fresh visit starts with nothing selected
       paintTray();
       trayOverlay.hidden = false;
-      document.getElementById('tray-close').focus();
+      document.getElementById('tray-done').focus();
     }
+
     document.getElementById('open-draft').addEventListener('click', function () { showTray('draft'); });
     document.getElementById('open-csv').addEventListener('click', function () { showTray('csv'); });
     document.getElementById('tray-empty').addEventListener('click', function () {
       if (!openTray) return;
-      if (!window.confirm('Take every row out of the ' + TRAY_COPY[openTray].title + '?')) return;
+      var listed = trayRows().length;
+      if (!window.confirm('Undo all ' + listed + ' rows? They go back to Not reviewed.')) return;
       var n = 0;
       for (var k in state) {
         if (state[k] && state[k].tray === openTray) { setTray(k, null, 'empty-tray'); n++; }
       }
       note('empty-tray', null, openTray, String(n));
       persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
-      toast('Tray emptied', { level: 'warn', detail: n + (n === 1 ? ' row taken out' : ' rows taken out') });
+      toast('Undone', { level: 'warn',
+        detail: n + (n === 1 ? ' row is back to Not reviewed.' : ' rows are back to Not reviewed.') });
     });
 
     // ── Export / import ────────────────────────────────────────────────
@@ -1212,7 +1317,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       note('ingest', null, String(n), doc.exported_at || null);
       persist();
       rows.forEach(paint); paintBar(); applyFilters();
-      toast(n + (n === 1 ? ' row updated' : ' rows updated'), { level: 'ok', detail: 'from the pipeline' });
+      toast(n + (n === 1 ? ' row updated' : ' rows updated'), { level: 'ok',
+        detail: 'New translations arrived while you were away.' });
       return { ok: true, rows: n };
     }
     window.deskIngest = ingest;
@@ -1333,17 +1439,15 @@ def _desk_js(code: str, rtl: bool) -> str:
         try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
         note('save', null, String(d.n), null);
         saveStatus.textContent = '';
-        toast('Saved ' + d.n + (d.n === 1 ? ' change' : ' changes'), {
-          level: 'ok', detail: 'Your work is in the repository now.'
-        });
+        toast('Saved', { level: 'ok',
+          detail: d.n + (d.n === 1 ? ' change is' : ' changes are') +
+                  ' stored. Safe to close this page or carry on from another computer.' });
       } catch (err) {
         saveStatus.textContent = 'not saved';
         saveStatus.className = 'desk-status is-error';
         note('save-failed', null, err.message, null);
-        toast('Could not save', {
-          level: 'err',
-          detail: err.message + ' — your decisions are still here; try again.'
-        });
+        toast('Not saved', { level: 'err',
+          detail: 'Nothing was lost — your work is still on this page. ' + err.message });
       } finally {
         saving = false; paintSave();
       }

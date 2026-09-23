@@ -179,18 +179,19 @@
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
       if (!csv && !draft) {
-        trays.appendChild(chip('desk-tray-none', 'nothing queued', null));
+        trays.appendChild(chip('desk-tray-none', 'not started', null));
         return;
       }
-      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' ready for CSV', base + '?show=csv'));
-      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' to re-translate', base + '?show=draft'));
+      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
       var undo = document.createElement('button');
       undo.type = 'button';
       undo.className = 'desk-btn';
       undo.textContent = 'Undo all';
       undo.addEventListener('click', function () {
-        if (!window.confirm('Clear every decision recorded for ' + code + ' in this browser?')) return;
+        if (!window.confirm('Clear every decision for ' + code.toUpperCase() +
+                            '? This cannot be undone.')) return;
         try { localStorage.removeItem('cel-desk-' + code); } catch (e) {}
         location.reload();
       });

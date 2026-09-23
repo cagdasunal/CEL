@@ -1116,7 +1116,7 @@ DESK_CSS = """
     background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); transition: border-color 120ms ease, background 120ms ease;
   }
-  .desk-locale-card:hover { border-color: var(--accent); background: var(--stripe); }
+  .desk-locale-card:hover { border-color: var(--border-strong); background: var(--stripe); }
   .desk-locale-open { text-decoration: none; color: inherit; }
   .desk-locale-open:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); border-radius: var(--radius-sm); }
   .desk-locale-open:hover .desk-locale-name { color: var(--accent); }
@@ -1133,7 +1133,7 @@ DESK_CSS = """
     font: inherit; font-size: var(--fs-md); padding: 7px 10px; color: var(--fg);
     background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
   }
-  .desk-select:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+  .desk-select:focus-visible { outline: 0; border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
   .desk-toolbar-spacer { flex: 1 1 auto; }
   /* Pushed to the far end of .dashboard-header, which is already a flex row. */
   .desk-header-btn { margin-left: auto; align-self: center; }
@@ -1200,17 +1200,25 @@ DESK_CSS = """
   }
   .desk-loc-count[hidden] { display: none; }
   .desk-loc.is-active .desk-loc-count { background: rgba(255,255,255,0.25); color: #fff; }
-  /* Below this the names would wrap to two rows; the flags alone still identify
-     each tab, and the active one keeps its name. */
-  @media (max-width: 860px) {
-    .desk-loc:not(.is-active) .desk-loc-name { display: none; }
-    .desk-loc { padding: 6px 10px; }
+  /* Flag alone for the languages you are not in, flag + name + count for the one you
+     are. This started as a narrow-screen fallback; the operator preferred it and asked
+     for it everywhere, and they are right -- eight repeated language names is a list to
+     read, whereas eight flags with one labelled is a position to see at a glance. */
+  .desk-loc:not(.is-active) { padding: 6px 10px; }
+  .desk-loc:not(.is-active) .desk-loc-name {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap;
   }
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
-  .desk-row.is-done { opacity: 0.55; }
-  .desk-src { max-width: 30ch; }
-  .desk-tgt { max-width: 30ch; color: var(--fg); }
+  /* State is a soft wash across the row, never a dimming. Fading a decided row made
+     the reviewer's own finished work the hardest thing on the page to read, and it read
+     as "disabled" rather than "done". These two tints are the only row colours. */
+  .desk-row.is-approved > td { background: rgba(29,107,58,0.07); }
+  .desk-row.is-queued > td   { background: rgba(93,96,238,0.07); }
+  .desk-row.is-approved .desk-icon-btn.is-on { background: var(--ok); border-color: var(--ok); }
+  .desk-row.is-queued .desk-icon-btn.is-on   { background: var(--accent); border-color: var(--accent); }
+  .desk-tgt { color: var(--fg); }
   .desk-col-state { width: 1%; white-space: nowrap; }
   .desk-col-act { width: 1%; }
   .desk-sec { display: block; margin: 0 0 3px; font-size: var(--fs-xs); color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -1221,14 +1229,16 @@ DESK_CSS = """
   /* Icon-only row actions. One colour for all three -- they inherit currentColor, so
      colour is free to mean STATE (indigo = decided) and never identity. Square target,
      tooltip via title, label via aria-label. */
-  .desk-icon-btn {
+  /* Square, and specific enough to beat `.desk-actions .desk-btn` (0,2,0) -- which it
+     was not, so the icons inherited 5px/11px inside a 30x28 box and sat off-centre. */
+  .desk-actions .desk-icon-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 30px; height: 28px; padding: 0;
-    color: var(--muted);
+    width: 30px; height: 30px; padding: 0;
+    color: var(--muted); line-height: 0;
   }
-  .desk-icon-btn:hover:not(:disabled) { background: var(--stripe); color: var(--fg); }
+  .desk-icon-btn:hover { background: var(--stripe); color: var(--fg); }
+  /* Active = this decision is the row's current state, and clicking again undoes it. */
   .desk-icon-btn.is-on { color: #fff; }
-  .desk-icon-btn:disabled { opacity: 0.45; }
   .desk-icon-btn svg { display: block; }
 
   /* Editor: a small form, with somewhere to say yes and somewhere to say no. */
@@ -1239,7 +1249,7 @@ DESK_CSS = """
     padding: 8px 10px; color: var(--fg); background: var(--bg);
     border: 1px solid var(--border-strong); border-radius: var(--radius-sm); resize: vertical;
   }
-  .desk-edit:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+  .desk-edit:focus-visible { outline: 0; border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
   .desk-editor-bar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
   .desk-editor-hint {
     flex: 1 1 auto; font-size: var(--fs-xs); font-weight: 600;
@@ -1250,7 +1260,9 @@ DESK_CSS = """
   /* Selection */
   .desk-col-pick { width: 1%; }
   .desk-pick { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 2px 0 0; }
-  .desk-row.is-picked > td { background: rgba(93,96,238,0.07); }
+  .desk-row.is-picked > td,
+  .desk-row.is-picked.is-approved > td,
+  .desk-row.is-picked.is-queued > td { background: rgba(93,96,238,0.13); }
 
   /* Sticky action bar. Two zones: the selection you are acting on now (top, only
      while something is selected) and the trays you have filled (bottom, whenever
@@ -1304,6 +1316,56 @@ DESK_CSS = """
   .desk-modal-body { margin: 0; font-size: var(--fs-md); color: var(--fg); line-height: 1.6; }
   .desk-modal-body h3 { margin: 16px 0 4px; font-size: var(--fs-base); }
   .desk-modal-body h3:first-child { margin-top: 0; }
+  /* Review list. A working screen, not a confirmation dialog: the reviewer opened it
+     to take things back out, so it is wide enough to read both texts, supports the same
+     multi-select as the table, and puts the action on every row as an icon. */
+  .desk-review {
+    width: 100%; max-width: 820px; max-height: 84vh;
+    display: flex; flex-direction: column;
+    background: var(--elevated); color: var(--fg);
+    border: 1px solid var(--border-strong); border-radius: var(--radius);
+    box-shadow: 0 16px 48px rgba(55,51,44,0.24);
+  }
+  .desk-review-head {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 18px 20px 12px; border-bottom: 1px solid var(--border);
+  }
+  .desk-review-title { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+  .desk-review-sub { margin: 2px 0 0; font-size: var(--fs-md); color: var(--muted); }
+  .desk-review-x { margin-left: auto; font-size: 18px; }
+  .desk-review-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .desk-review-all {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: var(--fs-sm); color: var(--muted); cursor: pointer;
+  }
+  .desk-review-list {
+    list-style: none; margin: 0; padding: 4px 8px;
+    overflow-y: auto; flex: 1 1 auto;
+  }
+  .desk-review-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+  }
+  .desk-review-item + .desk-review-item { border-top: 1px solid var(--border); }
+  .desk-review-item:hover { background: var(--stripe); }
+  .desk-review-texts { flex: 1 1 auto; min-width: 0; }
+  .desk-review-src { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+  .desk-review-tgt { margin: 2px 0 0; font-size: var(--fs-md); }
+  .desk-review-foot {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 20px; border-top: 1px solid var(--border);
+  }
+  .desk-review-foot .desk-notice { flex: 1 1 260px; margin: 0; }
+  .desk-review-actions { display: flex; gap: 8px; margin-left: auto; }
+  @media (max-width: 720px) {
+    .desk-review { max-height: 92vh; }
+    .desk-review-head, .desk-review-toolbar, .desk-review-foot { padding-left: 14px; padding-right: 14px; }
+  }
+
   .desk-queue-list { list-style: none; margin: 10px 0; padding: 0; max-height: 240px; overflow-y: auto; }
   .desk-queue-item {
     display: flex; align-items: center; gap: 12px; padding: 7px 0;
@@ -1353,9 +1415,60 @@ DESK_CSS = """
   .toast-close:hover { background: var(--stripe); color: var(--fg); }
   .toast-close:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
 
+  /* Responsive. This is a desktop tool, but "desktop" runs from a 1280 laptop to a
+     wide monitor, and it gets used on a tablet. The table itself never collapses --
+     five columns of parallel text IS the product, and stacking them destroys the
+     comparison the reviewer is here to make. So the columns give up width in order of
+     how little they need it, and .scroll-x carries the rest. */
+
+  /* Small desktop / large tablet landscape. */
+  @media (max-width: 1180px) {
+      .dashboard-shell { padding-left: 18px; padding-right: 18px; }
+  }
+
+  /* THE FLOOR IS UNCONDITIONAL, and that is the fix.
+     Five columns of parallel text cannot shrink past a point without the cells
+     overlapping. A first attempt put this floor inside `max-width: 1024px`, which left
+     1025-1180px with no floor at all -- so the bug simply moved to the window sizes
+     that were not being tested. A minimum plus .scroll-x means the table always keeps
+     its shape and the reviewer scrolls it sideways instead: the side-by-side
+     comparison IS the product, so it is the last thing that may be given up. */
+  /* FIXED layout with declared columns. Under the default `auto`, a max-width on a
+     cell clamps the box but NOT its content: at 820px the English source rendered 66px
+     into the German column -- the cell rectangles did not overlap, so a check that
+     compared cell boxes reported everything fine while the text was plainly on top of
+     itself. Fixed columns plus wrapping make that unrepresentable at any width. */
+  .desk-table { min-width: 900px; table-layout: fixed; }
+  .desk-table col.col-pick  { width: 40px; }
+  .desk-table col.col-src   { width: 32%; }
+  .desk-table col.col-tgt   { width: 32%; }
+  .desk-table col.col-state { width: 132px; }
+  .desk-table col.col-act   { width: 124px; }
+  .desk-table td, .desk-table th { overflow-wrap: anywhere; }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Tablet. The filter row becomes two lines rather than squeezing the search box
+     to nothing, and the sticky bar stacks so its buttons keep a full-size target. */
+  @media (max-width: 1024px) {
+      .desk-field { flex: 1 1 180px; }
+    .desk-toolbar { gap: 10px 14px; }
+    .desk-bar-row { flex-wrap: wrap; gap: 8px 10px; }
+    .desk-savebar-spacer { flex-basis: 100%; height: 0; }
+    .desk-header-btn { margin-left: auto; }
+  }
+
+  /* Portrait tablet. Section eyebrows are the first thing to go -- they repeat what
+     the page filter already says -- and the toolbar goes full width. */
+  @media (max-width: 860px) {
+    .desk-sec { display: none; }
+    .desk-field { flex: 1 1 100%; }
+    .desk-toolbar-spacer { display: none; }
+      .toast-stack { right: 12px; bottom: 12px; max-width: calc(100vw - 24px); }
+  }
+
   @media (max-width: 720px) {
-    .desk-src, .desk-tgt { max-width: none; }
     .desk-toolbar { gap: 10px; }
+    .dashboard-shell { padding-left: 12px; padding-right: 12px; }
   }
 """
 

@@ -132,9 +132,28 @@ class TestRenderedPage:
         assert "s.tray = !s.tray" not in page
         assert "!s.queued" not in page  # the old two-boolean model is gone
 
-    def test_a_row_in_a_tray_cannot_be_re_added_to_it(self, page):
-        assert "bQueue.disabled = s.tray === 'draft';" in page
-        assert "bApprove.disabled = s.tray === 'csv';" in page
+    def test_the_active_decision_is_the_undo(self, page):
+        """Reversal of an earlier rule, and the reason is worth keeping.
+
+        Tray assignment used to be add-only, so a mis-click could not multiply. It
+        also meant a decision could only be taken back from the tray screen, which
+        is not where anyone looks -- the operator reported being unable to undo at
+        all. Clicking the decision a row already carries now clears it. That is
+        safe because nothing is sent until a tray is explicitly submitted, and a
+        stray double-click is visible: the row's colour wash and the filled icon
+        both go.
+        """
+        assert "cur === 'csv' ? null : 'csv'" in page
+        assert "cur === 'draft' ? null : 'draft'" in page
+        # Neither control is ever disabled -- the active one IS the way back.
+        assert "bApprove.disabled = false;" in page
+        assert "bQueue.disabled = false;" in page
+
+    def test_state_is_shown_by_colour_not_by_dimming(self, page):
+        # Fading a decided row made the reviewer's own finished work the hardest
+        # thing on the page to read, and it read as "disabled" rather than "done".
+        assert "is-approved" in page and "is-queued" in page
+        assert "is-done" not in page
 
     def test_trays_are_mutually_exclusive_by_construction(self, page):
         """One `tray` field, not two booleans.
@@ -142,10 +161,11 @@ class TestRenderedPage:
         The contradictory state (queued AND approved) is unrepresentable, so no
         code path has to resolve it and none can forget to.
         """
-        assert "setTray(uid, 'csv'" in page
-        assert "setTray(uid, 'draft'" in page
+        assert "'csv'" in page and "'draft'" in page
+        assert "setTray(uid," in page
         # no separate approved/queued flags anywhere
         assert "s.approved" not in page
+        assert "s.queued" not in page
 
     def test_editing_counts_as_approving(self, page):
         # Typing the wording you want IS the decision; a follow-up Approve click
