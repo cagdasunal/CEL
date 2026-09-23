@@ -481,6 +481,8 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
         ("draft", "Needs a new translation"),
         ("sending", "Being translated"),
         ("failed", "Translation failed"),
+        ("exported", "In the export file"),
+        ("live", "Already on the website"),
     ]:
         parts.append(f'            <option value="{value}" data-base="{escape(label)}">{escape(label)}</option>')
     parts.append("          </select>")
@@ -541,6 +543,7 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('        <button type="button" class="desk-btn" id="open-draft">Needs a new translation</button>')
     parts.append('        <button type="button" class="desk-btn" id="open-csv">Approved</button>')
     parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden>Save</button>')
+    parts.append('        <span class="desk-status" id="save-elsewhere" hidden></span>')
     parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
     parts.append("      </div>")
     parts.append("    </div>")
@@ -578,17 +581,24 @@ def _desk_js(code: str, rtl: bool) -> str:
       // Gemini's mark is a four-pointed star.
       // An arrow curving back on itself: take this row back out.
       undo:   { stroke: 1.7, d: ['M3 8a5 5 0 1 1 1.6 3.7', 'M3 4.5V8h3.5'] },
-      spark:  { fill: true, d: ['M8 1c.28 2.2 1.1 3.9 2.4 5.1C11.7 7.3 13.2 7.9 15 8c-1.8.1-3.3.7-4.6 1.9' +
-                                'C9.1 11.1 8.28 12.8 8 15c-.28-2.2-1.1-3.9-2.4-5.1C4.3 8.7 2.8 8.1 1 8' +
-                                'c1.8-.1 3.3-.7 4.6-1.9C6.9 4.9 7.72 3.2 8 1z'] }
+      // Gemini's four-pointed star, which is TALLER THAN WIDE. Two symmetric attempts
+      // both read as a plus sign at this size, and that is inherent: a symmetric
+      // 4-point star has almost no information left at 15px. The asymmetry is what
+      // distinguishes it -- and it is also what the real mark looks like.
+      spark:  { fill: true, size: 17,
+                d: ['M8 0.4c.3 4 1.2 6.1 2.2 6.9.8.65 2.4.85 5.4.95' +
+                    '-3 .1-4.6.3-5.4.95-1 .8-1.9 2.9-2.2 6.9' +
+                    '-.3-4-1.2-6.1-2.2-6.9-.8-.65-2.4-.85-5.4-.95' +
+                    '3-.1 4.6-.3 5.4-.95C6.8 6.5 7.7 4.4 8 0.4z'] }
     };
 
     function icon(name) {
       var spec = ICONS[name];
       var svg = document.createElementNS(SVG_NS, 'svg');
       svg.setAttribute('viewBox', '0 0 16 16');
-      svg.setAttribute('width', '15');
-      svg.setAttribute('height', '15');
+      var px = String(spec.size || 15);
+      svg.setAttribute('width', px);
+      svg.setAttribute('height', px);
       svg.setAttribute('aria-hidden', 'true');
       svg.setAttribute('fill', spec.fill ? 'currentColor' : 'none');
       if (!spec.fill) {
@@ -605,6 +615,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       return svg;
     }
 
+    var LOCALES = __LOCALES__;
     var CODE = '__CODE__';
     var KEY = 'cel-desk-' + CODE;
     var LOGKEY = 'cel-desk-log-' + CODE;
@@ -797,11 +808,19 @@ def _desk_js(code: str, rtl: bool) -> str:
     //   failed        Gemini could not do it
     function stage(uid) {
       var s = state[uid] || {};
+      // A live row the reviewer has decided about again is NOT live any more from
+      // their point of view -- the new decision is what is outstanding. So anything
+      // in flight or freshly decided outranks where the text currently sits.
       if (s.failed) return 'failed';
       if (s.sentAt && !s.arrivedAt) return 'sending';
       if (s.arrivedAt && !s.tray) return 'arrived';
-      if (s.tray === 'csv') return s.text != null ? 'edited' : 'approved';
       if (s.tray === 'draft') return 'queued';
+      if (s.tray === 'csv') {
+        if (s.liveAt) return 'live';          // confirmed on the site by reconciliation
+        if (s.exportedAt) return 'exported';  // in a file, waiting to be imported
+        return s.text != null ? 'edited' : 'approved';
+      }
+      if (s.liveAt) return 'live';
       return 'todo';
     }
 
@@ -812,7 +831,9 @@ def _desk_js(code: str, rtl: bool) -> str:
       edited:   ['Approved · your wording', 'badge-ok'],
       queued:   ['Needs a new translation', 'badge-failed'],
       sending:  ['Being translated…', 'badge-partial'],
-      failed:   ['Translation failed', 'badge-failed']
+      failed:   ['Translation failed', 'badge-failed'],
+      exported: ['In the export file', 'badge-ok'],
+      live:     ['On the website', 'badge-ok']
     };
 
     function paint(tr) {
@@ -831,7 +852,9 @@ def _desk_js(code: str, rtl: bool) -> str:
       badge.textContent = spec[0];
       badge.title = st === 'failed' && s.failed ? String(s.failed) : '';
       tr.setAttribute('data-stage', st);
-      tr.classList.toggle('is-approved', st === 'approved' || st === 'edited');
+      tr.classList.toggle('is-approved', st === 'approved' || st === 'edited' ||
+                                          st === 'exported' || st === 'live');
+      tr.classList.toggle('is-live', st === 'live');
       tr.classList.toggle('is-queued', st === 'queued');
       tr.classList.toggle('is-arrived', st === 'arrived');
       tr.classList.toggle('is-sending', st === 'sending');
@@ -880,11 +903,13 @@ def _desk_js(code: str, rtl: bool) -> str:
     function paintBar() {
       var c = counts();
       var n = pickedIds().length;
-      var unsaved = delta().n;
+      var all = unsavedByLocale();
+      var unsaved = 0;
+      for (var lc in all) unsaved += all[lc].n;
       selCount.textContent = n;
       barSelect.hidden = n === 0;
-      // Clearing every decision leaves both trays empty and is still unsaved work,
-      // so the row has to survive an empty tray count.
+      // The bar stays while ANY language has unsaved work, so switching language can
+      // never make pending work disappear from view.
       barTrays.hidden = (c.csv + c.draft) === 0 && unsaved === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
@@ -897,17 +922,30 @@ def _desk_js(code: str, rtl: bool) -> str:
     }
 
     // ── Filters ────────────────────────────────────────────────────────
+    // A row you have just acted on stays where it is. Without this, approving under
+    // "Worth a look first" made the row vanish mid-click: the list shifted, the next
+    // click landed on a different row, and there was no way to undo the thing you had
+    // just done. Cleared whenever you change the view yourself.
+    var justActed = Object.create(null);
+
     function matches(tr) {
+      if (justActed[tr.getAttribute('data-uid')]) return true;
       var s = state[tr.getAttribute('data-uid')] || {};
       var p = fPage.value;
       if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
       var want = fState.value;
       var st = stage(tr.getAttribute('data-uid'));
+      // Rows already on the website never appear in the work views. That is the
+      // whole no-rework rule: the reviewer settled it, we exported it, Weglot serves
+      // it. It stays reachable through "Already on the website" if they want to
+      // change their mind, and acting on it puts it straight back in the queue.
       if (want === 'check' && !(tr.hasAttribute('data-why') && st === 'todo')) return false;
       if (want === 'arrived' && st !== 'arrived') return false;
       if (want === 'todo' && st !== 'todo') return false;
       if (want === 'csv' && !(st === 'approved' || st === 'edited')) return false;
       if (want === 'edited' && st !== 'edited') return false;
+      if (want === 'exported' && st !== 'exported') return false;
+      if (want === 'live' && st !== 'live') return false;
       if (want === 'draft' && st !== 'queued') return false;
       if (want === 'sending' && st !== 'sending') return false;
       if (want === 'failed' && st !== 'failed') return false;
@@ -922,7 +960,7 @@ def _desk_js(code: str, rtl: bool) -> str:
     // the list does not reshuffle under the cursor between renders.
     function paintFilterCounts() {
       var tally = { arrived: 0, check: 0, todo: 0, csv: 0, edited: 0,
-                    draft: 0, sending: 0, failed: 0 };
+                    draft: 0, sending: 0, failed: 0, exported: 0, live: 0 };
       rows.forEach(function (tr) {
         var st = stage(tr.getAttribute('data-uid'));
         if (st === 'arrived') tally.arrived++;
@@ -932,6 +970,8 @@ def _desk_js(code: str, rtl: bool) -> str:
         else if (st === 'queued') tally.draft++;
         else if (st === 'sending') tally.sending++;
         else if (st === 'failed') tally.failed++;
+        else if (st === 'exported') tally.exported++;
+        else if (st === 'live') tally.live++;
       });
       Array.prototype.forEach.call(fState.options, function (opt) {
         var base = opt.getAttribute('data-base') || opt.textContent;
@@ -970,6 +1010,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       // until a tray is explicitly submitted -- and a stray double-click is now
       // visible rather than silent, because the row loses its colour wash and the
       // icon stops being filled.
+      justActed[uid] = 1;
       if (what === 'approve') {
         if (setTray(uid, cur === 'csv' ? null : 'csv',
                     cur === 'csv' ? 'un-approve' : 'approve')) { persist(); paint(tr); }
@@ -1133,6 +1174,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       note(why + ':bulk', null, String(ids.length), String(changed));
       picked = Object.create(null);
       lastPicked = -1;
+      justActed = Object.create(null);   // a deliberate sweep may clear the view
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters();
@@ -1409,6 +1451,9 @@ def _desk_js(code: str, rtl: bool) -> str:
         }
         if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; }
         if (inc.tray && !inc.arrivedAt) { s.tray = inc.tray; n++; }
+        // Set by the CSV build and by reconciliation, respectively.
+        if (inc.exportedAt) { s.exportedAt = inc.exportedAt; n++; }
+        if (inc.liveAt) { s.liveAt = inc.liveAt; delete s.exportedAt; n++; }
       }
       note('ingest', null, String(n), doc.exported_at || null);
       persist();
@@ -1440,14 +1485,13 @@ def _desk_js(code: str, rtl: bool) -> str:
              JSON.stringify(a.rejected || null) === JSON.stringify(b.rejected || null);
     }
 
-    function delta() {
-      var out = {}, n = 0;
-      var ids = {};
-      for (var k in state) ids[k] = 1;
-      for (var k2 in saved) ids[k2] = 1;
+    function deltaBetween(now, was) {
+      var out = {}, n = 0, ids = {};
+      for (var k in now) ids[k] = 1;
+      for (var k2 in was) ids[k2] = 1;
       for (var uid in ids) {
-        var mine = state[uid] && state[uid].tray ? state[uid] : null;
-        var theirs = saved[uid] || null;
+        var mine = now[uid] && now[uid].tray ? now[uid] : null;
+        var theirs = was[uid] || null;
         if (sameDecision(mine, theirs)) continue;
         // null is how the server is told to forget a unit.
         out[uid] = mine ? { tray: mine.tray, text: mine.text, rejected: mine.rejected } : null;
@@ -1456,23 +1500,46 @@ def _desk_js(code: str, rtl: bool) -> str:
       return { body: out, n: n };
     }
 
-    function paintSave() {
-      var d = delta();
-      btnSave.hidden = d.n === 0 || saving;
-      btnSave.textContent = 'Save ' + d.n + (d.n === 1 ? ' change' : ' changes');
-      btnSave.disabled = saving;
+    function delta() { return deltaBetween(state, saved); }
+
+    // Unsaved work is a fact about the REVIEWER, not about the page they happen to be
+    // looking at. Making five changes in German, switching to French and finding an
+    // empty bar reads as "nothing pending" -- and the tab gets closed. Every language
+    // is counted, always.
+    function readLocale(code) {
+      try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
+      catch (e) { return {}; }
+    }
+    function readSaved(code) {
+      try { return JSON.parse(localStorage.getItem('cel-desk-saved-' + code) || '{}') || {}; }
+      catch (e) { return {}; }
     }
 
-    async function encodePayload(body) {
-      var doc = { schema: 'cel-localization-desk/1', locale: CODE, decisions: body };
-      var bytes = new TextEncoder().encode(JSON.stringify(doc));
-      var gz = new Response(
-        new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))
-      );
-      var buf = new Uint8Array(await gz.arrayBuffer());
-      var bin = '';
-      for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-      return btoa(bin);
+    function unsavedByLocale() {
+      var out = {};
+      LOCALES.forEach(function (code) {
+        var d = code === CODE ? delta()
+                              : deltaBetween(readLocale(code), readSaved(code));
+        if (d.n) out[code] = d;
+      });
+      return out;
+    }
+
+    function paintSave() {
+      var all = unsavedByLocale();
+      var total = 0, others = 0;
+      for (var c in all) { total += all[c].n; if (c !== CODE) others += all[c].n; }
+      btnSave.hidden = total === 0 || saving;
+      btnSave.textContent = 'Save ' + total + (total === 1 ? ' change' : ' changes');
+      btnSave.disabled = saving;
+      btnSave.title = others
+        ? others + ' of them are in another language — Save stores every language at once'
+        : '';
+      var note = document.getElementById('save-elsewhere');
+      if (note) {
+        note.hidden = others === 0;
+        note.textContent = others ? '· ' + others + ' unsaved in other languages' : '';
+      }
     }
 
     function callProxy(payload) {
@@ -1505,49 +1572,93 @@ def _desk_js(code: str, rtl: bool) -> str:
       return tick();
     }
 
+    async function encodeFor(locale, body) {
+      var doc = { schema: 'cel-localization-desk/1', locale: locale, decisions: body };
+      var bytes = new TextEncoder().encode(JSON.stringify(doc));
+      var gz = new Response(
+        new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))
+      );
+      var buf = new Uint8Array(await gz.arrayBuffer());
+      var bin = '';
+      for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+      return btoa(bin);
+    }
+
+    async function saveOne(locale, d) {
+      var payload = await encodeFor(locale, d.body);
+      var r = await callProxy({
+        action: 'dispatch', workflow: 'localization-save.yml',
+        inputs: { locale: locale, payload: payload }
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
+      var run = await awaitRun('localization-save.yml');
+      if (!run) throw new Error('timed out waiting for the run');
+      if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
+    }
+
     async function save() {
       if (saving) return;                    // one save in flight, never two
-      var d = delta();
-      if (!d.n) return;
+      var all = unsavedByLocale();
+      var codes = Object.keys(all);
+      if (!codes.length) return;
+      var total = 0;
+      codes.forEach(function (c) { total += all[c].n; });
+
       saving = true; paintSave();
       saveStatus.textContent = 'saving…';
       saveStatus.className = 'desk-status';
-      var snapshot = JSON.parse(JSON.stringify(state));   // what this save covers
-      try {
-        var payload = await encodePayload(d.body);
-        var r = await callProxy({
-          action: 'dispatch', workflow: 'localization-save.yml',
-          inputs: { locale: CODE, payload: payload }
-        });
-        if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
-        var run = await awaitRun('localization-save.yml');
-        if (!run) throw new Error('timed out waiting for the run');
-        if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
 
-        // Only now is the repo known to hold it. Recording `saved` from the SNAPSHOT
-        // rather than from current state keeps anything decided mid-save unsaved,
-        // instead of marking it clean without ever having sent it.
-        var nextSaved = {};
-        for (var uid in snapshot) {
-          if (snapshot[uid] && snapshot[uid].tray) nextSaved[uid] = snapshot[uid];
+      // Snapshot BEFORE sending. Anything decided while the run is in flight stays
+      // unsaved rather than being marked clean without ever having been sent.
+      var snaps = {};
+      codes.forEach(function (c) {
+        snaps[c] = JSON.parse(JSON.stringify(c === CODE ? state : readLocale(c)));
+      });
+
+      var done = [], failed = null;
+      try {
+        for (var i = 0; i < codes.length; i++) {
+          var c = codes[i];
+          if (codes.length > 1) {
+            saveStatus.textContent = 'saving ' + c.toUpperCase() +
+                                     ' (' + (i + 1) + ' of ' + codes.length + ')…';
+          }
+          await saveOne(c, all[c]);
+          // Bank each language as it lands. A failure on the fourth must not throw
+          // away the three that already succeeded.
+          var next = {};
+          for (var uid in snaps[c]) {
+            if (snaps[c][uid] && snaps[c][uid].tray) next[uid] = snaps[c][uid];
+          }
+          try { localStorage.setItem('cel-desk-saved-' + c, JSON.stringify(next)); } catch (e) {}
+          if (c === CODE) saved = next;
+          done.push(c);
         }
-        saved = nextSaved;
-        try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
-        note('save', null, String(d.n), null);
+      } catch (err) {
+        failed = err;
+      }
+
+      saving = false;
+      paintSave(); paintBar();
+
+      if (!failed) {
+        note('save', null, String(total), codes.join(','));
         saveStatus.textContent = '';
         toast('Saved', { level: 'ok',
-          detail: d.n + (d.n === 1 ? ' change is' : ' changes are') +
-                  ' stored. Safe to close this page or carry on from another computer.' });
-      } catch (err) {
+          detail: total + (total === 1 ? ' change is' : ' changes are') +
+                  ' stored' + (codes.length > 1 ? ' across ' + codes.length + ' languages' : '') +
+                  '. Safe to close this page or carry on from another computer.' });
+      } else {
         saveStatus.textContent = 'not saved';
         saveStatus.className = 'desk-status is-error';
-        note('save-failed', null, err.message, null);
+        note('save-failed', null, failed.message, done.join(','));
         toast('Not saved', { level: 'err',
-          detail: 'Nothing was lost — your work is still on this page. ' + err.message });
-      } finally {
-        saving = false; paintSave();
+          detail: (done.length ? done.length + ' language' + (done.length > 1 ? 's' : '') +
+                   ' saved first; the rest are ' : 'Nothing was lost — your work is ') +
+                  'still on this page. ' + failed.message });
       }
     }
+
     btnSave.addEventListener('click', save);
 
     // ── Toasts ─────────────────────────────────────────────────────────
@@ -1633,10 +1744,13 @@ def _desk_js(code: str, rtl: bool) -> str:
       });
     }
 
-    [fPage, fState].forEach(function (el) {
-      el.addEventListener('change', function () { applyFilters(); syncUrl(); });
-    });
-    fQ.addEventListener('input', function () { applyFilters(); syncUrl(); });
+    function resetView() {
+      justActed = Object.create(null);   // changing the view is when rows may move
+      applyFilters();
+      syncUrl();
+    }
+    [fPage, fState].forEach(function (el) { el.addEventListener('change', resetView); });
+    fQ.addEventListener('input', resetView);
 
     // ── Boot ───────────────────────────────────────────────────────────
     fetch('units.json', { cache: 'no-cache' })
@@ -1671,7 +1785,8 @@ def _desk_js(code: str, rtl: bool) -> str:
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
-        var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived', 'sending', 'failed', ''];
+        var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived',
+                     'sending', 'failed', 'exported', 'live', ''];
         if (want !== null && known.indexOf(want) !== -1) {
           fState.value = want;
         } else if (rows.some(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; })) {
@@ -1702,7 +1817,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       });
   })();
   </script>
-""".replace("__CODE__", code).replace("__RTL__", "true" if rtl else "false")
+""".replace("__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
+    "__LOCALES__", json.dumps([c for c, *_ in LOCALES]))
 
 
 def main() -> int:

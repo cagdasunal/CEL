@@ -1079,7 +1079,14 @@
   .desk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .desk-btn.is-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .desk-btn.is-primary:hover:not(:disabled) { background: #4e51be; }
-  .desk-btn.is-on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* A chosen control is marked by WEIGHT, never by fill. The row already carries its
+     state as a soft background, and a second, louder signal saying the same thing was
+     what made the buttons look "colourful when clicked". */
+  .desk-btn.is-on {
+    background: transparent; color: var(--fg);
+    border-color: var(--fg); font-weight: 700;
+  }
+  .desk-btn.is-on:hover { background: var(--stripe); }
   .desk-btn.is-flagged { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
 
   /* Rows. Dense on purpose -- this is a few hundred rows of triage, not a form. */
@@ -1140,13 +1147,19 @@
   }
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
-  /* State is a soft wash across the row, never a dimming. Fading a decided row made
-     the reviewer's own finished work the hardest thing on the page to read, and it read
-     as "disabled" rather than "done". These two tints are the only row colours. */
-  .desk-row.is-approved > td { background: rgba(29,107,58,0.07); }
-  .desk-row.is-queued > td   { background: rgba(93,96,238,0.07); }
-  .desk-row.is-approved .desk-icon-btn.is-on { background: var(--ok); border-color: var(--ok); }
-  .desk-row.is-queued .desk-icon-btn.is-on   { background: var(--accent); border-color: var(--accent); }
+  /* ONE signal per row: a soft background, and nothing else. No dimming (it made the
+     reviewer's own finished work the hardest thing to read, and said "disabled" rather
+     than "done"), and no colour on the buttons (a filled green tick next to a green row
+     said the same thing twice, in a way that competed with it).
+
+     Each tint means something, and the meanings do not overlap:
+       green  -> settled, going to the website
+       indigo -> the machine owes us something
+       warm   -> waiting on YOU to read it
+       red    -> it went wrong
+       grey   -> in flight, nothing to do yet */
+  .desk-row.is-approved > td { background: rgba(29,107,58,0.06); }
+  .desk-row.is-queued > td   { background: rgba(93,96,238,0.06); }
   .desk-tgt { color: var(--fg); }
   .desk-col-state { width: 1%; white-space: nowrap; }
   .desk-col-act { width: 1%; }
@@ -1166,8 +1179,11 @@
     color: var(--muted); line-height: 0;
   }
   .desk-icon-btn:hover { background: var(--stripe); color: var(--fg); }
-  /* Active = this decision is the row's current state, and clicking again undoes it. */
-  .desk-icon-btn.is-on { color: #fff; }
+  /* The active choice is marked by WEIGHT, not colour -- the row's background already
+     says which state it is in, and a second colour saying the same thing competed with
+     it. Clicking the marked one undoes it. */
+  .desk-icon-btn.is-on { background: transparent; color: var(--fg); border-color: var(--fg); }
+  .desk-icon-btn.is-on:hover { background: var(--stripe); }
   .desk-icon-btn svg { display: block; }
 
   /* Editor: a small form, with somewhere to say yes and somewhere to say no. */
@@ -1193,10 +1209,8 @@
      An outline that heavy read as an alert rather than a position. */
   .desk-row.is-cursor > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 
-  /* Waiting on Gemini, and the two ways that can end. */
-  .desk-row.is-arrived > td { background: rgba(93,96,238,0.09); }
+  .desk-row.is-arrived > td { background: var(--notice-bg); }
   .desk-row.is-sending > td { background: var(--stripe); }
-  .desk-row.is-sending { opacity: 0.7; }
   .desk-row.is-failed > td  { background: rgba(160,38,36,0.06); }
 
   .desk-row.is-picked > td,
