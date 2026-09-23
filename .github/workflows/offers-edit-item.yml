@@ -45,6 +45,13 @@ jobs:
 
       - name: Commit log
         if: always()
+        # Inputs reach the shell through env, never `${{ }}` inside `run:` -- GitHub
+        # substitutes an expression as TEXT before bash parses the script, so a value
+        # carrying `$(...)` would run as code. The Worker's input schema already
+        # constrains these; this is the half the workflow owns (audit 151 B-062).
+        env:
+          ITEM_ID: ${{ inputs.item_id }}
+          DAYS: ${{ inputs.days }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -53,7 +60,7 @@ jobs:
             exit 0
           fi
           git add data/offers-edit-log.json
-          git commit -m "chore(offers): edit item ${{ inputs.item_id }} auto-extend-days=${{ inputs.days }}"
+          git commit -m "chore(offers): edit item ${ITEM_ID} auto-extend-days=${DAYS}"
           # 5-attempt push retry with exponential backoff.
           # JSONL log format makes rebase conflicts extremely rare (each run
           # appends a distinct line at EOF — non-overlapping diffs auto-merge).

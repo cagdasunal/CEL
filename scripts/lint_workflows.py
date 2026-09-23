@@ -29,6 +29,24 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
                         no `cancelled()` (a timeout-minutes expiry -> conclusion
                         `cancelled`, not `failed`, so the alert misses TIMEOUTS — the
                         blog-summary-autopilot 7-day-silent incident)
+  - script_injection  : `${{ inputs.* }}` / issue / PR / comment / workflow_run text
+                        interpolated into a `run:` block. GitHub substitutes it as TEXT
+                        before bash parses the script, so `$(...)`, a backtick or a
+                        newline in the value runs as code with the job's token (audit
+                        151 B-062/B-149). Bind it with `env:` and quote `"$VAR"`.
+  - unwatched_scheduled_workflow : a `schedule:`d workflow that no `workflow_run`
+                        watchdog watches. When GitHub fails to acquire a hosted runner
+                        the job runs ZERO steps, so the workflow's OWN in-job notify
+                        can never fire — the failure is completely silent and the run
+                        is simply skipped until the next tick. Only a `workflow_run`
+                        watchdog (a separate run, with its own runner) can see it.
+                        Opt out per workflow with a comment line:
+                            # runner-watchdog-optout: <Exact Name> — <why>
+                        (2026-08-06: cagdasunal/CEL "Content Pipeline" was excluded from
+                        the watchdog on the assumption its 15-min cron self-heals; the
+                        MEASURED gap was a median of 107 min and run 31119936789 failed
+                        silently. This check exists so such an exclusion must be written
+                        down explicitly instead of living in a stale comment.)
 
 Stdlib only (text/regex; no PyYAML). Designed to run locally, in pre-commit, in
 `system_inspector` (check_workflow_reliability), and as a CI job in BOTH the
@@ -48,6 +66,32 @@ import sys
 from pathlib import Path
 
 SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+
+
+def _keeplatest_paths(workflows_dir: Path) -> list[str]:
+    """Paths tagged `merge=keepLatest` in the repo's .gitattributes.
+
+    These are deterministic build artifacts (regenerated dashboard HTML, the
+    Weglot import-status JSON) that two overlapping runs rewrite with different
+    timestamps. A plain `git pull --rebase` CONFLICTS on them and aborts red
+    (the 2026-06-27 content-pipeline incident). The conflict is auto-resolved by
+    the `keepLatest` merge driver — but only if the workflow REGISTERS that
+    driver (`git config merge.keepLatest.driver ...`) before it rebases, because
+    the driver lives in .git/config, not the repo. This returns the tagged paths
+    so the `generated_rebase_unsafe` rule can flag any rebasing workflow that
+    touches one without registering the driver. Empty if no .gitattributes.
+    """
+    ga = (workflows_dir / ".." / "..").resolve() / ".gitattributes"
+    if not ga.is_file():
+        return []
+    paths = []
+    for raw in ga.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if re.search(r"\bmerge=keepLatest\b", line):
+            paths.append(line.split()[0])
+    return paths
 
 
 def _run_blocks(text: str):
@@ -78,32 +122,6 @@ def _run_blocks(text: str):
         if m2 and not m2.group(2).startswith(("|", ">")):
             yield i + 1, m2.group(2)
         i += 1
-
-
-def _keeplatest_paths(workflows_dir: Path) -> list[str]:
-    """Paths tagged `merge=keepLatest` in the repo's .gitattributes.
-
-    These are deterministic build artifacts (regenerated dashboard HTML, the
-    Weglot import-status JSON) that two overlapping runs rewrite with different
-    timestamps. A plain `git pull --rebase` CONFLICTS on them and aborts red
-    (the 2026-06-27 content-pipeline incident). The conflict is auto-resolved by
-    the `keepLatest` merge driver — but only if the workflow REGISTERS that
-    driver (`git config merge.keepLatest.driver ...`) before it rebases, because
-    the driver lives in .git/config, not the repo. This returns the tagged paths
-    so the `generated_rebase_unsafe` rule can flag any rebasing workflow that
-    touches one without registering the driver. Empty if no .gitattributes.
-    """
-    ga = (workflows_dir / ".." / "..").resolve() / ".gitattributes"
-    if not ga.is_file():
-        return []
-    paths = []
-    for raw in ga.read_text(encoding="utf-8", errors="ignore").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if re.search(r"\bmerge=keepLatest\b", line):
-            paths.append(line.split()[0])
-    return paths
 
 
 def _job_blocks(text: str):
@@ -204,6 +222,23 @@ def lint_workflow(path: Path):
             "wrap push in a 3-attempt loop: `for i in 1 2 3; do git push && break; "
             "git pull --rebase --autostash origin main || exit 1; done`")
 
+    for bline, block in _run_blocks(text):
+        # Only flag the exit-code-LOSING filters (tail/head/tee) — these mask the
+        # upstream command's failure (the ci.yml `pytest | tail -30` bug). A
+        # `... | grep -q`/`| jq` boolean/extract is a benign idiom, not flagged.
+        piped = re.search(r"\|\s*(tail|head|tee)\b", block)
+        if piped and not re.search(r"pipefail|PIPESTATUS", block):
+            add("high", "silent_pipe", bline,
+                "run block pipes a command to tail/head/tee without `set -o pipefail` "
+                "— the upstream command's exit code is lost (the ci.yml `| tail -30` bug)",
+                "add `set -euo pipefail` at the top of the run block, or capture "
+                "`${PIPESTATUS[0]}` and exit on it")
+        for ml in re.finditer(r"(git push|publish|deploy|--sync|--publish)[^\n]*\|\|\s*(echo|true)\b", block):
+            add("high", "masked_failure", bline,
+                f"load-bearing command masked with `|| {ml.group(2)}`: `{ml.group(0)[:60]}` "
+                "— a real failure is swallowed and the job stays green",
+                "remove the `|| echo/true`; let it fail, or handle the specific recoverable case explicitly")
+
     # 5b. A rebase loop survives a concurrent push ONLY if it can resolve the
     #     conflict. Deterministic build artifacts tagged `merge=keepLatest` in
     #     .gitattributes (regenerated dashboard HTML, import-status.json) DO
@@ -226,23 +261,6 @@ def lint_workflow(path: Path):
                 "rebase aborts red (the 2026-06-27 content-pipeline race)",
                 "add `git config merge.keepLatest.driver 'cp %B %A'` before the pull/rebase, so "
                 "the conflict auto-resolves to this run's fresh output (see content-pipeline.yml)")
-
-    for bline, block in _run_blocks(text):
-        # Only flag the exit-code-LOSING filters (tail/head/tee) — these mask the
-        # upstream command's failure (the ci.yml `pytest | tail -30` bug). A
-        # `... | grep -q`/`| jq` boolean/extract is a benign idiom, not flagged.
-        piped = re.search(r"\|\s*(tail|head|tee)\b", block)
-        if piped and not re.search(r"pipefail|PIPESTATUS", block):
-            add("high", "silent_pipe", bline,
-                "run block pipes a command to tail/head/tee without `set -o pipefail` "
-                "— the upstream command's exit code is lost (the ci.yml `| tail -30` bug)",
-                "add `set -euo pipefail` at the top of the run block, or capture "
-                "`${PIPESTATUS[0]}` and exit on it")
-        for ml in re.finditer(r"(git push|publish|deploy|--sync|--publish)[^\n]*\|\|\s*(echo|true)\b", block):
-            add("high", "masked_failure", bline,
-                f"load-bearing command masked with `|| {ml.group(2)}`: `{ml.group(0)[:60]}` "
-                "— a real failure is swallowed and the job stays green",
-                "remove the `|| echo/true`; let it fail, or handle the specific recoverable case explicitly")
 
     # 6. a notify step that opens a LABELED issue without ensuring the label exists.
     #    `gh issue create --label X` aborts ATOMICALLY if X is absent in the repo, so
@@ -288,6 +306,133 @@ def lint_workflow(path: Path):
                     "blog-summary-autopilot 7-day-silent incident)",
                     "change the notify step guard to `if: failure() || cancelled()`")
 
+    # 8. `${{ }}` interpolation of ATTACKER-CONTROLLABLE data inside a `run:` block.
+    #    GitHub substitutes the expression TEXTUALLY before bash ever sees the script,
+    #    so a value containing `$(...)`, a backtick or a newline becomes CODE running
+    #    with the job's token and secrets. This is the one class the linter had no rule
+    #    for at all: it reported "14 workflow(s) clean" over a directory containing a
+    #    proven injection (audit 151 B-062/B-149 — offers-edit-item.yml:56,
+    #    offers-edit-regions.yml:57, blog-image-optimization.yml:69-70).
+    #    Only genuinely attacker-controllable contexts are listed; `secrets.*`,
+    #    `github.workspace`, `steps.*.outputs.*` and friends are NOT flagged, so this
+    #    rule stays quiet on the repo's own clean workflows.
+    lines = text.split("\n")
+    for bline, block in _run_blocks(text):
+        head = lines[bline - 1] if 0 <= bline - 1 < len(lines) else ""
+        body_start = bline + 1 if re.search(r"run:\s*[|>]", head) else bline
+        for idx, bl in enumerate(block.split("\n")):
+            for m in _TAINTED_EXPR_RE.finditer(bl):
+                expr = m.group(1).strip()
+                add("high", "script_injection", body_start + idx,
+                    f"`${{{{ {expr} }}}}` is interpolated into a `run:` block — the value is "
+                    "attacker-controllable and is substituted as TEXT before bash parses the "
+                    "script, so `$(...)`/backtick/newline content executes with the job's "
+                    "token and secrets",
+                    "pass it through `env:` on the step and reference the shell variable "
+                    "(`env: { SLUG: ${{ ... }} }` then `\"$SLUG\"`), quote every use, and "
+                    "validate the value (e.g. `case \"$SLUG\" in *[!a-z0-9-]*) exit 1;; esac`)")
+
+    return findings
+
+
+# Contexts an outsider can influence: workflow_dispatch / repository_dispatch inputs,
+# issue and comment bodies, PR titles/branch names, and workflow_run metadata. Each is
+# the documented source of a GitHub Actions script-injection.
+_TAINTED_EXPR_RE = re.compile(
+    r"\$\{\{\s*("
+    r"(?:[^}]*\b(?:"
+    r"github\.event\.inputs\.[A-Za-z0-9_.-]+"
+    r"|inputs\.[A-Za-z0-9_.-]+"
+    r"|github\.event\.client_payload\.[A-Za-z0-9_.-]+"
+    r"|github\.event\.issue\.(?:title|body)"
+    r"|github\.event\.comment\.body"
+    r"|github\.event\.discussion\.(?:title|body)"
+    r"|github\.event\.review\.body"
+    r"|github\.event\.pull_request\.(?:title|body)"
+    r"|github\.event\.pull_request\.head\.(?:ref|label|repo\.[A-Za-z0-9_.-]+)"
+    r"|github\.head_ref"
+    r"|github\.event\.head_commit\.message"
+    r"|github\.event\.workflow_run\.(?:head_branch|display_title|name)"
+    r")\b[^}]*)"
+    r")\}\}"
+)
+
+
+# A per-workflow, greppable escape hatch for the watchdog-coverage check:
+#     # runner-watchdog-optout: Some Workflow — reason it genuinely self-heals
+_OPTOUT_RE = re.compile(r"#\s*runner-watchdog-optout:\s*(.+?)\s*$", re.M)
+
+
+def _workflow_name(text: str, path: Path) -> str:
+    m = re.search(r"^name:\s*(.+?)\s*$", text, re.M)
+    return m.group(1).strip().strip("\"'") if m else path.stem
+
+
+def _is_scheduled(text: str) -> bool:
+    return bool(re.search(r"^\s*schedule:\s*$", text, re.M)) and \
+        bool(re.search(r"^\s*-?\s*cron:\s*['\"]", text, re.M))
+
+
+def _watched_workflow_names(text: str) -> set[str]:
+    """Workflow names listed under an `on:` -> `workflow_run:` -> `workflows:` block."""
+    if not re.search(r"^\s*workflow_run:\s*$", text, re.M):
+        return set()
+    names: set[str] = set()
+    in_list, indent = False, -1
+    for ln in text.split("\n"):
+        if re.match(r"^\s*workflows:\s*$", ln):
+            in_list, indent = True, len(ln) - len(ln.lstrip())
+            continue
+        if not in_list:
+            continue
+        if not ln.strip() or ln.lstrip().startswith("#"):
+            continue  # blank / comment lines don't end the list
+        m = re.match(r"^(\s*)-\s*(.+?)\s*$", ln)
+        if m and len(m.group(1)) > indent:
+            names.add(m.group(2).strip().strip("\"'"))
+        else:
+            in_list = False
+    return names
+
+
+def lint_watchdog_coverage(paths):
+    """Directory-level check: every scheduled workflow must be watched or opted out.
+
+    Cross-file, so it cannot live in `lint_workflow` (which sees one file at a time).
+    """
+    findings = []
+    texts = {p: p.read_text(encoding="utf-8", errors="ignore") for p in paths}
+
+    watched: set[str] = set()
+    optout: set[str] = set()
+    for text in texts.values():
+        watched |= _watched_workflow_names(text)
+        for m in _OPTOUT_RE.finditer(text):
+            # Everything before an em/en-dash or " - " is the workflow name.
+            raw = re.split(r"\s+[—–]\s+|\s+-\s+", m.group(1), maxsplit=1)[0]
+            optout.add(raw.strip().strip("\"'"))
+
+    for path, text in sorted(texts.items()):
+        if not _is_scheduled(text):
+            continue
+        name = _workflow_name(text, path)
+        if name in watched or name in optout:
+            continue
+        line = 1
+        for i, ln in enumerate(text.split("\n"), 1):
+            if re.match(r"^\s*schedule:\s*$", ln):
+                line = i
+                break
+        findings.append({
+            "file": path.name, "line": line, "severity": "high",
+            "category": "unwatched_scheduled_workflow",
+            "issue": (f"scheduled workflow {name!r} is not watched by any workflow_run "
+                      f"watchdog — a hosted-runner acquisition failure runs 0 steps, so "
+                      f"its own in-job notify cannot fire and the miss is silent"),
+            "fix": (f"add \"{name}\" to the `workflows:` list in "
+                    f".github/workflows/runner-acquisition-watchdog.yml, or document why "
+                    f"not with a comment: `# runner-watchdog-optout: {name} — <reason>`"),
+        })
     return findings
 
 
@@ -312,7 +457,11 @@ def main() -> int:
     all_findings = []
     files = []
     for d in find_workflow_dirs(args.dirs):
-        files.extend(sorted(Path(d).glob("*.yml")) + sorted(Path(d).glob("*.yaml")))
+        dir_files = sorted(Path(d).glob("*.yml")) + sorted(Path(d).glob("*.yaml"))
+        files.extend(dir_files)
+        # Cross-file check: scoped per directory so scanning two repos at once
+        # never lets one repo's watchdog "cover" the other repo's schedules.
+        all_findings.extend(lint_watchdog_coverage(dir_files))
     for f in files:
         all_findings.extend(lint_workflow(f))
 

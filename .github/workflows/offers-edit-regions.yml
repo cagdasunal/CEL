@@ -46,6 +46,10 @@ jobs:
 
       - name: Commit changes
         if: always()
+        # Inputs reach the shell through env, never `${{ }}` inside `run:` (see
+        # offers-edit-item.yml; audit 151 B-149).
+        env:
+          REGION: ${{ inputs.region }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -54,7 +58,7 @@ jobs:
             echo "Nothing to commit"
             exit 0
           fi
-          git commit -m "chore(offers): edit region ${{ inputs.region }}"
+          git commit -m "chore(offers): edit region ${REGION}"
           # 5-attempt push retry with exponential backoff. See offers-edit-item.yml
           # for the rationale (JSONL append-only log + rebase + push).
           # NOTE: cel-offers-regions.json is JSON-object (not JSONL), so two
