@@ -288,22 +288,33 @@ def render_index(units: list[dict]) -> str:
     parts.append('      <div class="desk-locales">')
     for code, name, endonym, _dir, flag in LOCALES:
         have = sum(1 for u in units if (u.get("current") or {}).get(code))
-        parts.append(
-            f'        <div class="desk-locale-card" data-locale="{code}" data-total="{have}">'
+        # The recommendation count is the only number that is useful on a FIRST visit:
+        # decisions all start at zero, so without this every card said the same thing
+        # and the index answered nothing.
+        flagged = sum(
+            1 for u in units
+            if (u.get("current") or {}).get(code)
+            and recommend(u["word_from"],
+                          (u["current"][code] or {}).get("word_to", ""), code)[0] == LEVEL_CHECK
         )
         parts.append(
-            f'          <a class="desk-locale-open" href="/admin/localization/{code}/">'
+            f'        <div class="desk-locale-card" data-locale="{code}" '
+            f'data-total="{have}" data-flagged="{flagged}">'
+        )
+        parts.append(
+            f'          <a class="desk-locale-open" href="/admin/localization/{code}/?show=check">'
+            f'<span class="desk-loc-flag" aria-hidden="true">{flag}</span> '
             f'<span class="desk-locale-name">{escape(name)}</span></a>'
         )
         parts.append(
             f'          <p class="desk-locale-sub"><bdi>{escape(endonym)}</bdi> '
-            f'&middot; <span class="mono">{code}</span></p>'
+            f'&middot; {have} units</p>'
         )
         parts.append('          <div class="desk-meter" role="presentation">')
         parts.append('            <div class="desk-meter-fill" style="width:0%"></div>')
         parts.append("          </div>")
         parts.append(
-            f'          <p class="desk-locale-stat">{have} units &mdash; not started</p>'
+            f'          <p class="desk-locale-stat">{flagged} need attention</p>'
         )
         parts.append('          <div class="desk-trays"></div>')
         parts.append("        </div>")
@@ -359,11 +370,14 @@ def _index_js() -> str:
         else if (st[k].tray === 'draft') draft++;
       }
       var done = csv + draft;
+      var flagged = parseInt(card.getAttribute('data-flagged'), 10) || 0;
       var pct = total ? Math.round(100 * done / total) : 0;
       card.querySelector('.desk-meter-fill').style.width = pct + '%';
+      // Once there is progress, progress is the more useful number; before that, the
+      // number of rows actually asking for attention is.
       card.querySelector('.desk-locale-stat').textContent =
         done ? (done + ' of ' + total + ' decided (' + pct + '%)')
-             : (total + ' units — not started');
+             : (flagged + ' need attention');
 
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
@@ -665,10 +679,12 @@ def _desk_js(code: str, rtl: bool) -> str:
       var uid = tr.getAttribute('data-uid');
       var s = state[uid] || {};
       var badge = tr.querySelector('.desk-state');
-      var label = 'unreviewed', cls = 'badge-partial';
+      // The badge says what YOU decided; the reason line under the translation says
+      // what the system noticed. They are different questions, so the badge must not
+      // repeat "needs attention" directly beside a line already explaining why.
+      var label = 'not reviewed', cls = 'badge-partial';
       if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
       else if (s.tray === 'draft') { label = 'to re-translate'; cls = 'badge-failed'; }
-      else if (tr.hasAttribute('data-why')) { label = 'needs attention'; cls = 'badge-partial'; }
       badge.className = 'desk-state ' + cls;
       badge.textContent = label;
       tr.classList.toggle('is-done', s.tray === 'csv');

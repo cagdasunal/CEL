@@ -366,10 +366,12 @@
       var uid = tr.getAttribute('data-uid');
       var s = state[uid] || {};
       var badge = tr.querySelector('.desk-state');
-      var label = 'unreviewed', cls = 'badge-partial';
+      // The badge says what YOU decided; the reason line under the translation says
+      // what the system noticed. They are different questions, so the badge must not
+      // repeat "needs attention" directly beside a line already explaining why.
+      var label = 'not reviewed', cls = 'badge-partial';
       if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
       else if (s.tray === 'draft') { label = 'to re-translate'; cls = 'badge-failed'; }
-      else if (tr.hasAttribute('data-why')) { label = 'needs attention'; cls = 'badge-partial'; }
       badge.className = 'desk-state ' + cls;
       badge.textContent = label;
       tr.classList.toggle('is-done', s.tray === 'csv');
