@@ -1135,6 +1135,8 @@ DESK_CSS = """
   }
   .desk-select:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
   .desk-toolbar-spacer { flex: 1 1 auto; }
+  /* Pushed to the far end of .dashboard-header, which is already a flex row. */
+  .desk-header-btn { margin-left: auto; align-self: center; }
 
   /* Buttons -- same contract as .cpw-btn */
   .desk-btn {

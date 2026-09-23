@@ -1,0 +1,82 @@
+name: Localization Desk — save decisions
+
+# Triggered from /admin/localization/<locale>/ when the reviewer saves.
+#
+# Until this existed, decisions lived only in the reviewer's browser: an afternoon's
+# work survived exactly as long as one browser profile, and nothing downstream
+# (reconciliation, the CSV builder, the batch) could read them at all.
+#
+# The payload is website copy typed by a human, so it is treated as untrusted
+# throughout. It is base64 of gzip of JSON — which the dispatch Worker's input schema
+# additionally constrains to the base64 alphabet, so the value cannot contain a shell
+# metacharacter — and it is bound with `env:` rather than interpolated into the `run:`
+# string, which is the injection GitHub's own guidance warns about. The script reads
+# os.environ and validates every field before writing anything.
+on:
+  workflow_dispatch:
+    inputs:
+      locale:
+        description: 'Locale code (de|fr|es|pt|it|ja|ko|ar)'
+        required: true
+        type: string
+      payload:
+        description: 'base64(gzip(json)) delta of decisions'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+# Serialised per locale. Two reviewers saving the same language at the same moment
+# would otherwise race on the same file; different languages are independent and run
+# in parallel. `cancel-in-progress: false` because a superseded save is still somebody's
+# work — it merges, so nothing is lost by letting it finish.
+concurrency:
+  group: localization-save-${{ inputs.locale }}
+  cancel-in-progress: false
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Apply decisions
+        env:
+          LOCALE: ${{ inputs.locale }}
+          PAYLOAD: ${{ inputs.payload }}
+        run: python3 tools/localize_desk/save_decisions.py
+
+      - name: Commit
+        env:
+          LOCALE: ${{ inputs.locale }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "docs/admin/localization/${LOCALE}/decisions.json"
+          if git diff --cached --quiet; then
+            echo "No change — the save was a no-op."
+            exit 0
+          fi
+          git commit -m "chore(localization): decisions for ${LOCALE}"
+          # The 15-minute content pipeline commits to this branch too, so a push can
+          # lose a race through no fault of this run. Rebase and retry rather than
+          # failing a save the reviewer believes succeeded.
+          for attempt in 1 2 3; do
+            if git push; then
+              echo "pushed on attempt ${attempt}"
+              exit 0
+            fi
+            git pull --rebase --autostash origin main
+          done
+          echo "ERROR: could not push after 3 attempts" >&2
+          exit 1

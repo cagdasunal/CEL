@@ -414,12 +414,19 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     )
     parts.append(render_admin_open("localization"))
     parts.append('  <div class="dashboard-shell">')
+    # Same markup and classes as render_page_chrome(), written out here so the help
+    # control can live IN the header rather than down among the filters. It is not a
+    # filter, and sitting next to Page/Show/Search it read like one.
+    parts.append('    <header class="dashboard-header">')
+    parts.append('      <div class="brand-text">')
+    parts.append(f'        <p class="eyebrow">LOCALIZATION DESK &middot; {escape(name.upper())}</p>')
     parts.append(
-        render_page_chrome(
-            f"LOCALIZATION DESK &middot; {escape(name.upper())}",
-            f"<bdi>{escape(endonym)}</bdi> &middot; {len(rows)} units",
-        )
+        f'        <p class="subtitle"><bdi>{escape(endonym)}</bdi> &middot; {len(rows)} units</p>'
     )
+    parts.append("      </div>")
+    parts.append('      <button type="button" class="desk-btn desk-header-btn" id="how-open">'
+                 "How this works</button>")
+    parts.append("    </header>")
 
     # Toolbar. The locale strip comes FIRST because switching language while staying
     # on the same page and filter is the move the reviewer makes most: the old desk
@@ -459,11 +466,10 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('          <input class="desk-select" id="f-q" type="search" '
                  'placeholder="source or translation" autocomplete="off">')
     parts.append("        </label>")
-    parts.append('        <span class="desk-toolbar-spacer"></span>')
     # Neither Import nor Download: the reviewer imports nothing, and asking them to
     # take backups is asking them to spend the time this project exists to save.
-    # Durability is the system's job, not a button.
-    parts.append('        <button type="button" class="desk-btn" id="how-open">How this works</button>')
+    # Durability is the system's job, not a button. "How this works" moved up into the
+    # header — it is help, not a filter.
     parts.append("      </div>")
     parts.append('      <p class="subtle" id="count-line"></p>')
     parts.append("    </div>")
