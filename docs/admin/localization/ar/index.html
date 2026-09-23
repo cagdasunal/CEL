@@ -132,7 +132,7 @@
         <span class="desk-savebar-spacer"></span>
         <button type="button" class="desk-btn" id="bulk-clear">Clear</button>
         <button type="button" class="desk-btn" id="bulk-draft">Needs a new translation</button>
-        <button type="button" class="desk-btn is-primary" id="bulk-approve">Approve</button>
+        <button type="button" class="desk-btn is-strong" id="bulk-approve">Approve</button>
       </div>
       <div class="desk-bar-row" id="bar-trays" hidden>
         <p class="desk-savebar-text" id="tray-line"></p>
@@ -221,7 +221,7 @@
       <footer class="desk-review-foot">
         <p class="desk-notice" id="tray-notice"></p>
         <div class="desk-review-actions">
-          <button type="button" class="desk-btn is-primary" id="tray-done">Close</button>
+          <button type="button" class="desk-btn" id="tray-done">Close</button>
         </div>
       </footer>
     </div>
@@ -246,21 +246,30 @@
       // Gemini's mark is a four-pointed star.
       // An arrow curving back on itself: take this row back out.
       undo:   { stroke: 1.7, d: ['M3 8a5 5 0 1 1 1.6 3.7', 'M3 4.5V8h3.5'] },
-      // Gemini's four-pointed star, which is TALLER THAN WIDE. Two symmetric attempts
-      // both read as a plus sign at this size, and that is inherent: a symmetric
-      // 4-point star has almost no information left at 15px. The asymmetry is what
-      // distinguishes it -- and it is also what the real mark looks like.
-      spark:  { fill: true, size: 17,
-                d: ['M8 0.4c.3 4 1.2 6.1 2.2 6.9.8.65 2.4.85 5.4.95' +
-                    '-3 .1-4.6.3-5.4.95-1 .8-1.9 2.9-2.2 6.9' +
-                    '-.3-4-1.2-6.1-2.2-6.9-.8-.65-2.4-.85-5.4-.95' +
-                    '3-.1 4.6-.3 5.4-.95C6.8 6.5 7.7 4.4 8 0.4z'] }
+      // The operator's own AI mark: one large four-pointed star with two smaller ones.
+      // My hand-drawn single star kept reading as a plus no matter how the arms were
+      // tapered -- a symmetric 4-point star simply has too little information left at
+      // 15px. Three stars of different sizes fix it, because the shape is then
+      // recognised by its composition rather than by one outline. 32-unit viewBox.
+      spark:  { fill: true, size: 17, vb: '0 0 32 32', d: [
+        'm13.294 7.436.803 2.23c.892 2.475 2.841 4.424 5.316 5.316l2.23.803c.201.073.201.358 0 .43'
+        + 'l-2.23.803c-2.475.892-4.424 2.841-5.316 5.316l-.803 2.23c-.073.201-.358.201-.43 0'
+        + 'l-.803-2.23c-.892-2.475-2.841-4.424-5.316-5.316l-2.23-.803c-.201-.073-.201-.358 0-.43'
+        + 'l2.23-.803c2.475-.892 4.424-2.841 5.316-5.316l.803-2.23c.072-.202.357-.202.43 0z',
+        'm23.332 2.077.407 1.129c.452 1.253 1.439 2.24 2.692 2.692l1.129.407c.102.037.102.181 0 .218'
+        + 'l-1.129.407c-1.253.452-2.24 1.439-2.692 2.692l-.407 1.129c-.037.102-.181.102-.218 0'
+        + 'l-.407-1.129c-.452-1.253-1.439-2.24-2.692-2.692l-1.129-.407c-.102-.037-.102-.181 0-.218'
+        + 'l1.129-.407c1.253-.452 2.24-1.439 2.692-2.692l.407-1.129c.037-.103.182-.103.218 0z',
+        'm23.332 21.25.407 1.129c.452 1.253 1.439 2.24 2.692 2.692l1.129.407c.102.037.102.181 0 .218'
+        + 'l-1.129.407c-1.253.452-2.24 1.439-2.692 2.692l-.407 1.129c-.037.102-.181.102-.218 0'
+        + 'l-.407-1.129c-.452-1.253-1.439-2.24-2.692-2.692l-1.129-.407c-.102-.037-.102-.181 0-.218'
+        + 'l1.129-.407c1.253-.452 2.24-1.439 2.692-2.692l.407-1.129c.037-.102.182-.102.218 0z'] }
     };
 
     function icon(name) {
       var spec = ICONS[name];
       var svg = document.createElementNS(SVG_NS, 'svg');
-      svg.setAttribute('viewBox', '0 0 16 16');
+      svg.setAttribute('viewBox', spec.vb || '0 0 16 16');
       var px = String(spec.size || 15);
       svg.setAttribute('width', px);
       svg.setAttribute('height', px);
@@ -409,9 +418,11 @@
         bCancel.textContent = 'Cancel';
         var bSave = document.createElement('button');
         bSave.type = 'button';
-        bSave.className = 'desk-btn is-primary';
+        // Ghost, not filled. Save in the bottom bar is the page's one primary, and a
+        // second filled pill inline in a table row competes with it for the same job.
+        bSave.className = 'desk-btn is-strong';
         bSave.setAttribute('data-edit', 'save');
-        bSave.textContent = 'Save wording';
+        bSave.textContent = 'Save changes';
         editBar.appendChild(editHint);
         editBar.appendChild(bCancel);
         editBar.appendChild(bSave);

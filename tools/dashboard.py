@@ -1148,8 +1148,14 @@ DESK_CSS = """
   .desk-btn:hover:not(:disabled) { background: var(--stripe); }
   .desk-btn:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
   .desk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* The ONE filled pill on the page, reserved for the single action that leaves the
+     browser. Four of these were visible at once, which is the same as none. */
   .desk-btn.is-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .desk-btn.is-primary:hover:not(:disabled) { background: #4e51be; }
+  /* Second-rank: the main action of a local group, marked by weight and a firm edge
+     rather than a fill, so it cannot compete with the page's primary. */
+  .desk-btn.is-strong { border-color: var(--fg); font-weight: 700; }
+  .desk-btn.is-strong:hover:not(:disabled) { background: var(--stripe); }
   /* A chosen control is marked by WEIGHT, never by fill. The row already carries its
      state as a soft background, and a second, louder signal saying the same thing was
      what made the buttons look "colourful when clicked". */
