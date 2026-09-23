@@ -201,10 +201,13 @@ HOW_MODAL = """\
         into Weglot. Clicking a tray button repeatedly cannot send anything twice.</p>
 
         <h3>Your decisions are kept in this browser</h3>
-        <p>They apply instantly and survive a reload. Saving them back to the
-        repository, sending the batch and building the CSV are not wired up yet &mdash;
-        the desk is being built before the machine translation is connected, so the
-        review flow can be judged first.</p>
+        <p>They apply instantly and survive a reload, but not a different computer.
+        <strong>Export decisions</strong> writes them to a file; <strong>Import</strong>
+        reads one back. That file is also how the batch and the CSV steps will receive
+        your decisions, so exporting at the end of a session is worth the habit.</p>
+        <p>Sending the batch and building the CSV are not wired up yet &mdash; the desk
+        is being built before the machine translation is connected, so the review flow
+        can be judged first.</p>
 
         <h3>Keyboard</h3>
         <p><code>J</code> / <code>K</code> move between rows, <code>A</code> approves,
@@ -407,6 +410,9 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
                  'placeholder="source or translation" autocomplete="off">')
     parts.append("        </label>")
     parts.append('        <span class="desk-toolbar-spacer"></span>')
+    parts.append('        <button type="button" class="desk-btn" id="io-export">Export decisions</button>')
+    parts.append('        <button type="button" class="desk-btn" id="io-import">Import</button>')
+    parts.append('        <input type="file" id="io-file" accept="application/json,.json" hidden>')
     parts.append('        <button type="button" class="desk-btn" id="how-open">How this works</button>')
     parts.append("      </div>")
     parts.append('      <p class="subtle" id="count-line"></p>')
@@ -923,6 +929,71 @@ def _desk_js(code: str, rtl: bool) -> str:
       }
       note('empty-tray', null, openTray, String(n));
       persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
+    });
+
+    // ── Export / import ────────────────────────────────────────────────
+    // Decisions live in this browser, which means they do not survive a different
+    // machine and cannot be read by the batch or CSV steps. This file is the handoff:
+    // the reviewer exports it, it goes into the repo, and the pipeline consumes it.
+    // A one-click save would need the dispatch Worker's workflow allowlist extended
+    // and the Worker redeployed -- a security boundary, deliberately not touched here.
+    function exportDecisions() {
+      var c = counts();
+      var doc = {
+        schema: 'cel-localization-desk/1',
+        locale: CODE,
+        exported_at: new Date().toISOString(),
+        counts: { csv: c.csv, draft: c.draft, total_rows: rows.length },
+        decisions: state,
+        history: hist
+      };
+      var blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'localization-' + CODE + '-decisions.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      note('export', null, String(c.csv + c.draft), null);
+    }
+
+    function importDecisions(file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var doc;
+        try { doc = JSON.parse(reader.result); }
+        catch (e) { window.alert('That file is not valid JSON.'); return; }
+        if (!doc || doc.schema !== 'cel-localization-desk/1') {
+          window.alert('That is not a localization desk export.'); return;
+        }
+        if (doc.locale !== CODE) {
+          // Importing German decisions into the Arabic desk would silently attach
+          // them to unit ids that mean something else here.
+          window.alert('That export is for "' + doc.locale + '", and this is the "' +
+                       CODE + '" desk. Open the ' + doc.locale + ' desk to import it.');
+          return;
+        }
+        var incoming = doc.decisions || {};
+        var n = Object.keys(incoming).length;
+        if (!window.confirm('Replace the decisions in this browser with ' + n +
+                            ' from the file? Your current ones are not merged.')) return;
+        state = incoming;
+        picked = Object.create(null);
+        persist();
+        note('import', null, String(n), doc.exported_at || null);
+        rows.forEach(paint); paintBar(); applyFilters();
+      };
+      reader.readAsText(file);
+    }
+
+    document.getElementById('io-export').addEventListener('click', exportDecisions);
+    var ioFile = document.getElementById('io-file');
+    document.getElementById('io-import').addEventListener('click', function () { ioFile.click(); });
+    ioFile.addEventListener('change', function () {
+      if (ioFile.files && ioFile.files[0]) importDecisions(ioFile.files[0]);
+      ioFile.value = '';
     });
 
     [fPage, fState].forEach(function (el) { el.addEventListener('change', applyFilters); });
