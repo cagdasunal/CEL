@@ -1260,9 +1260,21 @@ DESK_CSS = """
   /* Selection */
   .desk-col-pick { width: 1%; }
   .desk-pick { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 2px 0 0; }
+  /* Keyboard cursor: a thin marker on the leading edge, not a border round the row.
+     An outline that heavy read as an alert rather than a position. */
+  .desk-row.is-cursor > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+  /* Waiting on Gemini, and the two ways that can end. */
+  .desk-row.is-arrived > td { background: rgba(93,96,238,0.09); }
+  .desk-row.is-sending > td { background: var(--stripe); }
+  .desk-row.is-sending { opacity: 0.7; }
+  .desk-row.is-failed > td  { background: rgba(160,38,36,0.06); }
+
   .desk-row.is-picked > td,
   .desk-row.is-picked.is-approved > td,
-  .desk-row.is-picked.is-queued > td { background: rgba(93,96,238,0.13); }
+  .desk-row.is-picked.is-queued > td,
+  .desk-row.is-picked.is-arrived > td,
+  .desk-row.is-picked.is-failed > td { background: rgba(93,96,238,0.13); }
 
   /* Sticky action bar. Two zones: the selection you are acting on now (top, only
      while something is selected) and the trays you have filled (bottom, whenever
@@ -1299,6 +1311,9 @@ DESK_CSS = """
   .desk-tray-draft { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
   .desk-tray-csv   { background: rgba(29,107,58,0.13);  color: var(--ok);   border-color: rgba(29,107,58,0.3); }
   .desk-tray-proposed { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
+  .desk-tray-arrived { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
+  .desk-tray-sending { background: var(--stripe); color: var(--muted); }
+  .desk-tray-failed  { background: rgba(160,38,36,0.10); color: var(--err); border-color: rgba(160,38,36,0.28); }
   .desk-tray-none  { background: var(--stripe); color: var(--faint); }
   a.desk-tray:hover { border-color: currentColor; }
   .desk-trays { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }

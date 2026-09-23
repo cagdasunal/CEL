@@ -366,12 +366,18 @@ def _index_js() -> str:
     Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), function (card) {
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
+      // Same stages the desk itself uses, so the index cannot disagree with the page
+      // it links to.
       var st = read(code);
-      var csv = 0, draft = 0;
+      var csv = 0, draft = 0, arrived = 0, sending = 0, failed = 0;
       for (var k in st) {
-        if (!st[k]) continue;
-        if (st[k].tray === 'csv') csv++;
-        else if (st[k].tray === 'draft') draft++;
+        var v = st[k];
+        if (!v) continue;
+        if (v.failed) { failed++; continue; }
+        if (v.sentAt && !v.arrivedAt) { sending++; continue; }
+        if (v.arrivedAt && !v.tray) { arrived++; continue; }
+        if (v.tray === 'csv') csv++;
+        else if (v.tray === 'draft') draft++;
       }
       var done = csv + draft;
       var flagged = parseInt(card.getAttribute('data-flagged'), 10) || 0;
@@ -386,10 +392,14 @@ def _index_js() -> str:
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
-      if (!csv && !draft) {
+      if (!csv && !draft && !arrived && !sending && !failed) {
         trays.appendChild(chip('desk-tray-none', 'not started', null));
         return;
       }
+      // Ordered by what is waiting on the reviewer, not by what the system did.
+      if (arrived) trays.appendChild(chip('desk-tray-arrived', arrived + ' new to read', base + '?show=arrived'));
+      if (failed) trays.appendChild(chip('desk-tray-failed', failed + ' failed', base + '?show=failed'));
+      if (sending) trays.appendChild(chip('desk-tray-sending', sending + ' being translated', base + '?show=sending'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
@@ -459,12 +469,20 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Show')
     parts.append('          <select class="desk-select" id="f-state">')
-    parts.append('            <option value="check">Worth a look first</option>')
-    parts.append('            <option value="todo">Not reviewed</option>')
-    parts.append('            <option value="">Everything</option>')
-    parts.append('            <option value="csv">Approved</option>')
-    parts.append('            <option value="draft">Needs a new translation</option>')
-    parts.append('            <option value="edited">Approved with my wording</option>')
+    # Ordered by what the reviewer should do next, and every label carries a live
+    # count -- so the dropdown answers "where is the work" without selecting anything.
+    for value, label in [
+        ("arrived", "New translations — read these first"),
+        ("check", "Worth a look first"),
+        ("todo", "Not reviewed"),
+        ("", "Everything"),
+        ("csv", "Approved"),
+        ("edited", "Approved with my wording"),
+        ("draft", "Needs a new translation"),
+        ("sending", "Being translated"),
+        ("failed", "Translation failed"),
+    ]:
+        parts.append(f'            <option value="{value}" data-base="{escape(label)}">{escape(label)}</option>')
     parts.append("          </select>")
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Search')
@@ -767,6 +785,36 @@ def _desk_js(code: str, rtl: bool) -> str:
     }
 
     // ── Painting ───────────────────────────────────────────────────────
+    // The whole lifecycle of a row, in the order it happens. `stage()` is the ONLY
+    // place that decides what a row is; badges, filters, counts and the index all read
+    // it, so they cannot drift apart the way the wording did.
+    //
+    //   not-reviewed  nobody has looked
+    //   arrived       a new translation came back -- read this one first
+    //   approved      going to the website (with `edited` when it is the reviewer's text)
+    //   queued        marked for a new translation, NOT sent yet
+    //   sending       sent to Gemini, waiting
+    //   failed        Gemini could not do it
+    function stage(uid) {
+      var s = state[uid] || {};
+      if (s.failed) return 'failed';
+      if (s.sentAt && !s.arrivedAt) return 'sending';
+      if (s.arrivedAt && !s.tray) return 'arrived';
+      if (s.tray === 'csv') return s.text != null ? 'edited' : 'approved';
+      if (s.tray === 'draft') return 'queued';
+      return 'todo';
+    }
+
+    var STAGE_BADGE = {
+      todo:     ['Not reviewed', 'badge-partial'],
+      arrived:  ['New translation', 'badge-proposed'],
+      approved: ['Approved', 'badge-ok'],
+      edited:   ['Approved · your wording', 'badge-ok'],
+      queued:   ['Needs a new translation', 'badge-failed'],
+      sending:  ['Being translated…', 'badge-partial'],
+      failed:   ['Translation failed', 'badge-failed']
+    };
+
     function paint(tr) {
       var uid = tr.getAttribute('data-uid');
       var s = state[uid] || {};
@@ -777,13 +825,19 @@ def _desk_js(code: str, rtl: bool) -> str:
       // "Reworded" described what the reviewer DID; it said nothing about what
       // happens next, and what happens next is identical either way -- the wording
       // goes to the website. So both are Approved, and the edit is a note on it.
-      var label = 'Not reviewed', cls = 'badge-partial';
-      if (s.tray === 'csv') { label = s.text != null ? 'Approved · your wording' : 'Approved'; cls = 'badge-ok'; }
-      else if (s.tray === 'draft') { label = 'Needs a new translation'; cls = 'badge-failed'; }
-      badge.className = 'desk-state ' + cls;
-      badge.textContent = label;
-      tr.classList.toggle('is-approved', s.tray === 'csv');
-      tr.classList.toggle('is-queued', s.tray === 'draft');
+      var st = stage(uid);
+      var spec = STAGE_BADGE[st];
+      badge.className = 'desk-state ' + spec[1];
+      badge.textContent = spec[0];
+      badge.title = st === 'failed' && s.failed ? String(s.failed) : '';
+      tr.setAttribute('data-stage', st);
+      tr.classList.toggle('is-approved', st === 'approved' || st === 'edited');
+      tr.classList.toggle('is-queued', st === 'queued');
+      tr.classList.toggle('is-arrived', st === 'arrived');
+      tr.classList.toggle('is-sending', st === 'sending');
+      tr.classList.toggle('is-failed', st === 'failed');
+      // A row Gemini is still working on must not be decided out from under it.
+      tr.querySelectorAll('[data-act]').forEach(function (b) { b.disabled = st === 'sending'; });
       tr.classList.toggle('is-picked', !!picked[uid]);
 
       var bApprove = tr.querySelector('[data-act="approve"]');
@@ -848,11 +902,15 @@ def _desk_js(code: str, rtl: bool) -> str:
       var p = fPage.value;
       if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
       var want = fState.value;
-      if (want === 'check' && !tr.hasAttribute('data-why')) return false;
-      if (want === 'todo' && s.tray) return false;
-      if (want === 'csv' && s.tray !== 'csv') return false;
-      if (want === 'draft' && s.tray !== 'draft') return false;
-      if (want === 'edited' && s.text == null) return false;
+      var st = stage(tr.getAttribute('data-uid'));
+      if (want === 'check' && !(tr.hasAttribute('data-why') && st === 'todo')) return false;
+      if (want === 'arrived' && st !== 'arrived') return false;
+      if (want === 'todo' && st !== 'todo') return false;
+      if (want === 'csv' && !(st === 'approved' || st === 'edited')) return false;
+      if (want === 'edited' && st !== 'edited') return false;
+      if (want === 'draft' && st !== 'queued') return false;
+      if (want === 'sending' && st !== 'sending') return false;
+      if (want === 'failed' && st !== 'failed') return false;
       var q = fQ.value.trim().toLowerCase();
       if (q && tr.getAttribute('data-q').indexOf(q) === -1) return false;
       return true;
@@ -860,8 +918,34 @@ def _desk_js(code: str, rtl: bool) -> str:
 
     function shown() { return rows.filter(function (tr) { return !tr.hidden; }); }
 
+    // Live counts on every option. An empty group is disabled rather than hidden, so
+    // the list does not reshuffle under the cursor between renders.
+    function paintFilterCounts() {
+      var tally = { arrived: 0, check: 0, todo: 0, csv: 0, edited: 0,
+                    draft: 0, sending: 0, failed: 0 };
+      rows.forEach(function (tr) {
+        var st = stage(tr.getAttribute('data-uid'));
+        if (st === 'arrived') tally.arrived++;
+        else if (st === 'todo') { tally.todo++; if (tr.hasAttribute('data-why')) tally.check++; }
+        else if (st === 'approved') tally.csv++;
+        else if (st === 'edited') { tally.csv++; tally.edited++; }
+        else if (st === 'queued') tally.draft++;
+        else if (st === 'sending') tally.sending++;
+        else if (st === 'failed') tally.failed++;
+      });
+      Array.prototype.forEach.call(fState.options, function (opt) {
+        var base = opt.getAttribute('data-base') || opt.textContent;
+        if (opt.value === '') { opt.textContent = base + ' (' + rows.length + ')'; return; }
+        var n = tally[opt.value] || 0;
+        opt.textContent = base + ' (' + n + ')';
+        // Never disable the option currently selected, or the select goes blank.
+        opt.disabled = n === 0 && opt.value !== fState.value;
+      });
+    }
+
     function applyFilters() {
       rows.forEach(function (tr) { tr.hidden = !matches(tr); });
+      paintFilterCounts();
       var vis = shown();
       noRows.hidden = vis.length !== 0;
       countLine.textContent = vis.length + ' of ' + rows.length + ' units shown';
@@ -923,7 +1007,6 @@ def _desk_js(code: str, rtl: bool) -> str:
       var btn = ev.target.closest('[data-act]');
       if (!btn) return;
       var row = btn.closest('.desk-row');
-      focusRow(rows.indexOf(row));
       apply(row, btn.getAttribute('data-act'));
       paintBar();
       applyFilters();
@@ -1070,11 +1153,15 @@ def _desk_js(code: str, rtl: bool) -> str:
     });
 
     // ── Keyboard ───────────────────────────────────────────────────────
+    // The keyboard cursor is a thin marker on the left edge, set by a class rather
+    // than an inline outline. A 2px indigo outline around the whole row was loud
+    // enough to read as an alert, and it appeared on every mouse click as well --
+    // so simply using the page left a trail of heavy borders behind it.
     function focusRow(i) {
-      if (cursor >= 0 && rows[cursor]) rows[cursor].style.outline = '';
+      if (cursor >= 0 && rows[cursor]) rows[cursor].classList.remove('is-cursor');
       cursor = i;
       if (i < 0 || !rows[i]) return;
-      rows[i].style.outline = '2px solid var(--accent)';
+      rows[i].classList.add('is-cursor');
       rows[i].scrollIntoView({ block: 'nearest' });
     }
     function step(dir) {
@@ -1307,12 +1394,21 @@ def _desk_js(code: str, rtl: bool) -> str:
         // Merge, never replace: a returning batch carries only the rows it was asked
         // about, and must not erase decisions made on every other row.
         //
-        // It sets `tray` and nothing else. An earlier version also stored a draft
-        // wording, but nothing renders that any more -- keeping state no screen can
-        // show is how a system fills up with data nobody reads. When the batch step
-        // lands, the returning wording will replace the row's text and put the row
-        // back to undecided, which needs no new state at all.
-        if (incoming[uid].tray) { s.tray = incoming[uid].tray; n++; }
+        // These are exactly the fields the batch sets at each step of the lifecycle:
+        // `sentAt` when a request goes to Gemini, then `arrivedAt` + `text` when the
+        // new wording comes back, or `failed` when it does not. A row that has arrived
+        // drops its tray, so it reads as a fresh translation waiting to be looked at
+        // rather than something still queued.
+        var inc = incoming[uid];
+        if (inc.sentAt) { s.sentAt = inc.sentAt; delete s.arrivedAt; delete s.failed; n++; }
+        if (inc.arrivedAt) {
+          s.arrivedAt = inc.arrivedAt;
+          delete s.tray; delete s.failed;
+          if (typeof inc.text === 'string') s.text = inc.text;
+          n++;
+        }
+        if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; }
+        if (inc.tray && !inc.arrivedAt) { s.tray = inc.tray; n++; }
       }
       note('ingest', null, String(n), doc.exported_at || null);
       persist();
@@ -1575,8 +1671,13 @@ def _desk_js(code: str, rtl: bool) -> str:
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
-        if (want !== null && ['todo', 'csv', 'draft', 'edited', 'check', ''].indexOf(want) !== -1) {
+        var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived', 'sending', 'failed', ''];
+        if (want !== null && known.indexOf(want) !== -1) {
           fState.value = want;
+        } else if (rows.some(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; })) {
+          // Coming back after a batch, the question is "what came back", not "where
+          // was I". Land on exactly those rows without being asked.
+          fState.value = 'arrived';
         }
         if (qs.get('page')) fPage.value = qs.get('page');
         if (qs.get('q')) fQ.value = qs.get('q');

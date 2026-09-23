@@ -158,12 +158,18 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), function (card) {
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
+      // Same stages the desk itself uses, so the index cannot disagree with the page
+      // it links to.
       var st = read(code);
-      var csv = 0, draft = 0;
+      var csv = 0, draft = 0, arrived = 0, sending = 0, failed = 0;
       for (var k in st) {
-        if (!st[k]) continue;
-        if (st[k].tray === 'csv') csv++;
-        else if (st[k].tray === 'draft') draft++;
+        var v = st[k];
+        if (!v) continue;
+        if (v.failed) { failed++; continue; }
+        if (v.sentAt && !v.arrivedAt) { sending++; continue; }
+        if (v.arrivedAt && !v.tray) { arrived++; continue; }
+        if (v.tray === 'csv') csv++;
+        else if (v.tray === 'draft') draft++;
       }
       var done = csv + draft;
       var flagged = parseInt(card.getAttribute('data-flagged'), 10) || 0;
@@ -178,10 +184,14 @@
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
-      if (!csv && !draft) {
+      if (!csv && !draft && !arrived && !sending && !failed) {
         trays.appendChild(chip('desk-tray-none', 'not started', null));
         return;
       }
+      // Ordered by what is waiting on the reviewer, not by what the system did.
+      if (arrived) trays.appendChild(chip('desk-tray-arrived', arrived + ' new to read', base + '?show=arrived'));
+      if (failed) trays.appendChild(chip('desk-tray-failed', failed + ' failed', base + '?show=failed'));
+      if (sending) trays.appendChild(chip('desk-tray-sending', sending + ' being translated', base + '?show=sending'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
