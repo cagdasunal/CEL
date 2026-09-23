@@ -217,6 +217,47 @@
   <script>
   (function () {
     'use strict';
+    // Monochrome line icons, drawn in currentColor so they take the button's colour
+    // and nothing else. No brand colours: 990 rows of coloured marks would compete
+    // with the one thing colour is reserved for here, which is state.
+    //
+    // Held as path DATA and built with createElementNS rather than assigned as markup.
+    // These are constants, so a string assignment would have been safe -- but the desk
+    // has a test asserting this script never assigns markup at all, and an invariant
+    // with an exception is not an invariant. It is also how the row text stays safe.
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var ICONS = {
+      tick:   { stroke: 1.9, d: ['M3 8.5 6.5 12 13 4.5'] },
+      pencil: { stroke: 1.6, d: ['M11.2 2.3a1.6 1.6 0 0 1 2.3 2.3L5.6 12.4 2.5 13.5l1.1-3.1z',
+                                 'M10.2 3.4 12.6 5.8'] },
+      // Gemini's mark is a four-pointed star.
+      spark:  { fill: true, d: ['M8 1c.28 2.2 1.1 3.9 2.4 5.1C11.7 7.3 13.2 7.9 15 8c-1.8.1-3.3.7-4.6 1.9' +
+                                'C9.1 11.1 8.28 12.8 8 15c-.28-2.2-1.1-3.9-2.4-5.1C4.3 8.7 2.8 8.1 1 8' +
+                                'c1.8-.1 3.3-.7 4.6-1.9C6.9 4.9 7.72 3.2 8 1z'] }
+    };
+
+    function icon(name) {
+      var spec = ICONS[name];
+      var svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 16 16');
+      svg.setAttribute('width', '15');
+      svg.setAttribute('height', '15');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('fill', spec.fill ? 'currentColor' : 'none');
+      if (!spec.fill) {
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', String(spec.stroke));
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+      }
+      spec.d.forEach(function (d) {
+        var path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', d);
+        svg.appendChild(path);
+      });
+      return svg;
+    }
+
     var CODE = 'es';
     var KEY = 'cel-desk-' + CODE;
     var LOGKEY = 'cel-desk-log-' + CODE;
@@ -327,14 +368,35 @@
           why.className = 'desk-why';
           why.textContent = u.why;
         }
+        var editWrap = document.createElement('div');
+        editWrap.className = 'desk-editor';
+        editWrap.hidden = true;
         var ta = document.createElement('textarea');
         ta.className = 'desk-edit';
-        ta.hidden = true;
         ta.setAttribute('aria-label', 'Your wording');
         ta.value = u.tgt;
+        var editBar = document.createElement('div');
+        editBar.className = 'desk-editor-bar';
+        var editHint = document.createElement('span');
+        editHint.className = 'desk-editor-hint';
+        var bCancel = document.createElement('button');
+        bCancel.type = 'button';
+        bCancel.className = 'desk-btn';
+        bCancel.setAttribute('data-edit', 'cancel');
+        bCancel.textContent = 'Cancel';
+        var bSave = document.createElement('button');
+        bSave.type = 'button';
+        bSave.className = 'desk-btn is-primary';
+        bSave.setAttribute('data-edit', 'save');
+        bSave.textContent = 'Save wording';
+        editBar.appendChild(editHint);
+        editBar.appendChild(bCancel);
+        editBar.appendChild(bSave);
+        editWrap.appendChild(ta);
+        editWrap.appendChild(editBar);
         tdTgt.appendChild(live);
         if (why) tdTgt.appendChild(why);
-        tdTgt.appendChild(ta);
+        tdTgt.appendChild(editWrap);
 
         var tdState = document.createElement('td');
         tdState.className = 'desk-col-state';
@@ -347,15 +409,22 @@
         tdAct.className = 'desk-col-act';
         var acts = document.createElement('div');
         acts.className = 'desk-actions';
-        // Ghost, not filled. 990 rows means 990 buttons, and a filled primary on each
-        // turns the single-primary rule into wallpaper. Indigo on a row means STATE.
-        [['approve', 'Approve'], ['edit', 'Edit'], ['queue', 'Re-translate']]
-          .forEach(function (pair) {
+        // Icons, not words, for the three per-row actions: at ~990 rows the labels were
+        // most of the visual weight on the page. One colour for all three (currentColor,
+        // so they inherit) -- colour here means STATE, never identity, and a decided row
+        // is the only place indigo appears. Every one keeps a title and an aria-label,
+        // so the meaning survives a screen reader and a hover.
+        [['approve', 'Approve', 'tick'],
+         ['edit', 'Edit wording', 'pencil'],
+         ['queue', 'Ask for a new translation', 'spark']]
+          .forEach(function (spec) {
             var b = document.createElement('button');
             b.type = 'button';
-            b.className = 'desk-btn';
-            b.setAttribute('data-act', pair[0]);
-            b.textContent = pair[1];
+            b.className = 'desk-btn desk-icon-btn';
+            b.setAttribute('data-act', spec[0]);
+            b.title = spec[1];
+            b.setAttribute('aria-label', spec[1]);
+            b.appendChild(icon(spec[2]));
             acts.appendChild(b);
           });
         tdAct.appendChild(acts);
@@ -386,11 +455,15 @@
 
       var bApprove = tr.querySelector('[data-act="approve"]');
       var bQueue = tr.querySelector('[data-act="queue"]');
+      // The label lives in title/aria-label now, so state has to be said there too --
+      // an icon button with no text has nowhere else to say "already done".
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.textContent = s.tray === 'csv' ? 'Approved' : 'Approve';
+      bApprove.title = s.tray === 'csv' ? 'Approved' : 'Approve';
+      bApprove.setAttribute('aria-label', bApprove.title);
       bApprove.disabled = s.tray === 'csv';
       bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.textContent = s.tray === 'draft' ? 'Queued' : 'Re-translate';
+      bQueue.title = s.tray === 'draft' ? 'Queued for a new translation' : 'Ask for a new translation';
+      bQueue.setAttribute('aria-label', bQueue.title);
       // Nothing left to do on a row already in that tray: adding again is a no-op,
       // and taking it back out belongs on the tray screen.
       bQueue.disabled = s.tray === 'draft';
@@ -479,12 +552,7 @@
         // of clicks; removal is deliberate, from the tray screen.
         if (setTray(uid, 'draft', 'queue')) { persist(); paint(tr); }
       } else if (what === 'edit') {
-        var ta = tr.querySelector('.desk-edit');
-        var live = tr.querySelector('.desk-live');
-        var opening = ta.hidden;
-        ta.hidden = !opening;
-        live.hidden = opening;
-        if (opening) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        toggleEditor(tr, tr.querySelector('.desk-editor').hidden);
         return;
       }
     }
@@ -519,6 +587,42 @@
       paintBar();
       applyFilters();
     });
+
+    // The editor is a small form, so it behaves like one: it opens on the current
+    // wording, tracks whether that wording has changed, and never discards a change
+    // without asking. Before this it had no controls at all -- it saved on blur, which
+    // meant there was no way to close it without committing and no sign anything had
+    // been committed.
+    function toggleEditor(tr, open) {
+      var wrap = tr.querySelector('.desk-editor');
+      var live = tr.querySelector('.desk-live');
+      var ta = tr.querySelector('.desk-edit');
+      if (open) {
+        var uid = tr.getAttribute('data-uid');
+        var s = state[uid] || {};
+        ta.value = s.text != null ? s.text : live.textContent;
+        ta.setAttribute('data-opened-with', ta.value);
+        wrap.hidden = false;
+        live.hidden = true;
+        paintEditor(tr);
+        ta.focus();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      } else {
+        wrap.hidden = true;
+        live.hidden = false;
+      }
+    }
+
+    function editorDirty(tr) {
+      var ta = tr.querySelector('.desk-edit');
+      return ta.value.trim() !== (ta.getAttribute('data-opened-with') || '').trim();
+    }
+
+    function paintEditor(tr) {
+      var dirty = editorDirty(tr);
+      tr.querySelector('.desk-editor-hint').textContent = dirty ? 'unsaved' : '';
+      tr.querySelector('[data-edit="save"]').disabled = !dirty;
+    }
 
     function commitEditor(ta) {
       var tr = ta.closest('.desk-row');
@@ -558,10 +662,26 @@
       return any;
     }
 
-    body.addEventListener('change', function (ev) {
-      var ta = ev.target.closest('.desk-edit');
-      if (!ta) return;
-      if (commitEditor(ta)) applyFilters();
+    body.addEventListener('input', function (ev) {
+      if (ev.target.closest('.desk-edit')) paintEditor(ev.target.closest('.desk-row'));
+    });
+
+    body.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-edit]');
+      if (!btn) return;
+      var tr = btn.closest('.desk-row');
+      if (btn.getAttribute('data-edit') === 'save') {
+        if (commitEditor(tr.querySelector('.desk-edit'))) {
+          applyFilters();
+          toast('Wording saved', { level: 'ok', detail: 'This row is ready for CSV.' });
+        }
+        toggleEditor(tr, false);
+      } else {
+        // Closing with changes is allowed, but never silently.
+        if (editorDirty(tr) &&
+            !window.confirm('Close without keeping your changes to this wording?')) return;
+        toggleEditor(tr, false);
+      }
     });
 
     // Both doors out of this page.

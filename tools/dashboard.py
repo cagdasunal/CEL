@@ -1218,12 +1218,34 @@ DESK_CSS = """
      like a form to fill in rather than a choice to make. */
   .desk-actions { display: flex; flex-wrap: nowrap; gap: 5px; }
   .desk-actions .desk-btn { padding: 5px 11px; font-size: var(--fs-xs); }
+  /* Icon-only row actions. One colour for all three -- they inherit currentColor, so
+     colour is free to mean STATE (indigo = decided) and never identity. Square target,
+     tooltip via title, label via aria-label. */
+  .desk-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 28px; padding: 0;
+    color: var(--muted);
+  }
+  .desk-icon-btn:hover:not(:disabled) { background: var(--stripe); color: var(--fg); }
+  .desk-icon-btn.is-on { color: #fff; }
+  .desk-icon-btn:disabled { opacity: 0.45; }
+  .desk-icon-btn svg { display: block; }
+
+  /* Editor: a small form, with somewhere to say yes and somewhere to say no. */
+  .desk-editor { margin-top: 6px; }
+  .desk-editor[hidden] { display: none; }
   .desk-edit {
-    font: inherit; font-size: var(--fs-md); width: 100%; min-height: 76px; margin-top: 6px;
+    font: inherit; font-size: var(--fs-md); width: 100%; min-height: 76px;
     padding: 8px 10px; color: var(--fg); background: var(--bg);
     border: 1px solid var(--border-strong); border-radius: var(--radius-sm); resize: vertical;
   }
   .desk-edit:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+  .desk-editor-bar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .desk-editor-hint {
+    flex: 1 1 auto; font-size: var(--fs-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--warn);
+  }
+  .desk-editor-bar .desk-btn { font-size: var(--fs-xs); padding: 5px 12px; }
 
   /* Selection */
   .desk-col-pick { width: 1%; }
