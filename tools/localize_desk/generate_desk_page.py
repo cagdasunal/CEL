@@ -258,6 +258,7 @@ REVIEW_MODAL = """\
         <p class="desk-notice" id="tray-notice"></p>
         <div class="desk-review-actions">
           <button type="button" class="desk-btn" id="tray-done">Close</button>
+          <button type="button" class="desk-btn is-primary" id="tray-save" hidden></button>
         </div>
       </footer>
     </div>
@@ -303,6 +304,7 @@ def render_index(units: list[dict]) -> str:
         )
         parts.append(
             f'        <div class="desk-locale-card" data-locale="{code}" '
+            f'data-name="{escape(name)}" '
             f'data-total="{have}" data-flagged="{flagged}">'
         )
         parts.append(
@@ -387,33 +389,50 @@ def _index_js() -> str:
       // number of rows actually asking for attention is.
       card.querySelector('.desk-locale-stat').textContent =
         done ? (done + ' of ' + total + ' decided (' + pct + '%)')
-             : (flagged + ' need attention');
+             : (flagged === 1 ? '1 worth a look' : flagged + ' worth a look');
 
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
       if (!csv && !draft && !arrived && !sending && !failed) {
-        trays.appendChild(chip('desk-tray-none', 'not started', null));
+        trays.appendChild(chip('desk-tray-none', 'nothing decided yet', null));
         return;
       }
       // Ordered by what is waiting on the reviewer, not by what the system did.
       if (arrived) trays.appendChild(chip('desk-tray-arrived', arrived + ' new to read', base + '?show=arrived'));
-      if (failed) trays.appendChild(chip('desk-tray-failed', failed + ' failed', base + '?show=failed'));
+      if (failed) trays.appendChild(chip('desk-tray-failed',
+        failed + (failed === 1 ? ' translation failed' : ' translations failed'),
+        base + '?show=failed'));
       if (sending) trays.appendChild(chip('desk-tray-sending', sending + ' being translated', base + '?show=sending'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
-      var undo = document.createElement('button');
-      undo.type = 'button';
-      undo.className = 'desk-btn';
-      undo.textContent = 'Undo all';
-      undo.addEventListener('click', function () {
-        if (!window.confirm('Clear every decision for ' + code.toUpperCase() +
-                            '? This cannot be undone.')) return;
-        try { localStorage.removeItem('cel-desk-' + code); } catch (e) {}
-        location.reload();
-      });
-      trays.appendChild(undo);
+      // This used to say "Undo all" and warn "This cannot be undone" -- both wrong.
+      // It removed one browser key, so anything already saved came straight back
+      // from the server on the next visit, and the warning frightened the reviewer
+      // about an action that had almost no effect. What it can honestly offer is
+      // throwing away the work this browser has not sent yet.
+      var unsaved = 0, base0 = read('saved-' + code);
+      for (var uk in st) { if (JSON.stringify(st[uk]) !== JSON.stringify(base0[uk])) unsaved++; }
+      if (unsaved) {
+        var undo = document.createElement('button');
+        undo.type = 'button';
+        undo.className = 'desk-btn';
+        undo.textContent = 'Discard ' + unsaved + ' unsaved';
+        undo.title = 'Throw away what this browser has not saved. Anything already saved stays.';
+        undo.addEventListener('click', function () {
+          var nm = card.getAttribute('data-name') || code;
+          if (!window.confirm('Throw away ' + unsaved + ' unsaved change' +
+                              (unsaved === 1 ? '' : 's') + ' in ' + nm +
+                              '? Anything already saved stays where it is.')) return;
+          try {
+            localStorage.setItem('cel-desk-' + code,
+                                 localStorage.getItem('cel-desk-saved-' + code) || '{}');
+          } catch (e) {}
+          location.reload();
+        });
+        trays.appendChild(undo);
+      }
     });
   })();
   </script>
@@ -472,12 +491,12 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     # Ordered by what the reviewer should do next, and every label carries a live
     # count -- so the dropdown answers "where is the work" without selecting anything.
     for value, label in [
-        ("arrived", "New translations — read these first"),
         ("check", "Worth a look first"),
+        ("arrived", "New translations — read these first"),
         ("todo", "Not reviewed"),
         ("", "Everything"),
         ("csv", "Approved"),
-        ("edited", "Approved with my wording"),
+        ("edited", "Approved \u00b7 your wording"),
         ("draft", "Needs a new translation"),
         ("sending", "Being translated"),
         ("failed", "Translation failed"),
@@ -540,8 +559,11 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('      <div class="desk-bar-row" id="bar-trays" hidden>')
     parts.append('        <p class="desk-savebar-text" id="tray-line"></p>')
     parts.append('        <span class="desk-savebar-spacer"></span>')
-    parts.append('        <button type="button" class="desk-btn" id="open-draft">Needs a new translation</button>')
-    parts.append('        <button type="button" class="desk-btn" id="open-csv">Approved</button>')
+    # These OPEN a list; the two in the row above ACT on the selection. They used to
+    # read "Needs a new translation" and "Approved" -- byte-identical to, and one
+    # letter from, the action buttons sitting directly above them in the same bar.
+    parts.append('        <button type="button" class="desk-btn" id="open-draft">See marked</button>')
+    parts.append('        <button type="button" class="desk-btn" id="open-csv">See approved</button>')
     parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden>Save</button>')
     parts.append('        <span class="desk-status" id="save-elsewhere" hidden></span>')
     parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
@@ -655,8 +677,24 @@ def _desk_js(code: str, rtl: bool) -> str:
     var pickAll = document.getElementById('pick-all');
 
     // ── Persistence + history ──────────────────────────────────────────
+    var storageBroken = false;
     function persist() {
-      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+        storageBroken = false;
+        return true;
+      } catch (e) {
+        // Swallowing this silently let every caller toast "saved" while nothing had
+        // been written -- the screen stayed right and a reload lost the lot. Say so
+        // once, then stop repeating it.
+        if (!storageBroken) {
+          storageBroken = true;
+          toast('This browser will not store your work', { level: 'err',
+            detail: 'What you see is still correct, but a reload would lose it. ' +
+                    'Save now so it reaches the server.' });
+        }
+        return false;
+      }
     }
     function note(action, uid, from, to) {
       // Capped so a long session cannot fill the origin's storage quota and start
@@ -666,6 +704,29 @@ def _desk_js(code: str, rtl: bool) -> str:
       try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); } catch (e) {}
     }
     function rec(uid) { return state[uid] || (state[uid] = {}); }
+
+    // Who approved, when, and — the one that matters — WHAT they were looking at.
+    //
+    // An approval is an approval OF A WORDING, not of a row. Without `approvedAgainst`
+    // there is no way to tell later whether the text moved after the approval, so a
+    // Weglot re-translation would be exported under a signature given to something
+    // else. The export refuses that case, but only because this is recorded here.
+    //
+    // `by` comes from the dashboard's own session (auth.js puts the signed-in user on
+    // window.__CEL_USER__). The CSV's signature gate also wants a cryptographic
+    // signature, which is a later phase — but an identity has to exist before there is
+    // anything to sign.
+    function stampApproval(uid, tr, approving) {
+      var s = rec(uid);
+      if (!approving) { delete s.by; delete s.at; delete s.approvedAgainst; return; }
+      var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
+      if (who) s.by = who;
+      s.at = new Date().toISOString();
+      if (s.text == null) {
+        // A bare approval: record the live wording it was given to.
+        s.approvedAgainst = tr.querySelector('.desk-live').textContent;
+      }
+    }
 
     // Not surfaced in the UI on purpose; it exists so "it did something strange" can
     // be answered after the fact.
@@ -679,6 +740,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       // One tray field, not two booleans: the contradictory state (queued AND
       // approved) cannot be represented, so nothing downstream has to resolve it.
       if (tray) s.tray = tray; else delete s.tray;
+      // Deciding a row IS the way out of a failed translation. Without this the
+      // badge stayed red for ever, the Approved filter refused the row, and the
+      // exporter -- which tests only the tray -- would still have shipped it.
+      if (tray && s.failed) delete s.failed;
       note(why || ('tray:' + (tray || 'none')), uid, from, tray || null);
       return true;
     }
@@ -742,6 +807,10 @@ def _desk_js(code: str, rtl: bool) -> str:
         ta.className = 'desk-edit';
         ta.setAttribute('aria-label', 'Your wording');
         ta.value = u.tgt;
+        // Seeded here as well as on open, so `editorDirty` answers honestly for a
+        // box the reviewer never touched. Without it a never-opened editor reads
+        // as dirty and any flush treats the machine original as a decision.
+        ta.setAttribute('data-opened-with', ta.value);
         var editBar = document.createElement('div');
         editBar.className = 'desk-editor-bar';
         var editHint = document.createElement('span');
@@ -771,7 +840,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         tdState.className = 'desk-col-state';
         var badge = document.createElement('span');
         badge.className = 'desk-state badge-partial';
-        badge.textContent = 'unreviewed';
+        badge.textContent = 'Not reviewed';
         tdState.appendChild(badge);
 
         var tdAct = document.createElement('td');
@@ -880,7 +949,8 @@ def _desk_js(code: str, rtl: bool) -> str:
       // with no text has nowhere else to say what it currently means. Neither is ever
       // disabled: the active one IS the undo.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.title = s.tray === 'csv' ? 'Approved — click to undo' : 'Approve — send this wording to the website';
+      bApprove.title = s.tray === 'csv' ? 'Approved — click to undo'
+        : 'Approve — this wording goes to the website when the import file is made';
       bApprove.setAttribute('aria-label', bApprove.title);
       bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
@@ -924,11 +994,15 @@ def _desk_js(code: str, rtl: bool) -> str:
       barTrays.hidden = (c.csv + c.draft) === 0 && unsaved === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
-      if (c.csv) bits.push(c.csv + (c.csv === 1 ? ' approved' : ' approved'));
+      if (c.csv) bits.push(c.csv + ' approved');
       if (c.draft) bits.push(c.draft + (c.draft === 1 ? ' needs' : ' need') + ' a new translation');
       trayLine.textContent = bits.join('  ·  ');
-      document.getElementById('open-csv').disabled = !c.csv;
-      document.getElementById('open-draft').disabled = !c.draft;
+      var oc = document.getElementById('open-csv');
+      var od = document.getElementById('open-draft');
+      oc.disabled = !c.csv;
+      od.disabled = !c.draft;
+      oc.textContent = c.csv ? 'See ' + c.csv + ' approved' : 'See approved';
+      od.textContent = c.draft ? 'See ' + c.draft + ' marked' : 'See marked';
       paintSave();
     }
 
@@ -1024,7 +1098,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       justActed[uid] = 1;
       if (what === 'approve') {
         if (setTray(uid, cur === 'csv' ? null : 'csv',
-                    cur === 'csv' ? 'un-approve' : 'approve')) { persist(); paint(tr); }
+                    cur === 'csv' ? 'un-approve' : 'approve')) {
+          stampApproval(uid, tr, cur !== 'csv');
+          persist(); paint(tr);
+        }
       } else if (what === 'queue') {
         if (setTray(uid, cur === 'draft' ? null : 'draft',
                     cur === 'draft' ? 'un-queue' : 'queue')) { persist(); paint(tr); }
@@ -1114,10 +1191,20 @@ def _desk_js(code: str, rtl: bool) -> str:
         // Typing the wording you want IS the decision; a separate Approve click
         // afterwards could only ever be "yes".
         setTray(uid, 'csv', 'edit-approve');
+        var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
+        if (who) s.by = who;
+        s.at = new Date().toISOString();
+        delete s.approvedAgainst;   // the wording is the reviewer's own, not the live one
         changed = true;
       } else if (!val && s.text != null) {
         delete s.text;
         note('edit-cleared', uid, null, null);
+        // Clearing the box leaves a bare approval, and a bare approval has to record
+        // the wording it was given to. Without this the row kept `tray:'csv'` with no
+        // `approvedAgainst`, so the export skipped its drift check and shipped
+        // whatever Weglot happened to be serving that day -- the exact substitution
+        // `approvedAgainst` exists to refuse.
+        if (s.tray === 'csv') stampApproval(uid, tr, true);
         changed = true;
       }
       if (changed) { persist(); paint(tr); paintBar(); }
@@ -1131,7 +1218,15 @@ def _desk_js(code: str, rtl: bool) -> str:
     function flushEditors() {
       var any = false;
       Array.prototype.forEach.call(body.querySelectorAll('.desk-edit'), function (ta) {
-        if (ta.hidden) return;
+        // `hidden` is on the WRAPPER, and HTMLElement.hidden does not reflect
+        // ancestors -- so `ta.hidden` was always false and this committed EVERY
+        // row's closed editor on the way out. On a fresh load a closed editor
+        // holds the machine original, so the flush overwrote the reviewer's own
+        // wording with the text they had rejected. Ask the wrapper, and require
+        // the box to have actually been opened and changed.
+        var wrap = ta.closest('.desk-editor');
+        if (!wrap || wrap.hidden) return;
+        if (!editorDirty(ta.closest('.desk-row'))) return;
         if (commitEditor(ta)) any = true;
       });
       if (any) applyFilters();
@@ -1180,8 +1275,24 @@ def _desk_js(code: str, rtl: bool) -> str:
     function bulk(tray, why) {
       var ids = pickedIds();
       if (!ids.length) return;
+      var inFlight = ids.filter(function (uid) { return stage(uid) === 'sending'; });
+      ids = ids.filter(function (uid) { return stage(uid) !== 'sending'; });
+      if (!ids.length) {
+        toast('Nothing changed', { level: 'warn',
+          detail: inFlight.length + (inFlight.length === 1
+            ? ' row is out for translation. It can be decided when it comes back.'
+            : ' rows are out for translation. They can be decided when they come back.') });
+        return;
+      }
       var changed = 0;
-      ids.forEach(function (uid) { if (setTray(uid, tray, why)) changed++; });
+      ids.forEach(function (uid) {
+        if (!setTray(uid, tray, why)) return;
+        changed++;
+        if (tray === 'csv') {
+          var row = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
+          if (row) stampApproval(uid, row, true);
+        }
+      });
       note(why + ':bulk', null, String(ids.length), String(changed));
       picked = Object.create(null);
       lastPicked = -1;
@@ -1264,21 +1375,27 @@ def _desk_js(code: str, rtl: bool) -> str:
       ov.addEventListener('click', function (ev) { if (ev.target === ov) closeOverlays(); });
     });
 
+    // The notices describe what IS, not what is planned. They used to promise a send
+    // button and a make-the-file button, each with a confirmation step -- none of
+    // which exists. A reviewer went looking for controls that were never built, and
+    // the standing rule is to say what is not switched on, in their words.
     var TRAY_COPY = {
       draft: {
         title: 'Needs a new translation',
-        one: 'row will be sent to Gemini for a fresh translation.',
-        many: 'rows will be sent to Gemini for a fresh translation.',
-        notice: 'Nothing has been sent. When you send them, they go in one request ' +
-                '— cheaper than one at a time — and you will see the count and the ' +
-                'cost first.'
+        one: 'row is marked for a fresh translation.',
+        many: 'rows are marked for a fresh translation.',
+        notice: 'Save keeps these marks so nobody has to find them again. ' +
+                'Sending them to Gemini is not switched on yet — when it is, they go ' +
+                'in one request and you see the count and the cost before anything is ' +
+                'spent.'
       },
       csv: {
         title: 'Approved',
         one: 'row is approved and waiting to go to the website.',
         many: 'rows are approved and waiting to go to the website.',
-        notice: 'Nothing reaches the website on its own. These become one file you ' +
-                'import into Weglot, and you confirm before it is made.'
+        notice: 'Nothing reaches the website on its own. Save stores these approvals ' +
+                'for everyone. Making the Weglot import file is not switched on yet; ' +
+                'your approvals are kept and waiting for it.'
       }
     };
 
@@ -1306,6 +1423,19 @@ def _desk_js(code: str, rtl: bool) -> str:
       rm.disabled = sel === 0;
       rm.textContent = sel ? 'Undo ' + sel : 'Undo';
       document.getElementById('tray-empty').disabled = listed === 0;
+
+      // The list used to offer nothing but Undo and Close: a basket with no way to
+      // check out. Saving is the one step that actually exists today, and it is the
+      // step that makes this work survive the tab -- so it belongs here, not only in
+      // the bar behind the overlay.
+      var ts = document.getElementById('tray-save');
+      var allPending = unsavedByLocale(), pending = 0;
+      for (var pc in allPending) pending += allPending[pc].n;
+      ts.hidden = pending === 0;
+      ts.disabled = saving;
+      ts.textContent = saving ? 'Saving…'
+                              : 'Save ' + pending + (pending === 1 ? ' change' : ' changes');
+      ts.title = 'Store your decisions so they survive this tab and reach anyone else reviewing';
     }
 
     function removeFromTray(uids) {
@@ -1387,6 +1517,12 @@ def _desk_js(code: str, rtl: bool) -> str:
     });
 
     document.getElementById('tray-done').addEventListener('click', closeOverlays);
+    document.getElementById('tray-save').addEventListener('click', function () {
+      // Stay on the list while it saves -- the reviewer is looking at exactly the
+      // rows being stored, and closing the overlay would hide the outcome.
+      save().then(paintTrayFooter, paintTrayFooter);
+      paintTrayFooter();
+    });
 
     function showTray(which) {
       openTray = which;
@@ -1440,7 +1576,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       // something different here.
       if (doc.locale !== CODE) return { ok: false, why: 'document is for ' + doc.locale + ', this desk is ' + CODE };
       var incoming = doc.decisions || {};
-      var n = 0;
+      // Counted per KIND, because one number cannot honestly describe a document
+      // that mixes arrivals, failures and reconciliation results -- the toast used
+      // to announce "new translations arrived" over a batch of nothing but errors.
+      var n = 0, nArrived = 0, nFailed = 0, nLive = 0;
       for (var uid in incoming) {
         if (!incoming[uid]) continue;
         var s = rec(uid);
@@ -1458,19 +1597,28 @@ def _desk_js(code: str, rtl: bool) -> str:
           s.arrivedAt = inc.arrivedAt;
           delete s.tray; delete s.failed;
           if (typeof inc.text === 'string') s.text = inc.text;
-          n++;
+          n++; nArrived++;
         }
-        if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; }
+        if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; nFailed++; }
         if (inc.tray && !inc.arrivedAt) { s.tray = inc.tray; n++; }
         // Set by the CSV build and by reconciliation, respectively.
         if (inc.exportedAt) { s.exportedAt = inc.exportedAt; n++; }
-        if (inc.liveAt) { s.liveAt = inc.liveAt; delete s.exportedAt; n++; }
+        if (inc.liveAt) { s.liveAt = inc.liveAt; delete s.exportedAt; n++; nLive++; }
       }
       note('ingest', null, String(n), doc.exported_at || null);
       persist();
       rows.forEach(paint); paintBar(); applyFilters();
-      toast(n + (n === 1 ? ' row updated' : ' rows updated'), { level: 'ok',
-        detail: 'New translations arrived while you were away.' });
+      if (n) {
+        var said = [];
+        if (nArrived) said.push(nArrived + (nArrived === 1 ? ' new translation to read.'
+                                                          : ' new translations to read.'));
+        if (nFailed) said.push(nFailed + (nFailed === 1 ? ' translation failed.'
+                                                        : ' translations failed.'));
+        if (nLive) said.push(nLive + (nLive === 1 ? ' is now on the website.'
+                                                 : ' are now on the website.'));
+        toast(n + (n === 1 ? ' row updated' : ' rows updated'),
+              { level: nFailed ? 'warn' : 'ok', detail: said.join(' ') });
+      }
       return { ok: true, rows: n };
     }
     window.deskIngest = ingest;
@@ -1489,11 +1637,38 @@ def _desk_js(code: str, rtl: bool) -> str:
     var saveStatus = document.getElementById('save-status');
     var saving = false;
 
+    // Every field `stage()` reads. Five of these used to be left behind by both the
+    // comparison and the delta, so `sending`, `arrived`, `failed`, `exported` and
+    // `live` existed only in the browser that produced them -- and `liveAt`, which
+    // is what stops an already-published row being exported a second time, could
+    // never reach the server that does the exporting.
+    var SAVE_FIELDS = ['tray', 'text', 'rejected', 'by', 'at', 'approvedAgainst',
+                       'sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'];
+
+    // A record is worth keeping if it carries a decision OR any lifecycle stamp.
+    // Keying this on `tray` alone told the server to forget a row that was out for
+    // translation.
+    function hasContent(r) {
+      if (!r) return false;
+      for (var i = 0; i < SAVE_FIELDS.length; i++) {
+        var v = r[SAVE_FIELDS[i]];
+        if (v !== undefined && v !== null) return true;
+      }
+      return false;
+    }
+
     function sameDecision(a, b) {
       if (!a && !b) return true;
       if (!a || !b) return false;
-      return a.tray === b.tray && a.text === b.text &&
-             JSON.stringify(a.rejected || null) === JSON.stringify(b.rejected || null);
+      for (var i = 0; i < SAVE_FIELDS.length; i++) {
+        var k = SAVE_FIELDS[i];
+        // `approvedAgainst` belongs here: without it, re-approving a row whose
+        // wording had moved produced no delta, the server kept the stale snapshot,
+        // and the export skipped the row as "changed since approval" for ever.
+        if (JSON.stringify(a[k] === undefined ? null : a[k]) !==
+            JSON.stringify(b[k] === undefined ? null : b[k])) return false;
+      }
+      return true;
     }
 
     function deltaBetween(now, was) {
@@ -1501,11 +1676,19 @@ def _desk_js(code: str, rtl: bool) -> str:
       for (var k in now) ids[k] = 1;
       for (var k2 in was) ids[k2] = 1;
       for (var uid in ids) {
-        var mine = now[uid] && now[uid].tray ? now[uid] : null;
+        var mine = hasContent(now[uid]) ? now[uid] : null;
         var theirs = was[uid] || null;
         if (sameDecision(mine, theirs)) continue;
         // null is how the server is told to forget a unit.
-        out[uid] = mine ? { tray: mine.tray, text: mine.text, rejected: mine.rejected } : null;
+        if (mine) {
+          var row = {};
+          SAVE_FIELDS.forEach(function (f) {
+            if (mine[f] !== undefined) row[f] = mine[f];
+          });
+          out[uid] = row;
+        } else {
+          out[uid] = null;
+        }
         n++;
       }
       return { body: out, n: n };
@@ -1553,6 +1736,30 @@ def _desk_js(code: str, rtl: bool) -> str:
       }
     }
 
+    // A reviewer has no model of a workflow run, an underscored status or an HTTP
+    // code. The raw value still goes to note('save-failed'), where it can be read
+    // when something needs diagnosing; it does not go on screen.
+    var FAILURE_WORDS = {
+      'startup_failure': 'the save could not be started',
+      'cancelled': 'the save was cancelled',
+      'timed_out': 'the save took too long',
+      'failure': 'the server could not store it'
+    };
+    function humanFailure(msg) {
+      msg = String(msg || '');
+      for (var k in FAILURE_WORDS) if (msg.indexOf(k) !== -1) return FAILURE_WORDS[k];
+      if (msg.indexOf('timed out') !== -1) return 'the save is taking longer than expected';
+      if (msg.indexOf('HTTP 4') !== -1) return 'the server refused the save';
+      if (msg.indexOf('HTTP 5') !== -1) return 'the server is having trouble';
+      if (msg.indexOf('cannot confirm') !== -1) return msg;
+      return 'the save did not complete';
+    }
+
+    var RUN_WORDS = {
+      'queued': 'starting…', 'waiting': 'starting…', 'pending': 'starting…',
+      'in_progress': 'saving…', 'requested': 'starting…'
+    };
+
     function callProxy(payload) {
       var url = window.CEL_DISPATCH_URL;
       if (!url) return Promise.reject(new Error('Saving is not configured on this site yet.'));
@@ -1569,16 +1776,41 @@ def _desk_js(code: str, rtl: bool) -> str:
       });
     }
 
-    function awaitRun(workflow) {
+    // The newest run of a workflow is NOT necessarily the run we just started.
+    // Locales are saved one after another, so by the time the second one
+    // dispatches, the newest run is the FIRST one -- already completed, already
+    // successful. Polling without a baseline banked every locale after the first
+    // against its predecessor's result and told the reviewer it was safe to close
+    // the page. So: read the newest run id BEFORE dispatching, and accept only a
+    // run that is not that one.
+    function latestRunId(workflow) {
+      return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
+        var run = r.ok && r.body && r.body.run ? r.body.run : null;
+        if (!run) return null;                       // no runs yet; any run is ours
+        return run.id != null ? run.id : undefined;  // undefined = worker too old
+      }).catch(function () { return undefined; });
+    }
+
+    function awaitRun(workflow, baselineId) {
       var start = Date.now();
       function tick() {
         return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
           var run = r.ok && r.body && r.body.run ? r.body.run : null;
-          if (run && run.status === 'completed') return run;
+          if (run && run.id == null) {
+            // Without a run id we cannot tell our run from the last one, and a
+            // wrong "saved" is worse than an honest "unconfirmed".
+            throw new Error('this site cannot confirm the save yet');
+          }
+          var isOurs = run && (baselineId === null || run.id !== baselineId);
+          if (isOurs && run.status === 'completed') return run;
           if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
-          saveStatus.textContent = run ? run.status + '…' : 'queueing…';
+          saveStatus.textContent = isOurs ? (RUN_WORDS[run.status] || 'saving…')
+                                          : 'starting…';
           return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
         });
+      }
+      if (baselineId === undefined) {
+        return Promise.reject(new Error('this site cannot confirm the save yet'));
       }
       return tick();
     }
@@ -1595,16 +1827,50 @@ def _desk_js(code: str, rtl: bool) -> str:
       return btoa(bin);
     }
 
+    // A workflow_dispatch input is capped at 65,536 bytes. A whole locale of
+    // approvals measures 61-66 KB base64 -- Arabic is OVER the limit and Japanese
+    // clears it by 87 bytes -- and "select all, Approve, Save" is the ordinary way
+    // to get there. So the payload is split until every piece fits. The workflow
+    // MERGES rather than replaces, so several dispatches for one locale are safe.
+    var MAX_B64 = 60000;
+
+    async function chunksFor(locale, body) {
+      var uids = Object.keys(body);
+      if (!uids.length) return [];
+      var out = [], queue = [uids];
+      while (queue.length) {
+        var part = queue.shift();
+        var sub = {};
+        part.forEach(function (u) { sub[u] = body[u]; });
+        var enc = await encodeFor(locale, sub);
+        if (enc.length <= MAX_B64) { out.push(enc); continue; }
+        if (part.length === 1) {
+          throw new Error('one row is too large to send (' + part[0] + ')');
+        }
+        var mid = Math.ceil(part.length / 2);
+        queue.unshift(part.slice(mid));
+        queue.unshift(part.slice(0, mid));
+      }
+      return out;
+    }
+
     async function saveOne(locale, d) {
-      var payload = await encodeFor(locale, d.body);
-      var r = await callProxy({
-        action: 'dispatch', workflow: 'localization-save.yml',
-        inputs: { locale: locale, payload: payload }
-      });
-      if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
-      var run = await awaitRun('localization-save.yml');
-      if (!run) throw new Error('timed out waiting for the run');
-      if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
+      var parts = await chunksFor(locale, d.body);
+      for (var i = 0; i < parts.length; i++) {
+        if (parts.length > 1) {
+          saveStatus.textContent = 'saving ' + locale.toUpperCase() +
+                                   ' (part ' + (i + 1) + ' of ' + parts.length + ')…';
+        }
+        var baseline = await latestRunId('localization-save.yml');
+        var r = await callProxy({
+          action: 'dispatch', workflow: 'localization-save.yml',
+          inputs: { locale: locale, payload: parts[i] }
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
+        var run = await awaitRun('localization-save.yml', baseline);
+        if (!run) throw new Error('timed out waiting for the run');
+        if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
+      }
     }
 
     async function save() {
@@ -1639,7 +1905,7 @@ def _desk_js(code: str, rtl: bool) -> str:
           // away the three that already succeeded.
           var next = {};
           for (var uid in snaps[c]) {
-            if (snaps[c][uid] && snaps[c][uid].tray) next[uid] = snaps[c][uid];
+            if (hasContent(snaps[c][uid])) next[uid] = snaps[c][uid];
           }
           try { localStorage.setItem('cel-desk-saved-' + c, JSON.stringify(next)); } catch (e) {}
           if (c === CODE) saved = next;
@@ -1663,10 +1929,13 @@ def _desk_js(code: str, rtl: bool) -> str:
         saveStatus.textContent = 'not saved';
         saveStatus.className = 'desk-status is-error';
         note('save-failed', null, failed.message, done.join(','));
-        toast('Not saved', { level: 'err',
-          detail: (done.length ? done.length + ' language' + (done.length > 1 ? 's' : '') +
-                   ' saved first; the rest are ' : 'Nothing was lost — your work is ') +
-                  'still on this page. ' + failed.message });
+        toast(done.length ? 'Saved ' + done.length + ' of ' + codes.length + ' languages'
+                          : 'Not saved',
+              { level: 'err',
+                detail: 'Nothing was lost — ' +
+                        (done.length ? 'the rest is' : 'your work is') +
+                        ' still on this page. Try Save again. (' +
+                        humanFailure(failed.message) + ')' });
       }
     }
 
@@ -1782,16 +2051,36 @@ def _desk_js(code: str, rtl: bool) -> str:
             var server = (ddoc && ddoc.decisions) || {};
             var adopted = 0;
             for (var uid in server) {
-              if (!server[uid] || !server[uid].tray) continue;
+              if (!hasContent(server[uid])) continue;
               saved[uid] = server[uid];
-              if (!state[uid] || !state[uid].tray) { state[uid] = JSON.parse(JSON.stringify(server[uid])); adopted++; }
+              // Adopt only where this browser holds NOTHING. The old test was
+              // "no tray", which is not the same thing: a row that had come back
+              // from Gemini, and a row the reviewer had deliberately un-approved
+              // before saving, both have no tray -- and both were overwritten
+              // wholesale. The first threw away a translation already paid for;
+              // the second made the undo silently revert on reload.
+              if (!hasContent(state[uid])) {
+                state[uid] = JSON.parse(JSON.stringify(server[uid]));
+                adopted++;
+              }
             }
             try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
             persist();
             if (adopted) note('adopted', null, String(adopted), null);
+          } else if (dr.status !== 404) {
+            throw new Error('HTTP ' + dr.status);
           }
         } catch (e) {
-          // No decisions file yet is the normal first-run case, not an error.
+          // A missing file is the normal first-run case. A 5xx, a CDN failure or
+          // malformed JSON on a file that DOES exist is not: the desk would boot
+          // showing none of a colleague's decisions, and the next save -- merged
+          // last-writer-wins per unit -- would erase them.
+          if (!(e instanceof TypeError && !navigator.onLine)) {
+            note('decisions-load-failed', null, String(e && e.message || e), null);
+          }
+          toast('Could not read what is already saved', { level: 'warn',
+            detail: 'This page may not be showing decisions made elsewhere. ' +
+                    'Reload before you review, or your save could overwrite them.' });
         }
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);

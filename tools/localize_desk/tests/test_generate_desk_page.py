@@ -163,9 +163,13 @@ class TestRenderedPage:
         """
         assert "'csv'" in page and "'draft'" in page
         assert "setTray(uid," in page
-        # no separate approved/queued flags anywhere
-        assert "s.approved" not in page
-        assert "s.queued" not in page
+        # No separate approved/queued BOOLEANS anywhere. Matched precisely: the
+        # bare prefix "s.approved" also matches s.approvedAgainst, which is a
+        # legitimate field recording the wording an approval was given to.
+        import re
+        assert not re.search(r"s\.approved\s*=", page)
+        assert not re.search(r"s\.approved\b(?!Against)", page)
+        assert not re.search(r"s\.queued\b", page)
 
     def test_editing_counts_as_approving(self, page):
         # Typing the wording you want IS the decision; a follow-up Approve click
@@ -244,3 +248,112 @@ class TestRenderedPage:
             _unit("lacks", current={"fr": {"word_to": "Salut"}}),
         ])
         assert [u["id"] for u in G.locale_payload("de", G.load_units())] == ["has"]
+
+
+class TestAuditRegressions2026_09_23:
+    @pytest.fixture()
+    def page(self, units_dir):
+        _write(units_dir, "vancouver", [_unit("a", current={"de": {"word_to": "Hallo"}})])
+        return G.render_locale("de", "German", "Deutsch", "ltr", G.load_units())
+
+    """Every test here went RED before the 2026-09-23 audit fixes.
+
+    They are not structural preferences. Each one names a defect that either
+    destroyed a reviewer's typing, told them work was saved when it was not, or
+    dropped a field the exporter depends on to avoid re-publishing a live row.
+    """
+
+    def test_the_editor_flush_asks_the_wrapper_not_the_textarea(self, page):
+        """`hidden` sits on the wrapper and does not reflect to descendants.
+
+        `ta.hidden` was therefore always false, so leaving the page committed EVERY
+        row's closed editor. On a fresh load a closed editor holds the machine
+        original, so the flush overwrote the reviewer's own wording with the text
+        they had rejected -- badged "your wording" -- and pushed it to the repo.
+        """
+        assert "if (ta.hidden) return;" not in page
+        assert "var wrap = ta.closest('.desk-editor');" in page
+        assert "if (!wrap || wrap.hidden) return;" in page
+        # and it must also refuse a box that was opened but never changed
+        assert "if (!editorDirty(ta.closest('.desk-row'))) return;" in page
+
+    def test_every_editor_is_born_knowing_what_it_opened_with(self, page):
+        """Without this seed `editorDirty` reads true for a box nobody touched."""
+        assert page.count("ta.setAttribute('data-opened-with', ta.value);") >= 2
+
+    def test_the_save_carries_every_field_the_stage_function_reads(self, page):
+        """Five stamps used to be dropped by both the diff and the payload, so
+        sending/arrived/failed/exported/live never left the browser that made them.
+
+        `liveAt` is the one that costs money: the exporter skips rows already on the
+        website, it reads the saved file, and without this the exclusion can never
+        fire -- an older wording gets re-imported over a newer one.
+        """
+        for field in ("sentAt", "arrivedAt", "failed", "exportedAt", "liveAt"):
+            assert f"'{field}'" in page, f"{field} missing from SAVE_FIELDS"
+        assert "var SAVE_FIELDS = [" in page
+        # the old hand-listed payload is gone
+        assert "{ tray: mine.tray, text: mine.text, rejected: mine.rejected," not in page
+
+    def test_a_re_approval_after_the_wording_moved_is_a_real_change(self, page):
+        """`sameDecision` ignored `approvedAgainst`, so re-approving produced no
+        delta, the server kept the stale snapshot, and the exporter skipped the row
+        as "changed since approval" permanently -- unclearable from the UI."""
+        assert "a.tray === b.tray && a.text === b.text &&" not in page
+        assert "SAVE_FIELDS" in page.split("function sameDecision")[1][:400]
+
+    def test_a_record_is_kept_for_its_stamps_not_just_its_tray(self, page):
+        """Keying on `.tray` told the server to forget a row that was out for
+        translation."""
+        assert "function hasContent(r)" in page
+        assert "var mine = hasContent(now[uid]) ? now[uid] : null;" in page
+        assert "var mine = now[uid] && now[uid].tray ? now[uid] : null;" not in page
+
+    def test_the_run_poll_is_anchored_to_a_baseline(self, page):
+        """`runs?per_page=1` returns the NEWEST run, not ours.
+
+        Locales save one after another, so when the second dispatched, the newest
+        run was the first one -- already completed, already successful. Every locale
+        after the first was banked against its predecessor and the reviewer was told
+        it was safe to close the page.
+        """
+        assert "function latestRunId(workflow)" in page
+        assert "function awaitRun(workflow, baselineId)" in page
+        assert "run.id !== baselineId" in page
+        # and with no id available it must refuse rather than guess
+        assert "cannot confirm the save yet" in page
+
+    def test_the_save_is_split_to_fit_the_dispatch_ceiling(self, page):
+        """A whole locale of approvals measures 61-66 KB base64 against a 65,536
+        byte cap. Arabic is OVER it; Japanese clears by 87 bytes. "Select all,
+        Approve, Save" is the ordinary way to get there."""
+        assert "function chunksFor(locale, body)" in page
+        assert "var MAX_B64 = " in page
+        cap = int(page.split("var MAX_B64 = ")[1].split(";")[0])
+        assert cap < 65536, "the split threshold must sit below the real ceiling"
+
+    def test_a_storage_failure_is_not_reported_as_success(self, page):
+        """persist() swallowed the quota error and commitEditor toasted
+        "Your wording saved." anyway."""
+        assert "catch (e) { /* private mode */ }" not in page
+        assert "This browser will not store your work" in page
+
+    def test_adoption_only_fills_units_this_browser_has_never_touched(self, page):
+        """The guard was "no tray", which is not the same thing. A row back from
+        Gemini and a row deliberately un-approved both have no tray, and both were
+        overwritten wholesale -- the first threw away a paid-for translation, the
+        second made undo silently revert on reload."""
+        assert "if (!hasContent(state[uid]))" in page
+        assert "if (!state[uid] || !state[uid].tray) { state[uid] =" not in page
+
+    def test_a_failed_baseline_fetch_is_not_mistaken_for_a_missing_file(self, page):
+        """One catch covered both, so a 5xx booted the desk showing none of a
+        colleague's decisions -- and the next save, merged last-writer-wins, erased
+        them."""
+        assert "else if (dr.status !== 404)" in page
+        assert "Could not read what is already saved" in page
+
+    def test_clearing_an_edit_restores_the_wording_the_approval_is_against(self, page):
+        """Clearing the box left `tray:'csv'` with no `approvedAgainst`, so the
+        export skipped its drift check and shipped whatever Weglot served that day."""
+        assert "if (s.tray === 'csv') stampApproval(uid, tr, true);" in page

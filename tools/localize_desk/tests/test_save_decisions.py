@@ -176,3 +176,50 @@ class TestInjectionShapedInput:
     def test_a_unit_id_must_be_a_non_empty_string(self, tmp_path):
         with pytest.raises(Invalid):
             merge({}, {"": {"tray": "csv"}})
+
+
+class TestLifecycleStampsSurviveTheSave:
+    """Audit 2026-09-23. These five fields were dropped by the allow-list, so five
+    of the desk's nine stages existed only in the browser that produced them.
+
+    `liveAt` is the one with a price attached: the exporter refuses rows already on
+    the website, it reads this file, and while the field could not be stored that
+    refusal could never fire -- so an older wording would be re-imported over a
+    newer one, which is the failure the no-rework rule exists to prevent.
+    """
+
+    def test_every_stamp_the_stage_function_reads_is_kept(self):
+        got = clean_decision("u1", {
+            "tray": "csv",
+            "sentAt": "2026-09-23T10:00:00Z",
+            "arrivedAt": "2026-09-23T10:05:00Z",
+            "exportedAt": "2026-09-23T11:00:00Z",
+            "liveAt": "2026-09-23T12:00:00Z",
+            "failed": "the model returned nothing for this row",
+        })
+        for k in ("sentAt", "arrivedAt", "exportedAt", "liveAt", "failed"):
+            assert k in got, f"{k} was dropped"
+
+    def test_a_stamp_alone_is_a_valid_decision(self):
+        """A row out for translation has no tray. Requiring one made the desk tell
+        the server to forget it."""
+        assert clean_decision("u1", {"sentAt": "2026-09-23T10:00:00Z"})
+
+    def test_a_stamp_must_still_be_short(self):
+        with pytest.raises(Invalid):
+            clean_decision("u1", {"liveAt": "x" * 41})
+
+    def test_a_failure_reason_must_be_a_bounded_string(self):
+        with pytest.raises(Invalid):
+            clean_decision("u1", {"failed": "x" * 401})
+        with pytest.raises(Invalid):
+            clean_decision("u1", {"failed": True})
+
+    def test_a_live_stamp_round_trips_through_the_whole_save(self, tmp_path):
+        payload = base64.b64encode(gzip.compress(json.dumps({
+            "schema": "cel-localization-desk/1", "locale": "de",
+            "decisions": {"u1": {"tray": "csv", "liveAt": "2026-09-23T12:00:00Z"}},
+        }).encode())).decode()
+        apply("de", payload, tmp_path)
+        written = json.loads((tmp_path / "de" / "decisions.json").read_text())
+        assert written["decisions"]["u1"]["liveAt"] == "2026-09-23T12:00:00Z"

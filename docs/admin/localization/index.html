@@ -65,7 +65,7 @@
         <p><strong>990</strong> reviewable units across <strong>4</strong> pages and <strong>8</strong> languages. Pick a language to start.</p>
       </section>
       <div class="desk-locales">
-        <div class="desk-locale-card" data-locale="de" data-total="990" data-flagged="52">
+        <div class="desk-locale-card" data-locale="de" data-name="German" data-total="990" data-flagged="52">
           <a class="desk-locale-open" href="/admin/localization/de/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇩🇪</span> <span class="desk-locale-name">German</span></a>
           <p class="desk-locale-sub"><bdi>Deutsch</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -74,7 +74,7 @@
           <p class="desk-locale-stat">52 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="fr" data-total="990" data-flagged="38">
+        <div class="desk-locale-card" data-locale="fr" data-name="French" data-total="990" data-flagged="38">
           <a class="desk-locale-open" href="/admin/localization/fr/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇫🇷</span> <span class="desk-locale-name">French</span></a>
           <p class="desk-locale-sub"><bdi>Français</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -83,7 +83,7 @@
           <p class="desk-locale-stat">38 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="es" data-total="990" data-flagged="36">
+        <div class="desk-locale-card" data-locale="es" data-name="Spanish" data-total="990" data-flagged="36">
           <a class="desk-locale-open" href="/admin/localization/es/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇪🇸</span> <span class="desk-locale-name">Spanish</span></a>
           <p class="desk-locale-sub"><bdi>Español</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -92,7 +92,7 @@
           <p class="desk-locale-stat">36 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="pt" data-total="990" data-flagged="35">
+        <div class="desk-locale-card" data-locale="pt" data-name="Portuguese" data-total="990" data-flagged="35">
           <a class="desk-locale-open" href="/admin/localization/pt/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇧🇷</span> <span class="desk-locale-name">Portuguese</span></a>
           <p class="desk-locale-sub"><bdi>Português</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -101,7 +101,7 @@
           <p class="desk-locale-stat">35 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="it" data-total="990" data-flagged="38">
+        <div class="desk-locale-card" data-locale="it" data-name="Italian" data-total="990" data-flagged="38">
           <a class="desk-locale-open" href="/admin/localization/it/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇮🇹</span> <span class="desk-locale-name">Italian</span></a>
           <p class="desk-locale-sub"><bdi>Italiano</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -110,7 +110,7 @@
           <p class="desk-locale-stat">38 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="ja" data-total="990" data-flagged="81">
+        <div class="desk-locale-card" data-locale="ja" data-name="Japanese" data-total="990" data-flagged="81">
           <a class="desk-locale-open" href="/admin/localization/ja/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇯🇵</span> <span class="desk-locale-name">Japanese</span></a>
           <p class="desk-locale-sub"><bdi>日本語</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -119,7 +119,7 @@
           <p class="desk-locale-stat">81 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="ko" data-total="990" data-flagged="55">
+        <div class="desk-locale-card" data-locale="ko" data-name="Korean" data-total="990" data-flagged="55">
           <a class="desk-locale-open" href="/admin/localization/ko/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇰🇷</span> <span class="desk-locale-name">Korean</span></a>
           <p class="desk-locale-sub"><bdi>한국어</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -128,7 +128,7 @@
           <p class="desk-locale-stat">55 need attention</p>
           <div class="desk-trays"></div>
         </div>
-        <div class="desk-locale-card" data-locale="ar" data-total="990" data-flagged="44">
+        <div class="desk-locale-card" data-locale="ar" data-name="Arabic" data-total="990" data-flagged="44">
           <a class="desk-locale-open" href="/admin/localization/ar/?show=check"><span class="desk-loc-flag" aria-hidden="true">🇸🇦</span> <span class="desk-locale-name">Arabic</span></a>
           <p class="desk-locale-sub"><bdi>العربية</bdi> &middot; 990 units</p>
           <div class="desk-meter" role="presentation">
@@ -179,33 +179,50 @@
       // number of rows actually asking for attention is.
       card.querySelector('.desk-locale-stat').textContent =
         done ? (done + ' of ' + total + ' decided (' + pct + '%)')
-             : (flagged + ' need attention');
+             : (flagged === 1 ? '1 worth a look' : flagged + ' worth a look');
 
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
       if (!csv && !draft && !arrived && !sending && !failed) {
-        trays.appendChild(chip('desk-tray-none', 'not started', null));
+        trays.appendChild(chip('desk-tray-none', 'nothing decided yet', null));
         return;
       }
       // Ordered by what is waiting on the reviewer, not by what the system did.
       if (arrived) trays.appendChild(chip('desk-tray-arrived', arrived + ' new to read', base + '?show=arrived'));
-      if (failed) trays.appendChild(chip('desk-tray-failed', failed + ' failed', base + '?show=failed'));
+      if (failed) trays.appendChild(chip('desk-tray-failed',
+        failed + (failed === 1 ? ' translation failed' : ' translations failed'),
+        base + '?show=failed'));
       if (sending) trays.appendChild(chip('desk-tray-sending', sending + ' being translated', base + '?show=sending'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' approved', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' need a new translation', base + '?show=draft'));
 
-      var undo = document.createElement('button');
-      undo.type = 'button';
-      undo.className = 'desk-btn';
-      undo.textContent = 'Undo all';
-      undo.addEventListener('click', function () {
-        if (!window.confirm('Clear every decision for ' + code.toUpperCase() +
-                            '? This cannot be undone.')) return;
-        try { localStorage.removeItem('cel-desk-' + code); } catch (e) {}
-        location.reload();
-      });
-      trays.appendChild(undo);
+      // This used to say "Undo all" and warn "This cannot be undone" -- both wrong.
+      // It removed one browser key, so anything already saved came straight back
+      // from the server on the next visit, and the warning frightened the reviewer
+      // about an action that had almost no effect. What it can honestly offer is
+      // throwing away the work this browser has not sent yet.
+      var unsaved = 0, base0 = read('saved-' + code);
+      for (var uk in st) { if (JSON.stringify(st[uk]) !== JSON.stringify(base0[uk])) unsaved++; }
+      if (unsaved) {
+        var undo = document.createElement('button');
+        undo.type = 'button';
+        undo.className = 'desk-btn';
+        undo.textContent = 'Discard ' + unsaved + ' unsaved';
+        undo.title = 'Throw away what this browser has not saved. Anything already saved stays.';
+        undo.addEventListener('click', function () {
+          var nm = card.getAttribute('data-name') || code;
+          if (!window.confirm('Throw away ' + unsaved + ' unsaved change' +
+                              (unsaved === 1 ? '' : 's') + ' in ' + nm +
+                              '? Anything already saved stays where it is.')) return;
+          try {
+            localStorage.setItem('cel-desk-' + code,
+                                 localStorage.getItem('cel-desk-saved-' + code) || '{}');
+          } catch (e) {}
+          location.reload();
+        });
+        trays.appendChild(undo);
+      }
     });
   })();
   </script>

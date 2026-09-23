@@ -58,7 +58,8 @@ TRAYS = {"csv", "draft"}
 # A decision is exactly these keys. Anything else is dropped rather than stored: the
 # file is read by the CSV builder and the batch, and neither should meet a field that
 # arrived because a future desk version sent it.
-ALLOWED_KEYS = {"tray", "text", "rejected", "at"}
+ALLOWED_KEYS = {"tray", "text", "rejected", "at", "by", "approvedAgainst",
+                "sentAt", "arrivedAt", "failed", "exportedAt", "liveAt"}
 MAX_TEXT = 8000          # a translation unit, generously. Guards against a paste bomb.
 MAX_UNITS = 5000         # one locale has ~990; 5x that is a clear error, not a batch.
 
@@ -121,6 +122,42 @@ def clean_decision(uid: str, value: object) -> dict | None:
         if not isinstance(at, str) or len(at) > 40:
             raise Invalid(f"{uid}: at must be a short ISO string")
         out["at"] = at
+
+    # Who approved it, and what wording they were looking at. The second is what lets
+    # the export refuse a row whose translation moved AFTER the approval -- otherwise
+    # a later Weglot re-translation ships under a signature given to different text.
+    by = value.get("by")
+    if by is not None:
+        if not isinstance(by, str) or len(by) > 200:
+            raise Invalid(f"{uid}: by must be a short string")
+        out["by"] = by
+
+    against = value.get("approvedAgainst")
+    if against is not None:
+        if not isinstance(against, str):
+            raise Invalid(f"{uid}: approvedAgainst must be a string")
+        if len(against) > MAX_TEXT:
+            raise Invalid(f"{uid}: approvedAgainst is over the {MAX_TEXT} limit")
+        out["approvedAgainst"] = against
+
+    # The lifecycle stamps. These used to be dropped here, so five of the desk's nine
+    # stages -- sending, arrived, failed, exported, live -- never left the browser
+    # that produced them. The one that matters most is `liveAt`: the exporter skips
+    # rows already on the website, and it reads this file, so without it that
+    # exclusion could never fire and an older wording would be re-imported over a
+    # newer one.
+    for stamp in ("sentAt", "arrivedAt", "exportedAt", "liveAt"):
+        v = value.get(stamp)
+        if v is not None:
+            if not isinstance(v, str) or len(v) > 40:
+                raise Invalid(f"{uid}: {stamp} must be a short ISO string")
+            out[stamp] = v
+
+    failed = value.get("failed")
+    if failed is not None:
+        if not isinstance(failed, str) or len(failed) > 400:
+            raise Invalid(f"{uid}: failed must be a short string")
+        out["failed"] = failed
 
     if not out:
         # An empty object is ambiguous -- it could mean "clear" or "nothing". Null is
