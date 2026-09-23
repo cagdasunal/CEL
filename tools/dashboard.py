@@ -67,6 +67,10 @@ SHARED_CSS = """
     --accent: #5d60ee;
     --accent-warm: #e78b10;
     --surface: #F1EAD8;
+    /* Elevated surface: anything that floats over the page with NO scrim behind
+       it. --bg/--surface are the page itself, so a toast painted with them is
+       invisible except for its shadow -- which is exactly what happened. */
+    --elevated: #FBF7EC;
     --ok: #1d6b3a;
     --warn: #a65f1f;
     --err: #a02624;
@@ -1289,6 +1293,41 @@ DESK_CSS = """
   .desk-modal-body ol, .desk-modal-body ul { margin: 4px 0; padding-left: 20px; }
   .desk-modal-body li { margin-bottom: 4px; }
   .desk-modal-wide { max-width: 560px; text-align: left; }
+
+  /* Toasts. Bottom-right, stacked, out of the way of the sticky action bar.
+     Feedback for things that already happen and currently say nothing -- approving
+     48 rows in one click gave no confirmation at all. */
+  .toast-stack {
+    position: fixed; right: 18px; bottom: 18px; z-index: 60;
+    display: flex; flex-direction: column-reverse; gap: 8px;
+    max-width: min(380px, calc(100vw - 36px)); pointer-events: none;
+  }
+  .toast {
+    pointer-events: auto;
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 13px;
+    background: var(--elevated); color: var(--fg);
+    border: 1px solid rgba(55,51,44,0.28); border-left: 3px solid var(--muted);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 30px rgba(55,51,44,0.26);
+    font-size: var(--fs-md);
+    animation: toast-in 160ms ease-out;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+  .toast.is-ok   { border-left-color: var(--ok); }
+  .toast.is-warn { border-left-color: var(--warn); }
+  .toast.is-err  { border-left-color: var(--err); }
+  .toast-body { flex: 1 1 auto; min-width: 0; }
+  .toast-title { margin: 0; font-weight: 600; }
+  .toast-detail { margin: 2px 0 0; color: var(--muted); font-size: var(--fs-sm); }
+  .toast-close {
+    flex: 0 0 auto; width: 20px; height: 20px; padding: 0;
+    border: 0; border-radius: 50%; background: transparent; color: var(--faint);
+    font-size: 15px; line-height: 1; cursor: pointer;
+  }
+  .toast-close:hover { background: var(--stripe); color: var(--fg); }
+  .toast-close:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
 
   @media (max-width: 720px) {
     .desk-src, .desk-tgt { max-width: none; }

@@ -508,6 +508,7 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("    </div>")
 
     parts.append("  </div>")
+    parts.append('  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>')
     parts.append(HOW_MODAL)
     parts.append(TRAY_MODAL)
     parts.append(_desk_js(code, direction == "rtl"))
@@ -893,6 +894,13 @@ def _desk_js(code: str, rtl: bool) -> str:
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters();
+      var where = tray === 'csv' ? 'ready for CSV' : 'queued for re-translation';
+      toast(changed + (changed === 1 ? ' row ' : ' rows ') + where, {
+        level: 'ok',
+        detail: changed !== ids.length
+          ? (ids.length - changed) + ' were already there'
+          : null
+      });
     }
     document.getElementById('bulk-approve').addEventListener('click', function () { bulk('csv', 'approve'); });
     document.getElementById('bulk-draft').addEventListener('click', function () { bulk('draft', 'queue'); });
@@ -1024,6 +1032,7 @@ def _desk_js(code: str, rtl: bool) -> str:
       }
       note('empty-tray', null, openTray, String(n));
       persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
+      toast('Tray emptied', { level: 'warn', detail: n + (n === 1 ? ' row taken out' : ' rows taken out') });
     });
 
     // ── Export / import ────────────────────────────────────────────────
@@ -1071,10 +1080,62 @@ def _desk_js(code: str, rtl: bool) -> str:
       note('ingest', null, String(n), doc.exported_at || null);
       persist();
       rows.forEach(paint); paintBar(); applyFilters();
+      toast(n + (n === 1 ? ' row updated' : ' rows updated'), { level: 'ok', detail: 'from the pipeline' });
       return { ok: true, rows: n };
     }
     window.deskIngest = ingest;
 
+
+    // ── Toasts ─────────────────────────────────────────────────────────
+    // Confirmation for things that already happen and currently say nothing:
+    // approving 48 rows in one click gave no feedback at all. Errors stay until
+    // dismissed; everything else clears itself, and hovering holds it open so a
+    // message cannot vanish while it is being read.
+    var toastStack = document.getElementById('toast-stack');
+
+    function toast(title, opts) {
+      opts = opts || {};
+      var el = document.createElement('div');
+      el.className = 'toast' + (opts.level ? ' is-' + opts.level : '');
+      var bodyEl = document.createElement('div');
+      bodyEl.className = 'toast-body';
+      var h = document.createElement('p');
+      h.className = 'toast-title';
+      h.textContent = title;
+      bodyEl.appendChild(h);
+      if (opts.detail) {
+        var d = document.createElement('p');
+        d.className = 'toast-detail';
+        d.textContent = opts.detail;
+        bodyEl.appendChild(d);
+      }
+      var x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'toast-close';
+      x.setAttribute('aria-label', 'Dismiss');
+      x.textContent = '\u00d7';
+      var timer = null;
+      function close() {
+        if (timer) clearTimeout(timer);
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }
+      x.addEventListener('click', close);
+      el.appendChild(bodyEl);
+      el.appendChild(x);
+      toastStack.appendChild(el);
+
+      // An error is a thing to act on, so it waits for the reader.
+      if (opts.level !== 'err' && !opts.sticky) {
+        var arm = function () { timer = setTimeout(close, opts.ms || 5000); };
+        el.addEventListener('mouseenter', function () { if (timer) clearTimeout(timer); });
+        el.addEventListener('mouseleave', arm);
+        arm();
+      }
+      // Keep the stack short enough to stay readable.
+      while (toastStack.children.length > 4) toastStack.removeChild(toastStack.firstChild);
+      return close;
+    }
+    window.deskToast = toast;
 
     // ── URL state + language switching ─────────────────────────────────
     // The filters live in the query string so that switching language keeps you on
@@ -1143,6 +1204,10 @@ def _desk_js(code: str, rtl: bool) -> str:
         countLine.className = 'subtle desk-status is-error';
         noRows.hidden = true;
         note('load-failed', null, err.message, null);
+        toast('Could not load this language', {
+          level: 'err',
+          detail: err.message + ' — reload, and tell us if it keeps happening.'
+        });
       });
   })();
   </script>
