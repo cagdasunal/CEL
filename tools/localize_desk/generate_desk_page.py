@@ -200,11 +200,20 @@ HOW_MODAL = """\
         tray goes to the machine as one batch; the CSV tray becomes a file you import
         into Weglot. Clicking a tray button repeatedly cannot send anything twice.</p>
 
+        <h3>When the machine sends drafts back</h3>
+        <p>Rows you queued come back marked <em>needs your review</em>, and that is where
+        this page opens &mdash; you see what changed while you were away without looking
+        for it. Each one shows the English, what is live today, and the new suggestion
+        side by side, so you are never accepting something without seeing what it
+        replaces. <strong>Accept</strong> takes it, <strong>Edit</strong> takes your
+        wording instead, and <strong>Reject</strong> sends it back to be tried again
+        &mdash; remembering what was refused, so you do not get the same suggestion
+        twice.</p>
+
         <h3>Your decisions are kept in this browser</h3>
         <p>They apply instantly and survive a reload, but not a different computer.
-        <strong>Export decisions</strong> writes them to a file; <strong>Import</strong>
-        reads one back. That file is also how the batch and the CSV steps will receive
-        your decisions, so exporting at the end of a session is worth the habit.</p>
+        <strong>Download a backup</strong> writes them to a file you can keep. You never
+        need to load anything back by hand &mdash; machine drafts arrive on their own.</p>
         <p>Sending the batch and building the CSV are not wired up yet &mdash; the desk
         is being built before the machine translation is connected, so the review flow
         can be judged first.</p>
@@ -330,9 +339,10 @@ def _index_js() -> str:
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
       var st = read(code);
-      var csv = 0, draft = 0;
+      var csv = 0, draft = 0, proposed = 0;
       for (var k in st) {
         if (!st[k]) continue;
+        if (st[k].proposed && st[k].proposed.text != null) { proposed++; continue; }
         if (st[k].tray === 'csv') csv++;
         else if (st[k].tray === 'draft') draft++;
       }
@@ -346,10 +356,12 @@ def _index_js() -> str:
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
-      if (!csv && !draft) {
+      if (!csv && !draft && !proposed) {
         trays.appendChild(chip('desk-tray-none', 'nothing queued', null));
         return;
       }
+      // Waiting-on-you comes first: it is the only chip that is a request.
+      if (proposed) trays.appendChild(chip('desk-tray-proposed', proposed + ' need your review', base + '?show=proposed'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' ready for CSV', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' to re-translate', base + '?show=draft'));
 
@@ -398,7 +410,8 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Show')
     parts.append('          <select class="desk-select" id="f-state">')
-    parts.append('            <option value="todo">Needs review</option>')
+    parts.append('            <option value="proposed">Needs your review (new drafts)</option>')
+    parts.append('            <option value="todo">Not yet decided</option>')
     parts.append('            <option value="">Everything</option>')
     parts.append('            <option value="csv">Ready for CSV</option>')
     parts.append('            <option value="draft">To re-translate</option>')
@@ -410,9 +423,10 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
                  'placeholder="source or translation" autocomplete="off">')
     parts.append("        </label>")
     parts.append('        <span class="desk-toolbar-spacer"></span>')
-    parts.append('        <button type="button" class="desk-btn" id="io-export">Export decisions</button>')
-    parts.append('        <button type="button" class="desk-btn" id="io-import">Import</button>')
-    parts.append('        <input type="file" id="io-file" accept="application/json,.json" hidden>')
+    # No Import control: the reviewer never imports decisions. Machine drafts arrive
+    # through the batch ingest, not through a file picker. Download stays, as a backup
+    # of work that otherwise exists only in one browser.
+    parts.append('        <button type="button" class="desk-btn" id="io-export">Download a backup</button>')
     parts.append('        <button type="button" class="desk-btn" id="how-open">How this works</button>')
     parts.append("      </div>")
     parts.append('      <p class="subtle" id="count-line"></p>')
@@ -573,12 +587,22 @@ def _desk_js(code: str, rtl: bool) -> str:
         var live = document.createElement('span');
         live.className = 'desk-live';
         live.textContent = u.tgt;
+        var prop = document.createElement('div');
+        prop.className = 'desk-proposed';
+        prop.hidden = true;
+        var propLabel = document.createElement('span');
+        propLabel.className = 'desk-proposed-label';
+        propLabel.textContent = 'proposed';
+        var propText = document.createElement('span');
+        propText.className = 'desk-proposed-text';
+        prop.appendChild(propLabel); prop.appendChild(propText);
         var ta = document.createElement('textarea');
         ta.className = 'desk-edit';
         ta.hidden = true;
         ta.setAttribute('aria-label', 'Your wording');
         ta.value = u.tgt;
         tdTgt.appendChild(live);
+        tdTgt.appendChild(prop);
         tdTgt.appendChild(ta);
 
         var tdState = document.createElement('td');
@@ -594,7 +618,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         acts.className = 'desk-actions';
         // Ghost, not filled. 990 rows means 990 buttons, and a filled primary on each
         // turns the single-primary rule into wallpaper. Indigo on a row means STATE.
-        [['approve', 'Approve'], ['edit', 'Edit'], ['queue', 'Re-translate']]
+        [['approve', 'Approve'], ['edit', 'Edit'], ['queue', 'Re-translate'], ['reject', 'Reject']]
           .forEach(function (pair) {
             var b = document.createElement('button');
             b.type = 'button';
@@ -617,43 +641,74 @@ def _desk_js(code: str, rtl: bool) -> str:
     function paint(tr) {
       var uid = tr.getAttribute('data-uid');
       var s = state[uid] || {};
+      var proposed = s.proposed && s.proposed.text != null;
       var badge = tr.querySelector('.desk-state');
       var label = 'unreviewed', cls = 'badge-partial';
-      if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
+      if (proposed) { label = 'needs your review'; cls = 'badge-proposed'; }
+      else if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
       else if (s.tray === 'draft') { label = 'to re-translate'; cls = 'badge-failed'; }
       badge.className = 'desk-state ' + cls;
       badge.textContent = label;
-      tr.classList.toggle('is-done', s.tray === 'csv');
+      tr.classList.toggle('is-done', !proposed && s.tray === 'csv');
+      tr.classList.toggle('is-proposed', !!proposed);
       tr.classList.toggle('is-picked', !!picked[uid]);
+
+      // A proposal is a THIRD text, shown next to what it would replace. Accepting
+      // without seeing what is being replaced is not review, so the live wording
+      // stays on screen rather than being swapped out underneath the reviewer.
+      var box = tr.querySelector('.desk-proposed');
+      if (proposed) {
+        box.hidden = false;
+        box.querySelector('.desk-proposed-text').textContent = s.proposed.text;
+      } else {
+        box.hidden = true;
+      }
+
+      var acts = tr.querySelector('.desk-actions');
+      acts.classList.toggle('is-proposal', !!proposed);
 
       var bApprove = tr.querySelector('[data-act="approve"]');
       var bQueue = tr.querySelector('[data-act="queue"]');
-      bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.textContent = s.tray === 'csv' ? 'Approved' : 'Approve';
-      bApprove.disabled = s.tray === 'csv';
-      bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.textContent = s.tray === 'draft' ? 'Queued' : 'Re-translate';
-      // Nothing left to do on a row already in that tray: adding again is a no-op,
-      // and taking it back out belongs on the tray screen.
-      bQueue.disabled = s.tray === 'draft';
+      var bReject = tr.querySelector('[data-act="reject"]');
+      bReject.hidden = !proposed;
+
+      if (proposed) {
+        // On a proposal the two existing buttons change meaning, not position:
+        // Approve accepts the machine's wording, Re-translate is replaced by Reject.
+        bApprove.classList.remove('is-on');
+        bApprove.textContent = 'Accept';
+        bApprove.disabled = false;
+        bQueue.hidden = true;
+      } else {
+        bQueue.hidden = false;
+        bApprove.classList.toggle('is-on', s.tray === 'csv');
+        bApprove.textContent = s.tray === 'csv' ? 'Approved' : 'Approve';
+        bApprove.disabled = s.tray === 'csv';
+        bQueue.classList.toggle('is-on', s.tray === 'draft');
+        bQueue.textContent = s.tray === 'draft' ? 'Queued' : 'Re-translate';
+        // Nothing left to do on a row already in that tray: adding again is a no-op,
+        // and taking it back out belongs on the tray screen.
+        bQueue.disabled = s.tray === 'draft';
+      }
 
       var cb = tr.querySelector('[data-pick]');
       if (cb) cb.checked = !!picked[uid];
 
-      if (s.text != null) {
+      if (!proposed && s.text != null) {
         var live = tr.querySelector('.desk-live');
         if (live.textContent !== s.text) live.textContent = s.text;
       }
     }
 
     function counts() {
-      var csv = 0, draft = 0;
+      var csv = 0, draft = 0, proposed = 0;
       for (var k in state) {
         if (!state[k]) continue;
+        if (state[k].proposed && state[k].proposed.text != null) { proposed++; continue; }
         if (state[k].tray === 'csv') csv++;
         else if (state[k].tray === 'draft') draft++;
       }
-      return { csv: csv, draft: draft };
+      return { csv: csv, draft: draft, proposed: proposed };
     }
 
     function pickedIds() { return Object.keys(picked); }
@@ -663,9 +718,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       var n = pickedIds().length;
       selCount.textContent = n;
       barSelect.hidden = n === 0;
-      barTrays.hidden = (c.csv + c.draft) === 0;
+      barTrays.hidden = (c.csv + c.draft + c.proposed) === 0;
       savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
+      if (c.proposed) bits.push(c.proposed + ' need your review');
       if (c.csv) bits.push(c.csv + ' ready for CSV');
       if (c.draft) bits.push(c.draft + ' to re-translate');
       trayLine.textContent = bits.join('  ·  ');
@@ -679,7 +735,10 @@ def _desk_js(code: str, rtl: bool) -> str:
       var p = fPage.value;
       if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
       var want = fState.value;
-      if (want === 'todo' && s.tray) return false;
+      var isProposed = !!(s.proposed && s.proposed.text != null);
+      if (want === 'proposed' && !isProposed) return false;
+      // A proposal is never "done", whatever tray it came from.
+      if (want === 'todo' && (s.tray && !isProposed)) return false;
       if (want === 'csv' && s.tray !== 'csv') return false;
       if (want === 'draft' && s.tray !== 'draft') return false;
       if (want === 'edited' && s.text == null) return false;
@@ -709,8 +768,33 @@ def _desk_js(code: str, rtl: bool) -> str:
     // ── Actions ────────────────────────────────────────────────────────
     function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
+      var st = state[uid] || {};
       if (what === 'approve') {
+        if (st.proposed && st.proposed.text != null) {
+          // Accepting a proposal takes the machine's wording as the decision and
+          // clears the proposal, so the row leaves PROPOSED for good.
+          rec(uid).text = st.proposed.text;
+          delete rec(uid).proposed;
+          note('accept-proposal', uid, null, null);
+          setTray(uid, 'csv', 'accept');
+          persist(); paint(tr);
+          return;
+        }
         if (setTray(uid, 'csv', 'approve')) { persist(); paint(tr); }
+      } else if (what === 'reject') {
+        if (!st.proposed) return;
+        // Read the text BEFORE deleting: `st` is the same object as state[uid], so
+        // touching st.proposed afterwards throws and the handler dies half-done --
+        // rejected recorded in memory, nothing persisted, nothing repainted.
+        var refused = st.proposed.text;
+        // A rejection is information the next batch needs, not just a deletion: the
+        // refused wording is kept so the draft can be told what not to produce again.
+        var s2 = rec(uid);
+        s2.rejected = (s2.rejected || []).concat([refused]);
+        delete s2.proposed;
+        note('reject-proposal', uid, refused, null);
+        setTray(uid, 'draft', 'reject');
+        persist(); paint(tr);
       } else if (what === 'queue') {
         // ADD, never toggle -- see the module docstring. Idempotent under any number
         // of clicks; removal is deliberate, from the tray screen.
@@ -959,42 +1043,33 @@ def _desk_js(code: str, rtl: bool) -> str:
       note('export', null, String(c.csv + c.draft), null);
     }
 
-    function importDecisions(file) {
-      var reader = new FileReader();
-      reader.onload = function () {
-        var doc;
-        try { doc = JSON.parse(reader.result); }
-        catch (e) { window.alert('That file is not valid JSON.'); return; }
-        if (!doc || doc.schema !== 'cel-localization-desk/1') {
-          window.alert('That is not a localization desk export.'); return;
-        }
-        if (doc.locale !== CODE) {
-          // Importing German decisions into the Arabic desk would silently attach
-          // them to unit ids that mean something else here.
-          window.alert('That export is for "' + doc.locale + '", and this is the "' +
-                       CODE + '" desk. Open the ' + doc.locale + ' desk to import it.');
-          return;
-        }
-        var incoming = doc.decisions || {};
-        var n = Object.keys(incoming).length;
-        if (!window.confirm('Replace the decisions in this browser with ' + n +
-                            ' from the file? Your current ones are not merged.')) return;
-        state = incoming;
-        picked = Object.create(null);
-        persist();
-        note('import', null, String(n), doc.exported_at || null);
-        rows.forEach(paint); paintBar(); applyFilters();
-      };
-      reader.readAsText(file);
+    // The INGEST seam, not a UI affordance. Machine drafts land here when the batch
+    // returns; `deskIngest()` is the same door, callable from the console while the
+    // batch step is being built. The reviewer has no import button -- they never
+    // import decisions, and a file picker that says otherwise invites the mistake.
+    function ingest(doc) {
+      if (!doc || doc.schema !== 'cel-localization-desk/1') return { ok: false, why: 'not a desk document' };
+      // A document for another locale would attach its ids to strings that mean
+      // something different here.
+      if (doc.locale !== CODE) return { ok: false, why: 'document is for ' + doc.locale + ', this desk is ' + CODE };
+      var incoming = doc.decisions || {};
+      var n = 0;
+      for (var uid in incoming) {
+        if (!incoming[uid]) continue;
+        var s = rec(uid);
+        // Merge, never replace: a returning batch carries proposals for the rows it
+        // was asked about, and must not erase decisions made on every other row.
+        if (incoming[uid].proposed) { s.proposed = incoming[uid].proposed; n++; }
+        if (incoming[uid].tray) s.tray = incoming[uid].tray;
+      }
+      note('ingest', null, String(n), doc.exported_at || null);
+      persist();
+      rows.forEach(paint); paintBar(); applyFilters();
+      return { ok: true, proposals: n };
     }
+    window.deskIngest = ingest;
 
     document.getElementById('io-export').addEventListener('click', exportDecisions);
-    var ioFile = document.getElementById('io-file');
-    document.getElementById('io-import').addEventListener('click', function () { ioFile.click(); });
-    ioFile.addEventListener('change', function () {
-      if (ioFile.files && ioFile.files[0]) importDecisions(ioFile.files[0]);
-      ioFile.value = '';
-    });
 
     [fPage, fState].forEach(function (el) { el.addEventListener('change', applyFilters); });
     fQ.addEventListener('input', applyFilters);
@@ -1009,7 +1084,13 @@ def _desk_js(code: str, rtl: bool) -> str:
         buildRows(units);
         // ?show= lets the locale index link straight into a tray.
         var want = new URLSearchParams(location.search).get('show');
-        if (want && ['todo', 'csv', 'draft', 'edited', ''].indexOf(want) !== -1) fState.value = want;
+        if (want && ['todo', 'csv', 'draft', 'edited', 'proposed', ''].indexOf(want) !== -1) {
+          fState.value = want;
+        } else if (counts().proposed > 0) {
+          // The reviewer coming back after a batch is asking "what did the machine do
+          // while I was away", not "where was I". Land them on exactly those rows.
+          fState.value = 'proposed';
+        }
         rows.forEach(paint);
         paintBar();
         applyFilters();

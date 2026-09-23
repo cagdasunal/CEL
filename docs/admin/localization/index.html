@@ -159,9 +159,10 @@
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
       var st = read(code);
-      var csv = 0, draft = 0;
+      var csv = 0, draft = 0, proposed = 0;
       for (var k in st) {
         if (!st[k]) continue;
+        if (st[k].proposed && st[k].proposed.text != null) { proposed++; continue; }
         if (st[k].tray === 'csv') csv++;
         else if (st[k].tray === 'draft') draft++;
       }
@@ -175,10 +176,12 @@
       var trays = card.querySelector('.desk-trays');
       trays.textContent = '';
       var base = '/admin/localization/' + code + '/';
-      if (!csv && !draft) {
+      if (!csv && !draft && !proposed) {
         trays.appendChild(chip('desk-tray-none', 'nothing queued', null));
         return;
       }
+      // Waiting-on-you comes first: it is the only chip that is a request.
+      if (proposed) trays.appendChild(chip('desk-tray-proposed', proposed + ' need your review', base + '?show=proposed'));
       if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' ready for CSV', base + '?show=csv'));
       if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' to re-translate', base + '?show=draft'));
 

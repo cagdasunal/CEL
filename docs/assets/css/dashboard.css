@@ -1077,6 +1077,25 @@
   .desk-btn.is-flagged { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
 
   /* Rows. Dense on purpose -- this is a few hundred rows of triage, not a form. */
+  /* A machine proposal sits BESIDE what it would replace, never on top of it --
+     accepting without seeing what is being replaced is not review. */
+  .desk-proposed {
+    display: block; margin-top: 6px; padding: 7px 10px;
+    background: rgba(93,96,238,0.08); border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .desk-proposed[hidden] { display: none; }
+  .desk-proposed-label {
+    display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 2px;
+  }
+  .desk-proposed-text { display: block; }
+  .desk-row.is-proposed > td { background: rgba(93,96,238,0.04); }
+  .badge-proposed {
+    display: inline-block; border-radius: 3px; padding: 1px 6px;
+    font-size: var(--fs-xs); font-weight: 600;
+    background: rgba(93,96,238,0.14); color: var(--accent);
+  }
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
   .desk-row.is-done { opacity: 0.55; }
@@ -1135,6 +1154,7 @@
   .desk-tray-count { font-variant-numeric: tabular-nums; }
   .desk-tray-draft { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
   .desk-tray-csv   { background: rgba(29,107,58,0.13);  color: var(--ok);   border-color: rgba(29,107,58,0.3); }
+  .desk-tray-proposed { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
   .desk-tray-none  { background: var(--stripe); color: var(--faint); }
   a.desk-tray:hover { border-color: currentColor; }
   .desk-trays { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
