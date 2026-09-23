@@ -82,15 +82,19 @@ OUT_ROOT = EXTERNAL_REPO_ROOT / "admin" / "localization"
 
 # Locale code -> (English name, endonym, direction). Codes are the ones the unit files
 # carry (`pt`, not `pt-BR`) so the desk and the data cannot drift apart.
+# code, English name, endonym, direction, flag.
+# `pt` is Brazilian Portuguese for CEL, hence Brazil rather than Portugal. Arabic has
+# no country, so it takes the one the client's own locale list implies; the language
+# NAME is always shown beside the flag precisely because a flag is not a language.
 LOCALES = [
-    ("de", "German", "Deutsch", "ltr"),
-    ("fr", "French", "Français", "ltr"),
-    ("es", "Spanish", "Español", "ltr"),
-    ("pt", "Portuguese", "Português", "ltr"),
-    ("it", "Italian", "Italiano", "ltr"),
-    ("ja", "Japanese", "日本語", "ltr"),
-    ("ko", "Korean", "한국어", "ltr"),
-    ("ar", "Arabic", "العربية", "rtl"),
+    ("de", "German", "Deutsch", "ltr", "\U0001F1E9\U0001F1EA"),
+    ("fr", "French", "Français", "ltr", "\U0001F1EB\U0001F1F7"),
+    ("es", "Spanish", "Español", "ltr", "\U0001F1EA\U0001F1F8"),
+    ("pt", "Portuguese", "Português", "ltr", "\U0001F1E7\U0001F1F7"),
+    ("it", "Italian", "Italiano", "ltr", "\U0001F1EE\U0001F1F9"),
+    ("ja", "Japanese", "日本語", "ltr", "\U0001F1EF\U0001F1F5"),
+    ("ko", "Korean", "한국어", "ltr", "\U0001F1F0\U0001F1F7"),
+    ("ar", "Arabic", "العربية", "rtl", "\U0001F1F8\U0001F1E6"),
 ]
 
 PAGE_LABELS = {
@@ -282,7 +286,7 @@ def render_index(units: list[dict]) -> str:
     parts.append("      </section>")
 
     parts.append('      <div class="desk-locales">')
-    for code, name, endonym, _dir in LOCALES:
+    for code, name, endonym, _dir, flag in LOCALES:
         have = sum(1 for u in units if (u.get("current") or {}).get(code))
         parts.append(
             f'        <div class="desk-locale-card" data-locale="{code}" data-total="{have}">'
@@ -399,8 +403,7 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append(
         render_page_chrome(
             f"LOCALIZATION DESK &middot; {escape(name.upper())}",
-            f"<bdi>{escape(endonym)}</bdi> &mdash; {len(rows)} units. "
-            "Decisions apply instantly and stay in this browser.",
+            f"<bdi>{escape(endonym)}</bdi> &middot; {len(rows)} units",
         )
     )
 
@@ -409,14 +412,15 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     # forced a trip back to the index and lost the filters on the way.
     parts.append('    <div class="controls">')
     parts.append('      <nav class="desk-locales-strip" aria-label="Language">')
-    for lcode, lname, _endo, _dir in LOCALES:
+    for lcode, lname, _endo, _dir, lflag in LOCALES:
         cls = "desk-loc is-active" if lcode == code else "desk-loc"
         aria = ' aria-current="page"' if lcode == code else ""
         parts.append(
             f'        <a class="{cls}" href="/admin/localization/{lcode}/" '
-            f'data-loc="{lcode}"{aria}><span class="desk-loc-code">{lcode}</span>'
+            f'data-loc="{lcode}"{aria}>'
+            f'<span class="desk-loc-flag" aria-hidden="true">{lflag}</span>'
             f'<span class="desk-loc-name">{escape(lname)}</span>'
-            f'<span class="desk-loc-flag" data-loc-flag="{lcode}"></span></a>'
+            f'<span class="desk-loc-count" data-loc-count="{lcode}" hidden></span></a>'
         )
     parts.append("      </nav>")
     parts.append('      <div class="desk-toolbar">')
@@ -802,26 +806,56 @@ def _desk_js(code: str, rtl: bool) -> str:
       applyFilters();
     });
 
-    body.addEventListener('change', function (ev) {
-      var ta = ev.target.closest('.desk-edit');
-      if (!ta) return;
+    function commitEditor(ta) {
       var tr = ta.closest('.desk-row');
+      if (!tr) return false;
       var uid = tr.getAttribute('data-uid');
       var live = tr.querySelector('.desk-live');
       var val = ta.value.trim();
       var s = rec(uid);
-      if (val && val !== live.textContent) {
+      var changed = false;
+      if (val && val !== live.textContent && val !== s.text) {
         s.text = val;
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
         // afterwards could only ever be "yes".
         setTray(uid, 'csv', 'edit-approve');
-      } else if (!val) {
+        changed = true;
+      } else if (!val && s.text != null) {
         delete s.text;
         note('edit-cleared', uid, null, null);
+        changed = true;
       }
-      persist(); paint(tr); paintBar(); applyFilters();
+      if (changed) { persist(); paint(tr); paintBar(); }
+      return changed;
+    }
+
+    // Nothing typed may be lost on the way out. `change` alone is not enough: it
+    // fires on blur, and a click straight from an open editor onto a language link
+    // races the navigation. So every open editor is committed BEFORE leaving --
+    // localStorage writes are synchronous, so once this returns the work is safe.
+    function flushEditors() {
+      var any = false;
+      Array.prototype.forEach.call(body.querySelectorAll('.desk-edit'), function (ta) {
+        if (ta.hidden) return;
+        if (commitEditor(ta)) any = true;
+      });
+      if (any) applyFilters();
+      return any;
+    }
+
+    body.addEventListener('change', function (ev) {
+      var ta = ev.target.closest('.desk-edit');
+      if (!ta) return;
+      if (commitEditor(ta)) applyFilters();
     });
+
+    // Both doors out of this page.
+    window.addEventListener('beforeunload', flushEditors);
+    document.addEventListener('click', function (ev) {
+      var link = ev.target.closest('a[data-loc]');
+      if (link) flushEditors();
+    }, true);
 
     pickAll.addEventListener('change', function () {
       shown().forEach(function (tr) {
@@ -1046,8 +1080,8 @@ def _desk_js(code: str, rtl: bool) -> str:
     // saved decisions -- so "where is there work left" is answerable without visiting
     // all eight.
     function paintLocaleCounts() {
-      Array.prototype.forEach.call(document.querySelectorAll('[data-loc-flag]'), function (el) {
-        var lc = el.getAttribute('data-loc-flag');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
+        var lc = el.getAttribute('data-loc-count');
         var n = 0;
         try {
           var raw = JSON.parse(localStorage.getItem('cel-desk-' + lc) || '{}') || {};
@@ -1119,7 +1153,7 @@ def main() -> int:
     index.write_text(render_index(units), encoding="utf-8")
     written.append(index)
 
-    for code, name, endonym, direction in LOCALES:
+    for code, name, endonym, direction, _flag in LOCALES:
         out_dir = OUT_ROOT / code
         out_dir.mkdir(parents=True, exist_ok=True)
 

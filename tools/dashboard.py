@@ -1163,26 +1163,43 @@ DESK_CSS = """
   }
 
   /* Language strip. Switching language while keeping the page, filter and search is
-     the reviewer's most frequent move; it used to mean a trip back to the index. */
-  .desk-locales-strip { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 0 10px; }
+     the reviewer's most frequent move; it used to mean a trip back to the index.
+     A flag plus the language name -- the code was redundant with the name, and two
+     shouty uppercase fragments per tab made a strip of eight unreadable. The name
+     always stays: a flag is a country, not a language, and Arabic has no country. */
+  .desk-locales-strip {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 2px 0 12px; margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
   .desk-loc {
-    display: inline-flex; align-items: baseline; gap: 6px;
-    padding: 5px 12px; border-radius: 999px; text-decoration: none;
-    border: 1px solid transparent; color: var(--muted); font-size: var(--fs-sm);
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 13px; border-radius: 999px; text-decoration: none;
+    border: 1px solid var(--border); color: var(--fg);
+    font-size: var(--fs-md); line-height: 1.2;
+    transition: background 120ms ease, border-color 120ms ease;
   }
-  .desk-loc:hover { background: var(--stripe); color: var(--fg); }
+  .desk-loc:hover { background: var(--stripe); border-color: var(--border-strong); }
   .desk-loc:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
-  .desk-loc.is-active { background: var(--accent); color: #fff; font-weight: 600; }
-  .desk-loc.is-active .desk-loc-name { color: rgba(255,255,255,0.85); }
-  .desk-loc-code { text-transform: uppercase; font-weight: 600; letter-spacing: 0.03em; }
-  .desk-loc-name { font-size: var(--fs-xs); }
-  .desk-loc-flag {
-    font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums;
-    padding: 0 5px; border-radius: 999px; background: var(--border); color: var(--fg);
+  .desk-loc.is-active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; font-weight: 600;
   }
-  .desk-loc-flag[hidden] { display: none; }
-  .desk-loc.is-active .desk-loc-flag { background: rgba(255,255,255,0.25); color: #fff; }
-  @media (max-width: 720px) { .desk-loc-name { display: none; } }
+  .desk-loc-flag { font-size: 15px; line-height: 1; }
+  .desk-loc-name { white-space: nowrap; }
+  .desk-loc-count {
+    font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 1px 6px; border-radius: 999px;
+    background: var(--border); color: var(--fg);
+  }
+  .desk-loc-count[hidden] { display: none; }
+  .desk-loc.is-active .desk-loc-count { background: rgba(255,255,255,0.25); color: #fff; }
+  /* Below this the names would wrap to two rows; the flags alone still identify
+     each tab, and the active one keeps its name. */
+  @media (max-width: 860px) {
+    .desk-loc:not(.is-active) .desk-loc-name { display: none; }
+    .desk-loc { padding: 6px 10px; }
+  }
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
   .desk-row.is-done { opacity: 0.55; }

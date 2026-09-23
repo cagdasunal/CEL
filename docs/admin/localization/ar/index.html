@@ -58,17 +58,17 @@
       </details>
     </header>
   <div class="dashboard-shell">
-<header class="dashboard-header"><div class="brand-text"><p class="eyebrow">LOCALIZATION DESK &middot; ARABIC</p><p class="subtitle"><bdi>العربية</bdi> &mdash; 990 units. Decisions apply instantly and stay in this browser.</p></div></header>
+<header class="dashboard-header"><div class="brand-text"><p class="eyebrow">LOCALIZATION DESK &middot; ARABIC</p><p class="subtitle"><bdi>العربية</bdi> &middot; 990 units</p></div></header>
     <div class="controls">
       <nav class="desk-locales-strip" aria-label="Language">
-        <a class="desk-loc" href="/admin/localization/de/" data-loc="de"><span class="desk-loc-code">de</span><span class="desk-loc-name">German</span><span class="desk-loc-flag" data-loc-flag="de"></span></a>
-        <a class="desk-loc" href="/admin/localization/fr/" data-loc="fr"><span class="desk-loc-code">fr</span><span class="desk-loc-name">French</span><span class="desk-loc-flag" data-loc-flag="fr"></span></a>
-        <a class="desk-loc" href="/admin/localization/es/" data-loc="es"><span class="desk-loc-code">es</span><span class="desk-loc-name">Spanish</span><span class="desk-loc-flag" data-loc-flag="es"></span></a>
-        <a class="desk-loc" href="/admin/localization/pt/" data-loc="pt"><span class="desk-loc-code">pt</span><span class="desk-loc-name">Portuguese</span><span class="desk-loc-flag" data-loc-flag="pt"></span></a>
-        <a class="desk-loc" href="/admin/localization/it/" data-loc="it"><span class="desk-loc-code">it</span><span class="desk-loc-name">Italian</span><span class="desk-loc-flag" data-loc-flag="it"></span></a>
-        <a class="desk-loc" href="/admin/localization/ja/" data-loc="ja"><span class="desk-loc-code">ja</span><span class="desk-loc-name">Japanese</span><span class="desk-loc-flag" data-loc-flag="ja"></span></a>
-        <a class="desk-loc" href="/admin/localization/ko/" data-loc="ko"><span class="desk-loc-code">ko</span><span class="desk-loc-name">Korean</span><span class="desk-loc-flag" data-loc-flag="ko"></span></a>
-        <a class="desk-loc is-active" href="/admin/localization/ar/" data-loc="ar" aria-current="page"><span class="desk-loc-code">ar</span><span class="desk-loc-name">Arabic</span><span class="desk-loc-flag" data-loc-flag="ar"></span></a>
+        <a class="desk-loc" href="/admin/localization/de/" data-loc="de"><span class="desk-loc-flag" aria-hidden="true">🇩🇪</span><span class="desk-loc-name">German</span><span class="desk-loc-count" data-loc-count="de" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/fr/" data-loc="fr"><span class="desk-loc-flag" aria-hidden="true">🇫🇷</span><span class="desk-loc-name">French</span><span class="desk-loc-count" data-loc-count="fr" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/es/" data-loc="es"><span class="desk-loc-flag" aria-hidden="true">🇪🇸</span><span class="desk-loc-name">Spanish</span><span class="desk-loc-count" data-loc-count="es" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/pt/" data-loc="pt"><span class="desk-loc-flag" aria-hidden="true">🇧🇷</span><span class="desk-loc-name">Portuguese</span><span class="desk-loc-count" data-loc-count="pt" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/it/" data-loc="it"><span class="desk-loc-flag" aria-hidden="true">🇮🇹</span><span class="desk-loc-name">Italian</span><span class="desk-loc-count" data-loc-count="it" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/ja/" data-loc="ja"><span class="desk-loc-flag" aria-hidden="true">🇯🇵</span><span class="desk-loc-name">Japanese</span><span class="desk-loc-count" data-loc-count="ja" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/ko/" data-loc="ko"><span class="desk-loc-flag" aria-hidden="true">🇰🇷</span><span class="desk-loc-name">Korean</span><span class="desk-loc-count" data-loc-count="ko" hidden></span></a>
+        <a class="desk-loc is-active" href="/admin/localization/ar/" data-loc="ar" aria-current="page"><span class="desk-loc-flag" aria-hidden="true">🇸🇦</span><span class="desk-loc-name">Arabic</span><span class="desk-loc-count" data-loc-count="ar" hidden></span></a>
       </nav>
       <div class="desk-toolbar">
         <label class="desk-field">Page
@@ -507,26 +507,56 @@
       applyFilters();
     });
 
-    body.addEventListener('change', function (ev) {
-      var ta = ev.target.closest('.desk-edit');
-      if (!ta) return;
+    function commitEditor(ta) {
       var tr = ta.closest('.desk-row');
+      if (!tr) return false;
       var uid = tr.getAttribute('data-uid');
       var live = tr.querySelector('.desk-live');
       var val = ta.value.trim();
       var s = rec(uid);
-      if (val && val !== live.textContent) {
+      var changed = false;
+      if (val && val !== live.textContent && val !== s.text) {
         s.text = val;
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
         // afterwards could only ever be "yes".
         setTray(uid, 'csv', 'edit-approve');
-      } else if (!val) {
+        changed = true;
+      } else if (!val && s.text != null) {
         delete s.text;
         note('edit-cleared', uid, null, null);
+        changed = true;
       }
-      persist(); paint(tr); paintBar(); applyFilters();
+      if (changed) { persist(); paint(tr); paintBar(); }
+      return changed;
+    }
+
+    // Nothing typed may be lost on the way out. `change` alone is not enough: it
+    // fires on blur, and a click straight from an open editor onto a language link
+    // races the navigation. So every open editor is committed BEFORE leaving --
+    // localStorage writes are synchronous, so once this returns the work is safe.
+    function flushEditors() {
+      var any = false;
+      Array.prototype.forEach.call(body.querySelectorAll('.desk-edit'), function (ta) {
+        if (ta.hidden) return;
+        if (commitEditor(ta)) any = true;
+      });
+      if (any) applyFilters();
+      return any;
+    }
+
+    body.addEventListener('change', function (ev) {
+      var ta = ev.target.closest('.desk-edit');
+      if (!ta) return;
+      if (commitEditor(ta)) applyFilters();
     });
+
+    // Both doors out of this page.
+    window.addEventListener('beforeunload', flushEditors);
+    document.addEventListener('click', function (ev) {
+      var link = ev.target.closest('a[data-loc]');
+      if (link) flushEditors();
+    }, true);
 
     pickAll.addEventListener('change', function () {
       shown().forEach(function (tr) {
@@ -751,8 +781,8 @@
     // saved decisions -- so "where is there work left" is answerable without visiting
     // all eight.
     function paintLocaleCounts() {
-      Array.prototype.forEach.call(document.querySelectorAll('[data-loc-flag]'), function (el) {
-        var lc = el.getAttribute('data-loc-flag');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
+        var lc = el.getAttribute('data-loc-count');
         var n = 0;
         try {
           var raw = JSON.parse(localStorage.getItem('cel-desk-' + lc) || '{}') || {};
