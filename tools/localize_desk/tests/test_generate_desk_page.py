@@ -121,19 +121,57 @@ class TestRenderedPage:
         # Desk rules belong in dashboard.DESK_CSS, not in a per-page <style>.
         assert "<style>" not in page
 
-    def test_queue_is_add_only(self, page):
+    def test_tray_assignment_is_not_a_toggle(self, page):
         """The safety property the whole flow rests on.
 
         A toggle survives five clicks (odd -> still queued) but not four, and a
         double-click is the commonest mis-click there is -- it would have silently
-        un-queued the row. Adding is idempotent under any number of clicks.
+        un-queued the row. setTray() assigns; it never flips.
         """
-        assert "s.queued = true;" in page
-        assert "s.queued = !s.queued" not in page
+        assert "if (tray) s.tray = tray; else delete s.tray;" in page
+        assert "s.tray = !s.tray" not in page
+        assert "!s.queued" not in page  # the old two-boolean model is gone
 
-    def test_queued_row_disables_both_spending_paths(self, page):
-        assert "bQueue.disabled = !!s.queued;" in page
-        assert "bApprove.disabled = !!s.queued;" in page
+    def test_a_row_in_a_tray_cannot_be_re_added_to_it(self, page):
+        assert "bQueue.disabled = s.tray === 'draft';" in page
+        assert "bApprove.disabled = s.tray === 'csv';" in page
+
+    def test_trays_are_mutually_exclusive_by_construction(self, page):
+        """One `tray` field, not two booleans.
+
+        The contradictory state (queued AND approved) is unrepresentable, so no
+        code path has to resolve it and none can forget to.
+        """
+        assert "setTray(uid, 'csv'" in page
+        assert "setTray(uid, 'draft'" in page
+        # no separate approved/queued flags anywhere
+        assert "s.approved" not in page
+
+    def test_editing_counts_as_approving(self, page):
+        # Typing the wording you want IS the decision; a follow-up Approve click
+        # could only ever be "yes".
+        assert "setTray(uid, 'csv', 'edit-approve');" in page
+
+    def test_bulk_actions_exist_for_both_trays(self, page):
+        assert "bulk('csv', 'approve')" in page
+        assert "bulk('draft', 'queue')" in page
+        assert 'id="bulk-approve"' in page
+        assert 'id="bulk-draft"' in page
+
+    def test_select_all_acts_on_what_is_shown_not_everything(self, page):
+        # Selecting "all" while a filter is active must not silently take the
+        # 900 rows the reviewer cannot see.
+        assert "shown().forEach(function (tr) {" in page
+
+    def test_history_is_recorded_and_capped(self, page):
+        assert "function note(action, uid, from, to)" in page
+        assert "LOG_CAP" in page
+        assert "hist.slice(hist.length - LOG_CAP)" in page
+
+    def test_history_is_reachable_but_not_rendered(self, page):
+        assert "window.deskLog = function" in page
+        # It is a console affordance, not UI: nothing in the page shows it.
+        assert "deskLog()" not in page[:page.index("<script>")]
 
     def test_rtl_is_flagged_to_the_row_builder(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={"ar": {"word_to": "مرحبا"}})])

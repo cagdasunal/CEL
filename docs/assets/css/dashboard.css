@@ -1033,14 +1033,19 @@
 
   /* Locale index cards */
   .desk-locales { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 18px 0 0; }
+  /* The card is a container, not a link: it holds a link AND an Undo button, and a
+     button inside an anchor is invalid and unreachable by keyboard. Only the title
+     is the link, so the whole card is not one giant tap target that swallows Undo. */
   .desk-locale-card {
-    display: block; padding: 18px; text-decoration: none; color: inherit;
+    display: block; padding: 18px; color: inherit;
     background: var(--panel); border: 1px solid var(--border);
     border-radius: var(--radius); transition: border-color 120ms ease, background 120ms ease;
   }
   .desk-locale-card:hover { border-color: var(--accent); background: var(--stripe); }
-  .desk-locale-card:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
-  .desk-locale-name { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+  .desk-locale-open { text-decoration: none; color: inherit; }
+  .desk-locale-open:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); border-radius: var(--radius-sm); }
+  .desk-locale-open:hover .desk-locale-name { color: var(--accent); }
+  .desk-locale-name { display: inline-block; margin: 0; font-size: var(--fs-lg); font-weight: 600; }
   .desk-locale-sub { margin: 2px 0 12px; font-size: var(--fs-sm); color: var(--muted); }
   .desk-meter { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
   .desk-meter-fill { height: 100%; background: var(--accent); border-radius: 999px; }
@@ -1091,18 +1096,48 @@
   }
   .desk-edit:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
 
-  /* Sticky footer -- unsaved decisions + queue */
+  /* Selection */
+  .desk-col-pick { width: 1%; }
+  .desk-pick { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; margin: 2px 0 0; }
+  .desk-row.is-picked > td { background: rgba(93,96,238,0.07); }
+
+  /* Sticky action bar. Two zones: the selection you are acting on now (top, only
+     while something is selected) and the trays you have filled (bottom, whenever
+     either is non-empty). Both can be visible at once -- they answer different
+     questions ("what happens if I click Approve" vs "what is waiting to be sent"). */
   .desk-savebar {
     position: sticky; bottom: 0; z-index: 20;
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    margin-top: 18px; padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 0;
+    margin-top: 18px;
     background: rgba(241,234,216,0.94);
     -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
     border: 1px solid var(--border-strong); border-radius: var(--radius);
+    box-shadow: 0 -6px 24px rgba(55,51,44,0.08);
   }
   .desk-savebar[hidden] { display: none; }
+  .desk-bar-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 11px 16px;
+  }
+  .desk-bar-row + .desk-bar-row { border-top: 1px solid var(--border); }
+  .desk-bar-row[hidden] { display: none; }
   .desk-savebar-text { margin: 0; font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+  .desk-savebar-text strong { font-weight: 600; }
   .desk-savebar-spacer { flex: 1 1 auto; }
+
+  /* Tray chips -- also used on the locale index */
+  .desk-tray {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 3px 11px 3px 9px; border-radius: 999px;
+    font-size: var(--fs-sm); font-weight: 600; text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .desk-tray-count { font-variant-numeric: tabular-nums; }
+  .desk-tray-draft { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
+  .desk-tray-csv   { background: rgba(29,107,58,0.13);  color: var(--ok);   border-color: rgba(29,107,58,0.3); }
+  .desk-tray-none  { background: var(--stripe); color: var(--faint); }
+  a.desk-tray:hover { border-color: currentColor; }
+  .desk-trays { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
   .desk-status { min-height: 18px; font-size: var(--fs-md); color: var(--muted); }
   .desk-status.is-ok { color: var(--ok); }
   .desk-status.is-error { color: var(--err); }

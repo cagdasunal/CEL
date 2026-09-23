@@ -8,35 +8,51 @@ DESIGN
 ------
 Nothing here invents chrome. The page is `render_admin_open("localization")` +
 `.dashboard-shell`, the stylesheet is the generated `/assets/css/dashboard.css`, the
-"How this works" popup is the `.cpw-overlay` / `.cpw-modal` component the account
-menu already uses, and the buttons follow the hierarchy that modal established:
-exactly one filled indigo pill for the primary action, ghost pills for the rest,
-0.5 opacity when disabled. Desk-specific rules live in `dashboard.DESK_CSS` and
-resolve entirely to existing :root tokens -- no new colour, radius or type size.
+popups are the `.cpw-overlay` / `.cpw-modal` component the account menu already uses,
+and the buttons follow the hierarchy that modal established: one filled indigo pill
+for the primary action, ghost pills for the rest, 0.5 opacity when disabled.
+Desk-specific rules live in `dashboard.DESK_CSS` (monorepo SSOT -- this repo's
+`tools/dashboard.py` is a vendored copy, see rules/dashboard-deploy.md) and resolve
+entirely to existing :root tokens: no new colour, radius or type size.
 
-PROCESS (why the buttons are shaped this way)
----------------------------------------------
-Each unit carries one review state per locale:
+THE MODEL: ONE DECISION PER ROW, TWO DESTINATIONS
+-------------------------------------------------
+A row is in exactly one of three states:
 
-    unreviewed -> approved   (keep what Weglot serves; idempotent)
-               -> edited     (reviewer supplies the text; idempotent)
-               -> flagged    (needs a decision later; toggle)
-               -> queued     (wants a fresh machine draft; add-only)
+    (nothing yet)  --approve / edit-->  tray "csv"    --> Weglot import CSV
+                   --re-translate --->  tray "draft"  --> Gemini batch, comes back for review
 
-`queued` is deliberately a SET MEMBERSHIP, not a job. Clicking "Re-translate" five
-times by accident queues one unit, five times over, which is one unit -- there is
-no in-flight window to protect and nothing is spent at click time. Cost is incurred
-only at the separate, explicit batch approval, which names the count and the
-estimate before anything is sent. That is the whole reason the flow is
-queue-then-approve rather than fire-on-click.
+The two trays are NOT two shopping baskets competing for the same item. They are the
+two ways a row can LEAVE this screen, and they are mutually exclusive: approving a
+queued row takes it out of the draft tray, queueing an approved row takes it out of
+the CSV tray. That is why there is one tray field rather than two booleans -- the
+data model cannot represent the contradictory state, so no code has to handle it.
 
-Decisions apply instantly and locally (localStorage, per locale) so a reviewer can
-move through a few hundred rows without a network round trip per keystroke. The
-sticky footer shows how many decisions are unsaved.
+Editing implies approval. A reviewer who has typed the wording they want has made the
+decision; making them type it and then also click Approve is a second click that can
+only ever be "yes".
 
-NOT WIRED YET (stated in the UI, not hidden): pushing decisions back to the repo,
-and the batch submission itself. Those arrive with the Gemini phase; the desk is
-built first so the interaction can be judged before any spend exists.
+Each tray is sent separately and each needs its own confirmation, which is where cost
+and irreversibility live:
+  - the draft tray is submitted as ONE Gemini batch (50% cheaper than per-row calls,
+    and one shared cached prompt prefix across the locale);
+  - the CSV tray is rendered to a Weglot import file.
+Neither is wired yet -- the desk is built first so the interaction can be judged
+before any spend exists. The UI says so rather than pretending.
+
+WHY ADDING TO A TRAY IS NOT A TOGGLE
+------------------------------------
+A toggle survives five clicks (odd -> still queued) but NOT four, and a double-click
+is the commonest mis-click there is: it would have silently undone itself while
+looking like it did nothing. Setting a tray is idempotent under any number of clicks.
+Taking something back out is deliberate, from the tray screen, where the reviewer can
+see what they are removing.
+
+HISTORY
+-------
+Every state change appends to a capped local log (`cel-desk-log-<locale>`), readable
+from the console with `deskLog()`. It is not surfaced in the UI -- it exists so that
+"it did something strange" can be answered later.
 """
 from __future__ import annotations
 
@@ -62,7 +78,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 UNITS_DIR = REPO_ROOT / "data" / "localize" / "units"
 OUT_ROOT = EXTERNAL_REPO_ROOT / "admin" / "localization"
 
-# Locale code -> (English name, endonym, dir). Codes are the ones the unit files
+# Locale code -> (English name, endonym, direction). Codes are the ones the unit files
 # carry (`pt`, not `pt-BR`) so the desk and the data cannot drift apart.
 LOCALES = [
     ("de", "German", "Deutsch", "ltr"),
@@ -86,9 +102,9 @@ PAGE_LABELS = {
 def load_units() -> list[dict]:
     """Merge the per-page unit files into one list, de-duplicated by unit_id.
 
-    A unit that appears on several pages is ONE reviewable thing -- it is one
-    Weglot translation unit, and approving it approves it everywhere. The page
-    list is unioned so the page filter still finds it from either page.
+    A unit that appears on several pages is ONE reviewable thing -- it is one Weglot
+    translation unit, and approving it approves it everywhere. The page list is
+    unioned so the page filter still finds it from either page.
     """
     by_id: dict[str, dict] = {}
     for path in sorted(UNITS_DIR.glob("*.json")):
@@ -155,43 +171,65 @@ HOW_MODAL = """\
       <h2 class="cpw-title" id="how-title">How this works</h2>
       <div class="desk-modal-body">
         <h3>What you are looking at</h3>
-        <p>Every row is one translation unit &mdash; a single string Weglot serves on
-        the live site. The left column is the English source, the right column is what
-        visitors in this language see today. All of it is machine translation.</p>
+        <p>Every row is one translation unit &mdash; a single string Weglot serves on the
+        live site. The left column is the English source, the right is what visitors in
+        this language see today. All of it is machine translation.</p>
 
-        <h3>The four decisions</h3>
+        <h3>Every row leaves in one of two directions</h3>
         <ul>
-          <li><strong>Approve</strong> &mdash; the current text is fine. Nothing is sent
-          to Weglot; approving simply records that a human has read it.</li>
-          <li><strong>Edit</strong> &mdash; type the wording you want. Your text wins over
-          everything else.</li>
-          <li><strong>Flag</strong> &mdash; something is wrong but you do not want to fix
-          it now. Flagged rows stay easy to find.</li>
-          <li><strong>Re-translate</strong> &mdash; add the row to the queue for a fresh
-          machine draft. The button then reads <em>Queued</em> and stops responding;
-          take it back out from <em>Review queue</em>.</li>
+          <li><strong>Approve</strong> &mdash; the wording is right. The row joins the
+          <em>ready for CSV</em> tray, which becomes the Weglot import file.</li>
+          <li><strong>Edit</strong> &mdash; type the wording you want. Saving counts as
+          approving, so the row joins the same tray with your text instead.</li>
+          <li><strong>Re-translate</strong> &mdash; the wording is wrong and you would
+          like the machine to try again. The row joins the <em>re-translate</em> tray.</li>
         </ul>
+        <p>A row can only be in one tray. Approving something you had queued takes it
+        out of the re-translate tray, and vice versa &mdash; you never have to
+        remember to undo the other one.</p>
 
-        <h3>Why Re-translate does not do anything immediately</h3>
-        <p>It adds the row to a queue and nothing more. Clicking it repeatedly cannot
-        start five jobs or spend five times &mdash; a row is either in the queue or it is
-        not, and clicking again only ever adds, so a stray double-click cannot quietly
-        undo itself either. Removing is done from <em>Review queue</em>, where you can see
-        what you are removing. The queue is sent as one batch, and only after a separate
-        confirmation that shows you how many rows and roughly what it costs.</p>
+        <h3>Working in bulk</h3>
+        <p>Tick the box on any row, or the box in the header to take everything
+        currently shown. A bar appears at the bottom with the same two actions applied
+        to the whole selection. Filter first &mdash; <em>Show: Needs review</em> plus a
+        search term, then select all &mdash; and a few hundred rows go quickly.</p>
+
+        <h3>The trays are sent separately</h3>
+        <p>Nothing leaves this screen on its own. Each tray has its own review screen
+        where you can take rows back out, and its own confirmation. The re-translate
+        tray goes to the machine as one batch; the CSV tray becomes a file you import
+        into Weglot. Clicking a tray button repeatedly cannot send anything twice.</p>
 
         <h3>Your decisions are kept in this browser</h3>
-        <p>They apply instantly and survive a reload. Saving them back to the repository,
-        and sending the queue, are not wired up yet &mdash; the desk is being built before
-        the machine translation is connected, so the review flow can be judged first.</p>
+        <p>They apply instantly and survive a reload. Saving them back to the
+        repository, sending the batch and building the CSV are not wired up yet &mdash;
+        the desk is being built before the machine translation is connected, so the
+        review flow can be judged first.</p>
 
         <h3>Keyboard</h3>
         <p><code>J</code> / <code>K</code> move between rows, <code>A</code> approves,
-        <code>F</code> flags, <code>R</code> queues, <code>E</code> edits,
-        <code>Esc</code> closes this box.</p>
+        <code>R</code> queues a re-translation, <code>E</code> edits, <code>X</code>
+        ticks the box, <code>Esc</code> closes this box.</p>
       </div>
       <div class="cpw-actions">
         <button type="button" class="cpw-btn cpw-save" id="how-close">Got it</button>
+      </div>
+    </div>
+  </div>
+"""
+
+TRAY_MODAL = """\
+  <div class="cpw-overlay" id="tray-overlay" hidden>
+    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="tray-title">
+      <h2 class="cpw-title" id="tray-title"></h2>
+      <div class="desk-modal-body">
+        <p id="tray-summary"></p>
+        <ul class="desk-queue-list" id="tray-list"></ul>
+        <p class="desk-notice" id="tray-notice"></p>
+      </div>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="tray-empty">Empty this tray</button>
+        <button type="button" class="cpw-btn cpw-save" id="tray-close">Close</button>
       </div>
     </div>
   </div>
@@ -226,10 +264,12 @@ def render_index(units: list[dict]) -> str:
     for code, name, endonym, _dir in LOCALES:
         have = sum(1 for u in units if (u.get("current") or {}).get(code))
         parts.append(
-            f'        <a class="desk-locale-card" href="/admin/localization/{code}/" '
-            f'data-locale="{code}" data-total="{have}">'
+            f'        <div class="desk-locale-card" data-locale="{code}" data-total="{have}">'
         )
-        parts.append(f'          <p class="desk-locale-name">{escape(name)}</p>')
+        parts.append(
+            f'          <a class="desk-locale-open" href="/admin/localization/{code}/">'
+            f'<span class="desk-locale-name">{escape(name)}</span></a>'
+        )
         parts.append(
             f'          <p class="desk-locale-sub"><bdi>{escape(endonym)}</bdi> '
             f'&middot; <span class="mono">{code}</span></p>'
@@ -240,12 +280,13 @@ def render_index(units: list[dict]) -> str:
         parts.append(
             f'          <p class="desk-locale-stat">{have} units &mdash; not started</p>'
         )
-        parts.append("        </a>")
+        parts.append('          <div class="desk-trays"></div>')
+        parts.append("        </div>")
     parts.append("      </div>")
 
     parts.append(
         '      <p class="subtle">Nothing on these pages writes to the live site. '
-        "Approving records a human read; it does not re-publish anything.</p>"
+        "Approving records a decision; it does not re-publish anything.</p>"
     )
     parts.append("    </main>")
     parts.append("  </div>")
@@ -257,30 +298,68 @@ def render_index(units: list[dict]) -> str:
 
 
 def _index_js() -> str:
-    """Fill each card's meter from that locale's saved review progress.
+    """Fill each card's progress and tray chips from that locale's saved decisions.
 
-    The server cannot know this -- decisions live in the reviewer's browser -- so the
-    card ships with the honest static number and this upgrades it in place. Without
-    it the meter showed translation COVERAGE, which is 100% for every locale because
-    Weglot machine-translates everything, i.e. a full bar that means nothing.
+    The server cannot know any of this -- decisions live in the reviewer's browser --
+    so the card ships with the honest static number and this upgrades it in place.
+    Without it the meter showed translation COVERAGE, which is 100% for every locale
+    because Weglot machine-translates everything: a full bar that means nothing.
+
+    The chips link straight into the matching filter, and "undo" empties that tray for
+    that locale, so the index is a place to fix a mistake and not only to read one.
     """
     return """\
   <script>
   (function () {
     'use strict';
+    function read(code) {
+      try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
+      catch (e) { return {}; }
+    }
+    function chip(cls, label, href) {
+      var a = document.createElement(href ? 'a' : 'span');
+      a.className = 'desk-tray ' + cls;
+      if (href) a.href = href;
+      a.textContent = label;
+      return a;
+    }
     Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), function (card) {
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
-      var done = 0;
-      try {
-        var raw = JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {};
-        for (var k in raw) { if (raw[k] && (raw[k].approved || raw[k].text != null)) done++; }
-      } catch (e) { return; }
+      var st = read(code);
+      var csv = 0, draft = 0;
+      for (var k in st) {
+        if (!st[k]) continue;
+        if (st[k].tray === 'csv') csv++;
+        else if (st[k].tray === 'draft') draft++;
+      }
+      var done = csv + draft;
       var pct = total ? Math.round(100 * done / total) : 0;
       card.querySelector('.desk-meter-fill').style.width = pct + '%';
       card.querySelector('.desk-locale-stat').textContent =
-        done ? (done + ' of ' + total + ' reviewed (' + pct + '%)')
+        done ? (done + ' of ' + total + ' decided (' + pct + '%)')
              : (total + ' units — not started');
+
+      var trays = card.querySelector('.desk-trays');
+      trays.textContent = '';
+      var base = '/admin/localization/' + code + '/';
+      if (!csv && !draft) {
+        trays.appendChild(chip('desk-tray-none', 'nothing queued', null));
+        return;
+      }
+      if (csv) trays.appendChild(chip('desk-tray-csv', csv + ' ready for CSV', base + '?show=csv'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', draft + ' to re-translate', base + '?show=draft'));
+
+      var undo = document.createElement('button');
+      undo.type = 'button';
+      undo.className = 'desk-btn';
+      undo.textContent = 'Undo all';
+      undo.addEventListener('click', function () {
+        if (!window.confirm('Clear every decision recorded for ' + code + ' in this browser?')) return;
+        try { localStorage.removeItem('cel-desk-' + code); } catch (e) {}
+        location.reload();
+      });
+      trays.appendChild(undo);
     });
   })();
   </script>
@@ -318,14 +397,14 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('          <select class="desk-select" id="f-state">')
     parts.append('            <option value="todo">Needs review</option>')
     parts.append('            <option value="">Everything</option>')
-    parts.append('            <option value="approved">Approved</option>')
-    parts.append('            <option value="edited">Edited</option>')
-    parts.append('            <option value="flagged">Flagged</option>')
-    parts.append('            <option value="queued">Queued</option>')
+    parts.append('            <option value="csv">Ready for CSV</option>')
+    parts.append('            <option value="draft">To re-translate</option>')
+    parts.append('            <option value="edited">Edited by me</option>')
     parts.append("          </select>")
     parts.append("        </label>")
     parts.append('        <label class="desk-field">Search')
-    parts.append('          <input class="desk-select" id="f-q" type="search" placeholder="source or translation" autocomplete="off">')
+    parts.append('          <input class="desk-select" id="f-q" type="search" '
+                 'placeholder="source or translation" autocomplete="off">')
     parts.append("        </label>")
     parts.append('        <span class="desk-toolbar-spacer"></span>')
     parts.append('        <button type="button" class="desk-btn" id="how-open">How this works</button>')
@@ -337,6 +416,9 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append('      <div class="scroll-x">')
     parts.append('        <table class="doc-table desk-table">')
     parts.append("          <thead><tr>")
+    parts.append('            <th scope="col" class="desk-col-pick">'
+                 '<input type="checkbox" class="desk-pick" id="pick-all" '
+                 'aria-label="Select every row shown"></th>')
     parts.append('            <th scope="col">English source</th>')
     parts.append(f'            <th scope="col">{escape(name)} (live today)</th>')
     parts.append('            <th scope="col" class="desk-col-state">State</th>')
@@ -344,29 +426,34 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     parts.append("          </tr></thead>")
     # Rows are built in the browser from units.json, not baked in here. Server-rendering
     # 990 rows x 8 locales produced 11 MB of HTML that git had to store again on EVERY
-    # regeneration; the same content as JSON is ~300 KB per locale and the page shell
-    # stays ~20 KB. Nothing about the interaction changes -- paint()/applyFilters() run
-    # over the same DOM either way.
+    # regeneration; the same content as JSON is ~292 KB per locale and the page shell
+    # stays ~31 KB.
     parts.append('          <tbody id="desk-body"></tbody>')
-
-    parts.append("          </tbody>")
     parts.append("        </table>")
     parts.append('        <p class="empty" id="no-rows" hidden>Nothing matches these filters.</p>')
     parts.append("      </div>")
     parts.append("    </main>")
 
-    # Sticky footer
+    # Sticky two-zone action bar
     parts.append('    <div class="desk-savebar" id="savebar" hidden>')
-    parts.append('      <p class="desk-savebar-text" id="savebar-text"></p>')
-    parts.append('      <span class="desk-savebar-spacer"></span>')
-    parts.append('      <span class="desk-status" id="savebar-status" role="status"></span>')
-    parts.append('      <button type="button" class="desk-btn" id="btn-reset">Discard</button>')
-    parts.append('      <button type="button" class="desk-btn is-primary" id="btn-queue">Review queue</button>')
+    parts.append('      <div class="desk-bar-row" id="bar-select" hidden>')
+    parts.append('        <p class="desk-savebar-text"><strong id="sel-count">0</strong> selected</p>')
+    parts.append('        <span class="desk-savebar-spacer"></span>')
+    parts.append('        <button type="button" class="desk-btn" id="bulk-clear">Clear selection</button>')
+    parts.append('        <button type="button" class="desk-btn" id="bulk-draft">Re-translate these</button>')
+    parts.append('        <button type="button" class="desk-btn is-primary" id="bulk-approve">Approve these</button>')
+    parts.append("      </div>")
+    parts.append('      <div class="desk-bar-row" id="bar-trays" hidden>')
+    parts.append('        <p class="desk-savebar-text" id="tray-line"></p>')
+    parts.append('        <span class="desk-savebar-spacer"></span>')
+    parts.append('        <button type="button" class="desk-btn" id="open-draft">Review re-translate tray</button>')
+    parts.append('        <button type="button" class="desk-btn" id="open-csv">Review CSV tray</button>')
+    parts.append("      </div>")
     parts.append("    </div>")
 
     parts.append("  </div>")
     parts.append(HOW_MODAL)
-    parts.append(_queue_modal())
+    parts.append(TRAY_MODAL)
     parts.append(_desk_js(code, direction == "rtl"))
     parts.append(render_admin_close())
     parts.append("</body>")
@@ -374,46 +461,75 @@ def render_locale(code: str, name: str, endonym: str, direction: str,
     return "\n".join(parts)
 
 
-def _queue_modal() -> str:
-    return """\
-  <div class="cpw-overlay" id="q-overlay" hidden>
-    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="q-title">
-      <h2 class="cpw-title" id="q-title">Queued for re-translation</h2>
-      <div class="desk-modal-body">
-        <p id="q-summary"></p>
-        <ul class="desk-queue-list" id="q-list"></ul>
-        <p class="desk-notice">Sending is not connected yet. The queue is kept so the
-        review flow works end to end first; the batch goes out once the Gemini step is
-        wired, and it will ask you to confirm the count and the cost before spending
-        anything.</p>
-      </div>
-      <div class="cpw-actions">
-        <button type="button" class="cpw-btn cpw-cancel" id="q-clear">Empty the queue</button>
-        <button type="button" class="cpw-btn cpw-save" id="q-close">Close</button>
-      </div>
-    </div>
-  </div>
-"""
-
-
 def _desk_js(code: str, rtl: bool) -> str:
-    """Per-locale desk behaviour. IIFE, no globals, no framework."""
+    """Per-locale desk behaviour. IIFE, no globals but the debug hook, no framework."""
     return """\
   <script>
   (function () {
     'use strict';
-    var KEY = 'cel-desk-__CODE__';
+    var CODE = '__CODE__';
+    var KEY = 'cel-desk-' + CODE;
+    var LOGKEY = 'cel-desk-log-' + CODE;
+    var LOG_CAP = 4000;
+    var RTL = __RTL__;
+
     var state = {};
     try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+    var hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
 
     var body = document.getElementById('desk-body');
     var rows = [];
-    var RTL = __RTL__;
+    var picked = Object.create(null);
+    var lastPicked = -1;
+    var cursor = -1;
 
-    // Build the table from units.json with DOM APIs only -- never by assigning markup.
-    // The source and translation are arbitrary site copy, and textContent cannot be
-    // talked into executing any of it. (Spelling out the banned property here would
-    // trip the test that greps this script for it, which is the point of that test.)
+    var fPage = document.getElementById('f-page');
+    var fState = document.getElementById('f-state');
+    var fQ = document.getElementById('f-q');
+    var countLine = document.getElementById('count-line');
+    var noRows = document.getElementById('no-rows');
+    var savebar = document.getElementById('savebar');
+    var barSelect = document.getElementById('bar-select');
+    var barTrays = document.getElementById('bar-trays');
+    var trayLine = document.getElementById('tray-line');
+    var selCount = document.getElementById('sel-count');
+    var pickAll = document.getElementById('pick-all');
+
+    // ── Persistence + history ──────────────────────────────────────────
+    function persist() {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+    }
+    function note(action, uid, from, to) {
+      // Capped so a long session cannot fill the origin's storage quota and start
+      // throwing on the writes that actually matter.
+      hist.push({ t: new Date().toISOString(), a: action, u: uid || null, f: from || null, x: to || null });
+      if (hist.length > LOG_CAP) hist = hist.slice(hist.length - LOG_CAP);
+      try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); } catch (e) {}
+    }
+    function rec(uid) { return state[uid] || (state[uid] = {}); }
+
+    // Not surfaced in the UI on purpose; it exists so "it did something strange" can
+    // be answered after the fact.
+    window.deskLog = function (n) { return hist.slice(-(n || 200)); };
+    window.deskState = function () { return JSON.parse(JSON.stringify(state)); };
+
+    function setTray(uid, tray, why) {
+      var s = rec(uid);
+      var from = s.tray || null;
+      if (from === tray) return false;
+      // One tray field, not two booleans: the contradictory state (queued AND
+      // approved) cannot be represented, so nothing downstream has to resolve it.
+      if (tray) s.tray = tray; else delete s.tray;
+      note(why || ('tray:' + (tray || 'none')), uid, from, tray || null);
+      return true;
+    }
+
+    // ── Row construction ───────────────────────────────────────────────
+    // DOM APIs only -- never by assigning markup. The source and translation are
+    // arbitrary site copy, and textContent cannot be talked into executing any of it.
+    // (Spelling out the banned property here would trip the test that greps this
+    // script for it, which is the point of that test.)
     function buildRows(units) {
       var frag = document.createDocumentFragment();
       units.forEach(function (u) {
@@ -422,6 +538,15 @@ def _desk_js(code: str, rtl: bool) -> str:
         tr.setAttribute('data-uid', u.id);
         tr.setAttribute('data-pages', u.pages.join(' '));
         tr.setAttribute('data-q', (u.src + ' ' + u.tgt).toLowerCase());
+
+        var tdPick = document.createElement('td');
+        tdPick.className = 'desk-col-pick';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'desk-pick';
+        cb.setAttribute('data-pick', '');
+        cb.setAttribute('aria-label', 'Select this row');
+        tdPick.appendChild(cb);
 
         var tdSrc = document.createElement('td');
         tdSrc.className = 'desk-src';
@@ -447,7 +572,8 @@ def _desk_js(code: str, rtl: bool) -> str:
         ta.hidden = true;
         ta.setAttribute('aria-label', 'Your wording');
         ta.value = u.tgt;
-        tdTgt.appendChild(live); tdTgt.appendChild(ta);
+        tdTgt.appendChild(live);
+        tdTgt.appendChild(ta);
 
         var tdState = document.createElement('td');
         tdState.className = 'desk-col-state';
@@ -460,10 +586,9 @@ def _desk_js(code: str, rtl: bool) -> str:
         tdAct.className = 'desk-col-act';
         var acts = document.createElement('div');
         acts.className = 'desk-actions';
-        // Ghost, not filled. 990 rows means 990 buttons, and making each row's Approve
-        // a filled indigo pill turns the single-primary rule into wallpaper. Indigo here
-        // means STATE (this row is approved), set by .is-on in paint().
-        [['approve', 'Approve'], ['edit', 'Edit'], ['flag', 'Flag'], ['queue', 'Re-translate']]
+        // Ghost, not filled. 990 rows means 990 buttons, and a filled primary on each
+        // turns the single-primary rule into wallpaper. Indigo on a row means STATE.
+        [['approve', 'Approve'], ['edit', 'Edit'], ['queue', 'Re-translate']]
           .forEach(function (pair) {
             var b = document.createElement('button');
             b.type = 'button';
@@ -474,126 +599,116 @@ def _desk_js(code: str, rtl: bool) -> str:
           });
         tdAct.appendChild(acts);
 
-        tr.appendChild(tdSrc); tr.appendChild(tdTgt);
+        tr.appendChild(tdPick); tr.appendChild(tdSrc); tr.appendChild(tdTgt);
         tr.appendChild(tdState); tr.appendChild(tdAct);
         frag.appendChild(tr);
       });
       body.appendChild(frag);
       rows = Array.prototype.slice.call(body.querySelectorAll('.desk-row'));
     }
-    var fPage = document.getElementById('f-page');
-    var fState = document.getElementById('f-state');
-    var fQ = document.getElementById('f-q');
-    var countLine = document.getElementById('count-line');
-    var noRows = document.getElementById('no-rows');
-    var savebar = document.getElementById('savebar');
-    var savebarText = document.getElementById('savebar-text');
-    var cursor = -1;
 
-    function persist() {
-      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
-    }
-
-    function rec(uid) { return state[uid] || (state[uid] = {}); }
-
-    // ── Render one row from state ──────────────────────────────────────
+    // ── Painting ───────────────────────────────────────────────────────
     function paint(tr) {
       var uid = tr.getAttribute('data-uid');
       var s = state[uid] || {};
       var badge = tr.querySelector('.desk-state');
       var label = 'unreviewed', cls = 'badge-partial';
-      if (s.text != null) { label = 'edited'; cls = 'badge-ok'; }
-      else if (s.approved) { label = 'approved'; cls = 'badge-ok'; }
-      if (s.flagged) { label = label === 'unreviewed' ? 'flagged' : label + ' · flagged'; cls = 'badge-failed'; }
-      if (s.queued) { label = label === 'unreviewed' ? 'queued' : label + ' · queued'; }
+      if (s.tray === 'csv') { label = s.text != null ? 'edited' : 'approved'; cls = 'badge-ok'; }
+      else if (s.tray === 'draft') { label = 'to re-translate'; cls = 'badge-failed'; }
       badge.className = 'desk-state ' + cls;
       badge.textContent = label;
-      tr.classList.toggle('is-done', !!(s.approved || s.text != null));
+      tr.classList.toggle('is-done', s.tray === 'csv');
+      tr.classList.toggle('is-picked', !!picked[uid]);
 
       var bApprove = tr.querySelector('[data-act="approve"]');
-      var bFlag = tr.querySelector('[data-act="flag"]');
       var bQueue = tr.querySelector('[data-act="queue"]');
-      bApprove.classList.toggle('is-on', !!s.approved);
-      bApprove.textContent = s.approved ? 'Approved' : 'Approve';
-      bFlag.classList.toggle('is-flagged', !!s.flagged);
-      bQueue.classList.toggle('is-on', !!s.queued);
-      bQueue.textContent = s.queued ? 'Queued' : 'Re-translate';
-      // Nothing left to do on a queued row here: adding again is a no-op and removing
-      // belongs on the queue screen, so the control stops accepting clicks entirely.
-      bQueue.disabled = !!s.queued;
-      // A queued row is waiting on a machine draft, so approving it now would be
-      // approving text that is about to be replaced.
-      bApprove.disabled = !!s.queued;
+      bApprove.classList.toggle('is-on', s.tray === 'csv');
+      bApprove.textContent = s.tray === 'csv' ? 'Approved' : 'Approve';
+      bApprove.disabled = s.tray === 'csv';
+      bQueue.classList.toggle('is-on', s.tray === 'draft');
+      bQueue.textContent = s.tray === 'draft' ? 'Queued' : 'Re-translate';
+      // Nothing left to do on a row already in that tray: adding again is a no-op,
+      // and taking it back out belongs on the tray screen.
+      bQueue.disabled = s.tray === 'draft';
+
+      var cb = tr.querySelector('[data-pick]');
+      if (cb) cb.checked = !!picked[uid];
+
+      if (s.text != null) {
+        var live = tr.querySelector('.desk-live');
+        if (live.textContent !== s.text) live.textContent = s.text;
+      }
     }
 
-    function decided() {
-      var n = 0, q = 0;
+    function counts() {
+      var csv = 0, draft = 0;
       for (var k in state) {
-        var s = state[k];
-        if (!s) continue;
-        if (s.approved || s.text != null || s.flagged) n++;
-        if (s.queued) q++;
+        if (!state[k]) continue;
+        if (state[k].tray === 'csv') csv++;
+        else if (state[k].tray === 'draft') draft++;
       }
-      return { n: n, q: q };
+      return { csv: csv, draft: draft };
     }
+
+    function pickedIds() { return Object.keys(picked); }
 
     function paintBar() {
-      var d = decided();
-      if (!d.n && !d.q) { savebar.hidden = true; return; }
-      savebar.hidden = false;
+      var c = counts();
+      var n = pickedIds().length;
+      selCount.textContent = n;
+      barSelect.hidden = n === 0;
+      barTrays.hidden = (c.csv + c.draft) === 0;
+      savebar.hidden = barSelect.hidden && barTrays.hidden;
       var bits = [];
-      if (d.n) bits.push(d.n + (d.n === 1 ? ' decision' : ' decisions'));
-      if (d.q) bits.push(d.q + ' queued for re-translation');
-      savebarText.textContent = bits.join(' · ') + ' — kept in this browser';
-      document.getElementById('btn-queue').disabled = !d.q;
+      if (c.csv) bits.push(c.csv + ' ready for CSV');
+      if (c.draft) bits.push(c.draft + ' to re-translate');
+      trayLine.textContent = bits.join('  ·  ');
+      document.getElementById('open-csv').disabled = !c.csv;
+      document.getElementById('open-draft').disabled = !c.draft;
     }
 
     // ── Filters ────────────────────────────────────────────────────────
     function matches(tr) {
-      var uid = tr.getAttribute('data-uid');
-      var s = state[uid] || {};
+      var s = state[tr.getAttribute('data-uid')] || {};
       var p = fPage.value;
       if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
       var want = fState.value;
-      if (want === 'todo' && (s.approved || s.text != null)) return false;
-      if (want === 'approved' && !s.approved) return false;
+      if (want === 'todo' && s.tray) return false;
+      if (want === 'csv' && s.tray !== 'csv') return false;
+      if (want === 'draft' && s.tray !== 'draft') return false;
       if (want === 'edited' && s.text == null) return false;
-      if (want === 'flagged' && !s.flagged) return false;
-      if (want === 'queued' && !s.queued) return false;
       var q = fQ.value.trim().toLowerCase();
       if (q && tr.getAttribute('data-q').indexOf(q) === -1) return false;
       return true;
     }
 
+    function shown() { return rows.filter(function (tr) { return !tr.hidden; }); }
+
     function applyFilters() {
-      var shown = 0;
-      rows.forEach(function (tr) {
-        var ok = matches(tr);
-        tr.hidden = !ok;
-        if (ok) shown++;
-      });
-      noRows.hidden = shown !== 0;
-      countLine.textContent = shown + ' of ' + rows.length + ' units shown';
+      rows.forEach(function (tr) { tr.hidden = !matches(tr); });
+      var vis = shown();
+      noRows.hidden = vis.length !== 0;
+      countLine.textContent = vis.length + ' of ' + rows.length + ' units shown';
+      syncPickAll();
       if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
     }
 
+    function syncPickAll() {
+      var vis = shown();
+      var on = vis.filter(function (tr) { return picked[tr.getAttribute('data-uid')]; }).length;
+      pickAll.checked = vis.length > 0 && on === vis.length;
+      pickAll.indeterminate = on > 0 && on < vis.length;
+    }
+
     // ── Actions ────────────────────────────────────────────────────────
-    function act(tr, what) {
+    function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
-      var s = rec(uid);
       if (what === 'approve') {
-        if (s.queued) return;              // guarded in paint(), belt-and-braces here
-        s.approved = !s.approved;
-      } else if (what === 'flag') {
-        s.flagged = !s.flagged;
+        if (setTray(uid, 'csv', 'approve')) { persist(); paint(tr); }
       } else if (what === 'queue') {
-        // ADD, never toggle. A toggle survives five clicks (odd -> still queued) but
-        // NOT four, and a double-click is the most common mis-click there is -- it
-        // would have silently un-queued the row while looking like it did nothing.
-        // Adding is idempotent under any number of clicks; removal is deliberate,
-        // from the queue screen, where you can see what you are removing.
-        s.queued = true;
-        s.approved = false;
+        // ADD, never toggle -- see the module docstring. Idempotent under any number
+        // of clicks; removal is deliberate, from the tray screen.
+        if (setTray(uid, 'draft', 'queue')) { persist(); paint(tr); }
       } else if (what === 'edit') {
         var ta = tr.querySelector('.desk-edit');
         var live = tr.querySelector('.desk-live');
@@ -603,15 +718,37 @@ def _desk_js(code: str, rtl: bool) -> str:
         if (opening) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
         return;
       }
-      persist(); paint(tr); paintBar(); applyFilters();
     }
 
     body.addEventListener('click', function (ev) {
+      var cb = ev.target.closest('[data-pick]');
+      if (cb) {
+        var tr = cb.closest('.desk-row');
+        var i = rows.indexOf(tr);
+        if (ev.shiftKey && lastPicked >= 0) {
+          var a = Math.min(lastPicked, i), b = Math.max(lastPicked, i);
+          for (var k = a; k <= b; k++) {
+            if (rows[k].hidden) continue;
+            if (cb.checked) picked[rows[k].getAttribute('data-uid')] = 1;
+            else delete picked[rows[k].getAttribute('data-uid')];
+            paint(rows[k]);
+          }
+        } else {
+          if (cb.checked) picked[tr.getAttribute('data-uid')] = 1;
+          else delete picked[tr.getAttribute('data-uid')];
+          paint(tr);
+        }
+        lastPicked = i;
+        paintBar(); syncPickAll();
+        return;
+      }
       var btn = ev.target.closest('[data-act]');
       if (!btn) return;
-      var tr = btn.closest('.desk-row');
-      focusRow(rows.indexOf(tr));
-      act(tr, btn.getAttribute('data-act'));
+      var row = btn.closest('.desk-row');
+      focusRow(rows.indexOf(row));
+      apply(row, btn.getAttribute('data-act'));
+      paintBar();
+      applyFilters();
     });
 
     body.addEventListener('change', function (ev) {
@@ -621,9 +758,46 @@ def _desk_js(code: str, rtl: bool) -> str:
       var uid = tr.getAttribute('data-uid');
       var live = tr.querySelector('.desk-live');
       var val = ta.value.trim();
-      if (val && val !== live.textContent) { rec(uid).text = val; }
-      else { delete rec(uid).text; }
-      persist(); paint(tr); paintBar();
+      var s = rec(uid);
+      if (val && val !== live.textContent) {
+        s.text = val;
+        note('edit', uid, null, null);
+        // Typing the wording you want IS the decision; a separate Approve click
+        // afterwards could only ever be "yes".
+        setTray(uid, 'csv', 'edit-approve');
+      } else if (!val) {
+        delete s.text;
+        note('edit-cleared', uid, null, null);
+      }
+      persist(); paint(tr); paintBar(); applyFilters();
+    });
+
+    pickAll.addEventListener('change', function () {
+      shown().forEach(function (tr) {
+        var uid = tr.getAttribute('data-uid');
+        if (pickAll.checked) picked[uid] = 1; else delete picked[uid];
+        paint(tr);
+      });
+      paintBar(); syncPickAll();
+    });
+
+    function bulk(tray, why) {
+      var ids = pickedIds();
+      if (!ids.length) return;
+      var changed = 0;
+      ids.forEach(function (uid) { if (setTray(uid, tray, why)) changed++; });
+      note(why + ':bulk', null, String(ids.length), String(changed));
+      picked = Object.create(null);
+      lastPicked = -1;
+      persist();
+      rows.forEach(paint);
+      paintBar(); applyFilters();
+    }
+    document.getElementById('bulk-approve').addEventListener('click', function () { bulk('csv', 'approve'); });
+    document.getElementById('bulk-draft').addEventListener('click', function () { bulk('draft', 'queue'); });
+    document.getElementById('bulk-clear').addEventListener('click', function () {
+      picked = Object.create(null); lastPicked = -1;
+      rows.forEach(paint); paintBar(); syncPickAll();
     });
 
     // ── Keyboard ───────────────────────────────────────────────────────
@@ -651,36 +825,68 @@ def _desk_js(code: str, rtl: bool) -> str:
       if (k === 'j') { ev.preventDefault(); step(1); return; }
       if (k === 'k') { ev.preventDefault(); step(-1); return; }
       if (cursor < 0 || !rows[cursor]) return;
-      if (k === 'a') { ev.preventDefault(); act(rows[cursor], 'approve'); }
-      else if (k === 'f') { ev.preventDefault(); act(rows[cursor], 'flag'); }
-      else if (k === 'r') { ev.preventDefault(); act(rows[cursor], 'queue'); }
-      else if (k === 'e') { ev.preventDefault(); act(rows[cursor], 'edit'); }
+      var tr = rows[cursor];
+      if (k === 'a') { ev.preventDefault(); apply(tr, 'approve'); paintBar(); applyFilters(); }
+      else if (k === 'r') { ev.preventDefault(); apply(tr, 'queue'); paintBar(); applyFilters(); }
+      else if (k === 'e') { ev.preventDefault(); apply(tr, 'edit'); }
+      else if (k === 'x') {
+        ev.preventDefault();
+        var uid = tr.getAttribute('data-uid');
+        if (picked[uid]) delete picked[uid]; else picked[uid] = 1;
+        lastPicked = cursor;
+        paint(tr); paintBar(); syncPickAll();
+      }
     });
 
     // ── Overlays ───────────────────────────────────────────────────────
     var howOverlay = document.getElementById('how-overlay');
-    var qOverlay = document.getElementById('q-overlay');
-    function closeOverlays() { howOverlay.hidden = true; qOverlay.hidden = true; }
+    var trayOverlay = document.getElementById('tray-overlay');
+    var trayList = document.getElementById('tray-list');
+    var openTray = null;
+
+    function closeOverlays() { howOverlay.hidden = true; trayOverlay.hidden = true; }
     document.getElementById('how-open').addEventListener('click', function () {
       howOverlay.hidden = false;
       document.getElementById('how-close').focus();
     });
     document.getElementById('how-close').addEventListener('click', closeOverlays);
-    document.getElementById('q-close').addEventListener('click', closeOverlays);
-    [howOverlay, qOverlay].forEach(function (ov) {
+    document.getElementById('tray-close').addEventListener('click', closeOverlays);
+    [howOverlay, trayOverlay].forEach(function (ov) {
       ov.addEventListener('click', function (ev) { if (ev.target === ov) closeOverlays(); });
     });
 
-    var qList = document.getElementById('q-list');
+    var TRAY_COPY = {
+      draft: {
+        title: 'Re-translate tray',
+        one: 'unit is queued for a fresh machine draft.',
+        many: 'units are queued for a fresh machine draft.',
+        notice: 'Sending is not connected yet. When it is, this tray goes to the ' +
+                'machine as ONE batch — cheaper than a call per row, and it will ask ' +
+                'you to confirm the count and the estimated cost first.'
+      },
+      csv: {
+        title: 'CSV tray',
+        one: 'unit is approved and ready for the Weglot import file.',
+        many: 'units are approved and ready for the Weglot import file.',
+        notice: 'Building the file is not connected yet. When it is, this tray becomes ' +
+                'one Weglot import CSV, and you confirm before it is written. The ' +
+                'import into Weglot stays a manual step.'
+      }
+    };
 
-    function paintQueue() {
-      var d = decided();
-      document.getElementById('q-summary').textContent =
-        d.q + (d.q === 1 ? ' unit is' : ' units are') + ' queued for a fresh machine draft.';
-      qList.textContent = '';
+    function paintTray() {
+      if (!openTray) return;
+      var copy = TRAY_COPY[openTray];
+      var c = counts();
+      var n = openTray === 'csv' ? c.csv : c.draft;
+      document.getElementById('tray-title').textContent = copy.title;
+      document.getElementById('tray-summary').textContent =
+        n + ' ' + (n === 1 ? copy.one : copy.many);
+      document.getElementById('tray-notice').textContent = copy.notice;
+      trayList.textContent = '';
       rows.forEach(function (tr) {
         var uid = tr.getAttribute('data-uid');
-        if (!state[uid] || !state[uid].queued) return;
+        if (!state[uid] || state[uid].tray !== openTray) return;
         var li = document.createElement('li');
         li.className = 'desk-queue-item';
         var span = document.createElement('span');
@@ -691,31 +897,38 @@ def _desk_js(code: str, rtl: bool) -> str:
         rm.className = 'desk-btn';
         rm.textContent = 'Remove';
         rm.addEventListener('click', function () {
-          delete state[uid].queued;
-          persist(); paint(tr); paintBar(); applyFilters(); paintQueue();
+          setTray(uid, null, 'remove');
+          persist(); paint(tr); paintBar(); applyFilters(); paintTray();
         });
         li.appendChild(span); li.appendChild(rm);
-        qList.appendChild(li);
+        trayList.appendChild(li);
       });
+      if (!n) closeOverlays();
     }
 
-    document.getElementById('btn-queue').addEventListener('click', function () {
-      paintQueue();
-      qOverlay.hidden = false;
-      document.getElementById('q-close').focus();
-    });
-    document.getElementById('q-clear').addEventListener('click', function () {
-      for (var k in state) { if (state[k]) delete state[k].queued; }
-      persist(); rows.forEach(paint); paintBar(); applyFilters(); paintQueue(); closeOverlays();
-    });
-    document.getElementById('btn-reset').addEventListener('click', function () {
-      if (!window.confirm('Discard every decision recorded in this browser for this language?')) return;
-      state = {}; persist(); rows.forEach(paint); paintBar(); applyFilters();
+    function showTray(which) {
+      openTray = which;
+      paintTray();
+      trayOverlay.hidden = false;
+      document.getElementById('tray-close').focus();
+    }
+    document.getElementById('open-draft').addEventListener('click', function () { showTray('draft'); });
+    document.getElementById('open-csv').addEventListener('click', function () { showTray('csv'); });
+    document.getElementById('tray-empty').addEventListener('click', function () {
+      if (!openTray) return;
+      if (!window.confirm('Take every row out of the ' + TRAY_COPY[openTray].title + '?')) return;
+      var n = 0;
+      for (var k in state) {
+        if (state[k] && state[k].tray === openTray) { setTray(k, null, 'empty-tray'); n++; }
+      }
+      note('empty-tray', null, openTray, String(n));
+      persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
     });
 
     [fPage, fState].forEach(function (el) { el.addEventListener('change', applyFilters); });
     fQ.addEventListener('input', applyFilters);
 
+    // ── Boot ───────────────────────────────────────────────────────────
     fetch('units.json', { cache: 'no-cache' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -723,9 +936,13 @@ def _desk_js(code: str, rtl: bool) -> str:
       })
       .then(function (units) {
         buildRows(units);
+        // ?show= lets the locale index link straight into a tray.
+        var want = new URLSearchParams(location.search).get('show');
+        if (want && ['todo', 'csv', 'draft', 'edited', ''].indexOf(want) !== -1) fState.value = want;
         rows.forEach(paint);
         paintBar();
         applyFilters();
+        note('load', null, String(units.length), null);
       })
       .catch(function (err) {
         // Say so in the page. A desk that silently shows zero rows looks like
@@ -733,6 +950,7 @@ def _desk_js(code: str, rtl: bool) -> str:
         countLine.textContent = 'Could not load the units (' + err.message + ').';
         countLine.className = 'subtle desk-status is-error';
         noRows.hidden = true;
+        note('load-failed', null, err.message, null);
       });
   })();
   </script>
