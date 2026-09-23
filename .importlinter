@@ -27,3 +27,4 @@ forbidden_modules =
     tools.arabic_rtl
     tools.mailer
     tools.copywriter
+    tools.localize_desk

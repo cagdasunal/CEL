@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/assets/js/dashboard-config.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>French — Localization Desk — English College</title>
+  <meta name="description" content="Review the French machine translations served on the four Vancouver pages.">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+</head>
+<body>
+  <div class="shell-root">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/offers/" aria-label="English College">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="/admin/offers/">OFFERS</a>
+        <a class="shell-tab" href="/admin/images/">IMAGES</a>
+        <a class="shell-tab" href="/admin/docs/">DOCS</a>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab is-active">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem is-active" href="/admin/localization/">Localization Desk</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/translations/">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/log/">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/summaries/">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/files/">Files</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/housing/">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/courses/">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
+    </header>
+  <div class="dashboard-shell">
+<header class="dashboard-header"><div class="brand-text"><p class="eyebrow">LOCALIZATION DESK &middot; FRENCH</p><p class="subtitle"><bdi>Français</bdi> &mdash; 990 units. Decisions apply instantly and stay in this browser.</p></div></header>
+    <div class="controls">
+      <div class="desk-toolbar">
+        <label class="desk-field">Page
+          <select class="desk-select" id="f-page">
+            <option value="">All pages</option>
+            <option value="vancouver">Vancouver</option>
+            <option value="vs-toronto">Vancouver vs Toronto</option>
+            <option value="cost-of-studying-english">Cost of studying English</option>
+            <option value="how-long-to-learn-english">How long to learn English</option>
+          </select>
+        </label>
+        <label class="desk-field">Show
+          <select class="desk-select" id="f-state">
+            <option value="todo">Needs review</option>
+            <option value="">Everything</option>
+            <option value="approved">Approved</option>
+            <option value="edited">Edited</option>
+            <option value="flagged">Flagged</option>
+            <option value="queued">Queued</option>
+          </select>
+        </label>
+        <label class="desk-field">Search
+          <input class="desk-select" id="f-q" type="search" placeholder="source or translation" autocomplete="off">
+        </label>
+        <span class="desk-toolbar-spacer"></span>
+        <button type="button" class="desk-btn" id="how-open">How this works</button>
+      </div>
+      <p class="subtle" id="count-line"></p>
+    </div>
+    <main class="dashboard-main">
+      <div class="scroll-x">
+        <table class="doc-table desk-table">
+          <thead><tr>
+            <th scope="col">English source</th>
+            <th scope="col">French (live today)</th>
+            <th scope="col" class="desk-col-state">State</th>
+            <th scope="col" class="desk-col-act">Decision</th>
+          </tr></thead>
+          <tbody id="desk-body"></tbody>
+          </tbody>
+        </table>
+        <p class="empty" id="no-rows" hidden>Nothing matches these filters.</p>
+      </div>
+    </main>
+    <div class="desk-savebar" id="savebar" hidden>
+      <p class="desk-savebar-text" id="savebar-text"></p>
+      <span class="desk-savebar-spacer"></span>
+      <span class="desk-status" id="savebar-status" role="status"></span>
+      <button type="button" class="desk-btn" id="btn-reset">Discard</button>
+      <button type="button" class="desk-btn is-primary" id="btn-queue">Review queue</button>
+    </div>
+  </div>
+  <div class="cpw-overlay" id="how-overlay" hidden>
+    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="how-title">
+      <h2 class="cpw-title" id="how-title">How this works</h2>
+      <div class="desk-modal-body">
+        <h3>What you are looking at</h3>
+        <p>Every row is one translation unit &mdash; a single string Weglot serves on
+        the live site. The left column is the English source, the right column is what
+        visitors in this language see today. All of it is machine translation.</p>
+
+        <h3>The four decisions</h3>
+        <ul>
+          <li><strong>Approve</strong> &mdash; the current text is fine. Nothing is sent
+          to Weglot; approving simply records that a human has read it.</li>
+          <li><strong>Edit</strong> &mdash; type the wording you want. Your text wins over
+          everything else.</li>
+          <li><strong>Flag</strong> &mdash; something is wrong but you do not want to fix
+          it now. Flagged rows stay easy to find.</li>
+          <li><strong>Re-translate</strong> &mdash; add the row to the queue for a fresh
+          machine draft. The button then reads <em>Queued</em> and stops responding;
+          take it back out from <em>Review queue</em>.</li>
+        </ul>
+
+        <h3>Why Re-translate does not do anything immediately</h3>
+        <p>It adds the row to a queue and nothing more. Clicking it repeatedly cannot
+        start five jobs or spend five times &mdash; a row is either in the queue or it is
+        not, and clicking again only ever adds, so a stray double-click cannot quietly
+        undo itself either. Removing is done from <em>Review queue</em>, where you can see
+        what you are removing. The queue is sent as one batch, and only after a separate
+        confirmation that shows you how many rows and roughly what it costs.</p>
+
+        <h3>Your decisions are kept in this browser</h3>
+        <p>They apply instantly and survive a reload. Saving them back to the repository,
+        and sending the queue, are not wired up yet &mdash; the desk is being built before
+        the machine translation is connected, so the review flow can be judged first.</p>
+
+        <h3>Keyboard</h3>
+        <p><code>J</code> / <code>K</code> move between rows, <code>A</code> approves,
+        <code>F</code> flags, <code>R</code> queues, <code>E</code> edits,
+        <code>Esc</code> closes this box.</p>
+      </div>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-save" id="how-close">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cpw-overlay" id="q-overlay" hidden>
+    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="q-title">
+      <h2 class="cpw-title" id="q-title">Queued for re-translation</h2>
+      <div class="desk-modal-body">
+        <p id="q-summary"></p>
+        <ul class="desk-queue-list" id="q-list"></ul>
+        <p class="desk-notice">Sending is not connected yet. The queue is kept so the
+        review flow works end to end first; the batch goes out once the Gemini step is
+        wired, and it will ask you to confirm the count and the cost before spending
+        anything.</p>
+      </div>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="q-clear">Empty the queue</button>
+        <button type="button" class="cpw-btn cpw-save" id="q-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+    var KEY = 'cel-desk-fr';
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { state = {}; }
+
+    var body = document.getElementById('desk-body');
+    var rows = [];
+    var RTL = false;
+
+    // Build the table from units.json with DOM APIs only -- never by assigning markup.
+    // The source and translation are arbitrary site copy, and textContent cannot be
+    // talked into executing any of it. (Spelling out the banned property here would
+    // trip the test that greps this script for it, which is the point of that test.)
+    function buildRows(units) {
+      var frag = document.createDocumentFragment();
+      units.forEach(function (u) {
+        var tr = document.createElement('tr');
+        tr.className = 'desk-row';
+        tr.setAttribute('data-uid', u.id);
+        tr.setAttribute('data-pages', u.pages.join(' '));
+        tr.setAttribute('data-q', (u.src + ' ' + u.tgt).toLowerCase());
+
+        var tdSrc = document.createElement('td');
+        tdSrc.className = 'desk-src';
+        if (u.sec) {
+          var sec = document.createElement('span');
+          sec.className = 'desk-sec';
+          sec.textContent = u.sec;
+          tdSrc.appendChild(sec);
+        }
+        var srcText = document.createElement('span');
+        srcText.className = 'desk-srctext';
+        srcText.textContent = u.src;
+        tdSrc.appendChild(srcText);
+
+        var tdTgt = document.createElement('td');
+        tdTgt.className = 'desk-tgt';
+        if (RTL) tdTgt.setAttribute('dir', 'rtl');
+        var live = document.createElement('span');
+        live.className = 'desk-live';
+        live.textContent = u.tgt;
+        var ta = document.createElement('textarea');
+        ta.className = 'desk-edit';
+        ta.hidden = true;
+        ta.setAttribute('aria-label', 'Your wording');
+        ta.value = u.tgt;
+        tdTgt.appendChild(live); tdTgt.appendChild(ta);
+
+        var tdState = document.createElement('td');
+        tdState.className = 'desk-col-state';
+        var badge = document.createElement('span');
+        badge.className = 'desk-state badge-partial';
+        badge.textContent = 'unreviewed';
+        tdState.appendChild(badge);
+
+        var tdAct = document.createElement('td');
+        tdAct.className = 'desk-col-act';
+        var acts = document.createElement('div');
+        acts.className = 'desk-actions';
+        // Ghost, not filled. 990 rows means 990 buttons, and making each row's Approve
+        // a filled indigo pill turns the single-primary rule into wallpaper. Indigo here
+        // means STATE (this row is approved), set by .is-on in paint().
+        [['approve', 'Approve'], ['edit', 'Edit'], ['flag', 'Flag'], ['queue', 'Re-translate']]
+          .forEach(function (pair) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'desk-btn';
+            b.setAttribute('data-act', pair[0]);
+            b.textContent = pair[1];
+            acts.appendChild(b);
+          });
+        tdAct.appendChild(acts);
+
+        tr.appendChild(tdSrc); tr.appendChild(tdTgt);
+        tr.appendChild(tdState); tr.appendChild(tdAct);
+        frag.appendChild(tr);
+      });
+      body.appendChild(frag);
+      rows = Array.prototype.slice.call(body.querySelectorAll('.desk-row'));
+    }
+    var fPage = document.getElementById('f-page');
+    var fState = document.getElementById('f-state');
+    var fQ = document.getElementById('f-q');
+    var countLine = document.getElementById('count-line');
+    var noRows = document.getElementById('no-rows');
+    var savebar = document.getElementById('savebar');
+    var savebarText = document.getElementById('savebar-text');
+    var cursor = -1;
+
+    function persist() {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
+    }
+
+    function rec(uid) { return state[uid] || (state[uid] = {}); }
+
+    // ── Render one row from state ──────────────────────────────────────
+    function paint(tr) {
+      var uid = tr.getAttribute('data-uid');
+      var s = state[uid] || {};
+      var badge = tr.querySelector('.desk-state');
+      var label = 'unreviewed', cls = 'badge-partial';
+      if (s.text != null) { label = 'edited'; cls = 'badge-ok'; }
+      else if (s.approved) { label = 'approved'; cls = 'badge-ok'; }
+      if (s.flagged) { label = label === 'unreviewed' ? 'flagged' : label + ' · flagged'; cls = 'badge-failed'; }
+      if (s.queued) { label = label === 'unreviewed' ? 'queued' : label + ' · queued'; }
+      badge.className = 'desk-state ' + cls;
+      badge.textContent = label;
+      tr.classList.toggle('is-done', !!(s.approved || s.text != null));
+
+      var bApprove = tr.querySelector('[data-act="approve"]');
+      var bFlag = tr.querySelector('[data-act="flag"]');
+      var bQueue = tr.querySelector('[data-act="queue"]');
+      bApprove.classList.toggle('is-on', !!s.approved);
+      bApprove.textContent = s.approved ? 'Approved' : 'Approve';
+      bFlag.classList.toggle('is-flagged', !!s.flagged);
+      bQueue.classList.toggle('is-on', !!s.queued);
+      bQueue.textContent = s.queued ? 'Queued' : 'Re-translate';
+      // Nothing left to do on a queued row here: adding again is a no-op and removing
+      // belongs on the queue screen, so the control stops accepting clicks entirely.
+      bQueue.disabled = !!s.queued;
+      // A queued row is waiting on a machine draft, so approving it now would be
+      // approving text that is about to be replaced.
+      bApprove.disabled = !!s.queued;
+    }
+
+    function decided() {
+      var n = 0, q = 0;
+      for (var k in state) {
+        var s = state[k];
+        if (!s) continue;
+        if (s.approved || s.text != null || s.flagged) n++;
+        if (s.queued) q++;
+      }
+      return { n: n, q: q };
+    }
+
+    function paintBar() {
+      var d = decided();
+      if (!d.n && !d.q) { savebar.hidden = true; return; }
+      savebar.hidden = false;
+      var bits = [];
+      if (d.n) bits.push(d.n + (d.n === 1 ? ' decision' : ' decisions'));
+      if (d.q) bits.push(d.q + ' queued for re-translation');
+      savebarText.textContent = bits.join(' · ') + ' — kept in this browser';
+      document.getElementById('btn-queue').disabled = !d.q;
+    }
+
+    // ── Filters ────────────────────────────────────────────────────────
+    function matches(tr) {
+      var uid = tr.getAttribute('data-uid');
+      var s = state[uid] || {};
+      var p = fPage.value;
+      if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
+      var want = fState.value;
+      if (want === 'todo' && (s.approved || s.text != null)) return false;
+      if (want === 'approved' && !s.approved) return false;
+      if (want === 'edited' && s.text == null) return false;
+      if (want === 'flagged' && !s.flagged) return false;
+      if (want === 'queued' && !s.queued) return false;
+      var q = fQ.value.trim().toLowerCase();
+      if (q && tr.getAttribute('data-q').indexOf(q) === -1) return false;
+      return true;
+    }
+
+    function applyFilters() {
+      var shown = 0;
+      rows.forEach(function (tr) {
+        var ok = matches(tr);
+        tr.hidden = !ok;
+        if (ok) shown++;
+      });
+      noRows.hidden = shown !== 0;
+      countLine.textContent = shown + ' of ' + rows.length + ' units shown';
+      if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
+    }
+
+    // ── Actions ────────────────────────────────────────────────────────
+    function act(tr, what) {
+      var uid = tr.getAttribute('data-uid');
+      var s = rec(uid);
+      if (what === 'approve') {
+        if (s.queued) return;              // guarded in paint(), belt-and-braces here
+        s.approved = !s.approved;
+      } else if (what === 'flag') {
+        s.flagged = !s.flagged;
+      } else if (what === 'queue') {
+        // ADD, never toggle. A toggle survives five clicks (odd -> still queued) but
+        // NOT four, and a double-click is the most common mis-click there is -- it
+        // would have silently un-queued the row while looking like it did nothing.
+        // Adding is idempotent under any number of clicks; removal is deliberate,
+        // from the queue screen, where you can see what you are removing.
+        s.queued = true;
+        s.approved = false;
+      } else if (what === 'edit') {
+        var ta = tr.querySelector('.desk-edit');
+        var live = tr.querySelector('.desk-live');
+        var opening = ta.hidden;
+        ta.hidden = !opening;
+        live.hidden = opening;
+        if (opening) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+        return;
+      }
+      persist(); paint(tr); paintBar(); applyFilters();
+    }
+
+    body.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-act]');
+      if (!btn) return;
+      var tr = btn.closest('.desk-row');
+      focusRow(rows.indexOf(tr));
+      act(tr, btn.getAttribute('data-act'));
+    });
+
+    body.addEventListener('change', function (ev) {
+      var ta = ev.target.closest('.desk-edit');
+      if (!ta) return;
+      var tr = ta.closest('.desk-row');
+      var uid = tr.getAttribute('data-uid');
+      var live = tr.querySelector('.desk-live');
+      var val = ta.value.trim();
+      if (val && val !== live.textContent) { rec(uid).text = val; }
+      else { delete rec(uid).text; }
+      persist(); paint(tr); paintBar();
+    });
+
+    // ── Keyboard ───────────────────────────────────────────────────────
+    function focusRow(i) {
+      if (cursor >= 0 && rows[cursor]) rows[cursor].style.outline = '';
+      cursor = i;
+      if (i < 0 || !rows[i]) return;
+      rows[i].style.outline = '2px solid var(--accent)';
+      rows[i].scrollIntoView({ block: 'nearest' });
+    }
+    function step(dir) {
+      var i = cursor;
+      for (var n = 0; n < rows.length; n++) {
+        i += dir;
+        if (i < 0 || i >= rows.length) return;
+        if (!rows[i].hidden) { focusRow(i); return; }
+      }
+    }
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') { closeOverlays(); return; }
+      var t = ev.target.tagName;
+      if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
+      if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      var k = ev.key.toLowerCase();
+      if (k === 'j') { ev.preventDefault(); step(1); return; }
+      if (k === 'k') { ev.preventDefault(); step(-1); return; }
+      if (cursor < 0 || !rows[cursor]) return;
+      if (k === 'a') { ev.preventDefault(); act(rows[cursor], 'approve'); }
+      else if (k === 'f') { ev.preventDefault(); act(rows[cursor], 'flag'); }
+      else if (k === 'r') { ev.preventDefault(); act(rows[cursor], 'queue'); }
+      else if (k === 'e') { ev.preventDefault(); act(rows[cursor], 'edit'); }
+    });
+
+    // ── Overlays ───────────────────────────────────────────────────────
+    var howOverlay = document.getElementById('how-overlay');
+    var qOverlay = document.getElementById('q-overlay');
+    function closeOverlays() { howOverlay.hidden = true; qOverlay.hidden = true; }
+    document.getElementById('how-open').addEventListener('click', function () {
+      howOverlay.hidden = false;
+      document.getElementById('how-close').focus();
+    });
+    document.getElementById('how-close').addEventListener('click', closeOverlays);
+    document.getElementById('q-close').addEventListener('click', closeOverlays);
+    [howOverlay, qOverlay].forEach(function (ov) {
+      ov.addEventListener('click', function (ev) { if (ev.target === ov) closeOverlays(); });
+    });
+
+    var qList = document.getElementById('q-list');
+
+    function paintQueue() {
+      var d = decided();
+      document.getElementById('q-summary').textContent =
+        d.q + (d.q === 1 ? ' unit is' : ' units are') + ' queued for a fresh machine draft.';
+      qList.textContent = '';
+      rows.forEach(function (tr) {
+        var uid = tr.getAttribute('data-uid');
+        if (!state[uid] || !state[uid].queued) return;
+        var li = document.createElement('li');
+        li.className = 'desk-queue-item';
+        var span = document.createElement('span');
+        span.className = 'desk-queue-src';
+        span.textContent = tr.querySelector('.desk-srctext').textContent;
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'desk-btn';
+        rm.textContent = 'Remove';
+        rm.addEventListener('click', function () {
+          delete state[uid].queued;
+          persist(); paint(tr); paintBar(); applyFilters(); paintQueue();
+        });
+        li.appendChild(span); li.appendChild(rm);
+        qList.appendChild(li);
+      });
+    }
+
+    document.getElementById('btn-queue').addEventListener('click', function () {
+      paintQueue();
+      qOverlay.hidden = false;
+      document.getElementById('q-close').focus();
+    });
+    document.getElementById('q-clear').addEventListener('click', function () {
+      for (var k in state) { if (state[k]) delete state[k].queued; }
+      persist(); rows.forEach(paint); paintBar(); applyFilters(); paintQueue(); closeOverlays();
+    });
+    document.getElementById('btn-reset').addEventListener('click', function () {
+      if (!window.confirm('Discard every decision recorded in this browser for this language?')) return;
+      state = {}; persist(); rows.forEach(paint); paintBar(); applyFilters();
+    });
+
+    [fPage, fState].forEach(function (el) { el.addEventListener('change', applyFilters); });
+    fQ.addEventListener('input', applyFilters);
+
+    fetch('units.json', { cache: 'no-cache' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (units) {
+        buildRows(units);
+        rows.forEach(paint);
+        paintBar();
+        applyFilters();
+      })
+      .catch(function (err) {
+        // Say so in the page. A desk that silently shows zero rows looks like
+        // "nothing to review", which is the opposite of what has happened.
+        countLine.textContent = 'Could not load the units (' + err.message + ').';
+        countLine.className = 'subtle desk-status is-error';
+        noRows.hidden = true;
+      });
+  })();
+  </script>
+
+  <div class="cpw-overlay" id="cpw-overlay" hidden>
+    <form class="cpw-modal" id="cpw-form" autocomplete="off">
+      <h2 class="cpw-title">Change password</h2>
+      <div class="cpw-readonly">
+        <p class="cpw-field"><span class="cpw-k">First name</span><span class="cpw-v" id="cpw-first">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Last name</span><span class="cpw-v" id="cpw-last">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Email</span><span class="cpw-v" id="cpw-email">&mdash;</span></p>
+      </div>
+      <label class="cpw-label">Current password<input type="password" id="cpw-current" class="cpw-input" autocomplete="current-password" required></label>
+      <label class="cpw-label">New password<input type="password" id="cpw-new" class="cpw-input" autocomplete="new-password" required></label>
+      <label class="cpw-label">Confirm new password<input type="password" id="cpw-confirm" class="cpw-input" autocomplete="new-password" required></label>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="cpw-cancel">Cancel</button>
+        <button type="submit" class="cpw-btn cpw-save" id="cpw-save">Save</button>
+      </div>
+      <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+  </div>
+  <script>(function () {
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
+    var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+    var changePwBtn = document.getElementById('shell-change-pw');
+    if (currentUser && currentUser.email) {
+      setText('shell-user-name', currentUser.firstName || currentUser.email);
+      setText('shell-user-fullname', fullName(currentUser));
+      setText('shell-user-email', currentUser.email);
+      setText('cpw-first', currentUser.firstName || '—');
+      setText('cpw-last', currentUser.lastName || '—');
+      setText('cpw-email', currentUser.email);
+    } else if (changePwBtn) {
+      changePwBtn.style.display = 'none';
+    }
+
+    var logoutBtn = document.getElementById('shell-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', function () {
+      document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+      location.replace('/');
+    });
+
+    function sha256hex(str) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    function innerHash(pw) { return sha256hex(pw); }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+    function callProxy(payload) {
+      if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (resp) {
+          return resp.json().catch(function () { return {}; }).then(function (j) {
+            return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+          });
+        });
+    }
+
+    var overlay = document.getElementById('cpw-overlay');
+    var cpwForm = document.getElementById('cpw-form');
+    var cpwStatus = document.getElementById('cpw-status');
+    var cpwSave = document.getElementById('cpw-save');
+    if (changePwBtn && overlay && cpwForm) {
+      function closeModal() {
+        overlay.setAttribute('hidden', '');
+        cpwForm.reset();
+        cpwStatus.textContent = '';
+        cpwStatus.className = 'cpw-status';
+        cpwSave.disabled = false;
+      }
+      changePwBtn.addEventListener('click', function () {
+        var dd = document.getElementById('shell-user');
+        if (dd) dd.removeAttribute('open');
+        overlay.removeAttribute('hidden');
+        document.getElementById('cpw-current').focus();
+      });
+      document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+      cpwForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!currentUser || !currentUser.email) return;
+        var cur = document.getElementById('cpw-current').value;
+        var nw = document.getElementById('cpw-new').value;
+        var cf = document.getElementById('cpw-confirm').value;
+        if (!cur || !nw) return;
+        if (nw !== cf) {
+          cpwStatus.textContent = 'New passwords do not match.';
+          cpwStatus.className = 'cpw-status is-error';
+          return;
+        }
+        cpwSave.disabled = true;
+        cpwStatus.textContent = 'Saving…';
+        cpwStatus.className = 'cpw-status';
+        Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+          return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+        }).then(function (r) {
+          if (r.ok) {
+            cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+            cpwStatus.className = 'cpw-status is-ok';
+          } else {
+            cpwStatus.textContent = '✗ Current password is incorrect.';
+            cpwStatus.className = 'cpw-status is-error';
+            cpwSave.disabled = false;
+          }
+        }).catch(function () {
+          cpwStatus.textContent = '✗ Could not save right now. Please try again.';
+          cpwStatus.className = 'cpw-status is-error';
+          cpwSave.disabled = false;
+        });
+      });
+    }
+})();
+</script>
+</body>
+</html>

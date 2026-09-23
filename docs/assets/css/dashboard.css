@@ -1029,3 +1029,109 @@
     .docs-page { padding: 28px 16px 60px; }
     .docs-card { padding: 18px 18px; }
   }
+
+
+  /* Locale index cards */
+  .desk-locales { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 18px 0 0; }
+  .desk-locale-card {
+    display: block; padding: 18px; text-decoration: none; color: inherit;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); transition: border-color 120ms ease, background 120ms ease;
+  }
+  .desk-locale-card:hover { border-color: var(--accent); background: var(--stripe); }
+  .desk-locale-card:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  .desk-locale-name { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+  .desk-locale-sub { margin: 2px 0 12px; font-size: var(--fs-sm); color: var(--muted); }
+  .desk-meter { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+  .desk-meter-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .desk-locale-stat { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Toolbar */
+  .desk-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; }
+  .desk-field { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); color: var(--muted); }
+  .desk-select {
+    font: inherit; font-size: var(--fs-md); padding: 7px 10px; color: var(--fg);
+    background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  }
+  .desk-select:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+  .desk-toolbar-spacer { flex: 1 1 auto; }
+
+  /* Buttons -- same contract as .cpw-btn */
+  .desk-btn {
+    font: inherit; font-size: var(--fs-sm); font-weight: 600;
+    padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--border-strong); background: transparent; color: var(--fg);
+    cursor: pointer; white-space: nowrap;
+  }
+  .desk-btn:hover:not(:disabled) { background: var(--stripe); }
+  .desk-btn:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  .desk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .desk-btn.is-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .desk-btn.is-primary:hover:not(:disabled) { background: #4e51be; }
+  .desk-btn.is-on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .desk-btn.is-flagged { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
+
+  /* Rows. Dense on purpose -- this is a few hundred rows of triage, not a form. */
+  .desk-table td { vertical-align: top; padding: 8px 12px; }
+  .desk-table th { padding: 8px 12px; }
+  .desk-row.is-done { opacity: 0.55; }
+  .desk-src { max-width: 30ch; }
+  .desk-tgt { max-width: 30ch; color: var(--fg); }
+  .desk-col-state { width: 1%; white-space: nowrap; }
+  .desk-col-act { width: 1%; }
+  .desk-sec { display: block; margin: 0 0 3px; font-size: var(--fs-xs); color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
+  /* One line, always. Wrapping four pills onto three lines made every row look
+     like a form to fill in rather than a choice to make. */
+  .desk-actions { display: flex; flex-wrap: nowrap; gap: 5px; }
+  .desk-actions .desk-btn { padding: 5px 11px; font-size: var(--fs-xs); }
+  .desk-edit {
+    font: inherit; font-size: var(--fs-md); width: 100%; min-height: 76px; margin-top: 6px;
+    padding: 8px 10px; color: var(--fg); background: var(--bg);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm); resize: vertical;
+  }
+  .desk-edit:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+
+  /* Sticky footer -- unsaved decisions + queue */
+  .desk-savebar {
+    position: sticky; bottom: 0; z-index: 20;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    margin-top: 18px; padding: 12px 16px;
+    background: rgba(241,234,216,0.94);
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-strong); border-radius: var(--radius);
+  }
+  .desk-savebar[hidden] { display: none; }
+  .desk-savebar-text { margin: 0; font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+  .desk-savebar-spacer { flex: 1 1 auto; }
+  .desk-status { min-height: 18px; font-size: var(--fs-md); color: var(--muted); }
+  .desk-status.is-ok { color: var(--ok); }
+  .desk-status.is-error { color: var(--err); }
+
+  /* Notice used for the not-yet-wired batch step */
+  .desk-notice {
+    margin: 0; padding: 10px 14px; font-size: var(--fs-md);
+    color: var(--notice-fg); background: var(--notice-bg);
+    border: 1px solid var(--notice-border); border-radius: var(--radius-sm);
+  }
+
+  .desk-modal-body { margin: 0; font-size: var(--fs-md); color: var(--fg); line-height: 1.6; }
+  .desk-modal-body h3 { margin: 16px 0 4px; font-size: var(--fs-base); }
+  .desk-modal-body h3:first-child { margin-top: 0; }
+  .desk-queue-list { list-style: none; margin: 10px 0; padding: 0; max-height: 240px; overflow-y: auto; }
+  .desk-queue-item {
+    display: flex; align-items: center; gap: 12px; padding: 7px 0;
+    border-bottom: 1px solid var(--border); font-size: var(--fs-md);
+  }
+  .desk-queue-item:last-child { border-bottom: 0; }
+  .desk-queue-src {
+    flex: 1 1 auto; min-width: 0; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .desk-modal-body ol, .desk-modal-body ul { margin: 4px 0; padding-left: 20px; }
+  .desk-modal-body li { margin-bottom: 4px; }
+  .desk-modal-wide { max-width: 560px; text-align: left; }
+
+  @media (max-width: 720px) {
+    .desk-src, .desk-tgt { max-width: none; }
+    .desk-toolbar { gap: 10px; }
+  }
