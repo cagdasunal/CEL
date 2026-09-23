@@ -149,6 +149,24 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # per-content-type model tiering). The model is also folded into _source_hash, so a
 # future model change regenerates without a version bump; this bump forces a one-time
 # full regeneration under the new cheaper (tiered + cached) pipeline.
+#
+# ⚠ A LOCALE PROMPT EDIT IS NOT SEEN BY THIS KEY. `_source_hash` folds in
+# SUMMARY_PROMPT_VERSION, the model and the source text — NOT the per-locale prompt
+# (`prompts/locales/<lang>.md`), which `build_system_prompt` loads for every blog_post
+# (cli.py: `item.locale if item.content_type == "blog_post" else "en"`). So editing
+# de.md/es.md/it.md/… changes what a NEW or CHANGED post is generated with, and cannot
+# reach a post that already has a summary: its hash is unchanged, so it is skipped
+# forever. This is how the 2026-09-23 register fix (Sie/usted/Lei → informal, Basecamp
+# #451) landed without touching a single existing summary.
+# To make a locale-prompt edit reach existing posts, pick one:
+#   • run the autopilot with `force: true` (regenerates ALL published posts — costlier), or
+#   • bump SUMMARY_PROMPT_VERSION below (same blast radius, recorded in git).
+# Both regenerate every locale, not just the edited one. Folding
+# `tools.summary.prompt_version.prompt_version(locale)` into `_source_hash` would make
+# the invalidation automatic and per-locale, but the FIRST run after that change
+# regenerates all ~296 tracked items anyway (no stored hash carries a prompt term), so
+# it buys precision only from the second edit onward. Left undone deliberately: the
+# transition spends Gemini budget unattended on the 03:30 UTC schedule.
 SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
