@@ -94,11 +94,22 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'reset', email: email, exp: exp, sig: sig, new_pw_hash: h })
         });
-      }).then(function (r) { return r.json().catch(function () { return {}; }); })
+      }).then(function (r) {
+        // Keep the status: a server failure is not an invalid link (2026-09-23 a crash
+        // here read "This reset link is invalid or already used").
+        return r.json().catch(function () { return {}; })
+          .then(function (j) { j = j || {}; j._status = r.status; return j; });
+      })
         .then(function (j) {
           if (j && j.ok) {
             form.hidden = true;
             document.getElementById('reset-done').hidden = false;
+          } else if (j._status === 429) {
+            msg.textContent = 'Too many attempts. Please wait a few minutes and try again.';
+            if (btn) btn.disabled = false;
+          } else if (j._status >= 500 || !('ok' in j)) {
+            msg.textContent = 'Could not reset right now. This is a problem on our side and your link still works. Please try again in a few minutes.';
+            if (btn) btn.disabled = false;
           } else {
             msg.textContent = (j && j.error === 'expired')
               ? 'This reset link has expired. Please request a new one.'

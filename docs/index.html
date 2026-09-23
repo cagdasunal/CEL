@@ -96,11 +96,23 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'login', email: email, inner: inner })
         });
-      }).then(function (r) { return r.json().catch(function () { return {}; }); })
+      }).then(function (r) {
+        // Keep the status: a reply we cannot read, a 5xx or a 429 is NOT a wrong password.
+        // On 2026-09-23 a server crash rendered as "Wrong email or password." to a user
+        // whose password was right.
+        return r.json().catch(function () { return {}; })
+          .then(function (j) { j = j || {}; j._status = r.status; return j; });
+      })
         .then(function (j) {
           if (j && j.ok && j.token) {
             document.cookie = 'cel_session=' + j.token + '; Max-Age=1209600; Path=/; Secure; SameSite=Strict';
             location.replace(getReturn());
+          } else if (j._status === 429) {
+            errEl.textContent = 'Too many attempts. Please wait a few minutes and try again.';
+            if (btn) btn.disabled = false;
+          } else if (j._status >= 500 || !('ok' in j)) {
+            errEl.textContent = 'Could not sign in right now. This is a problem on our side, not your password. Please try again in a few minutes.';
+            if (btn) btn.disabled = false;
           } else {
             errEl.textContent = 'Wrong email or password.';
             pwEl.value = '';
