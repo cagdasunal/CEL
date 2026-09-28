@@ -1737,3 +1737,22 @@ def test_a_browser_that_keeps_nothing_still_saves_every_decision_to_the_storage(
         assert (_server(worker, u) or {}).get("tray") == "csv", "the approval never reached the storage"
         assert not errors, errors
         page.close()
+
+
+def test_an_old_single_string_rejected_still_saves(browser):
+    """M1 review P3 (#1): before `rejected` became a list it was one string. storedOnly sent it as it
+    was, the Worker refused the request (400), and saving stopped for that browser for good."""
+    with desk() as (base, _root, worker):                  # as committed: saving on
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        page.evaluate("u => localStorage.setItem('cel-desk-de', JSON.stringify("
+                      "{[u]: {tray: 'draft', rejected: 'the old draft'}}))", u)
+        page.reload()
+        _rows_ready(page)
+        _as_wait(page, "saved")
+        assert (_server(worker, u) or {}).get("rejected") == ["the old draft"]
+        # Sent once. Sending the list while comparing the string resent it until the client cap.
+        assert worker.calls.count("desk-write") == 1, worker.calls
+        assert not errors, errors
+        page.close()

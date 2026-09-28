@@ -54,6 +54,25 @@ def test_every_reason_a_save_can_stop_for_has_its_words():
     assert all(f"save.reason.{r}" in copy for r in G.SAVE_REASONS)
 
 
+class TestTheConflictWords:
+    """M1 review P3 (#1). "Decide again" read as "click your choice again", and clicking your own
+    highlighted choice undoes it, wiping both. And the export skips an approval whose website text
+    changed, so approvals wait for the import file; they do not all go into it."""
+
+    CONFLICT = ("status.conflict.tip", "status.conflict.gone", "autosave.conflict.hint",
+                "save.conflicts.detail.one", "save.conflicts.detail.other", "how.saving.on")
+
+    def test_a_conflict_says_choose_again_or_edit(self):
+        copy = C.load()
+        for key in self.CONFLICT:
+            assert "choose again, or edit, to keep yours" in copy[key].lower(), key
+        assert not [k for k, v in copy.items() if re.search(r"decid(e|ing) again", v, re.I)]
+
+    def test_approvals_wait_for_the_import_file(self):
+        assert C.load()["list.csv.notice"] == ("Nothing reaches the website by itself. Your approvals "
+                                               "are saved and wait for the next Weglot import file.")
+
+
 class TestTheDocument:
     def test_it_parses_and_has_no_duplicate_keys(self):
         copy = C.load()

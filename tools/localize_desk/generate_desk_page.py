@@ -435,10 +435,22 @@ _DELTA_JS = """\
       }
       return false;
     }
+    // What a record stores for a field. `rejected` was one string before it became a list: the
+    // Worker refuses that shape (400), and saving stopped for the browser that still held it, for
+    // good (M1 review). Read here as its list, by both what is sent and what is compared -- sending
+    // the list while comparing the string resent the change for ever.
+    function storedValue(r, f) {
+      var v = r[f];
+      return f === 'rejected' && typeof v === 'string' ? (v ? [v] : null) : v;
+    }
+
     function storedOnly(r) {
       var out = {};
       if (!r) return out;
-      STORED_FIELDS.forEach(function (f) { if (r[f] !== undefined && r[f] !== null) out[f] = r[f]; });
+      STORED_FIELDS.forEach(function (f) {
+        var v = storedValue(r, f);
+        if (v !== undefined && v !== null) out[f] = v;
+      });
       return out;
     }
 
@@ -460,7 +472,7 @@ _DELTA_JS = """\
         // `approvedAgainst` belongs here: without it, re-approving a row whose
         // wording had moved produced no delta, the server kept the stale snapshot,
         // and the export skipped the row as "changed since approval" for ever.
-        if (!sameValue(a[STORED_FIELDS[i]], b[STORED_FIELDS[i]])) return false;
+        if (!sameValue(storedValue(a, STORED_FIELDS[i]), storedValue(b, STORED_FIELDS[i]))) return false;
       }
       return true;
     }

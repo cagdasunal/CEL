@@ -140,8 +140,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `status.exported` | In the import file | Status badge |
 | `status.live` | On the website | Status badge |
 | `status.conflict` | Changed elsewhere | Status, when someone else saved this text first |
-| `status.conflict.tip` | {who} saved this first: “{text}”. Decide again to keep yours, or use theirs. | Hover text of that status |
-| `status.conflict.gone` | Someone else undid this text before you saved it. Decide again to keep yours, or use theirs. | Same, when they undid it |
+| `status.conflict.tip` | {who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs. | Hover text of that status |
+| `status.conflict.gone` | Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs. | Same, when they undid it |
 | `conflict.take_theirs` | Use theirs | Button beside that status |
 | `conflict.take_theirs.hint` | Replace your decision with the one saved first | Hover text of that button |
 | `action.approve` | Approve — this translation is right | Tick button |
@@ -193,7 +193,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `autosave.offline.hint` | They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer. | Hover text of that status |
 | `autosave.conflict.one` | 1 text changed elsewhere | Bar status, when someone else saved first |
 | `autosave.conflict.other` | {n} texts changed elsewhere | |
-| `autosave.conflict.hint` | Someone else saved these texts first. They're marked in the list: decide again to keep yours, or use theirs. | Hover text of that status |
+| `autosave.conflict.hint` | Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs. | Hover text of that status |
 | `autosave.refused.one` | 1 text not saved | Bar status, when the server turned texts down |
 | `autosave.refused.other` | {n} texts not saved | |
 | `autosave.refused.hint` | These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page. | Hover text of that status |
@@ -212,8 +212,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.reason.refused` | the server refused it | |
 | `save.reason.trouble` | the server is having trouble | |
 | `save.conflicts.title` | Someone else saved first | Message, after a save |
-| `save.conflicts.detail.one` | 1 text was changed by someone else before you saved it. It's marked in the list: keep yours by deciding again, or use theirs. | |
-| `save.conflicts.detail.other` | {n} texts were changed by someone else before you saved them. They're marked in the list: keep yours by deciding again, or use theirs. | |
+| `save.conflicts.detail.one` | 1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs. | |
+| `save.conflicts.detail.other` | {n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs. | |
 | `save.refused.title` | Some texts weren't saved | Message, after a save |
 | `save.refused.detail.one` | 1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed. | |
 | `save.refused.detail.other` | {n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed. | |
@@ -276,7 +276,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `list.csv.title` | Approved | List heading |
 | `list.csv.summary.one` | 1 text is approved and waiting to go to the website. | Under the heading |
 | `list.csv.summary.other` | {n} texts are approved and waiting to go to the website. | Under the heading |
-| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and go into the next Weglot import file. | Bottom of the list |
+| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot import file. | Bottom of the list |
 
 ## Why a text is flagged (under the translation)
 
@@ -359,7 +359,7 @@ says where saving stands; hover over it to see what that means.
 
 - **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.
 - **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.
-- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: decide again to keep yours, or use theirs.
+- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.
 - **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.
 
 A text you're editing keeps what you typed, even if someone else saves it meanwhile. When you
