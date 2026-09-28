@@ -1,0 +1,33 @@
+/* The always-open field's spike styles (monorepo runbook WO-22). Colours are the
+   dashboard's tokens, with fallbacks so the spike renders on a bare page; WO-22's build
+   decides the chip colours for real. Chip labels are real text in the token (rich_field.js). */
+
+/* pre-wrap is load-bearing: under the default `normal`, Chrome types a no-break space
+   for every second space and at the end of a line, and the saved text would carry U+00A0
+   the reviewer never typed (tests/browser/test_rich_field.py proves it both ways). */
+.rf-field {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 1.5em;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #d8d0bd);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--elevated, #fbf7ee);
+  line-height: 1.5;
+}
+.rf-field:focus-visible { outline: 2px solid var(--focus, #5d60ee); outline-offset: 1px; }
+
+.rf-token {
+  display: inline-block;
+  margin: 0 1px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 0.75em;
+  line-height: 1.5;
+  vertical-align: baseline;
+  background: var(--stripe, #efe7d4);
+  color: var(--muted, #6f6758);
+  user-select: none;
+  cursor: default;
+  unicode-bidi: isolate;      /* a chip's label never reorders the text around it */
+}
