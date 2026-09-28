@@ -600,8 +600,10 @@ def test_two_tabs_of_one_browser_keep_each_others_decisions(browser):
         ctx.close()
 
 
-def test_the_index_discard_is_not_undone_by_an_open_desk_tab(browser):
-    """L1 P1-2: after Discard on the index, one more click in the open desk put it all back."""
+def test_another_page_rewriting_a_language_is_not_undone_by_an_open_desk_tab(browser):
+    """L1 P1-2: after the index's Discard, one more click in the open desk put it all back.
+    (The Discard button is hidden while saving is off -- round 3 -- so another page of
+    the same browser rewrites the language directly: the same storage path.)"""
     with desk("new") as (base, _root, _worker):
         ctx = browser.new_context()
         d = ctx.new_page()
@@ -611,10 +613,8 @@ def test_the_index_discard_is_not_undone_by_an_open_desk_tab(browser):
         _act(d, u0, "approve")
         _act(d, u1, "approve")
         idx = ctx.new_page()
-        idx.on("dialog", lambda dlg: dlg.accept())
         idx.goto(base + "/admin/localization/")
-        idx.click('.desk-locale-card[data-locale="de"] .desk-locale-discard')
-        idx.wait_for_load_state()
+        idx.evaluate("() => localStorage.setItem('cel-desk-de', '{}')")
         d.wait_for_function("u => !(window.deskState()[u] || {}).tray", arg=u0, timeout=3000)
         _act(d, u2, "approve")
         stored = _stored(d)
@@ -826,3 +826,104 @@ def test_a_full_desk_stays_inside_its_budgets(browser):
         assert switches[1] <= 0.2 * scale, f"switch {switches} s, median over {0.2 * scale:.2f}"
         page.close()
 
+
+# ── Round 3 (the independent re-check of WO-32's desk fixes) ──────────────────────────
+
+def test_a_list_selection_does_not_outlive_another_tab_moving_the_row(browser):
+    """P2-1: a row ticked in tab A's Approved list, then requested in tab B, left the list's
+    Undo counting it -- and Undo erased tab B's request for a row the list no longer showed."""
+    with desk("new") as (base, _root, _worker):
+        ctx = browser.new_context()
+        a, b = ctx.new_page(), ctx.new_page()
+        for p in (a, b):
+            p.goto(base + "/admin/localization/de/")
+            p.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        u0, u1 = _visible_uids(a, 2)
+        _act(a, u0, "approve")
+        _act(a, u1, "approve")
+        a.click("#open-csv")
+        a.locator("#tray-list .desk-pick").first.check()           # the list follows page order: u0
+        _visible_uids(b, 2)
+        b.wait_for_function("u => (window.deskState()[u] || {}).tray === 'csv'", arg=u0, timeout=3000)
+        _act(b, u0, "queue")
+        a.wait_for_function("u => (window.deskState()[u] || {}).tray === 'draft'", arg=u0, timeout=3000)
+        assert a.locator("#tray-remove-sel").is_disabled(), "the list still counts a row it no longer shows"
+        assert _rec(a, u0).get("tray") == "draft"
+        ctx.close()
+
+
+def test_undo_from_the_requested_list_puts_the_turned_down_draft_back(browser):
+    """P2-2: the table's Undo restored the arrived draft; the list's left the row reading
+    "new translation" over the website's wording, the draft still marked rejected."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        uid = _visible_uids(page, 1)[0]
+        _put_in(page, uid, "arrived")
+        _act(page, uid, "queue")
+        assert _rec(page, uid).get("rejected") == ["WO-06 draft from Gemini"]
+        page.click("#open-draft")
+        page.locator("#tray-list .desk-review-item button").first.click()
+        rec = _rec(page, uid)
+        assert rec.get("text") == "WO-06 draft from Gemini" and "rejected" not in rec, rec
+        page.close()
+
+
+def test_the_index_offers_no_discard_while_saving_is_off(browser):
+    """P2-3: with nothing on a server, "Discard N unsaved" was a one-click wipe of a whole
+    language, beside a desk saying "kept in this browser"."""
+    with desk("new") as (base, _root, _worker):
+        page = browser.new_page()
+        page.goto(base + "/admin/localization/")
+        page.evaluate("() => localStorage.setItem('cel-desk-de', JSON.stringify({'0123456789abcdef': {tray: 'csv'}}))")
+        page.reload()
+        assert page.locator(".desk-locale-discard").count() == 0
+        assert "unsaved" not in page.locator("main").inner_text().lower()
+        page.close()
+
+
+def test_a_load_failure_stays_on_screen_when_another_tab_writes(browser):
+    """P3: another tab's write repainted the failed language as "0 of 0" with the reset panel."""
+    with desk("new") as (base, _root, worker):
+        worker.faults["fr/units.json"] = {"status": 503}
+        ctx = browser.new_context()
+        p = ctx.new_page()
+        p.goto(base + "/admin/localization/fr/")
+        p.wait_for_function("document.getElementById('count-line').classList.contains('is-error')", timeout=15000)
+        said = p.locator("#count-line").inner_text()
+        other = ctx.new_page()
+        other.goto(base + "/admin/localization/")
+        other.evaluate("() => localStorage.setItem('cel-desk-fr', JSON.stringify({'0123456789abcdef': {tray: 'csv'}}))")
+        p.wait_for_timeout(500)
+        assert p.locator("#count-line").inner_text() == said
+        assert p.locator("#no-rows").is_hidden()
+        ctx.close()
+
+
+def test_shortcuts_do_nothing_behind_the_account_dialog(browser):
+    """P3: the change-password dialog is the shell's, and `a` approved the row behind it."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-state", "")
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")
+        page.keyboard.press("j")
+        u = page.locator(f"{ROWS}.is-cursor").get_attribute("data-uid")
+        page.evaluate("() => { document.getElementById('cpw-overlay').hidden = false; }")
+        page.keyboard.press("a")
+        assert not _rec(page, u).get("tray"), "a approved a row behind the account dialog"
+        page.close()
+
+
+def test_a_draft_turned_down_before_the_list_shape_is_kept(browser):
+    """P3: a `rejected` saved as a string before round 2 was dropped on the next ✦."""
+    with desk("new") as (base, _root, _worker):
+        page = browser.new_page()
+        page.goto(base + "/admin/localization/de/")
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        uid = _visible_uids(page, 1)[0]
+        page.evaluate("u => localStorage.setItem('cel-desk-de', JSON.stringify({[u]: {rejected: 'an older draft'}}))", uid)
+        page.reload()
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        _put_in(page, uid, "arrived")
+        _act(page, uid, "queue")
+        assert _rec(page, uid).get("rejected") == ["an older draft", "WO-06 draft from Gemini"]
+        page.close()

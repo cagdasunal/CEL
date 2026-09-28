@@ -331,6 +331,10 @@ def render_index(units: list[dict]) -> str:
 # pages AND the index from this single string: the index used to carry its own copy
 # that knew nothing about `liveAt`/`exportedAt`, so the two pages could disagree about
 # the same record.
+# Runbook WO-34 (decision A15): saving is switched off until WO-17 stores decisions
+# privately. One constant for the desk AND the index, so the two cannot disagree about it.
+SAVE_OFF = True
+
 _STAGE_JS = """\
     function stageOf(s) {
       s = s || {};
@@ -507,6 +511,7 @@ def _index_js(worth_js: str = "{}") -> str:
     var COPY = __COPY__;
 __HELPERS__
     var WORTH = __WORTH__;
+    var SAVE_OFF = __SAVE_OFF__;
 __STAGE_JS__
 __DELTA_JS__
     function read(code) {
@@ -574,7 +579,9 @@ __DELTA_JS__
       // JSON counted saved work as unsaved whenever its keys came back in another order
       // (review round 2, L1 P2-3).
       var unsaved = deltaBetween(st, read('saved-' + code)).n;
-      if (unsaved) {
+      // While saving is off nothing is on a server, so "discard what is unsaved" would wipe
+      // a whole language with one click (round 3). WO-17 brings it back.
+      if (unsaved && !SAVE_OFF) {
         var undo = document.createElement('button');
         undo.type = 'button';
         undo.className = 'desk-btn desk-locale-discard';
@@ -605,7 +612,8 @@ __DELTA_JS__
   })();
   </script>
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
-        "__WORTH__", worth_js).replace("__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
+        "__WORTH__", worth_js).replace("__HELPERS__", JS_HELPERS + _TIP_JS).replace(
+        "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__COPY__", js_table())
 
 
 def render_locale(code: str, units: list[dict]) -> str:
@@ -1222,7 +1230,9 @@ __STAGE_JS__
       oc.textContent = c.csv ? t('bar.view.approved_n', { n: c.csv }) : t('bar.view.approved');
       od.textContent = c.draft ? t('bar.view.requested_n', { n: c.draft }) : t('bar.view.requested');
       paintSave();
-      placeToasts();
+      // After the frame: reading the bar's position inside a click forced a layout per click
+      // (round 3 measured 3.2 -> 10.4 ms with a toast up).
+      requestAnimationFrame(placeToasts);
     }
 
     // ── Filters ────────────────────────────────────────────────────────
@@ -1303,7 +1313,9 @@ __STAGE_JS__
       paintFilterCounts();
       var vis = shown();
       noRows.hidden = vis.length !== 0;
-      countLine.textContent = t('count.line', { shown: vis.length, total: rows.length });
+      // aria-live: rewriting an unchanged line made screen readers repeat it on every key.
+      var line = t('count.line', { shown: vis.length, total: rows.length });
+      if (countLine.textContent !== line) countLine.textContent = line;
       syncPickAll();
       if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
     }
@@ -1334,7 +1346,8 @@ __STAGE_JS__
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
       if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
-        var turnedDown = Array.isArray(s.rejected) ? s.rejected.slice() : [];
+        var turnedDown = Array.isArray(s.rejected) ? s.rejected.slice()
+          : (typeof s.rejected === 'string' && s.rejected ? [s.rejected] : []);   // the pre-list shape
         turnedDown.push(s.text);
         s.rejected = turnedDown.slice(-5);
         delete s.text;
@@ -1677,8 +1690,9 @@ __STAGE_JS__
     }
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') { closeOverlays(); return; }
-      // With the help or a list open, J/K/A/E/R/X acted on the table behind it.
-      if (!howOverlay.hidden || !trayOverlay.hidden) return;
+      // With any dialog open -- the help, a list, the shell's account dialog -- J/K/A/E/R/X
+      // acted on the table behind it.
+      if (document.querySelector('.cpw-overlay:not([hidden])')) return;
       var t = ev.target.tagName;
       if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
@@ -1769,7 +1783,9 @@ __STAGE_JS__
         delete trayPicked[uid];
         if (stage(uid) === 'sending') { busy++; return; }
         var row = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
-        if (decide(uid, row, null, why, false)) n++;
+        // Exactly the table's Undo: back to what the row was before (`was`), and a draft
+        // turned down by the request comes back (round 3 -- a list Undo left it rejected).
+        if (decide(uid, row, (state[uid] && state[uid].was) || null, why, true)) n++;
       });
       persist();
       rows.forEach(paint);
@@ -1783,6 +1799,11 @@ __STAGE_JS__
     function paintTray() {
       if (!openTray) return;
       var listed = trayRows();
+      // A row another tab moved out of this list is not selected any more: its Undo would
+      // act on a row the list no longer shows (round 3).
+      var onList = Object.create(null);
+      listed.forEach(function (tr) { onList[tr.getAttribute('data-uid')] = 1; });
+      Object.keys(trayPicked).forEach(function (uid) { if (!onList[uid]) delete trayPicked[uid]; });
       var n = listed.length;
       document.getElementById('tray-title').textContent = t('list.' + openTray + '.title');
       document.getElementById('tray-summary').textContent = tn('list.' + openTray + '.summary', n);
@@ -1966,7 +1987,7 @@ __STAGE_JS__
     // Runbook WO-34 (decision A15): Save committed the reviewer's email address into a
     // public repository. It is switched off until WO-17 moves the decisions to private
     // storage; the button stays, says so, and explains itself on hover and on click.
-    var SAVE_OFF = true;
+    var SAVE_OFF = __SAVE_OFF__;
 
 __DELTA_JS__
     function delta() { return deltaBetween(state, saved); }
@@ -2022,7 +2043,7 @@ __DELTA_JS__
       var elsewhere = document.getElementById('save-elsewhere');
       if (elsewhere) {
         elsewhere.hidden = others === 0;
-        elsewhere.textContent = others ? t('save.elsewhere', { n: others }) : '';
+        elsewhere.textContent = others ? t(SAVE_OFF ? 'save.off.elsewhere' : 'save.elsewhere', { n: others }) : '';
       }
       if (SAVE_OFF) {
         // aria-disabled, not disabled: a disabled button takes no hover, so it could
@@ -2621,6 +2642,9 @@ __DELTA_JS__
     function adoptStored() {
       state = readFresh(KEY);
       saved = readFresh(SAVEDKEY);
+      // Nothing built yet -- loading, or failed to load: the load paints from `state`, and a
+      // failure's message must stay on screen (round 3: it became "Showing 0 of 0").
+      if (!rows.length) return;
       rows.forEach(paint); paintBar(); applyFilters();
       if (openTray) paintTray();
     }
@@ -2646,7 +2670,7 @@ __DELTA_JS__
         {c: {"endonym": e, "rtl": d == "rtl"} for c, e, d, _f in LOCALES}, ensure_ascii=False)).replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
     "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
-    "__COPY__", js_table())
+    "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__COPY__", js_table())
 
 
 def main() -> int:

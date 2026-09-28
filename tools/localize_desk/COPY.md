@@ -172,6 +172,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.elsewhere` | + {n} unsaved in other languages | Next to Save |
 | `save.off.button` | Kept in this browser | The Save button, while saving is switched off |
 | `save.off.title` | Saving is switched off for now | Message, when that button is clicked |
+| `save.off.elsewhere` | + {n} in other languages | Next to that button, while saving is off |
 | `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
 | `save.status.starting` | Starting… | Next to Save, while saving |
 | `save.status.saving` | Saving… | Next to Save, while saving |
@@ -217,8 +218,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.edited.title` | Approved with your edit | After Save changes in the edit box |
 | `toast.edited.detail` | It's kept in this browser, with your other decisions. | |
 | `toast.undone.title` | Undone | After Undo in a list |
-| `toast.undone.one` | 1 text is back to Not reviewed yet. | |
-| `toast.undone.other` | {n} texts are back to Not reviewed yet. | |
+| `toast.undone.one` | 1 text is back to what it was before. | |
+| `toast.undone.other` | {n} texts are back to what they were before. | |
 | `toast.updated.one` | 1 text updated | When new translations arrive |
 | `toast.updated.other` | {n} texts updated | |
 | `toast.updated.arrived.one` | 1 new translation to read. | |
@@ -230,7 +231,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.storage.title` | Your browser isn't keeping your work | When the browser refuses to store |
 | `toast.storage.detail` | Everything on screen is still right, but reloading would lose it. Keep this tab open and let us know. | |
 | `toast.saved_load.title` | Couldn't load decisions saved earlier | When saved decisions can't be read |
-| `toast.saved_load.detail` | You may not see decisions made on another computer. Reload before reviewing, or saving could overwrite them. | |
+| `toast.saved_load.detail` | You may not see decisions made on another computer. Reload before reviewing. | |
 | `toast.load.title` | This language couldn't be loaded | When the texts can't be read |
 | `toast.load.detail` | {error}. Please reload the page, and let us know if it keeps happening. | |
 
@@ -245,8 +246,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `list.undo` | Undo | Button, nothing selected |
 | `list.undo_n` | Undo {n} | Button, with a selection |
 | `list.undo_all` | Undo all | Button |
-| `list.undo_all.confirm` | Undo all {n}? They go back to Not reviewed yet. | Confirmation |
-| `list.row.undo` | Undo — back to Not reviewed yet | Hover text of a row's undo |
+| `list.undo_all.confirm` | Undo all {n}? Each goes back to what it was before. | Confirmation |
+| `list.row.undo` | Undo — back to what it was before | Hover text of a row's undo |
 | `list.row.undo.label` | Undo this text | Screen-reader name of a row's undo |
 | `list.draft.title` | New translations requested | List heading |
 | `list.draft.summary.one` | 1 text is waiting for a new translation from Gemini. | Under the heading |
