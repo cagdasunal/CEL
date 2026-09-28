@@ -792,6 +792,35 @@ def render_locale(code: str, units: list[dict]) -> str:
                  f'{escape(t("locale.help"))}</button>')
     parts.append("    </header>")
 
+    # The engine's jobs (runbook U1): one panel, two halves -- the import file (F1, F2) and
+    # Gemini (F3). Each half's line says where its job stands (F4). Hidden while saving is off,
+    # and filled in by the page. Existing classes only: the stylesheet is the monorepo's.
+    parts.append(f'    <section id="jobs" aria-label="{escape(t("jobs.label"))}" hidden>')
+    parts.append('      <div class="desk-trays" id="job-file">')
+    parts.append(f'        <h2 class="desk-review-title">{escape(t("jobs.file.title"))}</h2>')
+    parts.append('        <button type="button" class="desk-btn is-strong" id="job-file-make"></button>')
+    parts.append(f'        <button type="button" class="desk-btn" id="job-file-download" hidden>'
+                 f'{escape(t("jobs.file.download"))}</button>')
+    parts.append('        <button type="button" class="desk-btn" id="job-file-imported" hidden></button>')
+    parts.append("      </div>")
+    parts.append('      <p class="desk-review-sub desk-status" id="job-file-line" role="status"></p>')
+    parts.append('      <div id="job-file-more" hidden>')
+    parts.append(f'        <div class="desk-notice" id="job-file-how">{block_html("jobs.file.how")}</div>')
+    parts.append('        <p class="desk-review-sub" id="job-file-out-title" hidden></p>')
+    parts.append('        <ul class="desk-queue-list" id="job-file-out" hidden></ul>')
+    parts.append('        <p class="desk-review-sub" id="job-file-notes-title" hidden></p>')
+    parts.append('        <ul class="desk-queue-list" id="job-file-notes" hidden></ul>')
+    parts.append("      </div>")
+    parts.append('      <div class="desk-trays" id="job-gemini">')
+    parts.append(f'        <h2 class="desk-review-title">{escape(t("jobs.gemini.title"))}</h2>')
+    parts.append('        <button type="button" class="desk-btn is-strong" id="job-gemini-plan"></button>')
+    parts.append('        <button type="button" class="desk-btn is-strong" id="job-gemini-send" hidden></button>')
+    parts.append(f'        <button type="button" class="desk-btn" id="job-gemini-collect" hidden>'
+                 f'{escape(t("jobs.gemini.collect"))}</button>')
+    parts.append("      </div>")
+    parts.append('      <p class="desk-review-sub desk-status" id="job-gemini-line" role="status"></p>')
+    parts.append("    </section>")
+
     # Toolbar. The locale strip comes FIRST because switching language while staying
     # on the same page and filter is the move the reviewer makes most.
     parts.append('    <div class="controls">')
@@ -898,6 +927,278 @@ def render_locale(code: str, units: list[dict]) -> str:
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
+
+# The panel's script (runbook U1), inserted into _desk_js just before it boots, so every name it
+# uses is assigned by the time it runs (a hoisted, unassigned name once emptied the decisions:
+# lessons, "a catch that resets state hides an order bug").
+_JOBS_JS = """\
+    // ── The import file and Gemini (runbook U1) ────────────────────────
+    // Each button starts one job in the engine: the Worker's desk-job-start records it and runs
+    // desk-engine.yml in the private monorepo. Each half's line says where its job stands
+    // (desk-job-get), read again every few seconds while one is open. The engine writes its
+    // results where desk-read finds them -- its stamps and new translations, never a decision --
+    // so a job that ends is followed by a re-read of those two, and the rows repaint.
+    var jobsEl = document.getElementById('jobs');
+    var jobEls = {};
+    ['file-line', 'file-make', 'file-download', 'file-imported', 'file-more', 'file-how', 'file-out-title',
+     'file-out', 'file-notes-title', 'file-notes', 'gemini-line', 'gemini-plan', 'gemini-send', 'gemini-collect']
+      .forEach(function (k) { jobEls[k] = document.getElementById('job-' + k); });
+    var deskJobs = { list: {}, seq: 0, timer: null, readFailed: false, err: { file: '', gemini: '' },
+                     starting: { file: false, gemini: false } };
+
+    function jobOpen(j) { return !!(j && (j.status === 'queued' || j.status === 'running')); }
+    // A failure is worded from COPY.md by its code; a code this desk does not know yet reads as
+    // the engine's own error, never as a key on screen.
+    function jobFailed(code) {
+      var key = 'job.failed.' + code;
+      return Object.prototype.hasOwnProperty.call(COPY, key) ? t(key) : t('job.failed.engine-error');
+    }
+    // A job reads what is SAVED: while this language has unsaved changes (or a conflict), the
+    // panel waits for "All changes saved". `all` is paintBar's unsavedByLocale(), when it has one.
+    function jobsUnsaved(all) {
+      return !!((all || unsavedByLocale())[CODE] || Object.keys(conflicts || {}).length);
+    }
+    function jobCounts() {
+      var file = 0, send = 0;
+      rows.forEach(function (tr) {
+        var st = stage(tr.getAttribute('data-uid'));
+        if (st === 'approved' || st === 'edited') file++;
+        else if (st === 'queued') send++;
+      });
+      return { file: file, send: send };
+    }
+    function jobTip(btn, why) {                      // why '' enables; a disabled control says why
+      btn.disabled = !!why;
+      if (why) btn.setAttribute('data-tip', why); else btn.removeAttribute('data-tip');
+    }
+    // Dollars as the reviewer reads them: cents, and never "about $0.00" for a price above nothing.
+    function jobCost(usd) {
+      var s = Number(usd).toFixed(2);
+      return s === '0.00' && usd > 0 ? '0.01' : s;
+    }
+    // The later of the two jobs that send to Gemini or collect from it.
+    function latestSend() {
+      var su = deskJobs.list.submit, co = deskJobs.list.collect;
+      return su && co ? (co.createdAt > su.createdAt ? co : su) : (su || co || null);
+    }
+    // Texts named by the engine, each with its reason from COPY.md: the English, then why.
+    function jobList(ul, items) {
+      ul.textContent = '';
+      items.forEach(function (it) {
+        var li = document.createElement('li');
+        li.className = 'desk-queue-item';
+        if (it.unit && sourceText[it.unit] !== undefined) {
+          var src = document.createElement('span');
+          src.className = 'desk-queue-src';
+          renderMarked(src, sourceText[it.unit]);
+          li.appendChild(src);
+        }
+        var why = document.createElement('span');
+        why.textContent = t('refusal.' + it.rule) + (it.suffix ? ' ' + t('refusal.suffix.' + it.suffix) : '');
+        li.appendChild(why);
+        ul.appendChild(li);
+      });
+      ul.hidden = !items.length;
+    }
+
+    function paintJobs(all) {
+      if (!deskJobs || !jobsEl || jobsEl.hidden) return;   // before the script below has run
+      var c = jobCounts(), unsaved = jobsUnsaved(all), L = deskJobs.list, e = jobEls;
+      // ── The import file (F1, F2)
+      var ex = L.export || null, res = (ex && ex.result) || {};
+      var batch = res.batchId || '';
+      var check = L.verify && batch && L.verify.ref === batch ? L.verify : null;
+      var busy = deskJobs.starting.file || jobOpen(ex) || jobOpen(L.verify);
+      var cr = (check && check.status === 'done' && check.result) || null;
+      var line = '', bad = false;
+      if (deskJobs.err.file) { line = deskJobs.err.file; bad = true; }
+      else if (busy && deskJobs.readFailed) line = t('jobs.read.failed');
+      else if (busy) line = t('jobs.working');
+      else if (ex && ex.status === 'failed') { line = jobFailed(ex.error); bad = true; }
+      else if (check && check.status === 'failed') { line = jobFailed(check.error); bad = true; }
+      else if (cr) line = t('jobs.file.live', { live: cr.live, n: cr.rows }) + (cr.waiting > 0 ? ' ' + t('jobs.file.waiting') : '');
+      else if (batch) line = tn('jobs.file.ready', res.rows);
+      else line = t('jobs.file.idle');
+      e['file-line'].textContent = line;
+      e['file-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
+      e['file-make'].textContent = t('jobs.file.make', { n: c.file });
+      jobTip(e['file-make'], busy ? line : unsaved ? t('jobs.unsaved') : c.file ? '' : t('jobs.file.make.none'));
+      var green = !!(cr && !(cr.waiting > 0));
+      e['file-download'].hidden = !batch || jobOpen(ex);
+      e['file-imported'].hidden = !batch || jobOpen(ex) || green;
+      e['file-imported'].textContent = cr ? t('jobs.file.again') : t('jobs.file.imported');
+      jobTip(e['file-imported'], busy ? line : '');
+      // Under it: how to import, and the texts the file left out or took with something to check.
+      var settled = ex && !jobOpen(ex);
+      var out = !settled ? [] : ex.error === 'export-refused'
+        ? (res.file || []).map(function (rule) { return { rule: rule }; }) : (res.refused || []);
+      var warned = settled ? (res.warned || []) : [];
+      var notes = warned.concat(settled ? (res.notes || []).map(function (rule) { return { rule: rule }; }) : []);
+      jobList(e['file-out'], out);
+      jobList(e['file-notes'], notes);
+      // A failed export's line already says "No file was made:" / "Nothing could go in the file:".
+      e['file-out-title'].hidden = !out.length || ex.status === 'failed' && !batch;
+      e['file-out-title'].textContent = out.length ? tn('jobs.file.out', out.length) : '';
+      e['file-notes-title'].hidden = !warned.length;
+      e['file-notes-title'].textContent = warned.length ? tn('jobs.file.notes', warned.length) : '';
+      e['file-how'].hidden = !batch || green || jobOpen(ex);
+      e['file-more'].hidden = e['file-how'].hidden && !out.length && !notes.length;
+
+      // ── Gemini (F3)
+      var pl = L.plan || null, send = latestSend();
+      var fresh = pl && (!send || pl.createdAt > send.createdAt) ? pl : null;
+      var gBusy = deskJobs.starting.gemini || jobOpen(pl) || jobOpen(send);
+      var p = (fresh && fresh.status === 'done' && fresh.result) || null;
+      var stop = p && p.stops && p.stops.length ? p.stops[0] : '';
+      var sr = (send && send.result) || {};
+      line = ''; bad = false;
+      if (deskJobs.err.gemini) { line = deskJobs.err.gemini; bad = true; }
+      else if (gBusy && deskJobs.readFailed) line = t('jobs.read.failed');
+      else if (deskJobs.starting.gemini || jobOpen(pl)) line = t('jobs.working');
+      else if (jobOpen(send)) line = t('jobs.gemini.sending');
+      else if (fresh && fresh.status === 'failed') { line = jobFailed(fresh.error); bad = true; }
+      else if (stop) { line = jobFailed(stop); bad = true; }
+      else if (p && !(p.texts > 0)) line = t('jobs.gemini.nothing');
+      else if (p) line = tn('jobs.gemini.estimate', p.texts, { cost: jobCost(p.estimateUsd) });
+      else if (send && send.status === 'failed') { line = jobFailed(send.error); bad = true; }
+      else if (send && sr.collected === false) line = t('jobs.gemini.slow');
+      else if (send) line = tn('jobs.gemini.arrived', sr.drafts || 0);
+      else line = t('jobs.gemini.idle');
+      e['gemini-line'].textContent = line;
+      e['gemini-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
+      // The price stands until it is sent or asked again: Send (with the amount the job may
+      // spend) takes the place of the button that asked for it.
+      var offer = !!(p && !stop && p.texts > 0 && !gBusy);
+      e['gemini-plan'].hidden = offer;
+      e['gemini-plan'].textContent = tn('jobs.gemini.plan', c.send);
+      jobTip(e['gemini-plan'], gBusy ? line : unsaved ? t('jobs.unsaved') : c.send ? '' : t('jobs.gemini.plan.none'));
+      e['gemini-send'].hidden = !offer;
+      e['gemini-send'].textContent = offer ? t('jobs.gemini.send', { cost: jobCost(p.estimateUsd) }) : '';
+      jobTip(e['gemini-send'], unsaved ? t('jobs.unsaved') : '');
+      e['gemini-collect'].hidden = gBusy || !(send && !jobOpen(send) && sr.runId && sr.collected === false);
+    }
+
+    function pollJobs(ms) {
+      clearTimeout(deskJobs.timer);
+      deskJobs.timer = setTimeout(readJobs, ms);
+    }
+    async function readJobs() {
+      var code = CODE, seq = ++deskJobs.seq;
+      var r = await callProxy({ action: 'desk-job-get', locale: code }, TIMEOUT_MS).catch(function () { return null; });
+      if (seq !== deskJobs.seq || code !== CODE) return;
+      var was = deskJobs.list;
+      deskJobs.readFailed = !(r && r.ok && r.body && r.body.jobs);
+      if (!deskJobs.readFailed) deskJobs.list = r.body.jobs;
+      var now = deskJobs.list;
+      // A job that ended since the last look may have changed what desk-read holds (a price does not).
+      var ended = Object.keys(was).some(function (k) {
+        return k !== 'plan' && jobOpen(was[k]) && now[k] && now[k].id === was[k].id && !jobOpen(now[k]);
+      });
+      paintJobs();
+      if (ended) rereadEngine();
+      var open = Object.keys(now).filter(function (k) { return jobOpen(now[k]); });
+      if (deskJobs.readFailed) pollJobs(15000);
+      else if (open.length) pollJobs(open.indexOf('submit') !== -1 || open.indexOf('collect') !== -1 ? 20000 : 4000);
+    }
+    // The engine's stamps and new translations for this language, read again after a job: in
+    // memory only, as the load keeps them (WO-25c). The rows they change repaint; one on screen
+    // holds its place (ruling #17), and an editor with typing in it keeps it.
+    async function rereadEngine() {
+      var code = CODE, seq = loadSeq;
+      var arrived = function () { return rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length; };
+      var before = arrived();
+      var sr = await callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS).catch(function () { return null; });
+      if (seq !== loadSeq || code !== CODE || !sr || !sr.ok || !sr.body) return;
+      var oldS = engineStamps, oldD = engineDrafts;
+      engineStamps = Object.assign(Object.create(null), sr.body.pipeline || {});
+      engineDrafts = Object.assign(Object.create(null), sr.body.drafts || {});
+      var moved = Object.create(null);
+      [oldS, engineStamps, oldD, engineDrafts].forEach(function (m) { for (var u in m) moved[u] = 1; });
+      rows.forEach(function (tr) {
+        var uid = tr.getAttribute('data-uid');
+        if (!moved[uid] || (JSON.stringify(oldS[uid]) === JSON.stringify(engineStamps[uid])
+            && JSON.stringify(oldD[uid]) === JSON.stringify(engineDrafts[uid]))) return;
+        paint(tr);
+        var wrap = tr.querySelector('.desk-editor');
+        if (wrap && !wrap.hidden && !editorDirty(tr)) { seedEditor(tr, wrap.querySelector('.desk-edit')); paintEditor(tr); }
+        if (!tr.hidden) justActed[uid] = 1;
+      });
+      applyFilters();
+      paintBar();
+      var after = arrived();
+      if (after > before) toast(tn('toast.arrived', after), { level: 'ok', detail: t('toast.arrived.detail') });
+    }
+
+    // A language's jobs, on every load: the page's and each switch.
+    function jobsLoad() {
+      if (SAVE_OFF || !jobsEl) return;
+      jobsEl.hidden = false;
+      clearTimeout(deskJobs.timer);
+      deskJobs.seq++;
+      deskJobs.list = {};
+      deskJobs.readFailed = false;
+      deskJobs.err = { file: '', gemini: '' };
+      paintJobs();
+      readJobs();
+    }
+
+    async function startJob(half, kind, extra) {
+      var code = CODE;
+      deskJobs.err[half] = '';
+      deskJobs.starting[half] = true;
+      paintJobs();
+      var r = await callProxy(Object.assign({ action: 'desk-job-start', locale: code, kind: kind }, extra || {}), TIMEOUT_MS)
+        .catch(function () { return null; });
+      deskJobs.starting[half] = false;
+      if (code !== CODE) return;
+      // Started, already running (409), or refused by GitHub and failed at once (502): the job says.
+      if (r && r.body && r.body.job) deskJobs.list[kind] = r.body.job;
+      else if (r && r.status === 429 && /daily/.test((r.body && r.body.error) || '')) deskJobs.err[half] = t('jobs.start.daily');
+      else if (r && r.status === 503) deskJobs.err[half] = t('jobs.start.unavailable');
+      else deskJobs.err[half] = t('jobs.start.failed', { reason: t('save.reason.' + failureReason(r)) });
+      paintJobs();
+      if (jobOpen(deskJobs.list[kind])) pollJobs(3000);
+    }
+
+    async function downloadFile() {
+      var b = ((deskJobs.list.export || {}).result || {}).batchId;
+      if (!b) return;
+      deskJobs.err.file = '';
+      var r = await callProxy({ action: 'desk-export-get', batch_id: b }, TIMEOUT_MS).catch(function () { return null; });
+      if (!r || !r.ok || !r.body || !r.body.export) {
+        deskJobs.err.file = t('jobs.file.download.failed', { reason: t('save.reason.' + failureReason(r)) });
+        paintJobs();
+        return;
+      }
+      // The engine's bytes as they are: a UTF-8 CSV with no byte-order mark (the gates refuse one).
+      var url = URL.createObjectURL(new Blob([r.body.export.csv], { type: 'text/csv;charset=utf-8' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = b + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+      paintJobs();
+    }
+
+    jobEls['file-make'].addEventListener('click', function () { startJob('file', 'export'); });
+    jobEls['file-download'].addEventListener('click', downloadFile);
+    jobEls['file-imported'].addEventListener('click', function () {
+      var b = ((deskJobs.list.export || {}).result || {}).batchId;
+      if (b) startJob('file', 'verify', { ref: b });
+    });
+    jobEls['gemini-plan'].addEventListener('click', function () { startJob('gemini', 'plan'); });
+    jobEls['gemini-send'].addEventListener('click', function () {
+      var p = (deskJobs.list.plan || {}).result;
+      // The amount is the price the reviewer was shown, unchanged: the job spends no more.
+      if (p && p.estimateUsd > 0) startJob('gemini', 'submit', { amount_usd: p.estimateUsd });
+    });
+    jobEls['gemini-collect'].addEventListener('click', function () {
+      var s = latestSend(), run = s && s.result && s.result.runId;
+      if (run) startJob('gemini', 'collect', { ref: run });
+    });
+"""
 
 
 def _desk_js(code: str, rtl: bool, worth_js: str = "{}") -> str:
@@ -1510,6 +1811,7 @@ __STAGE_JS__
       if (c.csv) oc.removeAttribute('data-tip'); else oc.setAttribute('data-tip', t('bar.view.approved.hint'));
       if (c.draft) od.removeAttribute('data-tip'); else od.setAttribute('data-tip', t('bar.view.requested.hint'));
       paintSave(all);
+      paintJobs(all);
       // After the frame: reading the bar's position inside a click forced a layout per click
       // (round 3 measured 3.2 -> 10.4 ms with a toast up).
       requestAnimationFrame(placeToasts);
@@ -2908,6 +3210,7 @@ __PROXY_JS__
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
+      jobsLoad();
       // Saving off, nothing is on a server and nothing is checked: the load ends here, doing
       // exactly the work it did before 4b (a second paint of the bar here sat on the switch).
       if (SAVE_OFF) return;
@@ -3100,6 +3403,7 @@ __PROXY_JS__
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
 
+__JOBS_JS__
     // ── Boot ───────────────────────────────────────────────────────────
     loadLocale(null).then(function () {
       // With the first language on screen, fetch the rest while the reviewer reads.
@@ -3117,7 +3421,8 @@ __PROXY_JS__
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
     "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
     "__PROXY_JS__", _PROXY_JS).replace("__SAVE_REASONS__", json.dumps(list(SAVE_REASONS))).replace(
-    "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__COPY__", js_table())
+    "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__JOBS_JS__", _JOBS_JS).replace(
+    "__COPY__", js_table())
 
 
 def main() -> int:

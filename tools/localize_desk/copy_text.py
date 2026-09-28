@@ -24,7 +24,8 @@ from pathlib import Path
 
 COPY_PATH = Path(__file__).resolve().parent / "COPY.md"
 
-_ROW = re.compile(r"^\|\s*`([a-z0-9_.\-]+)`\s*\|(.*)\|(.*)\|\s*$")
+# Keys may carry capitals: the engine's reason ids are upper case (refusal.PLACEHOLDER-ORDER, U1).
+_ROW = re.compile(r"^\|\s*`([A-Za-z0-9_.\-]+)`\s*\|(.*)\|(.*)\|\s*$")
 _BLOCK = re.compile(r"<!-- block ([a-z0-9_.\-]+) -->\n(.*?)\n<!-- /block -->", re.S)
 _VAR = re.compile(r"\{([A-Za-z_]+)\}")
 

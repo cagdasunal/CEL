@@ -7,6 +7,7 @@ document lacks, or a line in the document nothing uses, each fails here.
 """
 from __future__ import annotations
 
+import json
 import re
 import sys
 from html.parser import HTMLParser
@@ -21,6 +22,7 @@ from localize_desk import generate_desk_page as G  # noqa: E402
 from localize_desk import recommend as R  # noqa: E402
 
 TOOLS = Path(__file__).resolve().parents[1]
+REPO = TOOLS.parents[1]
 SOURCES = [TOOLS / "generate_desk_page.py", TOOLS / "recommend.py"]
 KEY = re.compile(r"""['"]([a-z][a-z0-9_]*(?:\.[a-z0-9_\-]+)+)['"]""")
 
@@ -40,6 +42,11 @@ def _dynamic_families() -> set[str]:
                  f"list.{tray}.summary.one", f"list.{tray}.summary.other"}
     keys |= {f"why.register.{loc}" for loc in R._FORMAL}
     keys |= {f"save.reason.{r}" for r in G.SAVE_REASONS}
+    # U1: the engine's ids, worded by the panel as 'refusal.' + rule and 'job.failed.' + code.
+    codes = json.loads((REPO / "data" / "localize" / "reason-codes.json").read_text(encoding="utf-8"))
+    keys |= {f"refusal.{r}" for r in codes["refusal"] + codes["export_skip"]}
+    keys |= {f"refusal.suffix.{x}" for x in codes["refusal_suffix"]}
+    keys |= {f"job.failed.{c}" for c in codes["job_failed"]}
     return keys
 
 
@@ -115,6 +122,16 @@ class TestTheDocument:
                 continue
             orphans.append(key)
         assert not orphans, f"COPY.md lines nothing uses: {sorted(orphans)}"
+
+    def test_every_reason_the_engine_can_give_has_a_sentence(self):
+        """U1: the engine hands the desk ids (data/localize/reason-codes.json, identical to the
+        monorepo's); each needs its sentence here, or the desk shows a key."""
+        codes = json.loads((REPO / "data" / "localize" / "reason-codes.json").read_text(encoding="utf-8"))
+        copy = C.load()
+        keys = ([f"refusal.{r}" for r in codes["refusal"] + codes["export_skip"]]
+                + [f"refusal.suffix.{s}" for s in codes["refusal_suffix"]]
+                + [f"job.failed.{c}" for c in codes["job_failed"]])
+        assert not [k for k in keys if k not in copy]
 
     def test_a_missing_key_or_placeholder_is_an_error_not_a_blank(self):
         with pytest.raises(KeyError):
