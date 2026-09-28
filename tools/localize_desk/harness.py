@@ -48,12 +48,27 @@ CONFIG_STUB = b"window.CEL_DISPATCH_URL = '/__worker';"
 class MockWorker:
     """The dispatch Worker and a GitHub run queue, in memory."""
 
-    def __init__(self, root: Path, mode: str = "new", run_seconds: float = 2.0):
+    def __init__(self, root: Path, mode: str = "new", run_seconds: float = 2.0,
+                 history: bool = True):
         self.out = root / "admin" / "localization"
         self.mode = mode
         self.run_seconds = run_seconds
-        self.runs: list[dict] = []
+        # A live workflow on GitHub always has earlier runs, and the desk's refusal of a
+        # Worker that cannot name runs depends on seeing one (runbook R67). `history=False`
+        # models a workflow that has never run -- the one case that refusal misses.
+        self.runs: list[dict] = ([{"id": 999, "status": "completed", "conclusion": "success",
+                                   "inputs": {}}] if history else [])
+        self._next_id = 1000
         self.lock = threading.Lock()
+
+    def _new_id(self) -> int:
+        self._next_id += 1
+        return self._next_id - 1
+
+    @property
+    def dispatched(self) -> list[dict]:
+        """The runs a dispatch created (the seeded history excluded)."""
+        return [r for r in self.runs if r["id"] >= 1000]
 
     def _run(self, run: dict) -> None:
         time.sleep(self.run_seconds / 2)
@@ -81,11 +96,11 @@ class MockWorker:
             if len(payload) > 64000:
                 return 400, {"ok": False, "error": "invalid input: payload has a disallowed value"}
             with self.lock:
-                run = {"id": 1000 + len(self.runs), "status": "queued", "conclusion": None,
+                run = {"id": self._new_id(), "status": "queued", "conclusion": None,
                        "inputs": body.get("inputs") or {}, "cancel": self.mode == "race"}
                 self.runs.append(run)
                 if self.mode == "race":   # a colleague's run lands, and succeeds, right after ours
-                    self.runs.append({"id": 1000 + len(self.runs), "status": "completed",
+                    self.runs.append({"id": self._new_id(), "status": "completed",
                                       "conclusion": "success", "inputs": {}})
             threading.Thread(target=self._run, args=(run,), daemon=True).start()
             if self.mode == "old":

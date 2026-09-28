@@ -1,0 +1,77 @@
+name: Desk browser tests
+# Robot click-tests for the Localization Desk (monorepo runbook WO-04, guard G9): a real
+# Chromium drives the desk in the click-test harness — sign-in simulated, the dispatch
+# Worker mocked in its three modes. The CEL pre-commit hook runs the same file before a
+# commit; this job is the backstop after a push. Keyless: no secrets, nothing leaves the
+# runner.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tools/localize_desk/**"
+      - "docs/admin/localization/**"
+      - "tools/dashboard.py"
+      - ".github/workflows/desk-browser.yml"
+  pull_request:
+    paths:
+      - "tools/localize_desk/**"
+      - "docs/admin/localization/**"
+      - "tools/dashboard.py"
+      - ".github/workflows/desk-browser.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: desk-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright and Chromium
+        run: |
+          set -o pipefail
+          python3 -m pip install --upgrade pip
+          pip install pytest playwright
+          python3 -m playwright install --with-deps chromium
+
+      - name: Desk browser tests
+        run: cd tools && python3 -m pytest localize_desk/tests/browser -p no:cacheprovider -rxs
+
+      - name: Notify on failure
+        # `failure() || cancelled()`: a timeout marks the job cancelled, not failed.
+        if: failure() || cancelled()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          gh label create ci-failure --repo "${{ github.repository }}" \
+            --color B60205 --description "Automated CI/cron failure alerts" --force >/dev/null 2>&1 || true
+          TITLE="🔴 ${{ github.workflow }} failed"
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NUM=$(gh issue list --repo "${{ github.repository }}" --label ci-failure --state open \
+                  --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --repo "${{ github.repository }}" \
+              --body "Failed again at $(date -u +%FT%TZ). Run: $URL"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" \
+              --label ci-failure \
+              --body "Desk browser tests failed. Run: $URL. Auto-updates on repeat failures; close once resolved."
+          fi
