@@ -13,7 +13,10 @@ It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
   * auth.js replaced by a stub that signs you in as a test reviewer;
   * dashboard-config.js pointing the desk at this server's mock dispatch Worker;
   * a mock Worker (validate / dispatch / poll) and a mock GitHub run that applies the
-    save with the real `save_decisions.apply`, into the temporary copy.
+    save with the real `save_decisions.apply`, into the temporary copy;
+  * the Worker's desk storage actions (desk-read / desk-write / desk-history), answered by
+    `desk_store.DeskStore` -- held to the real Worker by the monorepo's differential test
+    (runbook WO-33) -- over the same page map deploy.sh loads.
 
 --worker picks what the mock Worker does, to exercise the desk's failure handling:
   new   dispatch returns the run id and poll-by-id works (the deployed Worker since 2026-09-23)
@@ -35,8 +38,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from localize_desk import save_decisions  # noqa: E402
+from localize_desk.desk_store import DeskStore  # noqa: E402
 
 REPO_DOCS = Path(__file__).resolve().parents[2] / "docs"
+UNITS_DIR = Path(__file__).resolve().parents[2] / "data" / "localize" / "units"
 MODES = ("new", "old", "race")
 
 AUTH_STUB = (b"window.__CEL_USER__={firstName:'Test',lastName:'Reviewer',"
@@ -63,6 +68,8 @@ class MockWorker:
         # Slow or failing files, for the races the desk must survive (review round 2):
         # {"<part of the path>": {"delay": seconds, "status": 503}}. Tests set it live.
         self.faults: dict[str, dict] = {}
+        # The desk storage (WO-16's actions), as the deployed Worker will answer them.
+        self.store = DeskStore.from_units_dir(UNITS_DIR)
 
     def _new_id(self) -> int:
         self._next_id += 1
@@ -124,6 +131,9 @@ class MockWorker:
         if action == "changepw":
             # The shell's change-password dialog; the harness has no password to check.
             return 200, {"ok": True}
+        if action in ("desk-read", "desk-write", "desk-history"):
+            # The harness signs everyone in as the test reviewer.
+            return self.store.handle(action, body, "reviewer@example.test")
         return 400, {"error": "invalid action"}
 
 
