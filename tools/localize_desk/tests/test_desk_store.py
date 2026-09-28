@@ -124,3 +124,17 @@ def test_the_harness_plays_the_engine_for_the_desks_jobs():
     s.dispatch_status = 422
     code, r = s.handle("desk-job-start", {"locale": "fr", "kind": "export"}, "pat@example.test")
     assert code == 502 and r["job"]["error"] == "engine-did-not-start" and len(s.dispatched) == 1
+
+
+def test_a_users_job_starts_are_capped_per_day_as_the_worker_caps_them():
+    s = _store()
+    codes = [s.handle("desk-job-start", {"locale": "de", "kind": "export"}, "pat@example.test")[0] for _ in range(31)]
+    assert codes[0] == 200 and set(codes[1:30]) == {409} and codes[30] == 429
+    assert s.handle("desk-job-start", {"locale": "fr", "kind": "export"}, "kim@example.test")[0] == 200
+
+
+def test_a_ref_follows_the_runners_rule():
+    s = _store()
+    start = lambda ref: s.handle("desk-job-start", {"locale": "de", "kind": "verify", "ref": ref}, "pat@example.test")[0]
+    assert start("de-1.2") == 400 and start("run:1") == 400 and start("a" * 121) == 400
+    assert start("a" * 120) == 200

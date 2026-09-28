@@ -21,7 +21,8 @@ The desk's jobs (runbook U1): `desk-job-start` records a job the way the Worker 
 "dispatches" it by adding its id to `dispatched` -- no engine runs here. The harness plays the
 engine with `finish_job` and `seed_export` (the rows the engine writes through /engine-query);
 `dispatch_status` stands for GitHub's answer (204 took it; anything else, the Worker fails the
-job at once); `engine_configured` False stands for a Worker with no GitHub credential (503).
+job at once); `engine_configured` False stands for a Worker with no GitHub credential or no
+ENGINE_SECRET (503). A user's starts are capped per day as the Worker caps them (JOB_DAILY).
 `desk-job-get` and `desk-export-get` read them back.
 
 What it leaves out: the session check (the harness signs everyone in), the signature's
@@ -61,7 +62,8 @@ PAGE = re.compile(r"[a-z0-9_-]{1,80}")
 JOB_KINDS = ("export", "verify", "plan", "submit", "collect")
 JOB_RUN_CAP_USD = 40
 JOB_STALE_SEC = 35 * 60
-JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}")      # verify's batch, collect's run
+JOB_DAILY = 30                  # starts a day per user, a refused one too (each is a billed run)
+JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}")       # verify's batch, collect's run: the runner's rule
 JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{7,63}")
 BATCH_ID = JOB_REF
 
@@ -198,6 +200,7 @@ class DeskStore:
         self.dispatched: list[str] = []
         self.dispatch_status = 204
         self.engine_configured = True
+        self.job_starts: list[tuple[str, float]] = []      # (who, when): the Worker's attempts rows
         self.lock = threading.Lock()
 
     @classmethod
@@ -448,6 +451,10 @@ class DeskStore:
                 return 400, {"ok": False, "error": "invalid: ref"}
         if not self.engine_configured:
             return 503, {"ok": False, "error": "the engine is not configured"}
+        now = datetime.now(timezone.utc).timestamp()
+        if sum(1 for who, t in self.job_starts if who == email and t > now - 86400) + 1 > JOB_DAILY:
+            return 429, {"ok": False, "error": "over the daily budget"}
+        self.job_starts.append((email, now))
         self._sweep(locale)
         open_ = next((j for j in self.jobs.values() if j["locale"] == locale and j["kind"] == kind
                       and j["status"] in ("queued", "running")), None)
