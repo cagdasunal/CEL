@@ -14,17 +14,24 @@ permissions:
   contents: read
   issues: write
 
-concurrency:
-  group: desk-live-check
-  cancel-in-progress: true
-
 jobs:
   live:
-    # Only a successful Pages deployment, or a manual run.
+    # A Pages deployment that finished -- succeeded, failed or errored -- or a manual run.
+    # A failed deploy leaves the old desk served: the byte comparison then goes red if the
+    # push changed the desk (a 'success'-only filter skipped it, and a skip reads as green).
+    # Each deployment also emits waiting/queued/in_progress statuses; those runs are skipped.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' &&
-       github.event.deployment.environment == 'github-pages')
+      (github.event.deployment.environment == 'github-pages' &&
+       contains(fromJSON('["success","failure","error"]'), github.event.deployment_status.state))
+    # Job-level, so only runs that pass `if` queue here. At workflow level every status run
+    # joined the group before `if` was read, so the next deploy's waiting/queued status could
+    # cancel a pending check silently (run 36454954216: a status run cancelled by the next
+    # one). No cancel-in-progress: a running check finishes; a newer check waits, replacing
+    # any older pending one that never started.
+    concurrency:
+      group: desk-live-check
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
