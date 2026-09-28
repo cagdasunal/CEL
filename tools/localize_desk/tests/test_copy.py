@@ -39,10 +39,19 @@ def _dynamic_families() -> set[str]:
         keys |= {f"list.{tray}.title", f"list.{tray}.notice",
                  f"list.{tray}.summary.one", f"list.{tray}.summary.other"}
     keys |= {f"why.register.{loc}" for loc in R._FORMAL}
-    keys |= {f"save.reason.{r}" for r in ("startup", "cancelled", "timeout", "server",
-                                           "slow", "refused", "trouble", "unconfirmed",
-                                           "not_configured", "too_large", "unknown")}
+    keys |= {f"save.reason.{r}" for r in G.SAVE_REASONS}
     return keys
+
+
+def test_every_reason_a_save_can_stop_for_has_its_words():
+    """failureReason() builds `save.reason.<name>` at runtime: each name it can return is
+    one of SAVE_REASONS, and each of those is a COPY.md line (WO-17)."""
+    src = G.Path(G.__file__).read_text(encoding="utf-8")
+    body = src.split("function failureReason(r) {", 1)[1].split("\n    }\n", 1)[0]
+    returned = set(re.findall(r"'([a-z_]+)'", body))     # its only quoted words are its answers
+    assert returned == set(G.SAVE_REASONS), (returned, G.SAVE_REASONS)
+    copy = C.load()
+    assert all(f"save.reason.{r}" in copy for r in G.SAVE_REASONS)
 
 
 class TestTheDocument:

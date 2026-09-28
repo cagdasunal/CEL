@@ -23,7 +23,6 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CONTRACT = REPO / "data" / "localize" / "engine-reads.json"
 DESK = REPO / "tools" / "localize_desk" / "generate_desk_page.py"
-SAVE = REPO / "tools" / "localize_desk" / "save_decisions.py"
 
 
 def _contract() -> dict:
@@ -31,17 +30,22 @@ def _contract() -> dict:
 
 
 def _save_fields() -> set[str]:
-    m = re.search(r"var SAVE_FIELDS = \[([^\]]*)\]", DESK.read_text(encoding="utf-8"))
-    assert m, "the desk's SAVE_FIELDS list was not found"
+    """What the desk sends (WO-17): its STORED_FIELDS."""
+    m = re.search(r"var STORED_FIELDS = \[([^\]]*)\]", DESK.read_text(encoding="utf-8"))
+    assert m, "the desk's STORED_FIELDS list was not found"
     return set(re.findall(r"'([A-Za-z]+)'", m.group(1)))
 
 
 def _allowed_keys() -> set[str]:
-    tree = ast.parse(SAVE.read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and any(getattr(t, "id", "") == "ALLOWED_KEYS" for t in node.targets):
-            return {elt.value for elt in node.value.elts}
-    raise AssertionError("save_decisions.ALLOWED_KEYS not found")
+    """What the storage keeps: the Worker's deskRecord(), through the harness stand-in the
+    monorepo holds to it answer for answer (scripts/tests/test_desk_standin_parity.py)."""
+    import sys
+    sys.path.insert(0, str(REPO / "tools"))
+    from localize_desk.desk_store import record_of
+    probe = {f: ["x"] if f == "rejected" else ("csv" if f == "tray" else "x")
+             for f in ("tray", "text", "approvedAgainst", "rejected", "by", "at", "liveAt",
+                       "exportedAt", "importedAt", "sentAt", "arrivedAt", "failed", "why")}
+    return set(record_of(probe))
 
 
 def _read_fields(c: dict) -> set[str]:
@@ -49,17 +53,20 @@ def _read_fields(c: dict) -> set[str]:
 
 
 def test_every_field_the_engine_reads_is_saved_or_a_listed_gap():
+    """The desk's fields must arrive from the desk; `by` is the server's stamp; the engine's
+    own stamps arrive from the engine (its table, WO-21) -- they are the monorepo's half."""
     c = _contract()
-    arrives = _save_fields() & _allowed_keys()
-    gaps = _read_fields(c) - arrives
-    listed = set(c["known_gaps"])
+    arrives = (_save_fields() & _allowed_keys()) | {"by"}
+    desk_read = {f for f in _read_fields(c) if c["written_by"].get(f) == "desk"}
+    gaps = desk_read - arrives
+    listed = {f for f in c["known_gaps"] if c["written_by"].get(f) == "desk"}
     assert not gaps - listed, f"the engine reads fields the desk cannot save: {sorted(gaps - listed)}"
     assert not listed - gaps, f"{sorted(listed - gaps)} are saved now: remove them from known_gaps"
 
 
 def test_whatever_the_desk_sends_the_server_keeps():
     dropped = _save_fields() - _allowed_keys()
-    assert not dropped, f"the desk sends fields save_decisions throws away: {sorted(dropped)}"
+    assert not dropped, f"the desk sends fields the storage throws away: {sorted(dropped)}"
 
 
 def test_every_field_the_desk_owns_has_a_writer_in_the_desk():

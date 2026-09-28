@@ -310,56 +310,52 @@ class TestAuditRegressions2026_09_23:
         """Without this seed `editorDirty` reads true for a box nobody touched."""
         assert page.count("ta.setAttribute('data-opened-with', ta.value);") >= 2
 
-    def test_the_save_carries_every_field_the_stage_function_reads(self, page):
-        """Five stamps used to be dropped by both the diff and the payload, so
-        sending/arrived/failed/exported/live never left the browser that made them.
-
-        `liveAt` is the one that costs money: the exporter skips rows already on the
-        website, it reads the saved file, and without this the exclusion can never
-        fire -- an older wording gets re-imported over a newer one.
-        """
-        for field in ("sentAt", "arrivedAt", "failed", "exportedAt", "liveAt"):
-            assert f"'{field}'" in page, f"{field} missing from SAVE_FIELDS"
-        assert "var SAVE_FIELDS = [" in page
-        # the old hand-listed payload is gone
-        assert "{ tray: mine.tray, text: mine.text, rejected: mine.rejected," not in page
+    def test_the_save_sends_what_the_storage_keeps_and_nothing_else(self, page):
+        """WO-17: the desk sends the reviewer's own fields -- what the storage's deskRecord()
+        keeps. `by` and `at` are the server's stamps, and the engine's (sent, arrived,
+        failed, exported, live) go into the engine's own table: a browser sending them was
+        how a stale copy could undo a stamp -- and `liveAt` gates the export."""
+        import re
+        m = re.search(r"var STORED_FIELDS = \[([^\]]*)\]", page)
+        assert m, "the desk's STORED_FIELDS list was not found"
+        from localize_desk.desk_store import record_of
+        kept = set(record_of({"tray": "csv", "text": "a", "approvedAgainst": "b", "rejected": ["c"],
+                              "by": "x", "at": "y", "liveAt": "z", "sentAt": "w"}))
+        assert set(re.findall(r"'([A-Za-z]+)'", m.group(1))) == kept
 
     def test_a_re_approval_after_the_wording_moved_is_a_real_change(self, page):
         """`sameDecision` ignored `approvedAgainst`, so re-approving produced no
         delta, the server kept the stale snapshot, and the exporter skipped the row
         as "changed since approval" permanently -- unclearable from the UI."""
         assert "a.tray === b.tray && a.text === b.text &&" not in page
-        assert "SAVE_FIELDS" in page.split("function sameDecision")[1][:400]
+        assert "STORED_FIELDS" in page.split("function sameDecision")[1][:400]
 
-    def test_a_record_is_kept_for_its_stamps_not_just_its_tray(self, page):
-        """Keying on `.tray` told the server to forget a row that was out for
-        translation."""
+    def test_a_record_is_kept_for_any_decision_not_just_its_tray(self, page):
+        """Keying on `.tray` told the server to forget a decision without one (an edit
+        left after a request was undone)."""
         assert "function hasContent(r)" in page
         assert "var mine = hasContent(now[uid]) ? now[uid] : null;" in page
         assert "var mine = now[uid] && now[uid].tray ? now[uid] : null;" not in page
 
-    def test_the_run_poll_is_anchored_to_a_baseline(self, page):
-        """`runs?per_page=1` returns the NEWEST run, not ours.
+    def test_a_save_names_its_version_and_its_desk(self, page):
+        """WO-17: every change names the version it was based on (a change on any other
+        is a conflict, never applied), and every request says which desk is writing."""
+        body = page.split("async function saveLanguage(code, d)")[1].split("async function save()")[0]
+        assert "base: (base[uid] && base[uid].version) || 0" in body
+        assert "client: DESK_CLIENT" in body and "action: 'desk-write'" in body
 
-        Locales save one after another, so when the second dispatched, the newest
-        run was the first one -- already completed, already successful. Every locale
-        after the first was banked against its predecessor and the reviewer was told
-        it was safe to close the page.
-        """
-        assert "function latestRunId(workflow)" in page
-        assert "function awaitRun(workflow, baselineId)" in page
-        assert "run.id !== baselineId" in page
-        # and with no id available it must refuse rather than guess
-        assert "cannot confirm the save yet" in page
+    def test_a_save_goes_no_more_than_the_storage_takes_at_once(self, page):
+        """The Worker refuses more than 200 changes in one request: a whole language in
+        bulk (~823) goes in slices. The stand-in's limit is the Worker's (parity test)."""
+        from localize_desk.desk_store import MAX_CHANGES
+        assert f"var CHUNK = {MAX_CHANGES};" in page
 
-    def test_the_save_is_split_to_fit_the_dispatch_ceiling(self, page):
-        """A whole locale of approvals measures 61-66 KB base64 against a 65,536
-        byte cap. Arabic is OVER it; Japanese clears by 87 bytes. "Select all,
-        Approve, Save" is the ordinary way to get there."""
-        assert "function chunksFor(locale, body)" in page
-        assert "var MAX_B64 = " in page
-        cap = int(page.split("var MAX_B64 = ")[1].split(";")[0])
-        assert cap < 65536, "the split threshold must sit below the real ceiling"
+    def test_the_old_save_path_is_gone(self, page):
+        """S2 (R37): one save path. The workflow dispatch, its run polling and the repo's
+        decisions.json are retired -- a second path is a second truth."""
+        for gone in ("action: 'dispatch'", "action: 'poll'", "localization-save.yml", "decisions.json",
+                     "function chunksFor", "function awaitRun", "function latestRunId"):
+            assert gone not in page, gone
 
     def test_a_storage_failure_is_not_reported_as_success(self, page):
         """persist() swallowed the quota error and commitEditor toasted
@@ -372,14 +368,14 @@ class TestAuditRegressions2026_09_23:
         Gemini and a row deliberately un-approved both have no tray, and both were
         overwritten wholesale -- the first threw away a paid-for translation, the
         second made undo silently revert on reload."""
-        assert "if (!hasContent(state[uid]))" in page
+        assert "if (!hasContent(state[uid]) && hasContent(server[uid]))" in page
         assert "if (!state[uid] || !state[uid].tray) { state[uid] =" not in page
 
-    def test_a_failed_baseline_fetch_is_not_mistaken_for_a_missing_file(self, page):
-        """One catch covered both, so a 5xx booted the desk showing none of a
-        colleague's decisions -- and the next save, merged last-writer-wins, erased
-        them."""
-        assert "else if (dr.status !== 404)" in page
+    def test_an_unreadable_storage_is_not_mistaken_for_an_empty_one(self, page):
+        """A 5xx booted the desk showing none of a colleague's decisions -- and the next
+        save would have presented its own as the newer ones. (The storage answers an
+        empty language with 200 and nothing, so there is no "missing file" case left.)"""
+        assert "if (sr && !sr.ok) throw new Error('HTTP ' + sr.status);" in page
         assert "t('toast.saved_load.title')" in page
 
     def test_clearing_an_edit_restores_the_wording_the_approval_is_against(self, page):
@@ -461,15 +457,6 @@ class TestFourthAudit:
         assert "ta.setAttribute('dir', 'auto')" in page
         assert "tgt.setAttribute('dir', 'rtl')" not in page
 
-    def test_a_save_follows_the_run_its_own_dispatch_created(self, units_dir):
-        page = G.render_locale("de", self._units(units_dir))
-        save_one = page.split("async function saveOne(locale, d)")[1].split("async function save()")[0]
-        assert "function awaitRunId(workflow, runId)" in page
-        assert "r.body.run_id" in save_one
-        # with a Worker that cannot name runs, refuse BEFORE dispatching: the old
-        # order let the save land and then reported "Not saved"
-        assert save_one.index("cannot confirm the save yet") < save_one.index("action: 'dispatch'")
-
     def test_an_approval_records_the_websites_wording_never_the_screen(self, units_dir):
         """Independent review: `.desk-live` shows the reviewer's edit, and stamping from
         it recorded a DISCARDED edit as `approvedAgainst` after the edit was cleared."""
@@ -479,11 +466,6 @@ class TestFourthAudit:
         assert "liveText[u.id] = u.tgt;" in page
         # and the row shows the website's wording again once the edit is gone
         assert "var shown = s.text != null ? s.text : liveText[uid];" in page
-
-    def test_a_failed_probe_is_not_read_as_no_runs_yet(self, units_dir):
-        page = G.render_locale("de", self._units(units_dir))
-        probe = page.split("function latestRunId(workflow)")[1].split("function awaitRun(")[0]
-        assert probe.index("if (!r.ok) return undefined;") < probe.index("return null;")
 
 
 def test_index_links_into_a_list_in_reviewer_words():

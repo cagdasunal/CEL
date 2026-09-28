@@ -335,6 +335,10 @@ def render_index(units: list[dict]) -> str:
 # privately. One constant for the desk AND the index, so the two cannot disagree about it.
 SAVE_OFF = True
 
+# Why a save can stop -- each a COPY.md `save.reason.<name>` line. The page's failureReason()
+# returns exactly these (tests/test_copy.py holds the two together).
+SAVE_REASONS = ("offline", "reload", "signed_out", "cap", "daily", "unavailable", "refused", "trouble")
+
 _STAGE_JS = """\
     function stageOf(s) {
       s = s || {};
@@ -360,24 +364,26 @@ _STAGE_JS = """\
 # kept its own whole-record JSON comparison, which disagreed with the desk whenever a
 # record's keys came back in another order, or a record was empty (review round 2).
 _DELTA_JS = """\
-    // Every field `stage()` reads. Five of these used to be left behind by both the
-    // comparison and the delta, so `sending`, `arrived`, `failed`, `exported` and
-    // `live` existed only in the browser that produced them -- and `liveAt`, which
-    // is what stops an already-published row being exported a second time, could
-    // never reach the server that does the exporting.
-    var SAVE_FIELDS = ['tray', 'text', 'rejected', 'by', 'at', 'approvedAgainst',
-                       'sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'];
+    // What the storage keeps of a decision: the reviewer's own fields -- the Worker's
+    // deskRecord() (runbook WO-17). `by` and `at` are stamped by the server, and the
+    // engine's stamps (sent, arrived, failed, exported, live) live in its own tables, so
+    // none of them is sent, and none of them makes a row unsaved.
+    var STORED_FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];
 
-    // A record is worth keeping if it carries a decision OR any lifecycle stamp.
-    // Keying this on `tray` alone told the server to forget a row that was out for
-    // translation.
+    // A record is worth keeping if it carries a decision.
     function hasContent(r) {
       if (!r) return false;
-      for (var i = 0; i < SAVE_FIELDS.length; i++) {
-        var v = r[SAVE_FIELDS[i]];
+      for (var i = 0; i < STORED_FIELDS.length; i++) {
+        var v = r[STORED_FIELDS[i]];
         if (v !== undefined && v !== null) return true;
       }
       return false;
+    }
+    function storedOnly(r) {
+      var out = {};
+      if (!r) return out;
+      STORED_FIELDS.forEach(function (f) { if (r[f] !== undefined && r[f] !== null) out[f] = r[f]; });
+      return out;
     }
 
     // Strings compare directly; only `rejected` (a list) needs serialising. Serialising
@@ -394,11 +400,11 @@ _DELTA_JS = """\
     function sameDecision(a, b) {
       if (!a && !b) return true;
       if (!a || !b) return false;
-      for (var i = 0; i < SAVE_FIELDS.length; i++) {
+      for (var i = 0; i < STORED_FIELDS.length; i++) {
         // `approvedAgainst` belongs here: without it, re-approving a row whose
         // wording had moved produced no delta, the server kept the stale snapshot,
         // and the export skipped the row as "changed since approval" for ever.
-        if (!sameValue(a[SAVE_FIELDS[i]], b[SAVE_FIELDS[i]])) return false;
+        if (!sameValue(a[STORED_FIELDS[i]], b[STORED_FIELDS[i]])) return false;
       }
       return true;
     }
@@ -411,16 +417,8 @@ _DELTA_JS = """\
         var mine = hasContent(now[uid]) ? now[uid] : null;
         var theirs = hasContent(was[uid]) ? was[uid] : null;
         if (sameDecision(mine, theirs)) continue;
-        // null is how the server is told to forget a unit.
-        if (mine) {
-          var row = {};
-          SAVE_FIELDS.forEach(function (f) {
-            if (mine[f] !== undefined) row[f] = mine[f];
-          });
-          out[uid] = row;
-        } else {
-          out[uid] = null;
-        }
+        // null is how the storage is told the decision was undone.
+        out[uid] = mine ? storedOnly(mine) : null;
         n++;
       }
       return { body: out, n: n };
@@ -1155,6 +1153,28 @@ __STAGE_JS__
       badge.textContent = spec[0];
       if (st === 'failed' && s.failed) badge.setAttribute('data-tip', String(s.failed));
       else badge.removeAttribute('data-tip');
+      // Someone else saved this text first (WO-17): said on the row, with a way to take
+      // their version; deciding again yourself keeps yours.
+      var theirs = conflicts[uid];
+      tr.classList.toggle('is-conflict', !!theirs);
+      var take = tr.querySelector('[data-conflict]');
+      if (theirs) {
+        badge.className = 'desk-state desk-badge-look';
+        badge.textContent = t('status.conflict');
+        badge.setAttribute('data-tip', theirs.gone ? t('status.conflict.gone')
+          : t('status.conflict.tip', { who: theirs.by || '', text: theirs.text != null ? theirs.text : liveText[uid] }));
+        if (!take) {
+          take = document.createElement('button');
+          take.type = 'button';
+          take.className = 'desk-btn desk-take-theirs';
+          take.setAttribute('data-conflict', 'theirs');
+          take.textContent = t('conflict.take_theirs');
+          take.setAttribute('data-tip', t('conflict.take_theirs.hint'));
+          badge.parentNode.appendChild(take);
+        }
+      } else if (take) {
+        take.parentNode.removeChild(take);
+      }
       tr.setAttribute('data-stage', st);
       tr.classList.toggle('is-approved', st === 'approved' || st === 'edited' ||
                                           st === 'exported' || st === 'live');
@@ -1336,13 +1356,14 @@ __STAGE_JS__
     //  * ✦ on an arrived draft records that draft as `rejected` -- the batch sends it to
     //    Gemini as what not to repeat; without it a re-request paid twice for the same
     //    prompt (R56). Undoing puts the draft back.
-    //  * `was` stays in this browser (it is not in SAVE_FIELDS): undo is a convenience of
+    //  * `was` stays in this browser (it is not in STORED_FIELDS): undo is a convenience of
     //    the session that made the change, not a fact the engine needs.
     function decide(uid, tr, tray, why, restoring) {
+      clearConflict(uid);                  // deciding again is choosing yours over theirs
       var s = rec(uid);
       var from = s.tray || null;
       if (from === tray) return false;
-      // A LIST, newest last, the last five: what the Worker, save_decisions and the batch
+      // A LIST, newest last, the last five: what the Worker's storage and the batch
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
       if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
@@ -1389,6 +1410,22 @@ __STAGE_JS__
     }
 
     body.addEventListener('click', function (ev) {
+      var take = ev.target.closest('[data-conflict]');
+      if (take) {
+        var trc = take.closest('.desk-row'), uidc = trc.getAttribute('data-uid');
+        var theirs = conflicts[uidc] || {};
+        // Their decision, as the storage holds it: nothing of yours left to send. The
+        // engine's stamps on the row are not a decision and stay.
+        var keep = {};
+        ['sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'].forEach(function (f) {
+          if (state[uidc] && state[uidc][f] != null) keep[f] = state[uidc][f];
+        });
+        state[uidc] = Object.assign(keep, storedOnly(theirs), theirs.by ? { by: theirs.by, at: theirs.at } : {});
+        clearConflict(uidc);
+        note('take-theirs', uidc, null, null);
+        persist(); paint(trc); paintBar(); applyFilters();
+        return;
+      }
       var cb = ev.target.closest('[data-pick]');
       if (cb) {
         var tr = cb.closest('.desk-row');
@@ -1545,6 +1582,8 @@ __STAGE_JS__
       }
       // What is in the box is now the decision, so Cancel has nothing to throw away.
       ta.setAttribute('data-opened-with', ta.value);
+      // Typing your own wording is deciding again -- over someone else's save, too (WO-17).
+      if (changed) clearConflict(uid);
       if (changed) { persist(); paint(tr); paintBar(); }
       return changed;
     }
@@ -1978,11 +2017,9 @@ __STAGE_JS__
 
 
     // ── Saving ─────────────────────────────────────────────────────────
-    // `saved` is what the repo is known to hold. Everything that differs from it is
-    // unsaved work, and only the difference is sent -- a whole locale of approvals is
-    // 61-66 KB base64 against a 65,536-byte workflow_dispatch ceiling (chunksFor splits
-    // it), and sending deltas also means two people reviewing different pages of one
-    // language merge instead of clobbering.
+    // `saved` is what the storage is known to hold. Everything that differs from it is
+    // unsaved work, and only the difference is sent -- which also means two people
+    // reviewing different pages of one language merge instead of clobbering.
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(SAVEDKEY) || '{}') || {}; } catch (e) { saved = {}; }
 
@@ -2066,28 +2103,14 @@ __DELTA_JS__
       btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
     }
 
-    // A reviewer has no model of a workflow run, an underscored status or an HTTP
-    // code. The raw value still goes to note('save-failed'), where it can be read
-    // when something needs diagnosing; it does not go on screen.
-    // Internal error codes -> the reason words in COPY.md `save.reason.*`. The raw
-    // message still goes to note('save-failed') for diagnosis; it never goes on screen.
-    var FAILURE_KEYS = [
-      ['startup_failure', 'startup'], ['cancelled', 'cancelled'], ['timed_out', 'timeout'],
-      ['failure', 'server'], ['timed out', 'slow'], ['HTTP 4', 'refused'],
-      ['HTTP 5', 'trouble'], ['cannot confirm', 'unconfirmed'],
-      ['not configured', 'not_configured'], ['too large', 'too_large']
-    ];
-    function humanFailure(msg) {
-      msg = String(msg || '');
-      for (var i = 0; i < FAILURE_KEYS.length; i++) {
-        if (msg.indexOf(FAILURE_KEYS[i][0]) !== -1) return t('save.reason.' + FAILURE_KEYS[i][1]);
-      }
-      return t('save.reason.unknown');
-    }
-
-    function runWords(status) {
-      return t(status === 'in_progress' ? 'save.status.saving' : 'save.status.starting');
-    }
+    // ── Saving: the sign-in Worker's desk storage (runbook WO-17) ─────────────────
+    // A change names the version it was based on; the Worker applies it only on that
+    // version and stamps who and when itself. At most 200 changes a request, one request
+    // at a time. `saved` is the storage's copy, each with its `version`; the difference is
+    // what is sent. The old path -- a GitHub workflow committing to the public repo -- is
+    // gone (S2). Nothing leaves the browser while SAVE_OFF (WO-34).
+    var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
+    var CHUNK = 200;          // the Worker's most changes in one request
 
     function callProxy(payload) {
       var url = window.CEL_DISPATCH_URL;
@@ -2105,129 +2128,82 @@ __DELTA_JS__
       });
     }
 
-    // The newest run of a workflow is NOT necessarily the run we just started.
-    // Locales are saved one after another, so by the time the second one
-    // dispatches, the newest run is the FIRST one -- already completed, already
-    // successful. Polling without a baseline banked every locale after the first
-    // against its predecessor's result and told the reviewer it was safe to close
-    // the page. So: read the newest run id BEFORE dispatching, and accept only a
-    // run that is not that one.
-    function latestRunId(workflow) {
-      return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
-        // A failed poll is NOT "no runs yet": that answer means "any run is ours", and
-        // on the fallback path it let another reviewer's run confirm this save.
-        if (!r.ok) return undefined;
-        var run = r.body && r.body.run ? r.body.run : null;
-        if (!run) return null;                       // no runs yet; any run is ours
-        return run.id != null ? run.id : undefined;  // undefined = worker too old
-      }).catch(function () { return undefined; });
+    // Why a save stopped, as a COPY.md `save.reason.*` key. The raw answer goes to the log
+    // for diagnosis, never on screen.
+    function failureReason(r) {
+      if (!r) return 'offline';
+      if (r.status === 409) return 'reload';
+      if (r.status === 401 || r.status === 403) return 'signed_out';
+      if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'daily' : 'cap';
+      if (r.status === 503) return 'unavailable';
+      if (r.status === 400) return 'refused';
+      return 'trouble';
     }
 
-    function awaitRun(workflow, baselineId) {
-      var start = Date.now();
-      function tick() {
-        return callProxy({ action: 'poll', workflow: workflow }).then(function (r) {
-          var run = r.ok && r.body && r.body.run ? r.body.run : null;
-          if (run && run.id == null) {
-            // Without a run id we cannot tell our run from the last one, and a
-            // wrong "saved" is worse than an honest "unconfirmed".
-            throw new Error('this site cannot confirm the save yet');
-          }
-          var isOurs = run && (baselineId === null || run.id !== baselineId);
-          if (isOurs && run.status === 'completed') return run;
-          if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
-          saveStatus.textContent = isOurs ? runWords(run.status) : t('save.status.starting');
-          return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
+    // Texts someone else saved first, per language, until the reviewer decides: stored,
+    // so a reload cannot turn "decide first" into a silent overwrite.
+    function conflictsOf(code) { return readFresh('cel-desk-conflicts-' + code); }
+    var conflicts = conflictsOf(CODE);
+    function persistConflicts(code, map) {
+      try {
+        if (Object.keys(map).length) localStorage.setItem('cel-desk-conflicts-' + code, JSON.stringify(map));
+        else localStorage.removeItem('cel-desk-conflicts-' + code);
+      } catch (e) {}
+    }
+    function clearConflict(uid) {
+      if (!conflicts[uid]) return;
+      delete conflicts[uid];
+      persistConflicts(CODE, conflicts);
+    }
+
+    // The page a change names: the Page filter's when the text is on it, else its first
+    // (the Worker's page map allows any page the text is on).
+    function pageFor(pages) {
+      if (!pages || !pages.length) return '';
+      return fPage.value && pages.indexOf(fPage.value) !== -1 ? fPage.value : pages[0];
+    }
+
+    async function saveLanguage(code, d) {
+      var units = await fetchUnits(code);
+      var pages = Object.create(null);
+      units.forEach(function (u) { pages[u.id] = u.pages; });
+      var base = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
+      var waiting = code === CODE ? conflicts : conflictsOf(code);
+      // A text waiting on a conflict decision is not sent again until it is decided.
+      var uids = Object.keys(d.body).filter(function (uid) { return !waiting[uid]; });
+      var out = { applied: 0, conflicts: 0, refused: 0, waiting: Object.keys(d.body).length - uids.length };
+      for (var i = 0; i < uids.length; i += CHUNK) {
+        var changes = uids.slice(i, i + CHUNK).map(function (uid) {
+          return { unit: uid, page: pageFor(pages[uid]), base: (base[uid] && base[uid].version) || 0,
+                   record: d.body[uid] };                // null: the decision was undone
         });
-      }
-      if (baselineId === undefined) {
-        return Promise.reject(new Error('this site cannot confirm the save yet'));
-      }
-      return tick();
-    }
-
-    function awaitRunId(workflow, runId) {
-      var start = Date.now();
-      function tick() {
-        return callProxy({ action: 'poll', workflow: workflow, run_id: runId }).then(function (r) {
-          var run = r.ok && r.body && r.body.run ? r.body.run : null;
-          if (run && run.status === 'completed') return run;
-          if (Date.now() - start > 90000) return null;   // report a timeout, not a lie
-          saveStatus.textContent = run ? runWords(run.status) : t('save.status.starting');
-          return new Promise(function (res) { setTimeout(function () { res(tick()); }, 3000); });
-        });
-      }
-      return tick();
-    }
-
-    async function encodeFor(locale, body) {
-      var doc = { schema: 'cel-localization-desk/1', locale: locale, decisions: body };
-      var bytes = new TextEncoder().encode(JSON.stringify(doc));
-      var gz = new Response(
-        new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'))
-      );
-      var buf = new Uint8Array(await gz.arrayBuffer());
-      var bin = '';
-      for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-      return btoa(bin);
-    }
-
-    // A workflow_dispatch input is capped at 65,536 bytes. A whole locale of
-    // approvals measures 61-66 KB base64 -- Arabic is OVER the limit and Japanese
-    // clears it by 87 bytes -- and "select all, Approve, Save" is the ordinary way
-    // to get there. So the payload is split until every piece fits. The workflow
-    // MERGES rather than replaces, so several dispatches for one locale are safe.
-    var MAX_B64 = 60000;
-
-    async function chunksFor(locale, body) {
-      var uids = Object.keys(body);
-      if (!uids.length) return [];
-      var out = [], queue = [uids];
-      while (queue.length) {
-        var part = queue.shift();
-        var sub = {};
-        part.forEach(function (u) { sub[u] = body[u]; });
-        var enc = await encodeFor(locale, sub);
-        if (enc.length <= MAX_B64) { out.push(enc); continue; }
-        if (part.length === 1) {
-          throw new Error('one row is too large to send (' + part[0] + ')');
+        var r = null;
+        try {
+          r = await callProxy({ action: 'desk-write', locale: code, client: DESK_CLIENT, changes: changes });
+        } catch (e) { r = null; }
+        if (!r || !r.ok) {
+          var err = new Error(failureReason(r));
+          err.detail = r ? r.status + ' ' + ((r.body && r.body.error) || '') : 'no answer';
+          throw err;
         }
-        var mid = Math.ceil(part.length / 2);
-        queue.unshift(part.slice(mid));
-        queue.unshift(part.slice(0, mid));
+        (r.body.applied || []).forEach(function (a) {
+          base[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
+          out.applied++;
+        });
+        (r.body.conflicts || []).forEach(function (c) {
+          // Their version becomes the base, so a later save of yours is a deliberate choice
+          // over theirs -- and it waits until the reviewer makes it (the row says so).
+          base[c.unit] = c.current ? Object.assign(storedOnly(c.current), { version: c.current.version }) : {};
+          waiting[c.unit] = c.current || { gone: true };
+          out.conflicts++;
+        });
+        out.refused += (r.body.refused || []).length;
+        // Bank each request as it lands: a failure on the next must not undo this one.
+        try { localStorage.setItem('cel-desk-saved-' + code, JSON.stringify(base)); } catch (e) {}
+        persistConflicts(code, waiting);
+        if (code === CODE) saved = base;
       }
       return out;
-    }
-
-    async function saveOne(locale, d) {
-      var parts = await chunksFor(locale, d.body);
-      for (var i = 0; i < parts.length; i++) {
-        if (parts.length > 1) {
-          saveStatus.textContent = t('save.status.part',
-            { language: t('lang.' + locale), i: i + 1, count: parts.length });
-        }
-        // Probe BEFORE dispatching. A Worker that cannot name runs answers the poll
-        // without an id; dispatching anyway let the save land in the repo and then
-        // told the reviewer "Not saved -- try again", and every retry dispatched it
-        // once more. Refusing here is the honest version of "cannot confirm".
-        var baseline = await latestRunId('localization-save.yml');
-        if (baseline === undefined) throw new Error('this site cannot confirm the save yet');
-        var r = await callProxy({
-          action: 'dispatch', workflow: 'localization-save.yml',
-          inputs: { locale: locale, payload: parts[i] }
-        });
-        if (!r.ok) throw new Error('HTTP ' + r.status + (r.body && r.body.error ? ': ' + r.body.error : ''));
-        // The dispatch names the run it created. Follow THAT run: "the newest run
-        // that is not the baseline" is another reviewer's run whenever two people
-        // save one language, and GitHub's concurrency group can cancel ours while
-        // theirs succeeds. The baseline is only the fallback for a Worker that
-        // cannot say which run it started.
-        var runId = r.body && r.body.run_id != null ? r.body.run_id : null;
-        var run = runId !== null ? await awaitRunId('localization-save.yml', runId)
-                                 : await awaitRun('localization-save.yml', baseline);
-        if (!run) throw new Error('timed out waiting for the run');
-        if (run.conclusion !== 'success') throw new Error(run.conclusion || 'failed');
-      }
     }
 
     async function save() {
@@ -2239,21 +2215,12 @@ __DELTA_JS__
       var all = unsavedByLocale();
       var codes = Object.keys(all);
       if (!codes.length) return;
-      var total = 0;
-      codes.forEach(function (c) { total += all[c].n; });
 
       saving = true; paintSave();
       saveStatus.textContent = t('save.status.saving');
       saveStatus.className = 'desk-status';
 
-      // Snapshot BEFORE sending. Anything decided while the run is in flight stays
-      // unsaved rather than being marked clean without ever having been sent.
-      var snaps = {};
-      codes.forEach(function (c) {
-        snaps[c] = JSON.parse(JSON.stringify(c === CODE ? state : readLocale(c)));
-      });
-
-      var done = [], failed = null;
+      var got = { applied: 0, conflicts: 0, refused: 0, waiting: 0 }, done = [], failed = null;
       try {
         for (var i = 0; i < codes.length; i++) {
           var c = codes[i];
@@ -2261,15 +2228,8 @@ __DELTA_JS__
             saveStatus.textContent = t('save.status.language',
               { language: t('lang.' + c), i: i + 1, count: codes.length });
           }
-          await saveOne(c, all[c]);
-          // Bank each language as it lands. A failure on the fourth must not throw
-          // away the three that already succeeded.
-          var next = {};
-          for (var uid in snaps[c]) {
-            if (hasContent(snaps[c][uid])) next[uid] = snaps[c][uid];
-          }
-          try { localStorage.setItem('cel-desk-saved-' + c, JSON.stringify(next)); } catch (e) {}
-          if (c === CODE) saved = next;
+          var res = await saveLanguage(c, all[c]);
+          for (var k in got) got[k] += res[k];
           done.push(c);
         }
       } catch (err) {
@@ -2277,29 +2237,38 @@ __DELTA_JS__
       }
 
       saving = false;
-      paintSave(); paintBar();
+      rows.forEach(paint);
+      paintSave(); paintBar(); applyFilters();
 
-      if (!failed) {
-        note('save', null, String(total), codes.join(','));
-        saveStatus.textContent = '';
-        toast(t('save.done.title'), { level: 'ok',
-          detail: codes.length > 1
-            ? t('save.done.detail_langs', { n: total, count: codes.length })
-            : tn('save.done.detail', total) });
-      } else {
+      if (failed) {
         saveStatus.textContent = t('save.status.failed');
         saveStatus.className = 'desk-status is-error';
-        note('save-failed', null, failed.message, done.join(','));
-        var reason = humanFailure(failed.message);
+        note('save-failed', null, failed.message + ': ' + (failed.detail || ''), done.join(','));
+        var reason = t('save.reason.' + failed.message);
         toast(done.length ? t('save.partial.title', { done: done.length, count: codes.length })
                           : t('save.failed.title'),
               { level: 'err',
-                detail: t(done.length ? 'save.partial.detail' : 'save.failed.detail',
-                          { reason: reason }) });
+                detail: t(done.length ? 'save.partial.detail' : 'save.failed.detail', { reason: reason }) });
+        return;
+      }
+      note('save', null, String(got.applied), codes.join(','));
+      saveStatus.textContent = '';
+      if (got.applied) {
+        toast(t('save.done.title'), { level: 'ok',
+          detail: codes.length > 1 ? t('save.done.detail_langs', { n: got.applied, count: codes.length })
+                                   : tn('save.done.detail', got.applied) });
+      }
+      if (got.conflicts || got.waiting) {
+        toast(t('save.conflicts.title'), { level: 'warn', sticky: true,
+                                           detail: tn('save.conflicts.detail', got.conflicts + got.waiting) });
+      }
+      if (got.refused) {
+        toast(t('save.refused.title'), { level: 'warn', detail: tn('save.refused.detail', got.refused) });
       }
     }
 
     btnSave.addEventListener('click', save);
+
 
     // ── Toasts ─────────────────────────────────────────────────────────
     // Confirmation for things that already happen and currently say nothing:
@@ -2488,53 +2457,44 @@ __DELTA_JS__
       var seq = ++loadSeq;
       var code = CODE;
       var unitsP = fetchUnits(code);
-      var savedP = fetch(BASE + code + '/decisions.json', { cache: 'no-cache' })
-        .catch(function (e) { return e; });
+      // The storage's copy, fetched with the texts (runbook WO-17). While saving is off the
+      // desk asks nothing of the storage: every decision is this browser's.
+      var serverP = SAVE_OFF ? Promise.resolve(null)
+        : callProxy({ action: 'desk-read', locale: code }).catch(function (e) { return e; });
       var units;
       try { units = await unitsP; }
       catch (e) { if (seq !== loadSeq) return; throw e; }   // a stale failure is not news
       if (seq !== loadSeq) return;          // a newer switch has taken over
-      // What the repo holds is the baseline. Anything decided in THIS browser and
-      // not yet saved stays exactly as it is and still counts as unsaved -- the
-      // server copy fills in only the units this browser has never touched, which
-      // is what makes a second machine useful instead of blank.
+      // What the storage holds is the baseline, with each text's version. Anything decided
+      // in THIS browser and not yet saved stays exactly as it is and still counts as
+      // unsaved -- the server copy fills in only the texts this browser has never touched,
+      // which is what makes a second machine useful instead of blank.
       try {
-        var dr = await savedP;
+        var sr = await serverP;
         if (seq !== loadSeq) return;        // switched away while this was loading
-        if (dr instanceof Error) throw dr;
-        if (dr.ok) {
-          var ddoc = await dr.json();
-          if (seq !== loadSeq) return;
-          var server = (ddoc && ddoc.decisions) || {};
+        if (sr instanceof Error) throw sr;
+        if (sr && !sr.ok) throw new Error('HTTP ' + sr.status);
+        if (sr) {
+          var server = (sr.body && sr.body.decisions) || {};
           var adopted = 0;
+          saved = {};
           for (var uid in server) {
-            if (!hasContent(server[uid])) continue;
-            saved[uid] = server[uid];
-            // Adopt only where this browser holds NOTHING. The old test was
-            // "no tray", which is not the same thing: a row that had come back
-            // from Gemini, and a row the reviewer had deliberately un-approved
-            // before saving, both have no tray -- and both were overwritten
-            // wholesale. The first threw away a translation already paid for;
-            // the second made the undo silently revert on reload.
-            if (!hasContent(state[uid])) {
-              state[uid] = JSON.parse(JSON.stringify(server[uid]));
+            saved[uid] = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
+            // Adopt only where this browser holds NOTHING -- an undone decision and a draft
+            // that came back both have no tray, and neither may be overwritten.
+            if (!hasContent(state[uid]) && hasContent(server[uid])) {
+              state[uid] = Object.assign(storedOnly(server[uid]), { by: server[uid].by, at: server[uid].at });
               adopted++;
             }
           }
           try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
           persist();
           if (adopted) note('adopted', null, String(adopted), null);
-        } else if (dr.status !== 404) {
-          throw new Error('HTTP ' + dr.status);
         }
       } catch (e) {
-        // A missing file is the normal first-run case. A 5xx, a CDN failure or
-        // malformed JSON on a file that DOES exist is not: the desk would boot
-        // showing none of a colleague's decisions, and the next save -- merged
-        // last-writer-wins per unit -- would erase them.
-        if (!(e instanceof TypeError && !navigator.onLine)) {
-          note('decisions-load-failed', null, String(e && e.message || e), null);
-        }
+        // Unreadable storage is not "nothing saved": a desk that booted without a
+        // colleague's decisions, then saved, would present its own as the newer ones.
+        note('decisions-load-failed', null, String(e && e.message || e), null);
         toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
       }
       if (seq !== loadSeq) return;
@@ -2625,6 +2585,7 @@ __DELTA_JS__
       setLocale(code);
       state = readFresh(KEY);
       saved = readFresh(SAVEDKEY);
+      conflicts = conflictsOf(code);
       try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
       picked = Object.create(null);
       lastPicked = -1;
@@ -2647,6 +2608,7 @@ __DELTA_JS__
     function adoptStored() {
       state = readFresh(KEY);
       saved = readFresh(SAVEDKEY);
+      conflicts = conflictsOf(CODE);
       // Nothing built yet -- loading, or failed to load: the load paints from `state`, and a
       // failure's message must stay on screen (round 3: it became "Showing 0 of 0").
       if (!rows.length) return;
@@ -2654,7 +2616,7 @@ __DELTA_JS__
       if (openTray) paintTray();
     }
     window.addEventListener('storage', function (ev) {
-      if (ev.key === KEY || ev.key === SAVEDKEY || ev.key === null) adoptStored();
+      if (ev.key === KEY || ev.key === SAVEDKEY || ev.key === 'cel-desk-conflicts-' + CODE || ev.key === null) adoptStored();
       else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) paintBar();
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });

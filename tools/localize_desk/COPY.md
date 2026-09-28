@@ -138,6 +138,11 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `status.failed` | Translation failed | Status badge (the reason shows on hover) |
 | `status.exported` | In the import file | Status badge |
 | `status.live` | On the website | Status badge |
+| `status.conflict` | Changed elsewhere | Status, when someone else saved this text first |
+| `status.conflict.tip` | {who} saved this first: “{text}”. Decide again to keep yours, or use theirs. | Hover text of that status |
+| `status.conflict.gone` | Someone else undid this text before you saved it. Decide again to keep yours, or use theirs. | Same, when they undid it |
+| `conflict.take_theirs` | Use theirs | Button beside that status |
+| `conflict.take_theirs.hint` | Replace your decision with the one saved first | Hover text of that button |
 | `action.approve` | Approve — this translation is right | Tick button |
 | `action.approve.on` | Approved — click to undo | Tick button, when approved |
 | `action.edit` | Write your own translation | Pencil button |
@@ -175,10 +180,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.off.title` | Saving is switched off for now | Message, when that button is clicked |
 | `save.off.elsewhere` | + {n} in other languages | Next to that button, while saving is off |
 | `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
-| `save.status.starting` | Starting… | Next to Save, while saving |
 | `save.status.saving` | Saving… | Next to Save, while saving |
 | `save.status.language` | Saving {language} ({i} of {count})… | Next to Save, several languages |
-| `save.status.part` | Saving {language}, part {i} of {count}… | Next to Save, a large save |
 | `save.status.failed` | Not saved | Next to Save, after a failure |
 | `save.done.title` | Saved | Message, bottom right |
 | `save.done.detail.one` | 1 change is stored. You can close this page or carry on from another computer. | Message |
@@ -188,17 +191,20 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.failed.detail` | Nothing is lost — your work is still on this page. Please press Save again. ({reason}) | Message |
 | `save.partial.title` | Saved {done} of {count} languages | Message |
 | `save.partial.detail` | Nothing is lost — the rest is still on this page. Please press Save again. ({reason}) | Message |
-| `save.reason.startup` | the save couldn't start | Reason inside the message |
-| `save.reason.cancelled` | the save was cancelled | |
-| `save.reason.timeout` | the save took too long | |
-| `save.reason.server` | the server couldn't store it | |
-| `save.reason.slow` | it is taking longer than expected | |
+| `save.reason.offline` | there is no connection | Reason inside the message |
+| `save.reason.reload` | this page is out of date — reload it, then save | |
+| `save.reason.signed_out` | you have been signed out — sign in again, then save | |
+| `save.reason.cap` | a lot was saved at once — wait a few minutes | |
+| `save.reason.daily` | today's saving limit is reached — save again tomorrow | |
+| `save.reason.unavailable` | saving isn't available right now | |
 | `save.reason.refused` | the server refused it | |
 | `save.reason.trouble` | the server is having trouble | |
-| `save.reason.unconfirmed` | this site can't confirm saves yet | |
-| `save.reason.unknown` | the save didn't finish | |
-| `save.reason.not_configured` | saving isn't set up on this site yet | |
-| `save.reason.too_large` | one text is too long to send | |
+| `save.conflicts.title` | Someone else saved first | Message, after a save |
+| `save.conflicts.detail.one` | 1 text was changed by someone else before you saved it. It's marked in the list: keep yours by deciding again, or use theirs. | |
+| `save.conflicts.detail.other` | {n} texts were changed by someone else before you saved them. They're marked in the list: keep yours by deciding again, or use theirs. | |
+| `save.refused.title` | Some texts weren't saved | Message, after a save |
+| `save.refused.detail.one` | 1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed. | |
+| `save.refused.detail.other` | {n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed. | |
 
 ## Messages (bottom right)
 
