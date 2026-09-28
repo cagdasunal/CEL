@@ -1623,14 +1623,6 @@ __STAGE_JS__
       var s = rec(uid);
       var from = trayOf(uid);
       if (from === tray) return false;
-      // The request a draft answered: the storage still holds it ({tray: 'draft'}, at the time it
-      // was asked). Kept here (`wasSaved`, like `was`), so that undoing puts exactly it back --
-      // nothing sent, and Gemini not asked again: saved anew, it would be a new ask, later than
-      // the draft, and paid for (storage.queued; review of WO-25c, P1-1).
-      if (!restoring) {
-        if (stage(uid) === 'arrived' && s.tray) s.wasSaved = Object.assign(storedOnly(s), s.at ? { at: s.at } : {});
-        else delete s.wasSaved;
-      }
       // A LIST, newest last, the last five: what the Worker's storage and the batch
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
@@ -1651,6 +1643,9 @@ __STAGE_JS__
       // Undone, the draft is to read again: the copied words come back out, and a request's
       // turned-down draft comes off the list. Until that undo is saved -- a decision saved after
       // the arrival hides the draft (q3); ask Gemini again to have one back (#1's ruling (b)).
+      // An undo never puts back the request the draft answered: saved anew it would be a new ask,
+      // later than the draft, and paid for again (storage.queued). It ends in an empty decision --
+      // whatever was in flight -- which asks for nothing (#1's re-review of P1-1).
       if (restoring && from === 'csv' && draft && s.text === draft.text) delete s.text;
       if (restoring && from === 'draft' && draft && Array.isArray(s.rejected) &&
           s.rejected[s.rejected.length - 1] === draft.text) {
@@ -1661,15 +1656,6 @@ __STAGE_JS__
       setTray(uid, tray, why);
       if (from === 'csv') stampApproval(uid, tr, false);
       if (tray === 'csv') stampApproval(uid, tr, true);
-      // Undone back to the draft to read: the request it answered comes back as the storage holds it
-      // -- while it still does. Once this decision has been saved over it, putting the request back
-      // would be a new ask; the undo is then the storage's empty decision, which hides the draft
-      // (#1's ruling (b)).
-      if (restoring && tray === null && s.wasSaved) {
-        var asked = s.wasSaved;
-        delete s.wasSaved;
-        if (sameDecision(asked, saved[uid] || null)) { state[uid] = asked; return true; }
-      }
       // When: what the stage rule compares an arrival and an export with. The storage stamps the
       // time when the decision lands; until then a decision is the newest thing there is -- and one
       // with nothing left in it has no time yet (an undo), as the storage has none for it either.
@@ -1851,7 +1837,6 @@ __STAGE_JS__
       var changed = false;
       if (val && val !== liveText[uid] && val !== s.text) {
         s.text = val;
-        delete s.wasSaved;                   // an edit is a decision of its own: no request comes back under it
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
         // afterwards could only ever be "yes".

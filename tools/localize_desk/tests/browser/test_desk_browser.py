@@ -1904,10 +1904,12 @@ def _plus(stamp: str, ms: int) -> str:
 def test_a_draft_that_answers_a_request_is_read_decided_and_undone_as_a_draft(browser):
     """Review of WO-25c, P1-1 (#1's pre-paid-run review): every real draft answers a request --
     the storage's decision is still {tray: 'draft'} when it arrives -- and the actions read that
-    saved tray. ✦ acted as its undo (the decision emptied, nothing turned down, the paid draft
-    hidden once saved); bulk ✦ did nothing; ✓ then undo saved the request anew, later than the
-    draft, and Gemini would have been paid again; the Requested list held every draft. A text
-    with a draft to read has no tray of its own, and an undo puts the request back as it was."""
+    saved tray. ✦ acted as its undo; bulk ✦ did nothing; ✓ then undo saved the request anew, later
+    than the draft, and Gemini would have been paid again; the Requested list held every draft.
+    A text with a draft to read has no tray of its own. And an undo ends in an empty decision --
+    never the request put back, which saved anew is a new, paid ask (#1's re-review) -- whether the
+    decision it undoes was saved first (a) or not (b). The storage then asks for nothing, and the
+    draft is hidden once the undo is saved (#1's ruling (b))."""
     with desk() as (base, root, worker):
         page, errors = _open(browser, base + "/admin/localization/de/?show=all")
         a, b, c, d = _visible_uids(page, 4)
@@ -1925,13 +1927,14 @@ def test_a_draft_that_answers_a_request_is_read_decided_and_undone_as_a_draft(br
             assert C.t("status.arrived") in _label(page, u), (u, _label(page, u))
             assert _row(page, u).locator('[data-act="queue"]').get_attribute("data-tip") == C.t("action.queue")
         assert page.locator("#open-draft").is_disabled(), "the Requested list held the drafts"
-        _act(page, a, "approve")                            # ✓: the draft's words, approved
+        _act(page, a, "approve")                            # ✓: the draft's words, approved ...
         assert C.t("status.edited") in _label(page, a) and _rec(page, a).get("text") == DRAFT
-        _act(page, a, "approve")                            # ✓ again: the draft to read, as before
+        _as_wait(page, "saved")                             # ... and saved
+        _act(page, a, "approve")                            # ✓ again: the draft to read, until saved
         assert C.t("status.arrived") in _label(page, a)
-        _act(page, b, "queue")                              # ✦: turned down, asked again
+        _act(page, b, "queue")                              # ✦: turned down, asked again ...
         assert C.t("status.queued") in _label(page, b) and _rec(page, b).get("rejected") == [DRAFT]
-        _act(page, b, "queue")                              # ✦ again: the draft to read, as before
+        _act(page, b, "queue")                              # ... and undone before it is sent
         assert C.t("status.arrived") in _label(page, b) and "rejected" not in _rec(page, b)
         for u in (c, d):                                    # bulk ✦
             _row(page, u).locator("[data-pick]").check()
@@ -1942,15 +1945,18 @@ def test_a_draft_that_answers_a_request_is_read_decided_and_undone_as_a_draft(br
         assert page.locator("#tray-list .desk-review-item").count() == 2
         page.click("#tray-done")
         _as_wait(page, "saved")
-        for u in (a, b):                                    # nothing sent: no new ask, nothing paid again
-            row = worker.store.decisions[("de", u)]
-            assert (row["record"], row["version"], row["at"]) == ({"tray": "draft"}, 1, asked[u]), row
+        for u in (a, b):                                    # undone: an empty decision, asking for nothing
+            row = worker.store.decisions[("de", u)]         # (storage.queued reads only the draft tray)
+            assert row["record"] == {} and row["version"] > 1, row
         for u in (c, d):                                    # a new ask, after the draft, with it turned down
             s = _server(worker, u)
             assert (s["tray"], s["rejected"]) == ("draft", [DRAFT]), s
         page.reload()
         _rows_ready(page)
         _checked(page)
-        assert C.t("status.arrived") in _label(page, a) and C.t("status.arrived") in _label(page, b)
+        for u in (a, b):                                    # the undo saved after the arrival hides the draft
+            assert C.t("status.todo") in _label(page, u), (u, _label(page, u))
+        for u in (c, d):
+            assert C.t("status.queued") in _label(page, u)
         assert not errors, errors
         page.close()
