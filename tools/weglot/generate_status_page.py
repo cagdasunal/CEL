@@ -19,6 +19,7 @@ No external dependencies. Stdlib only.
 """
 
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from html import escape
@@ -88,6 +89,8 @@ STATIC_SUMMARIES_DIR = WEGLOT_CSV_DIR / "static-summaries"
 # The localization round's English freeze (localization runbook WO-30). Both repos carry
 # it at this path, held identical by the monorepo's parity check.
 FREEZE_FILE = PROJECT_ROOT / "data" / "localize" / "freeze.json"
+_FREEZE_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_FREEZE_PATH = re.compile(r"^/(?:[a-z0-9-]+(?:/[a-z0-9-]+)*)?$")
 
 
 def frozen_paste_slugs() -> set[str] | None:
@@ -103,13 +106,21 @@ def frozen_paste_slugs() -> set[str] | None:
         return set()
     except (OSError, ValueError):
         return None
-    pages = doc.get("frozen_pages") if isinstance(doc, dict) else None
-    if not isinstance(pages, list):
+    # The summary pipeline's own checks (CEL tools/summary/cli.py `_frozen_paths`), kept
+    # in step by hand because this file is vendored to a repo without that package: a
+    # file the pipeline refuses holds EVERY paste here too. A lighter check let an empty
+    # or US-style `frozen_until` free every page (round 3 review of WO-32).
+    if not isinstance(doc, dict) or doc.get("schema_version") != 1:
+        return None
+    pages = doc.get("frozen_pages")
+    if not isinstance(pages, list) or not all(isinstance(p, str) and _FREEZE_PATH.match(p) for p in pages):
         return None
     until = doc.get("frozen_until")
-    if isinstance(until, str) and datetime.now(timezone.utc).date().isoformat() > until:
+    if until is not None and not (isinstance(until, str) and _FREEZE_DATE.match(until)):
+        return None
+    if until and datetime.now(timezone.utc).date().isoformat() > until:
         return set()
-    return {p.strip("/").replace("/", "-") or "home" for p in pages if isinstance(p, str)}
+    return {p.strip("/").replace("/", "-") or "home" for p in pages}
 
 
 # ---------------------------------------------------------------------------

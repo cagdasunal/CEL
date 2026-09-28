@@ -77,3 +77,31 @@ def test_a_frozen_pages_summary_is_not_offered_for_pasting(tmp_path, monkeypatch
     assert page.count("Do not paste") == 1
     freeze.write_text("{broken")                                           # unreadable: hold all
     assert gsp.render_files_html().count("Do not paste") == 3
+
+
+import pytest as _pytest
+
+
+@_pytest.mark.parametrize("doc", [
+    {"schema_version": 1, "frozen_pages": ["/vancouver"], "frozen_until": ""},
+    {"schema_version": 1, "frozen_pages": ["/vancouver"], "frozen_until": "10/01/2026"},
+    {"schema_version": 1, "frozen_pages": ["https://www.englishcollege.com/vancouver"], "frozen_until": None},
+    {"schema_version": 2, "frozen_pages": ["/vancouver"], "frozen_until": None},
+    {"schema_version": 1, "frozen_pages": "/vancouver", "frozen_until": None},
+])
+def test_a_freeze_the_pipeline_would_refuse_holds_every_paste(tmp_path, monkeypatch, doc):
+    """Round 3 review of WO-32: the dashboard read these as "nothing frozen" while the
+    summary pipeline refused them and held every page."""
+    import json as _json
+    from tools.weglot import generate_status_page as gsp
+    summaries = tmp_path / "static-summaries"
+    summaries.mkdir()
+    for slug in ("vancouver", "home"):
+        (summaries / f"{slug}.summary.md").write_text("## x\n")
+    freeze = tmp_path / "freeze.json"
+    freeze.write_text(_json.dumps(doc))
+    monkeypatch.setattr(gsp, "STATIC_SUMMARIES_DIR", summaries)
+    monkeypatch.setattr(gsp, "FREEZE_FILE", freeze)
+    assert gsp.frozen_paste_slugs() is None
+    assert gsp.render_files_html().count("Do not paste") == 2
+

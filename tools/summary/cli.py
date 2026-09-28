@@ -360,6 +360,10 @@ class FreezeInvalid(ValueError):
 
 
 _FREEZE_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# A site path as the site writes it: lowercase slug segments. "/Vancouver" or "//vancouver"
+# passed the old check and matched nothing, so the page they meant stayed unfrozen
+# (round 3 review of WO-32).
+_FREEZE_PATH = re.compile(r"^/(?:[a-z0-9-]+(?:/[a-z0-9-]+)*)?$")
 
 
 def _frozen_paths() -> set[str]:
@@ -383,8 +387,8 @@ def _frozen_paths() -> set[str]:
     if not isinstance(doc, dict) or doc.get("schema_version") != 1:
         raise FreezeInvalid("expected an object with schema_version 1")
     pages = doc.get("frozen_pages")
-    if not isinstance(pages, list) or not all(isinstance(x, str) and x.startswith("/") for x in pages):
-        raise FreezeInvalid("frozen_pages must be a list of paths starting with /")
+    if not isinstance(pages, list) or not all(isinstance(x, str) and _FREEZE_PATH.match(x) for x in pages):
+        raise FreezeInvalid("frozen_pages must be a list of site paths like /vancouver/vs-toronto")
     until = doc.get("frozen_until")
     if until is not None and not (isinstance(until, str) and _FREEZE_DATE.match(until)):
         raise FreezeInvalid("frozen_until must be null or a YYYY-MM-DD date")
@@ -439,6 +443,13 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             "frozen": held}
     if freeze_error:
         plan["freeze_error"] = freeze_error
+    elif not args.collection:
+        # A frozen path no static page has freezes nothing here: say so, rather than let a
+        # typo look like protection.
+        static = {_page_path(u) for u in config.STATIC_PAGES}
+        unmatched = sorted(p for p in frozen if p not in static)
+        if unmatched:
+            plan["freeze_unmatched"] = unmatched
     return plan
 
 
@@ -1584,18 +1595,22 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # pages are why: generate-english may not run for them, so no manifest ever holds
     # them, yet regenerating their translations is exactly what stays allowed (WO-30;
     # review round 2, L3 P1-2). The live English is what translate uses anyway (below).
-    if (args.page and args.page in config.STATIC_PAGES
-            and not any(_page_path(e.get("url", "")) == _page_path(args.page)
-                        for e in en_summaries.values())):
+    # (A dry run reads the public page too -- a GET, as generate-english's dry run does for
+    # every static page; no API is called.) The page is matched by path, so a trailing slash
+    # or the bare host finds it (round 3).
+    static_url = next((u for u in config.STATIC_PAGES
+                       if args.page and _page_path(u) == _page_path(args.page)), None)
+    if (static_url and not any(_page_path(e.get("url", "")) == _page_path(static_url)
+                               for e in en_summaries.values())):
         try:
             live_md = structure.parts_to_markdown(
-                page_fetcher.fetch_page(args.page).existing_summary_parts or {})
+                page_fetcher.fetch_page(static_url).existing_summary_parts or {})
         except Exception as e:
             live_md = ""
-            warnings.append(f"{args.page}: live fetch failed ({e})")
+            warnings.append(f"{static_url}: live fetch failed ({e})")
         if live_md.strip():
-            slug = _page_path(args.page).strip("/").replace("/", "-") or "home"
-            en_summaries[f"live-{slug}"] = {"url": args.page, "markdown": live_md,
+            slug = _page_path(static_url).strip("/").replace("/", "-") or "home"
+            en_summaries[f"live-{slug}"] = {"url": static_url, "markdown": live_md,
                                             "content_type": "landing", "locale": "en"}
     if not en_summaries:
         warnings.append(
@@ -1950,7 +1965,12 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     # (Overview "Translations" row + Latest "Translated" column). The summary.yml live
     # commit step already commits docs/admin/weglot-imports/, so this ships with the CSVs.
     status_path = None
-    if not args.dry_run:
+    if not args.dry_run and args.page:
+        # One page's run would replace every other item's coverage on the dashboard: it
+        # writes no status, and says so (round 3 review of WO-32).
+        warnings.append("translation-status.json not written: a --page run covers one page; "
+                        "the next full translate run refreshes it")
+    elif not args.dry_run:
         # Count translated-per-locale from the SAME CSV-paired set that per_item
         # records (review 105 F1), so the dashboard's Overview "Translations" row and
         # the Latest "Translated" column never disagree. (per_locale_results' own
