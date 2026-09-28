@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sys
 import threading
@@ -1077,6 +1078,12 @@ def test_keeping_yours_over_a_conflict_is_a_deliberate_save_on_their_version(bro
         assert (s["text"], s["version"]) == ("WO-06 wording of my own", 2), s
 
 
+def _desk_chunk() -> int:
+    """The most changes the desk sends in one request (its `CHUNK`)."""
+    from localize_desk import generate_desk_page as G
+    return int(re.search(r"var CHUNK = (\d+);", Path(G.__file__).read_text(encoding="utf-8")).group(1))
+
+
 def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
     with desk(save_on=True) as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
@@ -1084,7 +1091,7 @@ def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
         page.check("#pick-all")
         page.click("#bulk-approve")
         _as_wait(page, "saved", 40000)
-        assert worker.calls.count("desk-write") >= 5            # 823 in slices of 200
+        assert worker.calls.count("desk-write") >= 9            # 823 in slices of at most 100
         assert sum(1 for (loc, _u) in worker.store.decisions if loc == "de") == 823
         page.close()
 
@@ -1373,7 +1380,10 @@ def test_the_client_never_sends_more_than_the_storage_takes_in_ten_minutes(brows
             page.click("#bulk-approve")
         _as_wait(page, "stopped", 60000)
         assert C.t("save.reason.cap") in _as_words(page)
-        assert len(worker.store.decisions) == 823 + 823 + 200
+        # Whole slices, never past the cap: two languages, then as many slices as still fit.
+        from localize_desk.desk_store import CAP_CHANGES
+        both, chunk = 823 + 823, _desk_chunk()
+        assert len(worker.store.decisions) == both + (CAP_CHANGES - both) // chunk * chunk
         page.close()
 
 

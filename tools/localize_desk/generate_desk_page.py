@@ -2249,7 +2249,9 @@ __DELTA_JS__
     // what is sent. The old path -- a GitHub workflow committing to the public repo -- is
     // gone (S2). Nothing leaves the browser while SAVE_OFF (WO-34).
     var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
-    var CHUNK = 200;          // the Worker's most changes in one request
+    // Most changes in one request. The Worker takes 200, but 200 cost 5-11 ms of its CPU, at the
+    // free plan's 10 ms; 100 cost 3.6-5.3 ms (#3 measured desk-write). Only bulk work reaches it.
+    var CHUNK = 100;
 
 __PROXY_JS__
     // Why a save stopped, as a COPY.md `save.reason.*` key. The raw answer goes to the log

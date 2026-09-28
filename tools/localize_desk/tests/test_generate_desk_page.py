@@ -345,10 +345,16 @@ class TestAuditRegressions2026_09_23:
         assert "client: DESK_CLIENT" in body and "action: 'desk-write'" in body
 
     def test_a_save_goes_no_more_than_the_storage_takes_at_once(self, page):
-        """The Worker refuses more than 200 changes in one request: a whole language in
-        bulk (~823) goes in slices. The stand-in's limit is the Worker's (parity test)."""
+        """The Worker refuses more than 200 changes in one request, and 200 cost 5-11 ms of its
+        CPU, at the free plan's 10 ms (#3 measured desk-write; 100 cost 3.6-5.3 ms). So a whole
+        language in bulk (~823) goes in slices of at most 100. The stand-in's limit is the
+        Worker's (parity test)."""
         from localize_desk.desk_store import MAX_CHANGES
-        assert f"var CHUNK = {MAX_CHANGES};" in page
+        m = re.search(r"var CHUNK = (\d+);", page)
+        assert m, "the desk no longer says how many changes go in one request"
+        chunk = int(m.group(1))
+        assert 0 < chunk <= 100, f"{chunk} changes in one request is past the Worker's CPU budget"
+        assert chunk <= MAX_CHANGES, f"{chunk} changes in one request is more than the Worker takes"
 
     def test_the_old_save_path_is_gone(self, page):
         """S2 (R37): one save path. The workflow dispatch, its run polling and the repo's
