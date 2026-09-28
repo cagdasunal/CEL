@@ -2414,7 +2414,8 @@ __PROXY_JS__
     // passed); the rest are tried again by themselves.
     var STOPS = { reload: 1, signed_out: 1, cap: 1, daily: 1, refused: 1 };
     var REASONS = __SAVE_REASONS__;
-    var sync = { phase: 'idle', reason: '' };   // idle | waiting | sending | retry | offline | stopped
+    var sync = { phase: 'idle', reason: '', checking: false };   // idle | waiting | sending | retry | offline | stopped
+    // `checking`: the rows came from this browser's copy and the storage's answer is still out (M1, 4b).
     var timer = null, firstAt = 0, lastAt = 0, tries = 0, requestOut = false, sentMem = [];
 
     function setSync(phase, reason) { sync = { phase: phase, reason: reason || '' }; }
@@ -2439,6 +2440,8 @@ __PROXY_JS__
       }
       if (conf) return { name: 'conflict', words: tn('autosave.conflict', conf), tip: t('autosave.conflict.hint') };
       if (!pend) {
+        // Quiet: nothing is wrong, the storage just has not answered yet (M1, 4b).
+        if (sync.checking) return { name: 'checking', words: t('autosave.checking'), tip: t('autosave.checking.hint') };
         return ref ? { name: 'refused', words: tn('autosave.refused', ref), tip: t('autosave.refused.hint') }
                    : { name: 'saved', words: t('autosave.saved'), tip: t('autosave.saved.hint') };
       }
@@ -2760,51 +2763,10 @@ __PROXY_JS__
       try { units = await unitsP; }
       catch (e) { if (seq !== loadSeq) return; throw e; }   // a stale failure is not news
       if (seq !== loadSeq) return;          // a newer switch has taken over
-      // What the storage holds is the baseline, with each text's version. A change made in
-      // THIS browser and not yet saved stays exactly as it is, still unsaved, and keeps the
-      // version it was made on -- so if someone saved the text since, it comes back as a
-      // conflict on its row instead of overwriting them. Everything else is the storage's
-      // copy: a text this browser never touched (what makes a second machine useful), and a
-      // text it saved long ago that a colleague has changed since (R26: comparing only
-      // "does this browser hold anything" kept the old copy as if it were a change, and the
-      // next save put it back over the colleague's; and it took an unsent undo -- which holds
-      // nothing -- for "never touched", so the undo was lost on a reload).
-      try {
-        var sr = await serverP;
-        if (seq !== loadSeq) return;        // switched away while this was loading
-        if (sr instanceof Error) throw sr;
-        if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);
-        if (sr) {
-          var server = (sr.body && sr.body.decisions) || {};
-          var adopted = 0, known = saved;   // what this browser last knew the storage held
-          saved = {};
-          for (var uid in server) {
-            var srv = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
-            var mine = hasContent(state[uid]) ? state[uid] : null;
-            var theirs = hasContent(server[uid]) ? server[uid] : null;
-            var was = known[uid];
-            // Never back to an older copy than this browser has already seen saved.
-            if (was && was.version > srv.version) { saved[uid] = was; continue; }
-            if (!sameDecision(mine, hasContent(was) ? was : null) && !sameDecision(mine, theirs)) {
-              if (was) saved[uid] = was;    // this browser's unsent change, on its own version
-              continue;
-            }
-            saved[uid] = srv;
-            if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; }
-          }
-          try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
-          persist();
-          if (adopted) note('adopted', null, String(adopted), null);
-        }
-      } catch (e) {
-        // Unreadable storage is not "nothing saved": a desk that booted without a
-        // colleague's decisions, then saved, would present its own as the newer ones.
-        note('decisions-load-failed', null, String(e && e.message || e), null);
-        toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
-      }
-      if (seq !== loadSeq) return;
-      // Built only now, with the decisions in hand: a row never shows undecided for a
-      // frame and then flips.
+      // Built NOW, from the copy this browser saved (runbook M1, 4b). The storage's answer used
+      // to come first, so every open and every switch waited a round trip; what it changed
+      // since is repainted when it answers (below), and the bar says it is checking.
+      sync.checking = !SAVE_OFF;
       buildRows(units);
       paintLocaleChrome(code, units.length);
       loadFailedFor = null;
@@ -2845,14 +2807,83 @@ __PROXY_JS__
       // Once per page, not per switch: sixteen switches were sixteen log entries in each
       // language, and the eight capped logs nearly filled the origin (review round 2).
       if (first) note('load', null, String(units.length), null);
-      // What this browser has not sent -- the last visit's included (nothing goes on the way
-      // out, R39) -- goes after the usual quiet moment.
-      changed();
       // What the browser tests time (runbook WO-09, G9 budgets): from the switch, or the
       // page opening, to the new rows painted on screen.
       if (window.performance && performance.mark) {
         requestAnimationFrame(function () {
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
+        });
+      }
+      // Saving off, nothing is on a server and nothing is checked: the load ends here, doing
+      // exactly the work it did before 4b (a second paint of the bar here sat on the switch).
+      if (SAVE_OFF) return;
+      // Then the storage's copy.
+      var repaint = Object.create(null);
+      // What the storage holds is the baseline, with each text's version. A change made in
+      // THIS browser and not yet saved stays exactly as it is, still unsaved, and keeps the
+      // version it was made on -- so if someone saved the text since, it comes back as a
+      // conflict on its row instead of overwriting them. Everything else is the storage's
+      // copy: a text this browser never touched (what makes a second machine useful), and a
+      // text it saved long ago that a colleague has changed since (R26: comparing only
+      // "does this browser hold anything" kept the old copy as if it were a change, and the
+      // next save put it back over the colleague's; and it took an unsent undo -- which holds
+      // nothing -- for "never touched", so the undo was lost on a reload).
+      try {
+        var sr = await serverP;
+        if (seq !== loadSeq) return;        // switched away while this was loading
+        // A row a reviewer has open for editing is theirs until they save it: its decision is
+        // left as this browser's, on the version it was opened on, so a colleague's save comes
+        // back as a conflict on their save -- never replacing what they are typing.
+        var editing = Object.create(null);
+        Array.prototype.forEach.call(document.querySelectorAll('tr[data-uid] .desk-edit'), function (ta) {
+          var row = ta.closest('tr[data-uid]');
+          if (row) editing[row.getAttribute('data-uid')] = true;
+        });
+        if (sr instanceof Error) throw sr;
+        if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);
+        if (sr) {
+          var server = (sr.body && sr.body.decisions) || {};
+          var adopted = 0, known = saved;   // what this browser last knew the storage held
+          saved = {};
+          for (var uid in server) {
+            var srv = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
+            var mine = hasContent(state[uid]) ? state[uid] : null;
+            var theirs = hasContent(server[uid]) ? server[uid] : null;
+            var was = known[uid];
+            if (editing[uid]) { if (was) saved[uid] = was; continue; }
+            // Never back to an older copy than this browser has already seen saved.
+            if (was && was.version > srv.version) { saved[uid] = was; continue; }
+            if (!sameDecision(mine, hasContent(was) ? was : null) && !sameDecision(mine, theirs)) {
+              if (was) saved[uid] = was;    // this browser's unsent change, on its own version
+              continue;
+            }
+            saved[uid] = srv;
+            if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; repaint[uid] = true; }
+          }
+          try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
+          persist();
+          if (adopted) note('adopted', null, String(adopted), null);
+        }
+      } catch (e) {
+        // Unreadable storage is not "nothing saved": a desk that booted without a
+        // colleague's decisions, then saved, would present its own as the newer ones.
+        note('decisions-load-failed', null, String(e && e.message || e), null);
+        toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
+      }
+      if (seq !== loadSeq) return;
+      sync.checking = false;
+      if (Object.keys(repaint).length) {
+        rows.forEach(function (tr) { if (repaint[tr.getAttribute('data-uid')]) paint(tr); });
+        applyFilters();
+        paintLocaleCounts();
+      }
+      paintBar();
+      // What this browser has not sent -- the last visit's included (nothing goes on the way
+      // out, R39) -- goes after the usual quiet moment, once the storage's copy is in.
+      changed();
+      if (window.performance && performance.mark) {
+        requestAnimationFrame(function () {
+          setTimeout(function () { if (seq === loadSeq) performance.mark('desk-checked:' + code); }, 0);
         });
       }
     }

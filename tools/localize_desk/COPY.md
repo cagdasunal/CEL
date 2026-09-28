@@ -179,6 +179,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.off.elsewhere` | + {n} in other languages | Next to that button, while saving is off |
 | `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
 | `autosave.saved` | All changes saved | Bar status, when everything is on the server |
+| `autosave.checking` | Checking for changes… | Bar status, while the page shows this computer's copy and the server has not answered yet |
+| `autosave.checking.hint` | This is what this computer saved last. Anything saved on another computer since shows up in a moment. | Hover text of that status |
 | `autosave.saved.hint` | Your decisions are on the server: you can close this page, or carry on from another computer. | Hover text of that status |
 | `autosave.saving.one` | Saving 1 change… | Bar status, while a change is on its way |
 | `autosave.saving.other` | Saving {n} changes… | |

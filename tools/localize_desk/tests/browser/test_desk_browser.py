@@ -772,13 +772,15 @@ def test_a_full_desk_stays_inside_its_budgets(browser, save_on):
         clicks = sorted(page.evaluate("""() => { const b = document.querySelectorAll('tr[data-uid] [data-act="approve"]')[i];
             const t0 = performance.now(); b.click(); return performance.now() - t0; }""".replace("[i]", f"[{i}]")) for i in (0, 1, 2))
         page.wait_for_timeout(1500)
+        if save_on:
+            # A real round trip (runbook M1, 4b): the desk builds from this browser's copy
+            # first, so the storage's answer is no longer on the switch's path. It used to be
+            # (median 135 ms at 4x CPU with no network at all), and this variant's budget was
+            # 0.3 s; U3's 0.2 s now holds with the read held back half a second.
+            worker.action_faults["desk-read"] = {"delay": 0.5}
         switches = sorted(_timed_switch(page, code) for code in ("fr", "it", "es"))
         assert clicks[1] <= 40 * scale, f"a click took {clicks} ms (median over {40 * scale:.0f})"
-        # Saving on, a switch also reads the storage before it builds (WO-17), a round trip the
-        # desk without saving never makes. Measured 2026-09-28 at 4x CPU, median 135 ms before
-        # autosave and 133 ms with it: the read is the cost, and it sits on 0.2 s -- so this
-        # variant's budget is 0.3 s (runbook §7: with a real network the read is longer still).
-        budget = (0.3 if save_on else 0.2) * scale
+        budget = 0.2 * scale
         assert switches[1] <= budget, f"switch {switches} s, median over {budget:.2f}"
         page.close()
 
@@ -1544,3 +1546,64 @@ def test_review2_p1_a_an_edit_records_the_website_wording_it_replaced(browser):
         _as_wait(page, "saved")
         assert _server(worker, u)["approvedAgainst"] == live[u]["tgt"]
         assert _server(worker, v)["approvedAgainst"] == live[v]["tgt"]
+
+
+# ── M1 (4b): the desk builds from this browser's copy, then checks the storage ─────────
+
+def _colleague_approves(worker, root, uid, locale="de"):
+    u = _units(root, locale)[uid]
+    worker.store.handle("desk-write", {"locale": locale, "client": 1, "changes": [
+        {"unit": uid, "page": u["pages"][0], "base": 0,
+         "record": {"tray": "csv", "approvedAgainst": u["tgt"]}}]}, "colleague@example.test")
+
+
+def _checked(page, code="de", timeout=20000):
+    page.wait_for_function(f"performance.getEntriesByName('desk-checked:{code}').length > 0", timeout=timeout)
+
+
+def test_the_desk_shows_this_browsers_copy_while_it_checks_the_storage(browser):
+    """It waited for the storage's answer before building a single row: every open and every
+    switch cost a round trip. Now the rows come from the copy this browser saved, the bar says
+    it is checking, and what the storage changed is repainted when it answers."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        _colleague_approves(worker, root, u)              # on another computer, since
+        worker.action_faults["desk-read"] = {"delay": 1.5}
+        page.reload()
+        _wait_ready(page, "de")
+        assert _as_state(page) == "checking"
+        assert page.locator("#save-status").inner_text() == C.t("autosave.checking")
+        assert _rec(page, u).get("tray") is None and C.t("status.todo") in _label(page, u)
+        _checked(page)
+        assert _rec(page, u).get("tray") == "csv"
+        assert C.t("status.approved") in _label(page, u)
+        _as_wait(page, "saved")
+        assert not errors, errors
+        page.close()
+
+
+def test_a_row_open_for_editing_is_not_taken_over_by_the_storage(browser):
+    """A reviewer can start editing before the storage answers now. Their open row keeps
+    what they typed; the colleague's save comes back as a conflict when they save theirs,
+    never a silent overwrite either way."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        _colleague_approves(worker, root, u)
+        worker.action_faults["desk-read"] = {"delay": 1.5}
+        page.reload()
+        _wait_ready(page, "de")
+        _act(page, u, "edit")
+        _row(page, u).locator("textarea.desk-edit").fill("Meine eigene Fassung")
+        _checked(page)
+        assert _row(page, u).locator("textarea.desk-edit").input_value() == "Meine eigene Fassung"
+        assert _rec(page, u).get("tray") is None
+        worker.action_faults.pop("desk-read", None)
+        _row(page, u).locator('[data-edit="save"]').click()
+        _as_wait(page, "conflict")
+        assert _server(worker, u)["tray"] == "csv", "the colleague's save must never be overwritten"
+        assert not errors, errors
+        page.close()
