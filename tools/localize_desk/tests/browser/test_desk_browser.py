@@ -159,6 +159,29 @@ def test_an_open_editor_survives_a_language_switch(browser):
         page.close()
 
 
+def _wait_ready(page, code: str):
+    page.wait_for_function(f"performance.getEntriesByName('desk-ready:{code}').length > 0", timeout=60000)
+
+
+def _top_row(page):
+    """The first row wholly in view: the reviewer's place, as [uid, y]."""
+    return page.evaluate(f"""() => {{
+        const tr = [...document.querySelectorAll('{ROWS}')].find(r => {{
+            const b = r.getBoundingClientRect(); return !r.hidden && b.top >= 0 && b.height > 0; }});
+        return [tr.dataset.uid, tr.getBoundingClientRect().top];
+    }}""")
+
+
+def _timed_switch(page, code: str) -> float:
+    """Seconds from the click to the new language ready, timed inside the page by the
+    desk's own marks, so Playwright's round trips are not counted (runbook WO-09)."""
+    page.locator(f'.desk-locales-strip [data-loc="{code}"]').click()
+    page.wait_for_function(f"performance.getEntriesByName('desk-ready:{code}').length > 0", timeout=60000)
+    return page.evaluate(
+        f"() => performance.getEntriesByName('desk-ready:{code}')[0].startTime"
+        f" - performance.getEntriesByName('desk-switch:{code}')[0].startTime") / 1000
+
+
 @pytest.mark.skipif(not os.environ.get("DESK_MEASURE"), reason="a measurement, not a guard: set DESK_MEASURE=1")
 def test_record_the_timings(browser):
     """Today's numbers with the CPU slowed 4x, printed for the runbook (WO-08, WO-09 turn
@@ -170,13 +193,9 @@ def test_record_the_timings(browser):
         page.goto(base + "/admin/localization/de/")
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
         first = time.monotonic() - t0
-        t0 = time.monotonic()
-        page.locator('.desk-locales-strip [data-loc="fr"]').click()
-        page.wait_for_url("**/localization/fr/**")
-        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
-        switch = time.monotonic() - t0
+        switch = _timed_switch(page, "fr")
         nodes = page.evaluate("() => document.getElementsByTagName('*').length")
-        print(json.dumps({"first_view_s": round(first, 2), "switch_s": round(switch, 2),
+        print(json.dumps({"first_view_s": round(first, 2), "switch_s": round(switch, 3),
                           "elements": nodes, "cpu_slowdown": 4}))
         page.close()
 
@@ -377,4 +396,116 @@ def test_the_tooltip_says_the_state_after_a_click(browser):
         btn.click()
         page.wait_for_timeout(150)
         assert page.locator(".desk-tip").inner_text() == C.t("action.approve.on")
+        page.close()
+
+
+# ── WO-09: one page for all languages (ruling #52) ───────────────────────────────────
+
+def _units(root: Path, code: str) -> dict:
+    data = json.loads((root / "admin" / "localization" / code / "units.json").read_text())
+    return {u["id"]: u for u in (data["units"] if isinstance(data, dict) else data)}
+
+
+def test_switching_language_does_not_reload_and_keeps_filters_and_place(browser):
+    with desk("new") as (base, root, _worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-page", "vs-toronto")
+        page.select_option("#f-state", "")
+        tab = page.locator('.desk-locales-strip [data-loc="fr"]')
+        # A reviewer scrolls up to the tabs to click one; the English text then at the
+        # top of the view is their place, and it must be where it was after the switch.
+        tab.scroll_into_view_if_needed()
+        anchor_uid, y0 = _top_row(page)
+        page.evaluate("() => { window.__sameDocument = true; }")
+        tab.click()
+        page.wait_for_url("**/localization/fr/**")
+        _wait_ready(page, "fr")
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        assert page.evaluate("() => window.__sameDocument === true"), "the switch reloaded the page"
+        assert page.locator("#f-page").input_value() == "vs-toronto"
+        assert "page=vs-toronto" in page.url
+        fr = _units(root, "fr")
+        some = page.locator(f"{ROWS}:visible").first.get_attribute("data-uid")
+        assert fr[some]["tgt"] in page.locator(f'tr[data-uid="{some}"] .desk-live').inner_text().replace("\n", "") \
+            or page.locator(f'tr[data-uid="{some}"] .desk-live').inner_text()  # French text on screen
+        assert page.locator('.desk-loc.is-active').get_attribute("data-loc") == "fr"
+        # the same English text, in the same place
+        box = page.locator(f'tr[data-uid="{anchor_uid}"]').bounding_box()
+        assert box and abs(box["y"] - y0) < 2, f"the reviewer's place moved: {y0} -> {box and box['y']}"
+        assert not errors, errors
+        page.close()
+
+
+def test_back_returns_to_the_previous_language_without_a_reload(browser):
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-state", "")      # every text, so the list is long
+        page.evaluate("() => { window.__sameDocument = true; }")
+        page.locator('.desk-locales-strip [data-loc="it"]').click()
+        page.wait_for_url("**/localization/it/**")
+        _wait_ready(page, "it")
+        # Back works from anywhere in the page -- deep in the list the place matters most,
+        # and the browser's own scroll restore would put the reader back at the top.
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        page.locator(f"{ROWS}:visible").nth(60).scroll_into_view_if_needed()
+        anchor_uid, y0 = _top_row(page)
+        page.go_back()
+        page.wait_for_url("**/localization/de/**")
+        page.wait_for_function("performance.getEntriesByName('desk-ready:de').length > 1", timeout=20000)
+        assert page.evaluate("() => window.__sameDocument === true")
+        assert page.locator('.desk-loc.is-active').get_attribute("data-loc") == "de"
+        box = page.locator(f'tr[data-uid="{anchor_uid}"]').bounding_box()
+        assert box and abs(box["y"] - y0) < 2, f"Back lost the reviewer's place: {y0} -> {box and box['y']}"
+        page.close()
+
+
+def test_switch_and_first_view_stay_inside_their_budgets(browser):
+    """G9 budgets (runbook WO-09), CPU slowed 4x: first view <= 1.5 s, switch <= 0.2 s,
+    each timed inside the page from the start to the new rows painted. The median of
+    three switches, so one slow frame on a busy runner does not decide it."""
+    with desk("new") as (base, _root, _worker):
+        page = browser.new_page()
+        page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": 4})
+        page.goto(base + "/admin/localization/de/")
+        _wait_ready(page, "de")
+        first = page.evaluate("() => performance.getEntriesByName('desk-ready:de')[0].startTime") / 1000
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
+        page.wait_for_timeout(1500)       # the other languages prefetch while the reviewer reads
+        switches = sorted(_timed_switch(page, code) for code in ("fr", "it", "es"))
+        assert first <= 1.5, f"first view {first:.2f} s > 1.5 s"
+        assert switches[1] <= 0.2, f"switch {switches} s, median > 0.2 s"
+        page.close()
+
+
+def test_a_decision_in_one_language_survives_a_switch_and_back(browser):
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        uid = page.locator(f"{ROWS}:visible").first.get_attribute("data-uid")
+        _act(page, uid, "approve")
+        page.locator('.desk-locales-strip [data-loc="ja"]').click()
+        page.wait_for_function("document.querySelector('.desk-loc.is-active').dataset.loc === 'ja'")
+        assert "1" in page.locator("#btn-save").inner_text()          # still unsaved, still counted
+        page.locator('.desk-locales-strip [data-loc="de"]').click()
+        page.wait_for_function("document.querySelector('.desk-loc.is-active').dataset.loc === 'de'")
+        page.select_option("#f-state", "")
+        assert C.t("status.approved") in _label(page, uid)
+        page.close()
+
+
+def test_shared_addresses_use_reviewer_words_and_old_links_still_open(browser):
+    """Desk audit §6 #2 (runbook WO-09): reviewers share links, so the address says
+    `approved` / `requested`; a link with the old `csv` / `draft` opens the same list and
+    is rewritten to the word."""
+    with desk("new") as (base, _root, _worker):
+        for asked, value, word in (("approved", "csv", "approved"), ("requested", "draft", "requested"),
+                                   ("csv", "csv", "approved"), ("draft", "draft", "requested")):
+            page, errors = _open(browser, f"{base}/admin/localization/de/?show={asked}")
+            assert page.locator("#f-state").input_value() == value, asked
+            assert f"show={word}" in page.url and f"show={value}" not in page.url.replace(f"show={word}", ""), page.url
+            assert not errors, errors
+            page.close()
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-state", "csv")
+        assert "show=approved" in page.url
+        assert "show=approved" in page.locator('.desk-locales-strip [data-loc="fr"]').get_attribute("href")
         page.close()

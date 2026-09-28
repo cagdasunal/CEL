@@ -80,7 +80,8 @@ def test_no_browser_title_tooltips():
     """Ruling #51 (runbook WO-08): the browser's own `title` tooltip waits about a second,
     never shows on keyboard focus or touch, and doubles up with ours. Desk controls carry
     `data-tip` (from COPY.md) and keep `aria-label`; `title` is left to the page's <title>."""
-    typed = re.findall(r"\.title\s*=", GEN)
+    # `document.title` is the page's <title> (the browser tab), renamed on a language switch.
+    typed = re.findall(r"(?<!document)\.title\s*=", GEN)
     markup = [m for m in re.findall(r"""\btitle=['"{]""", GEN)]
     assert not typed, f"script sets .title {len(typed)} times"
     assert not markup, f"markup carries title= {len(markup)} times"

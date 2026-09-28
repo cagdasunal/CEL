@@ -486,8 +486,8 @@ __STAGE_JS__
       if (arrived) trays.appendChild(chip('desk-tray-arrived', tn('index.chip.arrived', arrived), base + '?show=arrived'));
       if (failed) trays.appendChild(chip('desk-tray-failed', tn('index.chip.failed', failed), base + '?show=failed'));
       if (sending) trays.appendChild(chip('desk-tray-sending', t('index.chip.sending', { n: sending }), base + '?show=sending'));
-      if (csv) trays.appendChild(chip('desk-tray-csv', t('index.chip.approved', { n: csv }), base + '?show=csv'));
-      if (draft) trays.appendChild(chip('desk-tray-draft', tn('index.chip.requested', draft), base + '?show=draft'));
+      if (csv) trays.appendChild(chip('desk-tray-csv', t('index.chip.approved', { n: csv }), base + '?show=approved'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', tn('index.chip.requested', draft), base + '?show=requested'));
       trays.hidden = !trays.firstChild;
 
       // It can honestly offer only one thing: throwing away what this browser has not
@@ -531,9 +531,9 @@ def render_locale(code: str, units: list[dict]) -> str:
     # control can live IN the header rather than down among the filters.
     parts.append('    <header class="dashboard-header">')
     parts.append('      <div class="brand-text">')
-    parts.append(f'        <p class="eyebrow">{escape(t("locale.eyebrow", LANGUAGE=name.upper()))}</p>')
+    parts.append(f'        <p class="eyebrow" id="desk-eyebrow">{escape(t("locale.eyebrow", LANGUAGE=name.upper()))}</p>')
     parts.append(
-        f'        <p class="subtitle"><bdi>{escape(endonym)}</bdi> &middot; '
+        f'        <p class="subtitle" id="desk-subtitle"><bdi>{escape(endonym)}</bdi> &middot; '
         f'{escape(t("locale.subtitle", total=len(rows)))}</p>'
     )
     parts.append("      </div>")
@@ -599,7 +599,7 @@ def render_locale(code: str, units: list[dict]) -> str:
                  '<input type="checkbox" class="desk-pick" id="pick-all" '
                  f'aria-label="{escape(t("table.pick_all"))}"></th>')
     parts.append(f'            <th scope="col">{escape(t("table.col.source"))}</th>')
-    parts.append(f'            <th scope="col">{escape(t("table.col.target", language=name))}</th>')
+    parts.append(f'            <th scope="col" id="col-target">{escape(t("table.col.target", language=name))}</th>')
     parts.append(f'            <th scope="col" class="desk-col-state">{escape(t("table.col.status"))}</th>')
     parts.append(f'            <th scope="col" class="desk-col-act">{escape(t("table.col.actions"))}</th>')
     parts.append("          </tr></thead>")
@@ -736,11 +736,19 @@ __HELPERS__
     // Per locale, the ids "Worth a look first" starts from -- the same list the index
     // card counts, so a tab badge, the filter and the index say one number.
     var WORTH = __WORTH__;
-    var CODE = '__CODE__';
-    var KEY = 'cel-desk-' + CODE;
-    var LOGKEY = 'cel-desk-log-' + CODE;
+    // Every language's endonym and direction, so this one page can show any of them.
+    // Switching language swaps the data, not the page (ruling #52, runbook WO-09).
+    var LOCALE_INFO = __LOCALE_INFO__;
+    var CODE, KEY, LOGKEY, SAVEDKEY, RTL;
     var LOG_CAP = 4000;
-    var RTL = __RTL__;
+    function setLocale(code) {
+      CODE = code;
+      KEY = 'cel-desk-' + code;
+      LOGKEY = 'cel-desk-log-' + code;
+      SAVEDKEY = 'cel-desk-saved-' + code;
+      RTL = !!LOCALE_INFO[code].rtl;
+    }
+    setLocale('__CODE__');
 
     var state = {};
     // What the website serves for each row, as loaded -- never what is on screen. The
@@ -847,7 +855,7 @@ __HELPERS__
     // (Spelling out the banned property here would trip the test that greps this
     // script for it, which is the point of that test.)
     function buildRows(units) {
-      var frag = document.createDocumentFragment();
+      rows = [];
       units.forEach(function (u) {
         var tr = document.createElement('tr');
         tr.className = 'desk-row';
@@ -917,52 +925,9 @@ __HELPERS__
           var eg = u.sharedEg === '/' ? t('row.shared.home') : u.sharedEg;
           shared.textContent = tn('row.shared', u.shared, { example: eg });
         }
-        var editWrap = document.createElement('div');
-        editWrap.className = 'desk-editor';
-        editWrap.hidden = true;
-        var ta = document.createElement('textarea');
-        ta.className = 'desk-edit';
-        ta.setAttribute('aria-label', t('editor.label'));
-        ta.setAttribute('dir', 'auto');
-        ta.value = u.tgt;
-        // Seeded here as well as on open, so `editorDirty` answers honestly for a
-        // box the reviewer never touched. Without it a never-opened editor reads
-        // as dirty and any flush treats the machine original as a decision.
-        ta.setAttribute('data-opened-with', ta.value);
-        var editBar = document.createElement('div');
-        editBar.className = 'desk-editor-bar';
-        var editHint = document.createElement('span');
-        editHint.className = 'desk-editor-hint';
-        var bCancel = document.createElement('button');
-        bCancel.type = 'button';
-        bCancel.className = 'desk-btn';
-        bCancel.setAttribute('data-edit', 'cancel');
-        bCancel.textContent = t('editor.cancel');
-        var bSave = document.createElement('button');
-        bSave.type = 'button';
-        // Ghost, not filled. Save in the bottom bar is the page's one primary, and a
-        // second filled pill inline in a table row competes with it for the same job.
-        bSave.className = 'desk-btn is-strong';
-        bSave.setAttribute('data-edit', 'save');
-        bSave.textContent = t('editor.save');
-        editBar.appendChild(editHint);
-        editBar.appendChild(bCancel);
-        editBar.appendChild(bSave);
-        editWrap.appendChild(ta);
-        // A text with a link carries its markers into the edit box; say what they are
-        // for, once, where the reviewer meets them.
-        if (u.tgt.indexOf('<a wg-') !== -1 || u.src.indexOf('<a wg-') !== -1) {
-          var linkNote = document.createElement('p');
-          linkNote.className = 'desk-editor-note';
-          linkNote.setAttribute('dir', 'auto');
-          linkNote.textContent = t('editor.links');
-          editWrap.appendChild(linkNote);
-        }
-        editWrap.appendChild(editBar);
         tdTgt.appendChild(live);
         if (why) tdTgt.appendChild(why);
         if (shared) tdTgt.appendChild(shared);
-        tdTgt.appendChild(editWrap);
 
         var tdState = document.createElement('td');
         tdState.className = 'desk-col-state';
@@ -997,10 +962,36 @@ __HELPERS__
 
         tr.appendChild(tdPick); tr.appendChild(tdSrc); tr.appendChild(tdTgt);
         tr.appendChild(tdState); tr.appendChild(tdAct);
-        frag.appendChild(tr);
+        rows.push(tr);
       });
+    }
+
+    // Rows go onto the page in slices (runbook WO-09). Every row is built and painted,
+    // and filters, counts and selection read `rows`, never the page -- but the browser
+    // lays out only what is attached. So the first screen (down past the reader's place)
+    // goes up at once and the rest follows a slice per task, instead of one long freeze
+    // laying out 823 rows nobody can see yet.
+    var attachGen = 0;
+    var FIRST_SCREEN = 40, SLICE = 150;
+    function attachRows(anchorUid) {
+      var gen = ++attachGen;
+      var i = 0, shown = 0, reached = !anchorUid;
+      var frag = document.createDocumentFragment();
+      while (i < rows.length && !(reached && shown >= FIRST_SCREEN)) {
+        var tr = rows[i++];
+        frag.appendChild(tr);
+        if (!reached && tr.getAttribute('data-uid') === anchorUid) { reached = true; shown = 0; }
+        if (!tr.hidden) shown++;
+      }
       body.appendChild(frag);
-      rows = Array.prototype.slice.call(body.querySelectorAll('.desk-row'));
+      var more = function () {
+        if (gen !== attachGen) return;     // a switch has replaced these rows
+        var f = document.createDocumentFragment();
+        for (var n = 0; n < SLICE && i < rows.length; n++) f.appendChild(rows[i++]);
+        body.appendChild(f);
+        if (i < rows.length) setTimeout(more, 0);
+      };
+      if (i < rows.length) setTimeout(more, 0);
     }
 
     // ── Painting ───────────────────────────────────────────────────────
@@ -1245,7 +1236,8 @@ __STAGE_JS__
     function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
       if (what === 'edit') {
-        toggleEditor(tr, tr.querySelector('.desk-editor').hidden);
+        var ed = tr.querySelector('.desk-editor');
+        toggleEditor(tr, !ed || ed.hidden);
         return;
       }
       // A row being sent to Gemini is not the reviewer's to change until it comes back.
@@ -1298,10 +1290,63 @@ __STAGE_JS__
     // without asking. Before this it had no controls at all -- it saved on blur, which
     // meant there was no way to close it without committing and no sign anything had
     // been committed.
+    // The editor is built the first time a row is edited. Building all of them up front
+    // made every load create ~10,000 hidden elements nobody had asked for (runbook WO-09).
+    function ensureEditor(tr) {
+      var have = tr.querySelector('.desk-editor');
+      if (have) return have;
+      var uid = tr.getAttribute('data-uid');
+      var editWrap = document.createElement('div');
+      editWrap.className = 'desk-editor';
+      editWrap.hidden = true;
+      var ta = document.createElement('textarea');
+      ta.className = 'desk-edit';
+      ta.setAttribute('aria-label', t('editor.label'));
+      ta.setAttribute('dir', 'auto');
+      ta.value = liveText[uid];
+      // Seeded here as well as on open, so `editorDirty` answers honestly for a
+      // box the reviewer never touched. Without it a never-opened editor reads
+      // as dirty and any flush treats the machine original as a decision.
+      ta.setAttribute('data-opened-with', ta.value);
+      var editBar = document.createElement('div');
+      editBar.className = 'desk-editor-bar';
+      var editHint = document.createElement('span');
+      editHint.className = 'desk-editor-hint';
+      var bCancel = document.createElement('button');
+      bCancel.type = 'button';
+      bCancel.className = 'desk-btn';
+      bCancel.setAttribute('data-edit', 'cancel');
+      bCancel.textContent = t('editor.cancel');
+      var bSave = document.createElement('button');
+      bSave.type = 'button';
+      // Ghost, not filled. Save in the bottom bar is the page's one primary, and a
+      // second filled pill inline in a table row competes with it for the same job.
+      bSave.className = 'desk-btn is-strong';
+      bSave.setAttribute('data-edit', 'save');
+      bSave.textContent = t('editor.save');
+      editBar.appendChild(editHint);
+      editBar.appendChild(bCancel);
+      editBar.appendChild(bSave);
+      editWrap.appendChild(ta);
+      // A text with a link carries its markers into the edit box; say what they are
+      // for, once, where the reviewer meets them.
+      if (liveText[uid].indexOf('<a wg-') !== -1 || sourceText[uid].indexOf('<a wg-') !== -1) {
+        var linkNote = document.createElement('p');
+        linkNote.className = 'desk-editor-note';
+        linkNote.setAttribute('dir', 'auto');
+        linkNote.textContent = t('editor.links');
+        editWrap.appendChild(linkNote);
+      }
+      editWrap.appendChild(editBar);
+      tr.querySelector('.desk-tgt').appendChild(editWrap);
+      return editWrap;
+    }
+
     function toggleEditor(tr, open) {
-      var wrap = tr.querySelector('.desk-editor');
+      var wrap = open ? ensureEditor(tr) : tr.querySelector('.desk-editor');
+      if (!wrap) return;
       var live = tr.querySelector('.desk-live');
-      var ta = tr.querySelector('.desk-edit');
+      var ta = wrap.querySelector('.desk-edit');
       if (open) {
         var uid = tr.getAttribute('data-uid');
         var s = state[uid] || {};
@@ -1320,10 +1365,12 @@ __STAGE_JS__
 
     function editorDirty(tr) {
       var ta = tr.querySelector('.desk-edit');
+      if (!ta) return false;
       return ta.value.trim() !== (ta.getAttribute('data-opened-with') || '').trim();
     }
 
     function paintEditor(tr) {
+      if (!tr.querySelector('.desk-editor')) return;
       var dirty = editorDirty(tr);
       tr.querySelector('.desk-editor-hint').textContent = dirty ? t('editor.unsaved') : '';
       tr.querySelector('[data-edit="save"]').disabled = !dirty;
@@ -1409,10 +1456,32 @@ __STAGE_JS__
 
     // Both doors out of this page.
     window.addEventListener('beforeunload', flushEditors);
+    // A language tab switches the data in place (ruling #52): no reload, no blank page, no
+    // second sign-in check; filters and the reviewer's place carry over. Open editors are
+    // committed first (ruling #12). A modified click still opens the page itself.
     document.addEventListener('click', function (ev) {
       var link = ev.target.closest('a[data-loc]');
-      if (link) flushEditors();
+      if (!link) return;
+      flushEditors();
+      if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      var code = link.getAttribute('data-loc');
+      if (!LOCALE_INFO[code]) return;
+      ev.preventDefault();
+      switchTo(code, true);
     }, true);
+    var PATH_LOCALE = new RegExp('/localization/([a-z][a-z])/');
+    // The desk keeps the reader's place itself (the same English text in view); the
+    // browser's own restore on Back would put them wherever they last were instead.
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    window.addEventListener('popstate', function () {
+      var m = location.pathname.match(PATH_LOCALE);
+      if (m && m[1] !== CODE && LOCALE_INFO[m[1]]) { flushEditors(); switchTo(m[1], false); }
+    });
+    // Hovering a tab starts loading that language, so the click has nothing to wait for.
+    document.addEventListener('pointerover', function (ev) {
+      var a = ev.target.closest && ev.target.closest('a[data-loc]');
+      if (a && LOCALE_INFO[a.getAttribute('data-loc')]) fetchUnits(a.getAttribute('data-loc')).catch(function () {});
+    });
 
     pickAll.addEventListener('change', function () {
       shown().forEach(function (tr) {
@@ -1749,7 +1818,6 @@ __STAGE_JS__
     // 61-66 KB base64 against a 65,536-byte workflow_dispatch ceiling (chunksFor splits
     // it), and sending deltas also means two people reviewing different pages of one
     // language merge instead of clobbering.
-    var SAVEDKEY = 'cel-desk-saved-' + CODE;
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(SAVEDKEY) || '{}') || {}; } catch (e) { saved = {}; }
 
@@ -2140,10 +2208,19 @@ __STAGE_JS__
     // The filters live in the query string so that switching language keeps you on
     // the same page and the same view. Before this, changing language meant going
     // back to the index and setting the filters up again.
+    // Reviewers share these addresses, so they say what a reviewer would (desk audit §6
+    // #2, runbook WO-09): ?show=approved, ?show=requested. The list values underneath are
+    // unchanged, and a link carrying the old value still opens the same list.
+    var SHOW_WORD = { csv: 'approved', draft: 'requested' };
+    var SHOW_ALIAS = { approved: 'csv', requested: 'draft' };
+    function showFromUrl(v) {
+      return Object.prototype.hasOwnProperty.call(SHOW_ALIAS, v) ? SHOW_ALIAS[v] : v;
+    }
+
     function syncUrl() {
       var q = new URLSearchParams();
       if (fPage.value) q.set('page', fPage.value);
-      if (fState.value) q.set('show', fState.value);
+      if (fState.value) q.set('show', SHOW_WORD[fState.value] || fState.value);
       if (fQ.value.trim()) q.set('q', fQ.value.trim());
       var qs = q.toString();
       history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
@@ -2186,57 +2263,107 @@ __STAGE_JS__
       resetView();
     });
 
-    // ── Boot ───────────────────────────────────────────────────────────
-    fetch('units.json', { cache: 'no-cache' })
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      })
-      .then(async function (units) {
-        buildRows(units);
-        // What the repo holds is the baseline. Anything decided in THIS browser and
-        // not yet saved stays exactly as it is and still counts as unsaved -- the
-        // server copy fills in only the units this browser has never touched, which
-        // is what makes a second machine useful instead of blank.
-        try {
-          var dr = await fetch('decisions.json', { cache: 'no-cache' });
-          if (dr.ok) {
-            var ddoc = await dr.json();
-            var server = (ddoc && ddoc.decisions) || {};
-            var adopted = 0;
-            for (var uid in server) {
-              if (!hasContent(server[uid])) continue;
-              saved[uid] = server[uid];
-              // Adopt only where this browser holds NOTHING. The old test was
-              // "no tray", which is not the same thing: a row that had come back
-              // from Gemini, and a row the reviewer had deliberately un-approved
-              // before saving, both have no tray -- and both were overwritten
-              // wholesale. The first threw away a translation already paid for;
-              // the second made the undo silently revert on reload.
-              if (!hasContent(state[uid])) {
-                state[uid] = JSON.parse(JSON.stringify(server[uid]));
-                adopted++;
-              }
+    // ── Loading a language ─────────────────────────────────────────────
+    // One path for the first load and for every switch: the texts and the saved decisions
+    // are fetched TOGETHER (the decisions used to wait until 823 rows were built), and a
+    // language already fetched in the background costs nothing to open.
+    // The desk's own folder, whatever the site mounts it under, so every language's
+    // files resolve the same way before and after the address changes.
+    var BASE = new URL('../', location.href).pathname;
+    var unitCache = Object.create(null);
+    function fetchUnits(code) {
+      if (!unitCache[code]) {
+        unitCache[code] = fetch(BASE + code + '/units.json', { cache: 'no-cache' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          })
+          .catch(function (e) { delete unitCache[code]; throw e; });
+      }
+      return unitCache[code];
+    }
+
+    function paintLocaleChrome(code, total) {
+      var name = t('lang.' + code);
+      document.title = t('meta.locale.title', { language: name });
+      document.getElementById('desk-eyebrow').textContent = t('locale.eyebrow', { LANGUAGE: name.toUpperCase() });
+      document.getElementById('col-target').textContent = t('table.col.target', { language: name });
+      fQ.setAttribute('placeholder', t('filter.search.placeholder', { language: name }));
+      if (total != null) {
+        var sub = document.getElementById('desk-subtitle');
+        sub.textContent = '';
+        var bdi = document.createElement('bdi');
+        bdi.textContent = LOCALE_INFO[code].endonym;
+        sub.appendChild(bdi);
+        sub.appendChild(document.createTextNode(' \u00b7 ' + t('locale.subtitle', { total: total })));
+      }
+      Array.prototype.forEach.call(document.querySelectorAll('.desk-loc'), function (a) {
+        var on = a.getAttribute('data-loc') === code;
+        a.classList.toggle('is-active', on);
+        if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      });
+    }
+
+    async function loadLocale(first, anchor) {
+      var code = CODE;
+      var unitsP = fetchUnits(code);
+      var savedP = fetch(BASE + code + '/decisions.json', { cache: 'no-cache' })
+        .catch(function (e) { return e; });
+      var units = await unitsP;
+      if (code !== CODE) return;          // a newer switch has taken over
+      // What the repo holds is the baseline. Anything decided in THIS browser and
+      // not yet saved stays exactly as it is and still counts as unsaved -- the
+      // server copy fills in only the units this browser has never touched, which
+      // is what makes a second machine useful instead of blank.
+      try {
+        var dr = await savedP;
+        if (code !== CODE) return;          // switched away while this was loading
+        if (dr instanceof Error) throw dr;
+        if (dr.ok) {
+          var ddoc = await dr.json();
+          if (code !== CODE) return;
+          var server = (ddoc && ddoc.decisions) || {};
+          var adopted = 0;
+          for (var uid in server) {
+            if (!hasContent(server[uid])) continue;
+            saved[uid] = server[uid];
+            // Adopt only where this browser holds NOTHING. The old test was
+            // "no tray", which is not the same thing: a row that had come back
+            // from Gemini, and a row the reviewer had deliberately un-approved
+            // before saving, both have no tray -- and both were overwritten
+            // wholesale. The first threw away a translation already paid for;
+            // the second made the undo silently revert on reload.
+            if (!hasContent(state[uid])) {
+              state[uid] = JSON.parse(JSON.stringify(server[uid]));
+              adopted++;
             }
-            try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
-            persist();
-            if (adopted) note('adopted', null, String(adopted), null);
-          } else if (dr.status !== 404) {
-            throw new Error('HTTP ' + dr.status);
           }
-        } catch (e) {
-          // A missing file is the normal first-run case. A 5xx, a CDN failure or
-          // malformed JSON on a file that DOES exist is not: the desk would boot
-          // showing none of a colleague's decisions, and the next save -- merged
-          // last-writer-wins per unit -- would erase them.
-          if (!(e instanceof TypeError && !navigator.onLine)) {
-            note('decisions-load-failed', null, String(e && e.message || e), null);
-          }
-          toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
+          try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
+          persist();
+          if (adopted) note('adopted', null, String(adopted), null);
+        } else if (dr.status !== 404) {
+          throw new Error('HTTP ' + dr.status);
         }
+      } catch (e) {
+        // A missing file is the normal first-run case. A 5xx, a CDN failure or
+        // malformed JSON on a file that DOES exist is not: the desk would boot
+        // showing none of a colleague's decisions, and the next save -- merged
+        // last-writer-wins per unit -- would erase them.
+        if (!(e instanceof TypeError && !navigator.onLine)) {
+          note('decisions-load-failed', null, String(e && e.message || e), null);
+        }
+        toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
+      }
+      if (code !== CODE) return;
+      // Built only now, with the decisions in hand: a row never shows undecided for a
+      // frame and then flips.
+      buildRows(units);
+      paintLocaleChrome(code, units.length);
+      if (first) {
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
+        if (want !== null) want = showFromUrl(want);
         var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived',
                      'sending', 'failed', 'exported', 'live', ''];
         if (want !== null && known.indexOf(want) !== -1) {
@@ -2248,26 +2375,84 @@ __STAGE_JS__
         }
         if (qs.get('page')) fPage.value = qs.get('page');
         if (qs.get('q')) fQ.value = qs.get('q');
-        rows.forEach(paint);
-        paintBar();
-        applyFilters();
-        syncUrl();
-        paintLocaleCounts();
-        note('load', null, String(units.length), null);
-      })
-      .catch(function (err) {
-        // Say so in the page. A desk that silently shows zero rows looks like
-        // "nothing to review", which is the opposite of what has happened.
-        countLine.textContent = t('count.failed', { error: err.message });
-        countLine.className = 'subtle desk-status is-error';
-        noRows.hidden = true;
-        note('load-failed', null, err.message, null);
-        toast(t('toast.load.title'), { level: 'err', detail: t('toast.load.detail', { error: err.message }) });
-      });
+      }
+      rows.forEach(paint);
+      paintBar();
+      applyFilters();
+      syncUrl();
+      paintLocaleCounts();
+      attachRows(anchor && anchor.uid);
+      if (anchor) {
+        var at = rows.find(function (tr) { return tr.getAttribute('data-uid') === anchor.uid; });
+        if (at && !at.hidden) window.scrollBy(0, at.getBoundingClientRect().top - anchor.top);
+      }
+      note('load', null, String(units.length), null);
+      // What the browser tests time (runbook WO-09, G9 budgets): from the switch, or the
+      // page opening, to the new rows painted on screen.
+      if (window.performance && performance.mark) {
+        requestAnimationFrame(function () {
+          setTimeout(function () { if (code === CODE) performance.mark('desk-ready:' + code); }, 0);
+        });
+      }
+    }
+
+    function loadFailed(err) {
+      // Say so in the page. A desk that silently shows zero rows looks like
+      // "nothing to review", which is the opposite of what has happened.
+      countLine.textContent = t('count.failed', { error: err.message });
+      countLine.className = 'subtle desk-status is-error';
+      noRows.hidden = true;
+      note('load-failed', null, err.message, null);
+      toast(t('toast.load.title'), { level: 'err', detail: t('toast.load.detail', { error: err.message }) });
+    }
+
+    // The row at the top of the reader's view, and where it sat, so a switch can put the
+    // same English text back in the same place.
+    function viewAnchor() {
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].hidden) continue;
+        var r = rows[i].getBoundingClientRect();
+        if (r.bottom > 0) return { uid: rows[i].getAttribute('data-uid'), top: r.top };
+      }
+      return null;
+    }
+
+    function switchTo(code, push) {
+      if (code === CODE) return;
+      if (window.performance && performance.mark) performance.mark('desk-switch:' + code);
+      var anchor = viewAnchor();
+      setLocale(code);
+      state = readLocale(code);
+      saved = readSaved(code);
+      try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
+      picked = Object.create(null);
+      lastPicked = -1;
+      cursor = -1;
+      justActed = Object.create(null);
+      liveText = Object.create(null);
+      sourceText = Object.create(null);
+      attachGen++;                         // stop the old language's remaining slices
+      body.textContent = '';
+      rows = [];
+      paintLocaleChrome(code, null);
+      if (push) history.pushState(null, '', BASE + code + '/' + location.search);
+      return loadLocale(false, anchor).catch(loadFailed);
+    }
+
+    // ── Boot ───────────────────────────────────────────────────────────
+    loadLocale(true).then(function () {
+      // With the first language on screen, fetch the rest while the reviewer reads.
+      var rest = function () {
+        Object.keys(LOCALE_INFO).forEach(function (c) { if (c !== CODE) fetchUnits(c).catch(function () {}); });
+      };
+      if (window.requestIdleCallback) window.requestIdleCallback(rest, { timeout: 3000 });
+      else setTimeout(rest, 1500);
+    }).catch(loadFailed);
   })();
   </script>
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
-    "__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
+    "__CODE__", code).replace("__LOCALE_INFO__", json.dumps(
+        {c: {"endonym": e, "rtl": d == "rtl"} for c, e, d, _f in LOCALES}, ensure_ascii=False)).replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
     "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
 

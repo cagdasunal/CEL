@@ -8,6 +8,7 @@ JS invariant that decides whether a mis-click can cost money.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -40,6 +41,13 @@ def units_dir(tmp_path, monkeypatch):
     d.mkdir()
     monkeypatch.setattr(G, "UNITS_DIR", d)
     return d
+
+
+def _locale_info(page):
+    """The language table the one-page desk switches with (runbook WO-09)."""
+    m = re.search(r"var LOCALE_INFO = (\{.*?\});\n", page)
+    assert m, "no LOCALE_INFO in the page"
+    return json.loads(m.group(1))
 
 
 def _write(d: Path, page: str, units: list[dict]) -> None:
@@ -209,10 +217,18 @@ class TestRenderedPage:
         page = G.render_locale("ar", G.load_units())
         # Without <bdi> the subtitle renders as "990 — العربية units."
         assert "<bdi>العربية</bdi>" in page
-        assert "var RTL = true;" in page
+        # One page serves every language (runbook WO-09), so direction comes from the
+        # language table, per language, and the page boots into its own.
+        assert _locale_info(page)["ar"]["rtl"] is True
+        assert "setLocale('ar');" in page
+        assert "RTL = !!LOCALE_INFO[code].rtl;" in page
+        assert "if (RTL) tdTgt.setAttribute('dir', 'rtl');" in page
 
     def test_ltr_locale_does_not_flag_rtl(self, page):
-        assert "var RTL = false;" in page
+        info = _locale_info(page)
+        assert "setLocale('de');" in page
+        assert info["de"]["rtl"] is False
+        assert [c for c, v in info.items() if v["rtl"]] == ["ar"]
 
     def test_source_text_is_separable_from_its_section_label(self, page):
         # The queue list reads .desk-srctext; reading the whole cell glued the
@@ -226,7 +242,7 @@ class TestRenderedPage:
         builder assigns textContent / value only. An innerHTML anywhere in the desk
         script would reopen the hole that HTML-escaping used to close.
         """
-        script = page[page.index("var KEY = "):]
+        script = page[page.index("var LOCALE_INFO = "):]
         assert "innerHTML" not in script
         assert "renderMarked(srcText, u.src);" in script
         assert "renderMarked(live, u.tgt);" in script
@@ -462,3 +478,11 @@ class TestFourthAudit:
         page = G.render_locale("de", self._units(units_dir))
         probe = page.split("function latestRunId(workflow)")[1].split("function awaitRun(")[0]
         assert probe.index("if (!r.ok) return undefined;") < probe.index("return null;")
+
+
+def test_index_links_into_a_list_in_reviewer_words():
+    """The index's approved / requested chips link with the words a reviewer would share
+    (runbook WO-09); the old `csv` / `draft` values never appear in a link."""
+    src = Path(G.__file__).read_text()
+    assert "'?show=approved'" in src and "'?show=requested'" in src
+    assert "?show=csv" not in src and "?show=draft" not in src

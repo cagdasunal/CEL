@@ -290,8 +290,8 @@
       if (arrived) trays.appendChild(chip('desk-tray-arrived', tn('index.chip.arrived', arrived), base + '?show=arrived'));
       if (failed) trays.appendChild(chip('desk-tray-failed', tn('index.chip.failed', failed), base + '?show=failed'));
       if (sending) trays.appendChild(chip('desk-tray-sending', t('index.chip.sending', { n: sending }), base + '?show=sending'));
-      if (csv) trays.appendChild(chip('desk-tray-csv', t('index.chip.approved', { n: csv }), base + '?show=csv'));
-      if (draft) trays.appendChild(chip('desk-tray-draft', tn('index.chip.requested', draft), base + '?show=draft'));
+      if (csv) trays.appendChild(chip('desk-tray-csv', t('index.chip.approved', { n: csv }), base + '?show=approved'));
+      if (draft) trays.appendChild(chip('desk-tray-draft', tn('index.chip.requested', draft), base + '?show=requested'));
       trays.hidden = !trays.firstChild;
 
       // It can honestly offer only one thing: throwing away what this browser has not
