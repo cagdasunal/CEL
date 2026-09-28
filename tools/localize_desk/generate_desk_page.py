@@ -1664,10 +1664,7 @@ __STAGE_JS__
       var live = tr.querySelector('.desk-live');
       var ta = wrap.querySelector('.desk-edit');
       if (open) {
-        var uid = tr.getAttribute('data-uid');
-        var s = state[uid] || {};
-        ta.value = s.text != null ? s.text : liveText[uid];
-        ta.setAttribute('data-opened-with', ta.value);
+        seedEditor(tr, ta);
         wrap.hidden = false;
         live.hidden = true;
         paintEditor(tr);
@@ -1677,6 +1674,14 @@ __STAGE_JS__
         wrap.hidden = true;
         live.hidden = false;
       }
+    }
+
+    // What an editor opens on: the row's own wording, else the website's.
+    function seedEditor(tr, ta) {
+      var uid = tr.getAttribute('data-uid');
+      var s = state[uid] || {};
+      ta.value = s.text != null ? s.text : liveText[uid];
+      ta.setAttribute('data-opened-with', ta.value);
     }
 
     function editorDirty(tr) {
@@ -2414,8 +2419,10 @@ __PROXY_JS__
     // passed); the rest are tried again by themselves.
     var STOPS = { reload: 1, signed_out: 1, cap: 1, daily: 1, refused: 1 };
     var REASONS = __SAVE_REASONS__;
-    var sync = { phase: 'idle', reason: '', checking: false };   // idle | waiting | sending | retry | offline | stopped
-    // `checking`: the rows came from this browser's copy and the storage's answer is still out (M1, 4b).
+    var sync = { phase: 'idle', reason: '' };   // idle | waiting | sending | retry | offline | stopped
+    // The rows came from this browser's copy and the storage's answer is still out (M1, 4b). Its
+    // own variable: setSync replaces `sync`, and autosave's first step dropped it (#3's review).
+    var checking = false;
     var timer = null, firstAt = 0, lastAt = 0, tries = 0, requestOut = false, sentMem = [];
 
     function setSync(phase, reason) { sync = { phase: phase, reason: reason || '' }; }
@@ -2441,7 +2448,7 @@ __PROXY_JS__
       if (conf) return { name: 'conflict', words: tn('autosave.conflict', conf), tip: t('autosave.conflict.hint') };
       if (!pend) {
         // Quiet: nothing is wrong, the storage just has not answered yet (M1, 4b).
-        if (sync.checking) return { name: 'checking', words: t('autosave.checking'), tip: t('autosave.checking.hint') };
+        if (checking) return { name: 'checking', words: t('autosave.checking'), tip: t('autosave.checking.hint') };
         return ref ? { name: 'refused', words: tn('autosave.refused', ref), tip: t('autosave.refused.hint') }
                    : { name: 'saved', words: t('autosave.saved'), tip: t('autosave.saved.hint') };
       }
@@ -2766,7 +2773,7 @@ __PROXY_JS__
       // Built NOW, from the copy this browser saved (runbook M1, 4b). The storage's answer used
       // to come first, so every open and every switch waited a round trip; what it changed
       // since is repainted when it answers (below), and the bar says it is checking.
-      sync.checking = !SAVE_OFF;
+      checking = !SAVE_OFF;
       buildRows(units);
       paintLocaleChrome(code, units.length);
       loadFailedFor = null;
@@ -2831,13 +2838,15 @@ __PROXY_JS__
       try {
         var sr = await serverP;
         if (seq !== loadSeq) return;        // switched away while this was loading
-        // A row a reviewer has open for editing is theirs until they save it: its decision is
-        // left as this browser's, on the version it was opened on, so a colleague's save comes
-        // back as a conflict on their save -- never replacing what they are typing.
+        // A row a reviewer is editing is theirs until they save it: its decision is left as
+        // this browser's, on the version it was opened on, so a colleague's save comes back as
+        // a conflict on their save -- never replacing what they are typing. Only an OPEN editor
+        // with changes: a closed one stays in the page, and a cancelled row kept the old
+        // decision on screen (#3's review of 4b). An open, untouched one takes the new copy.
         var editing = Object.create(null);
-        Array.prototype.forEach.call(document.querySelectorAll('tr[data-uid] .desk-edit'), function (ta) {
+        Array.prototype.forEach.call(document.querySelectorAll('tr[data-uid] .desk-editor:not([hidden]) .desk-edit'), function (ta) {
           var row = ta.closest('tr[data-uid]');
-          if (row) editing[row.getAttribute('data-uid')] = true;
+          if (row && editorDirty(row)) editing[row.getAttribute('data-uid')] = true;
         });
         if (sr instanceof Error) throw sr;
         if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);
@@ -2871,9 +2880,20 @@ __PROXY_JS__
         toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
       }
       if (seq !== loadSeq) return;
-      sync.checking = false;
+      checking = false;
       if (Object.keys(repaint).length) {
-        rows.forEach(function (tr) { if (repaint[tr.getAttribute('data-uid')]) paint(tr); });
+        rows.forEach(function (tr) {
+          var uid = tr.getAttribute('data-uid');
+          if (!repaint[uid]) return;
+          paint(tr);
+          // An editor open here is untouched (one with changes kept its row, above): it starts
+          // from the new words, or typing over the old ones saved them onto the colleague's version.
+          var wrap = tr.querySelector('.desk-editor');
+          if (wrap && !wrap.hidden) { seedEditor(tr, wrap.querySelector('.desk-edit')); paintEditor(tr); }
+          // A row on screen holds its place until the reviewer changes the view (ruling #17): a
+          // colleague's approval took away, under "To do", the row about to be clicked.
+          if (!tr.hidden) justActed[uid] = 1;
+        });
         applyFilters();
         paintLocaleCounts();
       }

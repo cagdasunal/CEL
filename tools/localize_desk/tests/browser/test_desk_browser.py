@@ -1607,3 +1607,99 @@ def test_a_row_open_for_editing_is_not_taken_over_by_the_storage(browser):
         assert _server(worker, u)["tray"] == "csv", "the colleague's save must never be overwritten"
         assert not errors, errors
         page.close()
+
+
+# ── #3's review of 4b: the editing guard, the checking state, rows holding their place ──
+
+def _colleague_edits(worker, root, uid, text, locale="de"):
+    u = _units(root, locale)[uid]
+    worker.store.handle("desk-write", {"locale": locale, "client": 1, "changes": [
+        {"unit": uid, "page": u["pages"][0], "base": 0,
+         "record": {"tray": "csv", "text": text, "approvedAgainst": u["tgt"]}}]}, "colleague@example.test")
+
+
+def test_a_cancelled_editor_does_not_keep_a_colleagues_decision_off_the_row(browser):
+    """P2: the guard counted every editor a row had ever built, and a closed one stays in the
+    page. Opened and cancelled before the storage answered, the row kept the old decision on
+    screen -- R26's stale copy -- until the next load."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        _colleague_approves(worker, root, u)
+        worker.action_faults["desk-read"] = {"delay": 1.5}
+        page.reload()
+        _wait_ready(page, "de")
+        page.on("dialog", lambda dlg: dlg.accept())          # "discard your changes?" -- yes
+        _act(page, u, "edit")
+        _row(page, u).locator("textarea.desk-edit").fill("Doch nicht")   # typed, then thrown away
+        _row(page, u).locator('[data-edit="cancel"]').click()
+        _checked(page)
+        assert _rec(page, u).get("tray") == "csv"
+        assert C.t("status.approved") in _label(page, u)
+        assert not errors, errors
+        page.close()
+
+
+def test_an_open_unchanged_editor_takes_the_colleagues_copy_into_its_box(browser):
+    """Open but untouched is not editing: the row takes the colleague's newer wording and the
+    box shows it. Typing over the old words would have saved them onto the colleague's
+    version, with no conflict to say so."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        _colleague_edits(worker, root, u, "Die Fassung der Kollegin")
+        worker.action_faults["desk-read"] = {"delay": 1.5}
+        page.reload()
+        _wait_ready(page, "de")
+        _act(page, u, "edit")
+        _checked(page)
+        assert _rec(page, u).get("text") == "Die Fassung der Kollegin"
+        assert _row(page, u).locator("textarea.desk-edit").input_value() == "Die Fassung der Kollegin"
+        assert not errors, errors
+        page.close()
+
+
+def test_the_bar_keeps_checking_through_a_change_made_before_the_storage_answers(browser):
+    """P3: `checking` lived on the object setSync replaces, so autosave's first step dropped
+    it. Approved and undone before the storage answered, nothing was waiting, and the bar
+    said Saved while the storage's answer was still out."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        worker.action_faults["desk-read"] = {"delay": 2.0}
+        page.reload()
+        _wait_ready(page, "de")
+        _act(page, u, "approve")
+        _act(page, u, "approve")                  # the same choice again undoes it
+        assert _rec(page, u).get("tray") is None
+        assert _as_state(page) == "checking"
+        _checked(page)
+        _as_wait(page, "saved")
+        assert not errors, errors
+        page.close()
+
+
+def test_a_row_the_storage_changes_holds_its_place_until_the_view_changes(browser):
+    """P3 (ruling #17): the repaint re-filtered the list under the reviewer. In "To do", a
+    colleague's approval took away the row they were about to click. It stays, showing the
+    colleague's decision, until the reviewer changes the view."""
+    with desk(save_on=True) as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _as_wait(page, "saved")
+        _colleague_approves(worker, root, u)
+        worker.action_faults["desk-read"] = {"delay": 1.5}
+        page.goto(base + "/admin/localization/de/?show=todo")
+        _wait_ready(page, "de")
+        assert _row(page, u).is_visible()
+        _checked(page)
+        assert _row(page, u).is_visible(), "the row moved under the reviewer"
+        assert C.t("status.approved") in _label(page, u)
+        page.select_option("#f-state", "")
+        page.select_option("#f-state", "todo")
+        assert not _row(page, u).is_visible()
+        assert not errors, errors
+        page.close()
