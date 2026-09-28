@@ -157,7 +157,8 @@ class TestRenderedPage:
         pins the mechanism; the behaviour itself, every state x action, is walked in a
         real browser by tests/browser/test_desk_browser.py.
         """
-        assert "var undoing = (s.tray || null) === tray;" in page
+        # the text's own tray (WO-25c: no tray while a draft is to read)
+        assert "var undoing = trayOf(uid) === tray;" in page
         assert "var target = undoing ? (s.was || null) : tray;" in page
         # The active control IS the way back, so it is never disabled -- except while
         # Gemini has the row. Re-enabling both after that left a sending row with two

@@ -1335,6 +1335,12 @@ __STAGE_JS__
     // the engine's next move. The decisions are the reviewer's: only they are kept, and saved.
     var engineStamps = Object.create(null), engineDrafts = Object.create(null);
     function textOf(uid) { return merged(state[uid], engineStamps[uid], engineDrafts[uid]); }
+    // The text's tray, as its stage shows it. A draft that came back answers a request, and the
+    // storage's decision is still {tray: 'draft'} when it arrives: while the draft is to read, the
+    // text has no tray (merged clears it). The actions, the buttons, the counts and the Requested
+    // list read this -- reading the saved tray, ✦ undid the request, bulk ✦ did nothing, and the
+    // list held every draft (review of WO-25c, P1-1).
+    function trayOf(uid) { return stage(uid) === 'arrived' ? null : ((state[uid] || {}).tray || null); }
     function stage(uid) {
       // Most texts have nothing from the engine: their decision is all there is to read.
       if (!engineStamps[uid] && !engineDrafts[uid]) return stageOf(state[uid]);
@@ -1425,12 +1431,13 @@ __STAGE_JS__
       // with no text has nowhere else to say what it currently means. The active one IS
       // the undo, so neither is disabled -- except while Gemini has the row (above):
       // re-enabling them here left a sending row with two buttons that did nothing.
-      bApprove.classList.toggle('is-on', s.tray === 'csv');
-      var tipA = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
+      var ownTray = trayOf(uid);
+      bApprove.classList.toggle('is-on', ownTray === 'csv');
+      var tipA = t(ownTray === 'csv' ? 'action.approve.on' : 'action.approve');
       bApprove.setAttribute('data-tip', tipA);
       bApprove.setAttribute('aria-label', tipA);
-      bQueue.classList.toggle('is-on', s.tray === 'draft');
-      var tipQ = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
+      bQueue.classList.toggle('is-on', ownTray === 'draft');
+      var tipQ = t(ownTray === 'draft' ? 'action.queue.on' : 'action.queue');
       bQueue.setAttribute('data-tip', tipQ);
       bQueue.setAttribute('aria-label', tipQ);
 
@@ -1466,8 +1473,9 @@ __STAGE_JS__
       var csv = 0, draft = 0;
       for (var k in state) {
         if (!state[k]) continue;
-        if (state[k].tray === 'csv') csv++;
-        else if (state[k].tray === 'draft') draft++;
+        var own = trayOf(k);
+        if (own === 'csv') csv++;
+        else if (own === 'draft') draft++;
       }
       return { csv: csv, draft: draft };
     }
@@ -1613,8 +1621,16 @@ __STAGE_JS__
     function decide(uid, tr, tray, why, restoring) {
       clearConflict(uid);                  // deciding again is choosing yours over theirs
       var s = rec(uid);
-      var from = s.tray || null;
+      var from = trayOf(uid);
       if (from === tray) return false;
+      // The request a draft answered: the storage still holds it ({tray: 'draft'}, at the time it
+      // was asked). Kept here (`wasSaved`, like `was`), so that undoing puts exactly it back --
+      // nothing sent, and Gemini not asked again: saved anew, it would be a new ask, later than
+      // the draft, and paid for (storage.queued; review of WO-25c, P1-1).
+      if (!restoring) {
+        if (stage(uid) === 'arrived' && s.tray) s.wasSaved = Object.assign(storedOnly(s), s.at ? { at: s.at } : {});
+        else delete s.wasSaved;
+      }
       // A LIST, newest last, the last five: what the Worker's storage and the batch
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
@@ -1645,6 +1661,15 @@ __STAGE_JS__
       setTray(uid, tray, why);
       if (from === 'csv') stampApproval(uid, tr, false);
       if (tray === 'csv') stampApproval(uid, tr, true);
+      // Undone back to the draft to read: the request it answered comes back as the storage holds it
+      // -- while it still does. Once this decision has been saved over it, putting the request back
+      // would be a new ask; the undo is then the storage's empty decision, which hides the draft
+      // (#1's ruling (b)).
+      if (restoring && tray === null && s.wasSaved) {
+        var asked = s.wasSaved;
+        delete s.wasSaved;
+        if (sameDecision(asked, saved[uid] || null)) { state[uid] = asked; return true; }
+      }
       // When: what the stage rule compares an arrival and an export with. The storage stamps the
       // time when the decision lands; until then a decision is the newest thing there is -- and one
       // with nothing left in it has no time yet (an undo), as the storage has none for it either.
@@ -1669,7 +1694,7 @@ __STAGE_JS__
       // before, never further (ruling #16).
       justActed[uid] = 1;
       var s = rec(uid);
-      var undoing = (s.tray || null) === tray;
+      var undoing = trayOf(uid) === tray;
       var target = undoing ? (s.was || null) : tray;
       var why = undoing ? (what === 'approve' ? 'un-approve' : 'un-queue') : what;
       if (decide(uid, tr, target, why, undoing)) { persist(); paint(tr); }
@@ -1826,6 +1851,7 @@ __STAGE_JS__
       var changed = false;
       if (val && val !== liveText[uid] && val !== s.text) {
         s.text = val;
+        delete s.wasSaved;                   // an edit is a decision of its own: no request comes back under it
         note('edit', uid, null, null);
         // Typing the wording you want IS the decision; a separate Approve click
         // afterwards could only ever be "yes".
@@ -2053,7 +2079,7 @@ __STAGE_JS__
     function trayRows() {
       return rows.filter(function (tr) {
         var s = state[tr.getAttribute('data-uid')];
-        return s && s.tray === openTray;
+        return s && trayOf(tr.getAttribute('data-uid')) === openTray;
       });
     }
 

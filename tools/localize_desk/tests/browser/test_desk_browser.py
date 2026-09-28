@@ -1893,3 +1893,64 @@ def test_an_undo_saved_after_the_arrival_dismisses_the_draft(browser):
         _checked(page)
         assert C.t("status.todo") in _label(page, uid)
         page.close()
+
+
+def _plus(stamp: str, ms: int) -> str:
+    from datetime import datetime, timedelta
+    t = datetime.fromisoformat(stamp.replace("Z", "+00:00")) + timedelta(milliseconds=ms)
+    return t.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def test_a_draft_that_answers_a_request_is_read_decided_and_undone_as_a_draft(browser):
+    """Review of WO-25c, P1-1 (#1's pre-paid-run review): every real draft answers a request --
+    the storage's decision is still {tray: 'draft'} when it arrives -- and the actions read that
+    saved tray. ✦ acted as its undo (the decision emptied, nothing turned down, the paid draft
+    hidden once saved); bulk ✦ did nothing; ✓ then undo saved the request anew, later than the
+    draft, and Gemini would have been paid again; the Requested list held every draft. A text
+    with a draft to read has no tray of its own, and an undo puts the request back as it was."""
+    with desk() as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a, b, c, d = _visible_uids(page, 4)
+        units = _units(root, "de")
+        worker.store.handle("desk-write", {"locale": "de", "client": 1, "changes": [
+            {"unit": u, "page": units[u]["pages"][0], "base": 0, "record": {"tray": "draft"}}
+            for u in (a, b, c, d)]}, "reviewer@example.test")
+        asked = {u: worker.store.decisions[("de", u)]["at"] for u in (a, b, c, d)}
+        for u in (a, b, c, d):
+            worker.store.drafts[("de", u)] = {"text": DRAFT, "arrivedAt": _plus(asked[u], 1)}   # after the ask, before any click
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        for u in (a, b, c, d):
+            assert C.t("status.arrived") in _label(page, u), (u, _label(page, u))
+            assert _row(page, u).locator('[data-act="queue"]').get_attribute("data-tip") == C.t("action.queue")
+        assert page.locator("#open-draft").is_disabled(), "the Requested list held the drafts"
+        _act(page, a, "approve")                            # ✓: the draft's words, approved
+        assert C.t("status.edited") in _label(page, a) and _rec(page, a).get("text") == DRAFT
+        _act(page, a, "approve")                            # ✓ again: the draft to read, as before
+        assert C.t("status.arrived") in _label(page, a)
+        _act(page, b, "queue")                              # ✦: turned down, asked again
+        assert C.t("status.queued") in _label(page, b) and _rec(page, b).get("rejected") == [DRAFT]
+        _act(page, b, "queue")                              # ✦ again: the draft to read, as before
+        assert C.t("status.arrived") in _label(page, b) and "rejected" not in _rec(page, b)
+        for u in (c, d):                                    # bulk ✦
+            _row(page, u).locator("[data-pick]").check()
+        page.click("#bulk-draft")
+        for u in (c, d):
+            assert C.t("status.queued") in _label(page, u) and _rec(page, u).get("rejected") == [DRAFT]
+        page.click("#open-draft")
+        assert page.locator("#tray-list .desk-review-item").count() == 2
+        page.click("#tray-done")
+        _as_wait(page, "saved")
+        for u in (a, b):                                    # nothing sent: no new ask, nothing paid again
+            row = worker.store.decisions[("de", u)]
+            assert (row["record"], row["version"], row["at"]) == ({"tray": "draft"}, 1, asked[u]), row
+        for u in (c, d):                                    # a new ask, after the draft, with it turned down
+            s = _server(worker, u)
+            assert (s["tray"], s["rejected"]) == ("draft", [DRAFT]), s
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        assert C.t("status.arrived") in _label(page, a) and C.t("status.arrived") in _label(page, b)
+        assert not errors, errors
+        page.close()
