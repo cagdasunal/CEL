@@ -31,8 +31,6 @@
     "liveAt": "engine",
     "importedAt": "engine"
   },
-  "known_gaps": {
-    "importedAt": "WO-26: nothing records that an import happened (import confirmation)"
-  },
+  "known_gaps": {},
   "no_writer_yet": {}
 }
