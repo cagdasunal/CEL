@@ -4,7 +4,7 @@
  "path": "/vancouver/how-long-to-learn-english",
  "source": "render-alignment",
  "source_note": "Built by aligning the English render with each localized render (tools/localize/align.py) rather than from a Weglot dashboard export. word_from is at Weglot's own cut because Weglot performed the substitution. quality_approx is an approximation - see provenance.py.",
- "built_at": "2026-09-23T15:50:53Z",
+ "built_at": "2026-09-28T11:50:29Z",
  "locales": [
   "de",
   "fr",
@@ -405,7 +405,7 @@
    "word_from": "1190 Melville St, #300, Vancouver, BC V6E 3W1, Canada",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "other_inline",
    "pages": [
     "/",
@@ -700,7 +700,7 @@
    "word_from": "401 Wilshire Boulevard #200, Santa Monica, CA 90401 USA",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "other_inline",
    "pages": [
     "/",
@@ -994,7 +994,7 @@
    "word_from": "945 Hornblend Street, Suite G, 2nd floor, San Diego, CA 92109 USA",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "other_inline",
    "pages": [
     "/",
@@ -1121,7 +1121,7 @@
    "word_from": "<a wg-1=\"\">+1 604 685 0291</a><a wg-2=\"\">Get Directions</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1248,7 +1248,7 @@
    "word_from": "<a wg-1=\"\">+1 619 234 7466</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1375,7 +1375,7 @@
    "word_from": "<a wg-1=\"\">+1 619 243 4426</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1502,7 +1502,7 @@
    "word_from": "<a wg-1=\"\">+1 858 412 6888</a><a wg-2=\"\">Get Directions</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1629,7 +1629,7 @@
    "word_from": "<a wg-1=\"\">Affiliate Program</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1756,7 +1756,7 @@
    "word_from": "<a wg-1=\"\">All Courses</a><a wg-2=\"\">All Housing</a><a wg-3=\"\">Summer Camp </a><a wg-4=\"\">Apply Now</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -1883,7 +1883,7 @@
    "word_from": "<a wg-1=\"\">Apartment Economy APT Living</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2010,7 +2010,7 @@
    "word_from": "<a wg-1=\"\">BPPE Compliance Statement</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2137,7 +2137,7 @@
    "word_from": "<a wg-1=\"\">CEL Shared Apartment Premium</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2264,7 +2264,7 @@
    "word_from": "<a wg-1=\"\">CEL Shared Apartment Standard</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2391,7 +2391,7 @@
    "word_from": "<a wg-1=\"\">CEL Shared Apartment Superior Pacific Beach</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2633,7 +2633,7 @@
    "word_from": "<a wg-1=\"\">Cookie Policy</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2760,7 +2760,7 @@
    "word_from": "<a wg-1=\"\">Cost of Studying English</a><a wg-2=\"\">How Long to Learn English</a><a wg-3=\"\">Vancouver vs Toronto</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -2887,7 +2887,7 @@
    "word_from": "<a wg-1=\"\">English + Academic Skills</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3014,7 +3014,7 @@
    "word_from": "<a wg-1=\"\">English Plus Cambridge Preparation</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3141,7 +3141,7 @@
    "word_from": "<a wg-1=\"\">English Plus Career Development</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3268,7 +3268,7 @@
    "word_from": "<a wg-1=\"\">English Plus Experience</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3395,7 +3395,7 @@
    "word_from": "<a wg-1=\"\">English Plus Surfing</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3522,7 +3522,7 @@
    "word_from": "<a wg-1=\"\">English Plus TOEFL Preparation</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3649,7 +3649,7 @@
    "word_from": "<a wg-1=\"\">English Plus Volunteering</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3776,7 +3776,7 @@
    "word_from": "<a wg-1=\"\">General English</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -3903,7 +3903,7 @@
    "word_from": "<a wg-1=\"\">Global Pathway</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4030,7 +4030,7 @@
    "word_from": "<a wg-1=\"\">Homestay</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4157,7 +4157,7 @@
    "word_from": "<a wg-1=\"\">Learn English in the USA</a><a wg-2=\"\">Learn English in Canada</a><a wg-3=\"\">San Diego Language School</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4341,7 +4341,7 @@
    "word_from": "<a wg-1=\"\">Pathway Program</a><a wg-2=\"\">Certificate Programs</a><a wg-3=\"\">Undergraduate Programs</a><a wg-3=\"\">Graduate Programs</a><a wg-4=\"\">US Education System</a><a wg-5=\"\">Semester Abroad</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4468,7 +4468,7 @@
    "word_from": "<a wg-1=\"\">Premium Homestay</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4595,7 +4595,7 @@
    "word_from": "<a wg-1=\"\">Privacy Policy</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4722,7 +4722,7 @@
    "word_from": "<a wg-1=\"\">Private lessons</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -4937,7 +4937,7 @@
    "word_from": "<a wg-1=\"\">Shared Apartment Downtown</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5064,7 +5064,7 @@
    "word_from": "<a wg-1=\"\">Shared Apartment Silverstone</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5191,7 +5191,7 @@
    "word_from": "<a wg-1=\"\">Student House Budget</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5318,7 +5318,7 @@
    "word_from": "<a wg-1=\"\">Student House</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5445,7 +5445,7 @@
    "word_from": "<a wg-1=\"\">Student Voices</a><a wg-2=\"\">Blog</a><a wg-3=\"\">FAQs</a><a wg-4=\"\">Contact Us</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5572,7 +5572,7 @@
    "word_from": "<a wg-1=\"\">Terms & Conditions</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5699,7 +5699,7 @@
    "word_from": "<a wg-1=\"\">Vancouver Language School</a><a wg-2=\"\">Learn English in Canada</a><a wg-3=\"\">Student Services</a><a wg-4=\"\">School Policies</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -5826,7 +5826,7 @@
    "word_from": "<a wg-1=\"\">info@englishcollege.com</a>",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
@@ -6285,7 +6285,7 @@
    "word_from": "About CEL",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -6880,7 +6880,7 @@
    "word_from": "Apply now",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -7985,7 +7985,7 @@
    "word_from": "CEL San Diego",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -8117,7 +8117,7 @@
    "word_from": "CEL Vancouver",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -8958,7 +8958,7 @@
    "word_from": "Contact",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -10070,7 +10070,7 @@
    "word_from": "Destinations",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -10712,7 +10712,7 @@
    "word_from": "Email",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -10844,7 +10844,7 @@
    "word_from": "English Plus",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -10976,7 +10976,7 @@
    "word_from": "Explore",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -11864,7 +11864,7 @@
    "word_from": "General",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -15023,7 +15023,7 @@
    "word_from": "Phone",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -15948,7 +15948,7 @@
    "word_from": "Schools",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -17072,7 +17072,7 @@
    "word_from": "Study at CEL",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -17204,7 +17204,7 @@
    "word_from": "Study in Vancouver",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -17987,7 +17987,7 @@
    "word_from": "Useful Guides",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -19364,7 +19364,7 @@
    "word_from": "WhatsApp",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "plain",
    "pages": [
     "/",
@@ -20733,7 +20733,7 @@
    "word_from": "© 2026 <a wg-1=\"\">College of English Language</a>. All rights reserved.",
    "type": "Text",
    "role": "body",
-   "section": "How Long Does It Take to Learn English in Vancouver?",
+   "section": "",
    "markup_class": "a_only",
    "pages": [
     "/",
