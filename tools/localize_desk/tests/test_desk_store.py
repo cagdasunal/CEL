@@ -128,8 +128,8 @@ def test_the_harness_plays_the_engine_for_the_desks_jobs():
 
 def test_a_users_job_starts_are_capped_per_day_as_the_worker_caps_them():
     s = _store()
-    codes = [s.handle("desk-job-start", {"locale": "de", "kind": "export"}, "pat@example.test")[0] for _ in range(31)]
-    assert codes[0] == 200 and set(codes[1:30]) == {409} and codes[30] == 429
+    codes = [s.handle("desk-job-start", {"locale": "de", "kind": "export"}, "pat@example.test")[0] for _ in range(61)]
+    assert codes[0] == 200 and set(codes[1:60]) == {409} and codes[60] == 429
     assert s.handle("desk-job-start", {"locale": "fr", "kind": "export"}, "kim@example.test")[0] == 200
 
 
