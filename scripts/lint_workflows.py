@@ -29,6 +29,13 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
                         no `cancelled()` (a timeout-minutes expiry -> conclusion
                         `cancelled`, not `failed`, so the alert misses TIMEOUTS — the
                         blog-summary-autopilot 7-day-silent incident)
+  - notify_on_superseded_cancel : `cancel-in-progress: true` (workflow or job level)
+                        with a notify step that fires on `cancelled()`. A newer run cancels
+                        the running one, the cancelled run still executes its `cancelled()`
+                        step, and a false "failed" issue opens (CEL desk-browser.yml,
+                        stress-test.yml, desk-live-check.yml, 2026-09-28). Cancel only a
+                        pull request's run (`${{ github.event_name == 'pull_request' }}`) and
+                        keep `cancelled()` out of the PR case, or queue (`false`).
   - script_injection  : `${{ inputs.* }}` / issue / PR / comment / workflow_run text
                         interpolated into a `run:` block. GitHub substitutes it as TEXT
                         before bash parses the script, so `$(...)`, a backtick or a
@@ -290,8 +297,8 @@ def lint_workflow(path: Path):
     #    A `timeout-minutes` expiry marks the job `cancelled`, NOT `failed`, so an
     #    `if: failure()`-only notify NEVER fires on a TIMEOUT — exactly how
     #    blog-summary-autopilot timed out (cancelled) unalerted for 7 days. Safe to
-    #    require broadly: none of these crons use concurrency cancel-in-progress, so a
-    #    `cancelled` status only ever means a timeout or a manual cancel — both alert-worthy.
+    #    require broadly: rule 7b keeps `cancel-in-progress: true` away from such a notice,
+    #    so a `cancelled` status only ever means a timeout or a manual cancel — both alert-worthy.
     if is_scheduled and "gh issue create" in text:
         for sline, sblock in _step_blocks(text):
             if "gh issue create" not in sblock:
@@ -305,6 +312,23 @@ def lint_workflow(path: Path):
                     "(not `failed`), so the alert never fires on a TIMEOUT (the "
                     "blog-summary-autopilot 7-day-silent incident)",
                     "change the notify step guard to `if: failure() || cancelled()`")
+
+    # 7b. `cancel-in-progress: true` + a notify step on `cancelled()`: a newer run cancels
+    #     the running one, and the cancelled run still executes its `cancelled()` step, so
+    #     the notice opens a false "failed" issue. Only the literal `true` is flagged -- an
+    #     expression (e.g. PR-only cancelling) is the fix, and its guard is the author's.
+    if re.search(r"^\s*cancel-in-progress:\s*true\s*(#.*)?$", text, re.M) and "gh issue" in text:
+        for sline, sblock in _step_blocks(text):
+            if "gh issue" not in sblock:
+                continue
+            m = re.search(r"^\s*if:\s*(.+)$", sblock, re.M)
+            if m and "cancelled()" in m.group(1):
+                add("high", "notify_on_superseded_cancel", sline,
+                    "`cancel-in-progress: true` with a notify step on `cancelled()` -- a newer "
+                    "run cancels this one and the notice opens a false 'failed' issue",
+                    "cancel only a pull request's run (`cancel-in-progress: ${{ github.event_name "
+                    "== 'pull_request' }}`) and keep `cancelled()` out of the PR case, or queue "
+                    "with `cancel-in-progress: false`")
 
     # 8. `${{ }}` interpolation of ATTACKER-CONTROLLABLE data inside a `run:` block.
     #    GitHub substitutes the expression TEXTUALLY before bash ever sees the script,
