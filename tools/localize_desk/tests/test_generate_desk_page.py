@@ -159,9 +159,11 @@ class TestRenderedPage:
         """
         assert "var undoing = (s.tray || null) === tray;" in page
         assert "var target = undoing ? (s.was || null) : tray;" in page
-        # Neither control is ever disabled -- the active one IS the way back.
-        assert "bApprove.disabled = false;" in page
-        assert "bQueue.disabled = false;" in page
+        # The active control IS the way back, so it is never disabled -- except while
+        # Gemini has the row. Re-enabling both after that left a sending row with two
+        # live-looking buttons that did nothing (review round 2, WO-32).
+        assert "b.disabled = st === 'sending';" in page
+        assert "bApprove.disabled = false;" not in page and "bQueue.disabled = false;" not in page
 
     def test_state_is_shown_by_colour_not_by_dimming(self, page):
         # Fading a decided row made the reviewer's own finished work the hardest
@@ -443,9 +445,13 @@ class TestFourthAudit:
 
     def test_the_language_badge_counts_work_left_not_work_done(self, units_dir):
         page = G.render_locale("de", self._units(units_dir))
-        body = page.split("function paintLocaleCounts()")[1].split("\n    }\n")[0]
+        # Counted by outstanding(), which paintLocaleCounts() calls (memoised per stored
+        # value since review round 2 -- every click re-parsed all eight languages).
+        body = page.split("function outstanding(lc, recs)")[1].split("\n    }\n")[0]
         assert "WORTH[lc]" in body and "=== 'todo'" in body
-        assert "raw[k].tray" not in body          # it used to count decided rows
+        counts = page.split("function paintLocaleCounts()")[1].split("\n    }\n")[0]
+        assert "outstanding(lc, state)" in counts and "storedOutstanding(lc)" in counts
+        assert "raw[k].tray" not in body + counts   # it used to count decided rows
         assert '"de":["here"]' in page             # the baked list excludes the site-wide row
 
     def test_text_takes_its_own_direction_in_a_right_to_left_column(self, units_dir):
@@ -498,3 +504,21 @@ def test_one_gesture_has_one_name():
     src = Path(G.__file__).read_text()
     assert "tray-selcount" not in src and 'id="tray-all-label"' in src
     assert "tray screen" not in src.lower()      # ruling 18: it is the review list
+
+
+def test_the_committed_desk_is_what_the_generator_writes_today(tmp_path, monkeypatch):
+    """The browser tests serve the COMMITTED pages (harness.stage_copy), so a generator
+    change that was never regenerated left them testing yesterday's desk -- and the live
+    site serving it (review round 2, L6 P2). Rebuilt from the real manifest into a
+    scratch folder, every file must match what is committed."""
+    committed = G.OUT_ROOT
+    if not G.UNITS_DIR.is_dir() or not committed.is_dir():
+        pytest.skip("no manifest or no committed desk in this checkout")
+    monkeypatch.setattr(G, "OUT_ROOT", tmp_path / "localization")
+    assert G.main() == 0
+    fresh = {p.relative_to(tmp_path / "localization") for p in (tmp_path / "localization").rglob("*")
+             if p.is_file()}
+    stale = sorted(str(r) for r in fresh
+                   if (committed / r).read_bytes() != (tmp_path / "localization" / r).read_bytes())
+    assert not stale, ("committed desk differs from the generator -- run "
+                       "`cd tools && python3 -m localize_desk.generate_desk_page`: " + ", ".join(stale))

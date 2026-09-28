@@ -1373,7 +1373,11 @@
   }
   .desk-modal-body ol, .desk-modal-body ul { margin: 4px 0; padding-left: 20px; }
   .desk-modal-body li { margin-bottom: 4px; }
-  .desk-modal-wide { max-width: 560px; text-align: left; }
+  /* The help is taller than a laptop screen: its body scrolls, and the heading and Close
+     stay in view. Below ~1,050px its end and its Close button were out of reach
+     (review round 2, L5 #3). */
+  .desk-modal-wide { max-width: 560px; text-align: left; max-height: calc(100vh - 48px); }
+  .desk-modal-wide .desk-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
   /* Toasts. Bottom-right, stacked, out of the way of the sticky action bar.
      Feedback for things that already happen and currently say nothing -- approving

@@ -170,6 +170,9 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `save.button.hint` | Stores your decisions on the server, so they survive this tab and anyone else reviewing sees them. | Hover text of Save |
 | `save.button.hint_elsewhere` | {n} of them are in other languages. Save stores every language at once. | Hover text of Save |
 | `save.elsewhere` | + {n} unsaved in other languages | Next to Save |
+| `save.off.button` | Kept in this browser | The Save button, while saving is switched off |
+| `save.off.title` | Saving is switched off for now | Message, when that button is clicked |
+| `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
 | `save.status.starting` | Starting… | Next to Save, while saving |
 | `save.status.saving` | Saving… | Next to Save, while saving |
 | `save.status.language` | Saving {language} ({i} of {count})… | Next to Save, several languages |
@@ -205,14 +208,14 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.approved.detail` | They go to the website once an import file is made and imported into Weglot. | |
 | `toast.requested.one` | 1 new translation requested | After asking Gemini for a selection |
 | `toast.requested.other` | {n} new translations requested | |
-| `toast.requested.detail` | Nothing goes to Gemini until the requests are sent. | |
+| `toast.requested.detail` | Sending requests to Gemini isn't switched on yet. They'll be waiting when it is. | |
 | `toast.already.one` | 1 was already set. | Added to the two messages above |
 | `toast.already.other` | {n} were already set. | |
 | `toast.inflight.title` | Nothing changed | When every selected text is with Gemini |
 | `toast.inflight.one` | 1 text is with Gemini right now. You can decide once it comes back. | |
 | `toast.inflight.other` | {n} texts are with Gemini right now. You can decide once they come back. | |
 | `toast.edited.title` | Approved with your edit | After Save changes in the edit box |
-| `toast.edited.detail` | Press Save at the bottom to store it. | |
+| `toast.edited.detail` | It's kept in this browser, with your other decisions. | |
 | `toast.undone.title` | Undone | After Undo in a list |
 | `toast.undone.one` | 1 text is back to Not reviewed yet. | |
 | `toast.undone.other` | {n} texts are back to Not reviewed yet. | |
@@ -225,7 +228,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.updated.live.one` | 1 is now on the website. | |
 | `toast.updated.live.other` | {n} are now on the website. | |
 | `toast.storage.title` | Your browser isn't keeping your work | When the browser refuses to store |
-| `toast.storage.detail` | Everything on screen is still right, but reloading would lose it. Press Save now. | |
+| `toast.storage.detail` | Everything on screen is still right, but reloading would lose it. Keep this tab open and let us know. | |
 | `toast.saved_load.title` | Couldn't load decisions saved earlier | When saved decisions can't be read |
 | `toast.saved_load.detail` | You may not see decisions made on another computer. Reload before reviewing, or saving could overwrite them. | |
 | `toast.load.title` | This language couldn't be loaded | When the texts can't be read |
@@ -248,11 +251,11 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `list.draft.title` | New translations requested | List heading |
 | `list.draft.summary.one` | 1 text is waiting for a new translation from Gemini. | Under the heading |
 | `list.draft.summary.other` | {n} texts are waiting for a new translation from Gemini. | Under the heading |
-| `list.draft.notice` | Save keeps this list. Sending requests to Gemini isn't switched on yet — when it is, you'll see how many texts and what it costs before anything is sent. | Bottom of the list |
+| `list.draft.notice` | This list is kept in this browser. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is. | Bottom of the list |
 | `list.csv.title` | Approved | List heading |
 | `list.csv.summary.one` | 1 text is approved and waiting to go to the website. | Under the heading |
 | `list.csv.summary.other` | {n} texts are approved and waiting to go to the website. | Under the heading |
-| `list.csv.notice` | Nothing reaches the website by itself. Save keeps your approvals. Making the Weglot import file isn't switched on yet — your approvals will be waiting when it is. | Bottom of the list |
+| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are kept in this browser. Making the Weglot import file isn't switched on yet — they'll be waiting when it is. | Bottom of the list |
 
 ## Why a text is flagged (under the translation)
 
@@ -309,12 +312,14 @@ bottom applies one decision to all of them. On the keyboard, `J` and `K` move be
 
 ### Nothing reaches the website by itself
 
-Approved texts wait for the import file. New-translation requests wait until they're sent to
-Gemini, and you'll see how many and roughly what it costs first. Both lists open from the bar
-at the bottom, and anything in them can be undone.
+Approved texts wait for the import file, and new-translation requests wait for sending to
+Gemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the
+bottom, and anything in them can be undone.
 
 ### Saving
 
-Your decisions stay on this page as you make them. **Save** stores them on the server, so you
-can close the tab, come back tomorrow, or carry on from another computer.
+Your decisions are kept in this browser as you make them. Saving them to the server is
+switched off for now, until it can keep them private — so keep using this browser, and don't
+clear its history or site data. Once saving is back, you'll be able to close the tab and carry
+on from another computer.
 <!-- /block -->

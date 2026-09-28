@@ -60,6 +60,9 @@ class MockWorker:
                                    "inputs": {}}] if history else [])
         self._next_id = 1000
         self.lock = threading.Lock()
+        # Slow or failing files, for the races the desk must survive (review round 2):
+        # {"<part of the path>": {"delay": seconds, "status": 503}}. Tests set it live.
+        self.faults: dict[str, dict] = {}
 
     def _new_id(self) -> int:
         self._next_id += 1
@@ -118,6 +121,9 @@ class MockWorker:
                 if self.mode != "old":
                     out["id"] = run["id"]
             return 200, {"ok": True, "run": out}
+        if action == "changepw":
+            # The shell's change-password dialog; the harness has no password to check.
+            return 200, {"ok": True}
         return 400, {"error": "invalid action"}
 
 
@@ -138,6 +144,12 @@ def make_server(root: Path, worker: MockWorker, port: int) -> ThreadingHTTPServe
             self.wfile.write(body)
 
         def do_GET(self):
+            for part, fault in list(worker.faults.items()):
+                if part in self.path:
+                    if fault.get("delay"):
+                        time.sleep(fault["delay"])
+                    if fault.get("status"):
+                        return self._send(int(fault["status"]), b"{}")
             if self.path.startswith("/assets/js/auth.js"):
                 return self._send(200, AUTH_STUB, "application/javascript")
             if self.path.startswith("/assets/js/dashboard-config.js"):
@@ -158,7 +170,10 @@ def make_server(root: Path, worker: MockWorker, port: int) -> ThreadingHTTPServe
 def stage_copy(docs: Path = REPO_DOCS) -> Path:
     """A throwaway copy of the files the desk needs; saves land here, never in docs/."""
     root = Path(tempfile.mkdtemp(prefix="desk-harness-"))
-    shutil.copytree(docs / "admin" / "localization", root / "admin" / "localization")
+    # The whole admin area, so the dashboard's navigation leads somewhere (review round
+    # 2 found all nine nav links 404ing here) -- minus the bulk import files it never shows.
+    shutil.copytree(docs / "admin", root / "admin",
+                    ignore=shutil.ignore_patterns("*.csv", "*.zip", "*.bak", "*.poisoned.bak"))
     shutil.copytree(docs / "assets", root / "assets")
     return root
 

@@ -352,6 +352,78 @@ _STAGE_JS = """\
 """
 
 
+# What counts as unsaved, for the desk AND the index card, from this one string. The card
+# kept its own whole-record JSON comparison, which disagreed with the desk whenever a
+# record's keys came back in another order, or a record was empty (review round 2).
+_DELTA_JS = """\
+    // Every field `stage()` reads. Five of these used to be left behind by both the
+    // comparison and the delta, so `sending`, `arrived`, `failed`, `exported` and
+    // `live` existed only in the browser that produced them -- and `liveAt`, which
+    // is what stops an already-published row being exported a second time, could
+    // never reach the server that does the exporting.
+    var SAVE_FIELDS = ['tray', 'text', 'rejected', 'by', 'at', 'approvedAgainst',
+                       'sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'];
+
+    // A record is worth keeping if it carries a decision OR any lifecycle stamp.
+    // Keying this on `tray` alone told the server to forget a row that was out for
+    // translation.
+    function hasContent(r) {
+      if (!r) return false;
+      for (var i = 0; i < SAVE_FIELDS.length; i++) {
+        var v = r[SAVE_FIELDS[i]];
+        if (v !== undefined && v !== null) return true;
+      }
+      return false;
+    }
+
+    // Strings compare directly; only `rejected` (a list) needs serialising. Serialising
+    // every field of every record made each click on a decided desk pay for ~18,000
+    // JSON.stringify calls.
+    function sameValue(x, y) {
+      if (x === undefined) x = null;
+      if (y === undefined) y = null;
+      if (x === y) return true;
+      if (x === null || y === null || typeof x !== 'object' || typeof y !== 'object') return false;
+      return JSON.stringify(x) === JSON.stringify(y);
+    }
+
+    function sameDecision(a, b) {
+      if (!a && !b) return true;
+      if (!a || !b) return false;
+      for (var i = 0; i < SAVE_FIELDS.length; i++) {
+        // `approvedAgainst` belongs here: without it, re-approving a row whose
+        // wording had moved produced no delta, the server kept the stale snapshot,
+        // and the export skipped the row as "changed since approval" for ever.
+        if (!sameValue(a[SAVE_FIELDS[i]], b[SAVE_FIELDS[i]])) return false;
+      }
+      return true;
+    }
+
+    function deltaBetween(now, was) {
+      var out = {}, n = 0, ids = {};
+      for (var k in now) ids[k] = 1;
+      for (var k2 in was) ids[k2] = 1;
+      for (var uid in ids) {
+        var mine = hasContent(now[uid]) ? now[uid] : null;
+        var theirs = hasContent(was[uid]) ? was[uid] : null;
+        if (sameDecision(mine, theirs)) continue;
+        // null is how the server is told to forget a unit.
+        if (mine) {
+          var row = {};
+          SAVE_FIELDS.forEach(function (f) {
+            if (mine[f] !== undefined) row[f] = mine[f];
+          });
+          out[uid] = row;
+        } else {
+          out[uid] = null;
+        }
+        n++;
+      }
+      return { body: out, n: n };
+    }
+"""
+
+
 # One tooltip for every control on the desk and the index (ruling #51, runbook WO-08).
 # The browser's own `title` tooltip waited about a second, never showed on keyboard focus
 # or touch, and could not say a control's state promptly. This one: about 0.1 s after
@@ -436,6 +508,7 @@ def _index_js(worth_js: str = "{}") -> str:
 __HELPERS__
     var WORTH = __WORTH__;
 __STAGE_JS__
+__DELTA_JS__
     function read(code) {
       try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
       catch (e) { return {}; }
@@ -447,7 +520,7 @@ __STAGE_JS__
       a.textContent = label;
       return a;
     }
-    Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), function (card) {
+    function paintCard(card) {
       var code = card.getAttribute('data-locale');
       var total = parseInt(card.getAttribute('data-total'), 10) || 0;
       // The desk's own stageOf(), emitted from the same string, so the index cannot
@@ -477,6 +550,11 @@ __STAGE_JS__
         : (flagged ? tn('index.card.flagged', flagged) : t('index.card.flagged.none'));
       card.querySelector('.desk-locale-cta').textContent =
         t(done ? 'index.card.continue' : 'index.card.start');
+      // Continue lands where there is work: once the flagged texts were decided, the
+      // card still opened "Flagged" -- an empty list (review round 2, L5).
+      var left = total - done;
+      card.querySelector('.desk-locale-open').setAttribute('href', '/admin/localization/' + code +
+        '/?show=' + (arrived ? 'arrived' : flagged ? 'check' : left > 0 ? 'todo' : 'all'));
 
       // Only what is waiting on the reviewer or already decided, each a real link into
       // that filter. The old "nothing decided yet" pill said nothing and led nowhere.
@@ -492,8 +570,10 @@ __STAGE_JS__
 
       // It can honestly offer only one thing: throwing away what this browser has not
       // sent yet. Anything saved comes back from the server on the next visit.
-      var unsaved = 0, base0 = read('saved-' + code);
-      for (var uk in st) { if (JSON.stringify(st[uk]) !== JSON.stringify(base0[uk])) unsaved++; }
+      // The desk's own delta, emitted from the same string: comparing whole records as
+      // JSON counted saved work as unsaved whenever its keys came back in another order
+      // (review round 2, L1 P2-3).
+      var unsaved = deltaBetween(st, read('saved-' + code)).n;
       if (unsaved) {
         var undo = document.createElement('button');
         undo.type = 'button';
@@ -507,16 +587,25 @@ __STAGE_JS__
             localStorage.setItem('cel-desk-' + code,
                                  localStorage.getItem('cel-desk-saved-' + code) || '{}');
           } catch (e) {}
-          location.reload();
+          paintAll();
         });
         trays.hidden = false;
         trays.appendChild(undo);
       }
+    }
+    function paintAll() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-locale]'), paintCard);
+    }
+    paintAll();
+    // A desk open in another tab changes these numbers; so does Back to a cached page.
+    window.addEventListener('storage', function (ev) {
+      if (ev.key === null || (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0)) paintAll();
     });
+    window.addEventListener('pageshow', function (ev) { if (ev.persisted) paintAll(); });
   })();
   </script>
-""".replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
-        "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
+""".replace("__STAGE_JS__", _STAGE_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
+        "__WORTH__", worth_js).replace("__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
 
 
 def render_locale(code: str, units: list[dict]) -> str:
@@ -583,7 +672,7 @@ def render_locale(code: str, units: list[dict]) -> str:
                  'autocomplete="off">')
     parts.append("        </label>")
     parts.append("      </div>")
-    parts.append('      <p class="subtle" id="count-line"></p>')
+    parts.append('      <p class="subtle" id="count-line" aria-live="polite"></p>')
     parts.append("    </div>")
 
     parts.append('    <main class="dashboard-main">')
@@ -740,7 +829,7 @@ __HELPERS__
     // Switching language swaps the data, not the page (ruling #52, runbook WO-09).
     var LOCALE_INFO = __LOCALE_INFO__;
     var CODE, KEY, LOGKEY, SAVEDKEY, RTL;
-    var LOG_CAP = 4000;
+    var LOG_CAP = 1000;
     function setLocale(code) {
       CODE = code;
       KEY = 'cel-desk-' + code;
@@ -781,9 +870,21 @@ __HELPERS__
 
     // ── Persistence + history ──────────────────────────────────────────
     var storageBroken = false;
+    // Eight languages' decisions and logs share one origin's ~5 MB. When it is full, the
+    // logs are the one thing that may give way: they exist for diagnosis, the decisions
+    // are the reviewer's work (review round 2, L1 P2-5).
+    function trimLogs() {
+      LOCALES.forEach(function (c) {
+        if (c !== CODE) { try { localStorage.removeItem('cel-desk-log-' + c); } catch (e) {} }
+      });
+      hist = hist.slice(Math.floor(hist.length / 2));
+      try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); } catch (e) {}
+    }
     function persist() {
+      var raw = JSON.stringify(state);
       try {
-        localStorage.setItem(KEY, JSON.stringify(state));
+        try { localStorage.setItem(KEY, raw); }
+        catch (full) { trimLogs(); localStorage.setItem(KEY, raw); }
         storageBroken = false;
         return true;
       } catch (e) {
@@ -802,7 +903,11 @@ __HELPERS__
       // throwing on the writes that actually matter.
       hist.push({ t: new Date().toISOString(), a: action, u: uid || null, f: from || null, x: to || null });
       if (hist.length > LOG_CAP) hist = hist.slice(hist.length - LOG_CAP);
-      try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); } catch (e) {}
+      try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); }
+      catch (e) {
+        hist = hist.slice(Math.floor(hist.length / 2));
+        try { localStorage.setItem(LOGKEY, JSON.stringify(hist)); } catch (e2) {}
+      }
     }
     function rec(uid) { return state[uid] || (state[uid] = {}); }
 
@@ -901,6 +1006,9 @@ __HELPERS__
         // Surprise... 5" and a sentence's full stop jumped to the front. The reviewer
         // was being shown a defect that is not on the website.
         live.setAttribute('dir', 'auto');
+        // The text's own language, so a screen reader speaks it as that language and
+        // Japanese and Korean get their own glyphs, not the English page's (review round 2).
+        live.setAttribute('lang', CODE);
         renderMarked(live, u.tgt);
         live.setAttribute('data-shown', u.tgt);
         // The recommendation is advice, not an action: it says why a row is worth a
@@ -1054,18 +1162,17 @@ __STAGE_JS__
       var bApprove = tr.querySelector('[data-act="approve"]');
       var bQueue = tr.querySelector('[data-act="queue"]');
       // The label lives in title/aria-label, so state is said there -- an icon button
-      // with no text has nowhere else to say what it currently means. Neither is ever
-      // disabled: the active one IS the undo.
+      // with no text has nowhere else to say what it currently means. The active one IS
+      // the undo, so neither is disabled -- except while Gemini has the row (above):
+      // re-enabling them here left a sending row with two buttons that did nothing.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
       var tipA = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
       bApprove.setAttribute('data-tip', tipA);
       bApprove.setAttribute('aria-label', tipA);
-      bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
       var tipQ = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
       bQueue.setAttribute('data-tip', tipQ);
       bQueue.setAttribute('aria-label', tipQ);
-      bQueue.disabled = false;
 
       var cb = tr.querySelector('[data-pick]');
       if (cb) cb.checked = !!picked[uid];
@@ -1115,6 +1222,7 @@ __STAGE_JS__
       oc.textContent = c.csv ? t('bar.view.approved_n', { n: c.csv }) : t('bar.view.approved');
       od.textContent = c.draft ? t('bar.view.requested_n', { n: c.draft }) : t('bar.view.requested');
       paintSave();
+      placeToasts();
     }
 
     // ── Filters ────────────────────────────────────────────────────────
@@ -1160,6 +1268,7 @@ __STAGE_JS__
     // Live counts on every option, over the rows the Page and Search filters leave --
     // an option once promised 38 rows and showed none (audit P1-9b). An empty group is
     // disabled rather than hidden, so the list does not reshuffle under the cursor.
+    var LATE_STAGES = { arrived: 1, sending: 1, failed: 1, exported: 1, live: 1 };
     function paintFilterCounts() {
       var tally = { arrived: 0, check: 0, todo: 0, csv: 0, edited: 0,
                     draft: 0, sending: 0, failed: 0, exported: 0, live: 0 };
@@ -1183,11 +1292,14 @@ __STAGE_JS__
         opt.textContent = t(key, { n: n });
         // Never disable the option currently selected, or the select goes blank.
         opt.disabled = n === 0 && opt.value !== fState.value;
+        // Stages nothing has reached yet (nothing is sent, exported or live before the
+        // steps that do those exist) are left out, not offered as five dead options.
+        opt.hidden = opt.disabled && LATE_STAGES[opt.value] === 1;
       });
     }
 
     function applyFilters() {
-      rows.forEach(function (tr) { tr.hidden = !matches(tr); });
+      rows.forEach(function (tr) { var h = !matches(tr); if (tr.hidden !== h) tr.hidden = h; });
       paintFilterCounts();
       var vis = shown();
       noRows.hidden = vis.length !== 0;
@@ -1218,13 +1330,20 @@ __STAGE_JS__
       var s = rec(uid);
       var from = s.tray || null;
       if (from === tray) return false;
+      // A LIST, newest last, the last five: what the Worker, save_decisions and the batch
+      // all read. A string was refused by the Worker, taking the whole save with it
+      // (review round 2, L7 P1-1).
       if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
-        s.rejected = s.text;
+        var turnedDown = Array.isArray(s.rejected) ? s.rejected.slice() : [];
+        turnedDown.push(s.text);
+        s.rejected = turnedDown.slice(-5);
         delete s.text;
       }
-      if (restoring && from === 'draft' && s.rejected != null && s.arrivedAt && s.text == null) {
-        s.text = s.rejected;
-        delete s.rejected;
+      if (restoring && from === 'draft' && Array.isArray(s.rejected) && s.rejected.length &&
+          s.arrivedAt && s.text == null) {
+        s.rejected = s.rejected.slice();
+        s.text = s.rejected.pop();
+        if (!s.rejected.length) delete s.rejected;
       }
       if (!restoring && from && tray) s.was = from; else delete s.was;
       setTray(uid, tray, why);
@@ -1235,14 +1354,15 @@ __STAGE_JS__
 
     function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
+      // A row being sent to Gemini is not the reviewer's to change until it comes back.
+      // The buttons were already disabled; the keyboard reached it anyway (audit P1-4),
+      // and `E` still did -- it was checked after the editor (review round 2).
+      if (stage(uid) === 'sending') return;
       if (what === 'edit') {
         var ed = tr.querySelector('.desk-editor');
         toggleEditor(tr, !ed || ed.hidden);
         return;
       }
-      // A row being sent to Gemini is not the reviewer's to change until it comes back.
-      // The buttons were already disabled; the keyboard reached it anyway (audit P1-4).
-      if (stage(uid) === 'sending') return;
       var tray = what === 'approve' ? 'csv' : what === 'queue' ? 'draft' : null;
       if (!tray) return;
       // Clicking the decision a row already carries undoes it -- back to what it was
@@ -1303,6 +1423,7 @@ __STAGE_JS__
       ta.className = 'desk-edit';
       ta.setAttribute('aria-label', t('editor.label'));
       ta.setAttribute('dir', 'auto');
+      ta.setAttribute('lang', CODE);
       ta.value = liveText[uid];
       // Seeded here as well as on open, so `editorDirty` answers honestly for a
       // box the reviewer never touched. Without it a never-opened editor reads
@@ -1406,6 +1527,8 @@ __STAGE_JS__
         if (s.tray === 'csv') stampApproval(uid, tr, true);
         changed = true;
       }
+      // What is in the box is now the decision, so Cancel has nothing to throw away.
+      ta.setAttribute('data-opened-with', ta.value);
       if (changed) { persist(); paint(tr); paintBar(); }
       return changed;
     }
@@ -1462,7 +1585,9 @@ __STAGE_JS__
     document.addEventListener('click', function (ev) {
       var link = ev.target.closest('a[data-loc]');
       if (!link) return;
-      flushEditors();
+      // Editors are committed by switchTo(), and only when the language really changes:
+      // committing here, first, meant clicking the language already open approved a
+      // half-typed edit behind the reviewer's back (review round 2, L1 P2-2).
       if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       var code = link.getAttribute('data-loc');
       if (!LOCALE_INFO[code]) return;
@@ -1475,7 +1600,7 @@ __STAGE_JS__
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     window.addEventListener('popstate', function () {
       var m = location.pathname.match(PATH_LOCALE);
-      if (m && m[1] !== CODE && LOCALE_INFO[m[1]]) { flushEditors(); switchTo(m[1], false); }
+      if (m && m[1] !== CODE && LOCALE_INFO[m[1]]) switchTo(m[1], false);
     });
     // Hovering a tab starts loading that language, so the click has nothing to wait for.
     document.addEventListener('pointerover', function (ev) {
@@ -1552,6 +1677,8 @@ __STAGE_JS__
     }
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') { closeOverlays(); return; }
+      // With the help or a list open, J/K/A/E/R/X acted on the table behind it.
+      if (!howOverlay.hidden || !trayOverlay.hidden) return;
       var t = ev.target.tagName;
       if (t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT') return;
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
@@ -1578,7 +1705,7 @@ __STAGE_JS__
     var trayList = document.getElementById('tray-list');
     var openTray = null;
 
-    function closeOverlays() { howOverlay.hidden = true; trayOverlay.hidden = true; }
+    function closeOverlays() { howOverlay.hidden = true; trayOverlay.hidden = true; openTray = null; }
     document.getElementById('how-open').addEventListener('click', function () {
       howOverlay.hidden = false;
       document.getElementById('how-close').focus();
@@ -1627,19 +1754,31 @@ __STAGE_JS__
       var ts = document.getElementById('tray-save');
       var allPending = unsavedByLocale(), pending = 0;
       for (var pc in allPending) pending += allPending[pc].n;
-      ts.hidden = pending === 0;
+      ts.hidden = pending === 0 || SAVE_OFF;
       ts.disabled = saving;
       ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
       ts.setAttribute('data-tip', t('save.button.hint'));
     }
 
-    function removeFromTray(uids) {
-      uids.forEach(function (uid) { setTray(uid, null, 'take-back'); delete trayPicked[uid]; });
+    // Through decide(), like every other decision, so an undone approval also drops its
+    // who/when/against stamps. A row Gemini has is skipped, as the table and the bulk
+    // bar already did; Undo all took them out anyway (review round 2, L5 #7).
+    function takeBack(uids, why) {
+      var n = 0, busy = 0;
+      uids.forEach(function (uid) {
+        delete trayPicked[uid];
+        if (stage(uid) === 'sending') { busy++; return; }
+        var row = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
+        if (decide(uid, row, null, why, false)) n++;
+      });
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters(); paintTray();
-      toast(t('toast.undone.title'), { level: 'warn', detail: tn('toast.undone', uids.length) });
+      toast(t('toast.undone.title'), { level: 'warn',
+        detail: tn('toast.undone', n) + (busy ? ' ' + tn('toast.inflight', busy) : '') });
+      return n;
     }
+    function removeFromTray(uids) { takeBack(uids, 'take-back'); }
 
     function paintTray() {
       if (!openTray) return;
@@ -1674,6 +1813,7 @@ __STAGE_JS__
         tgt.className = 'desk-review-tgt';
         // Paragraph direction follows the text, as in the table (see `.desk-live`).
         tgt.setAttribute('dir', 'auto');
+        tgt.setAttribute('lang', CODE);
         var st = state[uid] || {};
         renderMarked(tgt, st.text != null ? st.text : liveText[uid]);
         texts.appendChild(src); texts.appendChild(tgt);
@@ -1685,6 +1825,7 @@ __STAGE_JS__
         rm.setAttribute('aria-label', t('list.row.undo.label'));
         rm.appendChild(icon('undo'));
         rm.addEventListener('click', function () { removeFromTray([uid]); });
+        rm.disabled = stage(uid) === 'sending';
 
         li.appendChild(cb); li.appendChild(texts); li.appendChild(rm);
         trayList.appendChild(li);
@@ -1729,15 +1870,13 @@ __STAGE_JS__
     document.getElementById('open-csv').addEventListener('click', function () { showTray('csv'); });
     document.getElementById('tray-empty').addEventListener('click', function () {
       if (!openTray) return;
-      var listed = trayRows().length;
-      if (!window.confirm(t('list.undo_all.confirm', { n: listed }))) return;
-      var n = 0;
-      for (var k in state) {
-        if (state[k] && state[k].tray === openTray) { setTray(k, null, 'empty-tray'); n++; }
-      }
-      note('empty-tray', null, openTray, String(n));
-      persist(); rows.forEach(paint); paintBar(); applyFilters(); closeOverlays();
-      toast(t('toast.undone.title'), { level: 'warn', detail: tn('toast.undone', n) });
+      var which = openTray;
+      var ids = trayRows().map(function (tr) { return tr.getAttribute('data-uid'); });
+      var movable = ids.filter(function (uid) { return stage(uid) !== 'sending'; }).length;
+      if (!window.confirm(t('list.undo_all.confirm', { n: movable }))) return;
+      var n = takeBack(ids, 'empty-tray');
+      note('empty-tray', null, which, String(n));
+      closeOverlays();
     });
 
     // ── Export / import ────────────────────────────────────────────────
@@ -1824,84 +1963,53 @@ __STAGE_JS__
     var btnSave = document.getElementById('btn-save');
     var saveStatus = document.getElementById('save-status');
     var saving = false;
+    // Runbook WO-34 (decision A15): Save committed the reviewer's email address into a
+    // public repository. It is switched off until WO-17 moves the decisions to private
+    // storage; the button stays, says so, and explains itself on hover and on click.
+    var SAVE_OFF = true;
 
-    // Every field `stage()` reads. Five of these used to be left behind by both the
-    // comparison and the delta, so `sending`, `arrived`, `failed`, `exported` and
-    // `live` existed only in the browser that produced them -- and `liveAt`, which
-    // is what stops an already-published row being exported a second time, could
-    // never reach the server that does the exporting.
-    var SAVE_FIELDS = ['tray', 'text', 'rejected', 'by', 'at', 'approvedAgainst',
-                       'sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'];
-
-    // A record is worth keeping if it carries a decision OR any lifecycle stamp.
-    // Keying this on `tray` alone told the server to forget a row that was out for
-    // translation.
-    function hasContent(r) {
-      if (!r) return false;
-      for (var i = 0; i < SAVE_FIELDS.length; i++) {
-        var v = r[SAVE_FIELDS[i]];
-        if (v !== undefined && v !== null) return true;
-      }
-      return false;
-    }
-
-    function sameDecision(a, b) {
-      if (!a && !b) return true;
-      if (!a || !b) return false;
-      for (var i = 0; i < SAVE_FIELDS.length; i++) {
-        var k = SAVE_FIELDS[i];
-        // `approvedAgainst` belongs here: without it, re-approving a row whose
-        // wording had moved produced no delta, the server kept the stale snapshot,
-        // and the export skipped the row as "changed since approval" for ever.
-        if (JSON.stringify(a[k] === undefined ? null : a[k]) !==
-            JSON.stringify(b[k] === undefined ? null : b[k])) return false;
-      }
-      return true;
-    }
-
-    function deltaBetween(now, was) {
-      var out = {}, n = 0, ids = {};
-      for (var k in now) ids[k] = 1;
-      for (var k2 in was) ids[k2] = 1;
-      for (var uid in ids) {
-        var mine = hasContent(now[uid]) ? now[uid] : null;
-        var theirs = was[uid] || null;
-        if (sameDecision(mine, theirs)) continue;
-        // null is how the server is told to forget a unit.
-        if (mine) {
-          var row = {};
-          SAVE_FIELDS.forEach(function (f) {
-            if (mine[f] !== undefined) row[f] = mine[f];
-          });
-          out[uid] = row;
-        } else {
-          out[uid] = null;
-        }
-        n++;
-      }
-      return { body: out, n: n };
-    }
-
+__DELTA_JS__
     function delta() { return deltaBetween(state, saved); }
 
     // Unsaved work is a fact about the REVIEWER, not about the page they happen to be
     // looking at. Making five changes in German, switching to French and finding an
     // empty bar reads as "nothing pending" -- and the tab gets closed. Every language
     // is counted, always.
-    function readLocale(code) {
-      try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
-      catch (e) { return {}; }
+    //
+    // Every click repaints the bar, and the bar read and parsed all eight languages twice
+    // and diffed seven of them: 88 ms a click on a fully decided desk at 4x CPU (review
+    // round 2, L1 P3). A stored value is parsed once and its delta computed once, until
+    // it changes. What these return is SHARED -- read it, never change it; readFresh()
+    // is for a copy that will be changed.
+    var parsedCache = Object.create(null);
+    function readStored(key) {
+      var raw;
+      try { raw = localStorage.getItem(key) || '{}'; } catch (e) { return {}; }
+      var hit = parsedCache[key];
+      if (hit && hit.raw === raw) return hit.val;
+      var val;
+      try { val = JSON.parse(raw) || {}; } catch (e) { val = {}; }
+      parsedCache[key] = { raw: raw, val: val };
+      return val;
     }
-    function readSaved(code) {
-      try { return JSON.parse(localStorage.getItem('cel-desk-saved-' + code) || '{}') || {}; }
-      catch (e) { return {}; }
+    function readFresh(key) {
+      try { return JSON.parse(localStorage.getItem(key) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function readLocale(code) { return readStored('cel-desk-' + code); }
+    function readSaved(code) { return readStored('cel-desk-saved-' + code); }
+    var deltaMemo = Object.create(null);
+    function storedDelta(code) {
+      var now = readLocale(code), was = readSaved(code), m = deltaMemo[code];
+      if (m && m.now === now && m.was === was) return m.d;
+      var d = deltaBetween(now, was);
+      deltaMemo[code] = { now: now, was: was, d: d };
+      return d;
     }
 
     function unsavedByLocale() {
       var out = {};
       LOCALES.forEach(function (code) {
-        var d = code === CODE ? delta()
-                              : deltaBetween(readLocale(code), readSaved(code));
+        var d = code === CODE ? delta() : storedDelta(code);
         if (d.n) out[code] = d;
       });
       return out;
@@ -1911,15 +2019,25 @@ __STAGE_JS__
       var all = unsavedByLocale();
       var total = 0, others = 0;
       for (var c in all) { total += all[c].n; if (c !== CODE) others += all[c].n; }
+      var elsewhere = document.getElementById('save-elsewhere');
+      if (elsewhere) {
+        elsewhere.hidden = others === 0;
+        elsewhere.textContent = others ? t('save.elsewhere', { n: others }) : '';
+      }
+      if (SAVE_OFF) {
+        // aria-disabled, not disabled: a disabled button takes no hover, so it could
+        // never say why it is off.
+        btnSave.hidden = total === 0;
+        btnSave.textContent = t('save.off.button');
+        btnSave.classList.remove('is-primary');
+        btnSave.setAttribute('aria-disabled', 'true');
+        btnSave.setAttribute('data-tip', t('save.off.hint'));
+        return;
+      }
       btnSave.hidden = total === 0 || saving;
       btnSave.textContent = tn('save.button', total);
       btnSave.disabled = saving;
       btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
-      var note = document.getElementById('save-elsewhere');
-      if (note) {
-        note.hidden = others === 0;
-        note.textContent = others ? t('save.elsewhere', { n: others }) : '';
-      }
     }
 
     // A reviewer has no model of a workflow run, an underscored status or an HTTP
@@ -2087,6 +2205,10 @@ __STAGE_JS__
     }
 
     async function save() {
+      if (SAVE_OFF) {
+        toast(t('save.off.title'), { level: 'warn', detail: t('save.off.hint') });
+        return;
+      }
       if (saving) return;                    // one save in flight, never two
       var all = unsavedByLocale();
       var codes = Object.keys(all);
@@ -2200,9 +2322,27 @@ __STAGE_JS__
       }
       // Keep the stack short enough to stay readable.
       while (toastStack.children.length > 4) toastStack.removeChild(toastStack.firstChild);
+      placeToasts();
       return close;
     }
     window.deskToast = toast;
+
+    // Messages sit above the bar at the bottom, never on it: in the corner they covered
+    // View approved and Save, and hovering one to read it kept it there (review round 2,
+    // L5 #2). The bar is sticky, so where it is depends on the scroll.
+    function placeToasts() {
+      if (!toastStack.firstChild) return;
+      var r = savebar.hidden ? null : savebar.getBoundingClientRect();
+      var lift = r && r.top < window.innerHeight ? Math.ceil(window.innerHeight - r.top) + 10 : 0;
+      toastStack.style.bottom = lift ? lift + 'px' : '';
+    }
+    var placing = false;
+    window.addEventListener('scroll', function () {
+      if (placing) return;
+      placing = true;
+      requestAnimationFrame(function () { placing = false; placeToasts(); });
+    }, { passive: true });
+    window.addEventListener('resize', placeToasts);
 
     // ── URL state + language switching ─────────────────────────────────
     // The filters live in the query string so that switching language keeps you on
@@ -2211,8 +2351,10 @@ __STAGE_JS__
     // Reviewers share these addresses, so they say what a reviewer would (desk audit §6
     // #2, runbook WO-09): ?show=approved, ?show=requested. The list values underneath are
     // unchanged, and a link carrying the old value still opens the same list.
-    var SHOW_WORD = { csv: 'approved', draft: 'requested' };
-    var SHOW_ALIAS = { approved: 'csv', requested: 'draft' };
+    // "All texts" is `all`: it wrote nothing, so a reload fell back to Flagged (review
+    // round 2, L5 #5).
+    var SHOW_WORD = { csv: 'approved', draft: 'requested', '': 'all' };
+    var SHOW_ALIAS = { approved: 'csv', requested: 'draft', all: '' };
     function showFromUrl(v) {
       return Object.prototype.hasOwnProperty.call(SHOW_ALIAS, v) ? SHOW_ALIAS[v] : v;
     }
@@ -2220,7 +2362,7 @@ __STAGE_JS__
     function syncUrl() {
       var q = new URLSearchParams();
       if (fPage.value) q.set('page', fPage.value);
-      if (fState.value) q.set('show', SHOW_WORD[fState.value] || fState.value);
+      q.set('show', Object.prototype.hasOwnProperty.call(SHOW_WORD, fState.value) ? SHOW_WORD[fState.value] : fState.value);
       if (fQ.value.trim()) q.set('q', fQ.value.trim());
       var qs = q.toString();
       history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
@@ -2233,13 +2375,21 @@ __STAGE_JS__
     // has decided yet -- so "where is there work left" is answerable without visiting
     // all eight. It used to count rows already DECIDED, the opposite: a tab you had
     // finished showed a number and a tab you had not started showed nothing.
+    function outstanding(lc, recs) {
+      return (WORTH[lc] || []).filter(function (uid) { return stageOf(recs[uid]) === 'todo'; }).length;
+    }
+    var outstandingMemo = Object.create(null);
+    function storedOutstanding(lc) {
+      var recs = readLocale(lc), m = outstandingMemo[lc];
+      if (m && m.recs === recs) return m.n;
+      var n = outstanding(lc, recs);
+      outstandingMemo[lc] = { recs: recs, n: n };
+      return n;
+    }
     function paintLocaleCounts() {
       Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
         var lc = el.getAttribute('data-loc-count');
-        var recs = lc === CODE ? state : readLocale(lc);
-        var n = (WORTH[lc] || []).filter(function (uid) {
-          return stageOf(recs[uid]) === 'todo';
-        }).length;
+        var n = lc === CODE ? outstanding(lc, state) : storedOutstanding(lc);
         el.textContent = n ? String(n) : '';
         el.hidden = !n;
         var link = el.parentNode;
@@ -2304,24 +2454,31 @@ __STAGE_JS__
       });
     }
 
-    async function loadLocale(first, anchor) {
+    // Only the newest load may build. Checking the language alone was not enough: de
+    // (still loading) -> fr -> de left two live loads for de, and both built their 823
+    // rows into one table (review round 2, L1 P1-1).
+    var loadSeq = 0, booted = false, loadFailedFor = null;
+    async function loadLocale(anchor) {
+      var seq = ++loadSeq;
       var code = CODE;
       var unitsP = fetchUnits(code);
       var savedP = fetch(BASE + code + '/decisions.json', { cache: 'no-cache' })
         .catch(function (e) { return e; });
-      var units = await unitsP;
-      if (code !== CODE) return;          // a newer switch has taken over
+      var units;
+      try { units = await unitsP; }
+      catch (e) { if (seq !== loadSeq) return; throw e; }   // a stale failure is not news
+      if (seq !== loadSeq) return;          // a newer switch has taken over
       // What the repo holds is the baseline. Anything decided in THIS browser and
       // not yet saved stays exactly as it is and still counts as unsaved -- the
       // server copy fills in only the units this browser has never touched, which
       // is what makes a second machine useful instead of blank.
       try {
         var dr = await savedP;
-        if (code !== CODE) return;          // switched away while this was loading
+        if (seq !== loadSeq) return;        // switched away while this was loading
         if (dr instanceof Error) throw dr;
         if (dr.ok) {
           var ddoc = await dr.json();
-          if (code !== CODE) return;
+          if (seq !== loadSeq) return;
           var server = (ddoc && ddoc.decisions) || {};
           var adopted = 0;
           for (var uid in server) {
@@ -2354,11 +2511,17 @@ __STAGE_JS__
         }
         toast(t('toast.saved_load.title'), { level: 'warn', detail: t('toast.saved_load.detail') });
       }
-      if (code !== CODE) return;
+      if (seq !== loadSeq) return;
       // Built only now, with the decisions in hand: a row never shows undecided for a
       // frame and then flips.
       buildRows(units);
       paintLocaleChrome(code, units.length);
+      loadFailedFor = null;
+      countLine.className = 'subtle';     // an earlier failure's styling goes with it
+      // The address's filters apply to whichever load lands first -- the page's own, or
+      // a switch made before it finished.
+      var first = !booted;
+      booted = true;
       if (first) {
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
@@ -2373,7 +2536,9 @@ __STAGE_JS__
           // was I". Land on exactly those rows without being asked.
           fState.value = 'arrived';
         }
-        if (qs.get('page')) fPage.value = qs.get('page');
+        // Only a page the desk has: an unknown one blanked the select and showed everything.
+        var pg = qs.get('page');
+        if (pg && Array.prototype.some.call(fPage.options, function (o) { return o.value === pg; })) fPage.value = pg;
         if (qs.get('q')) fQ.value = qs.get('q');
       }
       rows.forEach(paint);
@@ -2386,12 +2551,14 @@ __STAGE_JS__
         var at = rows.find(function (tr) { return tr.getAttribute('data-uid') === anchor.uid; });
         if (at && !at.hidden) window.scrollBy(0, at.getBoundingClientRect().top - anchor.top);
       }
-      note('load', null, String(units.length), null);
+      // Once per page, not per switch: sixteen switches were sixteen log entries in each
+      // language, and the eight capped logs nearly filled the origin (review round 2).
+      if (first) note('load', null, String(units.length), null);
       // What the browser tests time (runbook WO-09, G9 budgets): from the switch, or the
       // page opening, to the new rows painted on screen.
       if (window.performance && performance.mark) {
         requestAnimationFrame(function () {
-          setTimeout(function () { if (code === CODE) performance.mark('desk-ready:' + code); }, 0);
+          setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
     }
@@ -2401,6 +2568,7 @@ __STAGE_JS__
       // "nothing to review", which is the opposite of what has happened.
       countLine.textContent = t('count.failed', { error: err.message });
       countLine.className = 'subtle desk-status is-error';
+      loadFailedFor = CODE;                // its own tab now tries again
       noRows.hidden = true;
       note('load-failed', null, err.message, null);
       toast(t('toast.load.title'), { level: 'err', detail: t('toast.load.detail', { error: err.message }) });
@@ -2418,12 +2586,19 @@ __STAGE_JS__
     }
 
     function switchTo(code, push) {
-      if (code === CODE) return;
+      // The open language is not a switch -- unless it failed to load, when its own tab
+      // is the way to try again. It did nothing (review round 2, L1 P2-4).
+      var again = code === CODE;
+      if (again && loadFailedFor !== code) return;
+      flushEditors();
+      // A list belongs to its language: left open over the next one, its Undo changed
+      // the language on screen, not the one it listed (review round 2, L1 P0).
+      closeOverlays();
       if (window.performance && performance.mark) performance.mark('desk-switch:' + code);
       var anchor = viewAnchor();
       setLocale(code);
-      state = readLocale(code);
-      saved = readSaved(code);
+      state = readFresh(KEY);
+      saved = readFresh(SAVEDKEY);
       try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
       picked = Object.create(null);
       lastPicked = -1;
@@ -2435,12 +2610,28 @@ __STAGE_JS__
       body.textContent = '';
       rows = [];
       paintLocaleChrome(code, null);
-      if (push) history.pushState(null, '', BASE + code + '/' + location.search);
-      return loadLocale(false, anchor).catch(loadFailed);
+      if (push && !again) history.pushState(null, '', BASE + code + '/' + location.search);
+      return loadLocale(anchor).catch(loadFailed);
     }
 
+    // Another tab of this browser -- a second desk, or the index's Discard -- wrote this
+    // language. Adopt it: each tab wrote its whole copy, so the second tab's next click
+    // erased the first tab's work, and a Discard on the index came back after one more
+    // click here (review round 2, L1 P1-2).
+    function adoptStored() {
+      state = readFresh(KEY);
+      saved = readFresh(SAVEDKEY);
+      rows.forEach(paint); paintBar(); applyFilters();
+      if (openTray) paintTray();
+    }
+    window.addEventListener('storage', function (ev) {
+      if (ev.key === KEY || ev.key === SAVEDKEY || ev.key === null) adoptStored();
+      else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) paintBar();
+    });
+    window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
+
     // ── Boot ───────────────────────────────────────────────────────────
-    loadLocale(true).then(function () {
+    loadLocale(null).then(function () {
       // With the first language on screen, fetch the rest while the reviewer reads.
       var rest = function () {
         Object.keys(LOCALE_INFO).forEach(function (c) { if (c !== CODE) fetchUnits(c).catch(function () {}); });
@@ -2454,7 +2645,8 @@ __STAGE_JS__
     "__CODE__", code).replace("__LOCALE_INFO__", json.dumps(
         {c: {"endonym": e, "rtl": d == "rtl"} for c, e, d, _f in LOCALES}, ensure_ascii=False)).replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
-    "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
+    "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
+    "__COPY__", js_table())
 
 
 def main() -> int:

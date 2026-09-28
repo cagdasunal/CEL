@@ -11,12 +11,14 @@ on:
     paths:
       - "tools/localize_desk/**"
       - "docs/admin/localization/**"
+      - "data/localize/**"
       - "tools/dashboard.py"
       - ".github/workflows/desk-browser.yml"
   pull_request:
     paths:
       - "tools/localize_desk/**"
       - "docs/admin/localization/**"
+      - "data/localize/**"
       - "tools/dashboard.py"
       - ".github/workflows/desk-browser.yml"
   workflow_dispatch: {}
@@ -48,7 +50,9 @@ jobs:
         run: |
           set -o pipefail
           python3 -m pip install --upgrade pip
-          pip install pytest playwright
+          # Pinned to what the pre-commit hook runs (the monorepo's .venv314), so a new
+          # Playwright release cannot turn this red -- or green -- on its own.
+          pip install pytest==9.0.2 playwright==1.58.0
           python3 -m playwright install --with-deps chromium
 
       - name: Desk browser tests

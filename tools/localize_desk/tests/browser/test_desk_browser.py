@@ -86,6 +86,9 @@ def _decisions(root: Path, locale: str = "de") -> dict:
     return json.loads(f.read_text())["decisions"] if f.is_file() else {}
 
 
+WO34 = pytest.mark.skip(reason="WO-34 (A15): saving is switched off until WO-17 replaces this path with private storage; these tests go with the path")
+
+
 def test_the_desk_loads_signed_in_with_every_text(browser):
     with desk("new") as (base, _root, _worker):
         page, errors = _open(browser, base + "/admin/localization/de/")
@@ -94,6 +97,7 @@ def test_the_desk_loads_signed_in_with_every_text(browser):
         page.close()
 
 
+@WO34
 def test_approve_and_save_lands_with_the_current_worker(browser):
     with desk("new") as (base, root, _worker):
         page, errors = _open(browser, base + "/admin/localization/de/")
@@ -106,6 +110,7 @@ def test_approve_and_save_lands_with_the_current_worker(browser):
         page.close()
 
 
+@WO34
 def test_a_worker_that_cannot_name_runs_is_refused_before_anything_is_sent(browser):
     with desk("old") as (base, root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
@@ -117,6 +122,7 @@ def test_a_worker_that_cannot_name_runs_is_refused_before_anything_is_sent(brows
         page.close()
 
 
+@WO34
 @pytest.mark.xfail(strict=True, reason="R67, known gap: with no earlier run to read, the desk "
                    "cannot tell an old Worker from a new one, dispatches, and the save lands "
                    "while it reports Not saved. Reachable only with the pre-2026-09-23 Worker "
@@ -133,6 +139,7 @@ def test_known_gap_an_old_worker_with_no_run_history_is_not_refused(browser):
         page.close()
 
 
+@WO34
 def test_a_colleagues_run_winning_the_race_is_reported_as_not_saved(browser):
     with desk("race") as (base, root, _worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
@@ -300,7 +307,12 @@ def test_requesting_again_records_the_draft_that_was_turned_down(browser):
         _put_in(page, uid, "arrived")
         _act(page, uid, "queue")
         rec = _rec(page, uid)
-        assert rec.get("rejected") == "WO-06 draft from Gemini" and "text" not in rec
+        # A LIST, the last five: the Worker, save_decisions and draft.py all read one, and
+        # a string was refused by the Worker -- taking the whole save down with it (review
+        # round 2, L7 P1-1).
+        assert rec.get("rejected") == ["WO-06 draft from Gemini"] and "text" not in rec
+        from localize_desk import save_decisions as SD
+        assert SD.clean_decision(uid, rec)["rejected"] == ["WO-06 draft from Gemini"]
         _act(page, uid, "queue")
         rec = _rec(page, uid)
         assert rec.get("text") == "WO-06 draft from Gemini" and "rejected" not in rec
@@ -324,7 +336,11 @@ def test_a_row_in_flight_ignores_the_keyboard(browser):
         assert _rec(page, uid).get("tray") == "draft", "a changed a row that is being sent"
         page.keyboard.press("r")
         assert _rec(page, uid).get("tray") == "draft", "r changed a row that is being sent"
+        page.keyboard.press("e")
+        assert not page.is_visible(f'tr[data-uid="{uid}"] .desk-editor'), "e opened an editor on a row being sent"
         assert C.t("status.sending") in _label(page, uid)
+        # and it looks it: no control on the row may invite a click that does nothing
+        assert _row(page, uid).locator("[data-act]").evaluate_all("bs => bs.map(b => b.disabled)") == [True, True, True]
         page.close()
 
 
@@ -491,8 +507,8 @@ def test_a_decision_in_one_language_survives_a_switch_and_back(browser):
         uid = page.locator(f"{ROWS}:visible").first.get_attribute("data-uid")
         _act(page, uid, "approve")
         page.locator('.desk-locales-strip [data-loc="ja"]').click()
-        page.wait_for_function("document.querySelector('.desk-loc.is-active').dataset.loc === 'ja'")
-        assert "1" in page.locator("#btn-save").inner_text()          # still unsaved, still counted
+        _wait_ready(page, "ja")                    # the bar is painted with the new language
+        assert "1" in page.locator("#save-elsewhere").inner_text()    # still unsaved, still counted
         page.locator('.desk-locales-strip [data-loc="de"]').click()
         page.wait_for_function("document.querySelector('.desk-loc.is-active').dataset.loc === 'de'")
         page.select_option("#f-state", "")
@@ -517,3 +533,296 @@ def test_shared_addresses_use_reviewer_words_and_old_links_still_open(browser):
         assert "show=approved" in page.url
         assert "show=approved" in page.locator('.desk-locales-strip [data-loc="fr"]').get_attribute("href")
         page.close()
+
+
+# ── Review round 2 (runbook WO-32): each finding the reviewers reproduced, as a guard ───
+
+def _visible_uids(page, n=3):
+    page.select_option("#f-state", "")
+    return page.locator(f"{ROWS}:visible").evaluate_all("els => els.map(e => e.dataset.uid)")[:n]
+
+
+def _stored(page, key="cel-desk-de") -> dict:
+    return json.loads(page.evaluate(f"() => localStorage.getItem('{key}') || '{{}}'"))
+
+
+def test_back_closes_a_review_list_and_leaves_the_other_language_alone(browser):
+    """L1 P0: a German list left open over the French desk after Back, and its undo
+    removed the FRENCH approval."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/fr/")
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        page.locator('.desk-locales-strip [data-loc="de"]').click()
+        _wait_ready(page, "de")
+        _act(page, u, "approve")
+        page.click("#open-csv")
+        assert page.is_visible("#tray-overlay")
+        page.go_back()
+        page.wait_for_function("performance.getEntriesByName('desk-ready:fr').length > 1", timeout=20000)
+        assert not page.is_visible("#tray-overlay"), "the German list stayed open over the French desk"
+        assert _rec(page, u).get("tray") == "csv"
+        page.close()
+
+
+def test_overlapping_loads_never_build_the_table_twice(browser):
+    """L1 P1-1: de (still loading) -> fr -> de left two live loads for de, both built."""
+    with desk("new") as (base, _root, worker):
+        worker.faults["decisions.json"] = {"delay": 0.8}
+        page = browser.new_page()
+        page.goto(base + "/admin/localization/de/")
+        page.wait_for_selector('.desk-locales-strip [data-loc="fr"]')
+        page.locator('.desk-locales-strip [data-loc="fr"]').click()
+        page.locator('.desk-locales-strip [data-loc="de"]').click()
+        page.wait_for_function("performance.getEntriesByName('desk-ready:de').length > 0", timeout=20000)
+        page.wait_for_timeout(2000)                   # every load still running has landed
+        ids = page.locator("#desk-body tr[data-uid]").evaluate_all("els => els.map(e => e.dataset.uid)")
+        assert len(ids) == len(set(ids)) == 823, (len(ids), len(set(ids)))
+        page.close()
+
+
+def test_two_tabs_of_one_browser_keep_each_others_decisions(browser):
+    """L1 P1-2: each tab wrote its whole in-memory copy, so the second erased the first."""
+    with desk("new") as (base, _root, _worker):
+        ctx = browser.new_context()
+        a, b = ctx.new_page(), ctx.new_page()
+        for p in (a, b):
+            p.goto(base + "/admin/localization/de/")
+            p.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        u0, u1 = _visible_uids(a, 2)
+        _visible_uids(b, 2)
+        _act(a, u0, "approve")
+        b.wait_for_function("u => (window.deskState()[u] || {}).tray === 'csv'", arg=u0, timeout=3000)
+        _act(b, u1, "approve")
+        a.wait_for_function("u => (window.deskState()[u] || {}).tray === 'csv'", arg=u1, timeout=3000)
+        stored = _stored(a)
+        assert stored.get(u0, {}).get("tray") == "csv" and stored.get(u1, {}).get("tray") == "csv"
+        ctx.close()
+
+
+def test_the_index_discard_is_not_undone_by_an_open_desk_tab(browser):
+    """L1 P1-2: after Discard on the index, one more click in the open desk put it all back."""
+    with desk("new") as (base, _root, _worker):
+        ctx = browser.new_context()
+        d = ctx.new_page()
+        d.goto(base + "/admin/localization/de/")
+        d.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        u0, u1, u2 = _visible_uids(d, 3)
+        _act(d, u0, "approve")
+        _act(d, u1, "approve")
+        idx = ctx.new_page()
+        idx.on("dialog", lambda dlg: dlg.accept())
+        idx.goto(base + "/admin/localization/")
+        idx.click('.desk-locale-card[data-locale="de"] .desk-locale-discard')
+        idx.wait_for_load_state()
+        d.wait_for_function("u => !(window.deskState()[u] || {}).tray", arg=u0, timeout=3000)
+        _act(d, u2, "approve")
+        stored = _stored(d)
+        assert [stored.get(u, {}).get("tray") for u in (u0, u1, u2)] == [None, None, "csv"]
+        ctx.close()
+
+
+def test_the_index_counts_only_what_is_really_unsaved(browser):
+    """L1 P2-3: key order and empty records made the index offer to discard saved work."""
+    with desk("new") as (base, _root, _worker):
+        page = browser.new_page()
+        page.goto(base + "/admin/localization/")
+        u = "0123456789abcdef"
+        page.evaluate("""u => {
+            localStorage.setItem('cel-desk-de', JSON.stringify({[u]: {tray: 'csv', by: 'r@x', at: 't', approvedAgainst: 'a'}, other: {}}));
+            localStorage.setItem('cel-desk-saved-de', JSON.stringify({[u]: {approvedAgainst: 'a', at: 't', by: 'r@x', tray: 'csv'}}));
+        }""", u)
+        page.reload()
+        assert page.locator('.desk-locale-card[data-locale="de"] .desk-locale-discard').count() == 0
+        page.close()
+
+
+def test_committing_nothing_by_clicking_the_open_language_keeps_cancel_honest(browser):
+    """L1 P2-2: clicking the active tab committed the editor behind the reviewer's back,
+    so a later 'throw away what you typed' kept it as an approval."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.on("dialog", lambda dlg: dlg.accept())
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "edit")
+        _row(page, u).locator("textarea.desk-edit").fill("Mein eigener Text")
+        page.locator('.desk-locales-strip [data-loc="de"]').click()
+        _row(page, u).locator('[data-edit="cancel"]').click()
+        assert _rec(page, u).get("text") is None, "throwing the text away kept it"
+        page.close()
+
+
+def test_a_language_that_failed_to_load_can_be_opened_again_from_its_tab(browser):
+    """L1 P2-4: after a failed load its own tab did nothing, and the error styling stuck."""
+    with desk("new") as (base, _root, worker):
+        worker.faults["fr/units.json"] = {"status": 503}   # before the idle prefetch reaches it
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.locator('.desk-locales-strip [data-loc="fr"]').click()
+        page.wait_for_function("document.getElementById('count-line').classList.contains('is-error')", timeout=10000)
+        del worker.faults["fr/units.json"]
+        page.locator('.desk-locales-strip [data-loc="fr"]').click()
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        assert "is-error" not in (page.get_attribute("#count-line", "class") or "")
+        page.close()
+
+
+def test_switching_does_not_fill_the_action_log(browser):
+    """L1 P2-5: every switch logged a 'load', and eight capped logs nearly filled the
+    origin's storage."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        for _ in range(6):
+            for code in ("fr", "de"):
+                page.locator(f'.desk-locales-strip [data-loc="{code}"]').click()
+                _wait_ready(page, code)
+        log = json.loads(page.evaluate("() => localStorage.getItem('cel-desk-log-de') || '[]'"))
+        assert sum(1 for e in log if e.get("a") == "load") <= 1
+        page.close()
+
+
+def test_shortcuts_do_nothing_while_a_dialog_is_open(browser):
+    """L1 P3 / L5 #4: J/K/A/E acted on the table behind an open list."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-state", "")
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")
+        page.keyboard.press("j")
+        u = page.locator(f"{ROWS}.is-cursor").get_attribute("data-uid")
+        page.click("#how-open")
+        page.keyboard.press("a")
+        assert not _rec(page, u).get("tray"), "a approved a row behind the open list"
+        page.close()
+
+
+def test_every_text_cell_says_its_language_and_the_count_is_announced(browser):
+    """L1 P3: target cells had no lang, so screen readers and CJK glyphs used English."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/ja/")
+        langs = page.locator(f"{ROWS} .desk-live").evaluate_all("els => [...new Set(els.map(e => e.getAttribute('lang')))]")
+        assert langs == ["ja"]
+        assert page.get_attribute("#count-line", "aria-live") == "polite"
+        page.locator('.desk-locales-strip [data-loc="ar"]').click()
+        _wait_ready(page, "ar")
+        langs = page.locator(f"{ROWS} .desk-live").evaluate_all("els => [...new Set(els.map(e => e.getAttribute('lang')))]")
+        assert langs == ["ar"]
+        page.close()
+
+
+def test_a_message_never_covers_the_buttons_it_talks_about(browser):
+    """L5 #2: a toast sat on View approved / View requests / Save, and hovering it kept it."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.set_viewport_size({"width": 1440, "height": 900})
+        page.select_option("#f-state", "")
+        page.locator(f"{ROWS}:visible [data-pick]").nth(0).check()
+        page.click("#bulk-approve")
+        page.wait_for_selector("#toast-stack .toast, #toast-stack > *", timeout=5000)
+        for sel in ("#open-csv", "#btn-save"):
+            if not page.is_visible(sel):
+                continue
+            hit = page.evaluate("""sel => { const b = document.querySelector(sel).getBoundingClientRect();
+                const e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+                return !!e && !!e.closest(sel); }""", sel)
+            assert hit, f"a message covers {sel}"
+        page.close()
+
+
+def test_the_help_can_be_read_to_the_end_and_closed_on_a_laptop(browser):
+    """L5 #3: the help was taller than the screen with no scrolling, so its end and its
+    Close button were out of reach below ~1,050 px."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.set_viewport_size({"width": 1280, "height": 800})
+        page.click("#how-open")
+        page.locator("#how-close").scroll_into_view_if_needed()
+        hit = page.evaluate("""() => { const b = document.getElementById('how-close').getBoundingClientRect();
+            const e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+            return !!e && !!e.closest('#how-close'); }""")
+        assert hit, "the help's Close button cannot be reached"
+        page.click("#how-close")
+        assert not page.is_visible("#how-overlay")
+        page.close()
+
+
+def test_all_texts_is_kept_in_the_address(browser):
+    """L5 #5: 'All texts' wrote no show=, and a reload fell back to Flagged (263 rows -> 1)."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-state", "")
+        assert "show=all" in page.url
+        again = browser.new_page()
+        again.goto(page.url)
+        again.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        assert again.locator("#f-state").input_value() == ""
+        again.close()
+        page.close()
+
+
+def test_undo_all_in_a_list_leaves_rows_with_gemini_alone(browser):
+    """L5 #7: Undo all in the Requested list took rows out that Gemini was working on."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.on("dialog", lambda dlg: dlg.accept())
+        u1, u2 = _visible_uids(page, 2)
+        _act(page, u1, "queue")
+        _put_in(page, u2, "sending")
+        page.click("#open-draft")
+        page.click("#tray-empty")
+        assert _rec(page, u2).get("tray") == "draft" and _rec(page, u2).get("sentAt"), "a row with Gemini was undone"
+        assert not _rec(page, u1).get("tray")
+        page.close()
+
+
+def test_an_approval_records_who_and_the_wording_it_was_given_to(browser):
+    """L6 P1-1: nothing checked approvedAgainst, without which the export cannot refuse a
+    translation that moved after it was approved."""
+    with desk("new") as (base, root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        rec = _rec(page, u)
+        assert rec.get("approvedAgainst") == _units(root, "de")[u]["tgt"]
+        assert rec.get("by") and rec.get("at")
+        page.close()
+
+
+def test_saving_is_off_until_it_is_private_and_says_so(browser):
+    """WO-34 (A15): until WO-17, Save would commit the reviewer's email to the public repo.
+    It is switched off with its reason, and nothing is dispatched."""
+    with desk("new") as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        _approve_first_visible(page)
+        btn = page.locator("#btn-save")
+        assert btn.is_disabled()
+        assert btn.get_attribute("data-tip") == C.t("save.off.hint")
+        btn.click(force=True)
+        page.wait_for_timeout(500)
+        assert worker.dispatched == []
+        page.close()
+
+
+def test_a_full_desk_stays_inside_its_budgets(browser):
+    """L1 P3: with all eight languages decided, one click took 88 ms and a switch 0.26 s at
+    4x CPU -- the budget test only ever measured an empty desk."""
+    scale = float(os.environ.get("DESK_BUDGET_SCALE", "1"))
+    with desk("new") as (base, root, _worker):
+        page = browser.new_page()
+        page.goto(base + "/admin/localization/de/")
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        for code in ("de", "fr", "es", "pt", "it", "ja", "ko", "ar"):
+            recs = {u: {"tray": "csv", "by": "reviewer@example.test", "at": "2026-09-28T10:00:00Z",
+                        "approvedAgainst": x["tgt"]} for u, x in _units(root, code).items()}
+            page.evaluate("([c, r]) => { localStorage.setItem('cel-desk-' + c, r); localStorage.setItem('cel-desk-saved-' + c, r); }",
+                          [code, json.dumps(recs)])
+        page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": 4})
+        page.reload()
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
+        page.select_option("#f-state", "")
+        clicks = sorted(page.evaluate("""() => { const b = document.querySelectorAll('tr[data-uid] [data-act="approve"]')[i];
+            const t0 = performance.now(); b.click(); return performance.now() - t0; }""".replace("[i]", f"[{i}]")) for i in (0, 1, 2))
+        page.wait_for_timeout(1500)
+        switches = sorted(_timed_switch(page, code) for code in ("fr", "it", "es"))
+        assert clicks[1] <= 40 * scale, f"a click took {clicks} ms (median over {40 * scale:.0f})"
+        assert switches[1] <= 0.2 * scale, f"switch {switches} s, median over {0.2 * scale:.2f}"
+        page.close()
+
