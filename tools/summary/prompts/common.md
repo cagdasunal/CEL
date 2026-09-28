@@ -61,9 +61,9 @@ When mentioning these entities for the first time in the summary, spell out the 
 
 ## Numerals + currency
 
-Numerals are the default for digital reading. "12 weeks", "7 students per class", "45 years", "60-minute classes" — not "twelve weeks" / "seven students" / "forty-five years". Spell out only when starting a sentence. Never use dual forms ("12 (twelve)" is a 2010-era anti-pattern). Currency: prefix symbol with no space ("$1,950"), never the ISO code in body text ("1950 USD" is wrong here).
+Numerals are the default for digital reading. "12 weeks", "7 students per class", "45 years", "60-minute classes" — not "twelve weeks" / "seven students" / "forty-five years". Spell out only when starting a sentence. Never use dual forms ("12 (twelve)" is a 2010-era anti-pattern). Currency: never a bare $ (the client's Translation Guidelines §6). C$ for amounts in Canada (Vancouver, Toronto) and US$ for amounts in the US (San Diego); in English the symbol comes first with no space ("C$1,950", "US$1,890"), and other languages place it as their locale layer says. Keep the currency the source states and never convert an amount. Never the ISO code in body text ("1,950 USD" and "1,950 CAD" are wrong here).
 
-**Specific numbers beat generic claims.** "$1,890 per month for shared accommodation in Kitsilano" wins over "affordable housing options"; "12-week intensive with 25 hours of class per week" wins over "intensive program". Concrete numbers are an anti-AI signal AND a citation signal.
+**Specific numbers beat generic claims.** "C$1,890 per month for shared accommodation in Kitsilano" wins over "affordable housing options"; "12-week intensive with 25 hours of class per week" wins over "intensive program". Concrete numbers are an anti-AI signal AND a citation signal.
 
 ## E-E-A-T signals (Google Helpful Content 2026)
 

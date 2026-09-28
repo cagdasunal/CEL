@@ -14,7 +14,7 @@ US standard. No em dashes (universal rule from common.md). Oxford comma optional
 
 ## Number + currency formatting
 - Thousands: comma (1,000). Decimal: period (3.5).
-- Currency: `$1,890` for USD (no space), `$1,890 CAD` only when distinguishing from USD in Canadian context.
+- Currency: never a bare $. `C$1,890` for Canadian dollars, `US$1,890` for US dollars (no space); never an ISO code in prose (`1,890 CAD` and `1,890 USD` are wrong).
 - Time: 12-hour with AM/PM ("9:00 AM"), or 24-hour ("09:00") if source uses it.
 
 ## Date format

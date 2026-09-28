@@ -1,6 +1,7 @@
 """Tests for tools.summary.prompt_builder — system-prompt assembly + user-message format."""
 
 import json
+import re
 
 import pytest
 
@@ -223,3 +224,23 @@ def test_user_message_task_is_single_block_for_blog():
     assert "## Task" in msg
     assert "4-part" not in msg  # blog keeps the single-block instruction
     assert "## H2" in msg
+
+
+# ---- the client's Translation Guidelines §6: never a bare $ ----
+
+# A dollar sign straight before an amount with no letters in front of it: "$1,950",
+# "$ 330". "C$1,950" and "US$1,890" are not bare.
+_BARE_DOLLAR_AMOUNT = re.compile(r"(?<![A-Za-z])\$\s?[0-9]")
+
+
+@pytest.mark.parametrize("content_type", ["landing", "blog_post", "course", "housing"])
+def test_the_english_writer_is_never_taught_a_bare_dollar(content_type):
+    """Every English summary is written from common.md + the content type + locales/en.md.
+    The client's Translation Guidelines §6: "Never use a bare `$`. Always disambiguate with
+    `US$` or `C$`." Both files taught the opposite ("$1,950", "$1,890 CAD"), and the live
+    cost page's summary carried 13 bare $, 12 of them as "$X CAD"."""
+    text = "\n".join(b["text"] for b in build_system_prompt(content_type=content_type,
+                                                            source_locale="en"))
+    assert _BARE_DOLLAR_AMOUNT.findall(text) == []
+    assert "C$1,950" in text and "US$" in text
+    assert "never a bare $" in text.lower()
