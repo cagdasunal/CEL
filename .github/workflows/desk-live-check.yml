@@ -1,0 +1,67 @@
+name: Desk live check
+# After GitHub Pages deploys a push, the desk it serves must be the desk that was pushed
+# (monorepo runbook WO-33, review round 2). Nothing checked this: a failed Pages build, a
+# stale CDN copy or a file left out of the commit left reviewers on yesterday's desk while
+# every test was green. Fetches each desk page, its data and its two stylesheets with the
+# commit id as a cache-busting query and compares the bytes with the checkout
+# (tools/localize_desk/live_check.py). Keyless: it only reads the public site.
+
+on:
+  deployment_status: {}
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: desk-live-check
+  cancel-in-progress: true
+
+jobs:
+  live:
+    # Only a successful Pages deployment, or a manual run.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'github-pages')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: The served desk is the pushed desk
+        env:
+          PUSHED_SHA: ${{ github.event.deployment.sha || github.sha }}
+        run: cd tools && python3 -m localize_desk.live_check --sha "$PUSHED_SHA"
+
+      - name: Notify on failure
+        # `failure() || cancelled()`: a timeout marks the job cancelled, not failed.
+        if: failure() || cancelled()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          gh label create ci-failure --repo "${{ github.repository }}" \
+            --color B60205 --description "Automated CI/cron failure alerts" --force >/dev/null 2>&1 || true
+          TITLE="🔴 ${{ github.workflow }} failed"
+          URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          NUM=$(gh issue list --repo "${{ github.repository }}" --label ci-failure --state open \
+                  --search "$TITLE in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUM" ]; then
+            gh issue comment "$NUM" --repo "${{ github.repository }}" \
+              --body "Failed again at $(date -u +%FT%TZ). Run: $URL"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$TITLE" \
+              --label ci-failure \
+              --body "The desk GitHub Pages serves differs from the pushed commit. Run: $URL. Auto-updates on repeat failures; close once resolved."
+          fi
