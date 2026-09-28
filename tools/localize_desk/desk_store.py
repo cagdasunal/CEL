@@ -13,6 +13,7 @@ and body, for every rule: versions and conflicts, the page map, the smoke's scop
 client handshake, the record's shape, the size limit, history. Change the Worker and this
 together, or that test fails (monorepo runbook WO-33, decision (b)).
 
+desk-read also carries the engine's findings (schema v2, WO-36; `seed_findings` puts them in).
 `desk-summary` (runbook WO-18) is the index's: each language's decisions as the shapes the
 desk's stageOf() reads, with their counts, and the shape of each flagged text it names.
 
@@ -144,6 +145,8 @@ class DeskStore:
         self.history: list[dict] = []
         self.pipeline: dict[tuple[str, str], dict] = {}
         self.drafts: dict[tuple[str, str], dict] = {}
+        # schema v2 (WO-36): the engine's findings, (locale, unit, subject, rule) -> the row.
+        self.findings: dict[tuple[str, str, str, str], dict] = {}
         self.lock = threading.Lock()
 
     @classmethod
@@ -155,6 +158,14 @@ class DeskStore:
             for u in doc["units"]:
                 pages.setdefault(u["unit_id"], set()).add(doc["page"])
         return cls(pages, **kw)
+
+    def seed_findings(self, locale: str, rows: list[dict]) -> None:
+        """Findings as the engine's refresh writes them (storage.findings_statements' rows):
+        what the harness and the parity test put in, since no desk action writes them."""
+        with self.lock:
+            for r in rows:
+                hits = r["hits"] if isinstance(r["hits"], str) else _dumps(list(r["hits"]))
+                self.findings[(locale, r["unit_id"], r["subject"], r["rule"])] = {**r, "hits": hits}
 
     # ── the actions ─────────────────────────────────────────────────────────────────
     def handle(self, action: str, body: dict, email: str) -> tuple[int, dict]:
@@ -251,9 +262,22 @@ class DeskStore:
                      for (loc, u), r in sorted(self.decisions.items()) if loc == locale}
         pipeline = {u: dict(s) for (loc, u), s in sorted(self.pipeline.items()) if loc == locale}
         drafts = {u: dict(d) for (loc, u), d in sorted(self.drafts.items()) if loc == locale}
+        findings: dict[str, list] = {}
+        for (loc, u, _subject, _rule), r in sorted(self.findings.items()):
+            if loc != locale:
+                continue
+            try:
+                hits = json.loads(r["hits"])
+            except ValueError:
+                hits = []                       # a bad row is shown without its hits
+            findings.setdefault(u, []).append({
+                "subject": r["subject"], "subjectSha": r["subject_sha"], "rule": r["rule"],
+                "severity": r["severity"], "message": r["message"], "cite": r["cite"],
+                "hits": hits if isinstance(hits, list) else []})
         return 200, {"ok": True, "api": API, "locale": locale,
                      "readAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                     "decisions": decisions, "pipeline": pipeline, "drafts": drafts}
+                     "decisions": decisions, "pipeline": pipeline, "drafts": drafts,
+                     **({"findings": findings} if findings else {})}
 
     def _summary(self, body: dict) -> tuple[int, dict]:
         pairs: list[tuple[str, str]] = []
