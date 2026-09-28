@@ -159,6 +159,8 @@
 <h3>Your three choices</h3>
 <ul><li><strong>Approve</strong> (the tick) — the translation is right as it is.</li><li><strong>Edit</strong> (the pencil) — write what it should say. Saving your wording approves the text with your words.</li><li><strong>Ask Gemini for a new translation</strong> (the star) — the translation is wrong and you'd like Gemini to try again.</li></ul>
 <p>Each text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.</p>
+<h3>New translations from Gemini</h3>
+<p>When Gemini sends a new translation, it is shown in place of the website's, marked <em>New translation to read</em>, with the website's words under it. Approve it as it is, change it, or ask for another. <em>Show</em> → <em>New translations to read</em> lists only them.</p>
 <h3>Start with the flagged texts</h3>
 <p>Our automatic checks look for mistakes that are almost always real: English left untranslated, a price or date that changed, a missing link, or the wrong form of address for the client's rules. Flagged texts say why under the translation, and <em>Flagged — check these first</em> shows only them. That is usually a handful per language, not hundreds.</p>
 <p>Some texts also appear on other pages of the website. Weglot keeps one translation for all of them, so they say so and can't be changed from here yet.</p>
@@ -272,7 +274,7 @@
     var LOCALES = ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"];
     // Every word on this page comes from COPY.md (operator, 2026-09-23: all text lives in
     // one document and the code pulls it from there). t() / tn() read it.
-    var COPY = {"how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nApproved texts wait for the import file, and new-translation requests wait for sending to\nGemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the\nbottom, and anything in them can be undone.","how.saving.off":"### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","how.saving.on":"### Saving\n\nYour decisions are saved by themselves a moment after you stop clicking. The bar at the bottom\nsays where saving stands; hover over it to see what that means.\n\n- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.\n- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.\n- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.\n- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.\n\nA text you're editing keeps what you typed, even if someone else saves it meanwhile. When you\nsave yours, it is marked as changed elsewhere, so you choose which wording stays.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — English College","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — English College","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot.","locale.eyebrow":"LOCALIZATION DESK · {LANGUAGE}","locale.subtitle":"{total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"Flagged — check these first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In the import file ({n})","show.live":"On the website ({n})","count.line":"Showing {shown} of {total} texts","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In the import file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.checking":"Checking for changes…","autosave.checking.hint":"This is what this computer saved last. Anything saved on another computer since shows up in a moment.","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once an import file is made and imported into Weglot.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Sending requests to Gemini isn't switched on yet. They'll be waiting when it is.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's saved with your other decisions — the bar at the bottom says when.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.updated.one":"1 text updated","toast.updated.other":"{n} texts updated","toast.updated.arrived.one":"1 new translation to read.","toast.updated.arrived.other":"{n} new translations to read.","toast.updated.failed.one":"1 translation failed.","toast.updated.failed.other":"{n} translations failed.","toast.updated.live.one":"1 is now on the website.","toast.updated.live.other":"{n} are now on the website.","toast.storage.title":"This browser can't keep a copy of your work","toast.storage.detail":"Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for \"All changes saved\" before you close this tab, and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is saved with your decisions. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot import file.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","how.title":"How this works","how.close":"Close"};
+    var COPY = {"how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### New translations from Gemini\n\nWhen Gemini sends a new translation, it is shown in place of the website's, marked *New\ntranslation to read*, with the website's words under it. Approve it as it is, change it, or ask\nfor another. *Show* → *New translations to read* lists only them.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nApproved texts wait for the import file, and new-translation requests wait for sending to\nGemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the\nbottom, and anything in them can be undone.","how.saving.off":"### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","how.saving.on":"### Saving\n\nYour decisions are saved by themselves a moment after you stop clicking. The bar at the bottom\nsays where saving stands; hover over it to see what that means.\n\n- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.\n- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.\n- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.\n- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.\n\nA text you're editing keeps what you typed, even if someone else saves it meanwhile. When you\nsave yours, it is marked as changed elsewhere, so you choose which wording stays.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — English College","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — English College","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot.","locale.eyebrow":"LOCALIZATION DESK · {LANGUAGE}","locale.subtitle":"{total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"Flagged — check these first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In the import file ({n})","show.live":"On the website ({n})","count.line":"Showing {shown} of {total} texts","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","row.website_now":"On the website now:","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In the import file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.checking":"Checking for changes…","autosave.checking.hint":"This is what this computer saved last. Anything saved on another computer since shows up in a moment.","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once an import file is made and imported into Weglot.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Sending requests to Gemini isn't switched on yet. They'll be waiting when it is.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's saved with your other decisions — the bar at the bottom says when.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.arrived.one":"1 new translation to read","toast.arrived.other":"{n} new translations to read","toast.arrived.detail":"Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again.","toast.storage.title":"This browser can't keep a copy of your work","toast.storage.detail":"Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for \"All changes saved\" before you close this tab, and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is saved with your decisions. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot import file.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","how.title":"How this works","how.close":"Close"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -533,10 +535,9 @@
       // One tray field, not two booleans: the contradictory state (queued AND
       // approved) cannot be represented, so nothing downstream has to resolve it.
       if (tray) s.tray = tray; else delete s.tray;
-      // Deciding a row IS the way out of a failed translation. Without this the
-      // badge stayed red for ever, the Approved filter refused the row, and the
-      // exporter -- which tests only the tray -- would still have shipped it.
-      if (tray && s.failed) delete s.failed;
+      // A failure is the engine's (WO-25c): it ends with Gemini's next send or arrival, not with a
+      // decision here -- the badge says so until then. The decision is saved, and exported (it
+      // reads only the tray), all the same (#1's ruling (b), 2026-09-28).
       note(why || ('tray:' + (tray || 'none')), uid, from, tray || null);
       return true;
     }
@@ -744,8 +745,84 @@
       if (s.liveAt) return 'live';
       return 'todo';
     }
+    // One text from the storage's three tables (runbook WO-25c): storage.merged, line for line.
+    // The decision's fields, and its `at` as decidedAt; the engine's stamps as they are; then
+    // Gemini's draft, when it arrived later than the decision was saved -- or there is no decision,
+    // or no time to read -- whose text replaces the decision's, and the tray clears.
+    var DECISION_FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];
+    var STAMP_KEYS = ['sentAt', 'arrivedAt', 'failed', 'failedAt', 'exportedAt', 'importedAt', 'liveAt', 'runId'];
+    function merged(decision, stamps, draft) {
+      var d = decision || {}, out = {};
+      DECISION_FIELDS.forEach(function (k) { if (k in d) out[k] = d[k]; });
+      if (d.at) out.decidedAt = d.at;
+      if (stamps) STAMP_KEYS.forEach(function (k) { if (stamps[k] !== undefined && stamps[k] !== null) out[k] = stamps[k]; });
+      var arrived = draft ? instant(draft.arrivedAt) : null;
+      if (draft && draft.text !== undefined && draft.text !== null && arrived !== null) {
+        var asked = instant(d.at);
+        if (!decision || asked === null || arrived > asked) {
+          out.text = draft.text;
+          delete out.tray;
+          var piped = instant(out.arrivedAt);
+          if (piped === null || arrived > piped) out.arrivedAt = draft.arrivedAt;
+        }
+      }
+      return out;
+    }
+    // desk-summary's answer for one text (monorepo stage_vectors.shape): what stageOf reads, the
+    // times already compared -- an arrival only after the decision (ruling q3), and in the csv
+    // tray a stamp only for the wording it was stamped for (exportedAt at or after decidedAt,
+    // liveAt at or after that exportedAt). data/localize/stage-vectors.json holds the engine,
+    // desk-summary's SQL and these two to one rule (stage_vectors.py runs them on every case).
+    function arrivedSince(m) {
+      if (!m.arrivedAt || m.tray) return false;
+      var decided = instant(m.decidedAt), at = instant(m.arrivedAt);
+      return decided === null || (at !== null && at > decided);
+    }
+    function exportCounts(m) {
+      if (!m.exportedAt) return false;
+      var decided = instant(m.decidedAt), exported = instant(m.exportedAt);
+      return decided === null || (exported !== null && exported >= decided);
+    }
+    function liveCounts(m) {
+      if (!m.liveAt || !exportCounts(m)) return false;
+      var live = instant(m.liveAt), exported = instant(m.exportedAt);
+      return live !== null && exported !== null && live >= exported;
+    }
+    function shapeOf(m) {
+      var out = {};
+      if (m.tray) out.tray = m.tray;
+      if (m.text !== undefined && m.text !== null) out.text = true;
+      if (failedNow(m)) out.failed = true;
+      else if (inFlight(m)) out.sentAt = true;
+      else if (arrivedSince(m)) out.arrivedAt = true;
+      if (m.tray === 'csv' ? exportCounts(m) : m.exportedAt) out.exportedAt = true;
+      if (m.tray === 'csv' ? liveCounts(m) : m.liveAt) out.liveAt = true;
+      return out;
+    }
 
-    function stage(uid) { return stageOf(state[uid]); }
+    // What the engine did with each text of this language -- its stamps, and Gemini's draft --
+    // as the storage answered at the last read (runbook WO-25c). In memory only, never in this
+    // browser's storage: they are the engine's, and a copy kept here is how a stale stamp outlived
+    // the engine's next move. The decisions are the reviewer's: only they are kept, and saved.
+    var engineStamps = Object.create(null), engineDrafts = Object.create(null);
+    function textOf(uid) { return merged(state[uid], engineStamps[uid], engineDrafts[uid]); }
+    function stage(uid) {
+      // Most texts have nothing from the engine: their decision is all there is to read.
+      if (!engineStamps[uid] && !engineDrafts[uid]) return stageOf(state[uid]);
+      return stageOf(shapeOf(textOf(uid)));
+    }
+    // A record from this browser's storage holds a decision and nothing of the engine's: an older
+    // desk kept the engine's stamps in it (deskIngest, retired by WO-25c).
+    function decisionsOnly(recs) {
+      for (var u in recs) {
+        if (recs[u]) STAMP_KEYS.forEach(function (k) { delete recs[u][k]; });
+      }
+      return recs;
+    }
+    // The copy read at the top of this script, before STAMP_KEYS existed: called from there, the
+    // TypeError landed in that read's catch, which emptied the decisions -- and the next persist()
+    // erased this browser's unsent work (caught by the state-table test, WO-25c).
+    decisionsOnly(state);
 
     var STAGE_BADGE = {
       // One colour per meaning (role table, process contract §8 U1): not reviewed =
@@ -776,7 +853,8 @@
       var spec = STAGE_BADGE[st];
       badge.className = 'desk-state ' + spec[1];
       badge.textContent = spec[0];
-      if (st === 'failed' && s.failed) badge.setAttribute('data-tip', String(s.failed));
+      var why = (engineStamps[uid] || {}).failed;
+      if (st === 'failed' && why) badge.setAttribute('data-tip', String(why));
       else badge.removeAttribute('data-tip');
       // Someone else saved this text first (WO-17): said on the row, with a way to take
       // their version; deciding again yourself keeps yours.
@@ -832,10 +910,26 @@
 
       // The reviewer's wording while there is one; the website's again once it is cleared.
       var live = tr.querySelector('.desk-live');
-      var shown = s.text != null ? s.text : liveText[uid];
+      var v = textOf(uid);
+      var shown = v.text != null ? v.text : liveText[uid];
       if (live.getAttribute('data-shown') !== shown) {
         renderMarked(live, shown);
         live.setAttribute('data-shown', shown);
+      }
+      // A draft to read shows the website's words under it: what approving it replaces.
+      var now = tr.querySelector('.desk-website');
+      if (st === 'arrived' && !now) {
+        now = document.createElement('p');
+        now.className = 'desk-shared desk-website';
+        now.setAttribute('dir', 'auto');
+        now.appendChild(document.createTextNode(t('row.website_now') + ' '));
+        var words = document.createElement('span');
+        words.setAttribute('lang', CODE);
+        renderMarked(words, liveText[uid]);
+        now.appendChild(words);
+        live.parentNode.insertBefore(now, live.nextSibling);
+      } else if (st !== 'arrived' && now) {
+        now.parentNode.removeChild(now);
       }
     }
 
@@ -995,23 +1089,37 @@
       // A LIST, newest last, the last five: what the Worker's storage and the batch
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
-      if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
+      // Gemini's draft is the storage's (WO-25c), read with the decisions: `v.text` while it is
+      // the text to read.
+      var v = textOf(uid), draft = engineDrafts[uid];
+      var onDraft = stage(uid) === 'arrived' && v.text != null;
+      if (tray === 'draft' && onDraft) {
         var turnedDown = Array.isArray(s.rejected) ? s.rejected.slice()
           : (typeof s.rejected === 'string' && s.rejected ? [s.rejected] : []);   // the pre-list shape
-        turnedDown.push(s.text);
+        turnedDown.push(v.text);
         s.rejected = turnedDown.slice(-5);
         delete s.text;
       }
-      if (restoring && from === 'draft' && Array.isArray(s.rejected) && s.rejected.length &&
-          s.arrivedAt && s.text == null) {
-        s.rejected = s.rejected.slice();
-        s.text = s.rejected.pop();
+      // Approving a draft approves ITS words: they become the decision's text -- what the export
+      // ships -- against the website's words it replaces (stampApproval, P1-A).
+      if (tray === 'csv' && onDraft) s.text = v.text;
+      // Undone, the draft is to read again: the copied words come back out, and a request's
+      // turned-down draft comes off the list. Until that undo is saved -- a decision saved after
+      // the arrival hides the draft (q3); ask Gemini again to have one back (#1's ruling (b)).
+      if (restoring && from === 'csv' && draft && s.text === draft.text) delete s.text;
+      if (restoring && from === 'draft' && draft && Array.isArray(s.rejected) &&
+          s.rejected[s.rejected.length - 1] === draft.text) {
+        s.rejected = s.rejected.slice(0, -1);
         if (!s.rejected.length) delete s.rejected;
       }
       if (!restoring && from && tray) s.was = from; else delete s.was;
       setTray(uid, tray, why);
       if (from === 'csv') stampApproval(uid, tr, false);
       if (tray === 'csv') stampApproval(uid, tr, true);
+      // When: what the stage rule compares an arrival and an export with. The storage stamps the
+      // time when the decision lands; until then a decision is the newest thing there is -- and one
+      // with nothing left in it has no time yet (an undo), as the storage has none for it either.
+      if (hasContent(s)) s.at = new Date().toISOString(); else delete s.at;
       return true;
     }
 
@@ -1043,13 +1151,9 @@
       if (take) {
         var trc = take.closest('.desk-row'), uidc = trc.getAttribute('data-uid');
         var theirs = conflicts[uidc] || {};
-        // Their decision, as the storage holds it: nothing of yours left to send. The
-        // engine's stamps on the row are not a decision and stay.
-        var keep = {};
-        ['sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'].forEach(function (f) {
-          if (state[uidc] && state[uidc][f] != null) keep[f] = state[uidc][f];
-        });
-        state[uidc] = Object.assign(keep, storedOnly(theirs), theirs.by ? { by: theirs.by, at: theirs.at } : {});
+        // Their decision, as the storage holds it: nothing of yours left to send. (The engine's
+        // stamps are not in a decision: they are read with it, WO-25c.)
+        state[uidc] = Object.assign(storedOnly(theirs), theirs.by ? { by: theirs.by, at: theirs.at } : {});
         clearConflict(uidc);
         note('take-theirs', uidc, null, null);
         persist(); paint(trc); paintBar(); applyFilters();
@@ -1163,8 +1267,8 @@
     // What an editor opens on: the row's own wording, else the website's.
     function seedEditor(tr, ta) {
       var uid = tr.getAttribute('data-uid');
-      var s = state[uid] || {};
-      ta.value = s.text != null ? s.text : liveText[uid];
+      var v = textOf(uid);
+      ta.value = v.text != null ? v.text : liveText[uid];
       ta.setAttribute('data-opened-with', ta.value);
     }
 
@@ -1579,58 +1683,9 @@
       };
     };
 
-    // The INGEST seam, not a UI affordance. Machine drafts land here when the batch
-    // returns; `deskIngest()` is the same door, callable from the console while the
-    // batch step is being built. The reviewer has no import button -- they never
-    // import decisions, and a file picker that says otherwise invites the mistake.
-    function ingest(doc) {
-      if (!doc || doc.schema !== 'cel-localization-desk/1') return { ok: false, why: 'not a desk document' };
-      // A document for another locale would attach its ids to strings that mean
-      // something different here.
-      if (doc.locale !== CODE) return { ok: false, why: 'document is for ' + doc.locale + ', this desk is ' + CODE };
-      var incoming = doc.decisions || {};
-      // Counted per KIND, because one number cannot honestly describe a document
-      // that mixes arrivals, failures and reconciliation results -- the toast used
-      // to announce "new translations arrived" over a batch of nothing but errors.
-      var n = 0, nArrived = 0, nFailed = 0, nLive = 0;
-      for (var uid in incoming) {
-        if (!incoming[uid]) continue;
-        var s = rec(uid);
-        // Merge, never replace: a returning batch carries only the rows it was asked
-        // about, and must not erase decisions made on every other row.
-        //
-        // These are exactly the fields the batch sets at each step of the lifecycle:
-        // `sentAt` when a request goes to Gemini, then `arrivedAt` + `text` when the
-        // new wording comes back, or `failed` when it does not. A row that has arrived
-        // drops its tray, so it reads as a fresh translation waiting to be looked at
-        // rather than something still queued.
-        var inc = incoming[uid];
-        if (inc.sentAt) { s.sentAt = inc.sentAt; delete s.arrivedAt; delete s.failed; n++; }
-        if (inc.arrivedAt) {
-          s.arrivedAt = inc.arrivedAt;
-          delete s.tray; delete s.failed;
-          if (typeof inc.text === 'string') s.text = inc.text;
-          n++; nArrived++;
-        }
-        if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; nFailed++; }
-        if (inc.tray && !inc.arrivedAt) { s.tray = inc.tray; n++; }
-        // Set by the CSV build and by reconciliation, respectively.
-        if (inc.exportedAt) { s.exportedAt = inc.exportedAt; n++; }
-        if (inc.liveAt) { s.liveAt = inc.liveAt; delete s.exportedAt; n++; nLive++; }
-      }
-      note('ingest', null, String(n), doc.exported_at || null);
-      persist();
-      rows.forEach(paint); paintBar(); applyFilters();
-      if (n) {
-        var said = [];
-        if (nArrived) said.push(tn('toast.updated.arrived', nArrived));
-        if (nFailed) said.push(tn('toast.updated.failed', nFailed));
-        if (nLive) said.push(tn('toast.updated.live', nLive));
-        toast(tn('toast.updated', n), { level: nFailed ? 'warn' : 'ok', detail: said.join(' ') });
-      }
-      return { ok: true, rows: n };
-    }
-    window.deskIngest = ingest;
+    // Gemini's drafts and the engine's stamps are read from the storage with the decisions
+    // (runbook WO-25c). The console seam that took them in here -- deskIngest -- is gone: it wrote
+    // a draft into the reviewer's own record, and with saving on it would have been sent as their edit.
 
 
     // ── Saving ─────────────────────────────────────────────────────────
@@ -2278,8 +2333,9 @@
       applyFilters();
       syncUrl();
     }
-    [fPage, fState].forEach(function (el) { el.addEventListener('change', resetView); });
-    fQ.addEventListener('input', resetView);
+    function pickView() { autoLand = false; resetView(); }
+    [fPage, fState].forEach(function (el) { el.addEventListener('change', pickView); });
+    fQ.addEventListener('input', pickView);
     // An emptied view offers the way back instead of a dead end.
     document.getElementById('no-rows-reset').addEventListener('click', function () {
       fPage.value = ''; fState.value = ''; fQ.value = '';
@@ -2331,6 +2387,9 @@
     // (still loading) -> fr -> de left two live loads for de, and both built their 823
     // rows into one table (review round 2, L1 P1-1).
     var loadSeq = 0, booted = false, loadFailedFor = null;
+    // The first load, with no view asked for in the address, lands on new translations once the
+    // storage has said which they are; any view the reviewer picks first wins.
+    var autoLand = false;
     async function loadLocale(anchor) {
       var seq = ++loadSeq;
       var code = CODE;
@@ -2362,6 +2421,7 @@
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
+        autoLand = want === null;
         if (want !== null) want = showFromUrl(want);
         var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived',
                      'sending', 'failed', 'exported', 'live', ''];
@@ -2444,10 +2504,20 @@
             }
             saved[uid] = srv;
             if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; repaint[uid] = true; }
+            else if (server[uid].at && (state[uid] || {}).at !== server[uid].at) {
+              // The same decision: its time is the storage's, which is what the stage rule compares
+              // a draft and an export with -- an undone decision's too (WO-25c, #1's ruling (b)).
+              rec(uid).at = server[uid].at;
+              repaint[uid] = true;
+            }
           }
           try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
           persist();
           if (adopted) note('adopted', null, String(adopted), null);
+          // The engine's facts for this language, read with the decisions (WO-25c): in memory only.
+          engineStamps = Object.assign(Object.create(null), sr.body.pipeline || {});
+          engineDrafts = Object.assign(Object.create(null), sr.body.drafts || {});
+          Object.keys(engineStamps).concat(Object.keys(engineDrafts)).forEach(function (u) { repaint[u] = true; });
         }
       } catch (e) {
         // Unreadable storage is not "nothing saved": a desk that booted without a
@@ -2473,6 +2543,14 @@
         applyFilters();
         paintLocaleCounts();
       }
+      // New translations to read: said, and -- on the page's first load, with no view asked for --
+      // landed on, now that the storage has said which texts they are.
+      var arrivedN = rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length;
+      if (arrivedN) {
+        toast(tn('toast.arrived', arrivedN), { level: 'ok', detail: t('toast.arrived.detail') });
+        if (autoLand) { fState.value = 'arrived'; resetView(); }
+      }
+      autoLand = false;
       paintBar();
       // What this browser has not sent -- the last visit's included (nothing goes on the way
       // out, R39) -- goes after the usual quiet moment, once the storage's copy is in.
@@ -2484,14 +2562,11 @@
       }
     }
 
-    // The storage's copy of a decision replaces this browser's: its fields, and who made it
-    // and when. What the engine stamped on the row here is not a decision, and stays.
+    // The storage's copy of a decision replaces this browser's: its fields, who made it, and when
+    // -- an undone one too, whose time is what hides a draft that arrived before it (q3).
     function takeStorageCopy(uid, rec) {
-      var keep = {}, cur = state[uid] || {};
-      for (var k in cur) {
-        if (STORED_FIELDS.indexOf(k) === -1 && k !== 'by' && k !== 'at' && k !== 'was') keep[k] = cur[k];
-      }
-      state[uid] = Object.assign(keep, storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by, at: rec.at } : {});
+      state[uid] = Object.assign(storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by } : {},
+                                 rec.at ? { at: rec.at } : {});
     }
 
     function loadFailed(err) {
@@ -2528,7 +2603,7 @@
       if (window.performance && performance.mark) performance.mark('desk-switch:' + code);
       var anchor = viewAnchor();
       setLocale(code);
-      state = readFresh(KEY);
+      state = decisionsOnly(readFresh(KEY));
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(code);
       try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
@@ -2538,6 +2613,9 @@
       justActed = Object.create(null);
       liveText = Object.create(null);
       sourceText = Object.create(null);
+      engineStamps = Object.create(null);
+      engineDrafts = Object.create(null);
+      autoLand = false;
       attachGen++;                         // stop the old language's remaining slices
       body.textContent = '';
       rows = [];
@@ -2551,7 +2629,7 @@
     // erased the first tab's work, and a Discard on the index came back after one more
     // click here (review round 2, L1 P1-2).
     function adoptStored() {
-      state = readFresh(KEY);
+      state = decisionsOnly(readFresh(KEY));
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(CODE);
       changed();                           // the other tab's change is this browser's to send too

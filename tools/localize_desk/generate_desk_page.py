@@ -388,6 +388,60 @@ _STAGE_JS = """\
       if (s.liveAt) return 'live';
       return 'todo';
     }
+    // One text from the storage's three tables (runbook WO-25c): storage.merged, line for line.
+    // The decision's fields, and its `at` as decidedAt; the engine's stamps as they are; then
+    // Gemini's draft, when it arrived later than the decision was saved -- or there is no decision,
+    // or no time to read -- whose text replaces the decision's, and the tray clears.
+    var DECISION_FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];
+    var STAMP_KEYS = ['sentAt', 'arrivedAt', 'failed', 'failedAt', 'exportedAt', 'importedAt', 'liveAt', 'runId'];
+    function merged(decision, stamps, draft) {
+      var d = decision || {}, out = {};
+      DECISION_FIELDS.forEach(function (k) { if (k in d) out[k] = d[k]; });
+      if (d.at) out.decidedAt = d.at;
+      if (stamps) STAMP_KEYS.forEach(function (k) { if (stamps[k] !== undefined && stamps[k] !== null) out[k] = stamps[k]; });
+      var arrived = draft ? instant(draft.arrivedAt) : null;
+      if (draft && draft.text !== undefined && draft.text !== null && arrived !== null) {
+        var asked = instant(d.at);
+        if (!decision || asked === null || arrived > asked) {
+          out.text = draft.text;
+          delete out.tray;
+          var piped = instant(out.arrivedAt);
+          if (piped === null || arrived > piped) out.arrivedAt = draft.arrivedAt;
+        }
+      }
+      return out;
+    }
+    // desk-summary's answer for one text (monorepo stage_vectors.shape): what stageOf reads, the
+    // times already compared -- an arrival only after the decision (ruling q3), and in the csv
+    // tray a stamp only for the wording it was stamped for (exportedAt at or after decidedAt,
+    // liveAt at or after that exportedAt). data/localize/stage-vectors.json holds the engine,
+    // desk-summary's SQL and these two to one rule (stage_vectors.py runs them on every case).
+    function arrivedSince(m) {
+      if (!m.arrivedAt || m.tray) return false;
+      var decided = instant(m.decidedAt), at = instant(m.arrivedAt);
+      return decided === null || (at !== null && at > decided);
+    }
+    function exportCounts(m) {
+      if (!m.exportedAt) return false;
+      var decided = instant(m.decidedAt), exported = instant(m.exportedAt);
+      return decided === null || (exported !== null && exported >= decided);
+    }
+    function liveCounts(m) {
+      if (!m.liveAt || !exportCounts(m)) return false;
+      var live = instant(m.liveAt), exported = instant(m.exportedAt);
+      return live !== null && exported !== null && live >= exported;
+    }
+    function shapeOf(m) {
+      var out = {};
+      if (m.tray) out.tray = m.tray;
+      if (m.text !== undefined && m.text !== null) out.text = true;
+      if (failedNow(m)) out.failed = true;
+      else if (inFlight(m)) out.sentAt = true;
+      else if (arrivedSince(m)) out.arrivedAt = true;
+      if (m.tray === 'csv' ? exportCounts(m) : m.exportedAt) out.exportedAt = true;
+      if (m.tray === 'csv' ? liveCounts(m) : m.liveAt) out.liveAt = true;
+      return out;
+    }
 """
 
 
@@ -1108,10 +1162,9 @@ __HELPERS__
       // One tray field, not two booleans: the contradictory state (queued AND
       // approved) cannot be represented, so nothing downstream has to resolve it.
       if (tray) s.tray = tray; else delete s.tray;
-      // Deciding a row IS the way out of a failed translation. Without this the
-      // badge stayed red for ever, the Approved filter refused the row, and the
-      // exporter -- which tests only the tray -- would still have shipped it.
-      if (tray && s.failed) delete s.failed;
+      // A failure is the engine's (WO-25c): it ends with Gemini's next send or arrival, not with a
+      // decision here -- the badge says so until then. The decision is saved, and exported (it
+      // reads only the tray), all the same (#1's ruling (b), 2026-09-28).
       note(why || ('tray:' + (tray || 'none')), uid, from, tray || null);
       return true;
     }
@@ -1276,7 +1329,29 @@ __HELPERS__
     //   sending       sent to Gemini, waiting
     //   failed        Gemini could not do it
 __STAGE_JS__
-    function stage(uid) { return stageOf(state[uid]); }
+    // What the engine did with each text of this language -- its stamps, and Gemini's draft --
+    // as the storage answered at the last read (runbook WO-25c). In memory only, never in this
+    // browser's storage: they are the engine's, and a copy kept here is how a stale stamp outlived
+    // the engine's next move. The decisions are the reviewer's: only they are kept, and saved.
+    var engineStamps = Object.create(null), engineDrafts = Object.create(null);
+    function textOf(uid) { return merged(state[uid], engineStamps[uid], engineDrafts[uid]); }
+    function stage(uid) {
+      // Most texts have nothing from the engine: their decision is all there is to read.
+      if (!engineStamps[uid] && !engineDrafts[uid]) return stageOf(state[uid]);
+      return stageOf(shapeOf(textOf(uid)));
+    }
+    // A record from this browser's storage holds a decision and nothing of the engine's: an older
+    // desk kept the engine's stamps in it (deskIngest, retired by WO-25c).
+    function decisionsOnly(recs) {
+      for (var u in recs) {
+        if (recs[u]) STAMP_KEYS.forEach(function (k) { delete recs[u][k]; });
+      }
+      return recs;
+    }
+    // The copy read at the top of this script, before STAMP_KEYS existed: called from there, the
+    // TypeError landed in that read's catch, which emptied the decisions -- and the next persist()
+    // erased this browser's unsent work (caught by the state-table test, WO-25c).
+    decisionsOnly(state);
 
     var STAGE_BADGE = {
       // One colour per meaning (role table, process contract §8 U1): not reviewed =
@@ -1307,7 +1382,8 @@ __STAGE_JS__
       var spec = STAGE_BADGE[st];
       badge.className = 'desk-state ' + spec[1];
       badge.textContent = spec[0];
-      if (st === 'failed' && s.failed) badge.setAttribute('data-tip', String(s.failed));
+      var why = (engineStamps[uid] || {}).failed;
+      if (st === 'failed' && why) badge.setAttribute('data-tip', String(why));
       else badge.removeAttribute('data-tip');
       // Someone else saved this text first (WO-17): said on the row, with a way to take
       // their version; deciding again yourself keeps yours.
@@ -1363,10 +1439,26 @@ __STAGE_JS__
 
       // The reviewer's wording while there is one; the website's again once it is cleared.
       var live = tr.querySelector('.desk-live');
-      var shown = s.text != null ? s.text : liveText[uid];
+      var v = textOf(uid);
+      var shown = v.text != null ? v.text : liveText[uid];
       if (live.getAttribute('data-shown') !== shown) {
         renderMarked(live, shown);
         live.setAttribute('data-shown', shown);
+      }
+      // A draft to read shows the website's words under it: what approving it replaces.
+      var now = tr.querySelector('.desk-website');
+      if (st === 'arrived' && !now) {
+        now = document.createElement('p');
+        now.className = 'desk-shared desk-website';
+        now.setAttribute('dir', 'auto');
+        now.appendChild(document.createTextNode(t('row.website_now') + ' '));
+        var words = document.createElement('span');
+        words.setAttribute('lang', CODE);
+        renderMarked(words, liveText[uid]);
+        now.appendChild(words);
+        live.parentNode.insertBefore(now, live.nextSibling);
+      } else if (st !== 'arrived' && now) {
+        now.parentNode.removeChild(now);
       }
     }
 
@@ -1526,23 +1618,37 @@ __STAGE_JS__
       // A LIST, newest last, the last five: what the Worker's storage and the batch
       // all read. A string was refused by the Worker, taking the whole save with it
       // (review round 2, L7 P1-1).
-      if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
+      // Gemini's draft is the storage's (WO-25c), read with the decisions: `v.text` while it is
+      // the text to read.
+      var v = textOf(uid), draft = engineDrafts[uid];
+      var onDraft = stage(uid) === 'arrived' && v.text != null;
+      if (tray === 'draft' && onDraft) {
         var turnedDown = Array.isArray(s.rejected) ? s.rejected.slice()
           : (typeof s.rejected === 'string' && s.rejected ? [s.rejected] : []);   // the pre-list shape
-        turnedDown.push(s.text);
+        turnedDown.push(v.text);
         s.rejected = turnedDown.slice(-5);
         delete s.text;
       }
-      if (restoring && from === 'draft' && Array.isArray(s.rejected) && s.rejected.length &&
-          s.arrivedAt && s.text == null) {
-        s.rejected = s.rejected.slice();
-        s.text = s.rejected.pop();
+      // Approving a draft approves ITS words: they become the decision's text -- what the export
+      // ships -- against the website's words it replaces (stampApproval, P1-A).
+      if (tray === 'csv' && onDraft) s.text = v.text;
+      // Undone, the draft is to read again: the copied words come back out, and a request's
+      // turned-down draft comes off the list. Until that undo is saved -- a decision saved after
+      // the arrival hides the draft (q3); ask Gemini again to have one back (#1's ruling (b)).
+      if (restoring && from === 'csv' && draft && s.text === draft.text) delete s.text;
+      if (restoring && from === 'draft' && draft && Array.isArray(s.rejected) &&
+          s.rejected[s.rejected.length - 1] === draft.text) {
+        s.rejected = s.rejected.slice(0, -1);
         if (!s.rejected.length) delete s.rejected;
       }
       if (!restoring && from && tray) s.was = from; else delete s.was;
       setTray(uid, tray, why);
       if (from === 'csv') stampApproval(uid, tr, false);
       if (tray === 'csv') stampApproval(uid, tr, true);
+      // When: what the stage rule compares an arrival and an export with. The storage stamps the
+      // time when the decision lands; until then a decision is the newest thing there is -- and one
+      // with nothing left in it has no time yet (an undo), as the storage has none for it either.
+      if (hasContent(s)) s.at = new Date().toISOString(); else delete s.at;
       return true;
     }
 
@@ -1574,13 +1680,9 @@ __STAGE_JS__
       if (take) {
         var trc = take.closest('.desk-row'), uidc = trc.getAttribute('data-uid');
         var theirs = conflicts[uidc] || {};
-        // Their decision, as the storage holds it: nothing of yours left to send. The
-        // engine's stamps on the row are not a decision and stay.
-        var keep = {};
-        ['sentAt', 'arrivedAt', 'failed', 'exportedAt', 'liveAt'].forEach(function (f) {
-          if (state[uidc] && state[uidc][f] != null) keep[f] = state[uidc][f];
-        });
-        state[uidc] = Object.assign(keep, storedOnly(theirs), theirs.by ? { by: theirs.by, at: theirs.at } : {});
+        // Their decision, as the storage holds it: nothing of yours left to send. (The engine's
+        // stamps are not in a decision: they are read with it, WO-25c.)
+        state[uidc] = Object.assign(storedOnly(theirs), theirs.by ? { by: theirs.by, at: theirs.at } : {});
         clearConflict(uidc);
         note('take-theirs', uidc, null, null);
         persist(); paint(trc); paintBar(); applyFilters();
@@ -1694,8 +1796,8 @@ __STAGE_JS__
     // What an editor opens on: the row's own wording, else the website's.
     function seedEditor(tr, ta) {
       var uid = tr.getAttribute('data-uid');
-      var s = state[uid] || {};
-      ta.value = s.text != null ? s.text : liveText[uid];
+      var v = textOf(uid);
+      ta.value = v.text != null ? v.text : liveText[uid];
       ta.setAttribute('data-opened-with', ta.value);
     }
 
@@ -2110,58 +2212,9 @@ __STAGE_JS__
       };
     };
 
-    // The INGEST seam, not a UI affordance. Machine drafts land here when the batch
-    // returns; `deskIngest()` is the same door, callable from the console while the
-    // batch step is being built. The reviewer has no import button -- they never
-    // import decisions, and a file picker that says otherwise invites the mistake.
-    function ingest(doc) {
-      if (!doc || doc.schema !== 'cel-localization-desk/1') return { ok: false, why: 'not a desk document' };
-      // A document for another locale would attach its ids to strings that mean
-      // something different here.
-      if (doc.locale !== CODE) return { ok: false, why: 'document is for ' + doc.locale + ', this desk is ' + CODE };
-      var incoming = doc.decisions || {};
-      // Counted per KIND, because one number cannot honestly describe a document
-      // that mixes arrivals, failures and reconciliation results -- the toast used
-      // to announce "new translations arrived" over a batch of nothing but errors.
-      var n = 0, nArrived = 0, nFailed = 0, nLive = 0;
-      for (var uid in incoming) {
-        if (!incoming[uid]) continue;
-        var s = rec(uid);
-        // Merge, never replace: a returning batch carries only the rows it was asked
-        // about, and must not erase decisions made on every other row.
-        //
-        // These are exactly the fields the batch sets at each step of the lifecycle:
-        // `sentAt` when a request goes to Gemini, then `arrivedAt` + `text` when the
-        // new wording comes back, or `failed` when it does not. A row that has arrived
-        // drops its tray, so it reads as a fresh translation waiting to be looked at
-        // rather than something still queued.
-        var inc = incoming[uid];
-        if (inc.sentAt) { s.sentAt = inc.sentAt; delete s.arrivedAt; delete s.failed; n++; }
-        if (inc.arrivedAt) {
-          s.arrivedAt = inc.arrivedAt;
-          delete s.tray; delete s.failed;
-          if (typeof inc.text === 'string') s.text = inc.text;
-          n++; nArrived++;
-        }
-        if (inc.failed) { s.failed = String(inc.failed); delete s.sentAt; n++; nFailed++; }
-        if (inc.tray && !inc.arrivedAt) { s.tray = inc.tray; n++; }
-        // Set by the CSV build and by reconciliation, respectively.
-        if (inc.exportedAt) { s.exportedAt = inc.exportedAt; n++; }
-        if (inc.liveAt) { s.liveAt = inc.liveAt; delete s.exportedAt; n++; nLive++; }
-      }
-      note('ingest', null, String(n), doc.exported_at || null);
-      persist();
-      rows.forEach(paint); paintBar(); applyFilters();
-      if (n) {
-        var said = [];
-        if (nArrived) said.push(tn('toast.updated.arrived', nArrived));
-        if (nFailed) said.push(tn('toast.updated.failed', nFailed));
-        if (nLive) said.push(tn('toast.updated.live', nLive));
-        toast(tn('toast.updated', n), { level: nFailed ? 'warn' : 'ok', detail: said.join(' ') });
-      }
-      return { ok: true, rows: n };
-    }
-    window.deskIngest = ingest;
+    // Gemini's drafts and the engine's stamps are read from the storage with the decisions
+    // (runbook WO-25c). The console seam that took them in here -- deskIngest -- is gone: it wrote
+    // a draft into the reviewer's own record, and with saving on it would have been sent as their edit.
 
 
     // ── Saving ─────────────────────────────────────────────────────────
@@ -2720,8 +2773,9 @@ __PROXY_JS__
       applyFilters();
       syncUrl();
     }
-    [fPage, fState].forEach(function (el) { el.addEventListener('change', resetView); });
-    fQ.addEventListener('input', resetView);
+    function pickView() { autoLand = false; resetView(); }
+    [fPage, fState].forEach(function (el) { el.addEventListener('change', pickView); });
+    fQ.addEventListener('input', pickView);
     // An emptied view offers the way back instead of a dead end.
     document.getElementById('no-rows-reset').addEventListener('click', function () {
       fPage.value = ''; fState.value = ''; fQ.value = '';
@@ -2773,6 +2827,9 @@ __PROXY_JS__
     // (still loading) -> fr -> de left two live loads for de, and both built their 823
     // rows into one table (review round 2, L1 P1-1).
     var loadSeq = 0, booted = false, loadFailedFor = null;
+    // The first load, with no view asked for in the address, lands on new translations once the
+    // storage has said which they are; any view the reviewer picks first wins.
+    var autoLand = false;
     async function loadLocale(anchor) {
       var seq = ++loadSeq;
       var code = CODE;
@@ -2804,6 +2861,7 @@ __PROXY_JS__
         // ?show= lets the locale index link straight into a tray.
         var qs = new URLSearchParams(location.search);
         var want = qs.get('show');
+        autoLand = want === null;
         if (want !== null) want = showFromUrl(want);
         var known = ['todo', 'csv', 'draft', 'edited', 'check', 'arrived',
                      'sending', 'failed', 'exported', 'live', ''];
@@ -2886,10 +2944,20 @@ __PROXY_JS__
             }
             saved[uid] = srv;
             if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; repaint[uid] = true; }
+            else if (server[uid].at && (state[uid] || {}).at !== server[uid].at) {
+              // The same decision: its time is the storage's, which is what the stage rule compares
+              // a draft and an export with -- an undone decision's too (WO-25c, #1's ruling (b)).
+              rec(uid).at = server[uid].at;
+              repaint[uid] = true;
+            }
           }
           try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
           persist();
           if (adopted) note('adopted', null, String(adopted), null);
+          // The engine's facts for this language, read with the decisions (WO-25c): in memory only.
+          engineStamps = Object.assign(Object.create(null), sr.body.pipeline || {});
+          engineDrafts = Object.assign(Object.create(null), sr.body.drafts || {});
+          Object.keys(engineStamps).concat(Object.keys(engineDrafts)).forEach(function (u) { repaint[u] = true; });
         }
       } catch (e) {
         // Unreadable storage is not "nothing saved": a desk that booted without a
@@ -2915,6 +2983,14 @@ __PROXY_JS__
         applyFilters();
         paintLocaleCounts();
       }
+      // New translations to read: said, and -- on the page's first load, with no view asked for --
+      // landed on, now that the storage has said which texts they are.
+      var arrivedN = rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length;
+      if (arrivedN) {
+        toast(tn('toast.arrived', arrivedN), { level: 'ok', detail: t('toast.arrived.detail') });
+        if (autoLand) { fState.value = 'arrived'; resetView(); }
+      }
+      autoLand = false;
       paintBar();
       // What this browser has not sent -- the last visit's included (nothing goes on the way
       // out, R39) -- goes after the usual quiet moment, once the storage's copy is in.
@@ -2926,14 +3002,11 @@ __PROXY_JS__
       }
     }
 
-    // The storage's copy of a decision replaces this browser's: its fields, and who made it
-    // and when. What the engine stamped on the row here is not a decision, and stays.
+    // The storage's copy of a decision replaces this browser's: its fields, who made it, and when
+    // -- an undone one too, whose time is what hides a draft that arrived before it (q3).
     function takeStorageCopy(uid, rec) {
-      var keep = {}, cur = state[uid] || {};
-      for (var k in cur) {
-        if (STORED_FIELDS.indexOf(k) === -1 && k !== 'by' && k !== 'at' && k !== 'was') keep[k] = cur[k];
-      }
-      state[uid] = Object.assign(keep, storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by, at: rec.at } : {});
+      state[uid] = Object.assign(storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by } : {},
+                                 rec.at ? { at: rec.at } : {});
     }
 
     function loadFailed(err) {
@@ -2970,7 +3043,7 @@ __PROXY_JS__
       if (window.performance && performance.mark) performance.mark('desk-switch:' + code);
       var anchor = viewAnchor();
       setLocale(code);
-      state = readFresh(KEY);
+      state = decisionsOnly(readFresh(KEY));
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(code);
       try { hist = JSON.parse(localStorage.getItem(LOGKEY) || '[]') || []; } catch (e) { hist = []; }
@@ -2980,6 +3053,9 @@ __PROXY_JS__
       justActed = Object.create(null);
       liveText = Object.create(null);
       sourceText = Object.create(null);
+      engineStamps = Object.create(null);
+      engineDrafts = Object.create(null);
+      autoLand = false;
       attachGen++;                         // stop the old language's remaining slices
       body.textContent = '';
       rows = [];
@@ -2993,7 +3069,7 @@ __PROXY_JS__
     // erased the first tab's work, and a Discard on the index came back after one more
     // click here (review round 2, L1 P1-2).
     function adoptStored() {
-      state = readFresh(KEY);
+      state = decisionsOnly(readFresh(KEY));
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(CODE);
       changed();                           // the other tab's change is this browser's to send too

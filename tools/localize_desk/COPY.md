@@ -130,6 +130,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `row.shared.one` | Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet. | Under the translation |
 | `row.shared.other` | Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet. | Under the translation |
 | `row.shared.home` | the home page | Stands in for "/" in the line above |
+| `row.website_now` | On the website now: | Under a new translation from Gemini, before the website's words |
 | `status.todo` | Not reviewed yet | Status badge |
 | `status.arrived` | New translation to read | Status badge |
 | `status.approved` | Approved | Status badge |
@@ -239,14 +240,9 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.undone.title` | Undone | After Undo in a list |
 | `toast.undone.one` | 1 text is back to what it was before. | |
 | `toast.undone.other` | {n} texts are back to what they were before. | |
-| `toast.updated.one` | 1 text updated | When new translations arrive |
-| `toast.updated.other` | {n} texts updated | |
-| `toast.updated.arrived.one` | 1 new translation to read. | |
-| `toast.updated.arrived.other` | {n} new translations to read. | |
-| `toast.updated.failed.one` | 1 translation failed. | |
-| `toast.updated.failed.other` | {n} translations failed. | |
-| `toast.updated.live.one` | 1 is now on the website. | |
-| `toast.updated.live.other` | {n} are now on the website. | |
+| `toast.arrived.one` | 1 new translation to read | When the page opens on new translations from Gemini |
+| `toast.arrived.other` | {n} new translations to read | |
+| `toast.arrived.detail` | Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again. | |
 | `toast.storage.title` | This browser can't keep a copy of your work | When the browser refuses to store |
 | `toast.storage.detail` | Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for "All changes saved" before you close this tab, and let us know. | |
 | `toast.saved_load.title` | Couldn't load decisions saved earlier | When saved decisions can't be read |
@@ -314,6 +310,12 @@ it by machine, and nobody has checked it yet.
 - **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.
 
 Each text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.
+
+### New translations from Gemini
+
+When Gemini sends a new translation, it is shown in place of the website's, marked *New
+translation to read*, with the website's words under it. Approve it as it is, change it, or ask
+for another. *Show* → *New translations to read* lists only them.
 
 ### Start with the flagged texts
 

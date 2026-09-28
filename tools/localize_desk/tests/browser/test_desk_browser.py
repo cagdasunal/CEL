@@ -158,20 +158,24 @@ def test_record_the_timings(browser):
 # ── WO-06: the row-state table (contract §1, "Every state × every action") ──────────
 # Walks each state through ✓ and ✦, each clicked twice: the second click is the undo, and
 # it must land exactly where the table says (guard G11). States the desk cannot reach by
-# clicking (sending, arrived, failed, exported, live) are set the way the engine will set
-# them, through `deskIngest`.
+# clicking (sending, arrived, failed, exported, live) are set where the engine sets them --
+# the storage's pipeline and drafts, read with the decisions (runbook WO-25c; deskIngest is gone).
 
-ISO = "2026-09-28T10:00:00Z"
 # from-state: (after ✓, after ✓ again, after ✦, after ✦ again)
 TABLE = {
     "todo":     ("approved", "todo",     "queued", "todo"),
     "approved": ("todo",     "approved", "queued", "approved"),
     "edited":   ("todo",     "edited",   "queued", "edited"),
     "queued":   ("approved", "queued",   "todo",   "queued"),
+    # an undo is a draft to read again -- until the undo is saved (#1's ruling (b), 2026-09-28)
     "arrived":  ("edited",   "arrived",  "queued", "arrived"),
-    "failed":   ("approved", "todo",     "queued", "todo"),     # a decision ends a failure
-    "exported": ("todo",     "exported", "queued", "exported"),
-    "live":     ("live",     "live",     "queued", "live"),
+    # a failure is the engine's: it stands until Gemini's next send or arrival, and the decision
+    # is saved and exported all the same (#1's ruling (b), 2026-09-28)
+    "failed":   ("failed",   "failed",   "failed", "failed"),
+    # a stamp counts only for the wording it was stamped for (ruling 6): approving again is a new
+    # decision, later than the export
+    "exported": ("todo",     "approved", "queued", "approved"),
+    "live":     ("live",     "approved", "queued", "approved"),
 }
 
 
@@ -187,16 +191,35 @@ def _rec(page, uid) -> dict:
     return page.evaluate("u => (window.deskState()[u] || {})", uid)
 
 
-def _ingest(page, uid, rec):
-    page.evaluate("([u, r]) => window.deskIngest({schema: 'cel-localization-desk/1', locale: 'de', "
-                  "decisions: {[u]: r}})", [uid, rec])
+def _stamp(page, uid, ms: int = 0) -> str:
+    """A stamp `ms` after the text's decision here (or now, with none): the stage rule compares
+    times, so the engine's stamps are placed just after what the test decided."""
+    from datetime import datetime, timedelta, timezone
+    at = _rec(page, uid).get("at")
+    t0 = datetime.fromisoformat(at.replace("Z", "+00:00")) if at else datetime.now(timezone.utc)
+    return (t0 + timedelta(milliseconds=ms)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _seed(page, worker, uid, stamps=None, draft=None, locale="de"):
+    """What the engine did with a text, put where the engine keeps it -- the storage's pipeline
+    and drafts -- and the page opened again, which reads them with the decisions (WO-25c)."""
+    if stamps is not None:
+        worker.store.pipeline[(locale, uid)] = stamps
+    if draft is not None:
+        worker.store.drafts[(locale, uid)] = draft
+    page.reload()
+    _rows_ready(page)
+    _checked(page, locale)
+
+
+DRAFT = "WO-06 draft from Gemini"
 
 
 def _act(page, uid, act):
     _row(page, uid).locator(f'[data-act="{act}"]').click()
 
 
-def _put_in(page, uid, state):
+def _put_in(page, uid, state, worker=None):
     if state in ("approved", "exported", "live"):
         _act(page, uid, "approve")
     if state == "edited":
@@ -206,15 +229,15 @@ def _put_in(page, uid, state):
     if state in ("queued", "sending"):
         _act(page, uid, "queue")
     if state == "sending":
-        _ingest(page, uid, {"sentAt": ISO})
-    if state == "arrived":
-        _ingest(page, uid, {"arrivedAt": ISO, "text": "WO-06 draft from Gemini"})
+        _seed(page, worker, uid, stamps={"sentAt": _stamp(page, uid, 1)})
+    if state == "arrived":                   # before anything is decided on it: it is to read
+        _seed(page, worker, uid, draft={"text": DRAFT, "arrivedAt": _stamp(page, uid, -60000)})
     if state == "failed":
-        _ingest(page, uid, {"failed": "quota"})
+        _seed(page, worker, uid, stamps={"failed": "quota", "failedAt": _stamp(page, uid, 1)})
     if state == "exported":
-        _ingest(page, uid, {"exportedAt": ISO})
+        _seed(page, worker, uid, stamps={"exportedAt": _stamp(page, uid, 1)})
     if state == "live":
-        _ingest(page, uid, {"liveAt": ISO})
+        _seed(page, worker, uid, stamps={"exportedAt": _stamp(page, uid, 1), "liveAt": _stamp(page, uid, 2)})
 
 
 def _all_rows(page):
@@ -223,7 +246,7 @@ def _all_rows(page):
 
 
 def test_every_state_through_approve_and_request_and_back(browser):
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page, errors = _open(browser, base + "/admin/localization/de/")
         _all_rows(page)
         wrong = []
@@ -233,7 +256,7 @@ def test_every_state_through_approve_and_request_and_back(browser):
         for start, (a1, a2, q1, q2) in TABLE.items():
             for act, first, second in (("approve", a1, a2), ("queue", q1, q2)):
                 uid = pool[k]; k += 1
-                _put_in(page, uid, start)
+                _put_in(page, uid, start, worker)
                 assert C.t(f"status.{start}") in _label(page, uid), (start, _label(page, uid))
                 _act(page, uid, act)
                 if C.t(f"status.{first}") not in _label(page, uid):
@@ -249,10 +272,10 @@ def test_every_state_through_approve_and_request_and_back(browser):
 def test_requesting_again_records_the_draft_that_was_turned_down(browser):
     """R56: ✦ on an arrived draft must tell Gemini what was rejected, or a re-request repeats
     the same prompt and pays twice. Undo puts the draft back."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         uid = _all_rows(page)[0]
-        _put_in(page, uid, "arrived")
+        _put_in(page, uid, "arrived", worker)
         _act(page, uid, "queue")
         rec = _rec(page, uid)
         # A LIST, the last five: the Worker's storage and draft.py both read one, and
@@ -263,17 +286,20 @@ def test_requesting_again_records_the_draft_that_was_turned_down(browser):
         assert record_of(rec)["rejected"] == ["WO-06 draft from Gemini"]
         _act(page, uid, "queue")
         rec = _rec(page, uid)
-        assert rec.get("text") == "WO-06 draft from Gemini" and "rejected" not in rec
+        # the draft is the storage's (WO-25c): off the list, and to read again -- never in the record
+        assert "text" not in rec and "rejected" not in rec, rec
+        assert C.t("status.arrived") in _label(page, uid)
+        assert _row(page, uid).locator(".desk-live").inner_text() == DRAFT
         page.close()
 
 
 def test_a_row_in_flight_ignores_the_keyboard(browser):
     """Desk audit P1-4: the buttons are disabled while a row is being sent, but `a` and `r`
     reached it anyway."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         uid = _all_rows(page)[0]
-        _put_in(page, uid, "sending")
+        _put_in(page, uid, "sending", worker)
         page.evaluate("() => document.activeElement && document.activeElement.blur()")
         page.keyboard.press("j")
         # the proof needs the cursor ON this row, or the test passes for the wrong reason
@@ -709,15 +735,16 @@ def test_all_texts_is_kept_in_the_address(browser):
 
 def test_undo_all_in_a_list_leaves_rows_with_gemini_alone(browser):
     """L5 #7: Undo all in the Requested list took rows out that Gemini was working on."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         page.on("dialog", lambda dlg: dlg.accept())
         u1, u2 = _visible_uids(page, 2)
         _act(page, u1, "queue")
-        _put_in(page, u2, "sending")
+        _put_in(page, u2, "sending", worker)
         page.click("#open-draft")
         page.click("#tray-empty")
-        assert _rec(page, u2).get("tray") == "draft" and _rec(page, u2).get("sentAt"), "a row with Gemini was undone"
+        assert _rec(page, u2).get("tray") == "draft" and C.t("status.sending") in _label(page, u2), \
+            "a row with Gemini was undone"
         assert not _rec(page, u1).get("tray")
         page.close()
 
@@ -823,16 +850,17 @@ def test_a_list_selection_does_not_outlive_another_tab_moving_the_row(browser):
 def test_undo_from_the_requested_list_puts_the_turned_down_draft_back(browser):
     """P2-2: the table's Undo restored the arrived draft; the list's left the row reading
     "new translation" over the website's wording, the draft still marked rejected."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         uid = _visible_uids(page, 1)[0]
-        _put_in(page, uid, "arrived")
+        _put_in(page, uid, "arrived", worker)
         _act(page, uid, "queue")
-        assert _rec(page, uid).get("rejected") == ["WO-06 draft from Gemini"]
+        assert _rec(page, uid).get("rejected") == [DRAFT]
         page.click("#open-draft")
         page.locator("#tray-list .desk-review-item button").first.click()
         rec = _rec(page, uid)
-        assert rec.get("text") == "WO-06 draft from Gemini" and "rejected" not in rec, rec
+        assert "text" not in rec and "rejected" not in rec, rec
+        assert C.t("status.arrived") in _label(page, uid)
         page.close()
 
 
@@ -883,7 +911,7 @@ def test_shortcuts_do_nothing_behind_the_account_dialog(browser):
 
 def test_a_draft_turned_down_before_the_list_shape_is_kept(browser):
     """P3: a `rejected` saved as a string before round 2 was dropped on the next ✦."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new") as (base, _root, worker):
         page = browser.new_page()
         page.goto(base + "/admin/localization/de/")
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
@@ -891,9 +919,9 @@ def test_a_draft_turned_down_before_the_list_shape_is_kept(browser):
         page.evaluate("u => localStorage.setItem('cel-desk-de', JSON.stringify({[u]: {rejected: 'an older draft'}}))", uid)
         page.reload()
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
-        _put_in(page, uid, "arrived")
+        _put_in(page, uid, "arrived", worker)
         _act(page, uid, "queue")
-        assert _rec(page, uid).get("rejected") == ["an older draft", "WO-06 draft from Gemini"]
+        assert _rec(page, uid).get("rejected") == ["an older draft", DRAFT]
         page.close()
 
 
@@ -1559,7 +1587,7 @@ def test_review2_p1_a_an_edit_records_the_website_wording_it_replaced(browser):
         live = _units(root, "de")
         _put_in(page, u, "edited")
         assert _rec(page, u).get("approvedAgainst") == live[u]["tgt"]
-        _put_in(page, v, "arrived")                        # Gemini's draft, approved as it is
+        _put_in(page, v, "arrived", worker)                # Gemini's draft, approved as it is
         _act(page, v, "approve")
         assert _rec(page, v).get("text") and _rec(page, v).get("approvedAgainst") == live[v]["tgt"]
         _as_wait(page, "saved")
@@ -1762,4 +1790,106 @@ def test_an_old_single_string_rejected_still_saves(browser):
         # Sent once. Sending the list while comparing the string resent it until the client cap.
         assert worker.calls.count("desk-write") == 1, worker.calls
         assert not errors, errors
+        page.close()
+
+
+# ── WO-25c (M4): Gemini's drafts, read from the storage ─────────────────────────────────
+
+def test_a_draft_in_the_storage_is_shown_with_the_websites_words_under_it(browser):
+    """The desk reads Gemini's draft with the decisions: the text reads "New translation to
+    read", shows the draft, and under it the website's words it would replace. Nothing of the
+    engine's is kept in this browser's storage, and the console seam that took drafts in is gone."""
+    with desk("new") as (base, root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        _seed(page, worker, uid, stamps={"sentAt": "2026-09-28T09:00:00.000Z"},
+              draft={"text": DRAFT, "arrivedAt": "2026-09-28T10:00:00.000Z"})
+        assert C.t("status.arrived") in _label(page, uid)
+        assert _row(page, uid).locator(".desk-live").inner_text() == DRAFT
+        website = _row(page, uid).locator(".desk-website").inner_text()
+        assert website.startswith(C.t("row.website_now")) and _units(root, "de")[uid]["tgt"].split("<")[0][:20] in website
+        _toast(page, C.tn("toast.arrived", 1))
+        stored = json.loads(page.evaluate("() => localStorage.getItem('cel-desk-de') || '{}'"))
+        assert not any(k in r for r in stored.values() for k in ("arrivedAt", "sentAt", "failed", "exportedAt", "liveAt"))
+        assert page.evaluate("() => window.deskIngest === undefined")
+        assert not errors, errors
+        page.close()
+
+
+def test_an_older_desks_record_keeps_its_decision_and_loses_only_the_engines_stamps(browser):
+    """An older desk kept the engine's stamps in the reviewer's record (deskIngest). They go on
+    load -- the engine's facts are read from the storage -- and the decision stays. The first
+    version of that clean-up ran before its list of stamps existed: the error emptied every
+    decision, and the next save erased this browser's unsent work."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
+        u, v = _visible_uids(page, 2)
+        page.evaluate("""([u, v]) => localStorage.setItem('cel-desk-de', JSON.stringify({
+            [u]: {tray: 'csv', approvedAgainst: 'a', sentAt: '2026-09-28T10:00:00Z', failed: 'quota'},
+            [v]: {tray: 'draft', arrivedAt: '2026-09-28T10:00:00Z', text: 'an old draft'}}))""", [u, v])
+        page.reload()
+        _rows_ready(page)
+        assert _rec(page, u) == {"tray": "csv", "approvedAgainst": "a"}, _rec(page, u)
+        assert _rec(page, v) == {"tray": "draft", "text": "an old draft"}, _rec(page, v)
+        assert C.t("status.approved") in _label(page, u)
+        page.close()
+
+
+def test_approving_a_draft_saves_its_words_against_the_websites(browser):
+    """What the export ships is the decision's text: approving a draft copies its words there,
+    against the website's words it replaces (P1-A), and autosave sends them."""
+    with desk("new") as (base, root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        _put_in(page, uid, "arrived", worker)
+        _act(page, uid, "approve")
+        assert C.t("status.edited") in _label(page, uid)
+        _as_wait(page, "saved")
+        s = _server(worker, uid)
+        assert (s["tray"], s["text"], s["approvedAgainst"]) == ("csv", DRAFT, _units(root, "de")[uid]["tgt"]), s
+        page.close()
+
+
+def test_the_edit_box_opens_on_the_drafts_words(browser):
+    with desk("new") as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        _put_in(page, uid, "arrived", worker)
+        _act(page, uid, "edit")
+        assert _row(page, uid).locator("textarea.desk-edit").input_value() == DRAFT
+        page.close()
+
+
+def test_the_first_load_lands_on_the_new_translations(browser):
+    """Coming back after a batch, the question is "what came back": with no view asked for in the
+    address, the page lands on the new translations once the storage has said which they are."""
+    with desk("new") as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        worker.store.drafts[("de", uid)] = {"text": DRAFT, "arrivedAt": "2026-09-28T10:00:00.000Z"}
+        page.goto(base + "/admin/localization/de/")
+        _rows_ready(page)
+        _checked(page)
+        assert page.locator("#f-state").input_value() == "arrived"
+        assert page.locator(f"{ROWS}:visible").evaluate_all("els => els.map(e => e.dataset.uid)") == [uid]
+        page.close()
+
+
+def test_an_undo_saved_after_the_arrival_dismisses_the_draft(browser):
+    """#1's ruling (b): the storage keeps an undone decision, with its time, and a decision
+    later than the arrival hides the draft (q3). Undone, the draft is to read again only until
+    the undo is saved; a reviewer who wants one back asks Gemini again."""
+    with desk("new") as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        _put_in(page, uid, "arrived", worker)
+        _act(page, uid, "approve")
+        _as_wait(page, "saved")
+        _act(page, uid, "approve")                          # the undo
+        assert C.t("status.arrived") in _label(page, uid)   # until saved
+        _as_wait(page, "saved")
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        assert C.t("status.todo") in _label(page, uid)
         page.close()

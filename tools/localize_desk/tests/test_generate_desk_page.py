@@ -496,8 +496,9 @@ class TestFourthAudit:
         stamp = page.split("function stampApproval(uid, tr, approving)")[1].split("\n    }\n")[0]
         assert "liveText[uid]" in stamp and ".desk-live" not in stamp
         assert "liveText[u.id] = u.tgt;" in page
-        # and the row shows the website's wording again once the edit is gone
-        assert "var shown = s.text != null ? s.text : liveText[uid];" in page
+        # and the row shows the website's wording again once the edit is gone (or the draft's,
+        # read from the storage, WO-25c)
+        assert "var shown = v.text != null ? v.text : liveText[uid];" in page
 
 
 def test_index_links_into_a_list_in_reviewer_words():
@@ -597,3 +598,47 @@ class TestAutosave:
 
     def test_one_sender_across_the_tabs_of_a_browser(self, page):
         assert "navigator.locks.request('cel-desk-save'" in page
+
+
+
+def test_the_desk_reads_a_text_from_the_three_tables_as_the_engine_does():
+    """WO-25c: merged() and shapeOf() are storage.merged and desk-summary's shape; stageOf over
+    the shape is the stage. The monorepo's stage_vectors.py holds them to all 1,154 shared
+    cases; these are the rulings' own, here so a desk change is red before it leaves CEL."""
+    import shutil
+    import subprocess
+    if not shutil.which("node"):
+        pytest.skip("node not installed")
+    js = G._STAGE_JS + """
+    const T1 = '2026-09-28T11:00:00.000Z', T2 = '2026-09-28T12:00:00.000Z', T3 = '2026-09-28T13:00:00.000Z';
+    const cases = [
+      // a draft later than the decision is to read; earlier, it is not (q3)
+      [{tray: 'draft', at: T1}, null, {text: 'G', arrivedAt: T2}, 'arrived'],
+      [{tray: 'draft', at: T3}, null, {text: 'G', arrivedAt: T2}, 'queued'],
+      // no decision, or no time to read: the draft wins
+      [null, null, {text: 'G', arrivedAt: T2}, 'arrived'],
+      [{tray: 'csv'}, null, {text: 'G', arrivedAt: T2}, 'arrived'],
+      // an arrival that cannot be read never wins
+      [{tray: 'csv', at: T1}, null, {text: 'G', arrivedAt: 'not a time'}, 'approved'],
+      // a failure stands until a later send or arrival -- a decision does not end it (ruling (b))
+      [{tray: 'csv', at: T3}, {failed: 'quota', failedAt: T2}, null, 'failed'],
+      // a stamp counts only for the wording it was stamped for (ruling 6)
+      [{tray: 'csv', text: 'x', at: T3}, {exportedAt: T1, liveAt: T2}, null, 'edited'],
+      [{tray: 'csv', at: T1}, {exportedAt: T2, liveAt: T3}, null, 'live'],
+      [{tray: 'csv', at: T1}, {exportedAt: T3, liveAt: T2}, null, 'exported'],
+      [{tray: 'csv'}, {exportedAt: T2, liveAt: T3}, null, 'live'],
+      // an arrival the engine stamped (no draft row) counts only after the decision (q3)
+      [{at: T3}, {arrivedAt: T2}, null, 'todo'],
+      [{at: T1}, {arrivedAt: T2}, null, 'arrived'],
+      // an undo saved after the arrival hides the draft (ruling (b))
+      [{at: T3}, null, {text: 'G', arrivedAt: T2}, 'todo'],
+      [{}, null, {text: 'G', arrivedAt: T2}, 'arrived'],
+    ];
+    const bad = cases.filter(([d, p, g, want]) => stageOf(shapeOf(merged(d, p, g))) !== want)
+      .map(c => JSON.stringify(c) + ' -> ' + stageOf(shapeOf(merged(c[0], c[1], c[2]))));
+    const m = merged({tray: 'csv', text: 'x', at: T1}, {sentAt: T1, runId: 'r'}, {text: 'G', arrivedAt: T2});
+    if (m.text !== 'G' || m.tray !== undefined || m.arrivedAt !== T2 || m.decidedAt !== T1 || m.runId !== 'r') bad.push('merged ' + JSON.stringify(m));
+    console.log(JSON.stringify(bad));
+    """
+    out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True)
+    assert out.stdout.strip() == "[]", out.stdout
