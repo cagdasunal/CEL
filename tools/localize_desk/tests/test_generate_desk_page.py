@@ -142,9 +142,15 @@ class TestRenderedPage:
         safe because nothing is sent until a tray is explicitly submitted, and a
         stray double-click is visible: the row's colour wash and the filled icon
         both go.
+
+        Rewritten 2026-09-28 (runbook WO-06): the undo now returns to what the row was
+        BEFORE the decision (`was`), not always to "not reviewed" -- ✦ then ✦ on an
+        approved row had left it "Not reviewed yet" with the edit hidden inside. This
+        pins the mechanism; the behaviour itself, every state x action, is walked in a
+        real browser by tests/browser/test_desk_browser.py.
         """
-        assert "cur === 'csv' ? null : 'csv'" in page
-        assert "cur === 'draft' ? null : 'draft'" in page
+        assert "var undoing = (s.tray || null) === tray;" in page
+        assert "var target = undoing ? (s.was || null) : tray;" in page
         # Neither control is ever disabled -- the active one IS the way back.
         assert "bApprove.disabled = false;" in page
         assert "bQueue.disabled = false;" in page

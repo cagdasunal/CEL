@@ -114,6 +114,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `count.line` | Showing {shown} of {total} texts | Under the filters |
 | `count.failed` | Couldn't load the texts ({error}). | Under the filters, when loading fails |
 | `table.empty` | No texts match these filters. | Instead of the table |
+| `table.empty.reset` | Show all texts | Button under that line: clears Page, Show and Search |
 
 ## One language — the table
 

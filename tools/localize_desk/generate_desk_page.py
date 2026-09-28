@@ -543,7 +543,10 @@ def render_locale(code: str, units: list[dict]) -> str:
     # Rows are built in the browser from units.json, not baked in here.
     parts.append('          <tbody id="desk-body"></tbody>')
     parts.append("        </table>")
-    parts.append(f'        <p class="empty" id="no-rows" hidden>{escape(t("table.empty"))}</p>')
+    parts.append('        <div class="empty" id="no-rows" hidden>')
+    parts.append(f'          <p>{escape(t("table.empty"))}</p>')
+    parts.append(f'          <button type="button" class="desk-btn" id="no-rows-reset">{escape(t("table.empty.reset"))}</button>')
+    parts.append('        </div>')
     parts.append("      </div>")
     parts.append("    </main>")
 
@@ -1061,11 +1064,18 @@ __STAGE_JS__
     // just done. Cleared whenever you change the view yourself.
     var justActed = Object.create(null);
 
-    function matches(tr) {
-      if (justActed[tr.getAttribute('data-uid')]) return true;
-      var s = state[tr.getAttribute('data-uid')] || {};
+    // The Page and Search filters: what the Show counts are counted over, too.
+    function inScope(tr) {
       var p = fPage.value;
       if (p && (' ' + tr.getAttribute('data-pages') + ' ').indexOf(' ' + p + ' ') === -1) return false;
+      var q = fQ.value.trim().toLowerCase();
+      if (q && tr.getAttribute('data-q').indexOf(q) === -1) return false;
+      return true;
+    }
+
+    function matches(tr) {
+      if (justActed[tr.getAttribute('data-uid')]) return true;
+      if (!inScope(tr)) return false;
       var want = fState.value;
       var st = stage(tr.getAttribute('data-uid'));
       // Rows already on the website never appear in the work views. That is the
@@ -1082,19 +1092,19 @@ __STAGE_JS__
       if (want === 'draft' && st !== 'queued') return false;
       if (want === 'sending' && st !== 'sending') return false;
       if (want === 'failed' && st !== 'failed') return false;
-      var q = fQ.value.trim().toLowerCase();
-      if (q && tr.getAttribute('data-q').indexOf(q) === -1) return false;
       return true;
     }
 
     function shown() { return rows.filter(function (tr) { return !tr.hidden; }); }
 
-    // Live counts on every option. An empty group is disabled rather than hidden, so
-    // the list does not reshuffle under the cursor between renders.
+    // Live counts on every option, over the rows the Page and Search filters leave --
+    // an option once promised 38 rows and showed none (audit P1-9b). An empty group is
+    // disabled rather than hidden, so the list does not reshuffle under the cursor.
     function paintFilterCounts() {
       var tally = { arrived: 0, check: 0, todo: 0, csv: 0, edited: 0,
                     draft: 0, sending: 0, failed: 0, exported: 0, live: 0 };
-      rows.forEach(function (tr) {
+      var scoped = rows.filter(inScope);
+      scoped.forEach(function (tr) {
         var st = stage(tr.getAttribute('data-uid'));
         if (st === 'arrived') tally.arrived++;
         else if (st === 'todo') { tally.todo++; if (tr.hasAttribute('data-why')) tally.check++; }
@@ -1108,7 +1118,7 @@ __STAGE_JS__
       });
       Array.prototype.forEach.call(fState.options, function (opt) {
         var key = opt.getAttribute('data-copy');
-        if (opt.value === '') { opt.textContent = t(key, { n: rows.length }); return; }
+        if (opt.value === '') { opt.textContent = t(key, { n: scoped.length }); return; }
         var n = tally[opt.value] || 0;
         opt.textContent = t(key, { n: n });
         // Never disable the option currently selected, or the select goes blank.
@@ -1134,29 +1144,54 @@ __STAGE_JS__
     }
 
     // ── Actions ────────────────────────────────────────────────────────
+    // Every decision goes through here -- a click, a key, a bulk action -- so the row
+    // state table (process doc §1) holds for all of them. Three rules the table needed:
+    //  * A decision that replaces another remembers it (`was`), so clicking the active
+    //    choice again returns EXACTLY there: ✦ then ✦ on an approved row is approved
+    //    again, not "not reviewed" with the reviewer's edit hidden inside it.
+    //  * ✦ on an arrived draft records that draft as `rejected` -- the batch sends it to
+    //    Gemini as what not to repeat; without it a re-request paid twice for the same
+    //    prompt (R56). Undoing puts the draft back.
+    //  * `was` stays in this browser (it is not in SAVE_FIELDS): undo is a convenience of
+    //    the session that made the change, not a fact the engine needs.
+    function decide(uid, tr, tray, why, restoring) {
+      var s = rec(uid);
+      var from = s.tray || null;
+      if (from === tray) return false;
+      if (tray === 'draft' && stage(uid) === 'arrived' && s.text != null) {
+        s.rejected = s.text;
+        delete s.text;
+      }
+      if (restoring && from === 'draft' && s.rejected != null && s.arrivedAt && s.text == null) {
+        s.text = s.rejected;
+        delete s.rejected;
+      }
+      if (!restoring && from && tray) s.was = from; else delete s.was;
+      setTray(uid, tray, why);
+      if (from === 'csv') stampApproval(uid, tr, false);
+      if (tray === 'csv') stampApproval(uid, tr, true);
+      return true;
+    }
+
     function apply(tr, what) {
       var uid = tr.getAttribute('data-uid');
-      var cur = (state[uid] || {}).tray;
-      // Clicking the decision a row already carries UNDOES it. The earlier add-only
-      // rule made a mis-click harmless but left no way back except the tray screen,
-      // which is not where anyone looks. Undoing costs nothing -- nothing is sent
-      // until a tray is explicitly submitted -- and a stray double-click is now
-      // visible rather than silent, because the row loses its colour wash and the
-      // icon stops being filled.
-      justActed[uid] = 1;
-      if (what === 'approve') {
-        if (setTray(uid, cur === 'csv' ? null : 'csv',
-                    cur === 'csv' ? 'un-approve' : 'approve')) {
-          stampApproval(uid, tr, cur !== 'csv');
-          persist(); paint(tr);
-        }
-      } else if (what === 'queue') {
-        if (setTray(uid, cur === 'draft' ? null : 'draft',
-                    cur === 'draft' ? 'un-queue' : 'queue')) { persist(); paint(tr); }
-      } else if (what === 'edit') {
+      if (what === 'edit') {
         toggleEditor(tr, tr.querySelector('.desk-editor').hidden);
         return;
       }
+      // A row being sent to Gemini is not the reviewer's to change until it comes back.
+      // The buttons were already disabled; the keyboard reached it anyway (audit P1-4).
+      if (stage(uid) === 'sending') return;
+      var tray = what === 'approve' ? 'csv' : what === 'queue' ? 'draft' : null;
+      if (!tray) return;
+      // Clicking the decision a row already carries undoes it -- back to what it was
+      // before, never further (ruling #16).
+      justActed[uid] = 1;
+      var s = rec(uid);
+      var undoing = (s.tray || null) === tray;
+      var target = undoing ? (s.was || null) : tray;
+      var why = undoing ? (what === 'approve' ? 'un-approve' : 'un-queue') : what;
+      if (decide(uid, tr, target, why, undoing)) { persist(); paint(tr); }
     }
 
     body.addEventListener('click', function (ev) {
@@ -1330,17 +1365,17 @@ __STAGE_JS__
       }
       var changed = 0;
       ids.forEach(function (uid) {
-        if (!setTray(uid, tray, why)) return;
+        var row = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
+        if (!decide(uid, row, tray, why, false)) return;
         changed++;
-        if (tray === 'csv') {
-          var row = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
-          if (row) stampApproval(uid, row, true);
-        }
+        // Rows acted on hold their place until the reviewer changes the view (ruling
+        // #17) -- a bulk action is an action, not a change of view. Clearing the view
+        // here emptied "Flagged" on a select-all + Approve (audit P1-5).
+        justActed[uid] = 1;
       });
       note(why + ':bulk', null, String(ids.length), String(changed));
       picked = Object.create(null);
       lastPicked = -1;
-      justActed = Object.create(null);   // a deliberate sweep may clear the view
       persist();
       rows.forEach(paint);
       paintBar(); applyFilters();
@@ -2076,6 +2111,11 @@ __STAGE_JS__
     }
     [fPage, fState].forEach(function (el) { el.addEventListener('change', resetView); });
     fQ.addEventListener('input', resetView);
+    // An emptied view offers the way back instead of a dead end.
+    document.getElementById('no-rows-reset').addEventListener('click', function () {
+      fPage.value = ''; fState.value = ''; fQ.value = '';
+      resetView();
+    });
 
     // ── Boot ───────────────────────────────────────────────────────────
     fetch('units.json', { cache: 'no-cache' })

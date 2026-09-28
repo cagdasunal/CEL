@@ -179,3 +179,169 @@ def test_record_the_timings(browser):
         print(json.dumps({"first_view_s": round(first, 2), "switch_s": round(switch, 2),
                           "elements": nodes, "cpu_slowdown": 4}))
         page.close()
+
+
+# ── WO-06: the row-state table (contract §1, "Every state × every action") ──────────
+# Walks each state through ✓ and ✦, each clicked twice: the second click is the undo, and
+# it must land exactly where the table says (guard G11). States the desk cannot reach by
+# clicking (sending, arrived, failed, exported, live) are set the way the engine will set
+# them, through `deskIngest`.
+
+ISO = "2026-09-28T10:00:00Z"
+# from-state: (after ✓, after ✓ again, after ✦, after ✦ again)
+TABLE = {
+    "todo":     ("approved", "todo",     "queued", "todo"),
+    "approved": ("todo",     "approved", "queued", "approved"),
+    "edited":   ("todo",     "edited",   "queued", "edited"),
+    "queued":   ("approved", "queued",   "todo",   "queued"),
+    "arrived":  ("edited",   "arrived",  "queued", "arrived"),
+    "failed":   ("approved", "todo",     "queued", "todo"),     # a decision ends a failure
+    "exported": ("todo",     "exported", "queued", "exported"),
+    "live":     ("live",     "live",     "queued", "live"),
+}
+
+
+def _row(page, uid):
+    return page.locator(f'tr[data-uid="{uid}"]')
+
+
+def _label(page, uid) -> str:
+    return _row(page, uid).locator(".desk-state").inner_text()
+
+
+def _rec(page, uid) -> dict:
+    return page.evaluate("u => (window.deskState()[u] || {})", uid)
+
+
+def _ingest(page, uid, rec):
+    page.evaluate("([u, r]) => window.deskIngest({schema: 'cel-localization-desk/1', locale: 'de', "
+                  "decisions: {[u]: r}})", [uid, rec])
+
+
+def _act(page, uid, act):
+    _row(page, uid).locator(f'[data-act="{act}"]').click()
+
+
+def _put_in(page, uid, state):
+    if state in ("approved", "exported", "live"):
+        _act(page, uid, "approve")
+    if state == "edited":
+        _act(page, uid, "edit")
+        _row(page, uid).locator("textarea.desk-edit").fill("WO-06 wording of my own")
+        _row(page, uid).locator('[data-edit="save"]').click()
+    if state in ("queued", "sending"):
+        _act(page, uid, "queue")
+    if state == "sending":
+        _ingest(page, uid, {"sentAt": ISO})
+    if state == "arrived":
+        _ingest(page, uid, {"arrivedAt": ISO, "text": "WO-06 draft from Gemini"})
+    if state == "failed":
+        _ingest(page, uid, {"failed": "quota"})
+    if state == "exported":
+        _ingest(page, uid, {"exportedAt": ISO})
+    if state == "live":
+        _ingest(page, uid, {"liveAt": ISO})
+
+
+def _all_rows(page):
+    page.select_option("#f-state", "")
+    return [page.locator(ROWS).nth(i).get_attribute("data-uid") for i in range(12)]
+
+
+def test_every_state_through_approve_and_request_and_back(browser):
+    with desk("new") as (base, _root, _worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        _all_rows(page)
+        wrong = []
+        # one fresh row per (state, action) so no case inherits another's history
+        pool = [page.locator(ROWS).nth(i).get_attribute("data-uid") for i in range(40)]
+        k = 0
+        for start, (a1, a2, q1, q2) in TABLE.items():
+            for act, first, second in (("approve", a1, a2), ("queue", q1, q2)):
+                uid = pool[k]; k += 1
+                _put_in(page, uid, start)
+                assert C.t(f"status.{start}") in _label(page, uid), (start, _label(page, uid))
+                _act(page, uid, act)
+                if C.t(f"status.{first}") not in _label(page, uid):
+                    wrong.append(f"{start} --{act}--> {_label(page, uid)!r}, table says {first}")
+                _act(page, uid, act)
+                if C.t(f"status.{second}") not in _label(page, uid):
+                    wrong.append(f"{start} --{act} twice--> {_label(page, uid)!r}, table says {second}")
+        assert not wrong, "\n".join(wrong)
+        assert not errors, errors
+        page.close()
+
+
+def test_requesting_again_records_the_draft_that_was_turned_down(browser):
+    """R56: ✦ on an arrived draft must tell Gemini what was rejected, or a re-request repeats
+    the same prompt and pays twice. Undo puts the draft back."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        uid = _all_rows(page)[0]
+        _put_in(page, uid, "arrived")
+        _act(page, uid, "queue")
+        rec = _rec(page, uid)
+        assert rec.get("rejected") == "WO-06 draft from Gemini" and "text" not in rec
+        _act(page, uid, "queue")
+        rec = _rec(page, uid)
+        assert rec.get("text") == "WO-06 draft from Gemini" and "rejected" not in rec
+        page.close()
+
+
+def test_a_row_in_flight_ignores_the_keyboard(browser):
+    """Desk audit P1-4: the buttons are disabled while a row is being sent, but `a` and `r`
+    reached it anyway."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        uid = _all_rows(page)[0]
+        _put_in(page, uid, "sending")
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")
+        page.keyboard.press("j")
+        # the proof needs the cursor ON this row, or the test passes for the wrong reason
+        assert "is-cursor" in (_row(page, uid).get_attribute("class") or "")
+        # "sending" outranks the tray in the label, so read the record after EACH key: the
+        # request in flight must stay a request (a then r would cancel out and hide a bug).
+        page.keyboard.press("a")
+        assert _rec(page, uid).get("tray") == "draft", "a changed a row that is being sent"
+        page.keyboard.press("r")
+        assert _rec(page, uid).get("tray") == "draft", "r changed a row that is being sent"
+        assert C.t("status.sending") in _label(page, uid)
+        page.close()
+
+
+def test_rows_hold_their_place_after_a_bulk_action(browser):
+    """Ruling #17, desk audit P1-5: approving the whole flagged view emptied it."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        visible = page.locator(f"{ROWS}:visible")
+        n = visible.count()
+        assert n > 2
+        for i in range(3):
+            visible.nth(i).locator("[data-pick]").check()
+        page.click("#bulk-approve")
+        assert page.locator(f"{ROWS}:visible").count() == n
+        page.close()
+
+
+def test_the_show_counts_respect_the_page_filter(browser):
+    """Desk audit P1-9b: an option could promise 38 rows and show none."""
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.select_option("#f-page", "vs-toronto")
+        values = page.eval_on_selector_all("#f-state option", "os => os.map(o => o.value)")
+        for v in values:
+            page.select_option("#f-state", v)
+            shown = page.locator(f"{ROWS}:visible").count()
+            label = page.eval_on_selector(f'#f-state option[value="{v}"]', "o => o.textContent")
+            assert f"({shown})" in label, (v, label, shown)
+        page.close()
+
+
+def test_an_empty_view_offers_a_way_back(browser):
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.fill("#f-q", "zzqq-nothing-matches-this")
+        page.locator("#no-rows").wait_for(state="visible")
+        page.click("#no-rows-reset")
+        assert page.locator(f"{ROWS}:visible").count() == 823
+        page.close()
