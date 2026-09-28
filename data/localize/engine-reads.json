@@ -1,0 +1,30 @@
+{
+  "schema": "cel-localization-desk/engine-reads/1",
+  "note": "The desk<->engine field contract. The monorepo copy is the source; CEL carries an identical copy (check_dashboard_parity). Read by tools/localize/test_desk_contract.py (monorepo) and tools/localize_desk/tests/test_engine_contract.py (CEL). Change a gap in the same commit as the work order that closes it.",
+  "reads": {
+    "export.py": ["tray", "liveAt", "approvedAgainst", "text", "by"],
+    "reconcile.py": ["tray", "text", "approvedAgainst", "exportedAt", "importedAt"],
+    "batch.py": ["why", "rejected"]
+  },
+  "written_by": {
+    "tray": "desk",
+    "text": "desk",
+    "by": "desk",
+    "approvedAgainst": "desk",
+    "rejected": "desk",
+    "why": "recommendation",
+    "exportedAt": "engine",
+    "liveAt": "engine",
+    "importedAt": "engine"
+  },
+  "known_gaps": {
+    "importedAt": "WO-26: nothing records that an import happened (import confirmation)",
+    "why": "WO-14: the batch's reason comes from the recommendation, not a decision; the send wiring joins it"
+  },
+  "no_writer_yet": {
+    "rejected": "WO-06: the desk never records the draft a reviewer turned down, so a re-request repeats the same prompt",
+    "exportedAt": "WO-21: the engine's stamp write-back",
+    "liveAt": "WO-21: the engine's stamp write-back",
+    "importedAt": "WO-26: import confirmation"
+  }
+}
