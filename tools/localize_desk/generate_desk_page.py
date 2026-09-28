@@ -904,7 +904,7 @@ __HELPERS__
         var tdState = document.createElement('td');
         tdState.className = 'desk-col-state';
         var badge = document.createElement('span');
-        badge.className = 'desk-state badge-partial';
+        badge.className = 'desk-state desk-badge-todo';
         badge.textContent = t('status.todo');
         tdState.appendChild(badge);
 
@@ -955,12 +955,15 @@ __STAGE_JS__
     function stage(uid) { return stageOf(state[uid]); }
 
     var STAGE_BADGE = {
-      todo:     [t('status.todo'), 'badge-partial'],
-      arrived:  [t('status.arrived'), 'badge-proposed'],
+      // One colour per meaning (role table, process contract §8 U1): not reviewed =
+      // neutral outline, waiting on the machine = grey, look at this = warm, settled =
+      // green, went wrong = red. Indigo is never a state (ruling #53).
+      todo:     [t('status.todo'), 'desk-badge-todo'],
+      arrived:  [t('status.arrived'), 'desk-badge-look'],
       approved: [t('status.approved'), 'badge-ok'],
       edited:   [t('status.edited'), 'badge-ok'],
-      queued:   [t('status.queued'), 'badge-failed'],
-      sending:  [t('status.sending'), 'badge-partial'],
+      queued:   [t('status.queued'), 'desk-badge-wait'],
+      sending:  [t('status.sending'), 'desk-badge-wait'],
       failed:   [t('status.failed'), 'badge-failed'],
       exported: [t('status.exported'), 'badge-ok'],
       live:     [t('status.live'), 'badge-ok']

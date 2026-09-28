@@ -65,6 +65,11 @@ SHARED_CSS = """
     --stripe: rgba(55,51,44,0.04);
     --panel: rgba(55,51,44,0.03);
     --accent: #5d60ee;
+    /* Indigo is the button colour (ruling #53): text on it, and its pressed shade. */
+    --on-accent: #fff;
+    --accent-strong: #4e51be;
+    /* The one neutral row tint: a selection, and nothing else. */
+    --selected: rgba(55,51,44,0.09);
     --accent-warm: #e78b10;
     --surface: #F1EAD8;
     /* Elevated surface: anything that floats over the page with NO scrim behind
@@ -1125,7 +1130,7 @@ DESK_CSS = """
   .desk-locale-open::after { content: ""; position: absolute; inset: 0; border-radius: var(--radius); }
   .desk-locale-open:focus-visible { outline: 0; }
   .desk-locale-open:focus-visible::after { box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
-  .desk-locale-card:hover .desk-locale-name { color: var(--accent); }
+  .desk-locale-card:hover .desk-locale-name { text-decoration: underline; text-underline-offset: 3px; }
   .desk-locale-card .desk-tray, .desk-locale-discard { position: relative; z-index: 1; }
   .desk-locale-cta { display: inline-flex; margin-top: 14px; pointer-events: none; }
   .desk-locale-card:hover .desk-locale-cta { border-color: var(--fg); }
@@ -1134,7 +1139,7 @@ DESK_CSS = """
   .desk-meter { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
   /* An empty bar before any decision says nothing; the bar appears with the first one. */
   .desk-locale-card:not(.is-started) .desk-meter { display: none; }
-  .desk-meter-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .desk-meter-fill { height: 100%; background: var(--ok); border-radius: 999px; }
   .desk-locale-stat { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
 
   /* Toolbar */
@@ -1161,8 +1166,8 @@ DESK_CSS = """
   .desk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   /* The ONE filled pill on the page, reserved for the single action that leaves the
      browser. Four of these were visible at once, which is the same as none. */
-  .desk-btn.is-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .desk-btn.is-primary:hover:not(:disabled) { background: #4e51be; }
+  .desk-btn.is-primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .desk-btn.is-primary:hover:not(:disabled) { background: var(--accent-strong); }
   /* Second-rank: the main action of a local group, marked by weight and a firm edge
      rather than a fill, so it cannot compete with the page's primary. */
   .desk-btn.is-strong { border-color: var(--fg); font-weight: 700; }
@@ -1214,10 +1219,9 @@ DESK_CSS = """
   }
   .desk-loc:hover { background: var(--stripe); border-color: var(--border-strong); }
   .desk-loc:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
-  .desk-loc.is-active {
-    background: var(--accent); border-color: var(--accent);
-    color: #fff; font-weight: 600;
-  }
+  .desk-loc.is-active { border-color: var(--fg); color: var(--fg); font-weight: 600; }
+  /* A tab, not a button (ruling #53): no fill -- dark border, bold, the name underlined. */
+  .desk-loc.is-active .desk-loc-name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
   .desk-loc-flag { font-size: 15px; line-height: 1; }
   .desk-loc-name { white-space: nowrap; }
   .desk-loc-count {
@@ -1226,7 +1230,6 @@ DESK_CSS = """
     background: var(--border); color: var(--fg);
   }
   .desk-loc-count[hidden] { display: none; }
-  .desk-loc.is-active .desk-loc-count { background: rgba(255,255,255,0.25); color: #fff; }
   /* Flag alone for the languages you are not in, flag + name + count for the one you
      are. This started as a narrow-screen fallback; the operator preferred it and asked
      for it everywhere, and they are right -- eight repeated language names is a list to
@@ -1250,7 +1253,6 @@ DESK_CSS = """
        red    -> it went wrong
        grey   -> in flight, nothing to do yet */
   .desk-row.is-approved > td { background: rgba(29,107,58,0.06); }
-  .desk-row.is-queued > td   { background: rgba(93,96,238,0.06); }
   .desk-tgt { color: var(--fg); }
   .desk-col-state { width: 1%; white-space: nowrap; }
   .desk-col-act { width: 1%; }
@@ -1308,14 +1310,13 @@ DESK_CSS = """
   .desk-row.is-cursor > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 
   .desk-row.is-arrived > td { background: var(--notice-bg); }
-  .desk-row.is-sending > td { background: var(--stripe); }
   .desk-row.is-failed > td  { background: rgba(160,38,36,0.06); }
 
   .desk-row.is-picked > td,
   .desk-row.is-picked.is-approved > td,
   .desk-row.is-picked.is-queued > td,
   .desk-row.is-picked.is-arrived > td,
-  .desk-row.is-picked.is-failed > td { background: rgba(93,96,238,0.13); }
+  .desk-row.is-picked.is-failed > td { background: var(--selected); }
 
   /* Sticky action bar. Two zones: the selection you are acting on now (top, only
      while something is selected) and the trays you have filled (bottom, whenever
@@ -1349,10 +1350,16 @@ DESK_CSS = """
     border: 1px solid transparent;
   }
   .desk-tray-count { font-variant-numeric: tabular-nums; }
-  .desk-tray-draft { background: rgba(166,95,31,0.15); color: var(--warn); border-color: var(--notice-border); }
+  .desk-tray-draft { background: var(--stripe); color: var(--muted); border-color: var(--border); }
+  /* Status labels (role table, process contract §8 U1). The shared .badge-ok/.badge-failed
+     keep green and red; these three are the desk's own, so other dashboard pages keep
+     .badge-partial's meaning. */
+  .desk-badge-todo, .desk-badge-wait, .desk-badge-look { display: inline-block; border-radius: 3px; padding: 1px 6px; font-size: var(--fs-xs); font-weight: 600; }
+  .desk-badge-todo { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+  .desk-badge-wait { background: var(--stripe); color: var(--muted); }
+  .desk-badge-look { background: var(--notice-bg); color: var(--notice-fg); }
   .desk-tray-csv   { background: rgba(29,107,58,0.13);  color: var(--ok);   border-color: rgba(29,107,58,0.3); }
-  .desk-tray-proposed { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
-  .desk-tray-arrived { background: rgba(93,96,238,0.14); color: var(--accent); border-color: rgba(93,96,238,0.32); }
+  .desk-tray-arrived { background: var(--notice-bg); color: var(--notice-fg); border-color: var(--notice-border); }
   .desk-tray-sending { background: var(--stripe); color: var(--muted); }
   .desk-tray-failed  { background: rgba(160,38,36,0.10); color: var(--err); border-color: rgba(160,38,36,0.28); }
   a.desk-tray:hover { border-color: currentColor; }
