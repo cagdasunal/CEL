@@ -1280,6 +1280,9 @@
   }
   .desk-tray-count { font-variant-numeric: tabular-nums; }
   .desk-tray-draft { background: var(--stripe); color: var(--muted); border-color: var(--border); }
+  /* The one tooltip (ruling #51): dark ink on the elevated cream, never a colour of its own. */
+  .desk-tip { position: fixed; z-index: 2000; max-width: 280px; padding: 5px 9px; border-radius: var(--radius-sm); background: var(--fg); color: var(--elevated); font-size: var(--fs-sm); line-height: 1.35; pointer-events: none; box-shadow: 0 4px 14px rgba(55,51,44,0.22); }
+  .desk-tip[hidden] { display: none; }
   /* Status labels (role table, process contract §8 U1). The shared .badge-ok/.badge-failed
      keep green and red; these three are the desk's own, so other dashboard pages keep
      .badge-partial's meaning. */

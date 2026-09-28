@@ -345,3 +345,36 @@ def test_an_empty_view_offers_a_way_back(browser):
         page.click("#no-rows-reset")
         assert page.locator(f"{ROWS}:visible").count() == 823
         page.close()
+
+
+# ── WO-08: tooltips (ruling #51) ─────────────────────────────────────────────────────
+
+def test_a_tooltip_shows_quickly_on_hover_at_once_on_focus_and_closes_on_escape(browser):
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        btn = page.locator(f'{ROWS}:visible [data-act="approve"]').first
+        label = btn.get_attribute("aria-label")
+        tip = page.locator(".desk-tip")
+        btn.hover()
+        page.wait_for_timeout(150)
+        assert tip.is_visible() and tip.inner_text() == label
+        page.mouse.move(1, 1)
+        assert not tip.is_visible()
+        btn.focus()
+        page.keyboard.press("Shift+Tab")
+        page.keyboard.press("Tab")        # keyboard focus, so :focus-visible applies
+        assert tip.is_visible()
+        page.keyboard.press("Escape")
+        assert not tip.is_visible()
+        page.close()
+
+
+def test_the_tooltip_says_the_state_after_a_click(browser):
+    with desk("new") as (base, _root, _worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        btn = page.locator(f'{ROWS}:visible [data-act="approve"]').first
+        btn.hover()
+        btn.click()
+        page.wait_for_timeout(150)
+        assert page.locator(".desk-tip").inner_text() == C.t("action.approve.on")
+        page.close()

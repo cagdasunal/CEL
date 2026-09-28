@@ -240,7 +240,7 @@ def _review_modal() -> str:
           <p class="desk-review-sub" id="tray-summary"></p>
         </div>
         <button type="button" class="desk-icon-btn desk-review-x" id="tray-close"
-                title="{close}" aria-label="{close}">&#215;</button>
+                data-tip="{close}" aria-label="{close}">&#215;</button>
       </header>
       <div class="desk-review-toolbar">
         <label class="desk-review-all">
@@ -352,6 +352,69 @@ _STAGE_JS = """\
 """
 
 
+# One tooltip for every control on the desk and the index (ruling #51, runbook WO-08).
+# The browser's own `title` tooltip waited about a second, never showed on keyboard focus
+# or touch, and could not say a control's state promptly. This one: about 0.1 s after
+# hover, at once on keyboard focus, on a long press on touch; Esc closes it; it flips
+# below near the top of the screen and never runs off an edge. The text is the control's
+# `data-tip`, which comes from COPY.md; `aria-label` still carries it for screen readers.
+_TIP_JS = """
+    (function () {
+      var tip = document.createElement('div');
+      tip.className = 'desk-tip';
+      tip.setAttribute('role', 'tooltip');
+      tip.hidden = true;
+      document.body.appendChild(tip);
+      var owner = null, timer = null;
+      function hide() { clearTimeout(timer); timer = null; owner = null; tip.hidden = true; }
+      function show(el) {
+        var text = el.getAttribute('data-tip');
+        if (!text) { hide(); return; }
+        owner = el;
+        tip.textContent = text;
+        tip.hidden = false;
+        var r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8;
+        var top = r.top - h - gap;
+        if (top < gap) top = r.bottom + gap;
+        var left = Math.min(Math.max(gap, r.left + r.width / 2 - w / 2), window.innerWidth - w - gap);
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }
+      function later(el, ms) { clearTimeout(timer); timer = setTimeout(function () { show(el); }, ms); }
+      document.addEventListener('pointerover', function (ev) {
+        if (ev.pointerType === 'touch') return;
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el !== owner) later(el, 100);
+      });
+      document.addEventListener('pointerout', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && (!ev.relatedTarget || !el.contains(ev.relatedTarget))) hide();
+      });
+      document.addEventListener('focusin', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el.matches(':focus-visible')) show(el);
+      });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(); });
+      window.addEventListener('scroll', hide, true);
+      document.addEventListener('pointerdown', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (ev.pointerType === 'touch' && el) later(el, 500);
+      });
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function (ev) {
+          if (ev.pointerType === 'touch') { clearTimeout(timer); if (!tip.hidden) setTimeout(hide, 1500); }
+        });
+      });
+      // A click changes what the control says ("Approved -- click to undo"): say it now.
+      document.addEventListener('click', function () {
+        var el = owner;
+        if (el) setTimeout(function () { if (owner === el) show(el); }, 0);
+      });
+    })();
+"""
+
+
 def _worth_js(units: list[dict]) -> str:
     """`{locale: [unit ids worth a look]}` for every locale, as a JS literal."""
     return json.dumps({c: worth_a_look(c, units) for c, *_ in LOCALES},
@@ -436,7 +499,7 @@ __STAGE_JS__
         undo.type = 'button';
         undo.className = 'desk-btn desk-locale-discard';
         undo.textContent = t('index.discard.button', { n: unsaved });
-        undo.title = t('index.discard.hint');
+        undo.setAttribute('data-tip', t('index.discard.hint'));
         undo.addEventListener('click', function () {
           var nm = card.getAttribute('data-name') || code;
           if (!window.confirm(tn('index.discard.confirm', unsaved, { language: nm }))) return;
@@ -453,7 +516,7 @@ __STAGE_JS__
   })();
   </script>
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
-        "__HELPERS__", JS_HELPERS).replace("__COPY__", js_table())
+        "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
 
 
 def render_locale(code: str, units: list[dict]) -> str:
@@ -488,7 +551,7 @@ def render_locale(code: str, units: list[dict]) -> str:
         aria = ' aria-current="page"' if lcode == code else ""
         parts.append(
             f'        <a class="{cls}" href="/admin/localization/{lcode}/" '
-            f'data-loc="{lcode}" title="{escape(t("locale.langs.hover", language=lname))}"{aria}>'
+            f'data-loc="{lcode}" data-tip="{escape(t("locale.langs.hover", language=lname))}"{aria}>'
             f'<span class="desk-loc-flag" aria-hidden="true">{lflag}</span>'
             f'<span class="desk-loc-name">{escape(lname)}</span>'
             f'<span class="desk-loc-count" data-loc-count="{lcode}" hidden></span></a>'
@@ -925,7 +988,7 @@ __HELPERS__
             b.type = 'button';
             b.className = 'desk-btn desk-icon-btn';
             b.setAttribute('data-act', spec[0]);
-            b.title = spec[1];
+            b.setAttribute('data-tip', spec[1]);
             b.setAttribute('aria-label', spec[1]);
             b.appendChild(icon(spec[2]));
             acts.appendChild(b);
@@ -983,7 +1046,8 @@ __STAGE_JS__
       var spec = STAGE_BADGE[st];
       badge.className = 'desk-state ' + spec[1];
       badge.textContent = spec[0];
-      badge.title = st === 'failed' && s.failed ? String(s.failed) : '';
+      if (st === 'failed' && s.failed) badge.setAttribute('data-tip', String(s.failed));
+      else badge.removeAttribute('data-tip');
       tr.setAttribute('data-stage', st);
       tr.classList.toggle('is-approved', st === 'approved' || st === 'edited' ||
                                           st === 'exported' || st === 'live');
@@ -1002,12 +1066,14 @@ __STAGE_JS__
       // with no text has nowhere else to say what it currently means. Neither is ever
       // disabled: the active one IS the undo.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.title = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
-      bApprove.setAttribute('aria-label', bApprove.title);
+      var tipA = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
+      bApprove.setAttribute('data-tip', tipA);
+      bApprove.setAttribute('aria-label', tipA);
       bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.title = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
-      bQueue.setAttribute('aria-label', bQueue.title);
+      var tipQ = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
+      bQueue.setAttribute('data-tip', tipQ);
+      bQueue.setAttribute('aria-label', tipQ);
       bQueue.disabled = false;
 
       var cb = tr.querySelector('[data-pick]');
@@ -1495,7 +1561,7 @@ __STAGE_JS__
       ts.hidden = pending === 0;
       ts.disabled = saving;
       ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
-      ts.title = t('save.button.hint');
+      ts.setAttribute('data-tip', t('save.button.hint'));
     }
 
     function removeFromTray(uids) {
@@ -1546,7 +1612,7 @@ __STAGE_JS__
         var rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'desk-btn desk-icon-btn';
-        rm.title = t('list.row.undo');
+        rm.setAttribute('data-tip', t('list.row.undo'));
         rm.setAttribute('aria-label', t('list.row.undo.label'));
         rm.appendChild(icon('undo'));
         rm.addEventListener('click', function () { removeFromTray([uid]); });
@@ -1780,7 +1846,7 @@ __STAGE_JS__
       btnSave.hidden = total === 0 || saving;
       btnSave.textContent = tn('save.button', total);
       btnSave.disabled = saving;
-      btnSave.title = others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint');
+      btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
       var note = document.getElementById('save-elsewhere');
       if (note) {
         note.hidden = others === 0;
@@ -2102,8 +2168,8 @@ __STAGE_JS__
         var link = el.parentNode;
         var nm = link && link.querySelector('.desk-loc-name');
         // The name is visually hidden on inactive tabs; a hover says it, and the count.
-        if (nm) link.title = n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
-                               : t('locale.langs.hover', { language: nm.textContent });
+        if (nm) link.setAttribute('data-tip', n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
+                                                 : t('locale.langs.hover', { language: nm.textContent }));
       });
     }
 
@@ -2203,7 +2269,7 @@ __STAGE_JS__
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__WORTH__", worth_js).replace(
     "__CODE__", code).replace("__RTL__", "true" if rtl else "false").replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
-    "__HELPERS__", JS_HELPERS).replace("__COPY__", js_table())
+    "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__COPY__", js_table())
 
 
 def main() -> int:

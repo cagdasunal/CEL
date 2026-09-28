@@ -67,14 +67,14 @@
     </header>
     <div class="controls">
       <nav class="desk-locales-strip" aria-label="Choose a language">
-        <a class="desk-loc" href="/admin/localization/de/" data-loc="de" title="German"><span class="desk-loc-flag" aria-hidden="true">🇩🇪</span><span class="desk-loc-name">German</span><span class="desk-loc-count" data-loc-count="de" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/fr/" data-loc="fr" title="French"><span class="desk-loc-flag" aria-hidden="true">🇫🇷</span><span class="desk-loc-name">French</span><span class="desk-loc-count" data-loc-count="fr" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/es/" data-loc="es" title="Spanish"><span class="desk-loc-flag" aria-hidden="true">🇪🇸</span><span class="desk-loc-name">Spanish</span><span class="desk-loc-count" data-loc-count="es" hidden></span></a>
-        <a class="desk-loc is-active" href="/admin/localization/pt/" data-loc="pt" title="Portuguese" aria-current="page"><span class="desk-loc-flag" aria-hidden="true">🇧🇷</span><span class="desk-loc-name">Portuguese</span><span class="desk-loc-count" data-loc-count="pt" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/it/" data-loc="it" title="Italian"><span class="desk-loc-flag" aria-hidden="true">🇮🇹</span><span class="desk-loc-name">Italian</span><span class="desk-loc-count" data-loc-count="it" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/ja/" data-loc="ja" title="Japanese"><span class="desk-loc-flag" aria-hidden="true">🇯🇵</span><span class="desk-loc-name">Japanese</span><span class="desk-loc-count" data-loc-count="ja" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/ko/" data-loc="ko" title="Korean"><span class="desk-loc-flag" aria-hidden="true">🇰🇷</span><span class="desk-loc-name">Korean</span><span class="desk-loc-count" data-loc-count="ko" hidden></span></a>
-        <a class="desk-loc" href="/admin/localization/ar/" data-loc="ar" title="Arabic"><span class="desk-loc-flag" aria-hidden="true">🇸🇦</span><span class="desk-loc-name">Arabic</span><span class="desk-loc-count" data-loc-count="ar" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/de/" data-loc="de" data-tip="German"><span class="desk-loc-flag" aria-hidden="true">🇩🇪</span><span class="desk-loc-name">German</span><span class="desk-loc-count" data-loc-count="de" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/fr/" data-loc="fr" data-tip="French"><span class="desk-loc-flag" aria-hidden="true">🇫🇷</span><span class="desk-loc-name">French</span><span class="desk-loc-count" data-loc-count="fr" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/es/" data-loc="es" data-tip="Spanish"><span class="desk-loc-flag" aria-hidden="true">🇪🇸</span><span class="desk-loc-name">Spanish</span><span class="desk-loc-count" data-loc-count="es" hidden></span></a>
+        <a class="desk-loc is-active" href="/admin/localization/pt/" data-loc="pt" data-tip="Portuguese" aria-current="page"><span class="desk-loc-flag" aria-hidden="true">🇧🇷</span><span class="desk-loc-name">Portuguese</span><span class="desk-loc-count" data-loc-count="pt" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/it/" data-loc="it" data-tip="Italian"><span class="desk-loc-flag" aria-hidden="true">🇮🇹</span><span class="desk-loc-name">Italian</span><span class="desk-loc-count" data-loc-count="it" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/ja/" data-loc="ja" data-tip="Japanese"><span class="desk-loc-flag" aria-hidden="true">🇯🇵</span><span class="desk-loc-name">Japanese</span><span class="desk-loc-count" data-loc-count="ja" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/ko/" data-loc="ko" data-tip="Korean"><span class="desk-loc-flag" aria-hidden="true">🇰🇷</span><span class="desk-loc-name">Korean</span><span class="desk-loc-count" data-loc-count="ko" hidden></span></a>
+        <a class="desk-loc" href="/admin/localization/ar/" data-loc="ar" data-tip="Arabic"><span class="desk-loc-flag" aria-hidden="true">🇸🇦</span><span class="desk-loc-name">Arabic</span><span class="desk-loc-count" data-loc-count="ar" hidden></span></a>
       </nav>
       <div class="desk-toolbar">
         <label class="desk-field">Page
@@ -182,7 +182,7 @@
           <p class="desk-review-sub" id="tray-summary"></p>
         </div>
         <button type="button" class="desk-icon-btn desk-review-x" id="tray-close"
-                title="Close" aria-label="Close">&#215;</button>
+                data-tip="Close" aria-label="Close">&#215;</button>
       </header>
       <div class="desk-review-toolbar">
         <label class="desk-review-all">
@@ -284,6 +284,60 @@
       for (var k in (vals || {})) v[k] = vals[k];
       return t(key + (n === 1 ? '.one' : '.other'), v);
     }
+
+    (function () {
+      var tip = document.createElement('div');
+      tip.className = 'desk-tip';
+      tip.setAttribute('role', 'tooltip');
+      tip.hidden = true;
+      document.body.appendChild(tip);
+      var owner = null, timer = null;
+      function hide() { clearTimeout(timer); timer = null; owner = null; tip.hidden = true; }
+      function show(el) {
+        var text = el.getAttribute('data-tip');
+        if (!text) { hide(); return; }
+        owner = el;
+        tip.textContent = text;
+        tip.hidden = false;
+        var r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8;
+        var top = r.top - h - gap;
+        if (top < gap) top = r.bottom + gap;
+        var left = Math.min(Math.max(gap, r.left + r.width / 2 - w / 2), window.innerWidth - w - gap);
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }
+      function later(el, ms) { clearTimeout(timer); timer = setTimeout(function () { show(el); }, ms); }
+      document.addEventListener('pointerover', function (ev) {
+        if (ev.pointerType === 'touch') return;
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el !== owner) later(el, 100);
+      });
+      document.addEventListener('pointerout', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && (!ev.relatedTarget || !el.contains(ev.relatedTarget))) hide();
+      });
+      document.addEventListener('focusin', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el.matches(':focus-visible')) show(el);
+      });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(); });
+      window.addEventListener('scroll', hide, true);
+      document.addEventListener('pointerdown', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (ev.pointerType === 'touch' && el) later(el, 500);
+      });
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function (ev) {
+          if (ev.pointerType === 'touch') { clearTimeout(timer); if (!tip.hidden) setTimeout(hide, 1500); }
+        });
+      });
+      // A click changes what the control says ("Approved -- click to undo"): say it now.
+      document.addEventListener('click', function () {
+        var el = owner;
+        if (el) setTimeout(function () { if (owner === el) show(el); }, 0);
+      });
+    })();
 
     // Weglot keeps each link inside a text as <a wg-N="">words</a>. Showing that raw made
     // the reviewer read markup; the linked words are shown underlined instead. DOM only.
@@ -558,7 +612,7 @@
             b.type = 'button';
             b.className = 'desk-btn desk-icon-btn';
             b.setAttribute('data-act', spec[0]);
-            b.title = spec[1];
+            b.setAttribute('data-tip', spec[1]);
             b.setAttribute('aria-label', spec[1]);
             b.appendChild(icon(spec[2]));
             acts.appendChild(b);
@@ -633,7 +687,8 @@
       var spec = STAGE_BADGE[st];
       badge.className = 'desk-state ' + spec[1];
       badge.textContent = spec[0];
-      badge.title = st === 'failed' && s.failed ? String(s.failed) : '';
+      if (st === 'failed' && s.failed) badge.setAttribute('data-tip', String(s.failed));
+      else badge.removeAttribute('data-tip');
       tr.setAttribute('data-stage', st);
       tr.classList.toggle('is-approved', st === 'approved' || st === 'edited' ||
                                           st === 'exported' || st === 'live');
@@ -652,12 +707,14 @@
       // with no text has nowhere else to say what it currently means. Neither is ever
       // disabled: the active one IS the undo.
       bApprove.classList.toggle('is-on', s.tray === 'csv');
-      bApprove.title = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
-      bApprove.setAttribute('aria-label', bApprove.title);
+      var tipA = t(s.tray === 'csv' ? 'action.approve.on' : 'action.approve');
+      bApprove.setAttribute('data-tip', tipA);
+      bApprove.setAttribute('aria-label', tipA);
       bApprove.disabled = false;
       bQueue.classList.toggle('is-on', s.tray === 'draft');
-      bQueue.title = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
-      bQueue.setAttribute('aria-label', bQueue.title);
+      var tipQ = t(s.tray === 'draft' ? 'action.queue.on' : 'action.queue');
+      bQueue.setAttribute('data-tip', tipQ);
+      bQueue.setAttribute('aria-label', tipQ);
       bQueue.disabled = false;
 
       var cb = tr.querySelector('[data-pick]');
@@ -1145,7 +1202,7 @@
       ts.hidden = pending === 0;
       ts.disabled = saving;
       ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
-      ts.title = t('save.button.hint');
+      ts.setAttribute('data-tip', t('save.button.hint'));
     }
 
     function removeFromTray(uids) {
@@ -1196,7 +1253,7 @@
         var rm = document.createElement('button');
         rm.type = 'button';
         rm.className = 'desk-btn desk-icon-btn';
-        rm.title = t('list.row.undo');
+        rm.setAttribute('data-tip', t('list.row.undo'));
         rm.setAttribute('aria-label', t('list.row.undo.label'));
         rm.appendChild(icon('undo'));
         rm.addEventListener('click', function () { removeFromTray([uid]); });
@@ -1430,7 +1487,7 @@
       btnSave.hidden = total === 0 || saving;
       btnSave.textContent = tn('save.button', total);
       btnSave.disabled = saving;
-      btnSave.title = others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint');
+      btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
       var note = document.getElementById('save-elsewhere');
       if (note) {
         note.hidden = others === 0;
@@ -1752,8 +1809,8 @@
         var link = el.parentNode;
         var nm = link && link.querySelector('.desk-loc-name');
         // The name is visually hidden on inactive tabs; a hover says it, and the count.
-        if (nm) link.title = n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
-                               : t('locale.langs.hover', { language: nm.textContent });
+        if (nm) link.setAttribute('data-tip', n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
+                                                 : t('locale.langs.hover', { language: nm.textContent }));
       });
     }
 

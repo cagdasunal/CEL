@@ -101,7 +101,7 @@ class TestTheDocument:
 
 
 class _Visible(HTMLParser):
-    """Visible text plus the attributes a person reads (title, aria-label, placeholder)."""
+    """Visible text plus the attributes a person reads (tooltips, aria-label, placeholder)."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -112,7 +112,7 @@ class _Visible(HTMLParser):
         if tag in ("script", "style"):
             self._skip += 1
         for k, v in attrs:
-            if k in ("title", "aria-label", "placeholder") and v:
+            if k in ("title", "aria-label", "placeholder", "data-tip") and v:
                 self.out.append(v)
 
     def handle_endtag(self, tag):
@@ -160,7 +160,7 @@ class TestNoWordOutsideTheDocument:
             assert scripts
             for pattern in (r"textContent\s*=\s*'[A-Za-z]", r"\.title\s*=\s*'[A-Za-z]",
                             r"toast\(\s*'[A-Za-z]", r"confirm\(\s*'[A-Za-z]",
-                            r"'aria-label',\s*'[A-Za-z]"):
+                            r"'aria-label',\s*'[A-Za-z]", r"'data-tip',\s*'[A-Za-z]"):
                 hit = re.search(pattern, scripts)
                 assert not hit, f"a sentence typed into the script: {hit.group(0)!r}"
 

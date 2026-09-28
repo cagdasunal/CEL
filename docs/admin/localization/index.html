@@ -167,6 +167,60 @@
       return t(key + (n === 1 ? '.one' : '.other'), v);
     }
 
+    (function () {
+      var tip = document.createElement('div');
+      tip.className = 'desk-tip';
+      tip.setAttribute('role', 'tooltip');
+      tip.hidden = true;
+      document.body.appendChild(tip);
+      var owner = null, timer = null;
+      function hide() { clearTimeout(timer); timer = null; owner = null; tip.hidden = true; }
+      function show(el) {
+        var text = el.getAttribute('data-tip');
+        if (!text) { hide(); return; }
+        owner = el;
+        tip.textContent = text;
+        tip.hidden = false;
+        var r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8;
+        var top = r.top - h - gap;
+        if (top < gap) top = r.bottom + gap;
+        var left = Math.min(Math.max(gap, r.left + r.width / 2 - w / 2), window.innerWidth - w - gap);
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }
+      function later(el, ms) { clearTimeout(timer); timer = setTimeout(function () { show(el); }, ms); }
+      document.addEventListener('pointerover', function (ev) {
+        if (ev.pointerType === 'touch') return;
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el !== owner) later(el, 100);
+      });
+      document.addEventListener('pointerout', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && (!ev.relatedTarget || !el.contains(ev.relatedTarget))) hide();
+      });
+      document.addEventListener('focusin', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el.matches(':focus-visible')) show(el);
+      });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(); });
+      window.addEventListener('scroll', hide, true);
+      document.addEventListener('pointerdown', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (ev.pointerType === 'touch' && el) later(el, 500);
+      });
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function (ev) {
+          if (ev.pointerType === 'touch') { clearTimeout(timer); if (!tip.hidden) setTimeout(hide, 1500); }
+        });
+      });
+      // A click changes what the control says ("Approved -- click to undo"): say it now.
+      document.addEventListener('click', function () {
+        var el = owner;
+        if (el) setTimeout(function () { if (owner === el) show(el); }, 0);
+      });
+    })();
+
     var WORTH = {"de":["0401c147c6cea028","bbecd9e441a04e56","04c298199071772f","add0890afab68bb2","bdc5c12484a76834","3791422231fde31c","a18c11df8bacbf2e","a7fcb1c8aa9b4655","04e1a04336e1b918","382f66cd3c832916","63a5987a5db6b756"],"fr":["9574cffbab746184","afe89dd8d7fe5fd5","ca04ce9053f938cc","d18da433f7f35f9d","63a5987a5db6b756","68623cd832a9022f"],"es":["c841b6a883c68780"],"pt":[],"it":["2a5bef000a5bf45e","983ee7294906d0ae","63a5987a5db6b756"],"ja":["0dd727f0dbc06548","c5693562ab686a39","daa2fa38d6fca623","4c10377a101ea591","bbecd9e441a04e56","f4615f92165c8240","04c298199071772f","add0890afab68bb2","a4dad39e19e918fc","03fff5fca5487287","2d254cc30b4ac69f","bdc5c12484a76834","15565447bc814bb4","c9c1fac2f8f8d5bf","ce3147f8103beb3f","d5ff4ebd29f766cd","90b30c742b95f4bb","9ca3e44fce7d9a4a","abaf56c38d8855f5","9fb22239b1c2bfa0","c1dce9f8abaeca5a","ca04ce9053f938cc","d18da433f7f35f9d","312b38b1b15cb2c4","0190e7d9534cef5d","51147166d8635e43","978e350ae35a63c2","9b0b998c7b64c219","be241471bf946548"],"ko":["bbecd9e441a04e56","04c298199071772f","add0890afab68bb2","2a5bef000a5bf45e","a4dad39e19e918fc","2d254cc30b4ac69f","9fb22239b1c2bfa0","c1dce9f8abaeca5a","ca04ce9053f938cc","d18da433f7f35f9d","0190e7d9534cef5d","63a5987a5db6b756","51147166d8635e43"],"ar":["8a624fe2a3aa898b","983ee7294906d0ae","5b60fc4a0bab94f0","be10255fc15fa6c9","d18da433f7f35f9d","186afd033f2e0abd","63a5987a5db6b756"]};
     function stageOf(s) {
       s = s || {};
@@ -249,7 +303,7 @@
         undo.type = 'button';
         undo.className = 'desk-btn desk-locale-discard';
         undo.textContent = t('index.discard.button', { n: unsaved });
-        undo.title = t('index.discard.hint');
+        undo.setAttribute('data-tip', t('index.discard.hint'));
         undo.addEventListener('click', function () {
           var nm = card.getAttribute('data-name') || code;
           if (!window.confirm(tn('index.discard.confirm', unsaved, { language: nm }))) return;
