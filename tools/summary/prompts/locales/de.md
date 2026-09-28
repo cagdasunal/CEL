@@ -18,7 +18,7 @@ Deutsch ist **+20 bis +25%** länger als Englisch (zusammengesetzte Substantive,
 ## Number + currency formatting
 - Tausenderpunkt: 1.000 (nicht 1,000).
 - Dezimalkomma: 3,5 (nicht 3.5).
-- Währung: 1.890 € (Betrag vor Symbol, mit Leerzeichen). Niemals "EUR 1.890" im Fließtext.
+- Währung: `US$ 1.890`, `C$ 1.890` (Symbol vor dem Betrag, mit Leerzeichen; Kundenregel §6). Die Währung des Originals bleibt, nie umrechnen; nie ein $ allein, nie "USD" oder "CAD" im Fliesstext.
 - Zeit: 24-Stunden ("14:00 Uhr"), niemals "2 PM".
 
 ## Date format

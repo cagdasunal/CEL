@@ -16,7 +16,7 @@ Italiano : **+15 a +20%** più lungo dell'inglese.
 
 ## Number + currency formatting
 - Migliaia : punto (1.000), decimale : virgola (3,5).
-- Valuta : `1.890 €` (importo, spazio, simbolo) o `1.890 USD` quando si specifica.
+- Valuta : `US$ 1.890`, `C$ 1.890` (simbolo prima dell'importo, con spazio; regola del cliente §6). La valuta del testo originale resta, mai convertire; mai un $ da solo, mai "USD" o "CAD" nel testo.
 - Ora : 24h ("14:30"), mai "2:30 PM".
 
 ## Date format

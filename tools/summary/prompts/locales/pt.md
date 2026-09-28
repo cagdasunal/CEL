@@ -16,7 +16,7 @@ Português : **+15 a +20%** mais longo que o inglês.
 
 ## Number + currency formatting
 - Milhares : ponto (1.000), decimal : vírgula (3,5).
-- Moeda : `US$ 1.890 por mês` (pt-BR) — observe o `US$` sem espaço. Para EUR : `1.890 €`.
+- Moeda : `US$1.890 por mês`, `C$1.890` (símbolo antes, sem espaço; regra do cliente §6). A moeda do texto original se mantém, nunca converter; nunca um $ sozinho, nunca "USD" ou "CAD" no texto.
 - Hora : 24h ("14h30" ou "14:30"), nunca "2:30 PM".
 
 ## Date format

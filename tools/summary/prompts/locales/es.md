@@ -17,10 +17,10 @@ Español : **+15 a +25%** más largo que inglés.
 - Raya de diálogo (—) NO se usa en este tipo de contenido.
 
 ## Number + currency formatting
-- Miles : punto (1.000) en España, coma (1,000) en México y partes de LATAM. Match source.
-- Decimal : opuesto al de miles. España → "1.000,50", México → "1,000.50".
-- Moneda : `$1.890` (México) o `1.890 €` (España). Cuando se trata de USD/CAD, agregar la sigla : "1.890 USD" o "$1.890 dólares".
-- Hora : 24h ("14:00 h" en España) o 12h con "a. m./p. m." (México) — match source.
+- Miles : punto (1.000), en todo el texto (regla del cliente §6).
+- Decimal : coma (1,5).
+- Moneda : `US$1.890`, `C$1.890` (símbolo delante, sin espacio; regla del cliente §6). La moneda del texto original se mantiene, nunca convertir; nunca un $ solo, nunca "USD" o "CAD" en el texto.
+- Hora : 24 horas ("14:00").
 
 ## Date format
 DD/MM/AAAA (15/03/2026) en ambos dialectos. Forma larga : "15 de marzo de 2026" (mes en minúscula). Nunca "March 15, 2026".

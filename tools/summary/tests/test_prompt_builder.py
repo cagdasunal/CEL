@@ -244,3 +244,70 @@ def test_the_english_writer_is_never_taught_a_bare_dollar(content_type):
     assert _BARE_DOLLAR_AMOUNT.findall(text) == []
     assert "C$1,950" in text and "US$" in text
     assert "never a bare $" in text.lower()
+
+
+# ---- the translation layers against §6's table (client Translation Guidelines) ----
+#
+# §6: "Never use a bare `$`. Always disambiguate with `US$` or `C$`" and "Currency stays in
+# the source currency. Do not convert C$ to EUR, CHF, or local currency." Its table for the
+# five ratified languages is the test vector: US$100 -> DE `US$ 100`, FR `100 US$`,
+# ES `US$100`, PT-BR `US$100`, IT `US$ 100` (C$ the same). Thousands 1.500 (DE/ES/PT-BR/IT),
+# FR a narrow no-break space; decimals 1,5; 24-hour times.
+
+_SPACE = "[ \u00a0\u202f]"
+_SECTION_6 = {
+    # locale: (symbol first?, space between symbol and amount?, thousands separator)
+    "de": (True, True, "."),
+    "fr": (False, True, "\u202f"),
+    "es": (True, False, "."),
+    "pt": (True, False, "."),
+    "it": (True, True, "."),
+}
+
+
+def _locale_layer(locale):
+    blocks = build_translation_system_prompt(target_locale=locale)
+    return blocks[-1]["text"]
+
+
+@pytest.mark.parametrize("locale", sorted(_SECTION_6))
+def test_a_ratified_locale_layer_writes_currency_as_section_6_does(locale):
+    symbol_first, spaced, thousands = _SECTION_6[locale]
+    text = _locale_layer(locale)
+    gap = _SPACE if spaced else ""
+    for sym in ("US\\$", "C\\$"):
+        amount = "[0-9]{1,3}(?:" + re.escape(thousands) + "[0-9]{3})*"
+        shape = (sym + gap + amount) if symbol_first else (amount + gap + sym)
+        assert re.search(shape, text), (locale, "no example in the §6 form", shape)
+    # The wrong placement for this language never appears as an example.
+    if symbol_first:
+        wrong = r"(?:US|C)\$" + (r"[0-9]" if spaced else _SPACE + r"[0-9]")
+    else:
+        wrong = r"(?:US|C)\$" + _SPACE + r"?[0-9]"
+    assert not re.search(wrong, text), (locale, "an example in the wrong placement")
+    # No bare $, no conversion, no ISO code beside an amount.
+    assert not re.search(r"(?<![A-Za-z])\$" + _SPACE + r"?[0-9]", text), locale
+    assert not re.search(r"[0-9]" + _SPACE + r"?\$", text), locale
+    assert "€" not in text, (locale, "an amount converted to euros")
+    assert not re.search(r"[0-9]" + _SPACE + r"?(?:USD|CAD|EUR)\b|\b(?:USD|CAD|EUR)" + _SPACE + r"?[0-9]", text), locale
+
+
+@pytest.mark.parametrize("locale", sorted(_SECTION_6))
+def test_a_ratified_locale_layer_separates_numbers_as_section_6_does(locale):
+    _, _, thousands = _SECTION_6[locale]
+    text = _locale_layer(locale)
+    assert "1" + thousands + "000" in text, (locale, "thousands example")
+    assert re.search(r"[0-9],5\b", text), (locale, "decimal comma example")
+    assert "a. m." not in text and "12h" not in text, (locale, "12-hour times")
+
+
+@pytest.mark.parametrize("locale,bare_word", [("ar", "دولار"), ("ja", "ドル"), ("ko", "달러")])
+def test_an_unratified_locale_layer_never_teaches_a_bare_dollar(locale, bare_word):
+    """ar/ja/ko are not in §6's table, so their placement is left alone; §6's general
+    rule still holds: every example amount carries US$ or C$, never a bare $ and never
+    the bare word for "dollar" without the country."""
+    text = _locale_layer(locale)
+    assert "C$" in text and "US$" in text, locale
+    assert not re.search(r"(?<![A-Za-z])\$" + _SPACE + r"?[0-9]", text), locale
+    assert not re.search(r"[0-9][0-9,.]*" + _SPACE + r"?" + bare_word, text), (locale, "an amount in bare " + bare_word)
+    assert not re.search(bare_word + _SPACE + r"?[0-9]", text), locale

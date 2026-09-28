@@ -17,9 +17,9 @@ Français : **+15 à +20%** plus long que l'anglais (articles plus fréquents, l
 - Apostrophe typographique : ' (pas ').
 
 ## Number + currency formatting
-- Espace insécable pour les milliers : 1 000 (pas 1,000 ou 1.000).
+- Espace fine insécable (U+202F) pour les milliers : 1 000 (pas 1,000 ou 1.000).
 - Virgule décimale : 3,5 (pas 3.5).
-- Monnaie : `1 890 €` (montant, espace, symbole). Jamais "€ 1 890".
+- Monnaie : `1 890 US$`, `1 890 C$` (montant, espace insécable, symbole ; règle client §6). La devise du texte source reste, jamais de conversion ; jamais de $ seul, jamais "USD" ou "CAD" dans le texte.
 - Heure : 24h ("14h30" ou "14:30"), jamais "2:30 PM".
 
 ## Date format
