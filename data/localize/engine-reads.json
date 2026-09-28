@@ -34,9 +34,5 @@
   "known_gaps": {
     "importedAt": "WO-26: nothing records that an import happened (import confirmation)"
   },
-  "no_writer_yet": {
-    "exportedAt": "WO-21: the engine's stamp write-back",
-    "liveAt": "WO-21: the engine's stamp write-back",
-    "importedAt": "WO-26: import confirmation"
-  }
+  "no_writer_yet": {}
 }
