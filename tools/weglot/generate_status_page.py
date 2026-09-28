@@ -20,7 +20,7 @@ No external dependencies. Stdlib only.
 
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from html import escape
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -85,6 +85,31 @@ SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html
 # Summary-script artifact locations (tracker-090 — SEO Summaries page)
 SUMMARY_DRYRUN_DIR = PROJECT_ROOT / "data" / "seo-intel" / "summary-dryrun"
 STATIC_SUMMARIES_DIR = WEGLOT_CSV_DIR / "static-summaries"
+# The localization round's English freeze (localization runbook WO-30). Both repos carry
+# it at this path, held identical by the monorepo's parity check.
+FREEZE_FILE = PROJECT_ROOT / "data" / "localize" / "freeze.json"
+
+
+def frozen_paste_slugs() -> set[str] | None:
+    """The `<slug>.summary.md` names whose page is frozen for a localization round.
+
+    Pasting one changes that page's English mid-round, under every approval made against
+    it -- and this list offered /vancouver's for download while it was frozen (review
+    round 2, L3 P1-1). None when the file cannot be read: then every paste is held back.
+    """
+    try:
+        doc = json.loads(FREEZE_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return set()
+    except (OSError, ValueError):
+        return None
+    pages = doc.get("frozen_pages") if isinstance(doc, dict) else None
+    if not isinstance(pages, list):
+        return None
+    until = doc.get("frozen_until")
+    if isinstance(until, str) and datetime.now(timezone.utc).date().isoformat() > until:
+        return set()
+    return {p.strip("/").replace("/", "-") or "home" for p in pages if isinstance(p, str)}
 
 
 # ---------------------------------------------------------------------------
@@ -456,13 +481,22 @@ def render_files_html() -> str:
     if paste_files:
         parts.append('    <p class="subtle">Static-page summaries waiting to be pasted into Webflow Designer. Open each file, copy the Markdown, paste into the page\'s Rich Text element below the hero, and publish.</p>')
         parts.append('    <ul class="files">')
+        frozen = frozen_paste_slugs()
         for path in paste_files:
             public_url = f"https://cel.englishcollege.com/admin/weglot-imports/static-summaries/{path.name}"
+            held = frozen is None or path.name[: -len(".summary.md")] in frozen
             parts.append("    <li>")
             parts.append('      <div class="file-row">')
             parts.append(f'        <span class="file-name">{escape(path.name)}</span>')
-            parts.append(f'        <a href="{escape(public_url)}" download>Download</a>')
+            if held:
+                parts.append('        <span class="badge-partial">Do not paste</span>')
+            else:
+                parts.append(f'        <a href="{escape(public_url)}" download>Download</a>')
             parts.append("      </div>")
+            if held:
+                parts.append('      <p class="subtle">This page\'s English is frozen while its '
+                             'translations are reviewed. Pasting this would change the English '
+                             'under every approval, so it waits until the review round ends.</p>')
             parts.append(f'      <p class="subtle">{_mtime_note(path)}</p>')
             parts.append("    </li>")
         parts.append("  </ul>")

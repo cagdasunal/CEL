@@ -255,13 +255,20 @@ def main(argv: list[str] | None = None) -> int:
 
     # A page frozen for a localization round is refused BY NAME, before anything runs or
     # spends. Its translated blocks can still be regenerated -- only the English is frozen.
-    if (args.subcommand in ("generate-english", "all") and args.page
-            and _page_path(args.page) in _frozen_paths()):
-        print(f"[summary] REFUSED: {args.page} is frozen for a localization round "
-              f"({config.FREEZE_FILE.name}): its English may not change until the round "
-              "ends. Its translations can still be regenerated with `translate`.",
-              file=sys.stderr)
-        return 2
+    if args.subcommand in ("generate-english", "all") and args.page:
+        try:
+            frozen_now = _frozen_paths()
+        except FreezeInvalid as e:
+            # Unreadable is not "nothing frozen": that would unprotect the round.
+            print(f"[summary] REFUSED: {config.FREEZE_FILE.name} is not valid ({e}), so it "
+                  "cannot say whether this page is frozen. Fix the file first.", file=sys.stderr)
+            return 2
+        if _page_path(args.page) in frozen_now:
+            print(f"[summary] REFUSED: {args.page} is frozen for a localization round "
+                  f"({config.FREEZE_FILE.name}): its English may not change until the round "
+                  "ends. Its translations can still be regenerated with `translate`.",
+                  file=sys.stderr)
+            return 2
 
     out_dir = args.out_dir or (config.DRYRUN_DIR / _timestamp_slug())
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -306,7 +313,15 @@ def main(argv: list[str] | None = None) -> int:
         else:
             # All other subcommands run the orchestrator (real or dry-run).
             if args.subcommand in ("generate-english", "all"):
-                report["phases"]["generate_english"] = _execute_generate_english(args, out_dir)
+                ge = _execute_generate_english(args, out_dir)
+                # Every outcome says what the freeze held back -- a real run said nothing,
+                # so "why was /vancouver not regenerated?" had no answer (review round 2, L3 P2-3).
+                if isinstance(ge, dict):
+                    held = _plan_generate_english(args)
+                    ge.setdefault("frozen", held["frozen"])
+                    if held.get("freeze_error"):
+                        ge.setdefault("freeze_error", held["freeze_error"])
+                report["phases"]["generate_english"] = ge
             if args.subcommand in ("audit", "all"):
                 report["phases"]["audit"] = _execute_audit(args, out_dir)
             if args.subcommand in ("translate", "all"):
@@ -340,29 +355,57 @@ def _page_path(url: str) -> str:
     return path.rstrip("/") or "/"
 
 
+class FreezeInvalid(ValueError):
+    """freeze.json exists but cannot be trusted to say which pages are frozen."""
+
+
+_FREEZE_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
 def _frozen_paths() -> set[str]:
     """Pages whose English generate-english may not change (monorepo runbook WO-30).
 
     The monorepo's `data/localize/freeze.json`, vendored: while a localization round is
     open, regenerating a page's English changes the text every approval was made against.
-    `frozen_until` (a date, inclusive) ends the freeze; null means until further notice.
-    A missing file is no freeze -- `test_freeze.py` insists the vendored one is there.
+    `frozen_until` (a UTC date, YYYY-MM-DD, inclusive) ends the freeze; null means until
+    further notice. A missing file is no freeze -- `test_freeze.py` insists the vendored
+    one is there. A file that is there but malformed raises FreezeInvalid: reading it as
+    "nothing frozen" would unprotect the round (review round 2, L3 P2-2).
     """
     try:
-        doc = json.loads(config.FREEZE_FILE.read_text(encoding="utf-8"))
+        raw = config.FREEZE_FILE.read_text(encoding="utf-8")
     except FileNotFoundError:
         return set()
+    try:
+        doc = json.loads(raw)
+    except ValueError as e:
+        raise FreezeInvalid(f"not JSON: {e}") from None
+    if not isinstance(doc, dict) or doc.get("schema_version") != 1:
+        raise FreezeInvalid("expected an object with schema_version 1")
+    pages = doc.get("frozen_pages")
+    if not isinstance(pages, list) or not all(isinstance(x, str) and x.startswith("/") for x in pages):
+        raise FreezeInvalid("frozen_pages must be a list of paths starting with /")
     until = doc.get("frozen_until")
+    if until is not None and not (isinstance(until, str) and _FREEZE_DATE.match(until)):
+        raise FreezeInvalid("frozen_until must be null or a YYYY-MM-DD date")
     if until and datetime.now(timezone.utc).date().isoformat() > until:
         return set()
-    return {_page_path(p) for p in doc.get("frozen_pages", [])}
+    return {_page_path(p) for p in pages}
 
 
 def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
     targets: list[dict[str, Any]] = []
-    frozen = _frozen_paths()
     held: list[str] = []
+    freeze_error = None
     if not args.collection:
+        # Read only when static pages are in scope: the blog autopilot (--collection blog)
+        # crashed on a malformed freeze.json that has nothing to say about blog posts
+        # (review round 2, L3 P2-1). Malformed here holds EVERY static page back.
+        try:
+            frozen = _frozen_paths()
+        except FreezeInvalid as e:
+            freeze_error = str(e)
+            frozen = {_page_path(u) for u in config.STATIC_PAGES}
         for url in config.STATIC_PAGES:
             if args.page and url != args.page:
                 continue
@@ -375,6 +418,9 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             })
     for slug, cid in config.COLLECTIONS.items():
         if args.collection and args.collection != slug:
+            continue
+        # --page names one page; it planned every collection as well (review round 2, L3 P2-5).
+        if args.page and not args.collection:
             continue
         if getattr(args, "exclude_blog", False) and slug == "blog":
             continue
@@ -389,8 +435,11 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
         })
     if args.limit:
         targets = targets[: args.limit]
-    return {"target_count": len(targets), "targets": targets, "model": config.MODEL_ID,
+    plan = {"target_count": len(targets), "targets": targets, "model": config.MODEL_ID,
             "frozen": held}
+    if freeze_error:
+        plan["freeze_error"] = freeze_error
+    return plan
 
 
 def _plan_audit(args: argparse.Namespace) -> dict[str, Any]:
@@ -1529,7 +1578,26 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
         if args.from_run
         else (out_dir / "en-summaries.json")
     )
-    if not manifest_path.exists():
+    en_summaries: dict[str, dict] = (json.loads(manifest_path.read_text(encoding="utf-8"))
+                                     if manifest_path.exists() else {})
+    # A static page no manifest holds is translated from the English it serves. The frozen
+    # pages are why: generate-english may not run for them, so no manifest ever holds
+    # them, yet regenerating their translations is exactly what stays allowed (WO-30;
+    # review round 2, L3 P1-2). The live English is what translate uses anyway (below).
+    if (args.page and args.page in config.STATIC_PAGES
+            and not any(_page_path(e.get("url", "")) == _page_path(args.page)
+                        for e in en_summaries.values())):
+        try:
+            live_md = structure.parts_to_markdown(
+                page_fetcher.fetch_page(args.page).existing_summary_parts or {})
+        except Exception as e:
+            live_md = ""
+            warnings.append(f"{args.page}: live fetch failed ({e})")
+        if live_md.strip():
+            slug = _page_path(args.page).strip("/").replace("/", "-") or "home"
+            en_summaries[f"live-{slug}"] = {"url": args.page, "markdown": live_md,
+                                            "content_type": "landing", "locale": "en"}
+    if not en_summaries:
         warnings.append(
             f"no EN summaries manifest at {manifest_path}; nothing to translate. "
             f"Run generate-english first or pass --from-run <dir>."
@@ -1540,8 +1608,6 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
             "manifest_path": str(manifest_path),
             "warnings": warnings,
         }
-
-    en_summaries: dict[str, dict] = json.loads(manifest_path.read_text(encoding="utf-8"))
     # Manifest shape: {"<custom_id>": {"url": ..., "markdown": ..., "content_type": ..., "locale": ...}}
 
     # Content-type → collection-slug mapping (mirrors _collection_id_for_content_type).
@@ -1564,6 +1630,10 @@ def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any
     def _skip_item(en: dict) -> bool:
         ct = en.get("content_type")
         if ct in _SKIP_TRANSLATE_TYPES:
+            return True
+        # --page scopes translate to that page; it translated the whole manifest
+        # (review round 2, L3 P1-2).
+        if args.page and _page_path(en.get("url", "")) != _page_path(args.page):
             return True
         if args.collection and _CT_TO_COLLECTION.get(ct) != args.collection:
             return True

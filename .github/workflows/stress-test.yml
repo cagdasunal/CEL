@@ -4,13 +4,15 @@ name: Stress tests (modular core + copywriter + translator)
 # tools.core refactor + the copywriter compose path stayed green, with NO secrets and NO
 # spend: the suite deletes the API keys and uses only dry-run / mocked paths.
 #
-# Scoped to tools/** + the config files so the data-churn crons don't trigger it.
+# Scoped to tools/** + data/localize/** (the unit files and the freeze the tests read) +
+# the config files, so the data-churn crons don't trigger it.
 
 on:
   push:
     branches: [main]   # PRs from branches trigger via pull_request only — no duplicate runs
     paths:
       - "tools/**"
+      - "data/localize/**"
       - "requirements.txt"
       - "pyproject.toml"
       - ".importlinter"
@@ -18,6 +20,7 @@ on:
   pull_request:
     paths:
       - "tools/**"
+      - "data/localize/**"
       - "requirements.txt"
       - "pyproject.toml"
       - ".importlinter"
@@ -60,7 +63,9 @@ jobs:
         # corrected 2026-05-25, so the --deselect machinery is gone). lint-imports is NOT run
         # here — the stress step (run_stress.sh, next) lints, and its test_00 re-runs the FULL
         # suite bounding failures, so a NEW failure fails CI.
-        run: PYTHONPATH=. python3 -m pytest tools/ -m "not stress" -p no:cacheprovider -q
+        # No -q: pyproject.toml's addopts already has one, and -qq drops the final
+        # "N passed" line this job is read by (review round 2, L6 P3).
+        run: PYTHONPATH=. python3 -m pytest tools/ -m "not stress" -p no:cacheprovider
 
       - name: Stress harness (-m stress) — regression baseline + shim identity + compose + locale-native QA
         run: STRESS_PY=python3 bash tools/_stress/run_stress.sh

@@ -54,3 +54,26 @@ def test_overview_unchanged_when_no_translation_status(tmp_path, monkeypatch):
     html = g.render_summaries_html()
     assert "<strong>1</strong>" in html          # 1 source summary, nothing folded
     assert "source +" not in html                # no translated split note
+
+
+def test_a_frozen_pages_summary_is_not_offered_for_pasting(tmp_path, monkeypatch):
+    """Review round 2 (localization runbook WO-32, L3 P1-1): pasting a frozen page's
+    summary changes its English under every approval made in the open round."""
+    import json as _json
+    from tools.weglot import generate_status_page as gsp
+    summaries = tmp_path / "static-summaries"
+    summaries.mkdir()
+    for slug in ("vancouver", "vancouver-vs-toronto", "home"):
+        (summaries / f"{slug}.summary.md").write_text("## x\n")
+    freeze = tmp_path / "freeze.json"
+    freeze.write_text(_json.dumps({"schema_version": 1, "frozen_pages": ["/vancouver"],
+                                   "frozen_until": None}))
+    monkeypatch.setattr(gsp, "STATIC_SUMMARIES_DIR", summaries)
+    monkeypatch.setattr(gsp, "FREEZE_FILE", freeze)
+    page = gsp.render_files_html()
+    assert "static-summaries/vancouver.summary.md" not in page
+    assert "static-summaries/vancouver-vs-toronto.summary.md" in page     # per page, not prefix
+    assert "static-summaries/home.summary.md" in page
+    assert page.count("Do not paste") == 1
+    freeze.write_text("{broken")                                           # unreadable: hold all
+    assert gsp.render_files_html().count("Do not paste") == 3
