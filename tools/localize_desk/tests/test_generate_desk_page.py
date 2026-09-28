@@ -363,19 +363,28 @@ class TestAuditRegressions2026_09_23:
         assert "catch (e) { /* private mode */ }" not in page
         assert "t('toast.storage.title')" in page
 
-    def test_adoption_only_fills_units_this_browser_has_never_touched(self, page):
+    def test_adoption_never_overwrites_a_change_this_browser_has_not_sent(self, page):
         """The guard was "no tray", which is not the same thing. A row back from
         Gemini and a row deliberately un-approved both have no tray, and both were
         overwritten wholesale -- the first threw away a paid-for translation, the
-        second made undo silently revert on reload."""
-        assert "if (!hasContent(state[uid]) && hasContent(server[uid]))" in page
+        second made undo silently revert on reload.
+
+        Rewritten for runbook WO-18: its successor, "adopt only where this browser holds
+        nothing", still took an unsent undo (which holds nothing) for "never touched", and
+        kept a copy saved long ago as if it were a change -- so the next save put it back
+        over a colleague's newer one (R26). The rule is now "is this browser's copy a change
+        it has not sent?", decided against what it last knew was saved; the browser tests
+        drive both cases."""
+        assert "if (!sameDecision(mine, hasContent(was) ? was : null) && !sameDecision(mine, theirs))" in page
+        assert "if (!hasContent(state[uid]) && hasContent(server[uid]))" not in page
         assert "if (!state[uid] || !state[uid].tray) { state[uid] =" not in page
 
     def test_an_unreadable_storage_is_not_mistaken_for_an_empty_one(self, page):
         """A 5xx booted the desk showing none of a colleague's decisions -- and the next
         save would have presented its own as the newer ones. (The storage answers an
-        empty language with 200 and nothing, so there is no "missing file" case left.)"""
-        assert "if (sr && !sr.ok) throw new Error('HTTP ' + sr.status);" in page
+        empty language with 200 and nothing, so there is no "missing file" case left.)
+        An answer without its decisions is unreadable too (review of WO-17, P3)."""
+        assert "if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);" in page
         assert "t('toast.saved_load.title')" in page
 
     def test_clearing_an_edit_restores_the_wording_the_approval_is_against(self, page):
@@ -504,3 +513,34 @@ def test_the_committed_desk_is_what_the_generator_writes_today(tmp_path, monkeyp
                    if (committed / r).read_bytes() != (tmp_path / "localization" / r).read_bytes())
     assert not stale, ("committed desk differs from the generator -- run "
                        "`cd tools && python3 -m localize_desk.generate_desk_page`: " + ", ".join(stale))
+
+
+class TestAutosave:
+    """Runbook WO-18 (contract §8 S3). The behaviour is clicked by the browser tests; these hold
+    the numbers the contract names, and what must never be in the page."""
+
+    @pytest.fixture()
+    def page(self, units_dir):
+        _write(units_dir, "vancouver", [_unit("a", current={"de": {"word_to": "Hallo"}})])
+        return G.render_locale("de", G.load_units())
+
+    def test_the_client_ceiling_is_the_storage_cap(self, page):
+        """Bulk work waits in the browser rather than being refused by the Worker: the desk's
+        ceiling is the Worker's cap, which the stand-in carries (the parity test holds it)."""
+        import re
+        from localize_desk.desk_store import CAP_CHANGES, CAP_WINDOW_SEC
+        m = re.search(r"var CAP = \{ windowMs: (\d+), changes: (\d+), requests: (\d+) \};", page)
+        assert m, "the desk's CAP was not found"
+        assert (int(m.group(1)), int(m.group(2))) == (CAP_WINDOW_SEC * 1000, CAP_CHANGES)
+
+    def test_a_change_goes_after_about_two_seconds_of_quiet(self, page):
+        assert "var QUIET_MS = 2000, MAX_WAIT_MS = 10000, TIMEOUT_MS = 20000;" in page
+
+    def test_nothing_is_sent_on_the_way_out(self, page):
+        """R39: a request started while the page closes is one nobody can promise lands."""
+        for sender in ("sendBeacon", "keepalive", "addEventListener('pagehide'",
+                       "addEventListener('unload'", "addEventListener('visibilitychange'"):
+            assert sender not in page, sender
+
+    def test_one_sender_across_the_tabs_of_a_browser(self, page):
+        assert "navigator.locks.request('cel-desk-save'" in page

@@ -741,19 +741,30 @@ def test_saving_is_off_until_it_is_private_and_says_so(browser):
         page.close()
 
 
-def test_a_full_desk_stays_inside_its_budgets(browser):
+@pytest.mark.parametrize("save_on", [False, True], ids=["saving off", "saving on"])
+def test_a_full_desk_stays_inside_its_budgets(browser, save_on):
     """L1 P3: with all eight languages decided, one click took 88 ms and a switch 0.26 s at
-    4x CPU -- the budget test only ever measured an empty desk."""
+    4x CPU -- the budget test only ever measured an empty desk. With saving on (WO-18) the
+    storage holds the same decisions, so the desk starts with nothing unsaved."""
     scale = float(os.environ.get("DESK_BUDGET_SCALE", "1"))
-    with desk("new") as (base, root, _worker):
+    with desk("new", save_on=save_on) as (base, root, worker):
         page = browser.new_page()
         page.goto(base + "/admin/localization/de/")
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
         for code in ("de", "fr", "es", "pt", "it", "ja", "ko", "ar"):
             recs = {u: {"tray": "csv", "by": "reviewer@example.test", "at": "2026-09-28T10:00:00Z",
                         "approvedAgainst": x["tgt"]} for u, x in _units(root, code).items()}
-            page.evaluate("([c, r]) => { localStorage.setItem('cel-desk-' + c, r); localStorage.setItem('cel-desk-saved-' + c, r); }",
-                          [code, json.dumps(recs)])
+            saved = recs
+            if save_on:
+                units = _units(root, code)
+                for i in range(0, len(recs), 200):
+                    worker.store.handle("desk-write", {"locale": code, "client": 1, "changes": [
+                        {"unit": u, "page": units[u]["pages"][0], "base": 0,
+                         "record": {"tray": "csv", "approvedAgainst": units[u]["tgt"]}}
+                        for u in list(recs)[i:i + 200]]}, "reviewer@example.test")
+                saved = {u: {"tray": "csv", "approvedAgainst": x["approvedAgainst"], "version": 1} for u, x in recs.items()}
+            page.evaluate("([c, r, v]) => { localStorage.setItem('cel-desk-' + c, r); localStorage.setItem('cel-desk-saved-' + c, v); }",
+                          [code, json.dumps(recs), json.dumps(saved)])
         page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": 4})
         page.reload()
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
@@ -763,7 +774,12 @@ def test_a_full_desk_stays_inside_its_budgets(browser):
         page.wait_for_timeout(1500)
         switches = sorted(_timed_switch(page, code) for code in ("fr", "it", "es"))
         assert clicks[1] <= 40 * scale, f"a click took {clicks} ms (median over {40 * scale:.0f})"
-        assert switches[1] <= 0.2 * scale, f"switch {switches} s, median over {0.2 * scale:.2f}"
+        # Saving on, a switch also reads the storage before it builds (WO-17), a round trip the
+        # desk without saving never makes. Measured 2026-09-28 at 4x CPU, median 135 ms before
+        # autosave and 133 ms with it: the read is the cost, and it sits on 0.2 s -- so this
+        # variant's budget is 0.3 s (runbook §7: with a real network the read is longer still).
+        budget = (0.3 if save_on else 0.2) * scale
+        assert switches[1] <= budget, f"switch {switches} s, median over {budget:.2f}"
         page.close()
 
 
@@ -910,6 +926,11 @@ _STATES = {
         _rows_ready(pg), _first_visible(pg, "approve"), pg.locator("#open-csv").evaluate("e => e.click()")), "#tray-overlay"),
     "the requests list": ("/admin/localization/de/?show=all", lambda pg: (
         _rows_ready(pg), _first_visible(pg, "queue"), pg.locator("#open-draft").evaluate("e => e.click()")), "#tray-overlay"),
+    # Saving on, the storage refusing: the bar's Try again (runbook WO-18).
+    "with saving stopped": ("/admin/localization/de/?show=all", lambda pg: (
+        _rows_ready(pg), _first_visible(pg, "approve"), pg.wait_for_function(
+            "() => document.getElementById('save-status').getAttribute('data-state') === 'stopped'", timeout=15000)),
+        "#savebar", {"save_on": True, "fault": {"status": 401, "error": "session expired"}}),
 }
 
 
@@ -930,8 +951,10 @@ def _robot_act(page, c) -> str:
 
 @pytest.mark.parametrize("state", sorted(_STATES))
 def test_no_control_is_a_dead_end(browser, state):
-    path, setup, scope = _STATES[state]
-    with desk("new") as (base, _root, _worker):
+    path, setup, scope, *more = _STATES[state]
+    opts = more[0] if more else {}
+    with desk("new", save_on=opts.get("save_on", False)) as (base, _root, worker):
+        worker.desk_fault = opts.get("fault")
         page = browser.new_page(viewport={"width": 1440, "height": 900})
         page.on("dialog", lambda d: d.accept())
 
@@ -965,16 +988,33 @@ def test_no_control_is_a_dead_end(browser, state):
 
 
 # ── WO-17: the desk saves to the Worker's storage (served with saving on) ──────────────
+# Since WO-18 there is no Save button: a change goes by itself after a quiet moment, and the
+# bar's status says where it stands (`data-state` on #save-status, its words from COPY.md).
 
-def _save(page):
-    page.locator("#btn-save").click()
-    page.wait_for_function("() => !document.getElementById('btn-save').disabled", timeout=15000)
-    page.wait_for_timeout(200)
+def _as_state(page) -> str:
+    return page.locator("#save-status").get_attribute("data-state") or ""
+
+
+def _as_wait(page, state: str, timeout: float = 20000):
+    page.wait_for_function("s => document.getElementById('save-status').getAttribute('data-state') === s",
+                           arg=state, timeout=timeout)
+
+
+def _as_words(page) -> str:
+    el = page.locator("#save-status")
+    return el.inner_text() + " " + (el.get_attribute("data-tip") or "")
 
 
 def _server(worker, uid, locale="de"):
     row = worker.store.decisions.get((locale, uid))
     return None if row is None else {**row["record"], "version": row["version"], "by": row["by"]}
+
+
+def _as_open(context, url):
+    page = context.new_page()
+    page.goto(url)
+    page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+    return page
 
 
 def test_a_save_lands_in_the_storage_and_another_computer_sees_it(browser):
@@ -983,90 +1023,56 @@ def test_a_save_lands_in_the_storage_and_another_computer_sees_it(browser):
         u0, u1 = _visible_uids(page, 2)
         _act(page, u0, "approve")
         _act(page, u1, "queue")
-        assert page.locator("#btn-save").is_visible()
-        _save(page)
+        _as_wait(page, "saved")
         s0 = _server(worker, u0)
         assert s0["tray"] == "csv" and s0["version"] == 1 and s0["by"] == "reviewer@example.test"
         assert s0["approvedAgainst"] == _units(_root, "de")[u0]["tgt"]
         assert _server(worker, u1)["tray"] == "draft"
-        assert page.locator("#btn-save").is_hidden(), "nothing is unsaved after a save"
-        _toast(page, C.t("save.done.title"))
-        assert "desk-write" in worker.calls
-        other = browser.new_context().new_page()          # another computer: no local copy
-        other.goto(base + "/admin/localization/de/")
-        other.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        assert page.locator("#save-status").inner_text() == C.t("autosave.saved")
+        other = _as_open(browser.new_context(), base + "/admin/localization/de/")   # another computer
         assert _rec(other, u0).get("tray") == "csv" and _rec(other, u1).get("tray") == "draft"
-        assert other.locator("#btn-save").is_hidden()
+        _as_wait(other, "saved")
         assert not errors, errors
         page.close()
 
 
 def test_someone_else_saving_first_is_a_conflict_on_the_row_and_theirs_can_be_taken(browser):
     with desk(save_on=True) as (base, _root, worker):
-        a = browser.new_context().new_page()
-        b = browser.new_context().new_page()
-        for p in (a, b):
-            p.goto(base + "/admin/localization/de/")
-            p.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        a = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        b = _as_open(browser.new_context(), base + "/admin/localization/de/")
         u = _visible_uids(a, 1)[0]
         _visible_uids(b, 1)
         _act(a, u, "approve")
-        _save(a)                                           # A saves first
-        _act(b, u, "queue")
-        _save(b)                                           # B's change was based on nothing
+        _as_wait(a, "saved")                               # A saves first
+        _act(b, u, "queue")                                # B's change was based on nothing
+        _as_wait(b, "conflict")
         assert _server(worker, u)["tray"] == "csv", "a conflict must never overwrite"
         assert C.t("status.conflict") in _label(b, u)
+        assert C.tn("autosave.conflict", 1) in _as_words(b)
         _toast(b, C.t("save.conflicts.title"))
         _row(b, u).locator("[data-conflict]").click()     # use theirs
         assert _rec(b, u).get("tray") == "csv"
-        assert b.locator("#btn-save").is_hidden(), "taking theirs leaves nothing to save"
+        _as_wait(b, "saved")
         assert C.t("status.conflict") not in _label(b, u)
 
 
 def test_keeping_yours_over_a_conflict_is_a_deliberate_save_on_their_version(browser):
     with desk(save_on=True) as (base, _root, worker):
-        a = browser.new_context().new_page()
-        b = browser.new_context().new_page()
-        for p in (a, b):
-            p.goto(base + "/admin/localization/de/")
-            p.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        a = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        b = _as_open(browser.new_context(), base + "/admin/localization/de/")
         u = _visible_uids(a, 1)[0]
         _visible_uids(b, 1)
         _act(a, u, "approve")
-        _save(a)
+        _as_wait(a, "saved")
         _act(b, u, "queue")
-        _save(b)
-        _save(b)                                           # saving again does NOT overwrite
-        assert _server(worker, u)["tray"] == "csv", "an undecided conflict was sent again"
+        _as_wait(b, "conflict")
+        writes = worker.calls.count("desk-write")
+        b.wait_for_timeout(4000)                           # autosave does NOT send it again
+        assert worker.calls.count("desk-write") == writes and _server(worker, u)["tray"] == "csv"
         _put_in(b, u, "edited")                            # deciding again: yours, deliberately
-        _save(b)
+        _as_wait(b, "saved")
         s = _server(worker, u)
         assert (s["text"], s["version"]) == ("WO-06 wording of my own", 2), s
-
-
-@pytest.mark.parametrize("status,error,reason", [
-    (409, "desk out of date -- reload the page", "reload"),
-    (429, "over the cap", "cap"),
-    (429, "over the daily budget", "daily"),
-    (503, "storage not configured", "unavailable"),
-    (401, "session expired", "signed_out"),
-    (500, "server error", "trouble"),
-])
-def test_a_failed_save_says_why_and_keeps_every_change(browser, status, error, reason):
-    with desk(save_on=True) as (base, _root, worker):
-        page, _errors = _open(browser, base + "/admin/localization/de/")
-        u = _visible_uids(page, 1)[0]
-        _act(page, u, "approve")
-        worker.desk_fault = {"status": status, "error": error}
-        _save(page)
-        toast = page.locator("#toast-stack").inner_text()
-        assert C.t(f"save.reason.{reason}") in toast, toast
-        assert page.locator("#btn-save").is_visible(), "the change must stay unsaved"
-        assert _server(worker, u) is None
-        worker.desk_fault = None
-        _save(page)
-        assert _server(worker, u)["tray"] == "csv"
-        page.close()
 
 
 def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
@@ -1075,10 +1081,9 @@ def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
         page.select_option("#f-state", "")
         page.check("#pick-all")
         page.click("#bulk-approve")
-        _save(page)
+        _as_wait(page, "saved", 40000)
         assert worker.calls.count("desk-write") >= 5            # 823 in slices of 200
         assert sum(1 for (loc, _u) in worker.store.decisions if loc == "de") == 823
-        assert page.locator("#btn-save").is_hidden()
         page.close()
 
 
@@ -1087,21 +1092,455 @@ def test_an_undo_after_a_save_is_saved_too(browser):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         u = _visible_uids(page, 1)[0]
         _act(page, u, "approve")
-        _save(page)
+        _as_wait(page, "saved")
         _act(page, u, "approve")                                 # undo
-        _save(page)
+        page.wait_for_function("u => !(window.deskState()[u] || {}).tray", arg=u)
+        _as_wait(page, "saved")
         s = _server(worker, u)
         assert s["version"] == 2 and "tray" not in s
         page.close()
 
 
-def test_a_text_the_storage_does_not_know_is_refused_and_kept(browser):
+def test_a_text_the_storage_does_not_know_is_refused_kept_and_not_sent_again(browser):
     with desk(save_on=True) as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         u = _visible_uids(page, 1)[0]
         worker.store.units = {(unit, pg) for unit, pg in worker.store.units if unit != u}
         _act(page, u, "approve")
-        _save(page)
+        _as_wait(page, "refused")
         _toast(page, C.t("save.refused.title"))
-        assert _server(worker, u) is None and page.locator("#btn-save").is_visible()
+        assert _server(worker, u) is None and _rec(page, u).get("tray") == "csv"
+        writes = worker.calls.count("desk-write")
+        page.wait_for_timeout(5000)
+        assert worker.calls.count("desk-write") == writes, "a refused text went round again"
         page.close()
+
+
+# ── WO-18: autosave (contract §8 S3) ──────────────────────────────────────────────────
+
+def test_a_decision_saves_itself_after_a_quiet_moment_and_the_save_button_is_gone(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        t0 = time.monotonic()
+        _act(page, u, "approve")
+        assert page.locator("#btn-save").is_hidden() and page.locator("#tray-save").count() == 0
+        assert _as_state(page) == "saving" and C.tn("autosave.saving", 1) in _as_words(page)
+        page.wait_for_timeout(1000)
+        assert "desk-write" not in worker.calls, "sent before the reviewer paused"
+        _as_wait(page, "saved")
+        assert time.monotonic() - t0 >= 1.8
+        assert _server(worker, u)["tray"] == "csv"
+        page.click("#open-csv")
+        assert page.locator("#tray-save").count() == 0, "the list has no Save either"
+        assert not errors, errors
+        page.close()
+
+
+def test_quick_decisions_travel_together_and_one_request_is_ever_in_flight(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 5)
+        for x in u[:3]:
+            _act(page, x, "approve")
+        _as_wait(page, "saved")
+        assert worker.calls.count("desk-write") == 1, "three quick decisions, one request"
+        worker.desk_fault = {"delay": 4}
+        _act(page, u[3], "approve")
+        for _ in range(100):                               # the slow request is on its way
+            if worker.inflight:
+                break
+            time.sleep(0.1)
+        assert _as_state(page) == "saving"
+        _act(page, u[4], "approve")                        # its quiet moment ends mid-request
+        worker.desk_fault = None
+        _as_wait(page, "saved", 30000)
+        assert worker.max_inflight == 1, "a second request went while one was in flight"
+        assert _server(worker, u[3])["tray"] == "csv" and _server(worker, u[4])["tray"] == "csv"
+        page.close()
+
+
+def test_two_tabs_of_one_browser_share_the_saving(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        ctx = browser.new_context()
+        a = _as_open(ctx, base + "/admin/localization/de/")
+        b = _as_open(ctx, base + "/admin/localization/de/")
+        u0, u1 = _visible_uids(a, 2)
+        _visible_uids(b, 2)
+        worker.desk_fault = {"delay": 4}
+        _act(a, u0, "approve")
+        for _ in range(100):
+            if worker.inflight:
+                break
+            time.sleep(0.1)
+        _act(b, u1, "approve")                             # tab B's quiet moment ends during A's request
+        worker.desk_fault = None
+        _as_wait(a, "saved", 30000)
+        _as_wait(b, "saved", 30000)
+        assert worker.max_inflight == 1, "two tabs sent at once"
+        assert (_server(worker, u0)["version"], _server(worker, u1)["version"]) == (1, 1)
+        assert C.t("status.conflict") not in _label(a, u0) + _label(b, u1)
+        ctx.close()
+
+
+@pytest.mark.parametrize("status,error,state,reason", [
+    (500, "server error", "retrying", "trouble"),
+    (503, "storage not configured", "retrying", "unavailable"),
+    (429, "over the cap", "stopped", "cap"),
+    (429, "over the daily budget", "stopped", "daily"),
+    (401, "session expired", "stopped", "signed_out"),
+    (409, "desk out of date -- reload the page", "stopped", "reload"),
+    (400, "invalid: bad page", "stopped", "refused"),
+    (403, "forbidden origin", "stopped", "refused"),          # review of WO-17, P3: not "signed out"
+])
+def test_each_way_saving_can_fail_is_shown_and_loses_nothing(browser, status, error, state, reason):
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        worker.desk_fault = {"status": status, "error": error}
+        _act(page, u, "approve")
+        _as_wait(page, state)
+        assert C.t(f"save.reason.{reason}") in _as_words(page), _as_words(page)
+        assert _server(worker, u) is None
+        page.reload()                                      # nothing is lost across a reload
+        _rows_ready(page)
+        assert _rec(page, u).get("tray") == "csv"
+        _as_wait(page, state)
+        worker.desk_fault = None                           # the storage works again
+        if state == "retrying":
+            _as_wait(page, "saved", 30000)                 # by itself
+        elif reason == "reload":
+            page.reload()                                  # what the words say to do
+            _rows_ready(page)
+            _as_wait(page, "saved")
+        else:
+            page.click("#save-retry")
+            _as_wait(page, "saved")
+        assert _server(worker, u)["tray"] == "csv"
+        page.close()
+
+
+def test_offline_keeps_changes_on_this_computer_and_sends_them_when_back(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        ctx = browser.new_context()
+        page = _as_open(ctx, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        ctx.set_offline(True)
+        _act(page, u, "approve")
+        _as_wait(page, "offline")
+        assert C.tn("autosave.offline", 1) in _as_words(page)
+        ctx.set_offline(False)
+        _as_wait(page, "saved", 30000)
+        assert _server(worker, u)["tray"] == "csv"
+        ctx.close()
+
+
+def test_nothing_is_sent_on_the_way_out_and_it_goes_on_the_next_visit(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        ctx = browser.new_context()
+        page = _as_open(ctx, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        page.close(run_before_unload=True)                 # before the quiet moment is over
+        time.sleep(3)
+        assert "desk-write" not in worker.calls, "something was sent on the way out"
+        again = _as_open(ctx, base + "/admin/localization/de/")
+        _as_wait(again, "saved")
+        assert _server(worker, u)["tray"] == "csv"
+        ctx.close()
+
+
+@pytest.mark.parametrize("fault", [{"drop": True}, {"status": 502, "error": "bad gateway", "apply": True}],
+                         ids=["the answer lost", "a 502 after the write landed"])
+def test_an_answer_lost_on_the_way_back_is_not_a_conflict_with_yourself(browser, fault):
+    """Review of WO-17, P2-1: the reviewer's own save came back as "Changed elsewhere"."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        worker.desk_fault = fault                          # applied, then no good answer
+        _act(page, u, "approve")
+        page.wait_for_function("() => ['offline', 'retrying'].includes(document.getElementById('save-status').getAttribute('data-state'))", timeout=15000)
+        assert _server(worker, u)["version"] == 1
+        worker.desk_fault = None
+        page.wait_for_function("() => ['saved', 'conflict'].includes(document.getElementById('save-status').getAttribute('data-state'))",
+                               timeout=30000)
+        assert _as_state(page) == "saved", f"its own save came back as {_as_state(page)!r}: {_label(page, u)}"
+        assert _server(worker, u)["version"] == 1
+        assert C.t("status.conflict") not in _label(page, u)
+        page.close()
+
+
+def test_a_browser_holding_an_old_copy_takes_the_newer_decision_instead_of_overwriting_it(browser):
+    """R26: B's copy of a text was saved and unchanged; A changed it since. B's reload
+    kept its old copy as if it were a change of its own -- and would have saved it over A's."""
+    with desk(save_on=True) as (base, _root, worker):
+        a = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        u = _visible_uids(a, 1)[0]
+        _act(a, u, "approve")
+        _as_wait(a, "saved")
+        b = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        assert _rec(b, u).get("tray") == "csv"
+        _act(a, u, "queue")                                # A changes its mind: version 2
+        _as_wait(a, "saved")
+        b.reload()
+        _rows_ready(b)
+        b.wait_for_timeout(3000)
+        s = _server(worker, u)
+        assert (s["tray"], s["version"]) == ("draft", 2), f"a stale browser overwrote a newer decision: {s}"
+        assert _rec(b, u).get("tray") == "draft"
+        _as_wait(b, "saved")
+
+
+def test_an_undo_not_yet_sent_survives_a_reload(browser):
+    """An undone decision has nothing left in it, and the load took the storage's copy over
+    it -- the undo came back as an approval."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        _as_wait(page, "saved")
+        worker.desk_fault = {"status": 503, "error": "storage not configured"}
+        _act(page, u, "approve")                           # undo, not sent yet
+        _as_wait(page, "retrying")
+        page.reload()
+        _rows_ready(page)
+        assert not _rec(page, u).get("tray"), "the undo was lost on reload"
+        worker.desk_fault = None
+        _as_wait(page, "saved", 30000)
+        s = _server(worker, u)
+        assert s["version"] == 2 and "tray" not in s
+        page.close()
+
+
+_FILL = """() => {
+  let lo = 0, hi = 16 * 1024 * 1024;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    try { localStorage.setItem('zz-someone-else', 'x'.repeat(mid)); lo = mid; }
+    catch (e) { localStorage.removeItem('zz-someone-else'); hi = mid - 1; }
+  }
+  localStorage.setItem('zz-someone-else', 'x'.repeat(lo));
+  return lo;
+}"""
+
+
+def test_when_the_browser_is_full_the_unsent_changes_are_what_it_keeps(browser):
+    """P0-8 / R54: a full store gives up its logs, then the copies the storage already holds
+    (they come back from it); the change nobody has sent yet is what stays."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.on("dialog", lambda d: d.accept())
+        page.select_option("#f-state", "")
+        u = page.locator(f"{ROWS}:visible").first.get_attribute("data-uid")
+        page.check("#pick-all")
+        _row(page, u).locator("[data-pick]").uncheck()
+        page.click("#bulk-approve")                        # 822 decided and saved; u is not
+        _as_wait(page, "saved", 40000)
+        worker.desk_fault = {"status": 503, "error": "storage not configured"}
+        # The log gives way first (review round 2) -- here it has already gone, so what is left
+        # to give way is the saved copy.
+        page.evaluate("() => localStorage.removeItem('cel-desk-log-de')")
+        filled = page.evaluate(_FILL)
+        _act(page, u, "approve")                           # the one change that does not fit
+        stored = _stored(page)
+        assert list(stored) == [u] and stored[u].get("tray") == "csv", f"kept {len(stored)} texts"
+        assert page.evaluate("() => localStorage.getItem('zz-someone-else').length") == filled
+        page.reload()
+        _rows_ready(page)
+        v = next(x for x in _units(_root, "de") if x != u)
+        assert _rec(page, u).get("tray") == "csv", "the unsent change was lost"
+        assert _rec(page, v).get("tray") == "csv", "a saved decision did not come back from the storage"
+        worker.desk_fault = None
+        _as_wait(page, "saved", 30000)
+        de = [r for (loc, _x), r in worker.store.decisions.items() if loc == "de"]
+        assert len(de) == 823 and {r["version"] for r in de} == {1}, "something already saved was sent again"
+        page.close()
+
+
+def test_the_client_never_sends_more_than_the_storage_takes_in_ten_minutes(browser):
+    """The hard client cap: this browser stays under the Worker's 2,000 changes per 10 minutes,
+    and says so, instead of being refused."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        for code in ("de", "fr", "es"):
+            if code != "de":
+                page.locator(f'.desk-locales-strip [data-loc="{code}"]').click()
+                _wait_ready(page, code)
+            page.select_option("#f-state", "")
+            page.check("#pick-all")
+            page.click("#bulk-approve")
+        _as_wait(page, "stopped", 60000)
+        assert C.t("save.reason.cap") in _as_words(page)
+        assert len(worker.store.decisions) == 823 + 823 + 200
+        page.close()
+
+
+# ── WO-18: the index's counts come from the storage (desk-summary) ──────────────────────
+
+def test_the_index_on_another_computer_shows_what_was_saved(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        a = _as_open(browser.new_context(), base + "/admin/localization/de/?show=all")
+        flagged = a.locator(f"{ROWS}[data-why]").first.get_attribute("data-uid")
+        u0, u1 = [x for x in _visible_uids(a, 3) if x != flagged][:2]
+        _act(a, flagged, "approve")
+        _act(a, u0, "approve")
+        _act(a, u1, "queue")
+        _as_wait(a, "saved")
+        idx = browser.new_context().new_page()             # another computer: nothing local
+        idx.goto(base + "/admin/localization/")
+        card = idx.locator('.desk-locale-card[data-locale="de"]')
+        total = int(card.get_attribute("data-total"))
+        card.get_by_text(C.t("index.card.progress", done=3, total=total)).wait_for(timeout=15000)
+        assert C.t("index.chip.approved", n=2) in card.inner_text()
+        assert C.tn("index.chip.requested", 1) in card.inner_text()
+        n_flagged = int(card.get_attribute("data-flagged"))
+        href = card.locator(".desk-locale-open").get_attribute("href")
+        assert href.endswith("?show=check" if n_flagged > 1 else "?show=todo"), href
+        assert "desk-summary" in worker.calls
+
+
+def test_the_index_says_so_when_it_cannot_read_the_storage(browser):
+    with desk(save_on=True) as (base, _root, worker):
+        worker.action_faults["desk-summary"] = {"status": 503, "error": "storage not configured"}
+        idx = browser.new_page()
+        idx.goto(base + "/admin/localization/")
+        idx.get_by_text(C.t("index.summary.failed")).wait_for(timeout=15000)
+
+
+def test_the_live_index_asks_the_storage_nothing_while_saving_is_off(browser):
+    with desk("new") as (base, _root, worker):
+        idx = browser.new_page()
+        idx.goto(base + "/admin/localization/")
+        idx.wait_for_timeout(1500)
+        assert not [c for c in worker.calls if c.startswith("desk-")], worker.calls
+
+
+# ── The independent review of WO-17's local half (CEL d1f77a15), each finding as a guard ──
+
+def test_review_p0_1_probe_1_a_reload_takes_a_colleagues_newer_wording(browser):
+    """A approves and saves (v1); B edits and saves (v2); A only reloads. A's desk offered
+    "1 unsaved" -- A's old approval -- and saving it made v3 without B's wording."""
+    with desk(save_on=True) as (base, _root, worker):
+        a = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        u = _visible_uids(a, 1)[0]
+        _act(a, u, "approve")
+        _as_wait(a, "saved")
+        b = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        _visible_uids(b, 1)
+        _put_in(b, u, "edited")
+        _as_wait(b, "saved")
+        assert _server(worker, u)["version"] == 2
+        a.reload()
+        _rows_ready(a)
+        _as_wait(a, "saved")
+        a.wait_for_timeout(3000)
+        s = _server(worker, u)
+        assert (s["version"], s.get("text")) == (2, "WO-06 wording of my own"), f"B's wording was lost: {s}"
+        assert _rec(a, u).get("text") == "WO-06 wording of my own"
+
+
+def test_review_p0_1_probe_2_an_unsent_decision_meets_a_newer_save_as_a_conflict(browser):
+    """A approves without saving; B requests and saves (v1); A reloads and saves: A's approval
+    became v2 over B's request, with no conflict. A leaves before its quiet moment is over --
+    nothing goes on the way out -- so its approval is still unsent when it comes back."""
+    with desk(save_on=True) as (base, _root, worker):
+        ctx_a = browser.new_context()
+        a = _as_open(ctx_a, base + "/admin/localization/de/")
+        u = _visible_uids(a, 1)[0]
+        _act(a, u, "approve")
+        a.close(run_before_unload=True)                    # unsent: A left within the quiet moment
+        b = _as_open(browser.new_context(), base + "/admin/localization/de/")
+        _visible_uids(b, 1)
+        _act(b, u, "queue")
+        _as_wait(b, "saved")
+        assert "csv" not in str(_server(worker, u)), "A's approval went out before B's request"
+        a = _as_open(ctx_a, base + "/admin/localization/de/")
+        a.wait_for_function("() => ['saved', 'conflict'].includes(document.getElementById('save-status').getAttribute('data-state'))",
+                            timeout=20000)
+        s = _server(worker, u)
+        assert (s["tray"], s["version"]) == ("draft", 1), f"A's approval overwrote B's request: {s}"
+        assert _as_state(a) == "conflict" and C.t("status.conflict") in _label(a, u)
+
+
+def test_review_p1_4_a_decision_with_no_page_does_not_block_the_language(browser):
+    """A decision for a text the page no longer has went with page '' and the Worker refused the
+    whole request -- every save of that language, for good."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        page.evaluate("() => { const s = JSON.parse(localStorage.getItem('cel-desk-de') || '{}');"
+                      " s['0123456789abcdef'] = {tray: 'csv'}; localStorage.setItem('cel-desk-de', JSON.stringify(s)); }")
+        page.reload()
+        _rows_ready(page)
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        _as_wait(page, "refused")
+        assert _server(worker, u)["tray"] == "csv", "the text next to it was never saved"
+        assert _server(worker, "0123456789abcdef") is None
+
+
+def test_review_p3_an_answer_with_nothing_in_it_is_not_a_save(browser):
+    """A 200 with no JSON body counted as success -- with nothing saved, and nothing said."""
+    with desk(save_on=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u = _visible_uids(page, 1)[0]
+        worker.desk_fault = {"status": 200, "empty": True}
+        _act(page, u, "approve")
+        _as_wait(page, "retrying")
+        assert C.t("save.reason.trouble") in _as_words(page)
+        worker.desk_fault = None
+        _as_wait(page, "saved", 30000)
+        assert _server(worker, u)["tray"] == "csv"
+
+
+_STAGE_VECTORS = [
+    # (record, stage) -- stamps from two writers: the Worker's toISOString() and Python's isoformat
+    ({"tray": "draft", "sentAt": "2026-09-28T10:00:00.000Z", "failed": "quota", "failedAt": "2026-09-28T10:05:00.000Z"}, "failed"),
+    ({"tray": "draft", "sentAt": "2026-09-28T11:00:00.000Z", "failed": "quota", "failedAt": "2026-09-28T10:05:00.000Z"}, "sending"),
+    ({"sentAt": "2026-09-28T10:00:00.000Z", "failed": "quota", "failedAt": "2026-09-28T10:05:00.000Z",
+      "arrivedAt": "2026-09-28T10:30:00.000Z", "text": "neu"}, "arrived"),
+    # a string comparison gets this one wrong: "…00Z" sorts after "…00.500Z", but is earlier
+    ({"failed": "quota", "failedAt": "2026-09-28T10:00:00Z", "arrivedAt": "2026-09-28T10:00:00.500Z", "text": "neu"}, "arrived"),
+    ({"failed": "quota", "failedAt": "2026-09-28T10:00:00.250000+00:00", "sentAt": "2026-09-28T10:00:00.100Z"}, "failed"),
+    ({"failed": "quota"}, "failed"),                       # a failure with no time is the newest thing
+    ({"tray": "draft", "sentAt": "2026-09-28T10:00:00Z", "arrivedAt": "2026-09-28T09:00:00Z"}, "sending"),
+    ({"tray": "draft", "sentAt": "2026-09-28T10:00:00Z"}, "sending"),
+    ({"tray": "csv", "liveAt": "2026-09-28T10:00:00Z"}, "live"),
+    # the engine's failed_now(): a failure whose time cannot be read stands
+    ({"failed": "quota", "failedAt": "not a time", "sentAt": "2026-09-28T11:00:00.000Z"}, "failed"),
+    # its in_flight(): a send whose time cannot be read counts as still out
+    ({"tray": "draft", "sentAt": "not a time", "arrivedAt": "2026-09-28T10:00:00.000Z"}, "sending"),
+    # a stamp with no offset is UTC, as the engine reads it -- not the browser's local time
+    ({"failed": "quota", "failedAt": "2026-09-28T10:00:00", "arrivedAt": "2026-09-28T10:00:00.500Z", "text": "neu"}, "arrived"),
+]
+
+
+def test_review_p2_4_a_failure_counts_only_while_it_is_the_newest_stamp(browser):
+    """The pipeline keeps `failed` after a later send or arrival; stageOf() said "failed" for as
+    long as it was set. It now compares times, as the engine's in_flight() does -- parsed, never
+    as strings, because two writers stamp them."""
+    from localize_desk import generate_desk_page as G
+    page = browser.new_page(timezone_id="America/Vancouver")
+    got = page.evaluate("([js, recs]) => { const stageOf = new Function(js + '; return stageOf;')();"
+                        " return recs.map(stageOf); }", [G._STAGE_JS, [r for r, _ in _STAGE_VECTORS]])
+    assert got == [st for _, st in _STAGE_VECTORS], list(zip(got, [st for _, st in _STAGE_VECTORS]))
+    page.close()
+
+
+# ── The second independent review (current main), the desk half of P1-A ─────────────────
+
+def test_review2_p1_a_an_edit_records_the_website_wording_it_replaced(browser):
+    """An edit dropped `approvedAgainst`, and the export checks "moved since approval" only when
+    it is there: a live text changed after the edit shipped the edit over it, signed and green.
+    An approval of any kind now records the website's wording it was given against."""
+    with desk(save_on=True) as (base, root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        u, v = _visible_uids(page, 2)
+        live = _units(root, "de")
+        _put_in(page, u, "edited")
+        assert _rec(page, u).get("approvedAgainst") == live[u]["tgt"]
+        _put_in(page, v, "arrived")                        # Gemini's draft, approved as it is
+        _act(page, v, "approve")
+        assert _rec(page, v).get("text") and _rec(page, v).get("approvedAgainst") == live[v]["tgt"]
+        _as_wait(page, "saved")
+        assert _server(worker, u)["approvedAgainst"] == live[u]["tgt"]
+        assert _server(worker, v)["approvedAgainst"] == live[v]["tgt"]

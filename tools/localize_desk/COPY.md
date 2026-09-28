@@ -78,6 +78,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `index.chip.approved` | {n} approved | Card link |
 | `index.chip.requested.one` | 1 new translation requested | Card link |
 | `index.chip.requested.other` | {n} new translations requested | Card link |
+| `index.summary.failed` | Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again. | Under the languages, when the server's numbers can't be read |
 | `index.discard.button` | Discard {n} unsaved | Card button, when this browser has unsaved work |
 | `index.discard.hint` | Throw away what this browser hasn't saved. Anything already saved stays. | Hover text of that button |
 | `index.discard.confirm.one` | Throw away 1 unsaved change in {language}? Anything already saved stays. | Confirmation |
@@ -171,31 +172,40 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `bar.view.approved_n` | View approved ({n}) | Same, with a count |
 | `bar.view.requested` | View requests | Bar button, opens the requested list |
 | `bar.view.requested_n` | View requests ({n}) | Same, with a count |
-| `save.button.one` | Save 1 change | The one blue button |
-| `save.button.other` | Save {n} changes | The one blue button |
-| `save.button.hint` | Stores your decisions on the server, so they survive this tab and anyone else reviewing sees them. | Hover text of Save |
-| `save.button.hint_elsewhere` | {n} of them are in other languages. Save stores every language at once. | Hover text of Save |
-| `save.elsewhere` | + {n} unsaved in other languages | Next to Save |
+| `bar.view.approved.hint` | Nothing approved yet: approve a text, and it's listed here | Hover text of View approved, while the list is empty |
+| `bar.view.requested.hint` | No new translations requested yet: ask Gemini for one, and it's listed here | Hover text of View requests, while the list is empty |
 | `save.off.button` | Kept in this browser | The Save button, while saving is switched off |
 | `save.off.title` | Saving is switched off for now | Message, when that button is clicked |
 | `save.off.elsewhere` | + {n} in other languages | Next to that button, while saving is off |
 | `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
-| `save.status.saving` | Saving… | Next to Save, while saving |
-| `save.status.language` | Saving {language} ({i} of {count})… | Next to Save, several languages |
-| `save.status.failed` | Not saved | Next to Save, after a failure |
-| `save.done.title` | Saved | Message, bottom right |
-| `save.done.detail.one` | 1 change is stored. You can close this page or carry on from another computer. | Message |
-| `save.done.detail.other` | {n} changes are stored. You can close this page or carry on from another computer. | Message |
-| `save.done.detail_langs` | {n} changes are stored across {count} languages. You can close this page or carry on from another computer. | Message |
-| `save.failed.title` | Not saved | Message |
-| `save.failed.detail` | Nothing is lost — your work is still on this page. Please press Save again. ({reason}) | Message |
-| `save.partial.title` | Saved {done} of {count} languages | Message |
-| `save.partial.detail` | Nothing is lost — the rest is still on this page. Please press Save again. ({reason}) | Message |
-| `save.reason.offline` | there is no connection | Reason inside the message |
-| `save.reason.reload` | this page is out of date — reload it, then save | |
-| `save.reason.signed_out` | you have been signed out — sign in again, then save | |
-| `save.reason.cap` | a lot was saved at once — wait a few minutes | |
-| `save.reason.daily` | today's saving limit is reached — save again tomorrow | |
+| `autosave.saved` | All changes saved | Bar status, when everything is on the server |
+| `autosave.saved.hint` | Your decisions are on the server: you can close this page, or carry on from another computer. | Hover text of that status |
+| `autosave.saving.one` | Saving 1 change… | Bar status, while a change is on its way |
+| `autosave.saving.other` | Saving {n} changes… | |
+| `autosave.saving.hint` | Changes are saved by themselves a moment after you stop clicking. | Hover text of that status |
+| `autosave.retrying.one` | 1 change not saved yet — {reason}. Trying again… | Bar status, when a save failed and will be tried again |
+| `autosave.retrying.other` | {n} changes not saved yet — {reason}. Trying again… | |
+| `autosave.retrying.hint` | Nothing is lost: your changes are kept on this computer and saved as soon as the server answers. | Hover text of that status |
+| `autosave.offline.one` | Offline — 1 change kept on this computer | Bar status, with no connection |
+| `autosave.offline.other` | Offline — {n} changes kept on this computer | |
+| `autosave.offline.hint` | They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer. | Hover text of that status |
+| `autosave.conflict.one` | 1 text changed elsewhere | Bar status, when someone else saved first |
+| `autosave.conflict.other` | {n} texts changed elsewhere | |
+| `autosave.conflict.hint` | Someone else saved these texts first. They're marked in the list: decide again to keep yours, or use theirs. | Hover text of that status |
+| `autosave.refused.one` | 1 text not saved | Bar status, when the server turned texts down |
+| `autosave.refused.other` | {n} texts not saved | |
+| `autosave.refused.hint` | These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page. | Hover text of that status |
+| `autosave.stopped` | Saving stopped: {reason} | Bar status, when saving can't go on by itself |
+| `autosave.stopped.hint` | Nothing is lost: your changes are kept on this computer. | Hover text of that status |
+| `autosave.stopped.title` | Saving stopped | Message, when saving stops |
+| `autosave.stopped.detail` | Nothing is lost — your changes are kept on this computer. ({reason}) | |
+| `autosave.retry` | Try again | Bar button, when saving stopped or is waiting to try again |
+| `autosave.retry.hint` | Save your changes now | Hover text of that button |
+| `save.reason.offline` | there is no connection | Reason inside the status and the message |
+| `save.reason.reload` | this page is out of date — reload it | |
+| `save.reason.signed_out` | you have been signed out — sign in again, then press Try again | |
+| `save.reason.cap` | a lot was saved at once — it starts again by itself in a few minutes | |
+| `save.reason.daily` | today's saving limit is reached — it starts again tomorrow | |
 | `save.reason.unavailable` | saving isn't available right now | |
 | `save.reason.refused` | the server refused it | |
 | `save.reason.trouble` | the server is having trouble | |

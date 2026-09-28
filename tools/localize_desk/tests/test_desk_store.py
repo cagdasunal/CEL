@@ -66,3 +66,24 @@ def test_the_harness_answers_the_desk_actions_from_the_real_page_map():
     finally:
         import shutil
         shutil.rmtree(root, ignore_errors=True)
+
+
+def test_the_summary_counts_shapes_and_answers_flagged_texts():
+    """desk-summary (runbook WO-18): the index's counts, as the shapes stageOf() reads."""
+    s = _store()
+    _write(s, [{"unit": U1, "page": "vancouver", "base": 0, "record": {"tray": "csv", "text": "Hallo"}},
+               {"unit": U2, "page": "vs-toronto", "base": 0, "record": {"tray": "draft"}}])
+    code, r = s.handle("desk-summary", {"flagged": {"de": [U1], "fr": [U1]}}, "pat@example.test")
+    assert code == 200 and list(r["languages"]) == ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"]
+    assert r["languages"]["de"]["shapes"] == [[{"tray": "csv", "text": True}, 1], [{"tray": "draft"}, 1]]
+    assert r["languages"]["de"]["flagged"] == {U1: {"tray": "csv", "text": True}}
+    assert r["languages"]["fr"] == {"shapes": [], "flagged": {}}
+    assert "Hallo" not in str(r), "no reviewer's wording travels to the index"
+    code, r = s.handle("desk-summary", {"flagged": {"zz": [U1]}}, "pat@example.test")
+    assert code == 400
+
+
+def test_an_id_with_a_trailing_newline_is_refused_as_the_worker_refuses_it():
+    s = _store()
+    code, r = _write(s, [{"unit": U1 + "\n", "page": "vancouver", "base": 0, "record": {"tray": "csv"}}])
+    assert code == 400 and r["error"] == "invalid: bad text id"

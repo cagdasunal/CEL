@@ -257,7 +257,6 @@ def _review_modal() -> str:
         <p class="desk-notice" id="tray-notice"></p>
         <div class="desk-review-actions">
           <button type="button" class="desk-btn" id="tray-done">{close}</button>
-          <button type="button" class="desk-btn is-primary" id="tray-save" hidden></button>
         </div>
       </footer>
     </div>
@@ -318,6 +317,8 @@ def render_index(units: list[dict]) -> str:
     parts.append("      </div>")
 
     parts.append(f'      <p class="subtle">{escape(t("index.footnote"))}</p>')
+    # Said when the storage's counts cannot be read (saving on, runbook WO-18).
+    parts.append('      <p class="subtle desk-status" id="index-summary-note" role="status" hidden></p>')
     parts.append("    </main>")
     parts.append("  </div>")
     parts.append(_index_js(_worth_js(units)))
@@ -340,13 +341,40 @@ SAVE_OFF = True
 SAVE_REASONS = ("offline", "reload", "signed_out", "cap", "daily", "unavailable", "refused", "trouble")
 
 _STAGE_JS = """\
+    // The engine's rules for the stamps, line for line (monorepo tools/localize/storage.py:
+    // instant(), failed_now(), in_flight() -- the parity test runs both on shared cases).
+    // Two writers stamp rows, so stamps are compared as instants, never as text: "10:00:00Z"
+    // sorts after "10:00:00.500Z" and is the earlier of the two. A stamp with no offset is UTC,
+    // as the engine reads it -- Date.parse would take it as this browser's local time.
+    var STAMP_OFFSET = new RegExp('(Z|z|[+-][0-9][0-9](:?[0-9][0-9])?)$');
+    function instant(v) {
+      if (!v || typeof v !== 'string') return null;
+      var ms = Date.parse(v.indexOf(':') !== -1 && !STAMP_OFFSET.test(v) ? v + 'Z' : v);
+      return isNaN(ms) ? null : ms;
+    }
+    // Why the last attempt failed, while nothing has happened since: `failed` is never cleared
+    // by the storage, so a later send or arrival ends it (review of WO-17, P2-4). A failure
+    // whose time cannot be read stands.
+    function failedNow(s) {
+      if (!s.failed) return false;
+      var at = instant(s.failedAt);
+      if (at === null) return true;
+      return ![s.sentAt, s.arrivedAt].some(function (v) { var t = instant(v); return t !== null && t > at; });
+    }
+    // Sent, and neither back nor failed since. A send whose time cannot be read is still out.
+    function inFlight(s) {
+      if (!s.sentAt) return false;
+      var sent = instant(s.sentAt);
+      if (sent === null) return true;
+      return ![s.arrivedAt, s.failedAt].some(function (v) { var t = instant(v); return t !== null && t >= sent; });
+    }
     function stageOf(s) {
       s = s || {};
       // A live row the reviewer has decided about again is NOT live any more from
       // their point of view -- the new decision is what is outstanding. So anything
       // in flight or freshly decided outranks where the text currently sits.
-      if (s.failed) return 'failed';
-      if (s.sentAt && !s.arrivedAt) return 'sending';
+      if (failedNow(s)) return 'failed';
+      if (inFlight(s)) return 'sending';
       if (s.arrivedAt && !s.tray) return 'arrived';
       if (s.tray === 'draft') return 'queued';
       if (s.tray === 'csv') {
@@ -356,6 +384,31 @@ _STAGE_JS = """\
       }
       if (s.liveAt) return 'live';
       return 'todo';
+    }
+"""
+
+
+# The sign-in Worker, for the desk AND the index, from this one string: the session the
+# dashboard's sign-in left in its cookie goes with every request. A request with no answer
+# by `ms` is abandoned (runbook WO-18), so a hung request cannot hold the one slot for ever.
+_PROXY_JS = """\
+    function callProxy(payload, ms) {
+      var url = window.CEL_DISPATCH_URL;
+      if (!url) return Promise.reject(new Error('not configured'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      var ctl = ms && window.AbortController ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, ms) : null;
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctl ? ctl.signal : undefined
+      }).then(function (resp) {
+        return resp.json().catch(function () { return {}; }).then(function (j) {
+          return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+        });
+      }).finally(function () { if (timer) clearTimeout(timer); });
     }
 """
 
@@ -496,10 +549,11 @@ def _worth_js(units: list[dict]) -> str:
 
 
 def _index_js(worth_js: str = "{}") -> str:
-    """Fill each card's progress and links from that locale's saved decisions.
+    """Fill each card's progress and links from that locale's decisions.
 
-    The server cannot know any of this -- decisions live in the reviewer's browser --
-    so the card ships with the honest static number and this upgrades it in place.
+    The card ships with the honest static number and this upgrades it in place: from the
+    storage's counts (`desk-summary`) with this browser's unsent changes laid over them
+    when saving is on (runbook WO-18), from this browser's decisions alone while it is off.
     Every word comes from COPY.md through `t()` / `tn()`.
     """
     return """\
@@ -512,9 +566,37 @@ __HELPERS__
     var SAVE_OFF = __SAVE_OFF__;
 __STAGE_JS__
 __DELTA_JS__
+__PROXY_JS__
     function read(code) {
       try { return JSON.parse(localStorage.getItem('cel-desk-' + code) || '{}') || {}; }
       catch (e) { return {}; }
+    }
+    // Saving on, the storage's counts for every language (runbook WO-18): each decision's
+    // SHAPE with how many there are -- the desk's own stageOf() turns them into stages, so the
+    // index cannot count a stage the desk would not show. The index used to read this browser
+    // alone, and on another computer every language said "not started" (R57).
+    var summary = null;
+    function stages(code, st) {
+      var n = Object.create(null), flagged = 0;
+      function add(stg, k) { n[stg] = (n[stg] || 0) + k; }
+      var sum = summary && summary[code];
+      if (sum) {
+        (sum.shapes || []).forEach(function (s) { add(stageOf(s[0]), s[1]); });
+        // What this browser has not sent yet is laid over what the storage holds.
+        var was = read('saved-' + code), d = deltaBetween(st, was).body;
+        for (var uid in d) { add(stageOf(was[uid]), -1); add(stageOf(st[uid]), 1); }
+        (WORTH[code] || []).forEach(function (id) {
+          if (stageOf(id in d ? st[id] : (sum.flagged || {})[id]) === 'todo') flagged++;
+        });
+      } else {
+        for (var k in st) add(stageOf(st[k]), 1);
+        flagged = (WORTH[code] || []).filter(function (id) { return stageOf(st[id]) === 'todo'; }).length;
+      }
+      function c(stg) { return Math.max(0, n[stg] || 0); }
+      var done = 0;
+      for (var g in n) if (g !== 'todo') done += c(g);
+      return { done: done, csv: c('approved') + c('edited'), draft: c('queued'), arrived: c('arrived'),
+               sending: c('sending'), failed: c('failed'), flagged: flagged };
     }
     function chip(cls, label, href) {
       var a = document.createElement('a');
@@ -529,20 +611,9 @@ __DELTA_JS__
       // The desk's own stageOf(), emitted from the same string, so the index cannot
       // disagree with the page it links to.
       var st = read(code);
-      var csv = 0, draft = 0, arrived = 0, sending = 0, failed = 0, done = 0;
-      for (var k in st) {
-        var stg = stageOf(st[k]);
-        if (stg === 'todo') continue;
-        done++;
-        if (stg === 'failed') failed++;
-        else if (stg === 'sending') sending++;
-        else if (stg === 'arrived') arrived++;
-        else if (stg === 'approved' || stg === 'edited') csv++;
-        else if (stg === 'queued') draft++;
-      }
-      var flagged = (WORTH[code] || []).filter(function (uid) {
-        return stageOf(st[uid]) === 'todo';
-      }).length;
+      var g = stages(code, st);
+      var csv = g.csv, draft = g.draft, arrived = g.arrived, sending = g.sending, failed = g.failed;
+      var done = g.done, flagged = g.flagged;
       var pct = total ? Math.round(100 * done / total) : 0;
       card.querySelector('.desk-meter-fill').style.width = pct + '%';
       card.classList.toggle('is-started', done > 0);
@@ -606,10 +677,26 @@ __DELTA_JS__
     window.addEventListener('storage', function (ev) {
       if (ev.key === null || (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0)) paintAll();
     });
-    window.addEventListener('pageshow', function (ev) { if (ev.persisted) paintAll(); });
+    var summaryNote = document.getElementById('index-summary-note');
+    function readSummary() {
+      if (SAVE_OFF) return;                // nothing is on a server while saving is off
+      callProxy({ action: 'desk-summary', flagged: WORTH }, 20000).then(function (r) {
+        if (!r.ok || !r.body.languages) throw new Error('HTTP ' + r.status);
+        summary = r.body.languages;
+        summaryNote.hidden = true;
+        paintAll();
+      }).catch(function () {
+        // Never "not started" in silence: the numbers left on screen are this browser's only.
+        summaryNote.textContent = t('index.summary.failed');
+        summaryNote.hidden = false;
+      });
+    }
+    readSummary();
+    window.addEventListener('pageshow', function (ev) { if (ev.persisted) { paintAll(); readSummary(); } });
   })();
   </script>
 """.replace("__STAGE_JS__", _STAGE_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
+        "__PROXY_JS__", _PROXY_JS).replace(
         "__WORTH__", worth_js).replace("__HELPERS__", JS_HELPERS + _TIP_JS).replace(
         "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__COPY__", js_table())
 
@@ -726,6 +813,10 @@ def render_locale(code: str, units: list[dict]) -> str:
     parts.append('        <button type="button" class="desk-btn is-primary" id="btn-save" hidden></button>')
     parts.append('        <span class="desk-status" id="save-elsewhere" hidden></span>')
     parts.append('        <span class="desk-status" id="save-status" role="status"></span>')
+    # Autosave's one control (runbook WO-18): shown only when saving has stopped or is waiting
+    # to try again. The button that was Save stays only as "Kept in this browser" (SAVE_OFF).
+    parts.append(f'        <button type="button" class="desk-btn" id="save-retry" '
+                 f'data-tip="{escape(t("autosave.retry.hint"))}" hidden>{escape(t("autosave.retry"))}</button>')
     parts.append("      </div>")
     parts.append("    </div>")
 
@@ -890,10 +981,23 @@ __HELPERS__
       var raw = JSON.stringify(state);
       try {
         try { localStorage.setItem(KEY, raw); }
-        catch (full) { trimLogs(); localStorage.setItem(KEY, raw); }
+        catch (full) {
+          trimLogs();
+          try { localStorage.setItem(KEY, raw); }
+          catch (still) {
+            // Saving on, whatever the storage already holds comes back from it on the next
+            // visit; what has not been sent exists only here. So those copies give way --
+            // the other languages' first, then this one's -- and the unsent changes stay
+            // (runbook WO-18, desk audit P0-8). While saving is off nothing is anywhere else.
+            if (SAVE_OFF) throw still;
+            keepOnlyUnsent();
+          }
+        }
         storageBroken = false;
+        changed();
         return true;
       } catch (e) {
+        changed();                         // what the browser cannot keep, the storage still can
         // Swallowing this silently let every caller toast "saved" while nothing had
         // been written -- the screen stayed right and a reload lost the lot. Say so
         // once, then stop repeating it.
@@ -917,6 +1021,42 @@ __HELPERS__
     }
     function rec(uid) { return state[uid] || (state[uid] = {}); }
 
+    // A language's decisions and its saved copy, cut down to what has not been sent: a text
+    // whose decision is what the storage holds is dropped from both -- it comes back from the
+    // storage on the next load -- and an undo keeps the saved copy it undoes.
+    function unsentOnly(now, was) {
+      var st = {}, sv = {}, uid;
+      for (uid in now) {
+        if (sameDecision(hasContent(now[uid]) ? now[uid] : null, hasContent(was[uid]) ? was[uid] : null)) continue;
+        st[uid] = now[uid];
+        if (was[uid]) sv[uid] = was[uid];
+      }
+      for (uid in was) if (!(uid in now) && hasContent(was[uid])) sv[uid] = was[uid];
+      return { state: st, saved: sv };
+    }
+    // The browser is full: every language keeps only what it has not sent, the others first.
+    // The saved copy is written before the decisions each time -- decisions left without
+    // their saved copy are only sent again (and come back as already saved), where a saved
+    // copy left without its decisions would read as every one of them undone. `known` is a
+    // language's saved copy fresher than the one stored: a save's answer that could not be
+    // written -- cut down against the stored one, its changes would look unsent, and go round.
+    function keepOnlyUnsent(known) {
+      var order = LOCALES.filter(function (c) { return c !== CODE; });
+      for (var i = 0; i < order.length; i++) {
+        var c = order[i];
+        var cut = unsentOnly(readFresh('cel-desk-' + c), (known && known[c]) || readFresh('cel-desk-saved-' + c));
+        try {
+          localStorage.setItem('cel-desk-saved-' + c, JSON.stringify(cut.saved));
+          localStorage.setItem('cel-desk-' + c, JSON.stringify(cut.state));
+        } catch (e) { continue; }
+        try { localStorage.setItem(KEY, JSON.stringify(state)); return; } catch (e) { /* not yet */ }
+      }
+      // This language too. The page keeps everything on screen; the browser keeps the unsent part.
+      var mine = unsentOnly(state, saved);
+      localStorage.setItem(SAVEDKEY, JSON.stringify(mine.saved));
+      localStorage.setItem(KEY, JSON.stringify(mine.state));
+    }
+
     // Who approved, when, and — the one that matters — WHAT they were looking at.
     //
     // An approval is an approval OF A WORDING, not of a row. Without `approvedAgainst`
@@ -934,10 +1074,11 @@ __HELPERS__
       var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
       if (who) s.by = who;
       s.at = new Date().toISOString();
-      if (s.text == null) {
-        // A bare approval: record the live wording it was given to.
-        s.approvedAgainst = liveText[uid];
-      }
+      // The live wording it was given against -- for an edit too, and for an approved Gemini
+      // draft: without it the export cannot tell that the website's text moved after the
+      // approval, and an edit shipped over a newer change, signed and green (second review,
+      // P1-A). The Worker signs this field.
+      s.approvedAgainst = liveText[uid];
     }
 
     // Not surfaced in the UI on purpose; it exists so "it did something strange" can
@@ -1249,7 +1390,11 @@ __STAGE_JS__
       od.disabled = !c.draft;
       oc.textContent = c.csv ? t('bar.view.approved_n', { n: c.csv }) : t('bar.view.approved');
       od.textContent = c.draft ? t('bar.view.requested_n', { n: c.draft }) : t('bar.view.requested');
-      paintSave();
+      // A disabled control says why (the dead-control robot, runbook WO-33; found by its
+      // saving-stopped state, WO-18: the bar with approvals and no requests).
+      if (c.csv) oc.removeAttribute('data-tip'); else oc.setAttribute('data-tip', t('bar.view.approved.hint'));
+      if (c.draft) od.removeAttribute('data-tip'); else od.setAttribute('data-tip', t('bar.view.requested.hint'));
+      paintSave(all);
       // After the frame: reading the bar's position inside a click forced a layout per click
       // (round 3 measured 3.2 -> 10.4 ms with a toast up).
       requestAnimationFrame(placeToasts);
@@ -1566,7 +1711,7 @@ __STAGE_JS__
         var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
         if (who) s.by = who;
         s.at = new Date().toISOString();
-        delete s.approvedAgainst;   // the wording is the reviewer's own, not the live one
+        s.approvedAgainst = liveText[uid];   // what the website said when it was rewritten (P1-A)
         changed = true;
       } else if ((!val || val === liveText[uid]) && s.text != null) {
         // Emptying the box, or typing the website's wording back, both mean "no edit".
@@ -1804,18 +1949,7 @@ __STAGE_JS__
       // A disabled control says why (the dead-control robot, runbook WO-33).
       if (sel) rm.removeAttribute('data-tip'); else rm.setAttribute('data-tip', t('list.undo.hint'));
       document.getElementById('tray-empty').disabled = listed === 0;
-
-      // The list used to offer nothing but Undo and Close: a basket with no way to
-      // check out. Saving is the one step that actually exists today, and it is the
-      // step that makes this work survive the tab -- so it belongs here, not only in
-      // the bar behind the overlay.
-      var ts = document.getElementById('tray-save');
-      var allPending = unsavedByLocale(), pending = 0;
-      for (var pc in allPending) pending += allPending[pc].n;
-      ts.hidden = pending === 0 || SAVE_OFF;
-      ts.disabled = saving;
-      ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
-      ts.setAttribute('data-tip', t('save.button.hint'));
+      // The list's own Save went with autosave (runbook WO-18): what is decided here saves itself.
     }
 
     // Through decide(), like every other decision, so an undone approval also drops its
@@ -1916,12 +2050,6 @@ __STAGE_JS__
     });
 
     document.getElementById('tray-done').addEventListener('click', closeOverlays);
-    document.getElementById('tray-save').addEventListener('click', function () {
-      // Stay on the list while it saves -- the reviewer is looking at exactly the
-      // rows being stored, and closing the overlay would hide the outcome.
-      save().then(paintTrayFooter, paintTrayFooter);
-      paintTrayFooter();
-    });
 
     function showTray(which) {
       openTray = which;
@@ -2025,7 +2153,7 @@ __STAGE_JS__
 
     var btnSave = document.getElementById('btn-save');
     var saveStatus = document.getElementById('save-status');
-    var saving = false;
+    var retryBtn = document.getElementById('save-retry');
     // Runbook WO-34 (decision A15): Save committed the reviewer's email address into a
     // public repository. It is switched off until WO-17 moves the decisions to private
     // storage; the button stays, says so, and explains itself on hover and on click.
@@ -2078,16 +2206,16 @@ __DELTA_JS__
       return out;
     }
 
-    function paintSave() {
-      var all = unsavedByLocale();
+    function paintSave(all) {
+      all = all || unsavedByLocale();
       var total = 0, others = 0;
       for (var c in all) { total += all[c].n; if (c !== CODE) others += all[c].n; }
       var elsewhere = document.getElementById('save-elsewhere');
-      if (elsewhere) {
-        elsewhere.hidden = others === 0;
-        elsewhere.textContent = others ? t(SAVE_OFF ? 'save.off.elsewhere' : 'save.elsewhere', { n: others }) : '';
-      }
       if (SAVE_OFF) {
+        if (elsewhere) {
+          elsewhere.hidden = others === 0;
+          elsewhere.textContent = others ? t('save.off.elsewhere', { n: others }) : '';
+        }
         // aria-disabled, not disabled: a disabled button takes no hover, so it could
         // never say why it is off.
         btnSave.hidden = total === 0;
@@ -2097,10 +2225,16 @@ __DELTA_JS__
         btnSave.setAttribute('data-tip', t('save.off.hint'));
         return;
       }
-      btnSave.hidden = total === 0 || saving;
-      btnSave.textContent = tn('save.button', total);
-      btnSave.disabled = saving;
-      btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
+      // Saving on, there is no Save button (runbook WO-18): the status says where things
+      // stand, for every language at once, and offers Try again when it has stopped.
+      btnSave.hidden = true;
+      if (elsewhere) elsewhere.hidden = true;
+      var st = autosaveState(all);
+      saveStatus.setAttribute('data-state', st.name);
+      saveStatus.textContent = st.words;
+      saveStatus.setAttribute('data-tip', st.tip);
+      saveStatus.className = 'desk-status' + (st.name === 'saved' ? ' is-ok' : st.name === 'stopped' ? ' is-error' : '');
+      retryBtn.hidden = !st.retry;
     }
 
     // ── Saving: the sign-in Worker's desk storage (runbook WO-17) ─────────────────
@@ -2112,31 +2246,18 @@ __DELTA_JS__
     var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
     var CHUNK = 200;          // the Worker's most changes in one request
 
-    function callProxy(payload) {
-      var url = window.CEL_DISPATCH_URL;
-      if (!url) return Promise.reject(new Error('not configured'));
-      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
-      payload.token = m ? m[1] : '';
-      return fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function (resp) {
-        return resp.json().catch(function () { return {}; }).then(function (j) {
-          return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
-        });
-      });
-    }
-
+__PROXY_JS__
     // Why a save stopped, as a COPY.md `save.reason.*` key. The raw answer goes to the log
     // for diagnosis, never on screen.
     function failureReason(r) {
       if (!r) return 'offline';
       if (r.status === 409) return 'reload';
-      if (r.status === 401 || r.status === 403) return 'signed_out';
+      if (r.status === 401) return 'signed_out';
       if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'daily' : 'cap';
       if (r.status === 503) return 'unavailable';
-      if (r.status === 400) return 'refused';
+      // 403 is the Worker's "forbidden origin" -- the session is fine; it is a refusal (review
+      // of WO-17, P3: it read as "signed out").
+      if (r.status === 400 || r.status === 403) return 'refused';
       return 'trouble';
     }
 
@@ -2163,111 +2284,282 @@ __DELTA_JS__
       return fPage.value && pages.indexOf(fPage.value) !== -1 ? fPage.value : pages[0];
     }
 
+    // Texts the storage refused as not on their page, per language, with the decision it
+    // refused: not sent again this visit unless the reviewer decides them again -- autosave
+    // would otherwise send them round for ever. The next visit tries once more.
+    var parked = Object.create(null);
+    function isParked(code, uid, record) {
+      var p = parked[code];
+      return !!p && p[uid] === JSON.stringify(record);
+    }
+
+    // One request: the next slice (at most CHUNK) of one language's unsent changes -- or
+    // null when that language has nothing to send.
     async function saveLanguage(code, d) {
+      var waiting = code === CODE ? conflicts : conflictsOf(code);
+      // A text waiting on a conflict decision is not sent again until it is decided.
+      var uids = Object.keys(d.body).filter(function (uid) {
+        return !waiting[uid] && !isParked(code, uid, d.body[uid]);
+      }).slice(0, CHUNK);
+      if (!uids.length) return null;
+      var wait = capWait(uids.length);
+      if (wait) {
+        var capped = new Error('cap');
+        capped.wait = wait;
+        capped.detail = 'the client ceiling';
+        throw capped;
+      }
       var units = await fetchUnits(code);
       var pages = Object.create(null);
       units.forEach(function (u) { pages[u.id] = u.pages; });
-      var base = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
-      var waiting = code === CODE ? conflicts : conflictsOf(code);
-      // A text waiting on a conflict decision is not sent again until it is decided.
-      var uids = Object.keys(d.body).filter(function (uid) { return !waiting[uid]; });
-      var out = { applied: 0, conflicts: 0, refused: 0, waiting: Object.keys(d.body).length - uids.length };
-      for (var i = 0; i < uids.length; i += CHUNK) {
-        var changes = uids.slice(i, i + CHUNK).map(function (uid) {
-          return { unit: uid, page: pageFor(pages[uid]), base: (base[uid] && base[uid].version) || 0,
-                   record: d.body[uid] };                // null: the decision was undone
+      // A decision for a text this desk no longer has (the English changed, WO-20) has no page
+      // to name, and one such change made the Worker refuse the whole request -- every save of
+      // the language, for good (review of WO-17, P1-4). It is kept, not sent: refused, here.
+      var orphans = uids.filter(function (uid) { return !pageFor(pages[uid]); });
+      if (orphans.length) {
+        orphans.forEach(function (uid) {
+          (parked[code] || (parked[code] = Object.create(null)))[uid] = JSON.stringify(d.body[uid]);
         });
-        var r = null;
-        try {
-          r = await callProxy({ action: 'desk-write', locale: code, client: DESK_CLIENT, changes: changes });
-        } catch (e) { r = null; }
-        if (!r || !r.ok) {
-          var err = new Error(failureReason(r));
-          err.detail = r ? r.status + ' ' + ((r.body && r.body.error) || '') : 'no answer';
-          throw err;
-        }
-        (r.body.applied || []).forEach(function (a) {
-          base[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
-          out.applied++;
-        });
-        (r.body.conflicts || []).forEach(function (c) {
-          // Their version becomes the base, so a later save of yours is a deliberate choice
-          // over theirs -- and it waits until the reviewer makes it (the row says so).
-          base[c.unit] = c.current ? Object.assign(storedOnly(c.current), { version: c.current.version }) : {};
-          waiting[c.unit] = c.current || { gone: true };
-          out.conflicts++;
-        });
-        out.refused += (r.body.refused || []).length;
-        // Bank each request as it lands: a failure on the next must not undo this one.
-        try { localStorage.setItem('cel-desk-saved-' + code, JSON.stringify(base)); } catch (e) {}
-        persistConflicts(code, waiting);
-        if (code === CODE) saved = base;
+        uids = uids.filter(function (uid) { return pageFor(pages[uid]); });
+        if (!uids.length) return { code: code, applied: 0, conflicts: [], refused: orphans.length };
       }
+      var base = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
+      var changes = uids.map(function (uid) {
+        return { unit: uid, page: pageFor(pages[uid]), base: (base[uid] && base[uid].version) || 0,
+                 record: d.body[uid] };                // null: the decision was undone
+      });
+      countSent(changes.length);
+      var r = null;
+      try {
+        r = await callProxy({ action: 'desk-write', locale: code, client: DESK_CLIENT, changes: changes }, TIMEOUT_MS);
+      } catch (e) {
+        // No answer in time is the server's trouble; no answer at all is no connection.
+        r = e && e.name === 'AbortError' ? { status: 504, ok: false, body: {} } : null;
+      }
+      // A save is an answer that says so: a 200 with nothing in it counted as one, with
+      // nothing saved and nothing said (review of WO-17, P3).
+      if (!r || !r.ok || !r.body || r.body.ok !== true || !Array.isArray(r.body.applied)) {
+        var err = new Error(failureReason(r && r.ok ? { status: 502, body: r.body } : r));
+        err.detail = r ? r.status + ' ' + ((r.body && r.body.error) || '') : 'no answer';
+        throw err;
+      }
+      // What this browser holds NOW: the language may have loaded again while the request
+      // was out, or another tab written it.
+      var now = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
+      var parkedNow = code === CODE ? conflicts : conflictsOf(code);
+      var out = { code: code, applied: 0, conflicts: [], refused: orphans.length };
+      (r.body.applied || []).forEach(function (a) {
+        now[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
+        out.applied++;
+      });
+      (r.body.conflicts || []).forEach(function (c) {
+        var cur = c.current && hasContent(c.current) ? c.current : null;
+        if (sameDecision(hasContent(d.body[c.unit]) ? d.body[c.unit] : null, cur)) {
+          // The storage already holds exactly this change -- ours, sent before and its answer
+          // lost on the way back (runbook WO-18). Not a conflict with anyone: take its version.
+          if (c.current) now[c.unit] = Object.assign(storedOnly(c.current), { version: c.current.version });
+          else delete now[c.unit];
+          out.applied++;
+          return;
+        }
+        // Their version becomes the base, so a later save of yours is a deliberate choice
+        // over theirs -- and it waits until the reviewer makes it (the row says so).
+        now[c.unit] = c.current ? Object.assign(storedOnly(c.current), { version: c.current.version }) : {};
+        parkedNow[c.unit] = c.current || { gone: true };
+        out.conflicts.push(c.unit);
+      });
+      (r.body.refused || []).forEach(function (x) {
+        (parked[code] || (parked[code] = Object.create(null)))[x.unit] = JSON.stringify(d.body[x.unit]);
+        out.refused++;
+      });
+      try { localStorage.setItem('cel-desk-saved-' + code, JSON.stringify(now)); }
+      catch (e) {
+        var known = {};
+        known[code] = now;
+        if (!SAVE_OFF) { try { keepOnlyUnsent(known); } catch (e2) {} }
+      }
+      persistConflicts(code, parkedNow);
+      if (code === CODE) { saved = now; conflicts = parkedNow; }
       return out;
     }
 
+    // One round: the next slice of what is unsent, this language first. Null: nothing to send.
     async function save() {
-      if (SAVE_OFF) {
-        toast(t('save.off.title'), { level: 'warn', detail: t('save.off.hint') });
-        return;
-      }
-      if (saving) return;                    // one save in flight, never two
       var all = unsavedByLocale();
-      var codes = Object.keys(all);
-      if (!codes.length) return;
-
-      saving = true; paintSave();
-      saveStatus.textContent = t('save.status.saving');
-      saveStatus.className = 'desk-status';
-
-      var got = { applied: 0, conflicts: 0, refused: 0, waiting: 0 }, done = [], failed = null;
-      try {
-        for (var i = 0; i < codes.length; i++) {
-          var c = codes[i];
-          if (codes.length > 1) {
-            saveStatus.textContent = t('save.status.language',
-              { language: t('lang.' + c), i: i + 1, count: codes.length });
-          }
-          var res = await saveLanguage(c, all[c]);
-          for (var k in got) got[k] += res[k];
-          done.push(c);
-        }
-      } catch (err) {
-        failed = err;
+      var codes = Object.keys(all).sort(function (a, b) { return (b === CODE) - (a === CODE); });
+      for (var i = 0; i < codes.length; i++) {
+        var res = await saveLanguage(codes[i], all[codes[i]]);
+        if (res) return res;
       }
-
-      saving = false;
-      rows.forEach(paint);
-      paintSave(); paintBar(); applyFilters();
-
-      if (failed) {
-        saveStatus.textContent = t('save.status.failed');
-        saveStatus.className = 'desk-status is-error';
-        note('save-failed', null, failed.message + ': ' + (failed.detail || ''), done.join(','));
-        var reason = t('save.reason.' + failed.message);
-        toast(done.length ? t('save.partial.title', { done: done.length, count: codes.length })
-                          : t('save.failed.title'),
-              { level: 'err',
-                detail: t(done.length ? 'save.partial.detail' : 'save.failed.detail', { reason: reason }) });
-        return;
-      }
-      note('save', null, String(got.applied), codes.join(','));
-      saveStatus.textContent = '';
-      if (got.applied) {
-        toast(t('save.done.title'), { level: 'ok',
-          detail: codes.length > 1 ? t('save.done.detail_langs', { n: got.applied, count: codes.length })
-                                   : tn('save.done.detail', got.applied) });
-      }
-      if (got.conflicts || got.waiting) {
-        toast(t('save.conflicts.title'), { level: 'warn', sticky: true,
-                                           detail: tn('save.conflicts.detail', got.conflicts + got.waiting) });
-      }
-      if (got.refused) {
-        toast(t('save.refused.title'), { level: 'warn', detail: tn('save.refused.detail', got.refused) });
-      }
+      return null;
     }
 
-    btnSave.addEventListener('click', save);
+    // ── Autosave (runbook WO-18, contract §8 S3) ─────────────────────────────────
+    // There is no Save button. A change goes by itself once the reviewer has paused for about
+    // two seconds -- and no later than ten after the first unsent change, however busy they
+    // are -- one request at a time across every tab of this browser (they share one lock and
+    // one store, so they never race), under this browser's own ceiling. Nothing is sent on the
+    // way out: a request started while a page closes is one nobody can promise lands (R39);
+    // what is unsent stays in this browser and goes on the next visit. The bar says where
+    // things stand, in COPY.md's words: saved · saving · not saved, retrying · offline, kept
+    // on this computer · conflict · stopped -- and refused, for texts the storage turned down.
+    var QUIET_MS = 2000, MAX_WAIT_MS = 10000, TIMEOUT_MS = 20000;
+    var RETRY_MS = [2000, 5000, 15000, 30000, 60000];
+    // The ceiling: the Worker's own cap per user (2,000 changes in 10 minutes), so bulk work
+    // waits here rather than being refused there; and a request every 2 s on average, so no
+    // loop of this page's can ever hammer the storage.
+    var CAP = { windowMs: 600000, changes: 2000, requests: 300 };
+    var SENTKEY = 'cel-desk-sent';
+    // These stop saving until the reviewer acts (or, over the cap, until the window has
+    // passed); the rest are tried again by themselves.
+    var STOPS = { reload: 1, signed_out: 1, cap: 1, daily: 1, refused: 1 };
+    var REASONS = __SAVE_REASONS__;
+    var sync = { phase: 'idle', reason: '' };   // idle | waiting | sending | retry | offline | stopped
+    var timer = null, firstAt = 0, lastAt = 0, tries = 0, requestOut = false, sentMem = [];
+
+    function setSync(phase, reason) { sync = { phase: phase, reason: reason || '' }; }
+
+    // Where saving stands, for the bar: what is waiting, across every language.
+    function autosaveState(all) {
+      var pend = 0, conf = 0, ref = 0;
+      LOCALES.forEach(function (code) {
+        var waiting = code === CODE ? conflicts : readStored('cel-desk-conflicts-' + code);
+        conf += Object.keys(waiting).length;
+        var d = all[code];
+        if (!d) return;
+        for (var uid in d.body) {
+          if (waiting[uid]) continue;
+          if (isParked(code, uid, d.body[uid])) ref++; else pend++;
+        }
+      });
+      var why = sync.reason ? t('save.reason.' + sync.reason) : '';
+      if (sync.phase === 'stopped') {
+        return { name: 'stopped', words: t('autosave.stopped', { reason: why }), tip: t('autosave.stopped.hint'),
+                 retry: sync.reason !== 'reload' };
+      }
+      if (conf) return { name: 'conflict', words: tn('autosave.conflict', conf), tip: t('autosave.conflict.hint') };
+      if (!pend) {
+        return ref ? { name: 'refused', words: tn('autosave.refused', ref), tip: t('autosave.refused.hint') }
+                   : { name: 'saved', words: t('autosave.saved'), tip: t('autosave.saved.hint') };
+      }
+      if (sync.phase === 'offline') return { name: 'offline', words: tn('autosave.offline', pend), tip: t('autosave.offline.hint'), retry: true };
+      if (sync.phase === 'retry') {
+        return { name: 'retrying', words: tn('autosave.retrying', pend, { reason: why }), tip: t('autosave.retrying.hint'), retry: true };
+      }
+      return { name: 'saving', words: tn('autosave.saving', pend), tip: t('autosave.saving.hint') };
+    }
+
+    // This browser's requests of the last ten minutes, shared by its tabs.
+    function sentLog() {
+      var cut = Date.now() - CAP.windowMs, log;
+      try { log = JSON.parse(localStorage.getItem(SENTKEY) || '[]'); } catch (e) { log = null; }
+      if (!Array.isArray(log)) log = sentMem;
+      return log.filter(function (e) { return Array.isArray(e) && e[0] > cut; });
+    }
+    function countSent(n) {
+      var log = sentLog();
+      log.push([Date.now(), n]);
+      sentMem = log;
+      try { localStorage.setItem(SENTKEY, JSON.stringify(log)); } catch (e) {}
+    }
+    // How long until `n` more changes fit under the ceiling: 0 when they fit now. The
+    // Worker counts in whole minutes, so a minute is added before trying again.
+    function capWait(n) {
+      var log = sentLog(), changes = 0, reqs = log.length, i = 0;
+      log.forEach(function (e) { changes += e[1]; });
+      while (i < log.length && (reqs + 1 > CAP.requests || changes + n > CAP.changes)) {
+        changes -= log[i][1]; reqs--; i++;
+      }
+      return i ? log[i - 1][0] + CAP.windowMs + 60000 - Date.now() : 0;
+    }
+
+    // One sender at a time across this browser's tabs. Without the Web Locks API (older
+    // browsers) each tab keeps to one at a time; two tabs sending the same change is then
+    // harmless -- the second comes back as already saved.
+    function withLock(fn) {
+      return navigator.locks && navigator.locks.request ? navigator.locks.request('cel-desk-save', fn) : fn();
+    }
+
+    function arm(ms) { clearTimeout(timer); timer = setTimeout(run, Math.max(0, ms)); }
+    // Something changed -- here, or in another tab of this browser.
+    function changed() {
+      if (SAVE_OFF) return;
+      lastAt = Date.now();
+      schedule();
+    }
+    function schedule() {
+      // A retry, a stop and a request in flight each have their own way back.
+      if (SAVE_OFF || requestOut || sync.phase === 'stopped' || sync.phase === 'retry' || sync.phase === 'offline') return;
+      var now = Date.now();
+      if (!firstAt) firstAt = now;
+      if (sync.phase === 'idle') setSync('waiting');
+      arm(Math.min(lastAt + QUIET_MS, firstAt + MAX_WAIT_MS) - now);
+    }
+    function run() {
+      timer = null;
+      if (SAVE_OFF || requestOut) return;
+      requestOut = true;
+      setSync('sending', sync.reason);
+      paintBar();
+      withLock(save).then(sent, failed);
+    }
+    function sent(res) {
+      requestOut = false;
+      tries = 0;
+      setSync('idle');
+      if (!res) { firstAt = 0; paintBar(); return; }    // nothing was left to send
+      if (res.conflicts.length) {
+        if (res.code === CODE) {
+          res.conflicts.forEach(function (uid) {
+            var tr = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
+            if (tr) paint(tr);
+          });
+          applyFilters();
+        }
+        toast(t('save.conflicts.title'), { level: 'warn', sticky: true,
+                                           detail: tn('save.conflicts.detail', res.conflicts.length) });
+      }
+      if (res.refused) toast(t('save.refused.title'), { level: 'warn', detail: tn('save.refused.detail', res.refused) });
+      note('save', null, String(res.applied), res.code);
+      paintBar();
+      // The rest of a large change goes at once; a change made while this request was out
+      // waits for its own quiet moment -- and no longer than ten seconds from now.
+      firstAt = Date.now();
+      schedule();
+    }
+    function failed(err) {
+      requestOut = false;
+      var reason = err && REASONS.indexOf(err.message) !== -1 ? err.message : 'trouble';
+      note('save-failed', null, reason + ': ' + ((err && (err.detail || err.message)) || ''), null);
+      if (STOPS[reason]) {
+        setSync('stopped', reason);
+        clearTimeout(timer); timer = null;
+        if (reason === 'cap') arm(err.wait || CAP.windowMs);     // it starts again by itself
+        toast(t('autosave.stopped.title'), { level: reason === 'cap' ? 'warn' : 'err',
+                                             detail: t('autosave.stopped.detail', { reason: t('save.reason.' + reason) }) });
+      } else {
+        setSync(reason === 'offline' ? 'offline' : 'retry', reason);
+        arm(RETRY_MS[Math.min(tries++, RETRY_MS.length - 1)]);
+      }
+      paintBar();
+    }
+
+    // Try again: now, not after a quiet moment -- the reviewer asked.
+    retryBtn.addEventListener('click', function () {
+      tries = 0;
+      firstAt = 0;
+      setSync('idle');
+      clearTimeout(timer); timer = null;
+      run();
+    });
+    // Back online: try at once, instead of waiting out the retry.
+    window.addEventListener('online', function () {
+      if (sync.phase === 'offline' || sync.phase === 'retry') { tries = 0; arm(0); }
+    });
+    // While saving is off the old button stays as "Kept in this browser", and says why.
+    btnSave.addEventListener('click', function () {
+      toast(t('save.off.title'), { level: 'warn', detail: t('save.off.hint') });
+    });
 
 
     // ── Toasts ─────────────────────────────────────────────────────────
@@ -2458,34 +2750,47 @@ __DELTA_JS__
       var code = CODE;
       var unitsP = fetchUnits(code);
       // The storage's copy, fetched with the texts (runbook WO-17). While saving is off the
-      // desk asks nothing of the storage: every decision is this browser's.
+      // desk asks nothing of the storage: every decision is this browser's. The read takes
+      // autosave's turn (WO-18): a read answered while one of this browser's saves was still
+      // out could hand back the copy from before it, and the load would take that as newer.
       var serverP = SAVE_OFF ? Promise.resolve(null)
-        : callProxy({ action: 'desk-read', locale: code }).catch(function (e) { return e; });
+        : withLock(function () { return callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS); })
+            .catch(function (e) { return e; });
       var units;
       try { units = await unitsP; }
       catch (e) { if (seq !== loadSeq) return; throw e; }   // a stale failure is not news
       if (seq !== loadSeq) return;          // a newer switch has taken over
-      // What the storage holds is the baseline, with each text's version. Anything decided
-      // in THIS browser and not yet saved stays exactly as it is and still counts as
-      // unsaved -- the server copy fills in only the texts this browser has never touched,
-      // which is what makes a second machine useful instead of blank.
+      // What the storage holds is the baseline, with each text's version. A change made in
+      // THIS browser and not yet saved stays exactly as it is, still unsaved, and keeps the
+      // version it was made on -- so if someone saved the text since, it comes back as a
+      // conflict on its row instead of overwriting them. Everything else is the storage's
+      // copy: a text this browser never touched (what makes a second machine useful), and a
+      // text it saved long ago that a colleague has changed since (R26: comparing only
+      // "does this browser hold anything" kept the old copy as if it were a change, and the
+      // next save put it back over the colleague's; and it took an unsent undo -- which holds
+      // nothing -- for "never touched", so the undo was lost on a reload).
       try {
         var sr = await serverP;
         if (seq !== loadSeq) return;        // switched away while this was loading
         if (sr instanceof Error) throw sr;
-        if (sr && !sr.ok) throw new Error('HTTP ' + sr.status);
+        if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);
         if (sr) {
           var server = (sr.body && sr.body.decisions) || {};
-          var adopted = 0;
+          var adopted = 0, known = saved;   // what this browser last knew the storage held
           saved = {};
           for (var uid in server) {
-            saved[uid] = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
-            // Adopt only where this browser holds NOTHING -- an undone decision and a draft
-            // that came back both have no tray, and neither may be overwritten.
-            if (!hasContent(state[uid]) && hasContent(server[uid])) {
-              state[uid] = Object.assign(storedOnly(server[uid]), { by: server[uid].by, at: server[uid].at });
-              adopted++;
+            var srv = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
+            var mine = hasContent(state[uid]) ? state[uid] : null;
+            var theirs = hasContent(server[uid]) ? server[uid] : null;
+            var was = known[uid];
+            // Never back to an older copy than this browser has already seen saved.
+            if (was && was.version > srv.version) { saved[uid] = was; continue; }
+            if (!sameDecision(mine, hasContent(was) ? was : null) && !sameDecision(mine, theirs)) {
+              if (was) saved[uid] = was;    // this browser's unsent change, on its own version
+              continue;
             }
+            saved[uid] = srv;
+            if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; }
           }
           try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
           persist();
@@ -2540,6 +2845,9 @@ __DELTA_JS__
       // Once per page, not per switch: sixteen switches were sixteen log entries in each
       // language, and the eight capped logs nearly filled the origin (review round 2).
       if (first) note('load', null, String(units.length), null);
+      // What this browser has not sent -- the last visit's included (nothing goes on the way
+      // out, R39) -- goes after the usual quiet moment.
+      changed();
       // What the browser tests time (runbook WO-09, G9 budgets): from the switch, or the
       // page opening, to the new rows painted on screen.
       if (window.performance && performance.mark) {
@@ -2547,6 +2855,16 @@ __DELTA_JS__
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
+    }
+
+    // The storage's copy of a decision replaces this browser's: its fields, and who made it
+    // and when. What the engine stamped on the row here is not a decision, and stays.
+    function takeStorageCopy(uid, rec) {
+      var keep = {}, cur = state[uid] || {};
+      for (var k in cur) {
+        if (STORED_FIELDS.indexOf(k) === -1 && k !== 'by' && k !== 'at' && k !== 'was') keep[k] = cur[k];
+      }
+      state[uid] = Object.assign(keep, storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by, at: rec.at } : {});
     }
 
     function loadFailed(err) {
@@ -2609,15 +2927,20 @@ __DELTA_JS__
       state = readFresh(KEY);
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(CODE);
+      changed();                           // the other tab's change is this browser's to send too
       // Nothing built yet -- loading, or failed to load: the load paints from `state`, and a
       // failure's message must stay on screen (round 3: it became "Showing 0 of 0").
       if (!rows.length) return;
       rows.forEach(paint); paintBar(); applyFilters();
       if (openTray) paintTray();
     }
+    var LANG_KEY = new RegExp('^cel-desk-[a-z][a-z]$');
     window.addEventListener('storage', function (ev) {
       if (ev.key === KEY || ev.key === SAVEDKEY || ev.key === 'cel-desk-conflicts-' + CODE || ev.key === null) adoptStored();
-      else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) paintBar();
+      else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) {
+        paintBar();
+        if (LANG_KEY.test(ev.key)) changed();   // a decision this tab can send, if its own tab closes first
+      }
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
 
@@ -2637,6 +2960,7 @@ __DELTA_JS__
         {c: {"endonym": e, "rtl": d == "rtl"} for c, e, d, _f in LOCALES}, ensure_ascii=False)).replace(
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
     "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
+    "__PROXY_JS__", _PROXY_JS).replace("__SAVE_REASONS__", json.dumps(list(SAVE_REASONS))).replace(
     "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__COPY__", js_table())
 
 

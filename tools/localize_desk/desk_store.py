@@ -13,6 +13,9 @@ and body, for every rule: versions and conflicts, the page map, the smoke's scop
 client handshake, the record's shape, the size limit, history. Change the Worker and this
 together, or that test fails (monorepo runbook WO-33, decision (b)).
 
+`desk-summary` (runbook WO-18) is the index's: each language's decisions as the shapes the
+desk's stageOf() reads, with their counts, and the shape of each flagged text it names.
+
 What it leaves out: the session check (the harness signs everyone in), the signature's
 value (it is never returned), and the per-user cap (it needs thousands of requests; the
 Worker's own tests hold it).
@@ -30,13 +33,20 @@ from pathlib import Path
 
 API = 1
 MIN_CLIENT = 1
-LOCALES = frozenset({"de", "fr", "es", "pt", "it", "ja", "ko", "ar", "zz"})
+REAL_LOCALES = ("de", "fr", "es", "pt", "it", "ja", "ko", "ar")     # the Worker's order
+LOCALES = frozenset({*REAL_LOCALES, "zz"})
 SMOKE_LOCALE, SMOKE_PAGE, SMOKE_UNIT = "zz", "_smoke", "0000000000000000"
 MAX_CHANGES = 200
 MAX_TEXT = 8000
 MAX_BYTES = 1_900_000
-UNIT = re.compile(r"^[0-9a-f]{16}$")
-PAGE = re.compile(r"^[a-z0-9_-]{1,80}$")
+MAX_FLAGGED = 8000
+# The Worker's per-user cap (DESK_CAP), which this stand-in does not enforce (see above). The
+# desk's own ceiling is held to it (runbook WO-18), and these to the Worker by the parity test.
+CAP_CHANGES, CAP_WINDOW_SEC = 2000, 600
+# Used with fullmatch(), never match(): Python's `$` also matches before a final newline,
+# JavaScript's does not -- so "<id>\n" passed here and was refused by the Worker (parity test).
+UNIT = re.compile(r"[0-9a-f]{16}")
+PAGE = re.compile(r"[a-z0-9_-]{1,80}")
 
 
 class Invalid(ValueError):
@@ -106,6 +116,16 @@ def record_of(raw) -> dict:
     return out
 
 
+def _shape(tray, edited: bool) -> dict:
+    """The Worker's deskShape(): what stageOf() reads of a decision, and nothing else."""
+    out: dict = {}
+    if tray:
+        out["tray"] = tray
+    if edited:
+        out["text"] = True
+    return out
+
+
 def sig_input(locale: str, unit: str, record: dict, by: str, at: str) -> str:
     """The Worker's deskSigInput -- byte for byte (data/localize/desk-signature-vectors.json)."""
     return _dumps(["desk-approval/v1", locale, unit, record.get("tray") or "", record.get("text") or "",
@@ -145,6 +165,8 @@ class DeskStore:
                 return self._write(body, email)
             if action == "desk-history":
                 return self._history(body)
+            if action == "desk-summary":
+                return self._summary(body)
         return 400, {"error": "invalid action"}
 
     @staticmethod
@@ -174,9 +196,9 @@ class DeskStore:
                     raise Invalid("a change must be an object")
                 c = c if isinstance(c, dict) else {}
                 unit, page = _js_str(c.get("unit")), _js_str(c.get("page"))
-                if not UNIT.match(unit):
+                if not UNIT.fullmatch(unit):
                     raise Invalid("bad text id")
-                if not PAGE.match(page):
+                if not PAGE.fullmatch(page):
                     raise Invalid("bad page")
                 if (locale == SMOKE_LOCALE) != (page == SMOKE_PAGE):
                     raise Invalid("language zz and page _smoke go only together")
@@ -233,13 +255,50 @@ class DeskStore:
                      "readAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                      "decisions": decisions, "pipeline": pipeline, "drafts": drafts}
 
+    def _summary(self, body: dict) -> tuple[int, dict]:
+        pairs: list[tuple[str, str]] = []
+        try:
+            f = body.get("flagged")
+            if f is not None:
+                if not isinstance(f, dict):
+                    raise Invalid("flagged must be an object of lists")
+                for locale, ids in f.items():
+                    if locale not in REAL_LOCALES:
+                        raise Invalid("unknown language")
+                    if not isinstance(ids, list):
+                        raise Invalid("flagged must be an object of lists")
+                    for u in ids:
+                        if not isinstance(u, str) or not UNIT.fullmatch(u):
+                            raise Invalid("bad text id")
+                        pairs.append((locale, u))
+                if len(pairs) > MAX_FLAGGED:
+                    raise Invalid(f"more than {MAX_FLAGGED} flagged texts")
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        counts: dict[tuple[str, str | None, bool], int] = {}
+        for (loc, _u), r in self.decisions.items():
+            if loc != SMOKE_LOCALE:
+                key = (loc, r["record"].get("tray"), r["record"].get("text") is not None)
+                counts[key] = counts.get(key, 0) + 1
+        languages = {loc: {"shapes": [], "flagged": {}} for loc in REAL_LOCALES}
+        # SQLite's ORDER BY tray, edited: no tray first, then csv, draft; unedited first.
+        for loc, tray, edited in sorted(counts, key=lambda k: (k[0], k[1] is not None, k[1] or "", k[2])):
+            languages[loc]["shapes"].append([_shape(tray, edited), counts[(loc, tray, edited)]])
+        for loc, u in pairs:
+            r = self.decisions.get((loc, u))
+            if r is not None:
+                languages[loc]["flagged"][u] = _shape(r["record"].get("tray"), r["record"].get("text") is not None)
+        return 200, {"ok": True, "api": API,
+                     "readAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                     "languages": languages}
+
     def _history(self, body: dict) -> tuple[int, dict]:
         try:
             locale = self._locale(body)
         except Invalid as e:
             return 400, {"ok": False, "error": f"invalid: {e}"}
         unit = str(body.get("unit") or "")
-        if not UNIT.match(unit):
+        if not UNIT.fullmatch(unit):
             return 400, {"ok": False, "error": "invalid: bad text id"}
         rows = [h for h in self.history if h["locale"] == locale and h["unit"] == unit][::-1][:50]
         return 200, {"ok": True, "history": [

@@ -145,6 +145,7 @@
         <button type="button" class="desk-btn is-primary" id="btn-save" hidden></button>
         <span class="desk-status" id="save-elsewhere" hidden></span>
         <span class="desk-status" id="save-status" role="status"></span>
+        <button type="button" class="desk-btn" id="save-retry" data-tip="Save your changes now" hidden>Try again</button>
       </div>
     </div>
   </div>
@@ -199,7 +200,6 @@
         <p class="desk-notice" id="tray-notice"></p>
         <div class="desk-review-actions">
           <button type="button" class="desk-btn" id="tray-done">Close</button>
-          <button type="button" class="desk-btn is-primary" id="tray-save" hidden></button>
         </div>
       </footer>
     </div>
@@ -270,7 +270,7 @@
     var LOCALES = ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"];
     // Every word on this page comes from COPY.md (operator, 2026-09-23: all text lives in
     // one document and the code pulls it from there). t() / tn() read it.
-    var COPY = {"how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nApproved texts wait for the import file, and new-translation requests wait for sending to\nGemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the\nbottom, and anything in them can be undone.\n\n### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — English College","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — English College","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot.","locale.eyebrow":"LOCALIZATION DESK · {LANGUAGE}","locale.subtitle":"{total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"Flagged — check these first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In the import file ({n})","show.live":"On the website ({n})","count.line":"Showing {shown} of {total} texts","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In the import file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Decide again to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Decide again to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","save.button.one":"Save 1 change","save.button.other":"Save {n} changes","save.button.hint":"Stores your decisions on the server, so they survive this tab and anyone else reviewing sees them.","save.button.hint_elsewhere":"{n} of them are in other languages. Save stores every language at once.","save.elsewhere":"+ {n} unsaved in other languages","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","save.status.saving":"Saving…","save.status.language":"Saving {language} ({i} of {count})…","save.status.failed":"Not saved","save.done.title":"Saved","save.done.detail.one":"1 change is stored. You can close this page or carry on from another computer.","save.done.detail.other":"{n} changes are stored. You can close this page or carry on from another computer.","save.done.detail_langs":"{n} changes are stored across {count} languages. You can close this page or carry on from another computer.","save.failed.title":"Not saved","save.failed.detail":"Nothing is lost — your work is still on this page. Please press Save again. ({reason})","save.partial.title":"Saved {done} of {count} languages","save.partial.detail":"Nothing is lost — the rest is still on this page. Please press Save again. ({reason})","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it, then save","save.reason.signed_out":"you have been signed out — sign in again, then save","save.reason.cap":"a lot was saved at once — wait a few minutes","save.reason.daily":"today's saving limit is reached — save again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: keep yours by deciding again, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: keep yours by deciding again, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once an import file is made and imported into Weglot.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Sending requests to Gemini isn't switched on yet. They'll be waiting when it is.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's kept in this browser, with your other decisions.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.updated.one":"1 text updated","toast.updated.other":"{n} texts updated","toast.updated.arrived.one":"1 new translation to read.","toast.updated.arrived.other":"{n} new translations to read.","toast.updated.failed.one":"1 translation failed.","toast.updated.failed.other":"{n} translations failed.","toast.updated.live.one":"1 is now on the website.","toast.updated.live.other":"{n} are now on the website.","toast.storage.title":"Your browser isn't keeping your work","toast.storage.detail":"Everything on screen is still right, but reloading would lose it. Keep this tab open and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is kept in this browser. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are kept in this browser. Making the Weglot import file isn't switched on yet — they'll be waiting when it is.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","how.title":"How this works","how.close":"Close"};
+    var COPY = {"how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nApproved texts wait for the import file, and new-translation requests wait for sending to\nGemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the\nbottom, and anything in them can be undone.\n\n### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — English College","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — English College","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot.","locale.eyebrow":"LOCALIZATION DESK · {LANGUAGE}","locale.subtitle":"{total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"Flagged — check these first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In the import file ({n})","show.live":"On the website ({n})","count.line":"Showing {shown} of {total} texts","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In the import file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Decide again to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Decide again to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: decide again to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: keep yours by deciding again, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: keep yours by deciding again, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once an import file is made and imported into Weglot.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Sending requests to Gemini isn't switched on yet. They'll be waiting when it is.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's kept in this browser, with your other decisions.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.updated.one":"1 text updated","toast.updated.other":"{n} texts updated","toast.updated.arrived.one":"1 new translation to read.","toast.updated.arrived.other":"{n} new translations to read.","toast.updated.failed.one":"1 translation failed.","toast.updated.failed.other":"{n} translations failed.","toast.updated.live.one":"1 is now on the website.","toast.updated.live.other":"{n} are now on the website.","toast.storage.title":"Your browser isn't keeping your work","toast.storage.detail":"Everything on screen is still right, but reloading would lose it. Keep this tab open and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is kept in this browser. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are kept in this browser. Making the Weglot import file isn't switched on yet — they'll be waiting when it is.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","how.title":"How this works","how.close":"Close"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -419,10 +419,23 @@
       var raw = JSON.stringify(state);
       try {
         try { localStorage.setItem(KEY, raw); }
-        catch (full) { trimLogs(); localStorage.setItem(KEY, raw); }
+        catch (full) {
+          trimLogs();
+          try { localStorage.setItem(KEY, raw); }
+          catch (still) {
+            // Saving on, whatever the storage already holds comes back from it on the next
+            // visit; what has not been sent exists only here. So those copies give way --
+            // the other languages' first, then this one's -- and the unsent changes stay
+            // (runbook WO-18, desk audit P0-8). While saving is off nothing is anywhere else.
+            if (SAVE_OFF) throw still;
+            keepOnlyUnsent();
+          }
+        }
         storageBroken = false;
+        changed();
         return true;
       } catch (e) {
+        changed();                         // what the browser cannot keep, the storage still can
         // Swallowing this silently let every caller toast "saved" while nothing had
         // been written -- the screen stayed right and a reload lost the lot. Say so
         // once, then stop repeating it.
@@ -446,6 +459,42 @@
     }
     function rec(uid) { return state[uid] || (state[uid] = {}); }
 
+    // A language's decisions and its saved copy, cut down to what has not been sent: a text
+    // whose decision is what the storage holds is dropped from both -- it comes back from the
+    // storage on the next load -- and an undo keeps the saved copy it undoes.
+    function unsentOnly(now, was) {
+      var st = {}, sv = {}, uid;
+      for (uid in now) {
+        if (sameDecision(hasContent(now[uid]) ? now[uid] : null, hasContent(was[uid]) ? was[uid] : null)) continue;
+        st[uid] = now[uid];
+        if (was[uid]) sv[uid] = was[uid];
+      }
+      for (uid in was) if (!(uid in now) && hasContent(was[uid])) sv[uid] = was[uid];
+      return { state: st, saved: sv };
+    }
+    // The browser is full: every language keeps only what it has not sent, the others first.
+    // The saved copy is written before the decisions each time -- decisions left without
+    // their saved copy are only sent again (and come back as already saved), where a saved
+    // copy left without its decisions would read as every one of them undone. `known` is a
+    // language's saved copy fresher than the one stored: a save's answer that could not be
+    // written -- cut down against the stored one, its changes would look unsent, and go round.
+    function keepOnlyUnsent(known) {
+      var order = LOCALES.filter(function (c) { return c !== CODE; });
+      for (var i = 0; i < order.length; i++) {
+        var c = order[i];
+        var cut = unsentOnly(readFresh('cel-desk-' + c), (known && known[c]) || readFresh('cel-desk-saved-' + c));
+        try {
+          localStorage.setItem('cel-desk-saved-' + c, JSON.stringify(cut.saved));
+          localStorage.setItem('cel-desk-' + c, JSON.stringify(cut.state));
+        } catch (e) { continue; }
+        try { localStorage.setItem(KEY, JSON.stringify(state)); return; } catch (e) { /* not yet */ }
+      }
+      // This language too. The page keeps everything on screen; the browser keeps the unsent part.
+      var mine = unsentOnly(state, saved);
+      localStorage.setItem(SAVEDKEY, JSON.stringify(mine.saved));
+      localStorage.setItem(KEY, JSON.stringify(mine.state));
+    }
+
     // Who approved, when, and — the one that matters — WHAT they were looking at.
     //
     // An approval is an approval OF A WORDING, not of a row. Without `approvedAgainst`
@@ -463,10 +512,11 @@
       var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
       if (who) s.by = who;
       s.at = new Date().toISOString();
-      if (s.text == null) {
-        // A bare approval: record the live wording it was given to.
-        s.approvedAgainst = liveText[uid];
-      }
+      // The live wording it was given against -- for an edit too, and for an approved Gemini
+      // draft: without it the export cannot tell that the website's text moved after the
+      // approval, and an edit shipped over a newer change, signed and green (second review,
+      // P1-A). The Worker signs this field.
+      s.approvedAgainst = liveText[uid];
     }
 
     // Not surfaced in the UI on purpose; it exists so "it did something strange" can
@@ -648,13 +698,40 @@
     //   queued        marked for a new translation, NOT sent yet
     //   sending       sent to Gemini, waiting
     //   failed        Gemini could not do it
+    // The engine's rules for the stamps, line for line (monorepo tools/localize/storage.py:
+    // instant(), failed_now(), in_flight() -- the parity test runs both on shared cases).
+    // Two writers stamp rows, so stamps are compared as instants, never as text: "10:00:00Z"
+    // sorts after "10:00:00.500Z" and is the earlier of the two. A stamp with no offset is UTC,
+    // as the engine reads it -- Date.parse would take it as this browser's local time.
+    var STAMP_OFFSET = new RegExp('(Z|z|[+-][0-9][0-9](:?[0-9][0-9])?)$');
+    function instant(v) {
+      if (!v || typeof v !== 'string') return null;
+      var ms = Date.parse(v.indexOf(':') !== -1 && !STAMP_OFFSET.test(v) ? v + 'Z' : v);
+      return isNaN(ms) ? null : ms;
+    }
+    // Why the last attempt failed, while nothing has happened since: `failed` is never cleared
+    // by the storage, so a later send or arrival ends it (review of WO-17, P2-4). A failure
+    // whose time cannot be read stands.
+    function failedNow(s) {
+      if (!s.failed) return false;
+      var at = instant(s.failedAt);
+      if (at === null) return true;
+      return ![s.sentAt, s.arrivedAt].some(function (v) { var t = instant(v); return t !== null && t > at; });
+    }
+    // Sent, and neither back nor failed since. A send whose time cannot be read is still out.
+    function inFlight(s) {
+      if (!s.sentAt) return false;
+      var sent = instant(s.sentAt);
+      if (sent === null) return true;
+      return ![s.arrivedAt, s.failedAt].some(function (v) { var t = instant(v); return t !== null && t >= sent; });
+    }
     function stageOf(s) {
       s = s || {};
       // A live row the reviewer has decided about again is NOT live any more from
       // their point of view -- the new decision is what is outstanding. So anything
       // in flight or freshly decided outranks where the text currently sits.
-      if (s.failed) return 'failed';
-      if (s.sentAt && !s.arrivedAt) return 'sending';
+      if (failedNow(s)) return 'failed';
+      if (inFlight(s)) return 'sending';
       if (s.arrivedAt && !s.tray) return 'arrived';
       if (s.tray === 'draft') return 'queued';
       if (s.tray === 'csv') {
@@ -795,7 +872,11 @@
       od.disabled = !c.draft;
       oc.textContent = c.csv ? t('bar.view.approved_n', { n: c.csv }) : t('bar.view.approved');
       od.textContent = c.draft ? t('bar.view.requested_n', { n: c.draft }) : t('bar.view.requested');
-      paintSave();
+      // A disabled control says why (the dead-control robot, runbook WO-33; found by its
+      // saving-stopped state, WO-18: the bar with approvals and no requests).
+      if (c.csv) oc.removeAttribute('data-tip'); else oc.setAttribute('data-tip', t('bar.view.approved.hint'));
+      if (c.draft) od.removeAttribute('data-tip'); else od.setAttribute('data-tip', t('bar.view.requested.hint'));
+      paintSave(all);
       // After the frame: reading the bar's position inside a click forced a layout per click
       // (round 3 measured 3.2 -> 10.4 ms with a toast up).
       requestAnimationFrame(placeToasts);
@@ -1112,7 +1193,7 @@
         var who = (window.__CEL_USER__ && window.__CEL_USER__.email) || '';
         if (who) s.by = who;
         s.at = new Date().toISOString();
-        delete s.approvedAgainst;   // the wording is the reviewer's own, not the live one
+        s.approvedAgainst = liveText[uid];   // what the website said when it was rewritten (P1-A)
         changed = true;
       } else if ((!val || val === liveText[uid]) && s.text != null) {
         // Emptying the box, or typing the website's wording back, both mean "no edit".
@@ -1350,18 +1431,7 @@
       // A disabled control says why (the dead-control robot, runbook WO-33).
       if (sel) rm.removeAttribute('data-tip'); else rm.setAttribute('data-tip', t('list.undo.hint'));
       document.getElementById('tray-empty').disabled = listed === 0;
-
-      // The list used to offer nothing but Undo and Close: a basket with no way to
-      // check out. Saving is the one step that actually exists today, and it is the
-      // step that makes this work survive the tab -- so it belongs here, not only in
-      // the bar behind the overlay.
-      var ts = document.getElementById('tray-save');
-      var allPending = unsavedByLocale(), pending = 0;
-      for (var pc in allPending) pending += allPending[pc].n;
-      ts.hidden = pending === 0 || SAVE_OFF;
-      ts.disabled = saving;
-      ts.textContent = saving ? t('save.status.saving') : tn('save.button', pending);
-      ts.setAttribute('data-tip', t('save.button.hint'));
+      // The list's own Save went with autosave (runbook WO-18): what is decided here saves itself.
     }
 
     // Through decide(), like every other decision, so an undone approval also drops its
@@ -1462,12 +1532,6 @@
     });
 
     document.getElementById('tray-done').addEventListener('click', closeOverlays);
-    document.getElementById('tray-save').addEventListener('click', function () {
-      // Stay on the list while it saves -- the reviewer is looking at exactly the
-      // rows being stored, and closing the overlay would hide the outcome.
-      save().then(paintTrayFooter, paintTrayFooter);
-      paintTrayFooter();
-    });
 
     function showTray(which) {
       openTray = which;
@@ -1571,7 +1635,7 @@
 
     var btnSave = document.getElementById('btn-save');
     var saveStatus = document.getElementById('save-status');
-    var saving = false;
+    var retryBtn = document.getElementById('save-retry');
     // Runbook WO-34 (decision A15): Save committed the reviewer's email address into a
     // public repository. It is switched off until WO-17 moves the decisions to private
     // storage; the button stays, says so, and explains itself on hover and on click.
@@ -1683,16 +1747,16 @@
       return out;
     }
 
-    function paintSave() {
-      var all = unsavedByLocale();
+    function paintSave(all) {
+      all = all || unsavedByLocale();
       var total = 0, others = 0;
       for (var c in all) { total += all[c].n; if (c !== CODE) others += all[c].n; }
       var elsewhere = document.getElementById('save-elsewhere');
-      if (elsewhere) {
-        elsewhere.hidden = others === 0;
-        elsewhere.textContent = others ? t(SAVE_OFF ? 'save.off.elsewhere' : 'save.elsewhere', { n: others }) : '';
-      }
       if (SAVE_OFF) {
+        if (elsewhere) {
+          elsewhere.hidden = others === 0;
+          elsewhere.textContent = others ? t('save.off.elsewhere', { n: others }) : '';
+        }
         // aria-disabled, not disabled: a disabled button takes no hover, so it could
         // never say why it is off.
         btnSave.hidden = total === 0;
@@ -1702,10 +1766,16 @@
         btnSave.setAttribute('data-tip', t('save.off.hint'));
         return;
       }
-      btnSave.hidden = total === 0 || saving;
-      btnSave.textContent = tn('save.button', total);
-      btnSave.disabled = saving;
-      btnSave.setAttribute('data-tip', others ? t('save.button.hint_elsewhere', { n: others }) : t('save.button.hint'));
+      // Saving on, there is no Save button (runbook WO-18): the status says where things
+      // stand, for every language at once, and offers Try again when it has stopped.
+      btnSave.hidden = true;
+      if (elsewhere) elsewhere.hidden = true;
+      var st = autosaveState(all);
+      saveStatus.setAttribute('data-state', st.name);
+      saveStatus.textContent = st.words;
+      saveStatus.setAttribute('data-tip', st.tip);
+      saveStatus.className = 'desk-status' + (st.name === 'saved' ? ' is-ok' : st.name === 'stopped' ? ' is-error' : '');
+      retryBtn.hidden = !st.retry;
     }
 
     // ── Saving: the sign-in Worker's desk storage (runbook WO-17) ─────────────────
@@ -1717,20 +1787,23 @@
     var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
     var CHUNK = 200;          // the Worker's most changes in one request
 
-    function callProxy(payload) {
+    function callProxy(payload, ms) {
       var url = window.CEL_DISPATCH_URL;
       if (!url) return Promise.reject(new Error('not configured'));
       var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
       payload.token = m ? m[1] : '';
+      var ctl = ms && window.AbortController ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, ms) : null;
       return fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: ctl ? ctl.signal : undefined
       }).then(function (resp) {
         return resp.json().catch(function () { return {}; }).then(function (j) {
           return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
         });
-      });
+      }).finally(function () { if (timer) clearTimeout(timer); });
     }
 
     // Why a save stopped, as a COPY.md `save.reason.*` key. The raw answer goes to the log
@@ -1738,10 +1811,12 @@
     function failureReason(r) {
       if (!r) return 'offline';
       if (r.status === 409) return 'reload';
-      if (r.status === 401 || r.status === 403) return 'signed_out';
+      if (r.status === 401) return 'signed_out';
       if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'daily' : 'cap';
       if (r.status === 503) return 'unavailable';
-      if (r.status === 400) return 'refused';
+      // 403 is the Worker's "forbidden origin" -- the session is fine; it is a refusal (review
+      // of WO-17, P3: it read as "signed out").
+      if (r.status === 400 || r.status === 403) return 'refused';
       return 'trouble';
     }
 
@@ -1768,111 +1843,282 @@
       return fPage.value && pages.indexOf(fPage.value) !== -1 ? fPage.value : pages[0];
     }
 
+    // Texts the storage refused as not on their page, per language, with the decision it
+    // refused: not sent again this visit unless the reviewer decides them again -- autosave
+    // would otherwise send them round for ever. The next visit tries once more.
+    var parked = Object.create(null);
+    function isParked(code, uid, record) {
+      var p = parked[code];
+      return !!p && p[uid] === JSON.stringify(record);
+    }
+
+    // One request: the next slice (at most CHUNK) of one language's unsent changes -- or
+    // null when that language has nothing to send.
     async function saveLanguage(code, d) {
+      var waiting = code === CODE ? conflicts : conflictsOf(code);
+      // A text waiting on a conflict decision is not sent again until it is decided.
+      var uids = Object.keys(d.body).filter(function (uid) {
+        return !waiting[uid] && !isParked(code, uid, d.body[uid]);
+      }).slice(0, CHUNK);
+      if (!uids.length) return null;
+      var wait = capWait(uids.length);
+      if (wait) {
+        var capped = new Error('cap');
+        capped.wait = wait;
+        capped.detail = 'the client ceiling';
+        throw capped;
+      }
       var units = await fetchUnits(code);
       var pages = Object.create(null);
       units.forEach(function (u) { pages[u.id] = u.pages; });
-      var base = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
-      var waiting = code === CODE ? conflicts : conflictsOf(code);
-      // A text waiting on a conflict decision is not sent again until it is decided.
-      var uids = Object.keys(d.body).filter(function (uid) { return !waiting[uid]; });
-      var out = { applied: 0, conflicts: 0, refused: 0, waiting: Object.keys(d.body).length - uids.length };
-      for (var i = 0; i < uids.length; i += CHUNK) {
-        var changes = uids.slice(i, i + CHUNK).map(function (uid) {
-          return { unit: uid, page: pageFor(pages[uid]), base: (base[uid] && base[uid].version) || 0,
-                   record: d.body[uid] };                // null: the decision was undone
+      // A decision for a text this desk no longer has (the English changed, WO-20) has no page
+      // to name, and one such change made the Worker refuse the whole request -- every save of
+      // the language, for good (review of WO-17, P1-4). It is kept, not sent: refused, here.
+      var orphans = uids.filter(function (uid) { return !pageFor(pages[uid]); });
+      if (orphans.length) {
+        orphans.forEach(function (uid) {
+          (parked[code] || (parked[code] = Object.create(null)))[uid] = JSON.stringify(d.body[uid]);
         });
-        var r = null;
-        try {
-          r = await callProxy({ action: 'desk-write', locale: code, client: DESK_CLIENT, changes: changes });
-        } catch (e) { r = null; }
-        if (!r || !r.ok) {
-          var err = new Error(failureReason(r));
-          err.detail = r ? r.status + ' ' + ((r.body && r.body.error) || '') : 'no answer';
-          throw err;
-        }
-        (r.body.applied || []).forEach(function (a) {
-          base[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
-          out.applied++;
-        });
-        (r.body.conflicts || []).forEach(function (c) {
-          // Their version becomes the base, so a later save of yours is a deliberate choice
-          // over theirs -- and it waits until the reviewer makes it (the row says so).
-          base[c.unit] = c.current ? Object.assign(storedOnly(c.current), { version: c.current.version }) : {};
-          waiting[c.unit] = c.current || { gone: true };
-          out.conflicts++;
-        });
-        out.refused += (r.body.refused || []).length;
-        // Bank each request as it lands: a failure on the next must not undo this one.
-        try { localStorage.setItem('cel-desk-saved-' + code, JSON.stringify(base)); } catch (e) {}
-        persistConflicts(code, waiting);
-        if (code === CODE) saved = base;
+        uids = uids.filter(function (uid) { return pageFor(pages[uid]); });
+        if (!uids.length) return { code: code, applied: 0, conflicts: [], refused: orphans.length };
       }
+      var base = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
+      var changes = uids.map(function (uid) {
+        return { unit: uid, page: pageFor(pages[uid]), base: (base[uid] && base[uid].version) || 0,
+                 record: d.body[uid] };                // null: the decision was undone
+      });
+      countSent(changes.length);
+      var r = null;
+      try {
+        r = await callProxy({ action: 'desk-write', locale: code, client: DESK_CLIENT, changes: changes }, TIMEOUT_MS);
+      } catch (e) {
+        // No answer in time is the server's trouble; no answer at all is no connection.
+        r = e && e.name === 'AbortError' ? { status: 504, ok: false, body: {} } : null;
+      }
+      // A save is an answer that says so: a 200 with nothing in it counted as one, with
+      // nothing saved and nothing said (review of WO-17, P3).
+      if (!r || !r.ok || !r.body || r.body.ok !== true || !Array.isArray(r.body.applied)) {
+        var err = new Error(failureReason(r && r.ok ? { status: 502, body: r.body } : r));
+        err.detail = r ? r.status + ' ' + ((r.body && r.body.error) || '') : 'no answer';
+        throw err;
+      }
+      // What this browser holds NOW: the language may have loaded again while the request
+      // was out, or another tab written it.
+      var now = code === CODE ? saved : readFresh('cel-desk-saved-' + code);
+      var parkedNow = code === CODE ? conflicts : conflictsOf(code);
+      var out = { code: code, applied: 0, conflicts: [], refused: orphans.length };
+      (r.body.applied || []).forEach(function (a) {
+        now[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
+        out.applied++;
+      });
+      (r.body.conflicts || []).forEach(function (c) {
+        var cur = c.current && hasContent(c.current) ? c.current : null;
+        if (sameDecision(hasContent(d.body[c.unit]) ? d.body[c.unit] : null, cur)) {
+          // The storage already holds exactly this change -- ours, sent before and its answer
+          // lost on the way back (runbook WO-18). Not a conflict with anyone: take its version.
+          if (c.current) now[c.unit] = Object.assign(storedOnly(c.current), { version: c.current.version });
+          else delete now[c.unit];
+          out.applied++;
+          return;
+        }
+        // Their version becomes the base, so a later save of yours is a deliberate choice
+        // over theirs -- and it waits until the reviewer makes it (the row says so).
+        now[c.unit] = c.current ? Object.assign(storedOnly(c.current), { version: c.current.version }) : {};
+        parkedNow[c.unit] = c.current || { gone: true };
+        out.conflicts.push(c.unit);
+      });
+      (r.body.refused || []).forEach(function (x) {
+        (parked[code] || (parked[code] = Object.create(null)))[x.unit] = JSON.stringify(d.body[x.unit]);
+        out.refused++;
+      });
+      try { localStorage.setItem('cel-desk-saved-' + code, JSON.stringify(now)); }
+      catch (e) {
+        var known = {};
+        known[code] = now;
+        if (!SAVE_OFF) { try { keepOnlyUnsent(known); } catch (e2) {} }
+      }
+      persistConflicts(code, parkedNow);
+      if (code === CODE) { saved = now; conflicts = parkedNow; }
       return out;
     }
 
+    // One round: the next slice of what is unsent, this language first. Null: nothing to send.
     async function save() {
-      if (SAVE_OFF) {
-        toast(t('save.off.title'), { level: 'warn', detail: t('save.off.hint') });
-        return;
-      }
-      if (saving) return;                    // one save in flight, never two
       var all = unsavedByLocale();
-      var codes = Object.keys(all);
-      if (!codes.length) return;
-
-      saving = true; paintSave();
-      saveStatus.textContent = t('save.status.saving');
-      saveStatus.className = 'desk-status';
-
-      var got = { applied: 0, conflicts: 0, refused: 0, waiting: 0 }, done = [], failed = null;
-      try {
-        for (var i = 0; i < codes.length; i++) {
-          var c = codes[i];
-          if (codes.length > 1) {
-            saveStatus.textContent = t('save.status.language',
-              { language: t('lang.' + c), i: i + 1, count: codes.length });
-          }
-          var res = await saveLanguage(c, all[c]);
-          for (var k in got) got[k] += res[k];
-          done.push(c);
-        }
-      } catch (err) {
-        failed = err;
+      var codes = Object.keys(all).sort(function (a, b) { return (b === CODE) - (a === CODE); });
+      for (var i = 0; i < codes.length; i++) {
+        var res = await saveLanguage(codes[i], all[codes[i]]);
+        if (res) return res;
       }
-
-      saving = false;
-      rows.forEach(paint);
-      paintSave(); paintBar(); applyFilters();
-
-      if (failed) {
-        saveStatus.textContent = t('save.status.failed');
-        saveStatus.className = 'desk-status is-error';
-        note('save-failed', null, failed.message + ': ' + (failed.detail || ''), done.join(','));
-        var reason = t('save.reason.' + failed.message);
-        toast(done.length ? t('save.partial.title', { done: done.length, count: codes.length })
-                          : t('save.failed.title'),
-              { level: 'err',
-                detail: t(done.length ? 'save.partial.detail' : 'save.failed.detail', { reason: reason }) });
-        return;
-      }
-      note('save', null, String(got.applied), codes.join(','));
-      saveStatus.textContent = '';
-      if (got.applied) {
-        toast(t('save.done.title'), { level: 'ok',
-          detail: codes.length > 1 ? t('save.done.detail_langs', { n: got.applied, count: codes.length })
-                                   : tn('save.done.detail', got.applied) });
-      }
-      if (got.conflicts || got.waiting) {
-        toast(t('save.conflicts.title'), { level: 'warn', sticky: true,
-                                           detail: tn('save.conflicts.detail', got.conflicts + got.waiting) });
-      }
-      if (got.refused) {
-        toast(t('save.refused.title'), { level: 'warn', detail: tn('save.refused.detail', got.refused) });
-      }
+      return null;
     }
 
-    btnSave.addEventListener('click', save);
+    // ── Autosave (runbook WO-18, contract §8 S3) ─────────────────────────────────
+    // There is no Save button. A change goes by itself once the reviewer has paused for about
+    // two seconds -- and no later than ten after the first unsent change, however busy they
+    // are -- one request at a time across every tab of this browser (they share one lock and
+    // one store, so they never race), under this browser's own ceiling. Nothing is sent on the
+    // way out: a request started while a page closes is one nobody can promise lands (R39);
+    // what is unsent stays in this browser and goes on the next visit. The bar says where
+    // things stand, in COPY.md's words: saved · saving · not saved, retrying · offline, kept
+    // on this computer · conflict · stopped -- and refused, for texts the storage turned down.
+    var QUIET_MS = 2000, MAX_WAIT_MS = 10000, TIMEOUT_MS = 20000;
+    var RETRY_MS = [2000, 5000, 15000, 30000, 60000];
+    // The ceiling: the Worker's own cap per user (2,000 changes in 10 minutes), so bulk work
+    // waits here rather than being refused there; and a request every 2 s on average, so no
+    // loop of this page's can ever hammer the storage.
+    var CAP = { windowMs: 600000, changes: 2000, requests: 300 };
+    var SENTKEY = 'cel-desk-sent';
+    // These stop saving until the reviewer acts (or, over the cap, until the window has
+    // passed); the rest are tried again by themselves.
+    var STOPS = { reload: 1, signed_out: 1, cap: 1, daily: 1, refused: 1 };
+    var REASONS = ["offline", "reload", "signed_out", "cap", "daily", "unavailable", "refused", "trouble"];
+    var sync = { phase: 'idle', reason: '' };   // idle | waiting | sending | retry | offline | stopped
+    var timer = null, firstAt = 0, lastAt = 0, tries = 0, requestOut = false, sentMem = [];
+
+    function setSync(phase, reason) { sync = { phase: phase, reason: reason || '' }; }
+
+    // Where saving stands, for the bar: what is waiting, across every language.
+    function autosaveState(all) {
+      var pend = 0, conf = 0, ref = 0;
+      LOCALES.forEach(function (code) {
+        var waiting = code === CODE ? conflicts : readStored('cel-desk-conflicts-' + code);
+        conf += Object.keys(waiting).length;
+        var d = all[code];
+        if (!d) return;
+        for (var uid in d.body) {
+          if (waiting[uid]) continue;
+          if (isParked(code, uid, d.body[uid])) ref++; else pend++;
+        }
+      });
+      var why = sync.reason ? t('save.reason.' + sync.reason) : '';
+      if (sync.phase === 'stopped') {
+        return { name: 'stopped', words: t('autosave.stopped', { reason: why }), tip: t('autosave.stopped.hint'),
+                 retry: sync.reason !== 'reload' };
+      }
+      if (conf) return { name: 'conflict', words: tn('autosave.conflict', conf), tip: t('autosave.conflict.hint') };
+      if (!pend) {
+        return ref ? { name: 'refused', words: tn('autosave.refused', ref), tip: t('autosave.refused.hint') }
+                   : { name: 'saved', words: t('autosave.saved'), tip: t('autosave.saved.hint') };
+      }
+      if (sync.phase === 'offline') return { name: 'offline', words: tn('autosave.offline', pend), tip: t('autosave.offline.hint'), retry: true };
+      if (sync.phase === 'retry') {
+        return { name: 'retrying', words: tn('autosave.retrying', pend, { reason: why }), tip: t('autosave.retrying.hint'), retry: true };
+      }
+      return { name: 'saving', words: tn('autosave.saving', pend), tip: t('autosave.saving.hint') };
+    }
+
+    // This browser's requests of the last ten minutes, shared by its tabs.
+    function sentLog() {
+      var cut = Date.now() - CAP.windowMs, log;
+      try { log = JSON.parse(localStorage.getItem(SENTKEY) || '[]'); } catch (e) { log = null; }
+      if (!Array.isArray(log)) log = sentMem;
+      return log.filter(function (e) { return Array.isArray(e) && e[0] > cut; });
+    }
+    function countSent(n) {
+      var log = sentLog();
+      log.push([Date.now(), n]);
+      sentMem = log;
+      try { localStorage.setItem(SENTKEY, JSON.stringify(log)); } catch (e) {}
+    }
+    // How long until `n` more changes fit under the ceiling: 0 when they fit now. The
+    // Worker counts in whole minutes, so a minute is added before trying again.
+    function capWait(n) {
+      var log = sentLog(), changes = 0, reqs = log.length, i = 0;
+      log.forEach(function (e) { changes += e[1]; });
+      while (i < log.length && (reqs + 1 > CAP.requests || changes + n > CAP.changes)) {
+        changes -= log[i][1]; reqs--; i++;
+      }
+      return i ? log[i - 1][0] + CAP.windowMs + 60000 - Date.now() : 0;
+    }
+
+    // One sender at a time across this browser's tabs. Without the Web Locks API (older
+    // browsers) each tab keeps to one at a time; two tabs sending the same change is then
+    // harmless -- the second comes back as already saved.
+    function withLock(fn) {
+      return navigator.locks && navigator.locks.request ? navigator.locks.request('cel-desk-save', fn) : fn();
+    }
+
+    function arm(ms) { clearTimeout(timer); timer = setTimeout(run, Math.max(0, ms)); }
+    // Something changed -- here, or in another tab of this browser.
+    function changed() {
+      if (SAVE_OFF) return;
+      lastAt = Date.now();
+      schedule();
+    }
+    function schedule() {
+      // A retry, a stop and a request in flight each have their own way back.
+      if (SAVE_OFF || requestOut || sync.phase === 'stopped' || sync.phase === 'retry' || sync.phase === 'offline') return;
+      var now = Date.now();
+      if (!firstAt) firstAt = now;
+      if (sync.phase === 'idle') setSync('waiting');
+      arm(Math.min(lastAt + QUIET_MS, firstAt + MAX_WAIT_MS) - now);
+    }
+    function run() {
+      timer = null;
+      if (SAVE_OFF || requestOut) return;
+      requestOut = true;
+      setSync('sending', sync.reason);
+      paintBar();
+      withLock(save).then(sent, failed);
+    }
+    function sent(res) {
+      requestOut = false;
+      tries = 0;
+      setSync('idle');
+      if (!res) { firstAt = 0; paintBar(); return; }    // nothing was left to send
+      if (res.conflicts.length) {
+        if (res.code === CODE) {
+          res.conflicts.forEach(function (uid) {
+            var tr = rows.find(function (r) { return r.getAttribute('data-uid') === uid; });
+            if (tr) paint(tr);
+          });
+          applyFilters();
+        }
+        toast(t('save.conflicts.title'), { level: 'warn', sticky: true,
+                                           detail: tn('save.conflicts.detail', res.conflicts.length) });
+      }
+      if (res.refused) toast(t('save.refused.title'), { level: 'warn', detail: tn('save.refused.detail', res.refused) });
+      note('save', null, String(res.applied), res.code);
+      paintBar();
+      // The rest of a large change goes at once; a change made while this request was out
+      // waits for its own quiet moment -- and no longer than ten seconds from now.
+      firstAt = Date.now();
+      schedule();
+    }
+    function failed(err) {
+      requestOut = false;
+      var reason = err && REASONS.indexOf(err.message) !== -1 ? err.message : 'trouble';
+      note('save-failed', null, reason + ': ' + ((err && (err.detail || err.message)) || ''), null);
+      if (STOPS[reason]) {
+        setSync('stopped', reason);
+        clearTimeout(timer); timer = null;
+        if (reason === 'cap') arm(err.wait || CAP.windowMs);     // it starts again by itself
+        toast(t('autosave.stopped.title'), { level: reason === 'cap' ? 'warn' : 'err',
+                                             detail: t('autosave.stopped.detail', { reason: t('save.reason.' + reason) }) });
+      } else {
+        setSync(reason === 'offline' ? 'offline' : 'retry', reason);
+        arm(RETRY_MS[Math.min(tries++, RETRY_MS.length - 1)]);
+      }
+      paintBar();
+    }
+
+    // Try again: now, not after a quiet moment -- the reviewer asked.
+    retryBtn.addEventListener('click', function () {
+      tries = 0;
+      firstAt = 0;
+      setSync('idle');
+      clearTimeout(timer); timer = null;
+      run();
+    });
+    // Back online: try at once, instead of waiting out the retry.
+    window.addEventListener('online', function () {
+      if (sync.phase === 'offline' || sync.phase === 'retry') { tries = 0; arm(0); }
+    });
+    // While saving is off the old button stays as "Kept in this browser", and says why.
+    btnSave.addEventListener('click', function () {
+      toast(t('save.off.title'), { level: 'warn', detail: t('save.off.hint') });
+    });
 
 
     // ── Toasts ─────────────────────────────────────────────────────────
@@ -2063,34 +2309,47 @@
       var code = CODE;
       var unitsP = fetchUnits(code);
       // The storage's copy, fetched with the texts (runbook WO-17). While saving is off the
-      // desk asks nothing of the storage: every decision is this browser's.
+      // desk asks nothing of the storage: every decision is this browser's. The read takes
+      // autosave's turn (WO-18): a read answered while one of this browser's saves was still
+      // out could hand back the copy from before it, and the load would take that as newer.
       var serverP = SAVE_OFF ? Promise.resolve(null)
-        : callProxy({ action: 'desk-read', locale: code }).catch(function (e) { return e; });
+        : withLock(function () { return callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS); })
+            .catch(function (e) { return e; });
       var units;
       try { units = await unitsP; }
       catch (e) { if (seq !== loadSeq) return; throw e; }   // a stale failure is not news
       if (seq !== loadSeq) return;          // a newer switch has taken over
-      // What the storage holds is the baseline, with each text's version. Anything decided
-      // in THIS browser and not yet saved stays exactly as it is and still counts as
-      // unsaved -- the server copy fills in only the texts this browser has never touched,
-      // which is what makes a second machine useful instead of blank.
+      // What the storage holds is the baseline, with each text's version. A change made in
+      // THIS browser and not yet saved stays exactly as it is, still unsaved, and keeps the
+      // version it was made on -- so if someone saved the text since, it comes back as a
+      // conflict on its row instead of overwriting them. Everything else is the storage's
+      // copy: a text this browser never touched (what makes a second machine useful), and a
+      // text it saved long ago that a colleague has changed since (R26: comparing only
+      // "does this browser hold anything" kept the old copy as if it were a change, and the
+      // next save put it back over the colleague's; and it took an unsent undo -- which holds
+      // nothing -- for "never touched", so the undo was lost on a reload).
       try {
         var sr = await serverP;
         if (seq !== loadSeq) return;        // switched away while this was loading
         if (sr instanceof Error) throw sr;
-        if (sr && !sr.ok) throw new Error('HTTP ' + sr.status);
+        if (sr && (!sr.ok || !sr.body || !sr.body.decisions)) throw new Error('HTTP ' + sr.status);
         if (sr) {
           var server = (sr.body && sr.body.decisions) || {};
-          var adopted = 0;
+          var adopted = 0, known = saved;   // what this browser last knew the storage held
           saved = {};
           for (var uid in server) {
-            saved[uid] = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
-            // Adopt only where this browser holds NOTHING -- an undone decision and a draft
-            // that came back both have no tray, and neither may be overwritten.
-            if (!hasContent(state[uid]) && hasContent(server[uid])) {
-              state[uid] = Object.assign(storedOnly(server[uid]), { by: server[uid].by, at: server[uid].at });
-              adopted++;
+            var srv = Object.assign(storedOnly(server[uid]), { version: server[uid].version });
+            var mine = hasContent(state[uid]) ? state[uid] : null;
+            var theirs = hasContent(server[uid]) ? server[uid] : null;
+            var was = known[uid];
+            // Never back to an older copy than this browser has already seen saved.
+            if (was && was.version > srv.version) { saved[uid] = was; continue; }
+            if (!sameDecision(mine, hasContent(was) ? was : null) && !sameDecision(mine, theirs)) {
+              if (was) saved[uid] = was;    // this browser's unsent change, on its own version
+              continue;
             }
+            saved[uid] = srv;
+            if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; }
           }
           try { localStorage.setItem(SAVEDKEY, JSON.stringify(saved)); } catch (e) {}
           persist();
@@ -2145,6 +2404,9 @@
       // Once per page, not per switch: sixteen switches were sixteen log entries in each
       // language, and the eight capped logs nearly filled the origin (review round 2).
       if (first) note('load', null, String(units.length), null);
+      // What this browser has not sent -- the last visit's included (nothing goes on the way
+      // out, R39) -- goes after the usual quiet moment.
+      changed();
       // What the browser tests time (runbook WO-09, G9 budgets): from the switch, or the
       // page opening, to the new rows painted on screen.
       if (window.performance && performance.mark) {
@@ -2152,6 +2414,16 @@
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
+    }
+
+    // The storage's copy of a decision replaces this browser's: its fields, and who made it
+    // and when. What the engine stamped on the row here is not a decision, and stays.
+    function takeStorageCopy(uid, rec) {
+      var keep = {}, cur = state[uid] || {};
+      for (var k in cur) {
+        if (STORED_FIELDS.indexOf(k) === -1 && k !== 'by' && k !== 'at' && k !== 'was') keep[k] = cur[k];
+      }
+      state[uid] = Object.assign(keep, storedOnly(rec), hasContent(rec) && rec.by ? { by: rec.by, at: rec.at } : {});
     }
 
     function loadFailed(err) {
@@ -2214,15 +2486,20 @@
       state = readFresh(KEY);
       saved = readFresh(SAVEDKEY);
       conflicts = conflictsOf(CODE);
+      changed();                           // the other tab's change is this browser's to send too
       // Nothing built yet -- loading, or failed to load: the load paints from `state`, and a
       // failure's message must stay on screen (round 3: it became "Showing 0 of 0").
       if (!rows.length) return;
       rows.forEach(paint); paintBar(); applyFilters();
       if (openTray) paintTray();
     }
+    var LANG_KEY = new RegExp('^cel-desk-[a-z][a-z]$');
     window.addEventListener('storage', function (ev) {
       if (ev.key === KEY || ev.key === SAVEDKEY || ev.key === 'cel-desk-conflicts-' + CODE || ev.key === null) adoptStored();
-      else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) paintBar();
+      else if (ev.key.indexOf('cel-desk-') === 0 && ev.key.indexOf('cel-desk-log-') !== 0) {
+        paintBar();
+        if (LANG_KEY.test(ev.key)) changed();   // a decision this tab can send, if its own tab closes first
+      }
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
 

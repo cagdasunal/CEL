@@ -12,7 +12,7 @@ desk change is not done until it has been clicked through here (process doc §9)
 It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
   * auth.js replaced by a stub that signs you in as a test reviewer;
   * dashboard-config.js pointing the desk at this server's mock Worker;
-  * the Worker's desk storage actions (desk-read / desk-write / desk-history), answered by
+  * the Worker's desk storage actions (desk-read / desk-write / desk-history / desk-summary), answered by
     `desk_store.DeskStore` -- held to the real Worker by the monorepo's differential test
     (runbook WO-33) -- over the same page map deploy.sh loads.
 
@@ -57,9 +57,19 @@ class MockWorker:
         self.faults: dict[str, dict] = {}
         # A failing storage, for the save path's failures (WO-17): {"status": 429,
         # "error": "over the cap"} answers every desk-write that way; None = working.
+        # {"drop": True} applies the write and then loses the answer (a timeout, WO-18);
+        # {"status": 502, "apply": True} applies it and then answers with that error (a gateway
+        # failing after the write landed); {"status": 200, "empty": True} answers with no body;
+        # {"delay": seconds} holds the answer back (a slow storage), then answers normally.
         self.desk_fault: dict | None = None
+        # The same for any other storage action, by name: {"desk-summary": {"status": 503}}.
+        self.action_faults: dict[str, dict] = {}
         # Every action the desk asked for, in order -- what a test checks was never sent.
         self.calls: list[str] = []
+        # desk-write requests being answered right now, and the most there ever were at once:
+        # autosave sends one at a time, across every tab of a browser (runbook WO-18).
+        self.inflight = 0
+        self.max_inflight = 0
         # The desk storage (WO-16's actions), as the deployed Worker will answer them.
         self.store = DeskStore.from_units_dir(UNITS_DIR)
 
@@ -72,13 +82,34 @@ class MockWorker:
         if action == "changepw":
             # The shell's change-password dialog; the harness has no password to check.
             return 200, {"ok": True}
-        if action in ("desk-read", "desk-write", "desk-history"):
-            fault = self.desk_fault
-            if fault and action == "desk-write":
-                return int(fault.get("status", 500)), {"ok": False, "error": fault.get("error", "server error")}
-            # The harness signs everyone in as the test reviewer.
-            return self.store.handle(action, body, REVIEWER)
+        if action == "desk-write":
+            with self.lock:
+                self.inflight += 1
+                self.max_inflight = max(self.max_inflight, self.inflight)
+            try:
+                return self._desk(action, body)
+            finally:
+                with self.lock:
+                    self.inflight -= 1
+        if action in ("desk-read", "desk-history", "desk-summary"):
+            return self._desk(action, body)
         return 400, {"error": "invalid action"}
+
+    def _desk(self, action: str, body: dict) -> tuple[int, dict]:
+        """The storage's answer to one desk action, through whatever fault a test has set."""
+        fault = self.desk_fault if action == "desk-write" else self.action_faults.get(action)
+        if fault and fault.get("delay"):
+            time.sleep(float(fault["delay"]))
+        if fault and (fault.get("drop") or fault.get("apply")):
+            self.store.handle(action, body, REVIEWER)
+        if fault and fault.get("drop"):
+            return 0, {}
+        if fault and fault.get("empty"):
+            return int(fault.get("status", 200)), None
+        if fault and "status" in fault:
+            return int(fault["status"]), {"ok": False, "error": fault.get("error", "server error")}
+        # The harness signs everyone in as the test reviewer.
+        return self.store.handle(action, body, REVIEWER)
 
 
 def make_server(root: Path, worker: MockWorker, port: int) -> ThreadingHTTPServer:
@@ -116,6 +147,11 @@ def make_server(root: Path, worker: MockWorker, port: int) -> ThreadingHTTPServe
             length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(length) or b"{}")
             code, out = worker.handle(body)
+            if code == 0:                  # the answer is lost on the way back: no response at all
+                self.close_connection = True
+                return None
+            if out is None:                # an answer with nothing in it
+                return self._send(code, b"", "text/plain")
             return self._send(code, json.dumps(out).encode())
 
     return ThreadingHTTPServer(("127.0.0.1", port), Handler)
