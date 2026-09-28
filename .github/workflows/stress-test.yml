@@ -33,7 +33,10 @@ permissions:
 
 concurrency:
   group: stress-test-${{ github.ref }}
-  cancel-in-progress: true
+  # Only a pull request's superseded run is cancelled. On main a newer push queues behind
+  # the running one: the notice below fires on cancelled() (that is how a timeout reads),
+  # so a push that cancelled its predecessor would open a false "failed" issue.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   stress:
@@ -75,9 +78,10 @@ jobs:
         # marks the job `cancelled`, NOT `failed`, so `if: failure()` alone would NOT
         # fire on a timeout. blog-summary-autopilot timed out (cancelled) for 7 straight
         # days with ZERO alerts because of exactly this — the original "hung unnoticed"
-        # incident, reopened. None of these workflows use concurrency cancel-in-progress,
-        # so `cancelled()` only ever means a timeout or a manual cancel (both worth an alert).
-        if: failure() || cancelled()
+        # incident, reopened. On main this workflow never cancels a run itself (see
+        # `concurrency:`), so there `cancelled()` means a timeout or a manual cancel (both
+        # worth an alert); a pull request's superseded run is cancelled too, and is no failure.
+        if: failure() || (cancelled() && github.event_name != 'pull_request')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

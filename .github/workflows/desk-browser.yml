@@ -29,7 +29,10 @@ permissions:
 
 concurrency:
   group: desk-browser-${{ github.ref }}
-  cancel-in-progress: true
+  # Only a pull request's superseded run is cancelled. On main a newer push queues behind
+  # the running one: the notice below fires on cancelled() (that is how a timeout reads),
+  # so a push that cancelled its predecessor would open a false "failed" issue.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   browser:
@@ -63,8 +66,9 @@ jobs:
         run: cd tools && python3 -m pytest localize_desk/tests/browser -p no:cacheprovider -rxs
 
       - name: Notify on failure
-        # `failure() || cancelled()`: a timeout marks the job cancelled, not failed.
-        if: failure() || cancelled()
+        # `cancelled()`: a timeout marks the job cancelled, not failed. A pull request's
+        # superseded run is cancelled too, and is no failure.
+        if: failure() || (cancelled() && github.event_name != 'pull_request')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
