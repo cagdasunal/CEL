@@ -334,9 +334,10 @@ def render_index(units: list[dict]) -> str:
 # pages AND the index from this single string: the index used to carry its own copy
 # that knew nothing about `liveAt`/`exportedAt`, so the two pages could disagree about
 # the same record.
-# Runbook WO-34 (decision A15): saving is switched off until WO-17 stores decisions
-# privately. One constant for the desk AND the index, so the two cannot disagree about it.
-SAVE_OFF = True
+# Runbook WO-34 (decision A15): saving was switched off until WO-17 stored decisions
+# privately; M1 switches it on. It stays as the one switch back (the harness's --save-off
+# serves it off). One constant for the desk AND the index, so the two cannot disagree about it.
+SAVE_OFF = False
 
 # Why a save can stop -- each a COPY.md `save.reason.<name>` line. The page's failureReason()
 # returns exactly these (tests/test_copy.py holds the two together).
@@ -2251,9 +2252,10 @@ __DELTA_JS__
     // what is sent. The old path -- a GitHub workflow committing to the public repo -- is
     // gone (S2). Nothing leaves the browser while SAVE_OFF (WO-34).
     var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
-    // Most changes in one request. The Worker takes 200, but 200 cost 5.7-9.0 ms of its CPU (median
-    // to p95), at the free plan's 10 ms; 100 cost 3.5-6.4 ms (#3, G15). Only bulk work reaches it.
-    var CHUNK = 100;
+    // Most changes in one request. The Worker takes 200, but its CPU budget on the free plan is
+    // 10 ms, and production runs ~2.5-4 ms over bench: 100 projects to 8-11 ms (G15, 2026-09-28).
+    // Only bulk work reaches it.
+    var CHUNK = 50;
 
 __PROXY_JS__
     // Why a save stopped, as a COPY.md `save.reason.*` key. The raw answer goes to the log

@@ -1,7 +1,7 @@
 """Click-test the Localization Desk locally, with sign-in and the storage simulated.
 
     cd tools && python3 -m localize_desk.harness                 # http://127.0.0.1:8765/admin/localization/
-    cd tools && python3 -m localize_desk.harness --save-on       # the desk with saving switched on
+    cd tools && python3 -m localize_desk.harness --save-off      # the desk with saving switched off
 
 Why this exists: the desk's first three audits never loaded the page (the admin area is
 behind sign-in, and the sign-in service only answers cel.englishcollege.com), and every
@@ -16,8 +16,9 @@ It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
     `desk_store.DeskStore` -- held to the real Worker by the monorepo's differential test
     (runbook WO-33) -- over the same page map deploy.sh loads.
 
---save-on serves the copy with SAVE_OFF switched off, so the save path (runbook WO-17) can
-be clicked through before the storage is deployed; the committed pages keep it off.
+The copy is served as committed: saving on since M1. --save-off serves it with saving
+switched off, the desk's one switch back; --save-on (saving on whatever the pages say) was how
+the save path (runbook WO-17) was clicked through before the storage was deployed.
 """
 from __future__ import annotations
 
@@ -44,6 +45,7 @@ AUTH_STUB = (b"window.__CEL_USER__={firstName:'Test',lastName:'Reviewer',"
              b"document.cookie='cel_session=h.eyJzdWIiOiJyZXZpZXdlckBleGFtcGxlLnRlc3QifQ.s; Path=/';")
 CONFIG_STUB = b"window.CEL_DISPATCH_URL = '/__worker';"
 SAVE_OFF_LINE = "var SAVE_OFF = true;"
+SAVE_ON_LINE = "var SAVE_OFF = false;"
 
 
 class MockWorker:
@@ -157,11 +159,13 @@ def make_server(root: Path, worker: MockWorker, port: int) -> ThreadingHTTPServe
     return ThreadingHTTPServer(("127.0.0.1", port), Handler)
 
 
-def stage_copy(docs: Path = REPO_DOCS, save_on: bool = False) -> Path:
+def stage_copy(docs: Path = REPO_DOCS, save_on: bool = False, save_off: bool = False) -> Path:
     """A throwaway copy of the files the desk needs; nothing is written to docs/.
 
-    `save_on` switches the copy's SAVE_OFF off, so the save path can be exercised here
-    before the storage is deployed (WO-17). A page without the line is left alone.
+    By default the copy is served as committed. `save_on` switches the copy's saving on, so
+    the save path could be exercised before the storage was deployed (WO-17); `save_off`
+    switches it off, for what the desk does with saving off, now that the committed desk
+    saves (M1). A page without the line is left alone.
     """
     root = Path(tempfile.mkdtemp(prefix="desk-harness-"))
     # The whole admin area, so the dashboard's navigation leads somewhere (review round
@@ -169,11 +173,12 @@ def stage_copy(docs: Path = REPO_DOCS, save_on: bool = False) -> Path:
     shutil.copytree(docs / "admin", root / "admin",
                     ignore=shutil.ignore_patterns("*.csv", "*.zip", "*.bak", "*.poisoned.bak"))
     shutil.copytree(docs / "assets", root / "assets")
-    if save_on:
+    if save_on or save_off:
+        have, want = (SAVE_OFF_LINE, SAVE_ON_LINE) if save_on else (SAVE_ON_LINE, SAVE_OFF_LINE)
         for page in (root / "admin" / "localization").rglob("index.html"):
             text = page.read_text(encoding="utf-8")
-            if SAVE_OFF_LINE in text:
-                page.write_text(text.replace(SAVE_OFF_LINE, "var SAVE_OFF = false;"), encoding="utf-8")
+            if have in text:
+                page.write_text(text.replace(have, want), encoding="utf-8")
     return root
 
 
@@ -182,14 +187,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--save-on", action="store_true",
                     help="serve the desk with saving switched on (the storage is simulated)")
+    ap.add_argument("--save-off", action="store_true",
+                    help="serve the desk with saving switched off, whatever the committed desk says")
     args = ap.parse_args(argv)
     if not (REPO_DOCS / "admin" / "localization" / "index.html").is_file():
         print("ERROR: no generated desk in docs/admin/localization -- run "
               "`python3 -m localize_desk.generate_desk_page` first", file=sys.stderr)
         return 2
-    root = stage_copy(save_on=args.save_on)
+    if args.save_on and args.save_off:
+        ap.error("--save-on and --save-off are opposites")
+    root = stage_copy(save_on=args.save_on, save_off=args.save_off)
     server = make_server(root, MockWorker(root), args.port)
-    print(f"Desk harness ({'saving on' if args.save_on else 'saving off, as live'}) on "
+    served = "saving on" if args.save_on else "saving off" if args.save_off else "as committed"
+    print(f"Desk harness ({served}) on "
           f"http://127.0.0.1:{args.port}/admin/localization/  -- copy in {root}", flush=True)
     try:
         server.serve_forever()

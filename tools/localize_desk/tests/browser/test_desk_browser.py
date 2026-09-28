@@ -49,10 +49,10 @@ def browser():
 
 
 @contextmanager
-def desk(mode: str = "", save_on: bool = False):
+def desk(mode: str = "", save_on: bool = False, save_off: bool = False):
     """The harness on a free port: a temporary copy of docs/ and the mock Worker. (`mode`
     named the retired save workflow's Worker; it is ignored.)"""
-    root = H.stage_copy(save_on=save_on)
+    root = H.stage_copy(save_on=save_on, save_off=save_off)
     worker = H.MockWorker(root)
     server = H.make_server(root, worker, 0)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -443,7 +443,8 @@ def test_switch_and_first_view_stay_inside_their_budgets(browser):
 
 
 def test_a_decision_in_one_language_survives_a_switch_and_back(browser):
-    with desk("new") as (base, _root, _worker):
+    # Saving off: `#save-elsewhere` counts what waits in other languages beside that Save button.
+    with desk("new", save_off=True) as (base, _root, _worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         uid = page.locator(f"{ROWS}:visible").first.get_attribute("data-uid")
         _act(page, uid, "approve")
@@ -729,8 +730,9 @@ def test_an_approval_records_who_and_the_wording_it_was_given_to(browser):
 
 def test_saving_is_off_until_it_is_private_and_says_so(browser):
     """WO-34 (A15): until WO-17, Save would commit the reviewer's email to the public repo.
-    It is switched off with its reason, and nothing reaches the storage."""
-    with desk("new") as (base, _root, worker):
+    It was switched off with its reason, and nothing reached the storage. M1 switches it on;
+    switched back off (the harness's save_off), it still does exactly that."""
+    with desk("new", save_off=True) as (base, _root, worker):
         page, _errors = _open(browser, base + "/admin/localization/de/")
         _approve_first_visible(page)
         btn = page.locator("#btn-save")
@@ -748,7 +750,7 @@ def test_a_full_desk_stays_inside_its_budgets(browser, save_on):
     4x CPU -- the budget test only ever measured an empty desk. With saving on (WO-18) the
     storage holds the same decisions, so the desk starts with nothing unsaved."""
     scale = float(os.environ.get("DESK_BUDGET_SCALE", "1"))
-    with desk("new", save_on=save_on) as (base, root, worker):
+    with desk("new", save_on=save_on, save_off=not save_on) as (base, root, worker):
         page = browser.new_page()
         page.goto(base + "/admin/localization/de/")
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
@@ -830,7 +832,7 @@ def test_undo_from_the_requested_list_puts_the_turned_down_draft_back(browser):
 def test_the_index_offers_no_discard_while_saving_is_off(browser):
     """P2-3: with nothing on a server, "Discard N unsaved" was a one-click wipe of a whole
     language, beside a desk saying "kept in this browser"."""
-    with desk("new") as (base, _root, _worker):
+    with desk("new", save_off=True) as (base, _root, _worker):
         page = browser.new_page()
         page.goto(base + "/admin/localization/")
         page.evaluate("() => localStorage.setItem('cel-desk-de', JSON.stringify({'0123456789abcdef': {tray: 'csv'}}))")
@@ -1091,7 +1093,7 @@ def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
         page.check("#pick-all")
         page.click("#bulk-approve")
         _as_wait(page, "saved", 40000)
-        assert worker.calls.count("desk-write") >= 9            # 823 in slices of at most 100
+        assert worker.calls.count("desk-write") >= -(-823 // _desk_chunk())   # 823 in slices of CHUNK
         assert sum(1 for (loc, _u) in worker.store.decisions if loc == "de") == 823
         page.close()
 
@@ -1420,7 +1422,7 @@ def test_the_index_says_so_when_it_cannot_read_the_storage(browser):
 
 
 def test_the_live_index_asks_the_storage_nothing_while_saving_is_off(browser):
-    with desk("new") as (base, _root, worker):
+    with desk("new", save_off=True) as (base, _root, worker):
         idx = browser.new_page()
         idx.goto(base + "/admin/localization/")
         idx.wait_for_timeout(1500)
@@ -1711,5 +1713,27 @@ def test_a_row_the_storage_changes_holds_its_place_until_the_view_changes(browse
         page.select_option("#f-state", "")
         page.select_option("#f-state", "todo")
         assert not _row(page, u).is_visible()
+        assert not errors, errors
+        page.close()
+
+
+def test_a_browser_that_keeps_nothing_still_saves_every_decision_to_the_storage(browser):
+    """#1's COPY review of the switch-on: toast.storage.detail tells the reviewer their changes
+    still save to the server as usual when this browser keeps nothing. It is only true if
+    autosave's send path does not need localStorage. Pinned: every localStorage write refused,
+    the desk says so, an approval still reaches the Worker, and the bar reaches All changes saved."""
+    with desk() as (base, _root, worker):                  # as committed: saving on
+        page = browser.new_page()
+        errors: list[str] = []
+        page.on("pageerror", lambda e: errors.append(str(e)))
+        page.add_init_script("Storage.prototype.setItem = function () {"
+                             " throw new DOMException('full', 'QuotaExceededError'); };")
+        page.goto(base + "/admin/localization/de/")
+        page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+        u = _visible_uids(page, 1)[0]
+        _act(page, u, "approve")
+        _toast(page, C.t("toast.storage.title"))
+        _as_wait(page, "saved")
+        assert (_server(worker, u) or {}).get("tray") == "csv", "the approval never reached the storage"
         assert not errors, errors
         page.close()

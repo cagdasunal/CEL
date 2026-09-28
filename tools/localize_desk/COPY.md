@@ -235,7 +235,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.inflight.one` | 1 text is with Gemini right now. You can decide once it comes back. | |
 | `toast.inflight.other` | {n} texts are with Gemini right now. You can decide once they come back. | |
 | `toast.edited.title` | Approved with your edit | After Save changes in the edit box |
-| `toast.edited.detail` | It's kept in this browser, with your other decisions. | |
+| `toast.edited.detail` | It's saved with your other decisions — the bar at the bottom says when. | |
 | `toast.undone.title` | Undone | After Undo in a list |
 | `toast.undone.one` | 1 text is back to what it was before. | |
 | `toast.undone.other` | {n} texts are back to what they were before. | |
@@ -247,8 +247,8 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `toast.updated.failed.other` | {n} translations failed. | |
 | `toast.updated.live.one` | 1 is now on the website. | |
 | `toast.updated.live.other` | {n} are now on the website. | |
-| `toast.storage.title` | Your browser isn't keeping your work | When the browser refuses to store |
-| `toast.storage.detail` | Everything on screen is still right, but reloading would lose it. Keep this tab open and let us know. | |
+| `toast.storage.title` | This browser can't keep a copy of your work | When the browser refuses to store |
+| `toast.storage.detail` | Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for "All changes saved" before you close this tab, and let us know. | |
 | `toast.saved_load.title` | Couldn't load decisions saved earlier | When saved decisions can't be read |
 | `toast.saved_load.detail` | You may not see decisions made on another computer. Reload before reviewing. | |
 | `toast.load.title` | This language couldn't be loaded | When the texts can't be read |
@@ -272,11 +272,11 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `list.draft.title` | New translations requested | List heading |
 | `list.draft.summary.one` | 1 text is waiting for a new translation from Gemini. | Under the heading |
 | `list.draft.summary.other` | {n} texts are waiting for a new translation from Gemini. | Under the heading |
-| `list.draft.notice` | This list is kept in this browser. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is. | Bottom of the list |
+| `list.draft.notice` | This list is saved with your decisions. Sending requests to Gemini isn't switched on yet — they'll be waiting when it is. | Bottom of the list |
 | `list.csv.title` | Approved | List heading |
 | `list.csv.summary.one` | 1 text is approved and waiting to go to the website. | Under the heading |
 | `list.csv.summary.other` | {n} texts are approved and waiting to go to the website. | Under the heading |
-| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are kept in this browser. Making the Weglot import file isn't switched on yet — they'll be waiting when it is. | Bottom of the list |
+| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and go into the next Weglot import file. | Bottom of the list |
 
 ## Why a text is flagged (under the translation)
 

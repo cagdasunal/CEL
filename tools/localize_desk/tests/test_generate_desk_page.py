@@ -345,15 +345,16 @@ class TestAuditRegressions2026_09_23:
         assert "client: DESK_CLIENT" in body and "action: 'desk-write'" in body
 
     def test_a_save_goes_no_more_than_the_storage_takes_at_once(self, page):
-        """The Worker refuses more than 200 changes in one request, and 200 cost 5.7-9.0 ms of
-        its CPU (median to p95), at the free plan's 10 ms (#3, G15; 100 cost 3.5-6.4 ms). So a
-        whole language in bulk (~823) goes in slices of at most 100. The stand-in's limit is
-        the Worker's (parity test)."""
+        """The Worker refuses more than 200 changes in one request, and its CPU budget on the
+        free plan is 10 ms. Production G15, 2026-09-28: ~2.5-4 ms over bench (B); 100 projects to
+        8-11 ms (a 1-change desk-write measured 5.4 ms, max 7.0, live). So a whole language in
+        bulk (~823) goes in slices of at most 50 (#1's ruling). The stand-in's limit is the
+        Worker's (parity test)."""
         from localize_desk.desk_store import MAX_CHANGES
         m = re.search(r"var CHUNK = (\d+);", page)
         assert m, "the desk no longer says how many changes go in one request"
         chunk = int(m.group(1))
-        assert 0 < chunk <= 100, f"{chunk} changes in one request is past the Worker's CPU budget"
+        assert 0 < chunk <= 50, f"{chunk} changes in one request is past the Worker's CPU budget"
         assert chunk <= MAX_CHANGES, f"{chunk} changes in one request is more than the Worker takes"
 
     def test_the_help_says_how_saving_works_on_each_side_of_the_switch(self, monkeypatch):
@@ -535,6 +536,36 @@ def test_the_committed_desk_is_what_the_generator_writes_today(tmp_path, monkeyp
                    if (committed / r).read_bytes() != (tmp_path / "localization" / r).read_bytes())
     assert not stale, ("committed desk differs from the generator -- run "
                        "`cd tools && python3 -m localize_desk.generate_desk_page`: " + ", ".join(stale))
+
+
+def test_the_committed_desk_saves():
+    """M1: saving is switched on. The desk and the index save to the storage; SAVE_OFF stays
+    as the one switch back (the harness's save_off serves it that way)."""
+    from localize_desk import harness as H
+    assert G.SAVE_OFF is False
+    pages = sorted(G.OUT_ROOT.rglob("index.html"))
+    if not pages:
+        pytest.skip("no committed desk in this checkout")
+    assert all(H.SAVE_ON_LINE in p.read_text(encoding="utf-8") for p in pages)
+
+
+def test_the_harness_serves_the_desk_as_committed_or_switched_off_or_on():
+    """After the switch-on, the harness's old default ("saving off, as live") would silently
+    have served a saving desk to every test that meant off: off is now asked for by name."""
+    import shutil
+    from localize_desk import harness as H
+    if not (H.REPO_DOCS / "admin" / "localization" / "index.html").is_file():
+        pytest.skip("no committed desk in this checkout")
+    for kw, want, gone in (({}, H.SAVE_ON_LINE, H.SAVE_OFF_LINE),
+                           ({"save_off": True}, H.SAVE_OFF_LINE, H.SAVE_ON_LINE),
+                           ({"save_on": True}, H.SAVE_ON_LINE, H.SAVE_OFF_LINE)):
+        root = H.stage_copy(**kw)
+        try:
+            pages = list((root / "admin" / "localization").rglob("index.html"))
+            texts = [q.read_text(encoding="utf-8") for q in pages]
+            assert len(pages) == 9 and all(want in t and gone not in t for t in texts), kw
+        finally:
+            shutil.rmtree(root, ignore_errors=True)
 
 
 class TestAutosave:
