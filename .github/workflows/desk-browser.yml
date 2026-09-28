@@ -52,6 +52,10 @@ jobs:
           python3 -m playwright install --with-deps chromium
 
       - name: Desk browser tests
+        # The timing budgets are set on the operator's Mac; this runner is about 2.4x slower
+        # under the same 4x CPU throttle (first run: 0.305 s vs 0.126 s median switch).
+        env:
+          DESK_BUDGET_SCALE: "2.5"
         run: cd tools && python3 -m pytest localize_desk/tests/browser -p no:cacheprovider -rxs
 
       - name: Notify on failure

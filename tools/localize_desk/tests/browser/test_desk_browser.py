@@ -462,7 +462,15 @@ def test_back_returns_to_the_previous_language_without_a_reload(browser):
 def test_switch_and_first_view_stay_inside_their_budgets(browser):
     """G9 budgets (runbook WO-09), CPU slowed 4x: first view <= 1.5 s, switch <= 0.2 s,
     each timed inside the page from the start to the new rows painted. The median of
-    three switches, so one slow frame on a busy runner does not decide it."""
+    three switches, so one slow frame on a busy runner does not decide it.
+
+    The budgets are set on the reference machine (the operator's Mac, where the pre-commit
+    hook runs this at scale 1). A 4x slowdown is relative to the host, and GitHub's runner
+    is itself slower: its first run measured a 0.305 s median switch against 0.126 s here.
+    CI sets DESK_BUDGET_SCALE (desk-browser.yml) rather than a looser number in this file,
+    and a real regression still fails there -- the old reload-per-switch desk took 0.63 s
+    on the Mac, about 1.5 s on the runner."""
+    scale = float(os.environ.get("DESK_BUDGET_SCALE", "1"))
     with desk("new") as (base, _root, _worker):
         page = browser.new_page()
         page.context.new_cdp_session(page).send("Emulation.setCPUThrottlingRate", {"rate": 4})
@@ -472,8 +480,8 @@ def test_switch_and_first_view_stay_inside_their_budgets(browser):
         page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=60000)
         page.wait_for_timeout(1500)       # the other languages prefetch while the reviewer reads
         switches = sorted(_timed_switch(page, code) for code in ("fr", "it", "es"))
-        assert first <= 1.5, f"first view {first:.2f} s > 1.5 s"
-        assert switches[1] <= 0.2, f"switch {switches} s, median > 0.2 s"
+        assert first <= 1.5 * scale, f"first view {first:.2f} s > {1.5 * scale:.2f} s (scale {scale})"
+        assert switches[1] <= 0.2 * scale, f"switch {switches} s, median > {0.2 * scale:.2f} s (scale {scale})"
         page.close()
 
 
