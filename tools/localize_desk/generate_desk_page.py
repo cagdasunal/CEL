@@ -45,8 +45,8 @@ WHY ADDING TO A TRAY IS NOT A TOGGLE
 A toggle survives five clicks (odd -> still queued) but NOT four, and a double-click
 is the commonest mis-click there is: it would have silently undone itself while
 looking like it did nothing. Setting a tray is idempotent under any number of clicks.
-Taking something back out is deliberate, from the tray screen, where the reviewer can
-see what they are removing.
+Taking something back out is deliberate, from the review list (ruling 18), where the
+reviewer can see what they are removing.
 
 HISTORY
 -------
@@ -246,7 +246,7 @@ def _review_modal() -> str:
         <label class="desk-review-all">
           <input type="checkbox" class="desk-pick" id="tray-all"
                  aria-label="{escape(t("list.select_all.label"))}">
-          <span id="tray-selcount">{escape(t("list.select_all"))}</span>
+          <span id="tray-all-label">{escape(t("list.select_all"))}</span>
         </label>
         <span class="desk-savebar-spacer"></span>
         <button type="button" class="desk-btn" id="tray-remove-sel" disabled>{escape(t("list.undo"))}</button>
@@ -1613,7 +1613,7 @@ __STAGE_JS__
       var all = document.getElementById('tray-all');
       all.checked = listed > 0 && sel === listed;
       all.indeterminate = sel > 0 && sel < listed;
-      document.getElementById('tray-selcount').textContent =
+      document.getElementById('tray-all-label').textContent =
         sel ? t('list.selected', { n: sel }) : t('list.select_all');
       var rm = document.getElementById('tray-remove-sel');
       rm.disabled = sel === 0;

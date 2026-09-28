@@ -486,3 +486,15 @@ def test_index_links_into_a_list_in_reviewer_words():
     src = Path(G.__file__).read_text()
     assert "'?show=approved'" in src and "'?show=requested'" in src
     assert "?show=csv" not in src and "?show=draft" not in src
+
+
+def test_one_gesture_has_one_name():
+    """Desk audit §6, runbook WO-28: "select every text in view" is one gesture, in the
+    table header and in the review list, so it gets one name -- and the list's checkbox
+    label is named for what it is (it reads "Select all", then "3 selected")."""
+    from localize_desk import copy_text
+    copy = copy_text.load()
+    assert copy["table.pick_all"] == copy["list.select_all.label"]
+    src = Path(G.__file__).read_text()
+    assert "tray-selcount" not in src and 'id="tray-all-label"' in src
+    assert "tray screen" not in src.lower()      # ruling 18: it is the review list

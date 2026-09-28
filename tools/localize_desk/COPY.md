@@ -237,7 +237,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 |---|---|---|
 | `list.close` | Close | Button and the × |
 | `list.select_all` | Select all | Checkbox label |
-| `list.select_all.label` | Select every text in this list | Screen-reader name of that checkbox |
+| `list.select_all.label` | Select every text shown | Screen-reader name of that checkbox (the same gesture, and words, as the table's header checkbox) |
 | `list.selected` | {n} selected | Checkbox label, with a selection |
 | `list.undo` | Undo | Button, nothing selected |
 | `list.undo_n` | Undo {n} | Button, with a selection |
