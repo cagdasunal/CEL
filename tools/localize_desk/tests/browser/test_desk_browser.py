@@ -40,6 +40,13 @@ from localize_desk import harness as H  # noqa: E402
 ROWS = 'tbody tr[data-uid]'
 
 
+def _every(code: str = "de") -> int:
+    """Every row the generated desk lists in `code`: read, not written down, so a refresh that changes
+    the list (WO-39 added 16) does not break the suite, and no language is assumed the size of another."""
+    path = Path(__file__).resolve().parents[4] / "docs" / "admin" / "localization" / code / "units.json"
+    return len(json.loads(path.read_text(encoding="utf-8")))
+
+
 @pytest.fixture(scope="module")
 def browser():
     with sync_playwright() as p:
@@ -86,7 +93,7 @@ def _toast(page, text: str, timeout: float = 25000):
 def test_the_desk_loads_signed_in_with_every_text(browser):
     with desk("new") as (base, _root, _worker):
         page, errors = _open(browser, base + "/admin/localization/de/")
-        assert page.locator(ROWS).count() == 823
+        assert page.locator(ROWS).count() == _every()
         assert not errors, errors
         page.close()
 
@@ -319,7 +326,7 @@ def test_an_empty_view_offers_a_way_back(browser):
         page.fill("#f-q", "zzqq-nothing-matches-this")
         page.locator("#no-rows").wait_for(state="visible")
         page.click("#no-rows-reset")
-        assert page.locator(f"{ROWS}:visible").count() == 823
+        assert page.locator(f"{ROWS}:visible").count() == _every()
         page.close()
 
 
@@ -519,7 +526,7 @@ def test_overlapping_loads_never_build_the_table_twice(browser):
         page.wait_for_function("performance.getEntriesByName('desk-ready:de').length > 0", timeout=20000)
         page.wait_for_timeout(2000)                   # every load still running has landed
         ids = page.locator("#desk-body tr[data-uid]").evaluate_all("els => els.map(e => e.dataset.uid)")
-        assert len(ids) == len(set(ids)) == 823, (len(ids), len(set(ids)))
+        assert len(ids) == len(set(ids)) == _every(), (len(ids), len(set(ids)))
         page.close()
 
 
@@ -1093,8 +1100,8 @@ def test_a_whole_language_saves_in_slices_the_storage_takes(browser):
         page.check("#pick-all")
         page.click("#bulk-approve")
         _as_wait(page, "saved", 40000)
-        assert worker.calls.count("desk-write") >= -(-823 // _desk_chunk())   # 823 in slices of CHUNK
-        assert sum(1 for (loc, _u) in worker.store.decisions if loc == "de") == 823
+        assert worker.calls.count("desk-write") >= -(-_every() // _desk_chunk())   # every row, in slices of CHUNK
+        assert sum(1 for (loc, _u) in worker.store.decisions if loc == "de") == _every()
         page.close()
 
 
@@ -1364,7 +1371,7 @@ def test_when_the_browser_is_full_the_unsent_changes_are_what_it_keeps(browser):
         worker.desk_fault = None
         _as_wait(page, "saved", 30000)
         de = [r for (loc, _x), r in worker.store.decisions.items() if loc == "de"]
-        assert len(de) == 823 and {r["version"] for r in de} == {1}, "something already saved was sent again"
+        assert len(de) == _every() and {r["version"] for r in de} == {1}, "something already saved was sent again"
         page.close()
 
 
@@ -1384,7 +1391,7 @@ def test_the_client_never_sends_more_than_the_storage_takes_in_ten_minutes(brows
         assert C.t("save.reason.cap") in _as_words(page)
         # Whole slices, never past the cap: two languages, then as many slices as still fit.
         from localize_desk.desk_store import CAP_CHANGES
-        both, chunk = 823 + 823, _desk_chunk()
+        both, chunk = _every("de") + _every("fr"), _desk_chunk()
         assert len(worker.store.decisions) == both + (CAP_CHANGES - both) // chunk * chunk
         page.close()
 

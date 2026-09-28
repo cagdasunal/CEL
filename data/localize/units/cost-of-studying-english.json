@@ -4,7 +4,7 @@
  "path": "/vancouver/cost-of-studying-english",
  "source": "render-alignment",
  "source_note": "Built by aligning the English render with each localized render (tools/localize/align.py) rather than from a Weglot dashboard export. word_from is at Weglot's own cut because Weglot performed the substitution. quality_approx is an approximation - see provenance.py.",
- "built_at": "2026-09-28T11:50:23Z",
+ "built_at": "2026-09-28T19:57:14Z",
  "locales": [
   "de",
   "fr",
@@ -965,7 +965,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": true,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "170",
@@ -2173,7 +2173,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": true,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "70",
@@ -2283,7 +2283,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": true,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "8,480",
@@ -5615,7 +5615,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "<a wg-1=\"\">Gastfamilie</a>",
@@ -12066,7 +12066,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Langzeitaufenthalt",
@@ -13995,7 +13995,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Unterkunft",
@@ -16890,7 +16890,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "San Diego",
@@ -19806,7 +19806,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Transport",
@@ -20633,7 +20633,7 @@
     "/vancouver/cost-of-studying-english"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Wert",
@@ -20820,7 +20820,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Vancouver",
@@ -21084,7 +21084,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Vancouver oder Toronto",

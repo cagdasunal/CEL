@@ -4,7 +4,7 @@
  "path": "/vancouver",
  "source": "render-alignment",
  "source_note": "Built by aligning the English render with each localized render (tools/localize/align.py) rather than from a Weglot dashboard export. word_from is at Weglot's own cut because Weglot performed the substitution. quality_approx is an approximation - see provenance.py.",
- "built_at": "2026-09-28T11:50:17Z",
+ "built_at": "2026-09-28T19:57:08Z",
  "locales": [
   "de",
   "fr",
@@ -2102,7 +2102,7 @@
     "/vancouver/vs-toronto"
    ],
    "noise": true,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "7",
@@ -3885,7 +3885,7 @@
     "/vancouver"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "<a wg-1=\"\">Kanada</a>",
@@ -5522,7 +5522,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "<a wg-1=\"\">Gastfamilie</a>",
@@ -11194,7 +11194,7 @@
     "/vancouver"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Coal Harbour",
@@ -13933,7 +13933,7 @@
     "/vancouver"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Jeden Montag",
@@ -16352,7 +16352,7 @@
     "/vancouver"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Granville Island",
@@ -16782,7 +16782,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Unterkunft",
@@ -18975,7 +18975,7 @@
     "/vancouver/vs-toronto"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Lage",
@@ -22480,7 +22480,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "San Diego",
@@ -24167,7 +24167,7 @@
     "/vancouver"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Stanley Park",
@@ -26914,7 +26914,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Vancouver",
@@ -27377,7 +27377,7 @@
     "/voices"
    ],
    "noise": false,
-   "summary_owned": true,
+   "summary_owned": false,
    "current": {
     "de": {
      "word_to": "Vancouver oder Toronto",
