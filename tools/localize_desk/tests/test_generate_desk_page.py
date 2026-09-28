@@ -345,16 +345,32 @@ class TestAuditRegressions2026_09_23:
         assert "client: DESK_CLIENT" in body and "action: 'desk-write'" in body
 
     def test_a_save_goes_no_more_than_the_storage_takes_at_once(self, page):
-        """The Worker refuses more than 200 changes in one request, and 200 cost 5-11 ms of its
-        CPU, at the free plan's 10 ms (#3 measured desk-write; 100 cost 3.6-5.3 ms). So a whole
-        language in bulk (~823) goes in slices of at most 100. The stand-in's limit is the
-        Worker's (parity test)."""
+        """The Worker refuses more than 200 changes in one request, and 200 cost 5.7-9.0 ms of
+        its CPU (median to p95), at the free plan's 10 ms (#3, G15; 100 cost 3.5-6.4 ms). So a
+        whole language in bulk (~823) goes in slices of at most 100. The stand-in's limit is
+        the Worker's (parity test)."""
         from localize_desk.desk_store import MAX_CHANGES
         m = re.search(r"var CHUNK = (\d+);", page)
         assert m, "the desk no longer says how many changes go in one request"
         chunk = int(m.group(1))
         assert 0 < chunk <= 100, f"{chunk} changes in one request is past the Worker's CPU budget"
         assert chunk <= MAX_CHANGES, f"{chunk} changes in one request is more than the Worker takes"
+
+    def test_the_help_says_how_saving_works_on_each_side_of_the_switch(self, monkeypatch):
+        """M1: the help window's Saving part follows SAVE_OFF. Off, it says the decisions stay in
+        this browser. On, it describes autosave in the bar's own words. With one text for both
+        sides, the help was wrong on one side of the switch."""
+        from html import escape
+        from localize_desk import copy_text as C
+        monkeypatch.setattr(G, "SAVE_OFF", True)
+        off = G._how_modal()
+        monkeypatch.setattr(G, "SAVE_OFF", False)
+        on = G._how_modal()
+        assert C.block_html("how.saving.off") in off and C.block_html("how.saving.on") not in off
+        assert C.block_html("how.saving.on") in on and C.block_html("how.saving.off") not in on
+        # The statuses it names are the bar's, word for word: a renamed status fails here.
+        for key in ("autosave.saved", "autosave.checking", "autosave.retry"):
+            assert escape(C.t(key), quote=False) in on, key
 
     def test_the_old_save_path_is_gone(self, page):
         """S2 (R37): one save path. The workflow dispatch, its run polling and the repo's

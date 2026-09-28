@@ -337,10 +337,31 @@ Approved texts wait for the import file, and new-translation requests wait for s
 Gemini to be switched on. Neither step is switched on yet. Both lists open from the bar at the
 bottom, and anything in them can be undone.
 
+<!-- /block -->
+
+The help window ends with one of the two blocks below: the first while saving is switched off,
+the second once it is on.
+
+<!-- block how.saving.off -->
 ### Saving
 
 Your decisions are kept in this browser as you make them. Saving them to the server is
 switched off for now, until it can keep them private — so keep using this browser, and don't
 clear its history or site data. Once saving is back, you'll be able to close the tab and carry
 on from another computer.
+<!-- /block -->
+
+<!-- block how.saving.on -->
+### Saving
+
+Your decisions are saved by themselves a moment after you stop clicking. The bar at the bottom
+says where saving stands; hover over it to see what that means.
+
+- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.
+- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.
+- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: decide again to keep yours, or use theirs.
+- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.
+
+A text you're editing keeps what you typed, even if someone else saves it meanwhile. When you
+save yours, it is marked as changed elsewhere, so you choose which wording stays.
 <!-- /block -->

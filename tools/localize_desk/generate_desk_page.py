@@ -214,12 +214,14 @@ def _head(title: str, description: str) -> list[str]:
 
 
 def _how_modal() -> str:
-    """The help window. Its body is the `how.body` block in COPY.md."""
+    """The help window: the `how.body` block in COPY.md, then its Saving part -- one of two
+    blocks, as saving is off or on, so the help is true on both sides of the switch (M1)."""
+    saving = block_html("how.saving.off" if SAVE_OFF else "how.saving.on")
     return (
         '  <div class="cpw-overlay" id="how-overlay" hidden>\n'
         '    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="how-title">\n'
         f'      <h2 class="cpw-title" id="how-title">{escape(t("how.title"))}</h2>\n'
-        f'      <div class="desk-modal-body">\n{block_html("how.body")}\n      </div>\n'
+        f'      <div class="desk-modal-body">\n{block_html("how.body")}\n{saving}\n      </div>\n'
         '      <div class="cpw-actions">\n'
         f'        <button type="button" class="cpw-btn cpw-save" id="how-close">{escape(t("how.close"))}</button>\n'
         '      </div>\n'
@@ -2249,8 +2251,8 @@ __DELTA_JS__
     // what is sent. The old path -- a GitHub workflow committing to the public repo -- is
     // gone (S2). Nothing leaves the browser while SAVE_OFF (WO-34).
     var DESK_CLIENT = 1;      // the Worker's DESK_MIN_CLIENT: below it, it says reload
-    // Most changes in one request. The Worker takes 200, but 200 cost 5-11 ms of its CPU, at the
-    // free plan's 10 ms; 100 cost 3.6-5.3 ms (#3 measured desk-write). Only bulk work reaches it.
+    // Most changes in one request. The Worker takes 200, but 200 cost 5.7-9.0 ms of its CPU (median
+    // to p95), at the free plan's 10 ms; 100 cost 3.5-6.4 ms (#3, G15). Only bulk work reaches it.
     var CHUNK = 100;
 
 __PROXY_JS__
