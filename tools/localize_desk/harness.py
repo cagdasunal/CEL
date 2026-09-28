@@ -14,7 +14,10 @@ It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
   * dashboard-config.js pointing the desk at this server's mock Worker;
   * the Worker's desk storage actions (desk-read / desk-write / desk-history / desk-summary), answered by
     `desk_store.DeskStore` -- held to the real Worker by the monorepo's differential test
-    (runbook WO-33) -- over the same page map deploy.sh loads.
+    (runbook WO-33) -- over the same page map deploy.sh loads;
+  * the desk's jobs (desk-job-start / desk-job-get / desk-export-get, runbook U1), from the same
+    stand-in: nothing is dispatched, and a test plays the engine (`store.finish_job`,
+    `store.seed_export`).
 
 The copy is served as committed: saving on since M1. --save-off serves it with saving
 switched off, the desk's one switch back; --save-on (saving on whatever the pages say) was how
@@ -93,7 +96,8 @@ class MockWorker:
             finally:
                 with self.lock:
                     self.inflight -= 1
-        if action in ("desk-read", "desk-history", "desk-summary"):
+        if action in ("desk-read", "desk-history", "desk-summary",
+                      "desk-job-start", "desk-job-get", "desk-export-get"):
             return self._desk(action, body)
         return 400, {"error": "invalid action"}
 

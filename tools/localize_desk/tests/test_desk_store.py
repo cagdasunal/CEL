@@ -87,3 +87,40 @@ def test_an_id_with_a_trailing_newline_is_refused_as_the_worker_refuses_it():
     s = _store()
     code, r = _write(s, [{"unit": U1 + "\n", "page": "vancouver", "base": 0, "record": {"tray": "csv"}}])
     assert code == 400 and r["error"] == "invalid: bad text id"
+
+
+def _stamp(minutes_ago: float) -> str:
+    from datetime import datetime, timedelta, timezone
+    t = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
+    return t.strftime("%Y-%m-%dT%H:%M:%S.") + f"{t.microsecond // 1000:03d}Z"
+
+
+def test_a_job_the_engine_never_answered_is_failed_and_frees_its_language():
+    """The Worker's sweep (U1), which the parity test cannot reach: it has no clock to move."""
+    s = _store()
+    _c, r = s.handle("desk-job-start", {"locale": "de", "kind": "plan"}, "pat@example.test")
+    s.jobs[r["job"]["id"]]["created_at"] = _stamp(34)
+    _c, got = s.handle("desk-job-get", {"locale": "de"}, "pat@example.test")
+    assert got["jobs"]["plan"]["status"] == "queued"                     # 34 minutes: left alone
+    s.jobs[r["job"]["id"]].update(status="running", started_at=_stamp(36))
+    _c, got = s.handle("desk-job-get", {"locale": "de"}, "pat@example.test")
+    assert got["jobs"]["plan"]["status"] == "failed" and got["jobs"]["plan"]["error"] == "engine-never-answered"
+    assert s.handle("desk-job-start", {"locale": "de", "kind": "plan"}, "pat@example.test")[0] == 200
+
+
+def test_the_harness_plays_the_engine_for_the_desks_jobs():
+    s = _store()
+    assert s.finish_job("de", "export") is None                            # nothing open
+    _c, r = s.handle("desk-job-start", {"locale": "de", "kind": "export"}, "pat@example.test")
+    assert s.dispatched == [r["job"]["id"]]
+    assert s.finish_job("de", "export", "running") == r["job"]["id"]
+    assert s.jobs[r["job"]["id"]]["started_at"]
+    s.finish_job("de", "export", "done", {"batchId": "de-1", "rows": 1, "refused": []})
+    s.seed_export("de-1", "de", "word_from,word_to\nHello,Hallo\n", 1, [])
+    _c, got = s.handle("desk-job-get", {"locale": "de", "id": r["job"]["id"]}, "pat@example.test")
+    assert got["job"]["status"] == "done" and got["job"]["result"]["batchId"] == "de-1"
+    code, x = s.handle("desk-export-get", {"batch_id": "de-1"}, "pat@example.test")
+    assert code == 200 and x["export"]["csv"].startswith("word_from") and x["export"]["rows"] == 1
+    s.dispatch_status = 422
+    code, r = s.handle("desk-job-start", {"locale": "fr", "kind": "export"}, "pat@example.test")
+    assert code == 502 and r["job"]["error"] == "engine-did-not-start" and len(s.dispatched) == 1

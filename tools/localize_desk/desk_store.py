@@ -17,6 +17,13 @@ desk-read also carries the engine's findings (schema v2, WO-36; `seed_findings` 
 `desk-summary` (runbook WO-18) is the index's: each language's decisions as the shapes the
 desk's stageOf() reads, with their counts, and the shape of each flagged text it names.
 
+The desk's jobs (runbook U1): `desk-job-start` records a job the way the Worker does, and
+"dispatches" it by adding its id to `dispatched` -- no engine runs here. The harness plays the
+engine with `finish_job` and `seed_export` (the rows the engine writes through /engine-query);
+`dispatch_status` stands for GitHub's answer (204 took it; anything else, the Worker fails the
+job at once); `engine_configured` False stands for a Worker with no GitHub credential (503).
+`desk-job-get` and `desk-export-get` read them back.
+
 What it leaves out: the session check (the harness signs everyone in), the signature's
 value (it is never returned), and the per-user cap (it needs thousands of requests; the
 Worker's own tests hold it).
@@ -26,6 +33,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 import re
 import threading
 import uuid
@@ -48,6 +56,14 @@ CAP_CHANGES, CAP_WINDOW_SEC = 2000, 600
 # JavaScript's does not -- so "<id>\n" passed here and was refused by the Worker (parity test).
 UNIT = re.compile(r"[0-9a-f]{16}")
 PAGE = re.compile(r"[a-z0-9_-]{1,80}")
+# The Worker's jobs (runbook U1): the kinds, the one-run cap on a submit's amount, and how long
+# an open job may go unanswered before the sweep fails it.
+JOB_KINDS = ("export", "verify", "plan", "submit", "collect")
+JOB_RUN_CAP_USD = 40
+JOB_STALE_SEC = 35 * 60
+JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}")      # verify's batch, collect's run
+JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{7,63}")
+BATCH_ID = JOB_REF
 
 
 class Invalid(ValueError):
@@ -85,6 +101,35 @@ def _js_str(v) -> str:
 def _dumps(value) -> str:
     """JSON.stringify for the shapes this module sends: no spaces, non-ASCII as is."""
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _iso(t: datetime) -> str:
+    """Date.prototype.toISOString(): milliseconds, Z."""
+    return t.strftime("%Y-%m-%dT%H:%M:%S.") + f"{t.microsecond // 1000:03d}Z"
+
+
+def _job_out(r: dict | None) -> dict | None:
+    """The Worker's jobOut(): the row in the desk's names, each optional field only when set."""
+    if r is None:
+        return None
+    out = {"id": r["id"], "kind": r["kind"], "locale": r["locale"], "status": r["status"]}
+    if r.get("amount_usd") is not None:
+        out["amountUsd"] = r["amount_usd"]
+    if r.get("ref"):
+        out["ref"] = r["ref"]
+    out["requestedBy"] = r["requested_by"]
+    out["createdAt"] = r["created_at"]
+    for k, name in (("started_at", "startedAt"), ("finished_at", "finishedAt")):
+        if r.get(k):
+            out[name] = r[k]
+    if r.get("result"):
+        try:
+            out["result"] = json.loads(r["result"])
+        except ValueError:
+            out["result"] = None
+    if r.get("error"):
+        out["error"] = r["error"]
+    return out
 
 
 def record_of(raw) -> dict:
@@ -147,6 +192,12 @@ class DeskStore:
         self.drafts: dict[tuple[str, str], dict] = {}
         # schema v2 (WO-36): the engine's findings, (locale, unit, subject, rule) -> the row.
         self.findings: dict[tuple[str, str, str, str], dict] = {}
+        # schema v3 (U1): the desk's jobs, and the import files the engine made.
+        self.jobs: dict[str, dict] = {}
+        self.exports: dict[str, dict] = {}
+        self.dispatched: list[str] = []
+        self.dispatch_status = 204
+        self.engine_configured = True
         self.lock = threading.Lock()
 
     @classmethod
@@ -167,6 +218,33 @@ class DeskStore:
                 hits = r["hits"] if isinstance(r["hits"], str) else _dumps(list(r["hits"]))
                 self.findings[(locale, r["unit_id"], r["subject"], r["rule"])] = {**r, "hits": hits}
 
+    def finish_job(self, locale: str, kind: str, status: str = "done", result=None,
+                   error: str | None = None) -> str | None:
+        """The engine answering the open job of a language and kind (what its /engine-query
+        writes): `running` claims it, `done` / `failed` end it. The job's id, or None."""
+        with self.lock:
+            open_ = [j for j in self.jobs.values() if j["locale"] == locale and j["kind"] == kind
+                     and j["status"] in ("queued", "running")]
+            if not open_:
+                return None
+            j, at = open_[0], _iso(datetime.now(timezone.utc))
+            j["status"] = status
+            if status == "running":
+                j["started_at"] = j.get("started_at") or at
+            else:
+                j["finished_at"] = at
+                j["result"] = None if result is None else _dumps(result)
+                j["error"] = error
+            return j["id"]
+
+    def seed_export(self, batch_id: str, locale: str, csv: str, rows: int, refused: list,
+                    created_at: str | None = None) -> None:
+        """An import file as the engine's export job writes it into `exports`."""
+        with self.lock:
+            self.exports[batch_id] = {"batch_id": batch_id, "locale": locale, "csv": csv, "rows": rows,
+                                      "refused": _dumps(refused),
+                                      "created_at": created_at or _iso(datetime.now(timezone.utc))}
+
     # ── the actions ─────────────────────────────────────────────────────────────────
     def handle(self, action: str, body: dict, email: str) -> tuple[int, dict]:
         with self.lock:
@@ -178,6 +256,12 @@ class DeskStore:
                 return self._history(body)
             if action == "desk-summary":
                 return self._summary(body)
+            if action == "desk-job-start":
+                return self._job_start(body, email)
+            if action == "desk-job-get":
+                return self._job_get(body)
+            if action == "desk-export-get":
+                return self._export_get(body)
         return 400, {"error": "invalid action"}
 
     @staticmethod
@@ -328,3 +412,89 @@ class DeskStore:
         return 200, {"ok": True, "history": [
             {**h["record"], "page": h["page"], "version": h["version"], "by": h["by"], "at": h["at"]}
             for h in rows]}
+
+    # ── the desk's jobs (runbook U1) ────────────────────────────────────────────────
+    def _sweep(self, locale: str) -> None:
+        """jobSweep(): a job still open 35 minutes after it started is failed, in the row."""
+        now = datetime.now(timezone.utc)
+        cutoff = _iso(datetime.fromtimestamp(now.timestamp() - JOB_STALE_SEC, timezone.utc))
+        for j in self.jobs.values():
+            if (j["locale"] == locale and j["status"] in ("queued", "running")
+                    and (j.get("started_at") or j["created_at"]) < cutoff):
+                j.update(status="failed", finished_at=_iso(now), error="engine-never-answered")
+
+    def _job_start(self, body: dict, email: str) -> tuple[int, dict]:
+        try:
+            locale = self._locale(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        if locale not in REAL_LOCALES:
+            return 400, {"ok": False, "error": "invalid: not a desk language"}
+        kind = body.get("kind")
+        if not isinstance(kind, str) or kind not in JOB_KINDS:
+            return 400, {"ok": False, "error": "invalid: kind"}
+        amount = None
+        if kind == "submit":
+            amount = body.get("amount_usd")
+            if (not isinstance(amount, (int, float)) or isinstance(amount, bool) or not math.isfinite(amount)
+                    or amount <= 0 or amount > JOB_RUN_CAP_USD):
+                return 400, {"ok": False, "error": "invalid: amount_usd must be the plan's estimate, "
+                                                   f"above 0 and at most {JOB_RUN_CAP_USD}"}
+        elif "amount_usd" in body:                    # JavaScript's `!== undefined`: a null counts
+            return 400, {"ok": False, "error": "invalid: only a submit carries an amount"}
+        ref = body.get("ref")
+        if ref is not None:
+            if kind not in ("verify", "collect") or not isinstance(ref, str) or not JOB_REF.fullmatch(ref):
+                return 400, {"ok": False, "error": "invalid: ref"}
+        if not self.engine_configured:
+            return 503, {"ok": False, "error": "the engine is not configured"}
+        self._sweep(locale)
+        open_ = next((j for j in self.jobs.values() if j["locale"] == locale and j["kind"] == kind
+                      and j["status"] in ("queued", "running")), None)
+        if open_ is not None:
+            return 409, {"ok": False, "error": "already running", "job": _job_out(open_)}
+        job_id = str(uuid.uuid4())
+        self.jobs[job_id] = {"id": job_id, "kind": kind, "locale": locale, "status": "queued",
+                             "amount_usd": amount, "ref": ref, "requested_by": email,
+                             "created_at": _iso(datetime.now(timezone.utc))}
+        if self.dispatch_status not in (200, 204):
+            self.jobs[job_id].update(status="failed", finished_at=_iso(datetime.now(timezone.utc)),
+                                     error="engine-did-not-start")
+            return 502, {"ok": False, "error": "the engine did not start", "job": _job_out(self.jobs[job_id])}
+        self.dispatched.append(job_id)
+        return 200, {"ok": True, "job": _job_out(self.jobs[job_id])}
+
+    def _job_get(self, body: dict) -> tuple[int, dict]:
+        try:
+            locale = self._locale(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        self._sweep(locale)
+        if "id" in body:
+            job_id = body["id"]
+            if not isinstance(job_id, str) or not JOB_ID.fullmatch(job_id):
+                return 400, {"ok": False, "error": "invalid: id"}
+            one = self.jobs.get(job_id)
+            if one is None or one["locale"] != locale:
+                return 404, {"ok": False, "error": "no such job"}
+            return 200, {"ok": True, "job": _job_out(one)}
+        latest: dict[str, dict] = {}
+        for j in self.jobs.values():                 # insertion order: the newest of a kind wins
+            if j["locale"] == locale and (j["kind"] not in latest or j["created_at"] >= latest[j["kind"]]["created_at"]):
+                latest[j["kind"]] = j
+        return 200, {"ok": True, "jobs": {k: _job_out(latest[k]) for k in sorted(latest)}}
+
+    def _export_get(self, body: dict) -> tuple[int, dict]:
+        batch_id = body.get("batch_id")
+        if not isinstance(batch_id, str) or not BATCH_ID.fullmatch(batch_id):
+            return 400, {"ok": False, "error": "invalid: batch_id"}
+        r = self.exports.get(batch_id)
+        if r is None:
+            return 404, {"ok": False, "error": "no such file"}
+        try:
+            refused = json.loads(r["refused"])
+        except ValueError:
+            refused = []
+        return 200, {"ok": True, "export": {"batchId": r["batch_id"], "locale": r["locale"], "rows": r["rows"],
+                                            "createdAt": r["created_at"], "csv": r["csv"],
+                                            "refused": refused if isinstance(refused, list) else []}}
