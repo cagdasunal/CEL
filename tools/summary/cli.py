@@ -253,6 +253,16 @@ def main(argv: list[str] | None = None) -> int:
         print(run_ledger.format_status())
         return 0
 
+    # A page frozen for a localization round is refused BY NAME, before anything runs or
+    # spends. Its translated blocks can still be regenerated -- only the English is frozen.
+    if (args.subcommand in ("generate-english", "all") and args.page
+            and _page_path(args.page) in _frozen_paths()):
+        print(f"[summary] REFUSED: {args.page} is frozen for a localization round "
+              f"({config.FREEZE_FILE.name}): its English may not change until the round "
+              "ends. Its translations can still be regenerated with `translate`.",
+              file=sys.stderr)
+        return 2
+
     out_dir = args.out_dir or (config.DRYRUN_DIR / _timestamp_slug())
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -324,11 +334,40 @@ def main(argv: list[str] | None = None) -> int:
 # ---- Plan-only helpers (informational; used by 'plan' subcommand) ----
 
 
+def _page_path(url: str) -> str:
+    """"/vancouver" for "https://www.englishcollege.com/vancouver/" -- what freeze.json lists."""
+    path = re.sub(r"^https?://[^/]+", "", url.strip())
+    return path.rstrip("/") or "/"
+
+
+def _frozen_paths() -> set[str]:
+    """Pages whose English generate-english may not change (monorepo runbook WO-30).
+
+    The monorepo's `data/localize/freeze.json`, vendored: while a localization round is
+    open, regenerating a page's English changes the text every approval was made against.
+    `frozen_until` (a date, inclusive) ends the freeze; null means until further notice.
+    A missing file is no freeze -- `test_freeze.py` insists the vendored one is there.
+    """
+    try:
+        doc = json.loads(config.FREEZE_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return set()
+    until = doc.get("frozen_until")
+    if until and datetime.now(timezone.utc).date().isoformat() > until:
+        return set()
+    return {_page_path(p) for p in doc.get("frozen_pages", [])}
+
+
 def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
     targets: list[dict[str, Any]] = []
+    frozen = _frozen_paths()
+    held: list[str] = []
     if not args.collection:
         for url in config.STATIC_PAGES:
             if args.page and url != args.page:
+                continue
+            if _page_path(url) in frozen:
+                held.append(url)          # frozen for a localization round -- see _frozen_paths
                 continue
             targets.append({
                 "kind": "static_page", "url": url, "locale": "en", "content_type": "landing",
@@ -350,7 +389,8 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
         })
     if args.limit:
         targets = targets[: args.limit]
-    return {"target_count": len(targets), "targets": targets, "model": config.MODEL_ID}
+    return {"target_count": len(targets), "targets": targets, "model": config.MODEL_ID,
+            "frozen": held}
 
 
 def _plan_audit(args: argparse.Namespace) -> dict[str, Any]:

@@ -1,0 +1,13 @@
+{
+ "schema_version": 1,
+ "captured_at": "2026-09-23",
+ "purpose": "Plan section 3.1: no `summary.yml generate-english` dispatch may target these pages while a localization round is open, or the English under our manifest changes mid-round and every approval is orphaned. The constraint existed in the plan with no mechanism; this file is the mechanism.",
+ "frozen_pages": [
+  "/vancouver",
+  "/vancouver/cost-of-studying-english",
+  "/vancouver/how-long-to-learn-english",
+  "/vancouver/vs-toronto"
+ ],
+ "frozen_since": "2026-09-23",
+ "frozen_until": null
+}

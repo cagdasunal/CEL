@@ -137,6 +137,10 @@ LLMS_TXT_URL = "https://cel.englishcollege.com/llms.txt"
 # Filesystem layout.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEGLOT_IMPORTS_DIR = PROJECT_ROOT / "docs" / "admin" / "weglot-imports"
+# The localization round's English freeze (monorepo runbook WO-30, plan §3.1): the pages
+# whose English `generate-english` may not change while a round is open. Vendored from the
+# monorepo's data/localize/freeze.json and held identical there by the parity check.
+FREEZE_FILE = PROJECT_ROOT / "data" / "localize" / "freeze.json"
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 
 # tracker-092 Phase 2: idempotency. summary-state.json maps a content id

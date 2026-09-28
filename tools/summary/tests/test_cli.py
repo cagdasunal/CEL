@@ -45,7 +45,10 @@ def test_plan_target_count_includes_static_and_cms(tmp_path: Path):
     targets = data["phases"]["generate_english"]["targets"]
     static_targets = [t for t in targets if t["kind"] == "static_page"]
     cms_targets = [t for t in targets if t["kind"] == "cms_collection"]
-    assert len(static_targets) == 16  # 12 original + 4 Vancouver (tracker-096) + /courses (tracker-098 follow-up) - LA page (campus closed 2026-09-22)
+    # The catalogue: planned + held back by a localization round's English freeze
+    # (data/localize/freeze.json, monorepo runbook WO-30) -- the same 16 either way.
+    held = data["phases"]["generate_english"]["frozen"]
+    assert len(static_targets) + len(held) == 16  # 12 original + 4 Vancouver (tracker-096) + /courses (tracker-098 follow-up) - LA page (campus closed 2026-09-22)
     assert len(cms_targets) == 3  # blog + courses + housing_new
 
 
