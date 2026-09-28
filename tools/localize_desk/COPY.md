@@ -145,6 +145,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `action.queue.on` | New translation requested — click to undo | Star button, when requested |
 | `editor.label` | Your translation | Screen-reader name of the edit box |
 | `editor.cancel` | Cancel | Edit box button |
+| `editor.save.hint` | Change the wording first | Hover text of Save changes, before anything is typed |
 | `editor.save` | Save changes | Edit box button |
 | `editor.unsaved` | Not saved yet | Next to the edit box buttons, after typing |
 | `editor.links` | Keep the link markers <a wg-1=""> and </a> around the words that are a link. | Under the edit box, only when the text has a link |
@@ -244,6 +245,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `list.select_all.label` | Select every text shown | Screen-reader name of that checkbox (the same gesture, and words, as the table's header checkbox) |
 | `list.selected` | {n} selected | Checkbox label, with a selection |
 | `list.undo` | Undo | Button, nothing selected |
+| `list.undo.hint` | Tick the texts you want to undo | Hover text of Undo, while nothing is ticked |
 | `list.undo_n` | Undo {n} | Button, with a selection |
 | `list.undo_all` | Undo all | Button |
 | `list.undo_all.confirm` | Undo all {n}? Each goes back to what it was before. | Confirmation |

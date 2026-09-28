@@ -1507,7 +1507,10 @@ __STAGE_JS__
       if (!tr.querySelector('.desk-editor')) return;
       var dirty = editorDirty(tr);
       tr.querySelector('.desk-editor-hint').textContent = dirty ? t('editor.unsaved') : '';
-      tr.querySelector('[data-edit="save"]').disabled = !dirty;
+      var sv = tr.querySelector('[data-edit="save"]');
+      sv.disabled = !dirty;
+      // A disabled control says why (the dead-control robot, runbook WO-33).
+      if (dirty) sv.removeAttribute('data-tip'); else sv.setAttribute('data-tip', t('editor.save.hint'));
     }
 
     function commitEditor(ta) {
@@ -1759,6 +1762,8 @@ __STAGE_JS__
       var rm = document.getElementById('tray-remove-sel');
       rm.disabled = sel === 0;
       rm.textContent = sel ? t('list.undo_n', { n: sel }) : t('list.undo');
+      // A disabled control says why (the dead-control robot, runbook WO-33).
+      if (sel) rm.removeAttribute('data-tip'); else rm.setAttribute('data-tip', t('list.undo.hint'));
       document.getElementById('tray-empty').disabled = listed === 0;
 
       // The list used to offer nothing but Undo and Close: a basket with no way to

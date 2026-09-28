@@ -927,3 +927,98 @@ def test_a_draft_turned_down_before_the_list_shape_is_kept(browser):
         _act(page, uid, "queue")
         assert _rec(page, uid).get("rejected") == ["an older draft", "WO-06 draft from Gemini"]
         page.close()
+
+
+# ── The dead-control robot (runbook WO-32 lens L5; WO-33) ──────────────────────────────
+# Every control on the index and on a language page, in every state that shows new ones,
+# is clicked on a fresh page: each must visibly change something (the address, the text on
+# screen, what is stored, a dialog) -- or, if disabled, say why on hover. None may do
+# nothing. A link to the page you are on (aria-current, or its own address) is exempt.
+
+_FINGERPRINT = """() => JSON.stringify([location.href, document.body.innerText,
+  JSON.stringify(Object.assign({}, localStorage)),
+  [...document.querySelectorAll('.cpw-overlay, [role=menu]')].map(o => o.hidden || getComputedStyle(o).display)])"""
+_TAG = """scope => [...document.querySelectorAll(
+    ['a[href]', 'button', 'select', 'input'].map(t => scope + ' ' + t).join(','))]
+  .filter(e => e.offsetParent !== null && !(e.closest('#desk-body') && e.closest('tr') !== document.querySelector('#desk-body tr:not([hidden])')))
+  .map((e, i) => { e.setAttribute('data-robot', i); return {
+    i, tag: e.tagName, type: e.type || '', id: e.id, label: (e.getAttribute('aria-label') || e.innerText || '').trim().slice(0, 40),
+    disabled: !!e.disabled || e.getAttribute('aria-disabled') === 'true', tip: e.getAttribute('data-tip') || '',
+    current: e.getAttribute('aria-current') === 'page' ||
+      (e.tagName === 'A' && e.href.split('?')[0].replace(/index\\.html$/, '') === location.href.split('?')[0]) }; })"""
+
+
+def _rows_ready(page):
+    page.wait_for_function(f"document.querySelectorAll('{ROWS}').length > 800", timeout=20000)
+
+
+def _first_visible(page, act):
+    page.locator(f'{ROWS}:visible [data-act="{act}"]').first.evaluate("e => e.click()")
+
+
+_STATES = {
+    "the index": ("/admin/localization/", None, "body"),
+    "a language page": ("/admin/localization/de/", _rows_ready, "body"),
+    "with texts ticked": ("/admin/localization/de/?show=all", lambda pg: (
+        _rows_ready(pg), pg.locator(f"{ROWS}:visible [data-pick]").first.evaluate("e => e.click()")), "#savebar"),
+    "with an edit box open": ("/admin/localization/de/?show=all", lambda pg: (
+        _rows_ready(pg), _first_visible(pg, "edit")), ".desk-editor:not([hidden])"),
+    "with the help open": ("/admin/localization/de/", lambda pg: (
+        _rows_ready(pg), pg.locator("#how-open").evaluate("e => e.click()")), "#how-overlay"),
+    "with nothing to show": ("/admin/localization/de/?show=all&q=zzzzzzzz", _rows_ready, "#no-rows"),
+    "the approved list": ("/admin/localization/de/?show=all", lambda pg: (
+        _rows_ready(pg), _first_visible(pg, "approve"), pg.locator("#open-csv").evaluate("e => e.click()")), "#tray-overlay"),
+    "the requests list": ("/admin/localization/de/?show=all", lambda pg: (
+        _rows_ready(pg), _first_visible(pg, "queue"), pg.locator("#open-draft").evaluate("e => e.click()")), "#tray-overlay"),
+}
+
+
+def _robot_act(page, c) -> str:
+    el = page.locator(f'[data-robot="{c["i"]}"]')
+    if c["tag"] == "SELECT":
+        options = el.evaluate("s => [...s.options].filter(o => !o.disabled && !o.hidden).map(o => o.value)")
+        other = next((o for o in options if o != el.input_value()), None)
+        if other is None:
+            return "no other option"
+        el.select_option(other)
+    elif c["type"] in ("search", "text"):
+        el.fill("zz")
+    else:
+        el.evaluate("e => e.click()")
+    return ""
+
+
+@pytest.mark.parametrize("state", sorted(_STATES))
+def test_no_control_is_a_dead_end(browser, state):
+    path, setup, scope = _STATES[state]
+    with desk("new") as (base, _root, _worker):
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        page.on("dialog", lambda d: d.accept())
+
+        def fresh():
+            page.evaluate("() => localStorage.clear()") if page.url.startswith("http") else None
+            page.goto(base + path)
+            page.wait_for_load_state()
+            if setup:
+                setup(page)
+            page.wait_for_timeout(150)
+            return page.evaluate(_TAG, scope)
+
+        controls = fresh()
+        assert controls, f"{state}: no controls found in {scope}"
+        dead = []
+        for c in controls:
+            if c["current"]:
+                continue
+            fresh()
+            if c["disabled"]:
+                if not c["tip"]:
+                    dead.append(f'{c["tag"]} #{c["id"]} "{c["label"]}": disabled, and says nothing about why')
+                continue
+            before = page.evaluate(_FINGERPRINT)
+            why = _robot_act(page, c)
+            page.wait_for_timeout(250)
+            if page.evaluate(_FINGERPRINT) == before:
+                dead.append(f'{c["tag"]} #{c["id"]} "{c["label"]}": nothing changed {why}'.rstrip())
+        assert not dead, f"{state}: " + " | ".join(dead)
+        page.close()
