@@ -436,11 +436,10 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
         if getattr(args, "exclude_blog", False) and slug == "blog":
             continue
         content_type = {"blog": "blog_post", "courses": "course", "housing_new": "housing"}[slug]
-        translate = slug in config.TRANSLATE_COLLECTIONS
         targets.append({
             "kind": "cms_collection", "collection": slug, "collection_id": cid,
             "locale": "native_per_item" if slug in config.NATIVE_LANGUAGE_COLLECTIONS else "en",
-            "content_type": content_type, "translate": translate,
+            "content_type": content_type,
             # tracker-097: show each target's model in `plan`.
             "model": config.model_for_content_type(content_type),
         })

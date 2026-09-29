@@ -76,13 +76,6 @@ EXCLUDED_LINK_PATH_SEGMENTS = ("vc", "sd", "sm")
 # ordered first so they survive the prompt cap; the model links them where contextually
 # relevant (city-matched) and the link-stuffing + 6–8-link QA caps the total.
 
-# Which collections get translated (English source → 8 target languages via CSV).
-# 2026-05-24: housing_new added — the accommodation pages carry real 4-part designed
-# summaries that must reach locale users as proper translations (not Weglot machine
-# fallback), with same-locale internal links. (Static landing pages are translated too,
-# via content_type="landing", which has no collection slug → never in any skip set.)
-TRANSLATE_COLLECTIONS = ("courses", "housing_new")
-
 # Which collections have native-language summaries (one summary per item in the item's
 # authored language; no translation).
 NATIVE_LANGUAGE_COLLECTIONS = ("blog",)
@@ -103,12 +96,6 @@ BLOG_LANGUAGE_ID_TO_LOCALE = {
     "687659e4ab42b61d6b9f6a96": "ja",
     "687659fe11c147ceed4f09cd": "ar",
 }
-
-# Which collections are summarized in English but never translated (Weglot fallback
-# handles display on locale URLs). EMPTY since 2026-05-24 — housing_new moved to
-# TRANSLATE_COLLECTIONS above. The constant + the `_SKIP_TRANSLATE_TYPES` mechanism in
-# cli._execute_translate are retained for any future EN-only collection.
-NO_TRANSLATE_COLLECTIONS: tuple[str, ...] = ()
 
 # Static landing pages — write to the element with id="summary" via Webflow Designer API.
 STATIC_PAGES = (
@@ -170,21 +157,11 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
-# tracker-092 Phase 3: dedicated translator memory. Persists
-# source→translation across runs so unchanged strings are never re-translated.
-TRANSLATION_MEMORY_FILE = PROJECT_ROOT / "data" / "seo-intel" / "translation-memory.json"
-
-# BLOCK-level translation memory (tools.summary.block_reuse). Same tm_key scheme
-# as TRANSLATION_MEMORY_FILE but keyed per rendered summary BLOCK, so a page whose
-# every block is already translated is rebuilt for free (the whole-page TM misses
-# on any single changed block). Self-fills from each live translate run.
-BLOCK_TM_FILE = PROJECT_ROOT / "data" / "seo-intel" / "block-translation-memory.json"
-
-# EN↔locale URL map (hreflang-derived) for same-locale internal linking in the
-# translate phase. Built by `python3 -m tools.summary.url_map` from each EN page's
-# hreflang alternates (llms.txt + sitemap inventory, incl. blog posts as link
-# targets). Loaded by _execute_translate so links resolve to the CORRECT translated
-# slug (e.g. /pathway-program-usa → /de/auslandsstudium-usa) instead of the hub.
+# EN↔locale URL map (hreflang-derived) for same-locale internal linking. Built by
+# `python3 -m tools.summary.url_map` from each EN page's hreflang alternates (llms.txt +
+# sitemap inventory, incl. blog posts as link targets), so links resolve to the CORRECT
+# translated slug (e.g. /pathway-program-usa → /de/auslandsstudium-usa). Its translate
+# reader was retired 2026-09-29 (U3-S); kept because the copywriter skill's Phase 4 names it.
 URL_MAP_FILE = PROJECT_ROOT / "data" / "seo-intel" / "url-map.json"
 
 # Field slug for the Summary field on each CMS collection. Webflow rich-text field

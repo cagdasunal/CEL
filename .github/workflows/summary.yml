@@ -187,13 +187,12 @@ jobs:
           # docs/admin/weglot-imports/ matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1):
           # static-page Markdown (generate phase). (The per-locale CSVs came from translate, retired 2026-09-29.)
           git add docs/admin/weglot-imports/
-          # tracker-097 RC3: persist the idempotency state + translation memory + last-batch
+          # tracker-097 RC3: persist the idempotency state + last-batch
           # id ACROSS runs. Without committing summary-state.json, every GHA run started with
           # empty state and re-billed every unchanged item. Stage only if present (a sync run
           # or a phase that didn't write one leaves some absent).
           for f in \
             data/seo-intel/summary-state.json \
-            data/seo-intel/translation-memory.json \
             data/seo-intel/summary-last-batch.json; do
             [ -f "$f" ] && git add "$f" || true
           done

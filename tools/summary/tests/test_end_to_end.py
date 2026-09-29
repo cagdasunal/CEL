@@ -8,7 +8,6 @@ This single test file proves that:
   - generate-english writes en-summaries.json + manual-review.json
   - the retry loop fires for failed batch items
   - persistent failures land in manual-review.json
-  - translate reads the manifest and writes per-locale CSV via csv_emitter
   - cost-cap firing returns submitted: False
   - the public CLI exits 0 on every well-formed input
 """

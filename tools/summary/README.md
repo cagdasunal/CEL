@@ -355,7 +355,6 @@ tools/summary/
 ├── webflow_client.py      # CMS Data API reader/writer (dry-run safe; single-field + 4-part writes)
 ├── webflow_designer.py    # static-page summary → Markdown file (single-block or 4-section, manual paste)
 ├── batch_runner.py        # Gemini Batch API submission + retrieval + cost estimator (tracker-091); shared by the translator
-├── csv_emitter.py         # summary paragraph splitters; re-exports Weglot-CSV emission from tools/translator/weglot.py (tracker-094)
 ├── requirements.txt       # documents google-genai SDK (installed via CEL root requirements.txt)
 ├── prompts/
 │   ├── common.md          # locked critical rules (~200 lines; 2026-refreshed)
@@ -377,7 +376,7 @@ Translation is handled by the reusable **`tools/translator/`** package (renamed 
 adds a glossary (do-not-translate brand/entity terms), a translation-memory (skips
 unchanged source), and translation-QA (number/URL/placeholder preservation) on top of
 the shared `batch_runner` Gemini client. The Weglot-CSV emission also lives there
-(`tools/translator/weglot.py`) — `csv_emitter.py` re-exports it. Other CEL tools can
+(`tools/translator/weglot.py`). Other CEL tools can
 reuse the translator independently; see `tools/translator/README.md` for the full API.
 
 ## Cost expectation

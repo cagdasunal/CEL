@@ -7,7 +7,7 @@ every existing `from tools.translator.weglot import …` caller keeps working, a
 translator-specific piece — `pairs_from_translations` — which maps engine `Translation` objects
 to `WeglotPair` rows (it needs `Translation`, which the pure-stdlib engine must not import).
 
-The summary tool's `tools/summary/csv_emitter.py` re-exports from HERE (back-compat chain).
+(The summary tool's csv_emitter.py re-export shim was removed 2026-09-29, U3-S.)
 """
 from __future__ import annotations
 
