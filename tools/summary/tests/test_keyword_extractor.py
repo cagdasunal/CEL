@@ -268,3 +268,73 @@ def test_non_homepage_unaffected_by_override():
     # the homepage override.
     assert plan.primary != "english language school"
     assert "english" in plan.primary or "usa" in plan.primary
+
+
+# ---- U3-S batch 4 (2026-09-29): the blog keyword plan ----
+# The one-post live test (run 36559460352) published a summary built on the primary keyword
+# "vancouver a student guide", a fragment of "Day Trips from Vancouver: A Student Guide to
+# Weekend Escapes" taken across the colon, with "strong" (the body's <strong> tags) as a
+# secondary and CEFR levels / CEA as entities matched inside HTML ("cea" in "ocean").
+
+_DAY_TRIPS_TITLE = "Day Trips from Vancouver: A Student Guide to Weekend Escapes"
+_DAY_TRIPS_URL = "https://www.englishcollege.com/post/day-trips-from-vancouver"
+_DAY_TRIPS_BODY = (
+    "<h2>Why day trips from Vancouver are easy</h2>"
+    "<p><strong>Transit</strong> makes day trips from Vancouver simple for students. "
+    "The <strong>ferry</strong> to Bowen Island takes 20 minutes; the ocean is everywhere.</p>"
+    "<p><strong>Whistler</strong> is a longer trip. <strong>Squamish</strong> is closer. "
+    "Whistler in winter, Whistler in summer: Whistler suits every weekend. Squamish hikes and "
+    "Squamish climbing make Squamish a weekend favourite.</p>"
+    '<figure><img src="https://cdn.example/a1b2c3.avif" alt=""></figure>'
+)
+
+
+def _blog_plan(title=_DAY_TRIPS_TITLE, url=_DAY_TRIPS_URL, body=_DAY_TRIPS_BODY, locale="en"):
+    return derive_keywords(title, title, url, body, locale=locale, content_type="blog_post")
+
+
+def test_a_blog_primary_is_a_search_phrase_never_a_fragment_across_the_colon():
+    assert _blog_plan().primary == "day trips from vancouver"
+
+
+def test_a_blog_primary_never_ends_inside_a_place_name():
+    plan = _blog_plan(
+        title="Reasons To Learn English In San Diego",
+        url="https://www.englishcollege.com/post/learn-english-san-diego",
+        body="<p>Many students learn English in San Diego. To learn English in San Diego is easy.</p>",
+    )
+    assert plan.primary == "learn english in san diego"
+
+
+def test_a_blog_primary_does_not_start_or_end_on_a_pronoun():
+    plan = _blog_plan(
+        title="Vergiss Online-Englischkurse! Warum ein Sprachaufenthalt dich schneller voranbringt",
+        url="https://www.englishcollege.com/de/post/englischlernen-sprachaufenthalt-usa-statt-onlinekurs",
+        body="<p>Ein Sprachaufenthalt bringt dich schneller voran als Online-Englischkurse. "
+             "Mit Online-Englischkurse lernst du allein; ein Sprachaufenthalt ist anders.</p>",
+        locale="de",
+    )
+    assert plan.primary.split()[0] not in {"dich", "du", "ich"}
+    assert plan.primary.split()[-1] not in {"dich", "du", "ich"}
+
+
+def test_blog_secondaries_never_come_from_html_markup():
+    secondaries = _blog_plan().secondaries
+    assert "strong" not in secondaries
+    assert {"whistler", "squamish"} <= set(secondaries)
+
+
+def test_blog_entities_match_whole_words_in_the_text_not_the_markup():
+    entities = _blog_plan().entities
+    assert "Vancouver" in entities
+    assert "CEA" not in entities  # "ocean"
+    assert "A1" not in entities   # an image file name
+
+
+def test_a_blog_title_with_no_usable_phrase_falls_back_to_its_main_word_not_the_whole_slug():
+    plan = _blog_plan(
+        title="Halloween Is Just Around The Corner!",
+        url="https://www.englishcollege.com/post/halloween-is-just-around-the-corner",
+        body="<p>Halloween parties are fun. Students love Halloween, and Halloween costumes too.</p>",
+    )
+    assert plan.primary == "halloween"

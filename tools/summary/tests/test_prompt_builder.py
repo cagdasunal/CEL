@@ -257,3 +257,11 @@ def test_an_unratified_locale_layer_never_teaches_a_bare_dollar(locale, bare_wor
     assert not re.search(r"(?<![A-Za-z])\$" + _SPACE + r"?[0-9]", text), locale
     assert not re.search(r"[0-9][0-9,.]*" + _SPACE + r"?" + bare_word, text), (locale, "an amount in bare " + bare_word)
     assert not re.search(bare_word + _SPACE + r"?[0-9]", text), locale
+
+
+def test_the_blog_prompt_holds_every_number_to_the_post_and_lets_the_keyword_read_naturally():
+    """U3-S batch 4: the live test invented "Over 80 percent of the excursions…" and bent
+    sentences around a broken keyword ("When applying this Vancouver a student guide…")."""
+    text = " ".join(b["text"] for b in build_system_prompt("blog_post", "en")).lower()
+    assert "every number" in text and "percentage" in text
+    assert "reads naturally" in text

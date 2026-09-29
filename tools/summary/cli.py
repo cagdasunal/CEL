@@ -695,7 +695,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     """Execute generate-english phase. Returns metadata for the report."""
     from tools.summary import batch_runner, llms_parser
     from tools.summary.page_fetcher import fetch_page, PageContent
-    from tools.summary.keyword_extractor import derive_keywords
+    from tools.summary.keyword_extractor import derive_keywords, html_to_text
     from tools.summary.prompt_builder import (
         KeywordPlan, SourceItem, build_system_prompt, build_user_message,
     )
@@ -782,9 +782,14 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     title = field_data.get("name") or field_data.get("title", "")
                     slug = field_data.get("slug", "")
                     body = field_data.get("post-body") or field_data.get("description") or ""
+                    if target["content_type"] == "blog_post":
+                        # U3-S batch 4: the post as TEXT. Gemini and QA read its words, not its
+                        # markup (8,000 chars of HTML held about half of a 12k-char post).
+                        body = html_to_text(body)
                     locale = _resolve_item_locale(field_data, target["locale"])
                     url = _cms_item_url(target["content_type"], slug)  # per-collection prefix (M-14)
-                    kw = derive_keywords(title, title, url, body, locale=locale)
+                    kw = derive_keywords(title, title, url, body, locale=locale,
+                                         content_type=target["content_type"])
                     # tracker-098 pass 2: seed generation with the item's CURRENT summary
                     # so it expands what exists instead of regenerating from scratch.
                     # Content (`summary`) first, then the Paragraphs RichText if present.

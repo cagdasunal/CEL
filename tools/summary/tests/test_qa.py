@@ -191,7 +191,10 @@ def test_link_in_inventory_flags_invented_url():
 
 def test_existing_passing_draft_still_passes_with_grounding():
     """The original passing draft, given a matching source, still fully passes."""
-    src = "Learn English in Vancouver at CEL. B2 in 12 weeks. 7 students per class. A1 to C2 levels."
+    # U3-S batch 4: the draft's "24 to 36 weeks" added, so the source matches every number
+    # in the draft (the new fact_grounding_numbers check compares whole numbers).
+    src = ("Learn English in Vancouver at CEL. B2 in 12 weeks. 7 students per class. A1 to C2 levels. "
+           "Beginners need 24 to 36 weeks.")
     report = qa_checks(_PASSING_DRAFT, _PRIMARY_KW, "en", _INVENTORY, source_text=src)
     assert report.passed, f"notes: {report.notes}"
 
@@ -789,3 +792,48 @@ def test_passing_drafts_satisfy_retired_campus_check():
         excluded_path_segments=("vc", "sd", "sm"), structure="four_part",
     )
     assert four.checks["links_no_retired_campus"], four.notes
+
+
+# ---- U3-S batch 4 (2026-09-29): every number in a blog summary comes from the post ----
+# The live test published "Over 80 percent of the excursions detailed above start within a
+# short walk of the downtown core." The post never says it: its only 80s are "CAD 80–150" and
+# "CAD 60–80". The old checks matched digits against ALL of the source's digits run together
+# (and "percent" written out never matched `%`), so they passed.
+
+_POST = (
+    "A rental car in Vancouver costs roughly CAD 80–150 per day. The ferry vehicle fare adds "
+    "CAD 60–80 each way. Take the 257 Horseshoe Bay Express; Bowen Island is 20 minutes away. "
+    "About 1,500 students visit each year, and 35% of them go in summer."
+)
+_DRAFT_OK = (
+    "## How do students plan day trips from Vancouver\n\n"
+    "Day trips from Vancouver are cheap by bus: the 257 Horseshoe Bay Express reaches the ferry, "
+    "and Bowen Island is 20 minutes away. A rental car costs CAD 80 to 150 a day, and about "
+    "1500 students go each year, 35 percent of them in summer. See [our Vancouver school]"
+    "(https://www.englishcollege.com/vancouver/2026-guide).\n"
+)
+
+
+def _numbers_check(draft, source=_POST):
+    report = qa_checks(draft, "day trips from vancouver", "en", [], source_text=source)
+    return report.checks["fact_grounding_numbers"], report
+
+
+def test_a_percentage_the_post_does_not_state_fails_and_blocks():
+    ok, report = _numbers_check(_DRAFT_OK + "\nOver 80 percent of the trips start downtown.\n")
+    assert not ok and not report.passed
+
+
+def test_a_number_the_post_does_not_contain_fails_and_blocks():
+    ok, report = _numbers_check(_DRAFT_OK + "\nA weekend in Whistler costs C$999.\n")
+    assert not ok and not report.passed
+
+
+def test_numbers_taken_from_the_post_pass_whatever_their_format():
+    ok, _report = _numbers_check(_DRAFT_OK)
+    assert ok  # "1500" ~ "1,500", "35 percent" ~ "35%", and the link's 2026 isn't prose
+
+
+def test_a_localized_percentage_the_post_does_not_state_fails():
+    ok, _report = _numbers_check("## Frage\n\nÜber 80 Prozent der Ausflüge starten in der Stadt.\n")
+    assert not ok

@@ -267,6 +267,20 @@ def qa_checks(
         f"figures not found in source (review): {unmatched_figures}",
     )
 
+    # 12b. Every number comes from the post — CRITICAL (U3-S batch 4, 2026-09-29). The live
+    #      blog test published "Over 80 percent of the excursions…", a percentage the post
+    #      never states (its only 80s are prices). Checks 11-12 compare digits against ALL the
+    #      source's digits run together and miss a spelled-out "percent", so they passed. Here
+    #      numbers are whole tokens: a percentage must be one the post states AS a
+    #      percentage, and any other number of 2+ digits must be a number in the post.
+    #      Link URLs are ignored. Vacuous-pass without source_text (audit phase).
+    unmatched_numbers = _numbers_not_in_source(draft, source_text) if source_text else []
+    report.add(
+        "fact_grounding_numbers",
+        not unmatched_numbers,
+        f"numbers not in the post: {unmatched_numbers}",
+    )
+
     # 13. Near-duplicate vs source — WARNING. If most of the draft's word-5-gram
     #     shingles also appear in the source, the model copied the page verbatim
     #     instead of recapping it. Containment > 0.70 flags. Vacuous-pass w/o source.
@@ -394,10 +408,41 @@ def qa_checks(
         "no_em_dashes", "no_lists", "keyword_in_h2", "keyword_in_p1",
         "fact_grounding_prices", "no_faq_schema", "no_link_stuffing",
         "links_locale_matched", "links_internal_domain", "links_no_retired_campus",
+        "fact_grounding_numbers",
     }
     report.passed = all(report.checks.get(c, False) for c in critical)
 
     return report
+
+
+_NUMBER_RE = re.compile(r"\d+(?:[.,\u202f\u00a0]\d{3})*(?:[.,]\d+)?")
+# A number stated as a percentage, in each summary locale.
+_PERCENT_RE = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s?(?:%|percent\b|per cent\b|prozent\b|pour cent\b|per cento\b|"
+    r"por ciento\b|por cento\b|퍼센트|パーセント|بالمئة|في المئة)",
+    re.IGNORECASE,
+)
+
+
+def _numbers_not_in_source(draft: str, source_text: str) -> list[str]:
+    """Numbers in `draft` the post does not contain (U3-S batch 4). A percentage must be a
+    percentage the post states; any other number of 2+ digits must be a number in the post.
+    Thousands separators don't matter ("1,500" = "1500"); link URLs are skipped."""
+    def digits(t: str) -> str:
+        return re.sub(r"\D", "", t)
+
+    prose = re.sub(r"\]\([^)]*\)", "]", draft)
+    source_numbers = {digits(t) for t in _NUMBER_RE.findall(source_text)}
+    source_percents = {digits(t) for t in _PERCENT_RE.findall(source_text)}
+    missing: list[str] = []
+    for m in _PERCENT_RE.finditer(prose):
+        if digits(m.group(1)) not in source_percents:
+            missing.append(m.group(0))
+    without_percents = _PERCENT_RE.sub(" ", prose)
+    for t in _NUMBER_RE.findall(without_percents):
+        if len(digits(t)) >= 2 and digits(t) not in source_numbers:
+            missing.append(t)
+    return missing
 
 
 def _qa_checks_four_part(
