@@ -1,125 +1,78 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-09-28T19:14:24.162021-07:00",
+  "checked_at": "2026-09-29T02:39:49.715253-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-09-28T19:14:24.726575-07:00",
+      "checked_at": "2026-09-29T02:39:51.104825-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Academic English for college success",
-          "word_to": "Akademisches Englisch als Vorbereitung"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "fr": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-09-28T19:14:25.456639-07:00",
+      "checked_at": "2026-09-29T02:39:51.896680-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Preparation for College & University",
-          "word_to": "Préparation pour collège/université"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "es": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-09-28T19:14:26.041255-07:00",
+      "checked_at": "2026-09-29T02:39:53.021341-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
       "http_status": 200
     },
     "it": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-09-28T19:14:26.477622-07:00",
+      "checked_at": "2026-09-29T02:39:54.135390-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "Prenotabile con qualsiasi corso"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ja": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-09-28T19:14:27.181025-07:00",
+      "checked_at": "2026-09-29T02:39:55.419683-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "少人数制クラス(1クラス平均7名)"
-        },
-        {
-          "word_from": "Academic English for college success",
-          "word_to": "大学成功のためのアカデミック英語"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ko": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-09-28T19:14:27.991630-07:00",
+      "checked_at": "2026-09-29T02:39:56.571470-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "다른 수업과 추가하여 학습 가능"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "pt": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-09-28T19:14:28.815174-07:00",
+      "checked_at": "2026-09-29T02:39:57.327500-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "Turmas pequenas (média de 7 alunos)"
-        },
-        {
-          "word_from": "Preparation for College & University",
-          "word_to": "Preparação para Universidade"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ar": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-09-28T19:14:29.531925-07:00",
+      "checked_at": "2026-09-29T02:39:58.671076-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)"
-        },
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "حصص شخصية يمكن دمجها مع الفئات الاخرى"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     }
   }

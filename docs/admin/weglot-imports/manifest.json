@@ -85,20 +85,26 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-09-28T10:53:37.373409+00:00",
+      "executed_at": "2026-09-29T08:08:38.323877+00:00",
+      "held_back": 0,
       "mode": "upsert-courses+upsert-variants",
+      "publish_errors": 0,
+      "published": 0,
       "total": 15,
       "unchanged": 15,
       "updated": 0
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-09-28T10:53:29Z",
+    "finished_at": "2026-09-29T07:59:12Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-09-28T10:53:33.911261+00:00",
+      "executed_at": "2026-09-29T08:08:36.109130+00:00",
+      "held_back": 0,
       "mode": "upsert",
+      "publish_errors": 0,
+      "published": 1,
       "total": 15,
       "unchanged": 14,
       "updated": 1
@@ -106,22 +112,25 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-09-28T10:50:21Z",
+    "started_at": "2026-09-29T07:56:18Z",
     "variants": {
       "created": 0,
       "errors": 0,
+      "held_back": 0,
+      "publish_errors": 0,
+      "published": 2,
       "total": 48,
       "unchanged": 46,
       "updated": 2
     }
   },
-  "generated_at": "2026-09-28T10:53:41.659748+00:00",
+  "generated_at": "2026-09-29T08:08:43.869873+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
       "language_name": "Arabic",
       "language_to": "ar",
-      "row_count": 215,
+      "row_count": 226,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 13,
@@ -130,24 +139,19 @@
         "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 110,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
-        "housing_detail.fields.fidelo_usp_facts[].value": 24,
+        "housing_detail.fields.fidelo_usp_facts[].value": 22,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 19,
+        "housing_listing.bullets[]": 31,
         "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 20,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -214,16 +218,16 @@
         {
           "candidates": [
             {
-              "count": 1,
-              "word_to": "English"
+              "count": 2,
+              "word_to": "غرفة فردية و مزدوجة"
             },
             {
               "count": 1,
-              "word_to": "غرفة فردية و مزدوجة"
+              "word_to": "English"
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "English",
+          "winner": "غرفة فردية و مزدوجة",
           "word_from": "Single and double rooms"
         },
         {
@@ -292,7 +296,7 @@
       "csv_file": "de.csv",
       "language_name": "German",
       "language_to": "de",
-      "row_count": 252,
+      "row_count": 253,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -301,7 +305,7 @@
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 5,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 127,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 128,
         "housing_detail.fields.fidelo_title": 9,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
         "housing_detail.fields.fidelo_usp_facts[].value": 31,
@@ -437,7 +441,7 @@
       "csv_file": "es.csv",
       "language_name": "Spanish",
       "language_to": "es",
-      "row_count": 275,
+      "row_count": 276,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 9,
@@ -446,7 +450,7 @@
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 4,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 148,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 149,
         "housing_detail.fields.fidelo_title": 11,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
         "housing_detail.fields.fidelo_usp_facts[].value": 31,
@@ -735,7 +739,7 @@
       "csv_file": "fr.csv",
       "language_name": "French",
       "language_to": "fr",
-      "row_count": 227,
+      "row_count": 238,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -744,24 +748,19 @@
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 7,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 112,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 113,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 2,
-        "housing_detail.fields.fidelo_usp_facts[].value": 26,
+        "housing_detail.fields.fidelo_usp_facts[].value": 24,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 20,
+        "housing_listing.bullets[]": 32,
         "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -906,7 +905,7 @@
       "csv_file": "it.csv",
       "language_name": "Italian",
       "language_to": "it",
-      "row_count": 227,
+      "row_count": 238,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -915,24 +914,19 @@
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 112,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
-        "housing_detail.fields.fidelo_usp_facts[].value": 26,
+        "housing_detail.fields.fidelo_usp_facts[].value": 24,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 20,
+        "housing_listing.bullets[]": 32,
         "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -1062,7 +1056,7 @@
       "csv_file": "ja.csv",
       "language_name": "Japanese",
       "language_to": "ja",
-      "row_count": 221,
+      "row_count": 232,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -1071,24 +1065,19 @@
         "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 111,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 112,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
-        "housing_detail.fields.fidelo_usp_facts[].value": 25,
+        "housing_detail.fields.fidelo_usp_facts[].value": 23,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 21,
+        "housing_listing.bullets[]": 33,
         "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -1218,7 +1207,7 @@
       "csv_file": "ko.csv",
       "language_name": "Korean",
       "language_to": "ko",
-      "row_count": 233,
+      "row_count": 244,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 11,
@@ -1227,24 +1216,19 @@
         "detail.fields.fidelo_starting_price_display": 1,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 120,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 121,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
-        "housing_detail.fields.fidelo_usp_facts[].value": 31,
+        "housing_detail.fields.fidelo_usp_facts[].value": 29,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 19,
+        "housing_listing.bullets[]": 31,
         "housing_listing.title": 0,
         "listing.age_badge": 2,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -1378,7 +1362,7 @@
       "csv_file": "pt.csv",
       "language_name": "Portuguese",
       "language_to": "pt",
-      "row_count": 230,
+      "row_count": 241,
       "row_count_per_field": {
         "detail.fields.fidelo_intensity_rows[].country": 0,
         "detail.fields.fidelo_intensity_rows[].name": 12,
@@ -1387,24 +1371,19 @@
         "detail.fields.fidelo_starting_price_display": 6,
         "detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_accordion_sections[].heading": 6,
-        "housing_detail.fields.fidelo_accordion_sections[].items[]": 113,
+        "housing_detail.fields.fidelo_accordion_sections[].items[]": 114,
         "housing_detail.fields.fidelo_title": 1,
         "housing_detail.fields.fidelo_usp_facts[].label": 3,
-        "housing_detail.fields.fidelo_usp_facts[].value": 27,
+        "housing_detail.fields.fidelo_usp_facts[].value": 24,
         "housing_listing.badge": 1,
-        "housing_listing.bullets[]": 20,
+        "housing_listing.bullets[]": 33,
         "housing_listing.title": 0,
         "listing.age_badge": 1,
         "listing.bullets[]": 22,
         "listing.title": 0
       },
       "skipped_slugs": [
-        "english-plus-toefl-exam-preparation",
-        "san-diego/cel-shared-apartment-premium",
-        "san-diego/cel-shared-apartment-standard",
-        "san-diego/cel-shared-apartment-superior-pacific-beach",
-        "san-diego/homestay",
-        "san-diego/premium-homestay"
+        "english-plus-toefl-exam-preparation"
       ],
       "warnings": [
         {
@@ -1471,31 +1450,31 @@
         {
           "candidates": [
             {
-              "count": 1,
-              "word_to": "Café da manhã ou meia-pensão"
+              "count": 2,
+              "word_to": "Café da manhã ou café da manhã/jantar"
             },
             {
               "count": 1,
-              "word_to": "Café da manhã ou café da manhã/jantar"
+              "word_to": "Café da manhã ou meia-pensão"
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "Café da manhã ou meia-pensão",
+          "winner": "Café da manhã ou café da manhã/jantar",
           "word_from": "Breakfast or breakfast & dinner"
         },
         {
           "candidates": [
             {
               "count": 2,
-              "word_to": "30-75 minutos de ônibus até a CEL"
+              "word_to": "35-75 minutos de ônibus até a CEL"
             },
             {
-              "count": 1,
-              "word_to": "35-75 minutos de ônibus até a CEL"
+              "count": 2,
+              "word_to": "30-75 minutos de ônibus até a CEL"
             }
           ],
           "kind": "ambiguous_source",
-          "winner": "30-75 minutos de ônibus até a CEL",
+          "winner": "35-75 minutos de ônibus até a CEL",
           "word_from": "30-75 min. by bus to CEL"
         },
         {
@@ -1549,6 +1528,6 @@
   "schema": "weglot.csv-export.v1",
   "totals": {
     "languages": 8,
-    "rows": 1880
+    "rows": 1948
   }
 }

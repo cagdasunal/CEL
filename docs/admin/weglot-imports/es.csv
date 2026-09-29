@@ -224,6 +224,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;es;"✓ Minimum duration is 2 weeks";"✓ Duración mínima: 2 semanas";Text
 ;en;es;"✓ Minimum duration is 3 weeks";"✓ Duración mínima: 3 semanas";Text
 ;en;es;"✓ Minimum duration is 4 weeks";"✓ Duración mínima: 4 semanas";Text
+;en;es;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duración mínima: 4 semanas";Text
 ;en;es;"✓ Mixed Gender Apartments";"✓ Apartamentos de género mixto";Text
 ;en;es;"✓ Mixed gender Student House";"✓ Student House con género mixto";Text
 ;en;es;"✓ Most Families offer free Wi-Fi";"✓ La mayoría de familias ofrecen Wifi gratis";Text

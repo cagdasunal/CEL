@@ -46,8 +46,13 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"Enhance your English while working";"تعزيز لغتك الإنجليزية أثناء العمل";Text
 ;en;ar;"Free Wi-Fi";"English";Text
 ;en;ar;"Free Wi-Fi, Rooftop terrace with BBQ area";"واي فاي مجاني، تراس على السطح مع منطقة شواء";Text
+;en;ar;"From $270 per week";"يبدا من 290$ الاسبوع";Text
+;en;ar;"From $290 per week";"يبدا من 290 الاسبوع";Text
+;en;ar;"From $320 per week";"يبدا من 320 الاسبوع";Text
 ;en;ar;"From $330 per week";"يبدا من 330 الاسبوع";Text
+;en;ar;"From $380 per week";"يبدا من 380$ الاسبوع";Text
 ;en;ar;"From $390/week";"From $999,999/week";Text
+;en;ar;"From $420 per week";"ابتداء من 420$ للاسبوع";Text
 ;en;ar;"From CA$240 per week";"يبدا من 240الاسبوع";Text
 ;en;ar;"From CA$350 per week";"يبدا من 350الاسبوع";Text
 ;en;ar;"From CA$430 per week";"يبدا من 430الاسبوع";Text
@@ -55,6 +60,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"From CA$475 per week";"يبدا من 475الاسبوع";Text
 ;en;ar;"From CA$580 per week";"يبدا من 580الاسبوع";Text
 ;en;ar;"Full focus on your needs";"التركيز الكامل على احتياجاتك";Text
+;en;ar;"Full kitchen with Dishwasher";"مطبخ متكامل مع غسالة مواعين";Text
 ;en;ar;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ar;"Gain relevant experience";"اكتساب الخبرة ذات الصلة";Text
 ;en;ar;"General English 20 & Surfing";"الإنكليزية العامة المكثفة وركوب الأمواج (20 + 4)";Text
@@ -66,20 +72,24 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"Location";"الموقع";Text
 ;en;ar;"Managed by CEL";"تحت إدارة CEL";Text
 ;en;ar;"Max. 35 min by bus to CEL";"35 دقيقة في الباص الى المعهد CEL";Text
+;en;ar;"Max. 35 min. by bus to CEL";"35 دقيقة في الباص الى المعهد CEL";Text
 ;en;ar;"Minimum age is 17 years";"الحد الأدنى للعمر هو 17 سنة";Text
 ;en;ar;"Minimum age is 18 years";"الحد الأدنى للعمر هو 18 سنة";Text
 ;en;ar;"Most families provide Wifi";"توفر معظم العائلات خدمة الواي فاي المجانية";Text
 ;en;ar;"New courses start every Monday";"حصص جديدة لكل أيام الأثنين";Text
 ;en;ar;"No surf experience required";"لا يشترط وجود خبرة في ركوب الأمواج";Text
+;en;ar;"Nonstop bus connection";"باص متواصل الى المعهد";Text
 ;en;ar;"Pool, BBQ, small fitness room, jacuzzi";"Fill kitchen, pool, BBQ, fitness room, jacuzzi";Text
 ;en;ar;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"Full kitchen, pool, BBQ area, tennis and basketball courts, beach volleyball, fitness";Text
+;en;ar;"Pool, fitness room, BBQ, jacuzzi";"غرفة لياقة و مساحة شوي";Text
+;en;ar;"Pool, fitness, beach volleyball, tennis";"Fitness Room BBQ Area Pool";Text
 ;en;ar;"Prepare for Cambridge exam";"Prepare for Cambridge Exam";Text
 ;en;ar;"Private lessons";"دروس خصوصية";Text
 ;en;ar;"Project based learning";"التعلم القائم على المشروع";Text
 ;en;ar;"Room type";"نوع الغرفة";Text
 ;en;ar;"Shared Apartment GEC Viva";"Residence Standard YWCA";Text
 ;en;ar;"Shared bathroom";"English";Text
-;en;ar;"Single and double rooms";"English";Text
+;en;ar;"Single and double rooms";"غرفة فردية و مزدوجة";Text
 ;en;ar;"Single and double rooms with shared bathroom";"RT SM";Text
 ;en;ar;"Single and twin rooms (shared bathroom), studios (private bathroom)";"غرف فردية ومزدوجة (حمام مشترك)، استوديوهات (حمام خاص)";Text
 ;en;ar;"Single and twin rooms with a private bathroom";"Single and twin rooms with a private bathroom per bedroom";Text
@@ -174,6 +184,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"✓ Minimum duration is 2 weeks";"✓ الحد الأدنى للمدة هو 2 أسابيع";Text
 ;en;ar;"✓ Minimum duration is 3 weeks";"✓ الحد الأدنى للمدة هو 3 أسابيع";Text
 ;en;ar;"✓ Minimum duration is 4 weeks";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
+;en;ar;"✓ Minimum duration is 4 weeks/month/30 days";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
 ;en;ar;"✓ Mixed Gender Apartments";"✓ شقق مختلطة بين الجنسين";Text
 ;en;ar;"✓ Most Families offer free Wi-Fi";"✓ توفر معظم العائلات خدمة الواي فاي المجانية";Text
 ;en;ar;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ لا يتم توفير خدمة التنظيف أثناء الإقامة (يتم توفير معدات التنظيف)";Text
