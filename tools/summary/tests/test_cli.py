@@ -1401,3 +1401,18 @@ def test_a_failure_counts_only_against_the_same_body(tmp_path, monkeypatch):
     _live_blog_run(tmp_path, monkeypatch, {"e1": {"post-body": "Version two of the post."}},
                    qa_pass=False, out_name="v2")
     assert _state(tmp_path)["e1"]["failed_attempts"] == 1
+
+
+def test_qa_reads_the_post_title_with_its_body(tmp_path, monkeypatch):
+    """U4-1 (3/3): the Reviewer's trigger. "2026" is in the title Gemini is given, not in the
+    body, so a heading echoing the title failed fact_grounding_numbers every night. The title
+    is part of the post: QA's source text now starts with it."""
+    from tools.summary.qa import qa_checks
+    title = "San Diego vs. Hawaii: Wo lernst du 2026 besser Englisch?"
+    rc, seen, _phase = _live_blog_run(tmp_path, monkeypatch, {"sd": {
+        "name": title, "post-body": "<p>San Diego oder Hawaii? Beide sind schön.</p>"}})
+    assert rc == 0
+    assert seen["qa_sources"] and all(src.startswith(title) for src in seen["qa_sources"])
+    report = qa_checks("## Wo lernst du 2026 besser Englisch?\n\nIn San Diego.\n", "san diego", "de", [],
+                       source_text=seen["qa_sources"][0])
+    assert report.checks["fact_grounding_numbers"], report.notes

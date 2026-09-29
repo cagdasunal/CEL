@@ -1093,7 +1093,9 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         rep = qa_checks(
             r.content, kw.primary if kw else "", sitem.locale, link_inv,
             excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
-            source_text=sitem.body_excerpt,
+            # U4-1 (3/3): the title is part of the page. A number in it ("… 2026 …") is in
+            # the source, so a heading that echoes the title isn't a fabricated figure.
+            source_text=f"{sitem.title}\n{sitem.body_excerpt}",
             structure=_structure_for_content_type(sitem.content_type),
         )
         qa_scores[base_cid] = round(rep.score, 1)
