@@ -329,8 +329,9 @@ def main(argv: list[str] | None = None) -> int:
 # (402/429 no credit, then 404 on a gone model). A live run whose every request failed, to Gemini
 # or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
 # fires; so does a run the hard cost cap stopped (the Manager's ruling: a cap that silently stops
-# every night drains nothing either). A partial run, a day with nothing to do, a run QA demoted
-# to manual review, and a pilot-first confirm stop still exit 0.
+# every night drains nothing either), and so does a run whose every summary QA rejected (U4-1:
+# otherwise the same posts are re-paid every night, green). A partial run, a day with nothing
+# to do, and a pilot-first confirm stop still exit 0.
 _NO_WORK_DONE_EXIT_CODE = 3
 
 
@@ -345,8 +346,11 @@ def _no_work_done(ge: Any) -> str:
             return (f"it stopped at the cost cap (${gate['projected_usd']:.2f} projected > "
                     f"${gate['cost_cap_usd']}), so nothing was sent")
         return ""
-    if not (ge.get("qa_gate") or {}).get("checked"):  # no Gemini answer at all, retries included
+    qa = ge.get("qa_gate") or {}
+    if not qa.get("checked"):  # no Gemini answer at all, retries included
         return f"every request failed ({ge.get('failed', 0)} of {ge['requests_built']})"
+    if not qa.get("passed"):
+        return f"QA passed none of the {qa['checked']} summaries (all held for manual review)"
     wl = ge.get("write_log") or {}
     if wl.get("failures") and not (wl.get("cms_writes") or wl.get("static_writes")):
         return f"every write failed ({wl['failures']})"
