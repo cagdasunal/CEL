@@ -1071,6 +1071,38 @@
   .desk-meter-fill { height: 100%; background: var(--ok); border-radius: 999px; }
   .desk-locale-stat { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
 
+  /* The top of a language page (the operator's redesign, U3, 2026-09-29). First one strip for
+     EVERY language: three equal steps with a › between them -- a label, one big count and its
+     word, and the step's button; a step's line says only where its job stands. */
+  .desk-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; margin: 24px 0 0; }
+  .desk-flow[hidden] { display: none; }
+  .desk-flow-step {
+    display: flex; flex-direction: column; gap: 8px; min-height: 118px; padding: 14px 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .desk-flow-label { margin: 0; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .desk-flow-count { margin: 0; font-size: 26px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+  .desk-flow-count small { margin-left: 4px; font-size: var(--fs-md); font-weight: 400; color: var(--muted); }
+  .desk-flow-line { margin: 0; }
+  .desk-flow-line:empty { display: none; }
+  .desk-flow-act { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .desk-flow-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .desk-flow-files[hidden] { display: none; }
+  .desk-flow-files li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); }
+  .desk-flow-arrow { display: grid; place-items: center; padding: 0 8px; font-size: 18px; color: var(--muted); }
+  /* Then the language: its name and size, and a round ? for How this works. */
+  .desk-head { align-items: center; }
+  .desk-title { margin: 0; font-size: var(--fs-xl); font-weight: 600; }
+  .desk-help {
+    margin-left: auto; width: 30px; height: 30px; padding: 0; border-radius: 50%;
+    border: 1px solid var(--border-strong); background: transparent; color: var(--muted);
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .desk-help:hover { background: var(--stripe); color: var(--fg); }
+  .desk-help:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(93,96,238,0.35); }
+  /* "3 of 839", at the end of the filter row. */
+  .desk-count { margin: 0 0 8px; }
+
   /* Toolbar */
   .desk-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; }
   .desk-field { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); color: var(--muted); }
@@ -1159,15 +1191,8 @@
     background: var(--border); color: var(--fg);
   }
   .desk-loc-count[hidden] { display: none; }
-  /* Flag alone for the languages you are not in, flag + name + count for the one you
-     are. This started as a narrow-screen fallback; the operator preferred it and asked
-     for it everywhere, and they are right -- eight repeated language names is a list to
-     read, whereas eight flags with one labelled is a position to see at a glance. */
-  .desk-loc:not(.is-active) { padding: 6px 10px; }
-  .desk-loc:not(.is-active) .desk-loc-name {
-    position: absolute; width: 1px; height: 1px; overflow: hidden;
-    clip-path: inset(50%); white-space: nowrap;
-  }
+  /* Every chip names its language (the operator's redesign, U3, 2026-09-29: the approved mock
+     shows flag + name + "to check" on all eight; it replaces the flag-only chips of 09-23). */
   .desk-table td { vertical-align: top; padding: 8px 12px; }
   .desk-table th { padding: 8px 12px; }
   /* ONE signal per row: a soft background, and nothing else. No dimming (it made the
@@ -1473,4 +1498,10 @@
   @media (max-width: 720px) {
     .desk-toolbar { gap: 10px; }
     .dashboard-shell { padding-left: 12px; padding-right: 12px; }
+  }
+
+  /* A phone: the three steps stack, and the › turns to point down. */
+  @media (max-width: 760px) {
+    .desk-flow { grid-template-columns: 1fr; gap: 8px; }
+    .desk-flow-arrow { transform: rotate(90deg); padding: 0; }
   }
