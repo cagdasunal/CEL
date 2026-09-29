@@ -10,6 +10,12 @@ Production pipeline for generating SEO summary content on englishcollege.com pag
 > **identity-preserving re-export shims**, so everything here keeps working unchanged.
 > See [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
+> **`translate` and `translate-meta` were retired 2026-09-29 (U3-S).** The localization desk
+> is the one translation engine. The operator's rule: "Never rewrite or translate already we
+> have". The sections below that describe the translate phase are history. The rows it wrote in
+> `docs/admin/weglot-imports/` stay as they are. The same change makes the blog run fill only
+> an empty summary field and never regenerate a post that has one, `--force` included.
+
 ## Status
 
 **As of 2026-05-19 (tracker-087 closure)**: production-ready for workflow_dispatch. Previously "deployment-ready but execution deferred" framing was inaccurate — the audit-086 commit shipped two false-closure claims (H-1 missing `write_static_summary` function; C-4 stub `_execute_translate`). Both are now genuinely closed and exercised by the end-to-end stress test in `tests/test_end_to_end.py`. Live workflow_dispatch still requires the user to rotate API keys (see below) and trigger manually.
@@ -263,9 +269,8 @@ Subcommands:
 | `plan` | Show what would be processed; produce report.json + report.md. Cheapest sanity check. |
 | `generate-english` | Fetch source content, derive keywords, generate EN summaries for static pages + courses + housing. Blog posts get native-language summaries. |
 | `audit` | Score existing summaries; surface REGENERATE candidates with reasons. |
-| `translate` | Translate EN summaries into the 8 locales via the **`translator`** package (glossary + translation-memory + translation-QA); append rows to the per-language Weglot CSVs, consolidated with the existing Fidelo rows. **Scope = static landing pages + courses + housing** (`config.TRANSLATE_COLLECTIONS` + `landing`); **blog is native-per-locale and NOT translated** (`NATIVE_LANGUAGE_COLLECTIONS`). Housing joined the translated set 2026-05-24. |
-| `translate-meta` | Translate static-page `<title>` + `<meta name="description">` into the 8 locales via the `translator`; emit Weglot CSV rows typed `meta_title` / `meta_description` (mobile-safe char limits flagged for Latin locales). |
-| `all` | Run generate-english → audit → translate in sequence. |
+| `translate`, `translate-meta` | **Retired 2026-09-29 (U3-S).** The localization desk is the one translation engine. |
+| `all` | Run generate-english → audit in sequence. |
 
 Filters:
 
@@ -275,8 +280,8 @@ Filters:
 | `--page <URL>` | Process only one static page. |
 | `--locale <code>` | Filter CSV emission to one locale. |
 | `--limit <n>` | Cap items processed (use during pilot batches). |
-| `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). |
-| `--sync` | `generate-english` **and `translate`** — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). On `translate` it routes through `translator.translate_batch(..., sync=True)` → `batch_runner.generate_sync`. **Bounded (tracker-138):** a hard per-call timeout + a per-run budget (`config.SYNC_RUN_DEADLINE_SEC`) make a large `--sync` backlog drain incrementally across runs instead of riding the 60-min CI cap. |
+| `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). **Never regenerates a blog post that already has a summary** (U3-S). |
+| `--sync` | `generate-english` — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). **Bounded (tracker-138):** a hard per-call timeout + a per-run budget (`config.SYNC_RUN_DEADLINE_SEC`) make a large `--sync` backlog drain incrementally across runs instead of riding the 60-min CI cap. |
 | `--from-run <dir>` | `translate` / `link-blogs` — repo-relative dir holding a committed `en-summaries.json` (the manifest). Required for a standalone `translate` dispatch (the out-dir is fresh per run, so without it translate finds no manifest and no-ops). |
 | `--exclude-blog` | Skip the blog collection (static + courses + housing only). Blog keeps its single-block summary; this just lets the 4-part scope run without regenerating the 415 blog posts. |
 | `--out-dir <path>` | Override the run artifact location. |

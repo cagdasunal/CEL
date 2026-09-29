@@ -21,7 +21,6 @@ on:
           - plan
           - generate-english
           - audit
-          - translate
           - all
           - cancel-batch     # tracker-097: stop an orphaned Gemini batch (still billing)
           - retrieve-batch   # tracker-097: reclaim a submitted batch's results by id
@@ -66,7 +65,7 @@ on:
         default: ""
         type: string
       from_run:
-        description: "translate / link-blogs: repo-relative dir holding a committed en-summaries.json (e.g. data/seo-intel/summary-dryrun/<ts>). Required for a standalone translate dispatch — out-dir is fresh per run, so without this translate finds no manifest and no-ops."
+        description: "link-blogs: repo-relative dir holding a committed en-summaries.json (e.g. data/seo-intel/summary-dryrun/<ts>). (translate was retired 2026-09-29, U3-S.)"
         required: false
         default: ""
         type: string
@@ -82,7 +81,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 360  # 6h — matches GHA free-tier hard cap; covers realistic Gemini batch sizes (1-4h typical, 24h SLA). For batches expected to exceed 6h, run translate phase separately with --from-run pointing at the prior generate-english run dir.
+    timeout-minutes: 360  # 6h — matches GHA free-tier hard cap; covers realistic Gemini batch sizes (1-4h typical, 24h SLA).
     steps:
       - uses: actions/checkout@v6
         with:
@@ -195,7 +194,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # docs/admin/weglot-imports/ matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1):
-          # the per-locale CSVs (translate phase) + static-page Markdown (generate phase).
+          # static-page Markdown (generate phase). (The per-locale CSVs came from translate, retired 2026-09-29.)
           git add docs/admin/weglot-imports/
           # tracker-097 RC3: persist the idempotency state + translation memory + last-batch
           # id ACROSS runs. Without committing summary-state.json, every GHA run started with

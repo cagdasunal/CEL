@@ -72,14 +72,14 @@ def _fake_batch_result(custom_id: str, succeeded: bool, content: str = "", error
 
 
 def test_plan_subcommand_end_to_end(tmp_path: Path):
-    """`plan --dry-run` walks all three phase planners and writes report.json."""
+    """`plan --dry-run` walks both phase planners and writes report.json."""
     rc = cli.main(["plan", "--dry-run", "--out-dir", str(tmp_path)])
     assert rc == 0
     report = json.loads((tmp_path / "report.json").read_text())
     assert report["subcommand"] == "plan"
     assert "generate_english" in report["phases"]
     assert "audit" in report["phases"]
-    assert "translate" in report["phases"]
+    assert "translate" not in report["phases"]  # retired 2026-09-29 (U3-S)
 
 
 # ---- Test 2: generate-english live mode with mocked SDK + Webflow ----
@@ -218,154 +218,21 @@ def test_generate_english_cost_cap_aborts(tmp_path: Path, monkeypatch: pytest.Mo
     assert submit_called == []
 
 
-# ---- Test 4: translate phase live mode with mocked SDK ----
+# ---- Test 5: full `all` subcommand wires generate-english and audit together ----
+# (Test 4, the translate phase, was retired with the translate command, U3-S 2026-09-29.)
 
 
-def test_translate_live_mode_emits_csv_for_target_locale(
+def test_all_subcommand_runs_generate_and_audit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """Translate phase reads manifest, submits batch, writes CSV via csv_emitter."""
-    # Stage an EN manifest with a landing entry + a housing entry. 2026-05-24:
-    # housing IS now translated (housing_new moved to TRANSLATE_COLLECTIONS), so
-    # BOTH entries produce a request (only blog_post stays native-skipped).
-    # tracker-107: summaries are 4-part docs (## Tagline / ### Title / paragraph /
-    # #### Content); the translate CSV keys on the rendered per-block plain text.
-    manifest = {
-        "gen-0-test": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": (
-                "## Course Timelines\n\n"
-                "### How long does it take?\n\n"
-                "Twelve weeks for a strong B2 at our Vancouver campus.\n\n"
-                "#### What level do I need\n\n"
-                "All levels are welcome from day one.\n"
-            ),
-            "content_type": "landing",
-            "locale": "en",
-        },
-        "gen-1-housing": {
-            "url": "https://www.englishcollege.com/housing/some-residence",
-            "markdown": (
-                "## Where To Live\n\n"
-                "### Housing options near campus\n\n"
-                "Kitsilano apartment with kitchenette.\n\n"
-                "#### Amenities included\n\n"
-                "Wifi and weekly cleaning are included.\n"
-            ),
-            "content_type": "housing",  # now translated (was NO_TRANSLATE pre-2026-05-24)
-            "locale": "en",
-        },
-    }
-    (tmp_path / "en-summaries.json").write_text(json.dumps(manifest), encoding="utf-8")
-
-    captured_submit_calls = []
-
-    def fake_submit(requests, *args, **kwargs):
-        captured_submit_calls.append(list(requests))
-        return _fake_batch_handle()
-
-    def fake_wait(handle, *args, **kwargs):
-        # Translation mirrors the 4-part structure (same block count as source) so the
-        # per-block pairing aligns. Both landing + housing get a result.
-        return [
-            _fake_batch_result(
-                "tr-de-gen-0-test",
-                succeeded=True,
-                content=(
-                    "## Kurszeitpläne\n\n"
-                    "### Wie lange dauert es?\n\n"
-                    "Zwölf Wochen für ein solides B2 an unserem Campus in Vancouver.\n\n"
-                    "#### Welches Niveau brauche ich\n\n"
-                    "Alle Niveaus sind ab dem ersten Tag willkommen.\n"
-                ),
-            ),
-            _fake_batch_result(
-                "tr-de-gen-1-housing",
-                succeeded=True,
-                content=(
-                    "## Wo man wohnt\n\n"
-                    "### Wohnmöglichkeiten in Campusnähe\n\n"
-                    "Wohnung in Kitsilano mit Küchenzeile.\n\n"
-                    "#### Ausstattung inklusive\n\n"
-                    "WLAN und wöchentliche Reinigung sind inklusive.\n"
-                ),
-            ),
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-    # Make llms_parser.fetch_and_parse return None to skip the network.
-    from tools.summary import llms_parser
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse",
-        lambda *a, **kw: llms_parser.LlmsIndex(entries=[]),
-    )
-    # tracker-107: translate fetches the live page for its DEPLOYED summary (all types,
-    # not just landing — 2026-05-24); stub it offline (empty parts → manifest-markdown
-    # fallback = the 4-part fixture) and record which URLs were fetched.
-    import types
-    fetched_urls: list[str] = []
-
-    def _rec_fetch(url, *a, **k):
-        fetched_urls.append(url)
-        return types.SimpleNamespace(existing_summary_parts={})
-
-    monkeypatch.setattr(page_fetcher, "fetch_page", _rec_fetch)
-
-    # Redirect WEGLOT_IMPORTS_DIR to tmp_path so we don't pollute the real CSV dir.
-    from tools.summary import config
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
-
-    rc = cli.main([
-        "translate", "--no-dry-run", "--locale", "de",
-        "--out-dir", str(tmp_path),
-    ])
-    assert rc == 0
-    report = json.loads((tmp_path / "report.json").read_text())
-    phase = report["phases"]["translate"]
-    assert phase["target_locales"] == ["de"]
-    de_result = phase["per_locale"]["de"]
-    assert de_result["dry_run"] is False
-    assert de_result["rows_appended"] >= 1
-    # CSV was actually written.
-    csv_path = tmp_path / "weglot-out" / "de.csv"
-    assert csv_path.exists()
-    csv_text = csv_path.read_text(encoding="utf-8")
-    assert "Zwölf Wochen" in csv_text
-    assert "en;de" in csv_text  # Weglot CSV format: language_from;language_to
-    # tracker-107: rows are plain page-block text (what Weglot matches) — no markdown.
-    assert "](" not in csv_text and "##" not in csv_text
-    assert de_result.get("words", 0) > 0  # translated volume recorded for the dashboard
-    # 2026-05-24: housing now translated — submit_batch saw 2 requests (landing + housing).
-    assert len(captured_submit_calls) == 1, "expected exactly 1 submit_batch call (1 locale)"
-    assert len(captured_submit_calls[0]) == 2, (
-        f"expected 2 requests (landing + housing), got {len(captured_submit_calls[0])}"
-    )
-    assert "Kitsilano" in csv_text or "Küchenzeile" in csv_text  # housing row emitted too
-    # tracker-107 (2026-05-24): live-fetch now covers ALL translatable types (not just
-    # landing), so the manifest can't ship stale tagline/title for course/housing. The
-    # housing item's live page is fetched, not only the landing one.
-    assert "https://www.englishcollege.com/housing/some-residence" in fetched_urls
-    assert "https://www.englishcollege.com/learn-english-usa" in fetched_urls
-
-
-# ---- Test 5: full `all` subcommand wires the three phases together ----
-
-
-def test_all_subcommand_runs_generate_audit_translate(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-):
-    """`all` runs all three phases in one process and uses the in-process manifest."""
+    """`all` runs generate-english then audit in one process (translate retired, U3-S)."""
     monkeypatch.setattr(page_fetcher, "fetch_page", _fake_page_content)
 
     def fake_submit(requests, *args, **kwargs):
         return _fake_batch_handle()
 
     def fake_wait(handle, *args, **kwargs):
-        # Distinguish generate from translate by custom_id prefix.
-        first = handle.batch_id
-        # The orchestrator submits gen-* first, then tr-* per locale.
-        # Return success for whatever requests are observed.
+        # Return success for the generate request.
         return [
             _fake_batch_result(
                 "gen-0-x",
@@ -396,7 +263,7 @@ def test_all_subcommand_runs_generate_audit_translate(
     report = json.loads((tmp_path / "report.json").read_text())
     assert "generate_english" in report["phases"]
     assert "audit" in report["phases"]
-    assert "translate" in report["phases"]
+    assert "translate" not in report["phases"]
 
 
 # ---- Test 6: SSRF defense in page_fetcher (regression for tracker-087 F-3) ----

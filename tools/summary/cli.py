@@ -1,11 +1,13 @@
-"""CLI orchestration: generate-english | audit | translate | all | plan.
+"""CLI orchestration: generate-english | audit | all | plan.
 
 Subcommands:
   plan             — emit JSON describing what WOULD be processed (no fetches, no API)
   generate-english — fetch source content, derive keywords, generate EN summaries
   audit            — score existing summaries, surface REGENERATE candidates
-  translate        — translate EN summaries into 8 locales + emit Weglot CSVs
-  all              — run generate-english → audit → translate
+  all              — run generate-english → audit
+
+`translate` and `translate-meta` were retired 2026-09-29 (U3-S): the localization desk is the
+one translation engine, and the operator's rule is "Never rewrite or translate already we have".
 
 Default mode is `--dry-run`: no live Gemini API calls, no Webflow writes, no live
 CSV mutations. `--no-dry-run` enables real API calls + Webflow writes. Static-
@@ -119,14 +121,15 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="tools.summary",
         description=(
             "Generate SEO summary content for Webflow CMS items + static landing "
-            "pages, audit existing summaries, and emit Weglot-ready translation "
-            "CSVs. Default mode is --dry-run."
+            "pages and audit existing summaries. Default mode is --dry-run. (The "
+            "translate / translate-meta commands were retired 2026-09-29, U3-S: the "
+            "localization desk is the one translation engine.)"
         ),
     )
     parser.add_argument(
         "subcommand",
         choices=[
-            "generate-english", "audit", "translate", "translate-meta", "all", "plan",
+            "generate-english", "audit", "all", "plan",
             # tracker-097: orphaned-batch recovery (RC5). A submitted Gemini batch keeps
             # billing after its GHA run is cancelled; these stop / reclaim it by id.
             "cancel-batch", "retrieve-batch",
@@ -169,18 +172,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--limit", type=int, default=None,
         help="Cap items processed (pilot batches).",
-    )
-    parser.add_argument(
-        "--offset", type=int, default=0,
-        help="translate: skip the first N items of the (collection-filtered) order "
-             "before --limit, for targeted pilots (audit-108 L-4).",
-    )
-    parser.add_argument(
-        "--reuse-only", dest="reuse_only", action="store_true", default=False,
-        help="translate: emit ONLY pages whose every block is already in the block-TM "
-             "(zero Gemini). Pages with any new block are skipped (warned) — they keep "
-             "Weglot's machine translation until a normal run tops them up. Guarantees a "
-             "free, render-safe rebuild from existing translations.",
     )
     parser.add_argument(
         "--force", action="store_true", default=False,
@@ -228,7 +219,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--from-run", type=Path, default=None,
         help=(
-            "Translate / link-blogs phases — directory containing en-summaries.json from "
+            "link-blogs — directory containing en-summaries.json from "
             "a prior generate-english run. Defaults to <out-dir>/en-summaries.json."
         ),
     )
@@ -255,7 +246,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # A page frozen for a localization round is refused BY NAME, before anything runs or
-    # spends. Its translated blocks can still be regenerated -- only the English is frozen.
+    # spends.
     if args.subcommand in ("generate-english", "all") and args.page:
         try:
             frozen_now = _frozen_paths()
@@ -267,8 +258,7 @@ def main(argv: list[str] | None = None) -> int:
         if _page_path(args.page) in frozen_now:
             print(f"[summary] REFUSED: {args.page} is frozen for a localization round "
                   f"({config.FREEZE_FILE.name}): its English may not change until the round "
-                  "ends. Its translations can still be regenerated with `translate`.",
-                  file=sys.stderr)
+                  "ends.", file=sys.stderr)
             return 2
 
     out_dir = args.out_dir or (config.DRYRUN_DIR / _timestamp_slug())
@@ -310,7 +300,6 @@ def main(argv: list[str] | None = None) -> int:
         if args.subcommand == "plan":
             report["phases"]["generate_english"] = _plan_generate_english(args)
             report["phases"]["audit"] = _plan_audit(args)
-            report["phases"]["translate"] = _plan_translate(args)
         else:
             # All other subcommands run the orchestrator (real or dry-run).
             if args.subcommand in ("generate-english", "all"):
@@ -325,10 +314,6 @@ def main(argv: list[str] | None = None) -> int:
                 report["phases"]["generate_english"] = ge
             if args.subcommand in ("audit", "all"):
                 report["phases"]["audit"] = _execute_audit(args, out_dir)
-            if args.subcommand in ("translate", "all"):
-                report["phases"]["translate"] = _execute_translate(args, out_dir)
-            if args.subcommand in ("translate-meta", "all"):
-                report["phases"]["translate_meta"] = _execute_translate_meta(args, out_dir)
             if args.subcommand == "link-blogs":
                 report["phases"]["link_blogs"] = _execute_link_blogs(args, out_dir)
     finally:
@@ -342,9 +327,36 @@ def main(argv: list[str] | None = None) -> int:
         # with what result — across summaries AND translations). Never raises.
         from tools.summary import run_ledger
         run_ledger.record_run(report, out_dir)
+    if not args.dry_run:
+        reason = _no_work_done(report["phases"].get("generate_english"))
+        if reason:
+            print(f"[summary] ALERT: this run had work and did none of it: {reason}. Exiting "
+                  f"{_NO_WORK_DONE_EXIT_CODE} so the workflow's failure alert fires.", file=sys.stderr)
+            return _NO_WORK_DONE_EXIT_CODE
     if args.dry_run:
         print("[summary] Dry-run complete. No API calls fired, no Webflow writes performed.", file=sys.stderr)
     return 0
+
+
+# U3-S (2026-09-29): the blog autopilot stayed green for weeks while every Gemini request failed
+# (402/429 no credit, then 404 on a gone model). A live run whose every request failed, to Gemini
+# or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
+# fires. A partial run, a day with nothing to do, a run QA demoted to manual review, and a run
+# the cost gates stopped before sending anything still exit 0.
+_NO_WORK_DONE_EXIT_CODE = 3
+
+
+def _no_work_done(ge: Any) -> str:
+    """Why a live generate-english phase's every request failed, or "" when any succeeded (or
+    none was sent)."""
+    if not isinstance(ge, dict) or not ge.get("requests_built") or not ge.get("submitted"):
+        return ""
+    if not (ge.get("qa_gate") or {}).get("checked"):  # no Gemini answer at all, retries included
+        return f"every request failed ({ge.get('failed', 0)} of {ge['requests_built']})"
+    wl = ge.get("write_log") or {}
+    if wl.get("failures") and not (wl.get("cms_writes") or wl.get("static_writes")):
+        return f"every write failed ({wl['failures']})"
+    return ""
 
 
 # ---- Plan-only helpers (informational; used by 'plan' subcommand) ----
@@ -462,24 +474,6 @@ def _plan_audit(args: argparse.Namespace) -> dict[str, Any]:
         },
         "collections_to_audit": list(config.COLLECTIONS.keys()),
         "static_pages_to_audit": list(config.STATIC_PAGES),
-    }
-
-
-def _plan_translate(args: argparse.Namespace) -> dict[str, Any]:
-    target_locales = (
-        [args.locale] if args.locale and args.locale != "en"
-        else list(config.TARGET_TRANSLATION_LOCALES)
-    )
-    return {
-        "target_locales": target_locales,
-        "csvs": [
-            {
-                "locale": locale,
-                "csv_path": str(config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"),
-            }
-            for locale in target_locales
-        ],
-        "translatable_collections": list(config.TRANSLATE_COLLECTIONS),
     }
 
 
@@ -736,8 +730,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
 
     # tracker-091 M-13: fetch llms.txt once for the whole phase so every item's
     # link-candidate pool can include CMS items (housing /housing/, courses, blog) —
-    # not just the 12 curated STATIC_PAGES. Mirrors the translate-phase pattern
-    # (cli.py _execute_translate). Dry-run skips the network; failure falls back
+    # not just the 12 curated STATIC_PAGES. Dry-run skips the network; failure falls back
     # to STATIC_PAGES-only via _build_link_candidate_pool's None handling.
     llms_index = None
     if not args.dry_run:
@@ -926,7 +919,8 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "submitted": False, "cost_gate": cost_gate, "warnings": warnings,
         }
 
-    # Helper to build the EN-summaries manifest that the translate phase consumes.
+    # Helper to build the EN-summaries manifest (read by verify-emit, link-blogs and the
+    # admin Summaries page).
     def _write_en_summaries_manifest(succeeded_results, _sources):
         manifest: dict[str, dict] = {}
         src_by_cid: dict[str, Any] = {}
@@ -990,7 +984,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     }
     if args.dry_run:
         handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
-        # Dry-run: write a stub manifest so test_execute_translate_dry_run can read it.
+        # Dry-run: write a stub manifest, so a dry run leaves the same files as a live one.
         stub_results = [
             batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content="")
             for r in requests
@@ -1140,7 +1134,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     manual_review_path.write_text(
         json.dumps(manual_review_payload, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    # Write the EN-summaries manifest for the translate phase to read.
+    # Write the EN-summaries manifest.
     mpath, mcount = _write_en_summaries_manifest(succeeded, sources)
     # tracker-092 (2.1) + tracker-138 (2026-07-13): persist idempotency state per item AS IT IS WRITTEN,
     # not once at the end. Two reasons: (1) DURABILITY — the run is bounded by a wall-clock deadline, so it
@@ -1573,588 +1567,6 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
         "total_audited": len(scores),
         "keep_count": len(keep), "regenerate_count": len(regenerate),
         "manual_review_count": len(manual_review),
-        "warnings": warnings,
-    }
-
-
-def _execute_translate(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
-    """Translate EN summaries into 8 locales; emit consolidated per-language CSVs.
-
-    Reads `en-summaries.json` from `--from-run <dir>` if provided, else from
-    `<out_dir>/en-summaries.json` (the path generate-english writes to in the
-    same run). Closes audit-086 C-4 (tracker-087 F-2).
-    """
-    from tools.summary import batch_runner, csv_emitter, llms_parser, page_fetcher, qa, structure
-    from tools.summary.prompt_builder import (
-        build_translation_system_prompt, build_translation_user_message,
-    )
-    from tools.translator import translate_batch, TranslationUnit
-    from tools.translator.glossary import load_glossary
-    from tools.translator.tm import TranslationMemory
-
-    warnings: list[str] = []
-    target_locales = (
-        [args.locale] if args.locale and args.locale != "en"
-        else list(config.TARGET_TRANSLATION_LOCALES)
-    )
-
-    # Resolve manifest path: --from-run takes precedence.
-    manifest_path = (
-        (args.from_run / "en-summaries.json")
-        if args.from_run
-        else (out_dir / "en-summaries.json")
-    )
-    en_summaries: dict[str, dict] = (json.loads(manifest_path.read_text(encoding="utf-8"))
-                                     if manifest_path.exists() else {})
-    # A static page no manifest holds is translated from the English it serves. The frozen
-    # pages are why: generate-english may not run for them, so no manifest ever holds
-    # them, yet regenerating their translations is exactly what stays allowed (WO-30;
-    # review round 2, L3 P1-2). The live English is what translate uses anyway (below).
-    # (A dry run reads the public page too -- a GET, as generate-english's dry run does for
-    # every static page; no API is called.) The page is matched by path, so a trailing slash
-    # or the bare host finds it (round 3).
-    static_url = next((u for u in config.STATIC_PAGES
-                       if args.page and _page_path(u) == _page_path(args.page)), None)
-    if (static_url and not any(_page_path(e.get("url", "")) == _page_path(static_url)
-                               for e in en_summaries.values())):
-        try:
-            live_md = structure.parts_to_markdown(
-                page_fetcher.fetch_page(static_url).existing_summary_parts or {})
-        except Exception as e:
-            live_md = ""
-            warnings.append(f"{static_url}: live fetch failed ({e})")
-        if live_md.strip():
-            slug = _page_path(static_url).strip("/").replace("/", "-") or "home"
-            en_summaries[f"live-{slug}"] = {"url": static_url, "markdown": live_md,
-                                            "content_type": "landing", "locale": "en"}
-    if not en_summaries:
-        warnings.append(
-            f"no EN summaries manifest at {manifest_path}; nothing to translate. "
-            f"Run generate-english first or pass --from-run <dir>."
-        )
-        return {
-            "target_locales": target_locales,
-            "per_locale": {},
-            "manifest_path": str(manifest_path),
-            "warnings": warnings,
-        }
-    # Manifest shape: {"<custom_id>": {"url": ..., "markdown": ..., "content_type": ..., "locale": ...}}
-
-    # Content-type → collection-slug mapping (mirrors _collection_id_for_content_type).
-    # Skip any content_type that maps to a collection NOT meant for translation.
-    # Static pages (content_type="landing") have no mapping → never skipped (tracker-091 M-10).
-    _CT_TO_COLLECTION = {
-        "blog_post": "blog",
-        "course":    "courses",
-        "housing":   "housing_new",
-    }
-    _SKIP_TRANSLATE_TYPES = {
-        ct for ct, slug in _CT_TO_COLLECTION.items()
-        if slug in config.NATIVE_LANGUAGE_COLLECTIONS
-        or slug in config.NO_TRANSLATE_COLLECTIONS
-    }
-
-    # audit-108 L-4: --collection scopes the run to one collection (it was recorded in
-    # report["filters"] but never applied here). landing pages have no collection slug
-    # (_CT_TO_COLLECTION.get → None), so a --collection filter correctly excludes them.
-    def _skip_item(en: dict) -> bool:
-        ct = en.get("content_type")
-        if ct in _SKIP_TRANSLATE_TYPES:
-            return True
-        # --page scopes translate to that page; it translated the whole manifest
-        # (review round 2, L3 P1-2).
-        if args.page and _page_path(en.get("url", "")) != _page_path(args.page):
-            return True
-        if args.collection and _CT_TO_COLLECTION.get(ct) != args.collection:
-            return True
-        return False
-
-    # audit-108 M-4 (2026-05-24): translated-summary links are localized by Weglot's
-    # URL-translation rules on the live page (the CSV carries plain anchor text — links
-    # are stripped at emit by structure.summary_page_blocks), so llms.txt is no longer
-    # used to swap links here. We keep a cheap PRE-FLIGHT REACHABILITY check (retry once,
-    # then abort before a paid run) so a translate doesn't burn spend while the content
-    # infra is down — historically the T1 abort (2026-05-23). No value is bound; the
-    # fetch succeeding-or-raising is the only signal.
-    if not args.dry_run:
-        try:
-            batch_runner._retry_transient(
-                lambda: llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
-            )
-        except Exception as e:
-            warnings.append(
-                f"ABORT: llms.txt unreachable ({e}); aborting before a paid translate "
-                f"(content-infra reachability guard). Re-run when the site is reachable."
-            )
-            return {
-                "target_locales": target_locales,
-                "per_locale": {},
-                "manifest_path": str(manifest_path),
-                "degraded": True,
-                "aborted": True,
-                "warnings": warnings,
-            }
-
-    # tracker-092 Phase 3: translation runs through the dedicated engine (glossary
-    # + translation-memory + translation-QA). The engine reuses batch_runner as its
-    # Gemini client; this caller keeps the M-10 content-type filter and the block-level
-    # Weglot-CSV emission (tracker-107). audit-108 M-4: the llms.txt link-swap apparatus
-    # was removed from this path — links are localized by Weglot, not the CSV. Dry-run
-    # keeps the build-requests + dry_run_submit path UNCHANGED (request_count + JSONL
-    # parity for the M-10 tests).
-    glossary = load_glossary()
-    tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
-    # Block-level reuse layer (tools.summary.block_reuse): a page whose every rendered
-    # block is already translated is rebuilt for FREE; only pages with a new block hit
-    # Gemini. Live runs only. Self-fills from each run's model output.
-    from tools.summary import block_reuse
-    from tools.summary.prompt_version import prompt_version
-    block_tm = None if args.dry_run else TranslationMemory(config.BLOCK_TM_FILE)
-
-    # tracker-107: the source text we translate MUST equal what is DEPLOYED on the page
-    # (the string Weglot keys on). The committed manifest snapshot can DRIFT from the live
-    # page for EVERY type — static landing summaries (Designer #summary-* edits) AND CMS
-    # course/housing summaries (regenerated/edited after the snapshot; a 2-item pilot found
-    # ~10/14 manifest↔live block match on courses, so tagline/title/intro wouldn't apply).
-    # So for every translatable item we translate the live DEPLOYED text (page_fetcher →
-    # parts_to_markdown), fetched once + reused across locales → ~100% Weglot block match.
-    # An empty deployed summary or a fetch failure falls back to the manifest markdown
-    # (logged). The manifest still supplies the item inventory + the link count below (it
-    # keeps the `](url)` syntax that the rendered-text reconstruction drops).
-    effective_md: dict[str, str] = {}
-    for cid, en in en_summaries.items():
-        if _skip_item(en):
-            continue
-        md = en.get("markdown", "") or ""
-        if not args.dry_run:
-            try:
-                pc = page_fetcher.fetch_page(en.get("url", ""))
-                recon = structure.parts_to_markdown(pc.existing_summary_parts or {})
-                if recon.strip():
-                    md = recon
-                else:
-                    warnings.append(f"{cid}: no deployed summary parts on live page; using manifest markdown")
-            except Exception as e:
-                warnings.append(f"{cid}: live fetch failed ({e}); using manifest markdown")
-        effective_md[cid] = md
-
-    per_locale_results: dict[str, dict] = {}
-    # cid → [locales it was successfully translated + emitted into the CSV]. Feeds
-    # the /admin/#summaries dashboard's per-item "Translated" coverage column.
-    translated_per_item: dict[str, list[str]] = {}
-    for locale in target_locales:
-        # Build TranslationUnits (one per non-skipped, non-empty EN summary).
-        units = []
-        for cid, en in en_summaries.items():
-            if _skip_item(en):
-                continue
-            md = effective_md.get(cid, en.get("markdown", "") or "")  # tracker-107: deployed text (all types)
-            if not md.strip():
-                continue
-            units.append(TranslationUnit(
-                id=f"tr-{locale}-{cid}", text=md,
-                content_type=en.get("content_type", "landing"),
-            ))
-
-        # --offset/--limit window the SOURCE items translated (stable en_summaries order,
-        # so the same window per locale) — for instant pilot runs before the full batch.
-        if args.offset or args.limit:
-            end = (args.offset + args.limit) if args.limit else None
-            units = units[args.offset:end]
-
-        # Block-level reuse pre-pass: pull out every page whose rendered blocks are ALL
-        # already in the block-TM — those are rebuilt for free and never sent to Gemini.
-        # Gated to full live runs (pilots with --offset/--limit keep deterministic windows).
-        reused_block_pairs: list[tuple[str, list[tuple[str, str]]]] = []
-        if block_tm is not None and not (args.offset or args.limit):
-            kept_units = []
-            for u in units:
-                u_parts = u.id.split("-", 2)
-                u_cid = u_parts[2] if len(u_parts) >= 3 else ""
-                en_blocks = structure.summary_page_blocks(u.text)
-                cached = block_reuse.lookup_page_blocks(
-                    en_blocks, locale, block_tm, glossary.version,
-                    prompt_version=prompt_version(locale),
-                )
-                if u_cid and cached is not None:
-                    reused_block_pairs.append((u_cid, list(zip(en_blocks, cached))))
-                else:
-                    kept_units.append(u)
-            units = kept_units
-
-        # --reuse-only hard guarantee: never call Gemini, whatever the pre-pass did.
-        # Drop every leftover (uncached) page — they stay on Weglot machine-translation
-        # until a normal run tops them up. Unconditional so the no-spend promise holds
-        # even if the reuse pre-pass was gated off (e.g. --offset/--limit).
-        if args.reuse_only and units:
-            skipped = [u.id.split("-", 2)[2] for u in units if u.id.count("-") >= 2]
-            warnings.append(
-                f"locale {locale}: --reuse-only skipped {len(units)} page(s) with "
-                f"new/uncached blocks (left on machine-translation): {', '.join(skipped)}"
-            )
-            units = []
-
-        if not units and not reused_block_pairs:
-            per_locale_results[locale] = {
-                "skipped": True,
-                "reason": "no EN summaries had non-empty markdown",
-            }
-            continue
-
-        # request_builder reproduces the summary-translation prompt. audit-108 M-4:
-        # no link-swap table is injected — links are localized by Weglot on the live
-        # page and stripped to anchor text at emit, so swapping them in the prompt was
-        # wasted Pro tokens. The model just translates the Markdown, preserving structure.
-        def _summary_rb(unit, loc, gslice):
-            # tracker-095 M1: inject the per-unit glossary slice (do-not-translate
-            # brand/entity terms) into the summary translation prompt. The engine
-            # computes it; previously this builder discarded it, so brand terms
-            # were never told to the model for summaries.
-            system_blocks = build_translation_system_prompt(loc)
-            if gslice:
-                system_blocks = system_blocks + [{"type": "text", "text": gslice}]
-            return (
-                system_blocks,
-                build_translation_user_message(unit.text, loc),
-            )
-
-        # Cost check (build the would-be requests once via the same builder).
-        requests = []
-        for u in units:
-            sb, um = _summary_rb(u, locale, "")
-            requests.append(batch_runner.BatchRequest(
-                custom_id=u.id, system_blocks=sb, user_message=um, enable_thinking=False,
-            ))
-        cost_estimate = batch_runner.estimate_batch_cost_usd(
-            requests, mode="interactive" if args.sync else "batch",
-        )
-        if cost_estimate > config.MAX_BATCH_COST_USD:
-            warnings.append(
-                f"locale {locale}: cost cap exceeded "
-                f"(${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}). Skipping."
-            )
-            per_locale_results[locale] = {
-                "skipped": True, "cost_estimate_usd": round(cost_estimate, 2),
-                "reason": "exceeded MAX_BATCH_COST_USD",
-            }
-            continue
-
-        # Dry-run: original path (request_count + JSONL artifact parity).
-        if args.dry_run:
-            artifact_dir = out_dir / "translate-batches" / locale
-            handle = batch_runner.dry_run_submit(requests, artifact_dir=artifact_dir)
-            per_locale_results[locale] = {
-                "dry_run": True,
-                "batch_id": handle.batch_id,
-                "request_count": len(requests),
-                "cost_estimate_usd": round(cost_estimate, 2),
-                "artifact_path": str(handle.artifact_path),
-            }
-            continue
-
-        # Live: translate via the dedicated engine (TM skip + glossary + QA).
-        # qa_check_urls=False: this path swaps/removes links per locale (see
-        # _summary_rb), so source URLs are intentionally absent from the target
-        # — url_drift would false-flag every linked paragraph (tracker-095 H2).
-        translations = translate_batch(
-            units, locale, glossary, request_builder=_summary_rb, tm=tm,
-            qa_check_urls=False, sync=args.sync,
-        )
-        pairs: list[csv_emitter.SummaryPair] = []
-        succeeded_count = 0
-        failed_count = 0
-        loc_words = 0   # tracker-107: translated words shipped this locale (dashboard volume)
-        loc_links = 0   # internal links carried by translated summaries (locale-invariant)
-        for t in translations:
-            if not t.target.strip():
-                failed_count += 1
-                continue
-            # tracker-095 H1: a translation that failed a BLOCKING QA check
-            # (ok=False — placeholder/number drift, forbidden term, empty) must
-            # NOT ship. url_drift is excluded for summaries (qa_check_urls=False).
-            if not t.ok:
-                failed_count += 1
-                warnings.append(f"locale {locale} {t.id}: QA blocked, not shipped — {t.qa_flags}")
-                continue
-            # T4 (2026-05-23): reject a translation that emitted an off-locale or
-            # off-domain link (offline structural check; no HTTP probing). The link-swap
-            # table targets same-locale URLs, but the model can still slip an unswapped
-            # EN link through — this is the deterministic backstop.
-            links_ok, bad_links = qa.links_target_locale(t.target, locale)
-            if not links_ok:
-                failed_count += 1
-                warnings.append(
-                    f"locale {locale} {t.id}: off-locale/off-domain link(s) {bad_links}; not shipped"
-                )
-                continue
-            succeeded_count += 1
-            if t.qa_flags and not t.from_tm:
-                warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")
-            parts = t.id.split("-", 2)
-            if len(parts) < 3:
-                continue
-            orig_cid = parts[2]
-            # word_from comes from the SAME source we translated (deployed text for landing),
-            # so it equals the live page's text node. Link COUNT uses the manifest markdown,
-            # which keeps the `](url)` syntax the lossy landing reconstruction drops.
-            en_md = effective_md.get(orig_cid) or en_summaries.get(orig_cid, {}).get("markdown", "")
-            manifest_md = en_summaries.get(orig_cid, {}).get("markdown", "")
-            # tracker-107: pair by RENDERED page block (plain text), NOT \n\n chunks.
-            # Weglot matches each imported row against the live page's per-block text node
-            # (`<h2>/<h3>/<h4>/<h5>/<p>`, links as anchor text, no markdown). The old
-            # split kept `##`/`[](url)` markers + merged paragraphs, so word_from never
-            # matched and Weglot machine-translated instead. `summary_page_blocks` mirrors
-            # exactly how the page renders, so word_from == the page's text node.
-            en_blocks = structure.summary_page_blocks(en_md)
-            tr_blocks = structure.summary_page_blocks(t.target)
-            if not en_blocks or len(en_blocks) != len(tr_blocks):
-                warnings.append(
-                    f"locale {locale} cid {orig_cid}: block count mismatch "
-                    f"(en={len(en_blocks)} tr={len(tr_blocks)}); skipping"
-                )
-                continue
-            pairs.extend(
-                csv_emitter.SummaryPair(word_from=e, word_to=tr)
-                for e, tr in zip(en_blocks, tr_blocks)
-                if e.strip() and tr.strip()
-            )
-            translated_per_item.setdefault(orig_cid, []).append(locale)
-            loc_words += sum(len(b.split()) for b in tr_blocks)
-            loc_links += _count_internal_md_links(manifest_md)
-            # Self-fill the block-TM so these blocks are reused (free) next run.
-            block_reuse.store_page_blocks(block_tm, en_blocks, tr_blocks, locale,
-                                          glossary.version,
-                                          prompt_version=prompt_version(locale))
-
-        # Block-reused pages (every block already in the block-TM → no Gemini): emit
-        # their pairs directly. Each pair is the block's OWN stored translation, so the
-        # word_from/word_to alignment is correct by construction (no cross-page zipping).
-        for reused_cid, block_pairs in reused_block_pairs:
-            pairs.extend(
-                csv_emitter.SummaryPair(word_from=e, word_to=tr)
-                for e, tr in block_pairs
-                if e.strip() and tr.strip()
-            )
-            translated_per_item.setdefault(reused_cid, []).append(locale)
-            loc_words += sum(len(tr.split()) for _, tr in block_pairs)
-
-        # Emit consolidated CSV.
-        existing_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
-        out_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"  # overwrite in place
-        emission_report = csv_emitter.emit_consolidated_csv(
-            target_locale=locale,
-            existing_csv_path=existing_csv,
-            summary_pairs=pairs,
-            out_path=out_csv,
-        )
-        warnings.extend(emission_report.warnings)  # T5: large single-import heads-up
-        # Ledger visibility: FREE reuse (block-TM-reused pages + whole-page-TM hits)
-        # vs actual Gemini calls. from_tm hits never hit the API (engine.py:86-91);
-        # block-reused pages were pulled out before translate_batch entirely.
-        page_tm_hits = sum(1 for t in translations if getattr(t, "from_tm", False))
-        tm_hits = len(reused_block_pairs) + page_tm_hits
-        gemini_calls = max(0, len(translations) - page_tm_hits)
-        per_locale_results[locale] = {
-            "dry_run": False,
-            "engine": "translator",
-            "request_count": len(units),
-            "tm_hits": tm_hits,
-            "gemini_calls": gemini_calls,
-            "succeeded": succeeded_count,
-            "failed": failed_count,
-            "cost_estimate_usd": round(cost_estimate, 2),
-            "csv_path": str(out_csv),
-            "rows_appended": emission_report.new_row_count,
-            "duplicates_skipped": emission_report.duplicates_skipped,
-            "existing_rows": emission_report.existing_row_count,
-            "words": loc_words,            # tracker-107: dashboard volume
-            "internal_links": loc_links,
-        }
-        # Persist the block-TM after each locale so a self-filled block survives an
-        # interruption mid-batch (the engine already saves the whole-page TM per call).
-        if block_tm is not None:
-            block_tm.save()
-
-    # Persist a translation-status artifact next to the CSVs (live runs only) so the
-    # /admin/#summaries dashboard can surface per-locale + per-item translation coverage
-    # (Overview "Translations" row + Latest "Translated" column). The summary.yml live
-    # commit step already commits docs/admin/weglot-imports/, so this ships with the CSVs.
-    status_path = None
-    if not args.dry_run and args.page:
-        # One page's run would replace every other item's coverage on the dashboard: it
-        # writes no status, and says so (round 3 review of WO-32).
-        warnings.append("translation-status.json not written: a --page run covers one page; "
-                        "the next full translate run refreshes it")
-    elif not args.dry_run:
-        # Count translated-per-locale from the SAME CSV-paired set that per_item
-        # records (review 105 F1), so the dashboard's Overview "Translations" row and
-        # the Latest "Translated" column never disagree. (per_locale_results' own
-        # "succeeded" is the QA-pass count — a superset that can exceed the paired set
-        # by a rare paragraph-mismatch item — and stays in report.json.)
-        paired_per_locale: dict[str, int] = {}
-        for locs in translated_per_item.values():
-            for loc in locs:
-                paired_per_locale[loc] = paired_per_locale.get(loc, 0) + 1
-        status = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "source_run": (args.from_run.name if args.from_run else out_dir.name),
-            "dry_run": False,
-            "target_locales": target_locales,
-            "per_locale": {
-                loc: {
-                    "translated": paired_per_locale.get(loc, 0),
-                    "failed": r.get("failed", 0),
-                    "csv": Path(r["csv_path"]).name if r.get("csv_path") else None,
-                    # tracker-107: real translated content volume for the dashboard Overview.
-                    "words": r.get("words", 0),
-                    "internal_links": r.get("internal_links", 0),
-                }
-                for loc, r in per_locale_results.items()
-            },
-            "per_item": {cid: sorted(locs) for cid, locs in translated_per_item.items()},
-        }
-        status_path = config.WEGLOT_IMPORTS_DIR / "translation-status.json"
-        status_path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = status_path.with_name(status_path.name + ".tmp")
-        tmp.write_text(json.dumps(status, indent=2, ensure_ascii=False), encoding="utf-8")
-        tmp.replace(status_path)  # atomic
-
-    return {
-        "target_locales": target_locales,
-        "per_locale": per_locale_results,
-        "manifest_path": str(manifest_path),
-        "translation_status_path": str(status_path) if status_path else None,
-        "warnings": warnings,
-    }
-
-
-# ---- Meta-tags translation caller (tracker-092 Phase 3, caller #2) ----
-
-# Mobile-safe char limits (mirror scripts/meta_locale_audit.py). Latin scripts
-# only — ar/ko/ja render fewer characters per pixel, so length isn't enforced.
-_META_TITLE_LIMIT = 60
-_META_DESC_LIMIT = 130
-_NON_LATIN_LOCALES = ("ar", "ko", "ja")
-
-
-def _execute_translate_meta(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
-    """Translate static-page meta titles/descriptions into the 8 locales via the
-    dedicated translator; emit Weglot CSV rows typed `meta_title` /
-    `meta_description`. The engine's second caller (tracker-092 Phase 3).
-
-    Scope: the 17 STATIC_PAGES (bounded, high-value). Each page contributes up to
-    two source strings (title + meta description). Weglot serves the translated
-    meta on the locale URLs.
-    """
-    import urllib.parse as _urlparse
-    from tools.summary import batch_runner, csv_emitter
-    from tools.summary.page_fetcher import fetch_page
-    from tools.translator import translate_batch, TranslationUnit
-    from tools.translator.glossary import load_glossary
-    from tools.translator.tm import TranslationMemory
-
-    warnings: list[str] = []
-    target_locales = (
-        [args.locale] if args.locale and args.locale != "en"
-        else list(config.TARGET_TRANSLATION_LOCALES)
-    )
-    glossary = load_glossary()
-    tm = None if args.dry_run else TranslationMemory(config.TRANSLATION_MEMORY_FILE)
-
-    # Extract EN meta (title + description) per static page.
-    pages = [u for u in config.STATIC_PAGES if not args.page or u == args.page]
-    if args.limit:
-        pages = pages[: args.limit]
-    en_meta: list[tuple[str, str, str]] = []  # (slug, field, text)
-    for url in pages:
-        try:
-            pc = fetch_page(url)
-        except Exception as e:
-            warnings.append(f"meta fetch failed for {url}: {e}")
-            continue
-        slug = _urlparse.urlparse(url).path.strip("/").replace("/", "-") or "home"
-        if pc.title.strip():
-            en_meta.append((slug, "meta_title", pc.title.strip()))
-        if pc.description.strip():
-            en_meta.append((slug, "meta_description", pc.description.strip()))
-
-    if not en_meta:
-        warnings.append("no EN meta titles/descriptions extracted")
-        return {
-            "target_locales": target_locales, "per_locale": {},
-            "pages": len(pages), "warnings": warnings,
-        }
-
-    per_locale: dict[str, dict] = {}
-    for locale in target_locales:
-        units = [
-            TranslationUnit(id=f"meta-{field}-{slug}", text=text, content_type=field)
-            for (slug, field, text) in en_meta
-        ]
-        # tracker-095 L2: cost cap mirroring the summary path. estimate_batch_cost_usd
-        # is count-based, so the unit list is a valid proxy for the request count.
-        cost_estimate = batch_runner.estimate_batch_cost_usd(units)
-        if not args.dry_run and cost_estimate > config.MAX_BATCH_COST_USD:
-            warnings.append(
-                f"locale {locale}: meta cost cap exceeded "
-                f"(${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}). Skipping."
-            )
-            per_locale[locale] = {
-                "skipped": True, "cost_estimate_usd": round(cost_estimate, 2),
-                "reason": "exceeded MAX_BATCH_COST_USD",
-            }
-            continue
-        translations = translate_batch(units, locale, glossary, tm=tm, dry_run=args.dry_run)
-        by_id = {t.id: t for t in translations}
-        pairs: list[csv_emitter.SummaryPair] = []
-        for (slug, field, text) in en_meta:
-            t = by_id.get(f"meta-{field}-{slug}")
-            if not t or not t.target.strip():
-                continue
-            # tracker-095 H1: don't ship a meta string that failed a BLOCKING QA
-            # check (placeholder/number/URL drift, forbidden term). dry-run stubs
-            # are ok=True so they still pass for wiring parity.
-            if not t.ok:
-                warnings.append(f"locale {locale} {t.id}: QA blocked, not shipped — {t.qa_flags}")
-                continue
-            if t.qa_flags and not t.from_tm and "dry_run" not in t.qa_flags:
-                warnings.append(f"locale {locale} {t.id}: QA flags {t.qa_flags}")
-            if locale not in _NON_LATIN_LOCALES:
-                limit = _META_TITLE_LIMIT if field == "meta_title" else _META_DESC_LIMIT
-                if len(t.target) > limit:
-                    warnings.append(
-                        f"locale {locale} {field} {slug}: {len(t.target)} chars "
-                        f"exceeds mobile-safe {limit}"
-                    )
-            pairs.append(csv_emitter.SummaryPair(word_from=text, word_to=t.target, type_=field))
-
-        # Dry-run writes to an isolated artifact dir; live writes the real CSV.
-        if args.dry_run:
-            out_csv = out_dir / "meta-batches" / f"{locale}.csv"
-            existing_csv = out_csv
-        else:
-            out_csv = config.WEGLOT_IMPORTS_DIR / f"{locale}.csv"
-            existing_csv = out_csv
-        emission_report = csv_emitter.emit_consolidated_csv(
-            target_locale=locale,
-            existing_csv_path=existing_csv,
-            summary_pairs=pairs,
-            out_path=out_csv,
-        )
-        warnings.extend(emission_report.warnings)  # T5: large single-import heads-up
-        per_locale[locale] = {
-            "dry_run": args.dry_run,
-            "unit_count": len(units),
-            "rows_appended": emission_report.new_row_count,
-            "duplicates_skipped": emission_report.duplicates_skipped,
-            "csv_path": str(out_csv),
-        }
-
-    return {
-        "target_locales": target_locales,
-        "per_locale": per_locale,
-        "pages": len(pages),
-        "meta_strings": len(en_meta),
         "warnings": warnings,
     }
 

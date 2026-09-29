@@ -4,7 +4,8 @@ tracker-094: the generic Weglot CSV emission (the dialect, the row dataclass, th
 read/consolidate/atomic-write) lives in `tools.translator.weglot` so the
 `translator` package owns it and other tools can reuse it. This module re-exports
 those names (keeping `SummaryPair` as a back-compat alias for `WeglotPair`) for
-`cli._execute_translate` / `_execute_translate_meta`.
+`cli._execute_translate` / `_execute_translate_meta`, both retired 2026-09-29 (U3-S): this
+shim has no caller left.
 
 The consolidation reads the existing per-language CSV (which carries Fidelo
 translations written by `tools/weglot/csv_export.py`), dedups on

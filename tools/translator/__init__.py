@@ -17,9 +17,10 @@ Designed for reuse across tools: callers pass neutral `TranslationUnit`s and get
 `Translation`s back; `tools.translator.weglot` turns those into Weglot import CSVs
 that merge cleanly with the Fidelo translations already in the per-locale files.
 
-Callers today (CEL summary tool):
-    - tools/summary/cli.py:_execute_translate       (summary paragraphs → Weglot CSV)
-    - tools/summary/cli.py:_execute_translate_meta   (page meta titles/descriptions → CSV)
+Callers today: the copywriter skill's Phase 4 (monorepo .claude/skills/copywriter) and
+tools/_stress/test_30_compose. The summary tool's translate / translate-meta callers were
+retired 2026-09-29 (U3-S); tools.translator.weglot still serves its verify-emit and
+purge-stale-rows.
 """
 from __future__ import annotations
 
