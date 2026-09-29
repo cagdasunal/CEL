@@ -1425,3 +1425,32 @@ def test_a_cms_read_failure_exits_non_zero(tmp_path, monkeypatch, capsys):
     assert rc == cli._NO_WORK_DONE_EXIT_CODE
     assert seen["requests"] == [] and phase["requests_built"] == 0
     assert "CMS read failed" in capsys.readouterr().err
+
+
+# ---- U5-1 (the Reviewer's re-check, P2): a write-stage failure is recorded like any other ----
+# A post QA passed but whose Webflow write (or the render guard) kept failing was never recorded,
+# so every night paid for it again. The assertions below check what is SENT before any state is
+# read, and read state with a reader that tolerates its absence, so the parent fails on them.
+
+def _state_or_empty(tmp_path):
+    p = tmp_path / "summary-state.json"
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
+def test_a_post_whose_write_keeps_failing_is_held_after_two_nights(tmp_path, monkeypatch):
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, write_ok=False, out_name="w1")
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, write_ok=False, out_name="w2")
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, out_name="w3")
+    assert seen["requests"] == []                     # night 3: not sent, not paid
+    assert phase["held_for_review"] == ["https://www.englishcollege.com/post/post-e1"]
+    entry = _state_or_empty(tmp_path).get("e1", {})
+    assert entry.get("failed_attempts") == 2 and "write" in entry.get("last_error", "")
+
+
+def test_a_post_the_render_guard_refuses_is_recorded(tmp_path, monkeypatch):
+    from tools.summary import structure
+    monkeypatch.setattr(structure, "summary_markdown_to_html", lambda md: "<p>[text](https://x)</p>")
+    rc, seen, _phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}})
+    assert seen["patched"] == []                      # the guard refused the write
+    entry = _state_or_empty(tmp_path).get("e1", {})
+    assert entry.get("failed_attempts") == 1 and "render guard" in entry.get("last_error", "")

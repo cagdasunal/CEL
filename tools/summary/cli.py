@@ -1124,23 +1124,24 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     # SUMMARY_MAX_FAILED_ATTEMPTS tries instead of being re-paid every night. A later
     # successful write replaces the record (_checkpoint_written); a written item's record is
     # never overwritten by a failure (a --force rerun of an unchanged page).
+    def _record_failure(fitem, error: str, at: str) -> None:
+        cid_key = fitem.cms_item_id or fitem.url
+        h = _source_hash(fitem.body_excerpt, cid_key, config.model_for_content_type(fitem.content_type))
+        prev = summary_state.get(cid_key, {})
+        if prev and "failed_attempts" not in prev and prev.get("source_hash") == h:
+            return
+        tries = prev["failed_attempts"] + 1 if prev.get("source_hash") == h and "failed_attempts" in prev else 1
+        summary_state[cid_key] = {
+            "source_hash": h, "failed_attempts": tries,
+            "last_failed_at": at, "last_error": (error or "")[:300],
+        }
+
     if failed:
         _failed_at = _now_iso()
         for f in failed:
             mapped = _src_by_cid.get(f.custom_id[len("retry-"):] if f.custom_id.startswith("retry-") else f.custom_id)
-            if mapped is None:
-                continue
-            fitem = mapped[0]
-            cid_key = fitem.cms_item_id or fitem.url
-            h = _source_hash(fitem.body_excerpt, cid_key, config.model_for_content_type(fitem.content_type))
-            prev = summary_state.get(cid_key, {})
-            if prev and "failed_attempts" not in prev and prev.get("source_hash") == h:
-                continue
-            tries = prev["failed_attempts"] + 1 if prev.get("source_hash") == h and "failed_attempts" in prev else 1
-            summary_state[cid_key] = {
-                "source_hash": h, "failed_attempts": tries,
-                "last_failed_at": _failed_at, "last_error": (f.error or "")[:300],
-            }
+            if mapped is not None:
+                _record_failure(mapped[0], f.error or "", _failed_at)
         _save_summary_state(summary_state)
 
     # tracker-092 (1.3): cross-page boilerplate guard (non-blocking). Flag pairs
@@ -1204,11 +1205,20 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         }
         _save_summary_state(summary_state)
 
+    # U5-1: a write-stage failure (the Webflow write, the static write, or the render guard) is
+    # recorded through the same failed_attempts path, so a post QA passed but that can't be
+    # written is held after SUMMARY_MAX_FAILED_ATTEMPTS nights instead of re-paid every night.
+    def _checkpoint_failed(sitem, error: str) -> None:
+        if args.dry_run:
+            return
+        _record_failure(sitem, error, _now_iso())
+        _save_summary_state(summary_state)
+
     # Write back. Static pages → JSON. CMS items → Webflow API. Bounded by the shared run deadline (stops
     # STARTING new writes past it and publishes what it already wrote) and checkpoints each written item.
     write_log = _write_back_summaries(
         succeeded, sources, args, out_dir, warnings,
-        run_deadline=run_deadline, on_written=_checkpoint_written,
+        run_deadline=run_deadline, on_written=_checkpoint_written, on_failed=_checkpoint_failed,
     )
 
     # tracker-092 (2.4): observability — flag the run as degraded when a critical
@@ -1334,7 +1344,7 @@ def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
 
 def _write_back_summaries(
     succeeded: list, sources: list, args: argparse.Namespace, out_dir: Path, warnings: list[str],
-    run_deadline: Optional[float] = None, on_written=None,
+    run_deadline: Optional[float] = None, on_written=None, on_failed=None,
 ) -> dict[str, Any]:
     """Write generated summaries to Webflow CMS (CMS items) or to JSON files (static pages).
 
@@ -1342,6 +1352,8 @@ def _write_back_summaries(
     loop — past it we STOP starting new writes and fall through to publish + return whatever was written,
     so the whole run stays under the job cap. ``on_written(item)`` is invoked after each SUCCESSFUL write
     so the caller can checkpoint idempotency state incrementally (durable across an early stop).
+    ``on_failed(item, reason)`` is invoked after each failed write, render-guard refusal included
+    (U5-1), so the caller records it like a generation failure.
     """
     from tools.summary.structure import (
         four_part_content_html,
@@ -1397,6 +1409,8 @@ def _write_back_summaries(
             else:
                 failures += 1
                 warnings.append(f"static write failed: {item.url}: {wr.error}")
+                if on_failed is not None:
+                    on_failed(item, f"static write failed: {wr.error}")
         elif target == "cms" and item.cms_item_id:
             # tracker-098: convert Markdown → HTML before PATCH so the RichText field
             # renders headings + links instead of literal `##` / `[](url)`.
@@ -1422,6 +1436,8 @@ def _write_back_summaries(
                     f"render guard: {item.cms_item_id} field(s) {corrupt_fields} still "
                     f"contain literal Markdown link syntax after MD→HTML conversion; NOT written."
                 )
+                if on_failed is not None:
+                    on_failed(item, f"render guard: {corrupt_fields} still contain literal Markdown links")
                 continue
             if item.content_type == "blog_post":
                 wresult = wf.update_item_summary(
@@ -1446,6 +1462,8 @@ def _write_back_summaries(
             else:
                 failures += 1
                 warnings.append(f"cms write failed for {item.cms_item_id}: {wresult.error}")
+                if on_failed is not None:
+                    on_failed(item, f"cms write failed: {wresult.error}")
 
     # --publish (autopilot): push ONLY the items written this run to LIVE, per
     # collection (never the whole site). Mirrors the offers-auto-extend pattern.
