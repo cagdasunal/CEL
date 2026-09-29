@@ -1187,13 +1187,6 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     }
 
 
-# Acceptance gate for the link-INSERTION pass. Because the pass preserves the prose
-# verbatim (guarded separately by qa.text_preserved), the keyword-PLACEMENT checks
-# (keyword_in_h2 / keyword_in_p1) are intentionally NOT gated here — they judge the
-# original prose, not the links, and a CMS-sourced summary may have no stored keyword_plan.
-# These are the LINK + formatting invariants that actually matter for inserting links:
-
-
 def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
     """Audit existing summaries; score; surface REGENERATE candidates."""
     from tools.summary import structure

@@ -179,8 +179,9 @@ the swap+ancestor chain).
 
 > **Translation Memory caveat**: the TM key hashes only the SOURCE text + locale + glossary version
 > — **not** the links. So a TM entry cached before a url-map change serves the OLD link resolution.
-> After any url-map rebuild that changes link targets, **clear `data/seo-intel/translation-memory.json`**
-> (`echo '{}' > …`) so the next run re-resolves links. (Done 2026-05-24: 456 pre-url-map entries cleared.)
+> After any url-map rebuild that changes link targets, the translation memory had to be cleared so the
+> next run re-resolved links. (Done 2026-05-24: 456 pre-url-map entries cleared. The translation memory and
+> the translate phase were removed 2026-09-29, U3-S.)
 
 ## Weglot per-block matching — the translate CSV keys on rendered text nodes (tracker-107, 2026-05-24)
 
@@ -372,7 +373,7 @@ tools/summary/
 
 Translation is handled by the reusable **`tools/translator/`** package (renamed from
 `tools/translation_engine/` in tracker-094), not by the summary tool directly. The
-`translate` and `translate-meta` phases call `translator.translate_batch(...)`, which
+`translate` and `translate-meta` phases (retired 2026-09-29, U3-S) called `translator.translate_batch(...)`, which
 adds a glossary (do-not-translate brand/entity terms), a translation-memory (skips
 unchanged source), and translation-QA (number/URL/placeholder preservation) on top of
 the shared `batch_runner` Gemini client. The Weglot-CSV emission also lives there
@@ -502,7 +503,7 @@ cd /path/to/englishcollege
 python3 -m pytest tools/summary/tests/ tools/translator/tests/ -q   # 317 passed
 ```
 
-Current: **275 tests** in `tools/summary/tests/` (audit, batch_runner, cli, csv_emitter, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, url_map, webflow_client_dryrun, webflow_designer) plus **42 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **317 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
+Current: **275 tests** in `tools/summary/tests/` (audit, batch_runner, cli, end_to_end, keyword_extractor, llms_parser, page_fetcher, prompt_builder, qa, structure, url_map, webflow_client_dryrun, webflow_designer) plus **42 tests** in `tools/translator/tests/` (engine, glossary, qa, tm, weglot) — **317 total**. The summary suite covers the Phase-1 QA quality-gate (`qa.py`), Phase-2 idempotency/retry hardening, and the tracker-096 4-part structure (`structure.py` parse + Markdown→HTML + audit reconstruction, and the 4-part QA path); the translator suite covers glossary, translation-memory, translation-QA, and the Weglot-CSV/Fidelo-merge.
 
 ## References
 
