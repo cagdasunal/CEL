@@ -22,8 +22,13 @@ Blog summaries use the SINGLE-BLOCK structure — NOT the 4-part Tagline/Title/P
 - 2–3 paragraphs immediately under the H2; the first leads with a direct answer.
 - 1–2 `### H3` with long-tail variant questions, each followed by a short paragraph.
 - **Primary keyword** in the H2 AND in the first 120 characters of the first paragraph AND in at least one H3.
+- The primary keyword is a search phrase. Use it where it reads naturally: you may change its capitalization and put words around it, but never bend a sentence around it. A sentence that only exists to hold the keyword is cut.
 
 Return only the rendered Markdown (one `## H2`, 1–2 `### H3`, plain paragraphs). No code fences, no preamble, no trailing commentary.
+
+## Facts — every number comes from the post
+
+Every number in the summary (a price, duration, distance, count, year, route or bus number, percentage) must be one the post itself states. Never estimate, add up, round into a new figure or turn a price into a share; never write a percentage or statistic the post does not state. The common layer's call for concrete numbers means numbers FROM THE POST: when the post gives none, open with a named place or fact from it instead. A summary with a number the post doesn't contain is rejected.
 
 ## Word count target
 
