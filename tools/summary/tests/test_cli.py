@@ -1182,11 +1182,12 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
         )
         for iid, fd in field_data_by_id.items()
     ]
-    seen: dict = {"requests": [], "sent": [], "patched": [], "published": []}
+    seen: dict = {"requests": [], "sent": [], "messages": [], "patched": [], "published": []}
 
     def fake_sync(requests, run_deadline_sec=None, **kw):
         seen["requests"].extend(r.custom_id for r in requests)
         seen["sent"].extend((r.custom_id, r.model, r.thinking_level) for r in requests)
+        seen["messages"].extend(r.user_message for r in requests)
         first_pass_fails = fail_first_pass and not requests[0].custom_id.startswith("retry-")
 
         def ok(r):
@@ -1252,7 +1253,7 @@ def test_blog_run_where_every_post_has_a_summary_sends_and_writes_nothing(tmp_pa
     }, "--force")
 
     assert rc == 0
-    assert seen == {"requests": [], "sent": [], "patched": [], "published": []}
+    assert seen == {"requests": [], "sent": [], "messages": [], "patched": [], "published": []}
     assert phase["requests_built"] == 0
     assert phase["has_summary_skipped"] == 2
 
@@ -1322,3 +1323,18 @@ def test_partial_success_and_nothing_to_do_still_exit_zero(tmp_path, monkeypatch
 def test_a_dry_run_never_alerts(tmp_path):
     assert cli.main(["generate-english", "--collection", "blog", "--dry-run",
                      "--out-dir", str(tmp_path / "dry")]) == 0
+
+
+def test_a_blog_request_carries_the_blog_keyword_plan_and_the_post_as_text(tmp_path, monkeypatch):
+    """U3-S batch 4: the blog path derives its plan with content_type="blog_post" (the
+    live test's "vancouver a student guide" came from the generic path), and the post reaches
+    Gemini and QA as text, not HTML (the model saw ~half the post, much of it markup)."""
+    body = ("<p><strong>Day trips from Vancouver</strong> are easy. Plan day trips from Vancouver "
+            "by bus; the ferry takes 20 minutes.</p>")
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"dt": {
+        "name": "Day Trips from Vancouver: A Student Guide to Weekend Escapes",
+        "slug": "day-trips-from-vancouver", "post-body": body}})
+    assert rc == 0
+    manifest = json.loads(Path(phase["manifest_path"]).read_text())
+    assert [e["keyword_plan"]["primary"] for e in manifest.values()] == ["day trips from vancouver"]
+    assert seen["messages"] and all("<strong>" not in m and "<p>" not in m for m in seen["messages"])

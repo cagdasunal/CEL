@@ -13,6 +13,7 @@ Algorithm (from `.claude/skills/page-summary/SKILL.md`):
 from __future__ import annotations
 
 import collections
+import html
 import re
 import urllib.parse
 from dataclasses import dataclass
@@ -171,7 +172,8 @@ _BRAND_SUFFIX_RE = re.compile(
 
 
 def derive_keywords(
-    title: str, h1: str, url: str, body_text: str = "", locale: str = "en"
+    title: str, h1: str, url: str, body_text: str = "", locale: str = "en",
+    content_type: str = "",
 ) -> KeywordPlan:
     """Derive a KeywordPlan per /page-summary Phase 2.5.
 
@@ -181,7 +183,12 @@ def derive_keywords(
     URL-level overrides in `_PRIMARY_KEYWORD_OVERRIDES` take precedence over
     the candidate-A/B/C heuristic (tracker-091 M-12.4) so brand-slogan-dominated
     pages anchor on intent-driven keywords instead of zero-volume marketing copy.
+
+    `content_type="blog_post"` takes the blog path (`_derive_blog_keywords`, U3-S batch 4);
+    every other content type keeps the heuristic below unchanged.
     """
+    if content_type == "blog_post":
+        return _derive_blog_keywords(title, url, body_text, locale)
     candidate_a = _strip_brand(title)
     candidate_b = _strip_brand(h1)
     candidate_c = _slug_to_phrase(url)
@@ -351,7 +358,8 @@ def _shorten_primary(primary: str, body_text: str, locale: str = "en") -> str:
 
 
 def _body_frequency_terms(
-    body_text: str, exclude: str, limit: int = 5, locale: str = "en"
+    body_text: str, exclude: str, limit: int = 5, locale: str = "en",
+    extra_stopwords: frozenset[str] = frozenset(),
 ) -> list[str]:
     """Top non-stopword tokens by frequency in body, excluding primary-keyword tokens.
 
@@ -360,7 +368,7 @@ def _body_frequency_terms(
     """
     if not body_text:
         return []
-    stopwords = _LOCALE_STOPWORDS.get(locale, _STOPWORDS)
+    stopwords = _LOCALE_STOPWORDS.get(locale, _STOPWORDS) | extra_stopwords
     # Tokenizer: for non-Latin scripts use a broader Unicode word regex.
     # For Latin scripts keep the original `[a-zA-Z][a-zA-Z\-]{3,}` to skip short
     # words. KO/JA/AR words can be 1–2 chars (e.g. 비자), so minimum length is 2.
@@ -379,3 +387,134 @@ def _body_frequency_terms(
     # Filter to terms appearing ≥ 3 times.
     common = [w for w, c in counts.most_common() if c >= 3]
     return common[:limit]
+
+
+# ---- The blog path (U3-S batch 4, 2026-09-29) ----
+#
+# The one-post live test published a summary built on "vancouver a student guide": a fragment
+# of "Day Trips from Vancouver: A Student Guide to Weekend Escapes" taken ACROSS the colon (the
+# generic path tokenizes the punctuation away and caps its phrase search at 8 words, so "day
+# trips" fell off the front), then shortened to a sub-phrase the post never uses. Its secondary
+# "strong" and its entities A1-C2 / CEA came from the post-body's HTML (<strong> tags, image
+# file names, "cea" inside "ocean"). The blog path reads the post as TEXT and picks the primary
+# as a search phrase that sits inside ONE part of the title and that the post itself uses.
+
+_BLOG_TITLE_BREAK_RE = re.compile(r"\s*(?:[:|?!;,&()\[\]«»\"“”„]|\s[-–—]\s|[–—])\s*")
+_BLOG_WORD_RE = re.compile(r"[^\W_]+(?:['\-][^\W_]+)*")
+_BLOG_MAX_PRIMARY_WORDS = 4
+
+# Multi-word names a keyword must never end inside ("learn english in san").
+_BLOG_MULTIWORD_NAMES = (
+    "san diego", "santa monica", "los angeles", "pacific beach", "mission beach", "la jolla",
+    "british columbia", "north vancouver", "bowen island", "são paulo", "new york",
+    "san francisco", "united states",
+)
+
+# Pronouns, prepositions, auxiliaries and filler adverbs that make neither a keyword's first
+# or last word nor a secondary keyword. Blog path only: the generic stopword lists stay as
+# they are.
+_BLOG_EXTRA_STOPWORDS: dict[str, frozenset[str]] = {
+    "en": frozenset("""
+        about here there often really doesn don isn aren didn wasn won can couldn shouldn
+        wouldn haven hasn they're you're it's that's there's i'm we're let's because
+        around through during without within between across after before behind beyond
+        """.split()),
+    "de": frozenset("""
+        ich mich mir du dich dir dein deine deinen deinem deines deiner mein meine meinen
+        meinem meines sich habe hast hier mehr viele vielen sehr immer wirklich besonders
+        weniger oft einfach dabei zwischen während wegen trotz ohne bis statt am im zum zur
+        sondern etwas unser unsere unseren
+        """.split()),
+    "fr": frozenset("""
+        chaque beaucoup seulement souvent aussi cette leurs vraiment encore entre pendant
+        chez sans avec parce
+        """.split()),
+    "it": frozenset("""
+        come ogni negli nella nelle nei sulla sul sui della degli solo spesso anche dopo prima
+        davvero ancora tuo tua tuoi tue durante verso dalla dalle dallo dai circa dall dell
+        nell sull quell
+        """.split()),
+    "es": frozenset("muy también cada siempre".split()),
+    "pt": frozenset("muito também cada sempre".split()),
+}
+
+
+def html_to_text(markup: str) -> str:
+    """A post body as plain text: tags dropped, entities decoded, curly apostrophes made
+    straight, whitespace collapsed."""
+    text = re.sub(r"<[^>]+>", " ", markup or "")
+    text = html.unescape(text).replace("\u2019", "'")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _merge_names(tokens: list[str]) -> list[str]:
+    """Join a known multi-word name into one token ("san", "diego" -> "san diego")."""
+    out: list[str] = []
+    i = 0
+    while i < len(tokens):
+        for name in _BLOG_MULTIWORD_NAMES:
+            parts = name.split()
+            if tokens[i : i + len(parts)] == parts:
+                out.append(name)
+                i += len(parts)
+                break
+        else:
+            out.append(tokens[i])
+            i += 1
+    return out
+
+
+def _blog_primary(title: str, url: str, text: str, stopwords: frozenset[str]) -> str:
+    """The blog primary keyword: a 2-4 word phrase inside ONE punctuation-bounded part of the
+    title (a multi-word place name counts as one word, and may stand alone), first and last
+    word a content word. Ranked by: the post uses the phrase; the post uses each of its words;
+    how many of its words the editor put in the slug; longer; used more; earlier part of the
+    title; earlier in it."""
+    def is_content(w: str) -> bool:
+        return " " in w or (len(w) >= 3 and w not in stopwords and not w.isdigit())
+
+    body = " " + text.lower() + " "
+    post_words = set(_BLOG_WORD_RE.findall(body))
+    slug_words = set(re.split(r"[-_]+", urllib.parse.urlparse(url or "").path.rstrip("/").rsplit("/", 1)[-1].lower()))
+    best: tuple[tuple, str] | None = None
+    segments = [s for s in _BLOG_TITLE_BREAK_RE.split(_strip_brand(title).replace("\u2019", "'")) if s.strip()]
+    for si, segment in enumerate(segments):
+        words = _merge_names(_BLOG_WORD_RE.findall(segment.lower()))
+        for n in range(min(_BLOG_MAX_PRIMARY_WORDS, len(words)), 0, -1):
+            for i in range(len(words) - n + 1):
+                seg = words[i : i + n]
+                phrase = " ".join(seg)
+                if len(phrase.split()) < 2 or not (is_content(seg[0]) and is_content(seg[-1])):
+                    continue
+                uses = len(re.findall(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", body))
+                all_used = all(w in post_words for w in phrase.split() if is_content(w))
+                in_slug = sum(1 for w in phrase.split() if is_content(w) and w in slug_words)
+                key = (uses > 0, all_used, in_slug, len(phrase.split()), uses, -si, -i)
+                if best is None or key > best[0]:
+                    best = (key, phrase)
+    if best is not None:
+        return best[1]
+    # No phrase qualifies ("Halloween Is Just Around The Corner!"): the title's content word
+    # the post uses most, never the whole title or slug.
+    title_words = [w for w in _merge_names(_BLOG_WORD_RE.findall(_strip_brand(title).lower()))
+                   if is_content(w)]
+    if title_words:
+        return max(title_words, key=lambda w: (len(re.findall(r"(?<!\w)" + re.escape(w) + r"(?!\w)", body)),
+                                               -title_words.index(w)))
+    return (title or "").strip().lower()
+
+
+def _derive_blog_keywords(title: str, url: str, body: str, locale: str) -> KeywordPlan:
+    text = html_to_text(body)
+    extra = _BLOG_EXTRA_STOPWORDS.get(locale, frozenset())
+    stopwords = _LOCALE_STOPWORDS.get(locale, _STOPWORDS) | extra
+    primary = _blog_primary(title, url, text, stopwords)
+    secondaries = _body_frequency_terms(text, exclude=primary, limit=5, locale=locale,
+                                        extra_stopwords=extra)
+    haystack = (title + " " + text).lower()
+    entities = tuple(
+        e for e in _ENTITY_TERMS
+        if re.search(r"(?<!\w)" + re.escape(e.lower()) + r"(?!\w)", haystack)
+    )
+    return KeywordPlan(primary=primary, secondaries=tuple(secondaries), entities=entities)
+
