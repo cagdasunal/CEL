@@ -338,3 +338,16 @@ def test_a_blog_title_with_no_usable_phrase_falls_back_to_its_main_word_not_the_
         body="<p>Halloween parties are fun. Students love Halloween, and Halloween costumes too.</p>",
     )
     assert plan.primary == "halloween"
+
+
+def test_a_blog_phrase_the_post_uses_more_beats_a_longer_title_fragment():
+    """U4-3 (the Reviewer): length used to outrank use, so a 4-word window of the title the
+    post uses once ("san diego est-elle une bonne") beat the phrase it uses throughout."""
+    plan = _blog_plan(
+        title="San Diego est-elle une bonne ville pour apprendre l’anglais ? Ce qu’il faut savoir",
+        url="https://www.englishcollege.com/fr/post/sejour-linguistique-san-diego-apprendre-anglais",
+        body="<p>San Diego est-elle une bonne ville ? Oui. San Diego a des plages ; à San Diego on "
+             "apprend vite ; San Diego est ensoleillée ; les écoles de San Diego sont petites.</p>",
+        locale="fr",
+    )
+    assert plan.primary == "san diego"

@@ -157,6 +157,12 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 
+# U3-S batch 5 (U4-1): an item whose generation failed or that QA demoted is recorded in
+# summary-state.json with its source hash and a `failed_attempts` count. Once it has failed this
+# many times with the same source, it is held for review (not sent, not paid for) until its
+# source changes. The Reviewer's figure: $0.13 a stuck post a night, green, otherwise.
+SUMMARY_MAX_FAILED_ATTEMPTS = 2
+
 # EN↔locale URL map (hreflang-derived) for same-locale internal linking. Built by
 # `python3 -m tools.summary.url_map` from each EN page's hreflang alternates (llms.txt +
 # sitemap inventory, incl. blog posts as link targets), so links resolve to the CORRECT

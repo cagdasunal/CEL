@@ -152,17 +152,21 @@ def format_status(
     lines.append("")
     lines.append("Summaries (generate-english)")
     if isinstance(summary_state, dict) and summary_state:
-        gens = sorted(
-            (v.get("generated_at", "") for v in summary_state.values()
-             if isinstance(v, dict)),
-            reverse=True,
-        )
+        entries = [v for v in summary_state.values() if isinstance(v, dict)]
+        # U3-S batch 5 (U4-1): failed items are recorded too (`failed_attempts`); they are
+        # not pages with a summary, so they are counted apart.
+        written = [v for v in entries if "failed_attempts" not in v]
+        failed = [v for v in entries if "failed_attempts" in v]
+        gens = sorted((v.get("generated_at", "") for v in written), reverse=True)
         gens = [g for g in gens if g]
         latest = gens[0][:19].replace("T", " ") if gens else "—"
         earliest = gens[-1][:19].replace("T", " ") if gens else "—"
-        lines.append(f"  pages tracked : {len(summary_state)}")
+        lines.append(f"  pages tracked : {len(written)}")
         lines.append(f"  last generated: {latest}")
         lines.append(f"  oldest        : {earliest}")
+        if failed:
+            held = sum(1 for v in failed if v.get("failed_attempts", 0) >= config.SUMMARY_MAX_FAILED_ATTEMPTS)
+            lines.append(f"  failed        : {len(failed)} ({held} held for review)")
     else:
         lines.append("  (no summary-state.json)")
 

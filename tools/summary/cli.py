@@ -329,15 +329,22 @@ def main(argv: list[str] | None = None) -> int:
 # (402/429 no credit, then 404 on a gone model). A live run whose every request failed, to Gemini
 # or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
 # fires; so does a run the hard cost cap stopped (the Manager's ruling: a cap that silently stops
-# every night drains nothing either). A partial run, a day with nothing to do, a run QA demoted
-# to manual review, and a pilot-first confirm stop still exit 0.
+# every night drains nothing either), and so does a run whose every summary QA rejected (U4-1:
+# otherwise the same posts are re-paid every night, green), and a run whose CMS read failed
+# (U4-2: a revoked token read as "no items"). A partial run, a day with nothing to do, and a
+# pilot-first confirm stop still exit 0.
 _NO_WORK_DONE_EXIT_CODE = 3
 
 
 def _no_work_done(ge: Any) -> str:
     """Why a live generate-english phase with work did none of it, or "" when it did some, had
     none, or was a pilot-first confirm stop."""
-    if not isinstance(ge, dict) or not ge.get("requests_built"):
+    if not isinstance(ge, dict):
+        return ""
+    unread = [w for w in ge.get("warnings", []) if "enumeration failed" in w]
+    if unread:  # U4-2: "no items" because the CMS could not be read is not "nothing to do"
+        return f"the CMS read failed ({unread[0][:200]})"
+    if not ge.get("requests_built"):
         return ""
     if not ge.get("submitted"):
         gate = ge.get("cost_gate") or {}
@@ -345,8 +352,11 @@ def _no_work_done(ge: Any) -> str:
             return (f"it stopped at the cost cap (${gate['projected_usd']:.2f} projected > "
                     f"${gate['cost_cap_usd']}), so nothing was sent")
         return ""
-    if not (ge.get("qa_gate") or {}).get("checked"):  # no Gemini answer at all, retries included
+    qa = ge.get("qa_gate") or {}
+    if not qa.get("checked"):  # no Gemini answer at all, retries included
         return f"every request failed ({ge.get('failed', 0)} of {ge['requests_built']})"
+    if not qa.get("passed"):
+        return f"QA passed none of the {qa['checked']} summaries (all held for manual review)"
     wl = ge.get("write_log") or {}
     if wl.get("failures") and not (wl.get("cms_writes") or wl.get("static_writes")):
         return f"every write failed ({wl['failures']})"
@@ -815,21 +825,35 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     # tracker-092 Phase 2 (2.1): idempotency — skip items whose source content is
     # unchanged since the last successful run (live mode only; --force bypasses;
     # dry-run never reads/writes state so tests stay deterministic).
+    # U4-1: an entry with `failed_attempts` is a FAILED item, not a written one. It is retried
+    # until it has failed SUMMARY_MAX_FAILED_ATTEMPTS times with this source, then held.
     idempotency_skipped = 0
+    held_for_review: list[str] = []
     summary_state = _load_summary_state() if not args.dry_run else {}
     if not args.dry_run and not args.force and summary_state:
         kept = []
         for (sitem, kw, tgt) in sources:
             cid_key = sitem.cms_item_id or sitem.url
             model = config.model_for_content_type(sitem.content_type)
-            if summary_state.get(cid_key, {}).get("source_hash") == _source_hash(sitem.body_excerpt, cid_key, model):
-                idempotency_skipped += 1
-                continue
+            entry = summary_state.get(cid_key, {})
+            if entry.get("source_hash") == _source_hash(sitem.body_excerpt, cid_key, model):
+                if "failed_attempts" not in entry:
+                    idempotency_skipped += 1
+                    continue
+                if entry["failed_attempts"] >= config.SUMMARY_MAX_FAILED_ATTEMPTS:
+                    held_for_review.append(sitem.url)
+                    continue
             kept.append((sitem, kw, tgt))
         if idempotency_skipped:
             warnings.append(
                 f"idempotency: skipped {idempotency_skipped} unchanged item(s) "
                 f"(use --force to regenerate)"
+            )
+        if held_for_review:
+            warnings.append(
+                f"held for review: {len(held_for_review)} item(s) failed "
+                f"{config.SUMMARY_MAX_FAILED_ATTEMPTS} times with an unchanged source "
+                f"(summary-state.json failed_attempts); a changed source retries them"
             )
         sources = kept
 
@@ -863,7 +887,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         return {
             "target_count": len(plan["targets"]), "sources_resolved": len(sources),
             "requests_built": 0, "idempotency_skipped": idempotency_skipped,
-            "has_summary_skipped": has_summary_skipped,
+            "has_summary_skipped": has_summary_skipped, "held_for_review": held_for_review,
             "submitted": False, "dry_run": args.dry_run,
             "reason": "no items to process (all unchanged or none resolved)",
             "warnings": warnings,
@@ -1075,7 +1099,9 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         rep = qa_checks(
             r.content, kw.primary if kw else "", sitem.locale, link_inv,
             excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
-            source_text=sitem.body_excerpt,
+            # U4-1 (3/3): the title is part of the page. A number in it ("… 2026 …") is in
+            # the source, so a heading that echoes the title isn't a fabricated figure.
+            source_text=f"{sitem.title}\n{sitem.body_excerpt}",
             structure=_structure_for_content_type(sitem.content_type),
         )
         qa_scores[base_cid] = round(rep.score, 1)
@@ -1092,6 +1118,30 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "demoted_to_review": len(succeeded) - len(qa_passed),
     }
     succeeded = qa_passed
+
+    # U4-1: record every item that failed (no Gemini answer) or that QA demoted, with its source
+    # hash and an attempt count, so one that keeps failing is held after
+    # SUMMARY_MAX_FAILED_ATTEMPTS tries instead of being re-paid every night. A later
+    # successful write replaces the record (_checkpoint_written); a written item's record is
+    # never overwritten by a failure (a --force rerun of an unchanged page).
+    if failed:
+        _failed_at = _now_iso()
+        for f in failed:
+            mapped = _src_by_cid.get(f.custom_id[len("retry-"):] if f.custom_id.startswith("retry-") else f.custom_id)
+            if mapped is None:
+                continue
+            fitem = mapped[0]
+            cid_key = fitem.cms_item_id or fitem.url
+            h = _source_hash(fitem.body_excerpt, cid_key, config.model_for_content_type(fitem.content_type))
+            prev = summary_state.get(cid_key, {})
+            if prev and "failed_attempts" not in prev and prev.get("source_hash") == h:
+                continue
+            tries = prev["failed_attempts"] + 1 if prev.get("source_hash") == h and "failed_attempts" in prev else 1
+            summary_state[cid_key] = {
+                "source_hash": h, "failed_attempts": tries,
+                "last_failed_at": _failed_at, "last_error": (f.error or "")[:300],
+            }
+        _save_summary_state(summary_state)
 
     # tracker-092 (1.3): cross-page boilerplate guard (non-blocking). Flag pairs
     # of shipped summaries that are near-duplicates of EACH OTHER — templated
@@ -1178,6 +1228,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "cost_gate": cost_gate, "cache_plan": cache_plan_report,
         "idempotency_skipped": idempotency_skipped,
         "has_summary_skipped": has_summary_skipped,
+        "held_for_review": held_for_review,
         "degraded": degraded,
         "write_log": write_log,
         "manifest_path": str(mpath), "manifest_entries": mcount,

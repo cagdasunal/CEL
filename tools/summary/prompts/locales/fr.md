@@ -14,7 +14,7 @@ Français : **+15 à +20%** plus long que l'anglais (articles plus fréquents, l
 - **Espace après** : `«` (guillemets ouvrants français).
 - Guillemets français : « ... » — pas " ... ".
 - Pas de tirets em (— ou –) — règle universelle (voir common.md).
-- Apostrophe typographique : ' (pas ').
+- Apostrophe typographique : ’ (pas ').
 
 ## Number + currency formatting
 - Espace fine insécable (U+202F) pour les milliers : 1 000 (pas 1,000 ou 1.000).

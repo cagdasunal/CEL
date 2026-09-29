@@ -299,7 +299,8 @@ def test_generate_english_qa_gate_demotes_critical_fail(tmp_path: Path, monkeypa
         "https://www.englishcollege.com/learn-english-usa",
         "--out-dir", str(tmp_path),
     ])
-    assert rc == 0
+    # U3-S batch 5 (U4-1): QA passing none of the run's summaries alerts (exit 3).
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
     data = json.loads((tmp_path / "report.json").read_text())
     phase = data["phases"]["generate_english"]
     # The em-dash summary was demoted: 0 passed, 1 to review, written-back nothing.
@@ -1154,12 +1155,15 @@ def test_link_candidate_pool_drops_retired_campus_urls():
 # changed hash, prompt version or model, and not --force.
 
 def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_pass=False,
-                   fail_all=False, fail_ids=(), write_ok=True):
+                   fail_all=False, fail_ids=(), write_ok=True, qa_pass=True, list_raises=False,
+                   out_name="run"):
     """Drive the live blog pipeline offline. Returns (rc, seen, phase): what reached Gemini
     (custom ids, and each request's model + thinking level), every Webflow field write, and
     every publish. fail_first_pass fails every first-pass request, so the retry pass runs;
     fail_all fails every request, retries included, and fail_ids only those items' requests;
-    write_ok=False fails every Webflow write."""
+    write_ok=False fails every Webflow write; qa_pass=False makes QA reject every summary
+    (seen["qa_sources"] holds the source_text QA was given); list_raises makes the CMS read
+    fail. Calls sharing a tmp_path share summary-state.json (use a new out_name per run)."""
     import types as _types
     from tools.summary import batch_runner, webflow_client, config, llms_parser
     from tools.summary import qa as _qa
@@ -1169,7 +1173,12 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
     monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
+    def fake_qa(*a, **kw):
+        seen["qa_sources"].append(kw.get("source_text", ""))
+        return _types.SimpleNamespace(passed=qa_pass, score=95.0 if qa_pass else 40.0,
+                                      notes=[] if qa_pass else ["fact_grounding_numbers: numbers not in the post"])
+
+    monkeypatch.setattr(_qa, "qa_checks", fake_qa)
     monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
 
     blog_cid = config.COLLECTIONS["blog"]
@@ -1182,7 +1191,7 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
         )
         for iid, fd in field_data_by_id.items()
     ]
-    seen: dict = {"requests": [], "sent": [], "messages": [], "patched": [], "published": []}
+    seen: dict = {"requests": [], "sent": [], "messages": [], "patched": [], "published": [], "qa_sources": []}
 
     def fake_sync(requests, run_deadline_sec=None, **kw):
         seen["requests"].extend(r.custom_id for r in requests)
@@ -1213,11 +1222,16 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
     monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
     monkeypatch.setattr(batch_runner, "submit_batch", no_batch)
     monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
-    monkeypatch.setattr(webflow_client.WebflowClient, "list_items", lambda self, cid, **kw: iter(items))
+    def fake_list(self, cid, **kw):
+        if list_raises:
+            raise RuntimeError("HTTP 401 Unauthorized")
+        return iter(items)
+
+    monkeypatch.setattr(webflow_client.WebflowClient, "list_items", fake_list)
     monkeypatch.setattr(webflow_client.WebflowClient, "patch_fields", fake_patch)
     monkeypatch.setattr(webflow_client.WebflowClient, "publish_items", fake_publish)
 
-    out = tmp_path / "run"
+    out = tmp_path / out_name
     rc = cli.main([
         "generate-english", "--collection", "blog", "--no-dry-run", "--sync",
         "--confirm-cost", "--publish", "--out-dir", str(out), *extra,
@@ -1253,7 +1267,7 @@ def test_blog_run_where_every_post_has_a_summary_sends_and_writes_nothing(tmp_pa
     }, "--force")
 
     assert rc == 0
-    assert seen == {"requests": [], "sent": [], "messages": [], "patched": [], "published": []}
+    assert seen == {"requests": [], "sent": [], "messages": [], "patched": [], "published": [], "qa_sources": []}
     assert phase["requests_built"] == 0
     assert phase["has_summary_skipped"] == 2
 
@@ -1309,9 +1323,8 @@ def test_a_cost_cap_stop_exits_non_zero(tmp_path, monkeypatch, capsys):
 
 def test_partial_success_and_nothing_to_do_still_exit_zero(tmp_path, monkeypatch):
     """Only a run that did none of its work alerts. One success among failures is a normal day
-    (the rest go to manual review), and a day with nothing to fill is the steady state. (A QA
-    demotion and a pilot-first confirm stop keep exit 0 too: test_generate_english_qa_gate_
-    demotes_critical_fail, test_confirm_gate_blocks_paid_run_over_threshold.)"""
+    (the rest go to manual review), and a day with nothing to fill is the steady state. (A
+    pilot-first confirm stop keeps exit 0 too: test_confirm_gate_blocks_paid_run_over_threshold.)"""
     rc, seen, phase = _live_blog_run(tmp_path / "none", monkeypatch, {"a": {"summary": "<p>Have one.</p>"}})
     assert rc == 0 and phase["requests_built"] == 0
 
@@ -1338,3 +1351,77 @@ def test_a_blog_request_carries_the_blog_keyword_plan_and_the_post_as_text(tmp_p
     manifest = json.loads(Path(phase["manifest_path"]).read_text())
     assert [e["keyword_plan"]["primary"] for e in manifest.values()] == ["day trips from vancouver"]
     assert seen["messages"] and all("<strong>" not in m and "<p>" not in m for m in seen["messages"])
+
+
+# ---- U3-S batch 5 (U4-1, the Reviewer's P1): a post QA rejects is not re-paid every night ----
+# QA demoted a post to manual-review.json (kept 14 days) and nowhere else, so the next night
+# queued it, paid for it and demoted it again, green, forever.
+
+def test_a_run_whose_every_summary_qa_rejects_exits_non_zero(tmp_path, monkeypatch, capsys):
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}, "e2": {}}, qa_pass=False)
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
+    assert phase["qa_gate"]["checked"] == 2 and phase["qa_gate"]["passed"] == 0
+    assert seen["patched"] == []
+    assert "QA passed none" in capsys.readouterr().err
+
+
+def _state(tmp_path):
+    return json.loads((tmp_path / "summary-state.json").read_text())
+
+
+def test_a_post_that_fails_is_recorded_with_its_hash_and_an_attempt_count(tmp_path, monkeypatch):
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, qa_pass=False)
+    entry = _state(tmp_path)["e1"]
+    assert entry["failed_attempts"] == 1 and entry["source_hash"] and "last_error" in entry
+    assert "generated_at" not in entry  # not a written post
+
+    _live_blog_run(tmp_path, monkeypatch, {"e2": {}}, fail_all=True, out_name="run2")
+    assert _state(tmp_path)["e2"]["failed_attempts"] == 1  # a Gemini failure counts too
+
+
+def test_a_post_that_failed_twice_is_held_until_its_body_changes(tmp_path, monkeypatch):
+    post = {"post-body": "Some blog body text about studying."}
+    _live_blog_run(tmp_path, monkeypatch, {"e1": post}, qa_pass=False, out_name="n1")
+    _live_blog_run(tmp_path, monkeypatch, {"e1": post}, qa_pass=False, out_name="n2")
+    assert _state(tmp_path)["e1"]["failed_attempts"] == 2
+
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": post}, out_name="n3")
+    assert rc == 0 and seen["requests"] == []              # held: nothing sent, nothing paid
+    assert phase["held_for_review"] == ["https://www.englishcollege.com/post/post-e1"]
+
+    edited = {"post-body": "The post was edited, so its body is new."}
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": edited}, out_name="n4")
+    assert rc == 0 and seen["requests"] == ["gen-0-e1"] and seen["patched"] == ["e1"]
+    assert "failed_attempts" not in _state(tmp_path)["e1"]   # written: the checkpoint replaces it
+
+
+def test_a_failure_counts_only_against_the_same_body(tmp_path, monkeypatch):
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {"post-body": "Version one of the post."}},
+                   qa_pass=False, out_name="v1")
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {"post-body": "Version two of the post."}},
+                   qa_pass=False, out_name="v2")
+    assert _state(tmp_path)["e1"]["failed_attempts"] == 1
+
+
+def test_qa_reads_the_post_title_with_its_body(tmp_path, monkeypatch):
+    """U4-1 (3/3): the Reviewer's trigger. "2026" is in the title Gemini is given, not in the
+    body, so a heading echoing the title failed fact_grounding_numbers every night. The title
+    is part of the post: QA's source text now starts with it."""
+    from tools.summary.qa import qa_checks
+    title = "San Diego vs. Hawaii: Wo lernst du 2026 besser Englisch?"
+    rc, seen, _phase = _live_blog_run(tmp_path, monkeypatch, {"sd": {
+        "name": title, "post-body": "<p>San Diego oder Hawaii? Beide sind schön.</p>"}})
+    assert rc == 0
+    assert seen["qa_sources"] and all(src.startswith(title) for src in seen["qa_sources"])
+    report = qa_checks("## Wo lernst du 2026 besser Englisch?\n\nIn San Diego.\n", "san diego", "de", [],
+                       source_text=seen["qa_sources"][0])
+    assert report.checks["fact_grounding_numbers"], report.notes
+
+
+def test_a_cms_read_failure_exits_non_zero(tmp_path, monkeypatch, capsys):
+    """U4-2: a revoked token, a 401 or an API outage made list_items raise; the run logged a
+    warning, reported "no items to process" and exited 0, filling nothing every night."""
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, list_raises=True)
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
+    assert seen["requests"] == [] and phase["requests_built"] == 0
+    assert "CMS read failed" in capsys.readouterr().err

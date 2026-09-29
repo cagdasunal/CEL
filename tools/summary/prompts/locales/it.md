@@ -1,7 +1,7 @@
 # Italiano (it) — Locale Layer
 
 ## Direction + script
-LTR, scrittura latina con accenti gravi (à, è, ì, ò, ù) e acuti (é, ó). Apostrofo tipografico (') per elisioni.
+LTR, scrittura latina con accenti gravi (à, è, ì, ò, ù) e acuti (é, ó). Apostrofo tipografico (’) per elisioni.
 
 ## Tone + register
 Professionale, caloroso, fluido. **Sempre "tu" — mai la forma di cortesia "Lei"** (§7.5). Voce attiva; evitare il nominale eccessivo ("la valutazione del livello" → "valutiamo il livello").
