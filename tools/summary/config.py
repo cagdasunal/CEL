@@ -162,15 +162,11 @@ PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 # reach a post that already has a summary: its hash is unchanged, so it is skipped
 # forever. This is how the 2026-09-23 register fix (Sie/usted/Lei → informal, Basecamp
 # #451) landed without touching a single existing summary.
-# To make a locale-prompt edit reach existing posts, pick one:
-#   • run the autopilot with `force: true` (regenerates ALL published posts — costlier), or
-#   • bump SUMMARY_PROMPT_VERSION below (same blast radius, recorded in git).
-# Both regenerate every locale, not just the edited one. Folding
-# `tools.summary.prompt_version.prompt_version(locale)` into `_source_hash` would make
-# the invalidation automatic and per-locale, but the FIRST run after that change
-# regenerates all ~296 tracked items anyway (no stored hash carries a prompt term), so
-# it buys precision only from the second edit onward. Left undone deliberately: the
-# transition spends Gemini budget unattended on the 03:30 UTC schedule.
+# U3-S (2026-09-29): and nothing may reach one. A blog post that has a summary is never
+# regenerated (cli._execute_generate_english skips it before the hash is read, --force
+# included), by the operator's rule "Never rewrite or translate already we have". A version
+# bump or --force still regenerates the static pages, courses and housing, which are
+# generated in English and read no locale prompt.
 SUMMARY_PROMPT_VERSION = "2026-05-21-t098"
 SUMMARY_STATE_FILE = PROJECT_ROOT / "data" / "seo-intel" / "summary-state.json"
 

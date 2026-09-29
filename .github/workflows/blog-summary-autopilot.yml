@@ -4,12 +4,11 @@ name: Blog summary autopilot (new posts → native-language summary, live)
 # generates a summary in EACH post's own language (the CMS `Language` reference →
 # config.BLOG_LANGUAGE_ID_TO_LOCALE), and publishes ONLY the items it wrote to LIVE.
 #
-# Why this is cheap to run daily: generate-english is idempotent — it skips any post
-# whose source content + prompt version are unchanged since the last successful run
-# (data/seo-intel/summary-state.json, committed below). So a day with no new/edited
-# posts does ZERO Gemini work and commits nothing. Only genuinely new or changed
-# posts are summarized. Blog uses the cheap Flash model; --sync runs them inline
-# (no Batch API wait).
+# U3-S (2026-09-29): it fills ONLY a post whose summary field is empty. A post that has a
+# summary is never regenerated or re-published: not for an edited body, a prompt version or a
+# model change. There is no force input; the code ignores --force for blog as well. The
+# operator: "Never rewrite or translate already we have". So a day with no new posts does
+# ZERO Gemini work and commits nothing. --sync runs them inline (no Batch API wait).
 #
 # First-run BACKFILL is bounded (tracker-138, PERMANENT fix 2026-07-13): the state file starts
 # with no blog entries, so run #1 has the whole back-catalog (~142 posts) to summarize. The WHOLE
@@ -34,19 +33,14 @@ name: Blog summary autopilot (new posts → native-language summary, live)
 #   - WEBFLOW_API_TOKEN
 #   - GEMINI_API_KEY
 #
-# Manual backfill: trigger via workflow_dispatch (force=true regenerates every post,
-# e.g. after a SUMMARY_PROMPT_VERSION bump — costlier; leave false for new-only).
+# Manual run: trigger via workflow_dispatch (optionally with a limit). It does the same as
+# the daily run: only posts with an empty summary.
 
 on:
   schedule:
     - cron: '30 3 * * *'   # daily 03:30 UTC (offset from offers 02:17 / fidelo 04:17 / blog-images 11:00)
   workflow_dispatch:
     inputs:
-      force:
-        description: "Regenerate ALL published posts (ignore idempotency). Use after a prompt-version bump; costlier."
-        required: false
-        default: false
-        type: boolean
       limit:
         description: "Cap items processed this run (integer). Leave blank for unlimited."
         required: false
@@ -88,15 +82,11 @@ jobs:
         env:
           WEBFLOW_API_TOKEN: ${{ secrets.WEBFLOW_API_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FORCE: ${{ inputs.force }}
           LIMIT: ${{ inputs.limit }}
         run: |
           set -o pipefail
           # Bash array → each element is one quoted argv word (no word-split / injection).
           ARGS=(generate-english --collection blog --no-dry-run --sync --confirm-cost --publish)
-          if [ "$FORCE" = "true" ]; then
-            ARGS+=(--force)
-          fi
           if [ -n "$LIMIT" ]; then
             ARGS+=(--limit "$LIMIT")
           fi
