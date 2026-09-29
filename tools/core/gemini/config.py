@@ -26,6 +26,11 @@ MODEL_ID = "gemini-3.1-pro-preview"
 # already exist; it is left on the dead model on purpose (the operator: "Never rewrite ...").
 MODEL_BLOG = "gemini-2.5-flash"
 MODEL_BY_CONTENT_TYPE: dict[str, str] = {}
+# G-1 (2026-09-29): models the project's key cannot use -- each answers 404 "no longer available to new
+# users" (Google limits 2.5 to past users), though models.list still lists them. client.usable_model()
+# refuses them before any call; MODEL_BLOG (link-blogs, kept dead) is one of them. The same list as the
+# localization engine's (monorepo tools/localize/draft.GONE_MODELS).
+GONE_MODELS = frozenset({"gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"})
 BLOG_THINKING_LEVEL = "high"
 
 
@@ -55,6 +60,11 @@ DEFAULT_OUTPUT_TOKEN_ESTIMATE = 1500
 # U3-S: a request pinned at thinking "high" (the blog generator): the answer (~1,300, the old
 # blog allowance) plus the engine doc's 8,000-token thinking floor.
 OUTPUT_TOKEN_ESTIMATE_THINKING_HIGH = 9_300
+# G-1 (2026-09-29): the level a Pro request with thinking OFF is sent at. 3.1 Pro cannot switch thinking
+# off; omitting it meant its default -- high, billed as output -- unpinned. Pinned to the same level, so
+# nothing changes today and a change of Google's default cannot move spend or quality unseen. The same
+# level the localization engine translates at (monorepo draft.THINKING_LEVEL).
+PRO_THINKING_OFF_LEVEL = "high"
 
 # Extended thinking budget for content generation (translation passes disable thinking).
 THINKING_BUDGET_TOKENS = 1500

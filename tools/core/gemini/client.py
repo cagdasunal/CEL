@@ -164,6 +164,24 @@ def _est_tokens(text: str) -> int:
     return max(1, len(text) // 4)
 
 
+def usable_model(model: str) -> str:
+    """The model, if the project's key can use it; a gone one (config.GONE_MODELS) is refused here, before a
+    key is read, a client made or a request paid for (G-1)."""
+    if (model or "").removeprefix("models/") in config.GONE_MODELS:
+        raise ValueError(f"{model} is no longer available to this project's key (Gemini answers 404 \"no longer "
+                         f"available to new users\"); the shared config's model is {config.MODEL_ID}")
+    return model
+
+
+def _thinking_level(r: Any, model: str) -> str:
+    """The thinking level a request is sent at, "" for a budget: its own (U3-S), else, on Pro with thinking
+    off, config.PRO_THINKING_OFF_LEVEL (G-1) -- the one rule the config and the cost estimate both read."""
+    level = getattr(r, "thinking_level", "") or ""
+    if not level and _model_family(model) == "pro" and not getattr(r, "enable_thinking", True):
+        level = config.PRO_THINKING_OFF_LEVEL
+    return level
+
+
 def _request_model(r: Any, default_model: str) -> str:
     return (getattr(r, "model", "") or "") or default_model
 
@@ -228,7 +246,7 @@ def estimate_batch_cost_usd(
             out_tok = config.OUTPUT_TOKEN_ESTIMATE.get(
                 (fam, thinking), config.DEFAULT_OUTPUT_TOKEN_ESTIMATE
             )
-            if getattr(r, "thinking_level", "") == "high":
+            if _thinking_level(r, model) == "high":
                 out_tok = max(out_tok, config.OUTPUT_TOKEN_ESTIMATE_THINKING_HIGH)
 
         total += (out_tok / 1_000_000) * out_rate
@@ -324,8 +342,9 @@ def _build_generation_config(
 
     NOTE: Gemini 3.x Pro REQUIRES thinking mode — `thinking_budget=0` is rejected
     with "This model only works in thinking mode". For Pro we pass the configured
-    budget when `enable_thinking=True`; when False (the translate phase) we OMIT
-    thinking_config so the model uses its dynamic default. Verified live 2026-05-19.
+    budget when `enable_thinking=True`; when False (the translator, the summary retry)
+    it is pinned at config.PRO_THINKING_OFF_LEVEL -- the default it used to be left at,
+    now explicit (G-1, 2026-09-29).
 
     tracker-097: Gemini 2.5 Flash (the blog tier) DOES support disabling thinking,
     so we set `thinking_budget=0` to minimize output/thinking cost on the bulk blog
@@ -339,14 +358,15 @@ def _build_generation_config(
         cfg["cached_content"] = cached_content_name
     elif system_text:
         cfg["system_instruction"] = system_text
-    if r.thinking_level:
-        # U3-S: pinned, so a Google default change can't move spend or quality silently.
-        cfg["thinking_config"] = {"thinking_level": r.thinking_level}
+    level = _thinking_level(r, model)
+    if level:
+        # U3-S / G-1: pinned, so a Google default change can't move spend or quality silently.
+        cfg["thinking_config"] = {"thinking_level": level}
     elif _model_family(model) == "flash":
         cfg["thinking_config"] = {"thinking_budget": 0}
     elif r.enable_thinking:
         cfg["thinking_config"] = {"thinking_budget": config.THINKING_BUDGET_TOKENS}
-    # else (Pro, no thinking requested): omit — model picks its dynamic default.
+    # (Pro with thinking off is pinned above: G-1.)
     return cfg
 
 
@@ -609,6 +629,10 @@ def submit_batch(
     submit is rejected, we rebuild the batch without caching and submit once. The
     submitted batch_id is persisted to config.LAST_BATCH_FILE for cancel/retrieve.
     """
+    # G-1: a gone model is refused before the key, the SDK or a call.
+    usable_model(model or (requests[0].model if requests else "") or config.MODEL_ID)
+    for r in requests:
+        usable_model(r.model or model or config.MODEL_ID)
     api_key = os.environ.get(api_key_env, "").strip()
     if not api_key:
         raise RuntimeError(
@@ -703,6 +727,8 @@ def generate_sync(
     """
     if not requests:
         return []
+    for r in requests:                              # G-1: a gone model is refused before any call
+        usable_model(r.model or config.MODEL_ID)
     api_key = os.environ.get(api_key_env, "").strip()
     if not api_key:
         raise RuntimeError(
