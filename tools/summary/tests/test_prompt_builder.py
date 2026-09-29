@@ -265,3 +265,10 @@ def test_the_blog_prompt_holds_every_number_to_the_post_and_lets_the_keyword_rea
     text = " ".join(b["text"] for b in build_system_prompt("blog_post", "en")).lower()
     assert "every number" in text and "percentage" in text
     assert "reads naturally" in text
+
+
+def test_the_french_apostrophe_rule_names_the_typographic_apostrophe():
+    """U4-4: fr.md's rule read "Apostrophe typographique : ' (pas ')", a straight ' on both
+    sides, so it asked for nothing. The rule names ’ (U+2019) and forbids the straight '."""
+    rule = next(line for line in _locale_layer("fr").splitlines() if "Apostrophe typographique" in line)
+    assert "’" in rule.split("(pas")[0] and "'" in rule.split("(pas")[1]
