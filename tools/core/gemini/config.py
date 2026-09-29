@@ -55,6 +55,11 @@ DEFAULT_OUTPUT_TOKEN_ESTIMATE = 1500
 # U3-S: a request pinned at thinking "high" (the blog generator): the answer (~1,300, the old
 # blog allowance) plus the engine doc's 8,000-token thinking floor.
 OUTPUT_TOKEN_ESTIMATE_THINKING_HIGH = 9_300
+# G-1 (2026-09-29): the level a Pro request with thinking OFF is sent at. 3.1 Pro cannot switch thinking
+# off; omitting it meant its default -- high, billed as output -- unpinned. Pinned to the same level, so
+# nothing changes today and a change of Google's default cannot move spend or quality unseen. The same
+# level the localization engine translates at (monorepo draft.THINKING_LEVEL).
+PRO_THINKING_OFF_LEVEL = "high"
 
 # Extended thinking budget for content generation (translation passes disable thinking).
 THINKING_BUDGET_TOKENS = 1500

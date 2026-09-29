@@ -493,7 +493,44 @@ def test_cost_estimate_accounts_for_pro_thinking_output():
     )
     cost_think = batch_runner.estimate_batch_cost_usd([pro_think], mode="batch")
     cost_nothink = batch_runner.estimate_batch_cost_usd([pro_nothink], mode="batch")
-    # Thinking output (5500 tok) dominates vs no-think (1000 tok) on the same input.
-    assert cost_think > cost_nothink * 1.5, (cost_think, cost_nothink)
+    # G-1 (2026-09-29): 3.1 Pro cannot switch thinking off. "No thinking" left it at its default,
+    # HIGH, priced at 1,000 output tokens -- the cheapest line for the dearest request. It is now
+    # pinned at high and priced as high (9,300); the 1500-budget path stays 5,500.
+    assert cost_nothink > cost_think, (cost_think, cost_nothink)
     # And the allowance is wired off config (not a hard-coded 800).
-    assert config.OUTPUT_TOKEN_ESTIMATE[("pro", True)] > config.OUTPUT_TOKEN_ESTIMATE[("pro", False)]
+    assert config.OUTPUT_TOKEN_ESTIMATE[("pro", True)] > 800
+
+
+
+# ── G-1 (2026-09-29): a Pro request with thinking off is pinned at high, and priced so ──────────────
+def test_a_pro_request_with_thinking_off_is_pinned_at_high_not_left_to_the_default():
+    """Gemini 3 Pro cannot switch thinking off: omitting thinking_config meant its default -- HIGH,
+    billed as output -- unpinned, so a change of Google's default could move spend or quality unseen
+    (the translator, the summary retry). Sent explicitly now: the same level, pinned."""
+    r = batch_runner.BatchRequest(custom_id="t", system_blocks=[], user_message="u",
+                                  model="gemini-3.1-pro-preview", enable_thinking=False)
+    cfg = batch_runner._build_generation_config(r, "sys", model="gemini-3.1-pro-preview")
+    assert cfg["thinking_config"] == {"thinking_level": "high"}
+    types = pytest.importorskip("google.genai.types")
+    assert types.GenerateContentConfig(**cfg).thinking_config.thinking_level.name == "HIGH"
+
+
+def test_a_pro_request_with_thinking_off_is_priced_as_high_thinking():
+    sys_blocks = [{"type": "text", "text": "s"}]
+    off = batch_runner.BatchRequest(custom_id="o", system_blocks=sys_blocks, user_message="u",
+                                    model=config.MODEL_ID, enable_thinking=False)
+    high = batch_runner.BatchRequest(custom_id="h", system_blocks=sys_blocks, user_message="u",
+                                     model=config.MODEL_ID, thinking_level="high")
+    assert batch_runner.estimate_batch_cost_usd([off], mode="batch") == \
+        batch_runner.estimate_batch_cost_usd([high], mode="batch")
+
+
+def test_the_budget_and_flash_paths_are_unchanged():
+    """G-1 moves only Pro-with-thinking-off: a Pro request with thinking keeps its 1500 budget (the
+    copywriter, summary generation), and a Flash one keeps budget 0."""
+    on = batch_runner.BatchRequest(custom_id="x", system_blocks=[], user_message="u", enable_thinking=True)
+    assert batch_runner._build_generation_config(on, "s", model=config.MODEL_ID)["thinking_config"] == \
+        {"thinking_budget": config.THINKING_BUDGET_TOKENS}
+    off = batch_runner.BatchRequest(custom_id="y", system_blocks=[], user_message="u", enable_thinking=False)
+    assert batch_runner._build_generation_config(off, "s", model="gemini-3.8-flash")["thinking_config"] == \
+        {"thinking_budget": 0}
