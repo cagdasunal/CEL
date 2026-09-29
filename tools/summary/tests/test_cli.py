@@ -10,10 +10,9 @@ from tools.summary import cli
 
 @pytest.fixture(autouse=True)
 def _offline_landing_fetch(monkeypatch):
-    """tracker-107: the translate phase fetches each live landing page to source the
-    DEPLOYED summary text (it drifts from the manifest). Stub it offline by default
-    (empty parts → manifest-markdown fallback) so translate tests stay deterministic.
-    generate-english tests set their own page_fetcher.fetch_page, which overrides this."""
+    """Stub the live page fetch offline by default, so no test reaches the network (a
+    dry-run generate-english still fetches its static pages). generate-english tests set
+    their own page_fetcher.fetch_page, which overrides this."""
     import types
     from tools.summary import page_fetcher
     monkeypatch.setattr(
@@ -36,7 +35,19 @@ def test_plan_subcommand_writes_report(tmp_path: Path):
     assert data["dry_run"] is True
     assert "generate_english" in data["phases"]
     assert "audit" in data["phases"]
-    assert "translate" in data["phases"]
+    assert "translate" not in data["phases"]
+
+
+def test_translate_and_translate_meta_are_retired(tmp_path: Path):
+    """U3-S (2026-09-29): the localization desk is the one translation engine; the summary
+    tool's translate / translate-meta commands are gone, and so is their workflow option."""
+    for sub in ("translate", "translate-meta"):
+        with pytest.raises(SystemExit) as e:
+            cli.main([sub, "--dry-run", "--out-dir", str(tmp_path / sub)])
+        assert e.value.code == 2, sub  # argparse: invalid choice
+    wf = Path(__file__).resolve().parents[3] / ".github" / "workflows" / "summary.yml"
+    options = [ln.strip() for ln in wf.read_text(encoding="utf-8").splitlines() if ln.strip().startswith("- ")]
+    assert not [o for o in options if o.split("#")[0].strip() in ("- translate", "- translate-meta")]
 
 
 def test_plan_target_count_includes_static_and_cms(tmp_path: Path):
@@ -100,7 +111,6 @@ def test_generate_english_dry_run_writes_batch_jsonl(tmp_path: Path, monkeypatch
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
 
     rc = cli.main([
         "generate-english", "--dry-run", "--page",
@@ -144,7 +154,6 @@ def test_generate_english_dry_run_writes_en_summaries_manifest(tmp_path: Path, m
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
 
     rc = cli.main([
         "generate-english", "--dry-run",
@@ -169,448 +178,6 @@ def test_generate_english_dry_run_writes_en_summaries_manifest(tmp_path: Path, m
 
 
 # ---- A3: _execute_translate actually wires the pipeline (tracker-087 F-2 closure) ----
-
-
-def test_execute_translate_dry_run_uses_manifest_and_builds_batches(tmp_path: Path):
-    """Translate phase reads en-summaries.json and writes per-locale batch artifacts.
-
-    Content-type filter (2026-05-24): housing IS now translated (housing_new moved
-    to TRANSLATE_COLLECTIONS), so a landing + a housing entry both produce a request;
-    only blog_post stays skipped (NATIVE_LANGUAGE_COLLECTIONS — native per locale).
-    Expected request_count == 2 (landing + housing), with the blog entry filtered out.
-    """
-    # Manifest: landing + housing (both translated now) + blog (still skipped).
-    manifest = {
-        "gen-0-test": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": (
-                "## How long does it take?\n\n"
-                "Most students reach B2 in twelve weeks. See our "
-                "[course catalog](https://www.englishcollege.com/courses) for details.\n"
-            ),
-            "content_type": "landing",
-            "locale": "en",
-        },
-        "gen-1-housing": {
-            "url": "https://www.englishcollege.com/housing/some-residence",
-            "markdown": "## Where to live\n\nKitsilano apartment with kitchenette.\n",
-            "content_type": "housing",  # ← now TRANSLATED (was NO_TRANSLATE pre-2026-05-24)
-            "locale": "en",
-        },
-        "gen-2-blog": {
-            "url": "https://www.englishcollege.com/post/study-tips",
-            "markdown": "## Study tips\n\nReview vocabulary daily.\n",
-            "content_type": "blog_post",  # ← still skipped (native per locale)
-            "locale": "en",
-        },
-    }
-    (tmp_path / "en-summaries.json").write_text(
-        json.dumps(manifest), encoding="utf-8"
-    )
-
-    rc = cli.main([
-        "translate", "--dry-run", "--locale", "de",
-        "--out-dir", str(tmp_path),
-    ])
-    assert rc == 0
-    data = json.loads((tmp_path / "report.json").read_text())
-    phase = data["phases"]["translate"]
-    assert phase["target_locales"] == ["de"]
-    de_result = phase["per_locale"]["de"]
-    assert de_result.get("dry_run") is True
-    # housing now translated (landing + housing = 2); blog_post still filtered out.
-    assert de_result.get("request_count") == 2, (
-        f"expected 2 requests (landing + housing; blog skipped), got {de_result.get('request_count')}"
-    )
-    assert "batch_id" in de_result
-    # Artifact dir exists.
-    assert (tmp_path / "translate-batches" / "de").exists()
-
-
-def test_execute_translate_missing_manifest_warns(tmp_path: Path):
-    """If en-summaries.json is missing, translate phase warns and returns empty."""
-    rc = cli.main([
-        "translate", "--dry-run", "--locale", "fr",
-        "--out-dir", str(tmp_path),
-    ])
-    assert rc == 0
-    data = json.loads((tmp_path / "report.json").read_text())
-    phase = data["phases"]["translate"]
-    assert phase["per_locale"] == {}
-    assert any("no EN summaries manifest" in w for w in phase["warnings"])
-
-
-def test_execute_translate_from_run_reads_external_manifest(tmp_path: Path):
-    """--from-run reads en-summaries.json from a different directory."""
-    prior_run = tmp_path / "prior"
-    prior_run.mkdir()
-    (prior_run / "en-summaries.json").write_text(
-        json.dumps({
-            "gen-0-x": {
-                "url": "https://www.englishcollege.com/",
-                "markdown": "## Welcome\n\nHello, students.\n",
-                "content_type": "landing",
-                "locale": "en",
-            }
-        }),
-        encoding="utf-8",
-    )
-    new_run = tmp_path / "new"
-    rc = cli.main([
-        "translate", "--dry-run", "--locale", "es",
-        "--from-run", str(prior_run),
-        "--out-dir", str(new_run),
-    ])
-    assert rc == 0
-    data = json.loads((new_run / "report.json").read_text())
-    phase = data["phases"]["translate"]
-    assert phase["manifest_path"].endswith("prior/en-summaries.json")
-    assert phase["per_locale"]["es"].get("request_count") == 1
-
-
-def test_translate_aborts_when_llms_unavailable(tmp_path: Path, monkeypatch):
-    """T1 (2026-05-23): if llms.txt can't be fetched, translate ABORTS (emits no CSVs)
-    rather than ship link-stripped translations. (Live mode, but it aborts BEFORE any
-    Gemini/Webflow call, so no creds are needed.)"""
-    from tools.summary import llms_parser
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        "gen-0-c": {
-            "url": "https://www.englishcollege.com/courses/general-english",
-            "markdown": "## English\n\nLearn [more](https://www.englishcollege.com/courses) today.\n",
-            "content_type": "course", "locale": "en",
-        }
-    }), encoding="utf-8")
-
-    def _raise(*a, **k):
-        raise RuntimeError("llms unreachable")
-    monkeypatch.setattr(llms_parser, "fetch_and_parse", _raise)
-
-    out = tmp_path / "out"
-    rc = cli.main([
-        "translate", "--no-dry-run", "--locale", "de",
-        "--from-run", str(prior), "--out-dir", str(out),
-    ])
-    assert rc == 0
-    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
-    assert phase.get("aborted") is True
-    assert phase["per_locale"] == {}
-    assert any("ABORT" in w for w in phase["warnings"])
-
-
-def test_translate_ok_false_does_not_reach_csv(tmp_path: Path, monkeypatch):
-    """I4 (tracker-099): a translation whose ok=False MUST NOT appear in the emitted CSV.
-
-    Exercises the caller-level gate in _execute_translate:
-        if not t.ok: failed_count += 1; continue
-
-    The failing translation here is a NON-EMPTY, paragraph-matched target that fails a
-    BLOCKING QA check (number_drift: source has "12", target has "99"). This is
-    deliberate: a succeeded=False / empty-target result would be dropped by the
-    empty/paragraph-mismatch skips regardless of the ok gate, so it would NOT prove the
-    gate works. With a non-empty paragraph-matched target, the ONLY thing stopping the
-    row from reaching the CSV is `if not t.ok: continue` — so if that gate is ever
-    removed, this test fails (the bad row leaks).
-    """
-    from tools.summary import llms_parser, batch_runner, config
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        "gen-0-landing": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": "## Course length\n\nStudents finish in 12 weeks.\n",
-            "content_type": "landing",
-            "locale": "en",
-        }
-    }), encoding="utf-8")
-
-    weglot_dir = tmp_path / "weglot"
-    weglot_dir.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
-
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse",
-        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
-    )
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = requests
-        return batch_runner.BatchHandle(
-            batch_id="b-bad", request_count=len(requests), submitted_at="t", dry_run=False
-        )
-
-    def fake_wait(handle, **kw):
-        # Non-empty, 2-paragraph target that DROPS the source number (12 → 99):
-        # number_drift is BLOCKING (qa.py) and independent of check_urls, so ok=False
-        # while the target is fully formed and would otherwise pass paragraph pairing.
-        return [
-            batch_runner.BatchResult(
-                custom_id=r.custom_id, succeeded=True,
-                content="## Kurslaenge\n\nStudierende schliessen in 99 Wochen ab.",
-            )
-            for r in captured["requests"]
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    out = tmp_path / "out"
-    rc = cli.main([
-        "translate", "--no-dry-run", "--locale", "de",
-        "--from-run", str(prior), "--out-dir", str(out),
-    ])
-    assert rc == 0
-    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
-    de_result = phase["per_locale"]["de"]
-    assert de_result.get("failed") == 1, "expected 1 failed (number_drift) translation"
-    assert de_result.get("succeeded") == 0
-
-    csv_path = weglot_dir / "de.csv"
-    if csv_path.exists():
-        rows = csv_path.read_text(encoding="utf-8").strip()
-        data_rows = [r for r in rows.splitlines() if not r.startswith("id;")]
-        assert data_rows == [], f"ok=False translation leaked into CSV: {data_rows}"
-
-
-def test_translate_surfaces_emit_warnings_into_report(tmp_path: Path, monkeypatch):
-    """F2 (review 103): a warning from emit_consolidated_csv (e.g. the 5 MB file-size
-    heads-up) must reach report.json — exercises the cli plumbing
-    `warnings.extend(emission_report.warnings)`. Drive the REAL emit with a tiny size
-    threshold so any written CSV produces the warning, then assert it surfaces."""
-    from tools.summary import llms_parser, batch_runner, config
-    from tools.weglot import csv_engine  # the 5 MB guard constant lives in the canonical engine now
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        "gen-0-landing": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
-            "content_type": "landing",
-            "locale": "en",
-        }
-    }), encoding="utf-8")
-
-    weglot_dir = tmp_path / "weglot"
-    weglot_dir.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
-    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
-    monkeypatch.setattr(csv_engine, "_WEGLOT_IMPORT_WARN_BYTES", 50)  # tiny: even the header trips it
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse",
-        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
-    )
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = requests
-        return batch_runner.BatchHandle(
-            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
-        )
-
-    def fake_wait(handle, **kw):
-        # Clean 2-paragraph target (heading + sentence), no number drift → ok=True → reaches emit.
-        return [
-            batch_runner.BatchResult(
-                custom_id=r.custom_id, succeeded=True,
-                content="## Englische Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
-            )
-            for r in captured["requests"]
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    out = tmp_path / "out"
-    rc = cli.main([
-        "translate", "--no-dry-run", "--locale", "de",
-        "--from-run", str(prior), "--out-dir", str(out),
-    ])
-    assert rc == 0
-    phase = json.loads((out / "report.json").read_text())["phases"]["translate"]
-    assert any("5 MB import limit" in w for w in phase.get("warnings", [])), \
-        f"emit size warning did not surface into report.json: {phase.get('warnings')}"
-
-
-def test_translate_writes_translation_status(tmp_path: Path, monkeypatch):
-    """Dashboard feed (/admin/#summaries): a live translate run writes
-    translation-status.json next to the CSVs with per_locale counts + per_item
-    locale coverage, so generate_status_page can render the Overview 'Translations'
-    row + the Latest 'Translated' column."""
-    from tools.summary import llms_parser, batch_runner, config
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        "gen-0-landing": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
-            "content_type": "landing",
-            "locale": "en",
-        }
-    }), encoding="utf-8")
-
-    weglot_dir = tmp_path / "weglot"
-    weglot_dir.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
-    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse",
-        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
-    )
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = requests
-        return batch_runner.BatchHandle(
-            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
-        )
-
-    def fake_wait(handle, **kw):
-        return [
-            batch_runner.BatchResult(
-                custom_id=r.custom_id, succeeded=True,
-                content="## Englische Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
-            )
-            for r in captured["requests"]
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    out = tmp_path / "out"
-    rc = cli.main([
-        "translate", "--no-dry-run", "--locale", "de",
-        "--from-run", str(prior), "--out-dir", str(out),
-    ])
-    assert rc == 0
-    status_file = weglot_dir / "translation-status.json"
-    assert status_file.exists(), "translation-status.json was not written"
-    status = json.loads(status_file.read_text(encoding="utf-8"))
-    assert status["dry_run"] is False
-    assert status["source_run"] == "prior"
-    assert status["per_locale"]["de"]["translated"] == 1
-    assert status["per_item"]["gen-0-landing"] == ["de"]
-    # tracker-107: per-locale translated volume recorded for the dashboard Overview.
-    assert status["per_locale"]["de"]["words"] > 0
-    assert "internal_links" in status["per_locale"]["de"]
-    # dry-run must NOT write the status file (avoids clobbering the live one).
-    out2 = tmp_path / "out2"
-    weglot_dir2 = tmp_path / "weglot2"
-    weglot_dir2.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir2)
-    cli.main(["translate", "--locale", "de", "--from-run", str(prior), "--out-dir", str(out2)])
-    assert not (weglot_dir2 / "translation-status.json").exists()
-
-
-def test_translation_status_multi_locale(tmp_path: Path, monkeypatch):
-    """F4 (review 105): a cid translated into multiple locales lands in per_item with
-    all locales (sorted), and per_locale.translated counts the CSV-paired set per
-    locale — so the dashboard Overview row and the Latest column agree (F1)."""
-    from tools.summary import llms_parser, batch_runner, config
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        "gen-0-landing": {
-            "url": "https://www.englishcollege.com/learn-english-usa",
-            "markdown": "## English courses\n\nJoin our friendly classes in Vancouver.\n",
-            "content_type": "landing",
-            "locale": "en",
-        }
-    }), encoding="utf-8")
-
-    weglot_dir = tmp_path / "weglot"
-    weglot_dir.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
-    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
-    monkeypatch.setattr(config, "TARGET_TRANSLATION_LOCALES", ["de", "fr"])  # 2 locales, no --locale
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse",
-        lambda *a, **k: llms_parser.LlmsIndex(entries=[]),
-    )
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = requests
-        return batch_runner.BatchHandle(
-            batch_id="b-ok", request_count=len(requests), submitted_at="t", dry_run=False
-        )
-
-    def fake_wait(handle, **kw):
-        return [
-            batch_runner.BatchResult(
-                custom_id=r.custom_id, succeeded=True,
-                content="## Kurse\n\nNehmen Sie an unseren Kursen in Vancouver teil.",
-            )
-            for r in captured["requests"]
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    out = tmp_path / "out"
-    rc = cli.main(["translate", "--no-dry-run", "--from-run", str(prior), "--out-dir", str(out)])
-    assert rc == 0
-    status = json.loads((weglot_dir / "translation-status.json").read_text(encoding="utf-8"))
-    assert status["per_item"]["gen-0-landing"] == ["de", "fr"]
-    assert status["per_locale"]["de"]["translated"] == 1
-    assert status["per_locale"]["fr"]["translated"] == 1
-    assert sorted(status["target_locales"]) == ["de", "fr"]
-
-
-def test_translate_limit_caps_units(tmp_path: Path, monkeypatch):
-    """--limit caps the source items translated (instant pilot before full batch):
-    5 eligible landing summaries, --limit 2 → only 2 requests built."""
-    from tools.summary import llms_parser, batch_runner, config
-
-    prior = tmp_path / "prior"
-    prior.mkdir()
-    (prior / "en-summaries.json").write_text(json.dumps({
-        f"gen-{i}-landing": {
-            "url": f"https://www.englishcollege.com/p{i}",
-            "markdown": f"## Page {i}\n\nBody paragraph number {i} here.",
-            "content_type": "landing", "locale": "en",
-        }
-        for i in range(5)
-    }), encoding="utf-8")
-
-    weglot_dir = tmp_path / "weglot"
-    weglot_dir.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot_dir)
-    monkeypatch.setattr(config, "TRANSLATION_MEMORY_FILE", tmp_path / "tm.json")
-    monkeypatch.setattr(
-        llms_parser, "fetch_and_parse", lambda *a, **k: llms_parser.LlmsIndex(entries=[]))
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = list(requests)
-        return batch_runner.BatchHandle(
-            batch_id="b", request_count=len(requests), submitted_at="t", dry_run=False)
-
-    def fake_wait(handle, **kw):
-        return [
-            batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True,
-                                     content="## Seite\n\nUebersetzter Absatz hier.")
-            for r in captured["requests"]
-        ]
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    rc = cli.main(["translate", "--no-dry-run", "--locale", "de", "--limit", "2",
-                   "--from-run", str(prior), "--out-dir", str(tmp_path / "out")])
-    assert rc == 0
-    assert len(captured["requests"]) == 2, "expected --limit 2 to cap to 2 requests"
 
 
 # ---- M-13: link candidate pool builder (tracker-091) ----
@@ -695,7 +262,6 @@ def test_generate_english_qa_gate_demotes_critical_fail(tmp_path: Path, monkeypa
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
 
     captured: dict = {}
@@ -766,7 +332,6 @@ def _fake_live_generate(monkeypatch, content: str, llms_raises: bool = False):
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
 
     if llms_raises:
         def boom(*a, **kw):
@@ -853,86 +418,6 @@ def test_generate_english_degraded_flag_on_llms_failure(tmp_path: Path, monkeypa
     phase = json.loads((tmp_path / "run" / "report.json").read_text())["phases"]["generate_english"]
     assert phase.get("degraded") is True
     assert any("llms.txt fetch failed" in w for w in phase["warnings"])
-
-
-def test_translate_meta_dry_run_emits_typed_csv_rows(tmp_path: Path, monkeypatch):
-    """tracker-092 (3.4): translate-meta extracts page title+description and emits
-    Weglot CSV rows typed meta_title / meta_description via the translator."""
-    from tools.summary import page_fetcher
-
-    def fake_fetch(url, timeout=20.0):
-        return page_fetcher.PageContent(
-            url=url, final_url=url, status=200,
-            html="<html></html>", title="Learn English at CEL", h1="Home",
-            headings=(), canonical=url, hreflang_urls=(), existing_summary_html="",
-            body_text_excerpt="x",
-            description="Study English at CEL campuses in San Diego and Vancouver.",
-        )
-
-    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
-
-    rc = cli.main([
-        "translate-meta", "--dry-run", "--locale", "de", "--page",
-        "https://www.englishcollege.com/", "--out-dir", str(tmp_path),
-    ])
-    assert rc == 0
-    phase = json.loads((tmp_path / "report.json").read_text())["phases"]["translate_meta"]
-    assert phase["meta_strings"] == 2  # title + description
-    assert "de" in phase["per_locale"]
-    csv_path = tmp_path / "meta-batches" / "de.csv"
-    assert csv_path.exists()
-    rows = csv_path.read_text(encoding="utf-8")
-    assert "meta_title" in rows
-    assert "meta_description" in rows
-
-
-def test_translate_meta_live_emits_csv_via_engine(tmp_path: Path, monkeypatch):
-    """tracker-092 (3.4) review gap-close: the LIVE translate-meta path (engine →
-    Weglot CSV in WEGLOT_IMPORTS_DIR) was previously only covered in dry-run."""
-    from tools.summary import page_fetcher, batch_runner, config
-
-    def fake_fetch(url, timeout=20.0):
-        return page_fetcher.PageContent(
-            url=url, final_url=url, status=200, html="<html></html>",
-            title="Learn English at CEL", h1="Home", headings=(), canonical=url,
-            hreflang_urls=(), existing_summary_html="", body_text_excerpt="x",
-            description="Study English at CEL campuses.",
-        )
-
-    monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
-    weglot = tmp_path / "weglot"
-    weglot.mkdir()
-    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", weglot)
-
-    captured: dict = {}
-
-    def fake_submit(requests, **kw):
-        captured["requests"] = requests
-        return batch_runner.BatchHandle(batch_id="b", request_count=len(requests), submitted_at="t", dry_run=False)
-
-    def fake_wait(handle, **kw):
-        # Echo a German translation per unit, preserving any required tokens.
-        out = []
-        for r in captured["requests"]:
-            field = "Titel" if "meta_title" in r.custom_id else "Beschreibung"
-            out.append(batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True, content=f"[DE {field}]"))
-        return out
-
-    monkeypatch.setattr(batch_runner, "submit_batch", fake_submit)
-    monkeypatch.setattr(batch_runner, "wait_for_batch", fake_wait)
-
-    rc = cli.main([
-        "translate-meta", "--no-dry-run", "--locale", "de", "--page",
-        "https://www.englishcollege.com/", "--out-dir", str(tmp_path),
-    ])
-    assert rc == 0
-    phase = json.loads((tmp_path / "report.json").read_text())["phases"]["translate_meta"]
-    assert phase["per_locale"]["de"]["dry_run"] is False
-    csv_path = weglot / "de.csv"
-    assert csv_path.exists()
-    rows = csv_path.read_text(encoding="utf-8")
-    assert "meta_title" in rows and "meta_description" in rows
-    assert "[DE Titel]" in rows  # the engine-translated value reached the CSV
 
 
 def test_cms_item_url_per_collection_prefix():
@@ -1121,7 +606,6 @@ def test_generate_english_dry_run_passes_enriched_link_pool(tmp_path, monkeypatc
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     # Inject a known pool that includes a housing /housing/ URL. This bypasses the
     # dry-run network gate (which leaves llms_index None) so the integration
     # path is exercised regardless.
@@ -1313,7 +797,6 @@ def test_generate_english_blog_run_is_bounded_and_checkpoints_incrementally(tmp_
     monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)  # isolate: no real timer in the test
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     # QA is not under test here — force pass so all three items reach write-back.
     monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
     monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
@@ -1390,7 +873,6 @@ def test_generate_english_retry_pass_is_also_bounded_by_the_shared_deadline(tmp_
     monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
     monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
 
@@ -1564,7 +1046,6 @@ def test_generate_english_sync_uses_generate_sync_not_batch(tmp_path, monkeypatc
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
     monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
 

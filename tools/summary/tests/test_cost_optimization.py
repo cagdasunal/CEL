@@ -237,7 +237,6 @@ def _run_home_live(monkeypatch, tmp_path, *, estimate: float, extra_args=()):
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
     monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
     monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot")
     monkeypatch.setattr(batch_runner, "estimate_batch_cost_usd", lambda *a, **kw: estimate)
@@ -312,7 +311,6 @@ def test_dry_run_report_has_cost_gate_and_cache_plan(monkeypatch, tmp_path):
 
     monkeypatch.setattr(page_fetcher, "fetch_page", fake_fetch)
     monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
-    monkeypatch.setattr(cli, "_execute_translate", lambda *a, **kw: {})
 
     rc = cli.main([
         "generate-english", "--dry-run", "--page", "https://www.englishcollege.com/learn-english-usa",
