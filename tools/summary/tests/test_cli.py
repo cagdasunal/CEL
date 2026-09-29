@@ -1363,3 +1363,41 @@ def test_a_run_whose_every_summary_qa_rejects_exits_non_zero(tmp_path, monkeypat
     assert phase["qa_gate"]["checked"] == 2 and phase["qa_gate"]["passed"] == 0
     assert seen["patched"] == []
     assert "QA passed none" in capsys.readouterr().err
+
+
+def _state(tmp_path):
+    return json.loads((tmp_path / "summary-state.json").read_text())
+
+
+def test_a_post_that_fails_is_recorded_with_its_hash_and_an_attempt_count(tmp_path, monkeypatch):
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, qa_pass=False)
+    entry = _state(tmp_path)["e1"]
+    assert entry["failed_attempts"] == 1 and entry["source_hash"] and "last_error" in entry
+    assert "generated_at" not in entry  # not a written post
+
+    _live_blog_run(tmp_path, monkeypatch, {"e2": {}}, fail_all=True, out_name="run2")
+    assert _state(tmp_path)["e2"]["failed_attempts"] == 1  # a Gemini failure counts too
+
+
+def test_a_post_that_failed_twice_is_held_until_its_body_changes(tmp_path, monkeypatch):
+    post = {"post-body": "Some blog body text about studying."}
+    _live_blog_run(tmp_path, monkeypatch, {"e1": post}, qa_pass=False, out_name="n1")
+    _live_blog_run(tmp_path, monkeypatch, {"e1": post}, qa_pass=False, out_name="n2")
+    assert _state(tmp_path)["e1"]["failed_attempts"] == 2
+
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": post}, out_name="n3")
+    assert rc == 0 and seen["requests"] == []              # held: nothing sent, nothing paid
+    assert phase["held_for_review"] == ["https://www.englishcollege.com/post/post-e1"]
+
+    edited = {"post-body": "The post was edited, so its body is new."}
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": edited}, out_name="n4")
+    assert rc == 0 and seen["requests"] == ["gen-0-e1"] and seen["patched"] == ["e1"]
+    assert "failed_attempts" not in _state(tmp_path)["e1"]   # written: the checkpoint replaces it
+
+
+def test_a_failure_counts_only_against_the_same_body(tmp_path, monkeypatch):
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {"post-body": "Version one of the post."}},
+                   qa_pass=False, out_name="v1")
+    _live_blog_run(tmp_path, monkeypatch, {"e1": {"post-body": "Version two of the post."}},
+                   qa_pass=False, out_name="v2")
+    assert _state(tmp_path)["e1"]["failed_attempts"] == 1

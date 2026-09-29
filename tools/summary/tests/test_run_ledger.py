@@ -138,3 +138,20 @@ def test_status_subcommand_via_cli(capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "SUMMARY / TRANSLATION STATUS" in out
+
+
+def test_format_status_counts_written_pages_apart_from_failed_ones(tmp_path: Path):
+    """U3-S batch 5 (U4-1): summary-state.json also records posts that failed. They are not
+    pages with a summary, so the status shows them apart, with the ones held for review."""
+    summary_state = tmp_path / "summary-state.json"
+    summary_state.write_text(json.dumps({
+        "page-a": {"source_hash": "x", "generated_at": "2026-05-21T13:08:25+00:00"},
+        "post-b": {"source_hash": "y", "failed_attempts": 1, "last_failed_at": "2026-09-30T03:31:00+00:00"},
+        "post-c": {"source_hash": "z", "failed_attempts": 2, "last_failed_at": "2026-09-30T03:32:00+00:00"},
+    }), encoding="utf-8")
+    out = run_ledger.format_status(
+        ledger_path=tmp_path / "none.jsonl", summary_state_path=summary_state,
+        translation_status_path=tmp_path / "none.json",
+    )
+    assert "pages tracked : 1" in out
+    assert "failed        : 2 (1 held for review)" in out
