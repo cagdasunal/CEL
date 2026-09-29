@@ -123,11 +123,38 @@ def test_plan_caches_separates_models():
 # ---- Model tiering ----
 
 
-def test_model_for_content_type_tiers_blog_to_flash():
-    assert config.model_for_content_type("blog_post") == config.MODEL_BLOG
-    assert "flash" in config.MODEL_BLOG.lower()
+def test_blog_generator_runs_on_the_engines_model_with_thinking_high():
+    """U3-S (2026-09-29): gemini-2.5-flash answers 404 "no longer available to new users" for
+    this key, so every blog request failed. The blog generator takes the localization engine's
+    decision (monorepo sites/cel/docs/localize-gemini-models-2026-09-29.md): 3.1 Pro, thinking
+    pinned at high. The other content types are unchanged."""
+    assert config.model_for_content_type("blog_post") == "gemini-3.1-pro-preview"
+    assert config.BLOG_THINKING_LEVEL == "high"
     for ct in ("course", "housing", "landing", "anything-else"):
         assert config.model_for_content_type(ct) == config.MODEL_ID
+
+
+def test_a_thinking_level_replaces_the_budget_and_the_sdk_accepts_it():
+    """Gemini 3 takes a thinking LEVEL; a request that names one sends no numeric budget (the
+    API refuses both at once). Checked against the real SDK's own config model when installed."""
+    r = batch_runner.BatchRequest(custom_id="x", system_blocks=[], user_message="u",
+                                  model="gemini-3.1-pro-preview", thinking_level="high")
+    cfg = batch_runner._build_generation_config(r, "sys", model="gemini-3.1-pro-preview")
+    assert cfg["thinking_config"] == {"thinking_level": "high"}
+    types = pytest.importorskip("google.genai.types")
+    assert types.GenerateContentConfig(**cfg).thinking_config.thinking_level.name == "HIGH"
+
+
+def test_a_request_at_thinking_high_is_priced_for_high_thinking():
+    """The cost gate stays conservative: a request pinned at high is priced at the high-thinking
+    allowance (answer ~1,300 + the 8,000-token thinking floor), not the 5,500 Pro default."""
+    plain = batch_runner.BatchRequest(custom_id="p", system_blocks=[{"type": "text", "text": "s"}],
+                                      user_message="u", model=config.MODEL_ID)
+    high = batch_runner.BatchRequest(custom_id="h", system_blocks=[{"type": "text", "text": "s"}],
+                                     user_message="u", model=config.MODEL_ID, thinking_level="high")
+    est_plain = batch_runner.estimate_batch_cost_usd([plain], mode="interactive")
+    est_high = batch_runner.estimate_batch_cost_usd([high], mode="interactive")
+    assert est_high - est_plain == pytest.approx((9_300 - 5_500) / 1_000_000 * 12.0)
 
 
 def test_flash_generation_config_disables_thinking():

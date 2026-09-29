@@ -75,6 +75,10 @@ class BatchRequest:
     # requests run on Flash and the rest on Pro. The Batch API takes ONE model
     # per job, so cli groups requests by this field before submitting.
     model: str = ""
+    # U3-S (2026-09-29): a Gemini 3 thinking LEVEL ("low" / "medium" / "high"). Set, it
+    # replaces the numeric budget below (the API refuses both at once). Empty → the budget
+    # rules in _build_generation_config, unchanged.
+    thinking_level: str = ""
 
 
 @dataclass
@@ -224,6 +228,8 @@ def estimate_batch_cost_usd(
             out_tok = config.OUTPUT_TOKEN_ESTIMATE.get(
                 (fam, thinking), config.DEFAULT_OUTPUT_TOKEN_ESTIMATE
             )
+            if getattr(r, "thinking_level", "") == "high":
+                out_tok = max(out_tok, config.OUTPUT_TOKEN_ESTIMATE_THINKING_HIGH)
 
         total += (out_tok / 1_000_000) * out_rate
 
@@ -333,7 +339,10 @@ def _build_generation_config(
         cfg["cached_content"] = cached_content_name
     elif system_text:
         cfg["system_instruction"] = system_text
-    if _model_family(model) == "flash":
+    if r.thinking_level:
+        # U3-S: pinned, so a Google default change can't move spend or quality silently.
+        cfg["thinking_config"] = {"thinking_level": r.thinking_level}
+    elif _model_family(model) == "flash":
         cfg["thinking_config"] = {"thinking_budget": 0}
     elif r.enable_thinking:
         cfg["thinking_config"] = {"thinking_budget": config.THINKING_BUDGET_TOKENS}

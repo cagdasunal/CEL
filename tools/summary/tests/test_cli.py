@@ -1663,9 +1663,10 @@ def test_link_candidate_pool_drops_retired_campus_urls():
 # The blog run fills ONLY an empty summary field. Nothing regenerates a post that has one: not a
 # changed hash, prompt version or model, and not --force.
 
-def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra):
-    """Drive the live blog pipeline offline. Returns (rc, seen, phase): what reached Gemini,
-    every Webflow field write, and every publish."""
+def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_pass=False):
+    """Drive the live blog pipeline offline. Returns (rc, seen, phase): what reached Gemini
+    (custom ids, and each request's model + thinking level), every Webflow field write, and
+    every publish. fail_first_pass fails every first-pass request, so the retry pass runs."""
     import types as _types
     from tools.summary import batch_runner, webflow_client, config, llms_parser
     from tools.summary import qa as _qa
@@ -1688,12 +1689,15 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra):
         )
         for iid, fd in field_data_by_id.items()
     ]
-    seen: dict = {"requests": [], "patched": [], "published": []}
+    seen: dict = {"requests": [], "sent": [], "patched": [], "published": []}
 
     def fake_sync(requests, run_deadline_sec=None, **kw):
         seen["requests"].extend(r.custom_id for r in requests)
-        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=True,
-                                         content="## A blog question\n\nA clear answer paragraph.\n")
+        seen["sent"].extend((r.custom_id, r.model, r.thinking_level) for r in requests)
+        ok = not (fail_first_pass and not requests[0].custom_id.startswith("retry-"))
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=ok,
+                                         content="## A blog question\n\nA clear answer paragraph.\n" if ok else "",
+                                         error=None if ok else "boom")
                 for r in requests]
 
     def no_batch(*a, **kw):
@@ -1751,7 +1755,7 @@ def test_blog_run_where_every_post_has_a_summary_sends_and_writes_nothing(tmp_pa
     }, "--force")
 
     assert rc == 0
-    assert seen == {"requests": [], "patched": [], "published": []}
+    assert seen == {"requests": [], "sent": [], "patched": [], "published": []}
     assert phase["requests_built"] == 0
     assert phase["has_summary_skipped"] == 2
 
@@ -1765,3 +1769,12 @@ def test_blog_autopilot_workflow_cannot_force_a_regeneration():
     assert not [ln for ln in code if "ARGS" in ln and "--force" in ln], "the autopilot can pass --force"
     assert not [ln for ln in code if "inputs.force" in ln or ln.strip() == "force:"], \
         "the autopilot still offers a force input"
+
+
+def test_blog_requests_go_to_the_engines_model_at_thinking_high_retry_included(tmp_path, monkeypatch):
+    """U3-S step 3: every blog request, the retry pass's too, names 3.1 Pro and thinking high."""
+    rc, seen, _phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}, "e2": {"summary": ""}},
+                                      fail_first_pass=True)
+    assert rc == 0
+    assert [cid for cid, _m, _t in seen["sent"]] == ["gen-0-e1", "gen-1-e2", "retry-gen-0-e1", "retry-gen-1-e2"]
+    assert {(m, t) for _cid, m, t in seen["sent"]} == {("gemini-3.1-pro-preview", "high")}

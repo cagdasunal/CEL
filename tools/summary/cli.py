@@ -435,7 +435,7 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             "kind": "cms_collection", "collection": slug, "collection_id": cid,
             "locale": "native_per_item" if slug in config.NATIVE_LANGUAGE_COLLECTIONS else "en",
             "content_type": content_type, "translate": translate,
-            # tracker-097: show the tiered model so `plan` reveals blog → Flash.
+            # tracker-097: show each target's model in `plan`.
             "model": config.model_for_content_type(content_type),
         })
     if args.limit:
@@ -858,8 +858,9 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                 system_blocks=system_blocks,
                 user_message=user_msg,
                 enable_thinking=True,
-                # tracker-097: tier the model by content type (blog → Flash, rest → Pro).
                 model=config.model_for_content_type(item.content_type),
+                # U3-S: the blog generator pins thinking at high (the engine's decision).
+                thinking_level=config.BLOG_THINKING_LEVEL if item.content_type == "blog_post" else "",
             )
             requests.append(req)
         except Exception as e:
@@ -1033,6 +1034,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                         user_message=retry_user,
                         enable_thinking=False,
                         model=orig.model,  # tracker-097: retry on the same tier
+                        thinking_level=orig.thinking_level,
                     )
                 )
         if retry_requests:

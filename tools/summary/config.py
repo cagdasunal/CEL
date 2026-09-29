@@ -235,7 +235,7 @@ WEBFLOW_API_BASE = "https://api.webflow.com/v2"
 # COST_CONFIRM_THRESHOLD_USD stay summary-local — the client never reads them; cli.py's
 # cost gate does.)
 from tools.core.gemini.config import (  # noqa: E402,F401
-    MODEL_ID, MODEL_BLOG, MODEL_BY_CONTENT_TYPE, model_for_content_type,
+    MODEL_ID, MODEL_BLOG, MODEL_BY_CONTENT_TYPE, model_for_content_type, BLOG_THINKING_LEVEL,
     OUTPUT_TOKEN_ESTIMATE, DEFAULT_OUTPUT_TOKEN_ESTIMATE, THINKING_BUDGET_TOKENS,
     CACHE_TTL_SECONDS, CACHE_MIN_GROUP_SIZE, ENABLE_EXPLICIT_CACHE,
     DRYRUN_DIR, LAST_BATCH_FILE,
