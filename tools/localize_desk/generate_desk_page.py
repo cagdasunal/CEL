@@ -68,6 +68,7 @@ from localize_desk.recommend import LEVEL_CHECK, recommend  # noqa: E402
 
 from dashboard import (  # noqa: E402
     AUTH_SCRIPT_TAG,
+    DASHBOARD_CSS_LINK,
     EXTERNAL_REPO_ROOT,
     render_admin_close,
     render_admin_open,
@@ -207,7 +208,7 @@ def _head(title: str, description: str) -> list[str]:
         '  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">',
         '  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">',
         f"  {render_favicon_tag()}",
-        '  <link rel="stylesheet" href="/assets/css/dashboard.css">',
+        f"  {DASHBOARD_CSS_LINK}",   # the stylesheet, with its content's hash (U3)
         "</head>",
         "<body>",
     ]

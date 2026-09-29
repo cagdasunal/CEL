@@ -39,7 +39,8 @@ DOCS = Path(__file__).resolve().parents[2] / "docs"
 BASE = "https://cel.englishcollege.com"
 LOCALES = ("de", "fr", "es", "pt", "it", "ja", "ko", "ar")
 _PAGES = ["admin/localization/index.html"] + [f"admin/localization/{c}/index.html" for c in LOCALES]
-_ASSET = re.compile(r'(?:src|href)="/([^"?#]+[.](?:js|css))"')
+# A stylesheet's address may carry its content's hash (?v=..., U3): the file is the path before it.
+_ASSET = re.compile(r'(?:src|href)="/([^"?#]+[.](?:js|css))(?:[?][^"#]*)?"')
 _LINK = re.compile(r'href="/([^"#]+)"')
 
 

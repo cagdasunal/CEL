@@ -33,6 +33,7 @@ from zoneinfo import ZoneInfo
 
 from tools.dashboard import (
     AUTH_SCRIPT_TAG,
+    DASHBOARD_CSS_LINK,
     EXTERNAL_REPO_ROOT,
     render_admin_close,
     render_admin_open,
@@ -648,7 +649,7 @@ def render_html(entries: list[dict]) -> str:
     parts.append('  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append('  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append(f'  {render_favicon_tag()}')
-    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
+    parts.append('  ' + DASHBOARD_CSS_LINK)
     parts.append("</head>")
     parts.append("<body>")
     parts.append(render_admin_open("images"))

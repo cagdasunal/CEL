@@ -125,7 +125,7 @@ class TestRenderedPage:
         assert page.count("<body>") == 1
 
     def test_uses_the_shared_stylesheet_and_no_inline_style_block(self, page):
-        assert '<link rel="stylesheet" href="/assets/css/dashboard.css">' in page
+        assert '<link rel="stylesheet" href="/assets/css/dashboard.css?v=' in page   # with its hash (U3)
         # Desk rules belong in dashboard.DESK_CSS, not in a per-page <style>.
         assert "<style>" not in page
 
@@ -650,3 +650,15 @@ def test_the_desk_reads_a_text_from_the_three_tables_as_the_engine_does():
     """
     out = subprocess.run(["node", "-e", js], capture_output=True, text=True, check=True)
     assert out.stdout.strip() == "[]", out.stdout
+
+
+def test_the_desk_asks_for_the_stylesheet_it_was_built_with():
+    """U3 (the Manager, from the harness): the desk's new markup with a CACHED old dashboard.css rendered
+    the strip unstyled. The desk links the stylesheet with the committed file's hash, as every dashboard
+    page does (tools/dashboard.py DASHBOARD_CSS_LINK): a new stylesheet is a new address."""
+    import hashlib
+    css = (Path(__file__).resolve().parents[3] / "docs" / "assets" / "css" / "dashboard.css").read_bytes()
+    link = f'<link rel="stylesheet" href="/assets/css/dashboard.css?v={hashlib.sha256(css).hexdigest()[:10]}">'
+    units = G.load_units()
+    for page in (G.render_index(units), G.render_locale("de", units)):
+        assert link in page and 'href="/assets/css/dashboard.css"' not in page

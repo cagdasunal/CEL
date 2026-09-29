@@ -4,6 +4,7 @@ Consumers: tools.fidelo.build_viewer · tools.weglot.generate_status_page
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -1579,6 +1580,19 @@ DESK_CSS = """
 """
 
 
+def dashboard_css_text() -> str:
+    """The combined stylesheet, exactly as write_external_css writes it."""
+    return SHARED_CSS + "\n" + SHELL_CSS + "\n" + DESK_CSS
+
+
+# The stylesheet's address carries its content's hash (U3, the Manager from the harness): the
+# desk's new markup with a CACHED old dashboard.css rendered its strip unstyled -- GitHub Pages
+# lets a browser keep the file about ten minutes. A new stylesheet is a new address, so a page
+# asks for the stylesheet it was built with. Every builder links it through DASHBOARD_CSS_LINK.
+DASHBOARD_CSS_HREF = "/assets/css/dashboard.css?v=" + hashlib.sha256(dashboard_css_text().encode("utf-8")).hexdigest()[:10]
+DASHBOARD_CSS_LINK = f'<link rel="stylesheet" href="{DASHBOARD_CSS_HREF}">'
+
+
 # Gate scripts for /admin/* sub-pages: dashboard-config.js MUST load before
 # auth.js (auth.js reads window.CEL_DISPATCH_URL to validate the session).
 # _SHELL_HTML inlines the same order for the main dashboard shell.
@@ -1621,7 +1635,7 @@ def write_external_css(repo_root: Path) -> Path:
     """Write combined dashboard CSS to <repo_root>/assets/css/dashboard.css."""
     target = repo_root / "assets" / "css" / "dashboard.css"
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(SHARED_CSS + "\n" + SHELL_CSS + "\n" + DESK_CSS, encoding="utf-8")
+    target.write_text(dashboard_css_text(), encoding="utf-8")
     return target
 
 

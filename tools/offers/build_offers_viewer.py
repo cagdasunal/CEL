@@ -21,6 +21,7 @@ from pathlib import Path
 
 from tools.dashboard import (
     AUTH_SCRIPT_TAG,
+    DASHBOARD_CSS_LINK,
     EXTERNAL_REPO_ROOT,
     render_admin_close,
     render_admin_open,
@@ -625,7 +626,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append('  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append('  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append(f"  {render_favicon_tag()}")
-    parts.append('  <link rel="stylesheet" href="/assets/css/dashboard.css">')
+    parts.append('  ' + DASHBOARD_CSS_LINK)
     parts.append("  <style>")
     parts.append("    [data-tab]{display:none}")
     parts.append("    [data-tab].is-active{display:block}")
@@ -757,7 +758,7 @@ def main() -> int:
             "<!DOCTYPE html><html lang='en'><head>"
             f"  {AUTH_SCRIPT_TAG}"
             '<meta charset=\"utf-8\"><title>Offers — College of English Language Admin</title>'
-            '<link rel="stylesheet" href="/assets/css/dashboard.css"></head>'
+            f"{DASHBOARD_CSS_LINK}</head>"
             "<body><div class='dashboard-shell'>"
             "<section class='status status-error error'>"
             "<p class='status-label'>Offers data temporarily unavailable.</p>"
@@ -784,7 +785,7 @@ def main() -> int:
             "<!DOCTYPE html><html lang='en'><head>"
             f"  {AUTH_SCRIPT_TAG}"
             '<meta charset=\"utf-8\"><title>Offers — College of English Language Admin</title>'
-            '<link rel="stylesheet" href="/assets/css/dashboard.css"></head>'
+            f"{DASHBOARD_CSS_LINK}</head>"
             "<body><div class='dashboard-shell'>"
             "<section class='status status-error error'>"
             "<p class='status-label'>Offers data temporarily unavailable.</p>"
