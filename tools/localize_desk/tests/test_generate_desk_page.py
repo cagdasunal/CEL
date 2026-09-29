@@ -625,8 +625,11 @@ def test_the_desk_reads_a_text_from_the_three_tables_as_the_engine_does():
       [{tray: 'csv'}, null, {text: 'G', arrivedAt: T2}, 'arrived'],
       // an arrival that cannot be read never wins
       [{tray: 'csv', at: T1}, null, {text: 'G', arrivedAt: 'not a time'}, 'approved'],
-      // a failure stands until a later send or arrival -- a decision does not end it (ruling (b))
-      [{tray: 'csv', at: T3}, {failed: 'quota', failedAt: T2}, null, 'failed'],
+      // a failure stands until a later send, arrival or DECISION: ruling (b) of 09-28 said a decision
+      // did not end it; the U3 review's B3-1 (the Manager's acceptance) says a later one does --
+      [{tray: 'csv', at: T3}, {failed: 'quota', failedAt: T2}, null, 'approved'],
+      // -- and one saved before it leaves the failure standing.
+      [{tray: 'csv', at: T1}, {failed: 'quota', failedAt: T2}, null, 'failed'],
       // a stamp counts only for the wording it was stamped for (ruling 6)
       [{tray: 'csv', text: 'x', at: T3}, {exportedAt: T1, liveAt: T2}, null, 'edited'],
       [{tray: 'csv', at: T1}, {exportedAt: T2, liveAt: T3}, null, 'live'],

@@ -762,13 +762,15 @@
       return isNaN(ms) ? null : ms;
     }
     // Why the last attempt failed, while nothing has happened since: `failed` is never cleared
-    // by the storage, so a later send or arrival ends it (review of WO-17, P2-4). A failure
-    // whose time cannot be read stands.
+    // by the storage, so a later send, arrival or decision ends it (review of WO-17, P2-4; U3's
+    // B3-1). A failure whose time cannot be read stands.
     function failedNow(s) {
       if (!s.failed) return false;
       var at = instant(s.failedAt);
       if (at === null) return true;
-      return ![s.sentAt, s.arrivedAt].some(function (v) { var t = instant(v); return t !== null && t > at; });
+      // A decision saved after the failure ends it too (the U3 review's B3-1): the reviewer's own
+      // wording, a new ask, an undo. storage.failed_now and desk-summary's SQL read it the same.
+      return ![s.sentAt, s.arrivedAt, s.decidedAt].some(function (v) { var t = instant(v); return t !== null && t > at; });
     }
     // Sent, and neither back nor failed since. A send whose time cannot be read is still out.
     function inFlight(s) {
@@ -1201,6 +1203,18 @@
       // Clicking the decision a row already carries undoes it -- back to what it was
       // before, never further (ruling #16).
       justActed[uid] = 1;
+      // Except ✦ on a failed text: the engine sends a failed text again only on an ask saved after
+      // the failure (the U3 review's A1-1), so ✦ there is a NEW ask, never an undo -- one click. The
+      // same ask saved again: `resave` makes it a change to send, and its new time ends the failure.
+      if (tray === 'draft' && stage(uid) === 'failed' && trayOf(uid) === 'draft') {
+        clearConflict(uid);
+        var sf = rec(uid);
+        sf.at = new Date().toISOString();
+        sf.resave = 1;
+        note('queue', uid, 'draft', 'draft');
+        persist(); paint(tr);
+        return;
+      }
       var s = rec(uid);
       var undoing = trayOf(uid) === tray;
       var target = undoing ? (s.was || null) : tray;
@@ -1832,7 +1846,8 @@
       for (var uid in ids) {
         var mine = hasContent(now[uid]) ? now[uid] : null;
         var theirs = hasContent(was[uid]) ? was[uid] : null;
-        if (sameDecision(mine, theirs)) continue;
+        // `resave`: the same decision, to be saved again for its new time (A1-1's retry).
+        if (sameDecision(mine, theirs) && !(now[uid] && now[uid].resave)) continue;
         // null is how the storage is told the decision was undone.
         out[uid] = mine ? storedOnly(mine) : null;
         n++;
@@ -2054,6 +2069,17 @@
         out.applied++;
       });
       if (out.applied) flowSaved(code, r.body.at);
+      // A retry saved (A1-1): its mark goes, here and in the copy this browser keeps.
+      var resaved = (r.body.applied || []).filter(function (a) {
+        var own = code === CODE ? state[a.unit] : null;
+        return own ? own.resave : false;
+      });
+      if (resaved.length) { resaved.forEach(function (a) { delete state[a.unit].resave; }); persist(); }
+      if (code !== CODE && (r.body.applied || []).length) {
+        var kept = readFresh('cel-desk-' + code), touched = false;
+        (r.body.applied || []).forEach(function (a) { if (kept[a.unit] && kept[a.unit].resave) { delete kept[a.unit].resave; touched = true; } });
+        if (touched) try { localStorage.setItem('cel-desk-' + code, JSON.stringify(kept)); } catch (e) {}
+      }
       (r.body.conflicts || []).forEach(function (c) {
         var cur = c.current && hasContent(c.current) ? c.current : null;
         if (sameDecision(hasContent(d.body[c.unit]) ? d.body[c.unit] : null, cur)) {
@@ -2555,7 +2581,7 @@
             }
             saved[uid] = srv;
             if (!sameDecision(mine, theirs)) { takeStorageCopy(uid, server[uid]); adopted++; repaint[uid] = true; }
-            else if (server[uid].at && (state[uid] || {}).at !== server[uid].at) {
+            else if (server[uid].at && (state[uid] || {}).at !== server[uid].at && !(state[uid] || {}).resave) {
               // The same decision: its time is the storage's, which is what the stage rule compares
               // a draft and an export with -- an undone decision's too (WO-25c, #1's ruling (b)).
               rec(uid).at = server[uid].at;

@@ -169,9 +169,11 @@ TABLE = {
     "queued":   ("approved", "queued",   "todo",   "queued"),
     # an undo is a draft to read again -- until the undo is saved (#1's ruling (b), 2026-09-28)
     "arrived":  ("edited",   "arrived",  "queued", "arrived"),
-    # a failure is the engine's: it stands until Gemini's next send or arrival, and the decision
-    # is saved and exported all the same (#1's ruling (b), 2026-09-28)
-    "failed":   ("failed",   "failed",   "failed", "failed"),
+    # a decision saved after the failure ends it (the U3 review's B3-1, overturning ruling (b)):
+    # ✓ approves, ✦ is a NEW ask, never an undo (A1-1). The second click undoes -- and an undo
+    # carries no time until it is saved (as for an arrived draft), so it shows the failure again
+    # until then; saved, the storage's time for it ends the failure too (todo).
+    "failed":   ("approved", "failed",   "queued", "failed"),
     # a stamp counts only for the wording it was stamped for (ruling 6): approving again is a new
     # decision, later than the export
     "exported": ("todo",     "approved", "queued", "approved"),
@@ -2268,4 +2270,37 @@ def test_a_weglot_file_is_offered_only_while_it_is_current(browser):
         _checked(page)
         page.wait_for_timeout(1500)                     # the jobs are read with the page
         assert page.locator("#flow-files [data-file]").count() == 0
+        page.close()
+
+
+def test_asking_gemini_again_on_a_failed_text_is_a_new_ask_not_an_undo(browser):
+    """The U3 review's A1-1: the engine sends a failed text again only on an ask saved after the
+    failure. ✦ on a failed row undid the ask; now it saves it again -- one click, a new time -- and the
+    row is a request once more, before and after a reload."""
+    with desk("new") as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        uid = _visible_uids(page, 1)[0]
+        _act(page, uid, "queue")
+        _as_wait(page, "saved")
+        # The failure comes after the ask as the STORAGE saved it (its time is the save's, a moment
+        # after the click): an ask saved later would end it (B3-1).
+        saved_at = worker.store.decisions[("de", uid)]["at"]
+        _seed(page, worker, uid, stamps={"sentAt": _plus(saved_at, 100), "failed": "quota",
+                                        "failedAt": _plus(saved_at, 200)})
+        page.select_option("#f-state", "")
+        assert C.t("status.failed") in _label(page, uid)
+        before = worker.store.decisions[("de", uid)]
+        page.wait_for_timeout(400)                      # the failure is in the past, as a real one is
+        _act(page, uid, "queue")
+        assert C.t("status.queued") in _label(page, uid)
+        _as_wait(page, "saved")
+        after = worker.store.decisions[("de", uid)]
+        assert after["version"] == before["version"] + 1 and after["record"].get("tray") == "draft"
+        assert after["at"] > worker.store.pipeline[("de", uid)]["failedAt"]
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        page.select_option("#f-state", "")
+        assert C.t("status.queued") in _label(page, uid)
+        assert not errors, errors
         page.close()
