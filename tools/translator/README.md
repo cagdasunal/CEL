@@ -38,7 +38,7 @@ from tools.translator.tm import TranslationMemory
 from tools.translator.weglot import pairs_from_translations, emit_consolidated_csv
 
 glossary = load_glossary()                                  # bundled CEL brand/entity terms
-tm = TranslationMemory(Path("data/seo-intel/translation-memory.json"))
+tm = TranslationMemory(Path("translation-memory.json"))       # any path you own
 
 units = [TranslationUnit(id="title::home", text="Learn English at CEL", content_type="meta_title")]
 results = translate_batch(units, "de", glossary, tm=tm)     # → list[Translation], input order
@@ -132,9 +132,8 @@ id;language_from;language_to;word_from;word_to;type     (semicolon, minimal-quot
   report (the summary CLI does); the authoritative post-import completeness check is the
   sentinel verifier (`docs/admin/weglot-imports/import-status.json`).
 
-The summary tool's `tools/summary/csv_emitter.py` re-exports these (keeping
-`SummaryPair` as a back-compat alias) and adds its summary-specific paragraph
-splitters.
+(The summary tool's `csv_emitter.py` re-export shim was removed with its translate command,
+2026-09-29, U3-S.)
 
 ## Glossary
 

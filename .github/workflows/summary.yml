@@ -64,11 +64,6 @@ on:
         required: false
         default: ""
         type: string
-      from_run:
-        description: "link-blogs: repo-relative dir holding a committed en-summaries.json (e.g. data/seo-intel/summary-dryrun/<ts>). (translate was retired 2026-09-29, U3-S.)"
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: write
@@ -112,7 +107,6 @@ jobs:
           LOCALE_FILTER: ${{ inputs.locale_filter }}
           LIMIT: ${{ inputs.limit }}
           BATCH_ID: ${{ inputs.batch_id }}
-          FROM_RUN: ${{ inputs.from_run }}
         run: |
           set -o pipefail
           # Bash array, not a string: every element is passed as one quoted argv
@@ -144,9 +138,6 @@ jobs:
           fi
           if [ -n "$BATCH_ID" ]; then
             ARGS+=(--batch-id "$BATCH_ID")
-          fi
-          if [ -n "$FROM_RUN" ]; then
-            ARGS+=(--from-run "$FROM_RUN")
           fi
           echo "Running: python3 -m tools.summary ${ARGS[*]}"
           python3 -m tools.summary "${ARGS[@]}" 2>&1 | tee /tmp/summary-stdout.log
@@ -196,13 +187,12 @@ jobs:
           # docs/admin/weglot-imports/ matches config.WEGLOT_IMPORTS_DIR (tracker-089 C-1):
           # static-page Markdown (generate phase). (The per-locale CSVs came from translate, retired 2026-09-29.)
           git add docs/admin/weglot-imports/
-          # tracker-097 RC3: persist the idempotency state + translation memory + last-batch
+          # tracker-097 RC3: persist the idempotency state + last-batch
           # id ACROSS runs. Without committing summary-state.json, every GHA run started with
           # empty state and re-billed every unchanged item. Stage only if present (a sync run
           # or a phase that didn't write one leaves some absent).
           for f in \
             data/seo-intel/summary-state.json \
-            data/seo-intel/translation-memory.json \
             data/seo-intel/summary-last-batch.json; do
             [ -f "$f" ] && git add "$f" || true
           done

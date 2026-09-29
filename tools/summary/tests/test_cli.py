@@ -50,6 +50,15 @@ def test_translate_and_translate_meta_are_retired(tmp_path: Path):
     assert not [o for o in options if o.split("#")[0].strip() in ("- translate", "- translate-meta")]
 
 
+def test_link_blogs_is_retired(tmp_path: Path):
+    """U3-S batch 3 (the Manager's ruling): link-blogs rewrote summaries that already exist,
+    against the operator's rule "Never rewrite or translate already we have". It's gone."""
+    with pytest.raises(SystemExit) as e:
+        cli.main(["link-blogs", "--dry-run", "--out-dir", str(tmp_path / "lb")])
+    assert e.value.code == 2  # argparse: invalid choice
+    assert not hasattr(cli, "_execute_link_blogs")
+
+
 def test_plan_target_count_includes_static_and_cms(tmp_path: Path):
     cli.main(["plan", "--out-dir", str(tmp_path)])
     data = json.loads((tmp_path / "report.json").read_text())
@@ -1287,11 +1296,21 @@ def test_every_write_failing_exits_non_zero(tmp_path, monkeypatch, capsys):
     assert "every write failed" in capsys.readouterr().err
 
 
+def test_a_cost_cap_stop_exits_non_zero(tmp_path, monkeypatch, capsys):
+    """The Manager's ruling (U3-S batch 3): the hard cost cap stopping the run alerts too."""
+    from tools.summary import config
+    monkeypatch.setattr(config, "MAX_BATCH_COST_USD", 0.000001)
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}})
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
+    assert phase["submitted"] is False and seen["requests"] == []
+    assert "cost cap" in capsys.readouterr().err
+
+
 def test_partial_success_and_nothing_to_do_still_exit_zero(tmp_path, monkeypatch):
-    """Only a run whose every request failed alerts. One success among failures is a normal day
-    (the rest go to manual review), and a day with nothing to fill is the steady state. (A
-    QA demotion and a cost-gate stop keep exit 0 too: test_generate_english_qa_gate_demotes_
-    critical_fail, test_generate_english_cost_cap_aborts.)"""
+    """Only a run that did none of its work alerts. One success among failures is a normal day
+    (the rest go to manual review), and a day with nothing to fill is the steady state. (A QA
+    demotion and a pilot-first confirm stop keep exit 0 too: test_generate_english_qa_gate_
+    demotes_critical_fail, test_confirm_gate_blocks_paid_run_over_threshold.)"""
     rc, seen, phase = _live_blog_run(tmp_path / "none", monkeypatch, {"a": {"summary": "<p>Have one.</p>"}})
     assert rc == 0 and phase["requests_built"] == 0
 

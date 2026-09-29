@@ -1,7 +1,7 @@
 """Direct tests for the canonical Weglot CSV engine (tools.weglot.csv_engine).
 
-The engine is also exercised through the re-exports in test_weglot.py / test_purge.py /
-test_csv_emitter.py; this file pins its public API + byte-format independently.
+The engine is also exercised through the re-exports in test_weglot.py / test_purge.py;
+this file pins its public API + byte-format independently.
 """
 from pathlib import Path
 

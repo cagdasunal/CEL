@@ -1,6 +1,5 @@
 """Tests for tools.summary.prompt_builder — system-prompt assembly + user-message format."""
 
-import json
 import re
 
 import pytest
@@ -8,40 +7,9 @@ import pytest
 from tools.summary.prompt_builder import (
     KeywordPlan,
     SourceItem,
-    build_link_insertion_system_prompt,
-    build_link_insertion_user_message,
     build_system_prompt,
-    build_translation_system_prompt,
-    build_translation_user_message,
     build_user_message,
 )
-
-
-def test_link_insertion_system_prompt_is_focused_and_preserve_first():
-    blocks = build_link_insertion_system_prompt()
-    assert len(blocks) == 1  # the single focused link_insertion.md layer (cheap for Flash)
-    text = blocks[0]["text"].lower()
-    assert "preserve" in text and "do not" in text  # text-preservation is the hard rule
-    assert "englishcollege.com" in text  # the www domain rule
-    assert "same locale" in text
-
-
-def test_link_insertion_user_message_carries_summary_candidates_and_locale():
-    msg = build_link_insertion_user_message(
-        "## Title\n\nSome existing summary text about studying in Vancouver.",
-        [
-            "https://www.englishcollege.com/vancouver",
-            "https://www.englishcollege.com/courses",
-        ],
-        "de",
-        post_title="Mein Beitrag",
-    )
-    assert "Some existing summary text about studying in Vancouver." in msg
-    assert "https://www.englishcollege.com/vancouver" in msg
-    assert "de" in msg
-    assert "Mein Beitrag" in msg
-    # The task tells the model to change no words.
-    assert "change no words" in msg.lower()
 
 
 def test_system_prompt_three_blocks_present():
@@ -109,30 +77,6 @@ def test_user_message_caps_link_candidates():
     assert "/page-60" not in msg
     assert "/page-30" in msg
     assert "/page-0" in msg
-
-
-def test_translation_user_message_translates_without_swap_table():
-    """audit-108 M-4: no link-swap table is injected — the model just translates the
-    Markdown (links are localized by Weglot + stripped to anchor text at emit)."""
-    msg = build_translation_user_message(
-        en_summary_markdown="## H2\n\nSummary body with [a link](https://www.englishcollege.com/courses).",
-        target_locale="de",
-    )
-    assert "Translate the following English Summary into de" in msg
-    assert "Summary body with" in msg
-    # The old swap-table apparatus must be gone.
-    assert "swap table" not in msg.lower()
-    assert "```json" not in msg
-    assert "REMOVE" not in msg
-
-
-def test_translation_system_prompt_two_blocks():
-    """Tracker-091: blocks are plain {type:text, text:...}; no cache_control."""
-    blocks = build_translation_system_prompt("de")
-    assert len(blocks) == 2
-    assert all("cache_control" not in b for b in blocks)
-    assert all(b["type"] == "text" for b in blocks)
-    assert "Target Locale: de" in blocks[1]["text"]
 
 
 # ---- B3: prompts+keywords flow end-to-end (tracker-087) ----
@@ -266,7 +210,9 @@ _SECTION_6 = {
 
 
 def _locale_layer(locale):
-    blocks = build_translation_system_prompt(target_locale=locale)
+    # The blog generator's own prompt (common → blog_post → locale): the last block is the
+    # locale layer. (Read through the retired translation prompt until U3-S, 2026-09-29.)
+    blocks = build_system_prompt("blog_post", locale)
     return blocks[-1]["text"]
 
 

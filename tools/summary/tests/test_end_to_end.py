@@ -8,7 +8,6 @@ This single test file proves that:
   - generate-english writes en-summaries.json + manual-review.json
   - the retry loop fires for failed batch items
   - persistent failures land in manual-review.json
-  - translate reads the manifest and writes per-locale CSV via csv_emitter
   - cost-cap firing returns submitted: False
   - the public CLI exits 0 on every well-formed input
 """
@@ -209,7 +208,7 @@ def test_generate_english_cost_cap_aborts(tmp_path: Path, monkeypatch: pytest.Mo
         "generate-english", "--no-dry-run", "--limit", "1",
         "--out-dir", str(tmp_path),
     ])
-    assert rc == 0
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE  # U3-S: a cost-cap stop alerts
     report = json.loads((tmp_path / "report.json").read_text())
     phase = report["phases"]["generate_english"]
     assert phase["submitted"] is False
