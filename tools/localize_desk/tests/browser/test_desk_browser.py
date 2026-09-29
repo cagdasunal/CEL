@@ -1962,189 +1962,310 @@ def test_a_draft_that_answers_a_request_is_read_decided_and_undone_as_a_draft(br
         page.close()
 
 
-# ── The import file and Gemini (runbook U1) ─────────────────────────────────────────────
-# The panel starts jobs through the Worker's desk-job-start; here the stand-in records them and
-# the test plays the engine (store.finish_job, seed_export, the pipeline and drafts it writes).
-# The page reads a job again every few seconds while one is open.
+# ── Ask Gemini > Review > Weglot file (the operator's redesign, U3) ──────────────────────
+# One strip above the language, for EVERY language. The stand-in records the jobs; the test plays
+# the engine (store.finish_job, seed_export, the pipeline and drafts it writes). The page reads a
+# job again every few seconds while one is open (20 while Gemini alone is out).
 
-def _line(page, half: str) -> str:
-    return page.locator(f"#job-{half}-line").inner_text()
-
-
-def _line_is(page, half: str, text: str, timeout: float = 15000):
-    page.wait_for_function("([h, s]) => document.getElementById('job-' + h + '-line').textContent === s",
-                           arg=[half, text], timeout=timeout)
+def _flow_is(page, box: str, text: str, timeout: float = 15000):
+    page.wait_for_function("([b, s]) => document.getElementById('flow-' + b + '-line').textContent === s",
+                           arg=[box, text], timeout=timeout)
 
 
-def _job(worker, locale: str, kind: str) -> dict:
-    """The newest job of a kind, as the stand-in recorded it."""
-    mine = [j for j in worker.store.jobs.values() if j["locale"] == locale and j["kind"] == kind]
-    return mine[-1] if mine else {}
+def _count_is(page, box: str, n: int, timeout: float = 15000):
+    page.wait_for_function("([b, n]) => document.getElementById('flow-' + b + '-n').textContent === n",
+                           arg=[box, str(n)], timeout=timeout)
 
 
-def test_the_import_file_is_made_downloaded_and_checked_from_the_panel(browser):
-    """F1 and F2: Get the import file -> the file, what it left out and why -> Download -> I
-    imported it -> how much of it the website shows, and Check again while some is missing."""
+def _job(worker, locale: str, kind: str, timeout: float = 15) -> dict:
+    """The newest job of a kind, as the stand-in recorded it -- waited for, since the page starts
+    some by itself (a submit once its price is in)."""
+    end = time.time() + timeout
+    while True:
+        mine = [j for j in worker.store.jobs.values() if j["locale"] == locale and j["kind"] == kind]
+        if mine or time.time() > end:
+            return mine[-1] if mine else {}
+        time.sleep(0.2)
+
+
+def _others(worker, locale: str, uids: list, record: dict, who: str = "kim@example.test"):
+    """Decisions another reviewer saved in another language, through the storage as their desk would."""
+    changes = [{"unit": u, "page": next(p for u2, p in sorted(worker.store.units) if u2 == u), "base": 0,
+                "record": record} for u in uids]
+    code, r = worker.store.handle("desk-write", {"locale": locale, "client": 1, "changes": changes}, who)
+    assert code == 200 and len(r["applied"]) == len(uids), r
+
+
+def _units_on(worker, page_slug: str = "vancouver", n: int = 3) -> list:
+    return sorted(u for u, p in worker.store.units if p == page_slug)[:n]
+
+
+def test_the_top_of_a_language_page(browser):
+    """FB-2: the strip first, then the language's title with a round ?, the chips with their names
+    and their "to check", and the one-row filters ending in "N of M"."""
     with desk("new") as (base, _root, worker):
-        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
-        a, b, c = _visible_uids(page, 3)
-        _act(page, a, "approve")
-        _act(page, b, "approve")
-        _as_wait(page, "saved")
-        make = page.locator("#job-file-make")
-        assert make.inner_text() == C.t("jobs.file.make", n=2) and make.is_enabled()
-        make.click()
-        _line_is(page, "file", C.t("jobs.working"))
-        assert _job(worker, "de", "export")["status"] == "queued" and worker.store.dispatched
-        # The engine: the file into `exports`, then the stamps, then the job done.
-        batch = "de-20260929T101500000Z-ab12cd34"
-        csv = "word_from,word_to\nHello,Hallo\nBye,Tschüss\n"
-        worker.store.seed_export(batch, "de", csv, 2, [{"unit": c, "rule": "PLACEHOLDER-ORDER"}])
-        for u in (a, b):
-            worker.store.pipeline[("de", u)] = {"exportedAt": _stamp(page, u, 5)}
-        worker.store.finish_job("de", "export", "done", {
-            "batchId": batch, "rows": 2, "stamped": 2, "refused": [{"unit": c, "rule": "PLACEHOLDER-ORDER"}],
-            "warned": [{"unit": b, "rule": "CLIENT-RULE-WARN"}], "notes": ["DEDUPED"], "skipped": {}})
-        _line_is(page, "file", C.tn("jobs.file.ready", 2))
-        page.wait_for_function("u => document.querySelector('tr[data-uid=\"' + u + '\"] .desk-state').textContent"
-                               f" === {json.dumps(C.t('status.exported'))}", arg=a, timeout=10000)
-        assert make.inner_text() == C.t("jobs.file.make", n=0) and make.is_disabled()
-        assert make.get_attribute("data-tip") == C.t("jobs.file.make.none")
-        assert page.locator("#job-file-how").is_visible()
-        assert page.locator("#job-file-out-title").inner_text() == C.tn("jobs.file.out", 1)
-        out = page.locator("#job-file-out").inner_text()
-        assert C.t("refusal.PLACEHOLDER-ORDER") in out
-        assert page.locator("#job-file-notes-title").inner_text() == C.tn("jobs.file.notes", 1)
-        notes = page.locator("#job-file-notes").inner_text()
-        assert C.t("refusal.CLIENT-RULE-WARN") in notes and C.t("refusal.DEDUPED") in notes
-        # Download: the engine's bytes, named by the batch.
-        with page.expect_download() as got:
-            page.locator("#job-file-download").click()
-        d = got.value
-        assert d.suggested_filename == batch + ".csv"
-        assert Path(d.path()).read_bytes() == csv.encode("utf-8")
-        # I imported it: a check of THIS file; one text on the website so far.
-        page.locator("#job-file-imported").click()
-        _line_is(page, "file", C.t("jobs.working"))
-        assert _job(worker, "de", "verify")["ref"] == batch
-        worker.store.pipeline[("de", a)] = {"exportedAt": _stamp(page, a, 5), "liveAt": _stamp(page, a, 6)}
-        worker.store.finish_job("de", "verify", "done",
-                                {"batchId": batch, "rows": 2, "imported": 2, "live": 1, "waiting": 1, "green": False})
-        _line_is(page, "file", C.t("jobs.file.live", live=1, n=2) + " " + C.t("jobs.file.waiting"))
-        assert page.locator("#job-file-imported").inner_text() == C.t("jobs.file.again")
-        assert _row(page, a).locator(".desk-state").inner_text() == C.t("status.live")
+        page, errors = _open(browser, base + "/admin/localization/de/")
+        _checked(page)
+        order = page.evaluate("""() => ['#flow', '#desk-title', '.desk-locales-strip', '.desk-toolbar']
+          .map(s => document.querySelector(s).getBoundingClientRect().top)""")
+        assert order == sorted(order)
+        assert page.locator("#desk-title").inner_text() == C.t("locale.title", language="German", total=_every())
+        assert page.locator(".desk-loc-name").evaluate_all("els => els.every(e => e.getBoundingClientRect().width > 8)")
+        shown = page.locator(f"{ROWS}:visible").count()
+        assert page.locator("#count-line").inner_text() == C.t("count.line", shown=shown, total=_every())
+        # The Review box adds up the chips' numbers: one count, two places.
+        chips = page.evaluate("() => [...document.querySelectorAll('[data-loc-count]')].reduce((a, e) => a + (+e.textContent || 0), 0)")
+        _count_is(page, "review", chips)
+        # The page opens on "to check": Show them says they are there; elsewhere it brings them back.
+        show = page.locator("#flow-show")
+        assert show.is_disabled() and show.get_attribute("data-tip") == C.t("flow.review.shown")
+        page.select_option("#f-state", "")
+        assert show.is_enabled()
+        show.click()
+        assert page.locator("#f-state").input_value() == "check" and "show=" in page.url
+        # No price, no step number, no sentence of its own: Send and Get the file say why they wait.
+        send, get = page.locator("#flow-send"), page.locator("#flow-get")
+        assert send.is_disabled() and send.get_attribute("data-tip") == C.t("flow.ask.none")
+        assert get.is_disabled() and get.get_attribute("data-tip") == C.t("flow.file.none")
+        assert "$" not in page.locator("#flow").inner_text()
+        page.locator("#how-open").click()
+        assert page.locator("#how-overlay").is_visible()
         assert not errors, errors
         page.close()
 
 
-def test_requests_go_to_gemini_at_the_price_shown_and_come_back_to_read(browser):
-    """F3: Send N requests -> the price -> Send (about $x) with exactly that amount -> Gemini
-    slower than the job -> Check for new translations -> they arrive, to read."""
+def test_send_to_gemini_asks_for_every_language_in_one_run(browser):
+    """The Manager's ruling (U3): one Send, confirmed with the total; one plan for all languages,
+    then one submit at exactly that plan's estimate (the most the run may spend, never shown);
+    Gemini slower than the job -> Check for new translations -> they arrive, to read."""
     with desk("new") as (base, _root, worker):
+        fr = _units_on(worker, n=2)
+        _others(worker, "fr", fr, {"tray": "draft"})
         page, errors = _open(browser, base + "/admin/localization/de/?show=all")
-        a, b = _visible_uids(page, 2)
+        a = _visible_uids(page, 1)[0]
         _act(page, a, "queue")
-        _act(page, b, "queue")
         _as_wait(page, "saved")
-        plan = page.locator("#job-gemini-plan")
-        assert plan.inner_text() == C.tn("jobs.gemini.plan", 2) and plan.is_enabled()
-        plan.click()
-        _line_is(page, "gemini", C.t("jobs.working"))
-        worker.store.finish_job("de", "plan", "done", {"texts": 2, "requests": 2, "estimateUsd": 0.0873, "stops": []})
-        _line_is(page, "gemini", C.tn("jobs.gemini.estimate", 2, cost="0.09"))
-        send = page.locator("#job-gemini-send")
-        assert send.inner_text() == C.t("jobs.gemini.send", cost="0.09") and plan.is_hidden()
-        send.click()
-        _line_is(page, "gemini", C.t("jobs.gemini.sending"))
-        assert _job(worker, "de", "submit")["amount_usd"] == 0.0873       # the price shown, unrounded
-        worker.store.finish_job("de", "submit", "done",
-                                {"runId": "20260929T101500000000Z", "drafts": 0, "failed": 0, "collected": False})
-        _line_is(page, "gemini", C.t("jobs.gemini.slow"))
-        page.locator("#job-gemini-collect").click()
-        _line_is(page, "gemini", C.t("jobs.gemini.sending"))
-        assert _job(worker, "de", "collect")["ref"] == "20260929T101500000000Z"
-        for u in (a, b):
-            worker.store.drafts[("de", u)] = {"text": DRAFT, "arrivedAt": _stamp(page, u, 5)}
-        worker.store.finish_job("de", "collect", "done",
-                                {"runId": "20260929T101500000000Z", "drafts": 2, "failed": 0, "collected": True})
-        _line_is(page, "gemini", C.tn("jobs.gemini.arrived", 2), timeout=30000)
+        _count_is(page, "ask", 3)
+        said = []
+        page.on("dialog", lambda d: (said.append(d.message), d.accept()))
+        page.locator("#flow-send").click()
+        _flow_is(page, "ask", C.t("jobs.working"))
+        # The Reviewer's E2-2 ruling: it sends every language's requests, and says how many of each.
+        assert said == [C.tn("flow.ask.confirm", 3) + " " + " · ".join(
+            [C.t("flow.ask.confirm.lang", language="German", n=1), C.t("flow.ask.confirm.lang", language="French", n=2)])]
+        assert _job(worker, "all", "plan")["status"] == "queued"
+        assert [j["locale"] for j in worker.store.jobs.values()] == ["all"]        # one run, not one per language
+        worker.store.finish_job("all", "plan", "done",
+                                {"texts": 3, "requests": 3, "estimateUsd": 0.0214, "stops": [], "byLocale": {"de": 1, "fr": 2}})
+        assert _job(worker, "all", "submit")["amount_usd"] == 0.0214              # the plan's own, unrounded
+        _flow_is(page, "ask", C.t("status.sending"))
+        worker.store.finish_job("all", "submit", "done", {"runId": "20260929T101500000000Z", "drafts": 0, "failed": 0,
+                                                          "collected": False, "byLocale": {}})
+        _flow_is(page, "ask", C.t("jobs.gemini.slow"), timeout=40000)
+        page.locator("#flow-collect").click()
+        assert not _job(worker, "all", "collect").get("ref")       # whichever run is out (the Reviewer's J-2)
+        worker.store.drafts[("de", a)] = {"text": DRAFT, "arrivedAt": _stamp(page, a, 5)}
+        worker.store.finish_job("all", "collect", "done", {"runId": "20260929T101500000000Z", "drafts": 3, "failed": 0,
+                                                           "collected": True, "byLocale": {"de": 1, "fr": 2}})
+        _flow_is(page, "ask", C.tn("jobs.gemini.arrived", 3), timeout=40000)
         page.wait_for_function("u => document.querySelector('tr[data-uid=\"' + u + '\"] .desk-state').textContent"
                                f" === {json.dumps(C.t('status.arrived'))}", arg=a, timeout=10000)
-        _toast(page, C.tn("toast.arrived", 2))
+        _toast(page, C.tn("toast.arrived", 1))
+        assert "$" not in page.locator("#flow").inner_text()
         assert not errors, errors
         page.close()
 
 
-def test_a_job_that_fails_or_cannot_run_says_why_in_the_documents_words(browser):
+def test_get_the_file_makes_one_per_language_and_i_imported_it_checks_each(browser):
+    """Get the file: an export for each language with approvals, in parallel; a Download per
+    language, which also opens the window with Weglot's steps and what the file left out; I
+    imported it checks each file, and each says how much of it the website shows."""
+    with desk("new") as (base, _root, worker):
+        fr = _units_on(worker, n=2)
+        _others(worker, "fr", fr, {"tray": "csv", "approvedAgainst": "x"})
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a, c = _visible_uids(page, 2)
+        _act(page, a, "approve")
+        _as_wait(page, "saved")
+        _count_is(page, "file", 3)
+        page.locator("#flow-get").click()
+        _flow_is(page, "file", C.t("jobs.working"))
+        _job(worker, "fr", "export")
+        assert sorted(j["locale"] for j in worker.store.jobs.values() if j["kind"] == "export") == ["de", "fr"]
+        de_b, fr_b = "de-20260929T101500000Z-ab12cd34", "fr-20260929T101500000Z-cd34ef56"
+        csv = "word_from,word_to\nHello,Hallo\n"
+        worker.store.seed_export(de_b, "de", csv, 1, [{"unit": c, "rule": "PLACEHOLDER-ORDER"}])
+        worker.store.seed_export(fr_b, "fr", "word_from,word_to\nHello,Bonjour\nBye,Salut\n", 2, [])
+        worker.store.pipeline[("de", a)] = {"exportedAt": _stamp(page, a, 5)}
+        worker.store.finish_job("de", "export", "done", {"batchId": de_b, "rows": 1, "stamped": 1, "skipped": {},
+                                                         "refused": [{"unit": c, "rule": "PLACEHOLDER-ORDER"}],
+                                                         "warned": [], "notes": ["DEDUPED"]})
+        worker.store.finish_job("fr", "export", "done", {"batchId": fr_b, "rows": 2, "stamped": 2, "skipped": {},
+                                                         "refused": [], "warned": [], "notes": []})
+        german = page.locator("#flow-files [data-file='de']")
+        german.wait_for(timeout=15000)
+        assert german.inner_text() == C.t("flow.file.download", language="German")
+        assert page.locator("#flow-files [data-file='fr']").inner_text() == C.t("flow.file.download", language="French")
+        _flow_is(page, "file", "")
+        with page.expect_download() as got:
+            german.click()
+        assert got.value.suggested_filename == de_b + ".csv"
+        assert Path(got.value.path()).read_bytes() == csv.encode("utf-8")
+        assert page.locator("#file-overlay").is_visible()
+        assert page.locator("#file-title").inner_text() == C.t("flow.file.popup", language="German")
+        assert page.locator("#file-rows").inner_text() == C.tn("flow.file.rows", 1)
+        body = page.locator("#file-overlay").inner_text()
+        assert C.t("refusal.PLACEHOLDER-ORDER") in body and C.t("refusal.DEDUPED") in body
+        page.locator("#file-close").click()
+        page.locator("#flow-imported").click()
+        assert _job(worker, "de", "verify")["ref"] == de_b and _job(worker, "fr", "verify")["ref"] == fr_b
+        worker.store.finish_job("de", "verify", "done", {"batchId": de_b, "rows": 1, "imported": 1, "live": 1, "waiting": 0, "green": True})
+        worker.store.finish_job("fr", "verify", "done", {"batchId": fr_b, "rows": 2, "imported": 2, "live": 1, "waiting": 1, "green": False})
+        page.wait_for_function("s => document.getElementById('flow-files').textContent.indexOf(s) !== -1",
+                               arg=C.t("flow.file.live", live=1, n=2), timeout=15000)
+        assert C.t("flow.file.live", live=1, n=1) in page.locator("#flow-files").inner_text()
+        assert page.locator("#flow-imported").inner_text() == C.t("jobs.file.again")    # French still missing
+        assert not errors, errors
+        page.close()
+
+
+def test_a_job_that_fails_or_cannot_start_says_why_in_the_documents_words(browser):
     with desk("new") as (base, _root, worker):
         page, errors = _open(browser, base + "/admin/localization/de/?show=all")
         a, b = _visible_uids(page, 2)
         _act(page, a, "approve")
         _act(page, b, "queue")
         _as_wait(page, "saved")
-        # No file made: the whole job's reasons, listed.
-        page.locator("#job-file-make").click()
-        worker.store.finish_job("de", "export", "failed", {"file": ["STALE-MANIFEST"], "refused": []},
-                                error="export-refused")
-        _line_is(page, "file", C.t("job.failed.export-refused"))
-        assert C.t("refusal.STALE-MANIFEST") in page.locator("#job-file-out").inner_text()
-        assert page.locator("#job-file-out-title").is_hidden() and page.locator("#job-file-download").is_hidden()
-        # A price that a cap would refuse: said, and nothing to send.
-        page.locator("#job-gemini-plan").click()
-        worker.store.finish_job("de", "plan", "done",
-                                {"texts": 1, "requests": 1, "estimateUsd": 0.04, "stops": ["over-day-cap"]})
-        _line_is(page, "gemini", C.t("job.failed.over-day-cap"))
-        assert page.locator("#job-gemini-send").is_hidden()
+        page.on("dialog", lambda d: d.accept())
+        # A price a cap would refuse: said, and nothing sent.
+        page.locator("#flow-send").click()
+        worker.store.finish_job("all", "plan", "done", {"texts": 1, "requests": 1, "estimateUsd": 0.04,
+                                                        "stops": ["over-day-cap"], "byLocale": {"de": 1}})
+        _flow_is(page, "ask", C.t("job.failed.over-day-cap"))
+        assert _job(worker, "all", "submit", timeout=1) == {}
+        # No file made: the language, then the job's reason and the file's own.
+        page.locator("#flow-get").click()
+        worker.store.finish_job("de", "export", "failed", {"file": ["STALE-MANIFEST"], "refused": []}, error="export-refused")
+        _flow_is(page, "file", C.t("flow.failed", language="German", reason=C.t("job.failed.export-refused")
+                                   + " " + C.t("refusal.STALE-MANIFEST")))
         # A code this desk does not know yet reads as the engine's own error, never as a key.
-        page.locator("#job-file-make").click()
+        page.locator("#flow-get").click()
         worker.store.finish_job("de", "export", "failed", None, error="a-code-from-the-future")
-        _line_is(page, "file", C.t("job.failed.engine-error"))
-        # GitHub refusing the dispatch: failed at once.
-        worker.store.dispatch_status = 422
-        page.locator("#job-file-make").click()
-        _line_is(page, "file", C.t("job.failed.engine-did-not-start"))
+        _flow_is(page, "file", C.t("flow.failed", language="German", reason=C.t("job.failed.engine-error")))
         # The server refusing the start itself: the day's limit, no engine, trouble.
-        worker.store.dispatch_status = 204
-        worker.action_faults["desk-job-start"] = {"status": 429, "error": "over the daily budget"}
-        page.locator("#job-file-make").click()
-        _line_is(page, "file", C.t("jobs.start.daily"))
-        worker.action_faults["desk-job-start"] = {"status": 503, "error": "the engine is not configured"}
-        page.locator("#job-file-make").click()
-        _line_is(page, "file", C.t("jobs.start.unavailable"))
-        worker.action_faults["desk-job-start"] = {"status": 500, "error": "server error"}
-        page.locator("#job-file-make").click()
-        _line_is(page, "file", C.t("jobs.start.failed", reason=C.t("save.reason.trouble")))
+        for fault, words in ((({"status": 429, "error": "over the daily budget"}), C.t("jobs.start.daily")),
+                             (({"status": 503, "error": "the engine is not configured"}), C.t("jobs.start.unavailable")),
+                             (({"status": 500, "error": "server error"}),
+                              C.t("jobs.start.failed", reason=C.t("save.reason.trouble")))):
+            worker.action_faults["desk-job-start"] = fault
+            page.locator("#flow-get").click()
+            _flow_is(page, "file", words)
         assert not [e for e in errors if "COPY.md" in e], errors
         page.close()
 
 
-def test_the_panel_waits_for_saving_and_follows_the_language(browser):
-    """A job reads what is saved: with a change not saved, its buttons wait and say why. Each
-    language shows its own jobs."""
+def test_the_strip_waits_for_saving_and_is_not_there_with_saving_off(browser):
+    """A job reads what is saved: with a change not saved, Send and Get the file wait and say why."""
     with desk("new") as (base, _root, worker):
         worker.desk_fault = {"status": 503, "error": "unavailable"}
         page, _errors = _open(browser, base + "/admin/localization/de/?show=all")
         a = _visible_uids(page, 1)[0]
         _act(page, a, "approve")
-        make = page.locator("#job-file-make")
-        page.wait_for_function("() => document.getElementById('job-file-make').getAttribute('data-tip') === "
+        page.wait_for_function("() => document.getElementById('flow-get').getAttribute('data-tip') === "
                                + json.dumps(C.t("jobs.unsaved")), timeout=10000)
-        assert make.is_disabled()
+        assert page.locator("#flow-get").is_disabled()
         worker.desk_fault = None                        # the desk tries again by itself
         _as_wait(page, "saved", timeout=40000)
-        assert make.is_enabled()
-        make.click()
-        _line_is(page, "file", C.t("jobs.working"))
-        page.locator('.desk-locales-strip [data-loc="fr"]').click()
-        page.wait_for_url("**/localization/fr/**")
-        _line_is(page, "file", C.t("jobs.file.idle"))
-        assert _job(worker, "fr", "export") == {}
+        assert page.locator("#flow-get").is_enabled()
+        page.close()
+    with desk("new", save_off=True) as (base, _root, worker):
+        page, _errors = _open(browser, base + "/admin/localization/de/")
+        assert page.locator("#flow").is_hidden()
+        assert "desk-job-get" not in worker.calls and "desk-summary" not in worker.calls
         page.close()
 
 
-def test_with_saving_off_there_is_no_panel(browser):
-    with desk("new", save_off=True) as (base, _root, worker):
+def _ago(minutes: float) -> str:
+    from datetime import datetime, timedelta, timezone
+    t = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    return t.strftime("%Y-%m-%dT%H:%M:%S.") + f"{t.microsecond // 1000:03d}Z"
+
+
+def test_check_for_new_translations_shows_whenever_a_run_may_still_be_out(browser):
+    """The Reviewer's J-2: the desk said "Check for new translations first" with no such button --
+    after a plan stopped on a run still out, or a send the engine never answered. The button shows
+    whenever a run may be out, and asks the engine for whichever run is (no ref, locale "all")."""
+    with desk("new") as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a = _visible_uids(page, 1)[0]
+        _act(page, a, "queue")
+        _as_wait(page, "saved")
+        page.on("dialog", lambda d: d.accept())
+        collect = page.locator("#flow-collect")
+        page.locator("#flow-send").click()
+        worker.store.finish_job("all", "plan", "done", {"texts": 1, "requests": 1, "estimateUsd": 0.01,
+                                                        "stops": ["run-still-out"], "byLocale": {"de": 1}})
+        _flow_is(page, "ask", C.t("job.failed.run-still-out"))
+        assert collect.is_visible()
+        collect.click()
+        job = _job(worker, "all", "collect")
+        assert job["status"] == "queued" and not job.get("ref")
+        worker.store.finish_job("all", "collect", "failed", None, error="no-run")    # nothing was out after all
+        _flow_is(page, "ask", C.t("job.failed.no-run"))
+        assert collect.is_hidden()
+        # A send the engine never answered may have left its run out, with no run id to name.
+        page.locator("#flow-send").click()
+        worker.store.finish_job("all", "plan", "done", {"texts": 1, "requests": 1, "estimateUsd": 0.01, "stops": [],
+                                                        "byLocale": {"de": 1}})
+        _job(worker, "all", "submit")
+        worker.store.finish_job("all", "submit", "failed", None, error="engine-never-answered")
+        _flow_is(page, "ask", C.t("job.failed.engine-never-answered"), timeout=40000)
+        assert collect.is_visible()
+        assert not errors, errors
+        page.close()
+
+
+def test_a_weglot_file_is_offered_only_while_it_is_current(browser):
+    """The Reviewer's A4-1: a file made before a later decision in its language, or more than 60
+    minutes ago, is out of date -- Download and I imported it are not offered, and Get the file is."""
+    with desk("new") as (base, _root, worker):
+        fr = _units_on(worker, n=2)
+        _others(worker, "fr", fr[:1], {"tray": "csv", "approvedAgainst": "x"})
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a, b = _visible_uids(page, 2)
+        _act(page, a, "approve")
+        _as_wait(page, "saved")
+        page.locator("#flow-get").click()
+        for lc, batch in (("de", "de-20260929T101500000Z-ab12cd34"), ("fr", "fr-20260929T101500000Z-cd34ef56")):
+            _job(worker, lc, "export")
+            worker.store.seed_export(batch, lc, "word_from,word_to\nHello,Hallo\n", 1, [])
+            worker.store.finish_job(lc, "export", "done", {"batchId": batch, "rows": 1, "stamped": 1, "skipped": {},
+                                                           "refused": [], "warned": [], "notes": []})
+        german, french = page.locator("#flow-files [data-file='de']"), page.locator("#flow-files [data-file='fr']")
+        german.wait_for(timeout=15000)
+        # A later decision here: the German file is out of date, and the new approval wants a file.
+        _act(page, b, "approve")
+        _as_wait(page, "saved")
+        german.wait_for(state="detached", timeout=10000)
+        assert page.locator("#flow-get").is_enabled()
+        # A later decision in French, by someone else: found when Download asks, and nothing is handed over.
+        got = []
+        page.on("download", lambda d: got.append(d))
+        _others(worker, "fr", fr[1:2], {"tray": "csv", "approvedAgainst": "y"})
+        french.click()
+        _flow_is(page, "file", C.t("flow.file.stale"))
+        french.wait_for(state="detached", timeout=10000)
+        assert got == [] and page.locator("#file-overlay").is_hidden()
+        page.close()
+    with desk("new") as (base, _root, worker):
+        # A file made 61 minutes ago: not offered, however current its language.
+        worker.store.handle("desk-job-start", {"locale": "de", "kind": "export"}, "kim@example.test")
+        worker.store.seed_export("de-old", "de", "word_from,word_to\n", 0, [], created_at=_ago(61))
+        worker.store.finish_job("de", "export", "done", {"batchId": "de-old", "rows": 0, "stamped": 0, "skipped": {},
+                                                         "refused": [], "warned": [], "notes": []})
+        _job(worker, "de", "export")["created_at"] = _ago(61)
         page, _errors = _open(browser, base + "/admin/localization/de/")
-        assert page.locator("#jobs").is_hidden()
-        assert "desk-job-get" not in worker.calls
+        _checked(page)
+        page.wait_for_timeout(1500)                     # the jobs are read with the page
+        assert page.locator("#flow-files [data-file]").count() == 0
         page.close()

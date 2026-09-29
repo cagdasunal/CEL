@@ -58,38 +58,40 @@
       </details>
     </header>
   <div class="dashboard-shell">
-    <header class="dashboard-header">
-      <div class="brand-text">
-        <p class="eyebrow" id="desk-eyebrow">LOCALIZATION DESK · ARABIC</p>
-        <p class="subtitle" id="desk-subtitle"><bdi>العربية</bdi> &middot; 839 texts</p>
+    <section class="desk-flow" id="flow" aria-label="Ask Gemini, review and get the Weglot file, for every language" hidden>
+      <div class="desk-flow-step" id="flow-ask-step">
+        <p class="desk-flow-label">Ask Gemini</p>
+        <p class="desk-flow-count"><span id="flow-ask-n">0</span><small>requested</small></p>
+        <p class="desk-status desk-flow-line" id="flow-ask-line" role="status"></p>
+        <div class="desk-flow-act">
+          <button type="button" class="desk-btn is-strong" id="flow-send">Send to Gemini</button>
+          <button type="button" class="desk-btn" id="flow-collect" hidden>Check for new translations</button>
+        </div>
       </div>
-      <button type="button" class="desk-btn desk-header-btn" id="how-open">How this works</button>
-    </header>
-    <section id="jobs" aria-label="The import file and Gemini" hidden>
-      <div class="desk-trays" id="job-file">
-        <h2 class="desk-review-title">The import file</h2>
-        <button type="button" class="desk-btn is-strong" id="job-file-make"></button>
-        <button type="button" class="desk-btn" id="job-file-download" hidden>Download the import file</button>
-        <button type="button" class="desk-btn" id="job-file-imported" hidden></button>
+      <span class="desk-flow-arrow" aria-hidden="true">&#8250;</span>
+      <div class="desk-flow-step" id="flow-review-step">
+        <p class="desk-flow-label">Review</p>
+        <p class="desk-flow-count"><span id="flow-review-n">0</span><small>to check</small></p>
+        <div class="desk-flow-act">
+          <button type="button" class="desk-btn" id="flow-show">Show them</button>
+        </div>
       </div>
-      <p class="desk-review-sub desk-status" id="job-file-line" role="status"></p>
-      <div id="job-file-more" hidden>
-        <div class="desk-notice" id="job-file-how"><p>How to import it in Weglot:</p>
-<ul><li>Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”</li><li>Check that Weglot's “… updated translations will be imported.” shows the same number as this file.</li><li>Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”</li><li>Press <strong>Import</strong>.</li></ul>
-<p>If Weglot lists a text under <strong>Errors</strong>, let the team know: the check after the import will show it too. Then come back here and press <strong>I imported it</strong>.</p></div>
-        <p class="desk-review-sub" id="job-file-out-title" hidden></p>
-        <ul class="desk-queue-list" id="job-file-out" hidden></ul>
-        <p class="desk-review-sub" id="job-file-notes-title" hidden></p>
-        <ul class="desk-queue-list" id="job-file-notes" hidden></ul>
+      <span class="desk-flow-arrow" aria-hidden="true">&#8250;</span>
+      <div class="desk-flow-step" id="flow-file-step">
+        <p class="desk-flow-label">Weglot file</p>
+        <p class="desk-flow-count"><span id="flow-file-n">0</span><small>approved</small></p>
+        <p class="desk-status desk-flow-line" id="flow-file-line" role="status"></p>
+        <ul class="desk-flow-files" id="flow-files" hidden></ul>
+        <div class="desk-flow-act">
+          <button type="button" class="desk-btn is-strong" id="flow-get">Get the file</button>
+          <button type="button" class="desk-btn" id="flow-imported" hidden>I imported it</button>
+        </div>
       </div>
-      <div class="desk-trays" id="job-gemini">
-        <h2 class="desk-review-title">Gemini</h2>
-        <button type="button" class="desk-btn is-strong" id="job-gemini-plan"></button>
-        <button type="button" class="desk-btn is-strong" id="job-gemini-send" hidden></button>
-        <button type="button" class="desk-btn" id="job-gemini-collect" hidden>Check for new translations</button>
-      </div>
-      <p class="desk-review-sub desk-status" id="job-gemini-line" role="status"></p>
     </section>
+    <header class="dashboard-header desk-head">
+      <h1 class="desk-title" id="desk-title">Arabic · 839 texts</h1>
+      <button type="button" class="desk-help" id="how-open" data-tip="How this works" aria-label="How this works">?</button>
+    </header>
     <div class="controls">
       <nav class="desk-locales-strip" aria-label="Choose a language">
         <a class="desk-loc" href="/admin/localization/de/" data-loc="de" data-tip="German"><span class="desk-loc-flag" aria-hidden="true">🇩🇪</span><span class="desk-loc-name">German</span><span class="desk-loc-count" data-loc-count="de" hidden></span></a>
@@ -113,7 +115,7 @@
         </label>
         <label class="desk-field">Show
           <select class="desk-select" id="f-state">
-            <option value="check" data-copy="show.check">Flagged — check these first (…)</option>
+            <option value="check" data-copy="show.check">To check first (…)</option>
             <option value="arrived" data-copy="show.arrived">New translations to read (…)</option>
             <option value="todo" data-copy="show.todo">Not reviewed yet (…)</option>
             <option value="" data-copy="show.all">All texts (…)</option>
@@ -122,15 +124,16 @@
             <option value="draft" data-copy="show.draft">New translation requested (…)</option>
             <option value="sending" data-copy="show.sending">With Gemini (…)</option>
             <option value="failed" data-copy="show.failed">Translation failed (…)</option>
-            <option value="exported" data-copy="show.exported">In the import file (…)</option>
+            <option value="exported" data-copy="show.exported">In a Weglot file (…)</option>
             <option value="live" data-copy="show.live">On the website (…)</option>
           </select>
         </label>
         <label class="desk-field">Search
           <input class="desk-select desk-search" id="f-q" type="search" placeholder="English or Arabic" autocomplete="off">
         </label>
+        <span class="desk-toolbar-spacer"></span>
+        <p class="subtle desk-count" id="count-line" aria-live="polite"></p>
       </div>
-      <p class="subtle" id="count-line" aria-live="polite"></p>
     </div>
     <main class="dashboard-main">
       <div class="scroll-x">
@@ -192,7 +195,9 @@
 <h3>Working faster</h3>
 <p>Tick any texts — or the box in the heading to take everything on screen — and the bar at the bottom applies one decision to all of them. On the keyboard, <code>J</code> and <code>K</code> move between texts, <code>A</code> approves, <code>E</code> edits, <code>R</code> asks Gemini for a new translation, and <code>X</code> ticks.</p>
 <h3>Nothing reaches the website by itself</h3>
-<p>Approved texts reach the website through the import file: <strong>Get the import file</strong> at the top of the page makes it, you import it in Weglot, and <strong>I imported it</strong> checks that the website shows it. Requests go to Gemini with <strong>Send requests to Gemini</strong>; the desk shows what that costs before anything is sent. Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.</p>
+<p>The three boxes at the top work on every language at once.</p>
+<ul><li><strong>Ask Gemini</strong> counts the new translations you requested with ✦. <strong>Send to Gemini</strong> asks you to confirm the number, then sends them all to Gemini together. Their new translations come back to read, usually within 20 minutes; if Gemini is slower, <strong>Check for new translations</strong> fetches them.</li><li><strong>Review</strong> counts the flagged texts nobody has checked yet. <strong>Show them</strong> lists this language's in the table.</li><li><strong>Weglot file</strong> counts the approved texts that aren't in a file yet. <strong>Get the file</strong> makes one Weglot file for each language that has some. <strong>Download</strong> a language's file: the window that opens says how to import it in Weglot. Then press <strong>I imported it</strong>, and each file says how many of its texts the website shows; <strong>Check again</strong> looks again while some are missing.</li></ul>
+<p>Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.</p>
 <h3>Saving</h3>
 <p>Your decisions are saved by themselves a moment after you stop clicking. The bar at the bottom says where saving stands; hover over it to see what that means.</p>
 <ul><li><strong>All changes saved</strong> — everything is on the server. You can close this page, or carry on from another computer.</li><li><strong>Checking for changes…</strong> — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.</li><li><strong>Changed elsewhere</strong> — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.</li><li><strong>Offline</strong>, <strong>not saved yet</strong> or <strong>Saving stopped</strong> — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. <strong>Try again</strong> saves them now.</li></ul>
@@ -231,6 +236,25 @@
           <button type="button" class="desk-btn" id="tray-done">Close</button>
         </div>
       </footer>
+    </div>
+  </div>
+
+  <div class="cpw-overlay" id="file-overlay" hidden>
+    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="file-title">
+      <h2 class="cpw-title" id="file-title"></h2>
+      <p class="desk-review-sub" id="file-rows"></p>
+      <div class="desk-modal-body">
+<p>How to import it in Weglot:</p>
+<ul><li>Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”</li><li>Check that Weglot's “… updated translations will be imported.” shows the same number as this file.</li><li>Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”</li><li>Press <strong>Import</strong>.</li></ul>
+<p>If Weglot lists a text under <strong>Errors</strong>, let the team know: the check after the import will show it too. Then come back here and press <strong>I imported it</strong>.</p>
+        <p class="desk-review-sub" id="file-out-title" hidden></p>
+        <ul class="desk-queue-list" id="file-out" hidden></ul>
+        <p class="desk-review-sub" id="file-notes-title" hidden></p>
+        <ul class="desk-queue-list" id="file-notes" hidden></ul>
+      </div>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-save" id="file-close">Close</button>
+      </div>
     </div>
   </div>
 
@@ -299,7 +323,7 @@
     var LOCALES = ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"];
     // Every word on this page comes from COPY.md (operator, 2026-09-23: all text lives in
     // one document and the code pulls it from there). t() / tn() read it.
-    var COPY = {"jobs.file.how":"How to import it in Weglot:\n\n- Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”\n- Check that Weglot's “… updated translations will be imported.” shows the same number as this file.\n- Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”\n- Press **Import**.\n\nIf Weglot lists a text under **Errors**, let the team know: the check after the import will show it\ntoo. Then come back here and press **I imported it**.","how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### New translations from Gemini\n\nWhen Gemini sends a new translation, it is shown in place of the website's, marked *New\ntranslation to read*, with the website's words under it. Approve it as it is, change it, or ask\nfor another. *Show* → *New translations to read* lists only them.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nApproved texts reach the website through the import file: **Get the import file** at the top of the page makes it, you import it in Weglot, and **I imported it** checks that the website shows it. Requests go to Gemini with **Send requests to Gemini**; the desk shows what that costs before anything is sent. Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.","how.saving.off":"### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","how.saving.on":"### Saving\n\nYour decisions are saved by themselves a moment after you stop clicking. The bar at the bottom\nsays where saving stands; hover over it to see what that means.\n\n- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.\n- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.\n- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.\n- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.\n\nA text you're editing keeps what you typed, even if someone else saves it meanwhile. When you\nsave yours, it is marked as changed elsewhere, so you choose which wording stays.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — College of English Language","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot.","locale.eyebrow":"LOCALIZATION DESK · {LANGUAGE}","locale.subtitle":"{total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"Flagged — check these first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In the import file ({n})","show.live":"On the website ({n})","count.line":"Showing {shown} of {total} texts","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","jobs.label":"The import file and Gemini","jobs.working":"Working on it — about a minute.","jobs.unsaved":"Wait until the bar says “All changes saved”: the file and the requests are made from what's saved.","jobs.start.failed":"It couldn't start: {reason}. Try again.","jobs.start.unavailable":"This can't run right now. Let the team know.","jobs.read.failed":"Couldn't check how it's going. Trying again…","jobs.file.title":"The import file","jobs.file.idle":"Approved texts reach the website through the import file: get it here, then import it in Weglot.","jobs.file.make":"Get the import file ({n} approved)","jobs.file.make.none":"No approved text is waiting for a file. Approve one first.","jobs.file.ready.one":"The import file is ready: 1 text.","jobs.file.ready.other":"The import file is ready: {n} texts.","jobs.file.download":"Download the import file","jobs.file.out.one":"1 text isn't in the file:","jobs.file.out.other":"{n} texts aren't in the file:","jobs.file.notes.one":"1 text went in with something to check:","jobs.file.notes.other":"{n} texts went in with something to check:","jobs.file.imported":"I imported it","jobs.file.live":"On the website: {live} of {n} texts.","jobs.file.waiting":"The website can take a few minutes to show an import. Check again in a few minutes.","jobs.file.again":"Check again","jobs.gemini.title":"Gemini","jobs.gemini.idle":"When you ask Gemini for new translations, the requests wait here until you send them.","jobs.gemini.plan.one":"Send 1 request to Gemini","jobs.gemini.plan.other":"Send {n} requests to Gemini","jobs.gemini.plan.none":"No requests are waiting. Ask Gemini for a new translation first.","jobs.gemini.estimate.one":"1 text: about ${cost}. Nothing is sent until you press Send.","jobs.gemini.estimate.other":"{n} texts: about ${cost}. Nothing is sent until you press Send.","jobs.gemini.nothing":"Nothing to send: every request is already with Gemini, or was undone.","jobs.gemini.send":"Send (about ${cost})","jobs.gemini.sending":"With Gemini. It can take up to 20 minutes; you can keep working.","jobs.gemini.arrived.one":"1 new translation to read.","jobs.gemini.arrived.other":"{n} new translations to read.","jobs.gemini.slow":"Gemini hasn't finished yet. Check again in a few minutes.","jobs.gemini.collect":"Check for new translations","jobs.start.daily":"Today's limit is reached: this works again tomorrow.","jobs.file.download.failed":"The import file couldn't be downloaded: {reason}. Try again.","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","row.website_now":"On the website now:","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In the import file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.checking":"Checking for changes…","autosave.checking.hint":"This is what this computer saved last. Anything saved on another computer since shows up in a moment.","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once an import file is made and imported into Weglot.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Send them to Gemini from the top of the page when you're ready.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's saved with your other decisions — the bar at the bottom says when.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.arrived.one":"1 new translation to read","toast.arrived.other":"{n} new translations to read","toast.arrived.detail":"Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again.","toast.storage.title":"This browser can't keep a copy of your work","toast.storage.detail":"Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for \"All changes saved\" before you close this tab, and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is saved with your decisions. Send the requests to Gemini from the top of the page.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot import file.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules; the note under the translation says which. Edit it, then approve it again.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then approve it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then approve it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then approve it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo the approval.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then approve it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Approve both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was approved. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was approved. Review it again.","refusal.UNSIGNED":"The approval wasn't saved through the desk. Approve it again.","refusal.BAD-SIGNATURE":"The approval doesn't match what was saved. Approve it again.","refusal.UNREGISTERED":"The approval doesn't say who made it. Approve it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and the approval doesn't say who made it. Approve it again.","refusal.DUPLICATE":"The same text was approved twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was approved in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules; the note under the translation says which.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The approvals couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not approved, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was approved. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"The approval doesn't record which wording it was given for. Approve it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The approved wording is empty. Write one, or undo the approval.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The price to send wasn't clear, so nothing was sent. Get the price again, then send.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The import file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no import file to check yet. Get the import file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"Gemini's price went up since you saw it, so nothing was sent. Get the new price, then send.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","how.title":"How this works","how.close":"Close"};
+    var COPY = {"jobs.file.how":"How to import it in Weglot:\n\n- Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”\n- Check that Weglot's “… updated translations will be imported.” shows the same number as this file.\n- Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”\n- Press **Import**.\n\nIf Weglot lists a text under **Errors**, let the team know: the check after the import will show it\ntoo. Then come back here and press **I imported it**.","how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### New translations from Gemini\n\nWhen Gemini sends a new translation, it is shown in place of the website's, marked *New\ntranslation to read*, with the website's words under it. Approve it as it is, change it, or ask\nfor another. *Show* → *New translations to read* lists only them.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nThe three boxes at the top work on every language at once.\n\n- **Ask Gemini** counts the new translations you requested with ✦. **Send to Gemini** asks you to confirm the number, then sends them all to Gemini together. Their new translations come back to read, usually within 20 minutes; if Gemini is slower, **Check for new translations** fetches them.\n- **Review** counts the flagged texts nobody has checked yet. **Show them** lists this language's in the table.\n- **Weglot file** counts the approved texts that aren't in a file yet. **Get the file** makes one Weglot file for each language that has some. **Download** a language's file: the window that opens says how to import it in Weglot. Then press **I imported it**, and each file says how many of its texts the website shows; **Check again** looks again while some are missing.\n\nBoth lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.","how.saving.off":"### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","how.saving.on":"### Saving\n\nYour decisions are saved by themselves a moment after you stop clicking. The bar at the bottom\nsays where saving stands; hover over it to see what that means.\n\n- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.\n- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.\n- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.\n- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.\n\nA text you're editing keeps what you typed, even if someone else saves it meanwhile. When you\nsave yours, it is marked as changed elsewhere, so you choose which wording stays.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — College of English Language","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when a Weglot file is made and imported.","locale.title":"{language} · {total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"To check first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In a Weglot file ({n})","show.live":"On the website ({n})","count.line":"{shown} of {total}","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","flow.label":"Ask Gemini, review and get the Weglot file, for every language","flow.ask.label":"Ask Gemini","flow.ask.unit":"requested","flow.ask.button":"Send to Gemini","flow.ask.none":"Ask Gemini for a new translation with ✦ first","flow.ask.confirm.one":"Send 1 text to Gemini?","flow.ask.confirm.other":"Send {n} texts to Gemini?","flow.ask.confirm.lang":"{language} {n}","flow.review.label":"Review","flow.review.unit":"to check","flow.review.button":"Show them","flow.review.none":"Nothing to check in {language}","flow.review.shown":"They're in the table now","flow.file.label":"Weglot file","flow.file.unit":"approved","flow.file.button":"Get the file","flow.file.none":"Approve texts with ✓ first","flow.file.download":"Download {language}","flow.file.live":"{live} of {n} on the website","flow.file.stale":"This file is out of date: get the file again.","flow.file.popup":"{language}: the Weglot file","flow.file.rows.one":"1 text in this file.","flow.file.rows.other":"{n} texts in this file.","flow.failed":"{language}: {reason}","jobs.working":"Working on it — about a minute.","jobs.unsaved":"Wait until the bar says “All changes saved”: the file and the requests are made from what's saved.","jobs.start.failed":"It couldn't start: {reason}. Try again.","jobs.start.unavailable":"This can't run right now. Let the team know.","jobs.start.daily":"Today's limit is reached: this works again tomorrow.","jobs.read.failed":"Couldn't check how it's going. Trying again…","jobs.file.out.one":"1 text isn't in the file:","jobs.file.out.other":"{n} texts aren't in the file:","jobs.file.notes.one":"1 text went in with something to check:","jobs.file.notes.other":"{n} texts went in with something to check:","jobs.file.imported":"I imported it","jobs.file.again":"Check again","jobs.file.download.failed":"The Weglot file couldn't be downloaded: {reason}. Try again.","jobs.gemini.nothing":"Nothing to send: every request is already with Gemini, or was undone.","jobs.gemini.arrived.one":"1 new translation to read.","jobs.gemini.arrived.other":"{n} new translations to read.","jobs.gemini.slow":"Gemini hasn't finished yet. Check again in a few minutes.","jobs.gemini.collect":"Check for new translations","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","row.website_now":"On the website now:","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In a Weglot file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.checking":"Checking for changes…","autosave.checking.hint":"This is what this computer saved last. Anything saved on another computer since shows up in a moment.","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once a Weglot file is made and imported.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Send them to Gemini from the top of the page when you're ready.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's saved with your other decisions — the bar at the bottom says when.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.arrived.one":"1 new translation to read","toast.arrived.other":"{n} new translations to read","toast.arrived.detail":"Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again.","toast.storage.title":"This browser can't keep a copy of your work","toast.storage.detail":"Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for \"All changes saved\" before you close this tab, and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is saved with your decisions. Send the requests to Gemini from the top of the page.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot file.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then approve it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then approve it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then approve it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo the approval.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then approve it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Approve both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was approved. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was approved. Review it again.","refusal.UNSIGNED":"The approval wasn't saved through the desk. Approve it again.","refusal.BAD-SIGNATURE":"The approval doesn't match what was saved. Approve it again.","refusal.UNREGISTERED":"The approval doesn't say who made it. Approve it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and the approval doesn't say who made it. Approve it again.","refusal.DUPLICATE":"The same text was approved twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was approved in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The approvals couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not approved, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was approved. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"The approval doesn't record which wording it was given for. Approve it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The approved wording is empty. Write one, or undo the approval.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","how.title":"How this works","how.close":"Close"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -1006,7 +1030,7 @@
       if (c.csv) oc.removeAttribute('data-tip'); else oc.setAttribute('data-tip', t('bar.view.approved.hint'));
       if (c.draft) od.removeAttribute('data-tip'); else od.setAttribute('data-tip', t('bar.view.requested.hint'));
       paintSave(all);
-      paintJobs(all);
+      paintFlow(all);
       // After the frame: reading the bar's position inside a click forced a layout per click
       // (round 3 measured 3.2 -> 10.4 ms with a toast up).
       requestAnimationFrame(placeToasts);
@@ -1093,6 +1117,7 @@
       // aria-live: rewriting an unchanged line made screen readers repeat it on every key.
       var line = t('count.line', { shown: vis.length, total: rows.length });
       if (countLine.textContent !== line) countLine.textContent = line;
+      paintShow();
       syncPickAll();
       if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
     }
@@ -1536,7 +1561,10 @@
     var trayList = document.getElementById('tray-list');
     var openTray = null;
 
-    function closeOverlays() { howOverlay.hidden = true; trayOverlay.hidden = true; openTray = null; }
+    function closeOverlays() {
+      howOverlay.hidden = true; trayOverlay.hidden = true; openTray = null;
+      document.getElementById('file-overlay').hidden = true;
+    }
     document.getElementById('how-open').addEventListener('click', function () {
       howOverlay.hidden = false;
       document.getElementById('how-close').focus();
@@ -2025,6 +2053,7 @@
         now[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
         out.applied++;
       });
+      if (out.applied) flowSaved(code, r.body.at);
       (r.body.conflicts || []).forEach(function (c) {
         var cur = c.current && hasContent(c.current) ? c.current : null;
         if (sameDecision(hasContent(d.body[c.unit]) ? d.body[c.unit] : null, cur)) {
@@ -2336,30 +2365,20 @@
       });
     }
 
-    // Each language tab carries its OUTSTANDING count -- rows worth a look that nobody
-    // has decided yet -- so "where is there work left" is answerable without visiting
-    // all eight. It used to count rows already DECIDED, the opposite: a tab you had
-    // finished showed a number and a tab you had not started showed nothing.
-    function outstanding(lc, recs) {
-      return (WORTH[lc] || []).filter(function (uid) { return stageOf(recs[uid]) === 'todo'; }).length;
-    }
-    var outstandingMemo = Object.create(null);
-    function storedOutstanding(lc) {
-      var recs = readLocale(lc), m = outstandingMemo[lc];
-      if (m && m.recs === recs) return m.n;
-      var n = outstanding(lc, recs);
-      outstandingMemo[lc] = { recs: recs, n: n };
-      return n;
-    }
+    // Each language tab carries its OUTSTANDING count -- flagged texts nobody has checked yet,
+    // "to check" -- so "where is there work left" is answerable without visiting all eight. It
+    // used to count rows already DECIDED, the opposite: a tab you had finished showed a number and
+    // a tab you had not started showed nothing. Since U3 it is the strip's own per-language count
+    // (flowCounts), so the tabs and the Review box add up to one number.
     function paintLocaleCounts() {
       Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
         var lc = el.getAttribute('data-loc-count');
-        var n = lc === CODE ? outstanding(lc, state) : storedOutstanding(lc);
+        var n = flowCounts(lc).check;
         el.textContent = n ? String(n) : '';
         el.hidden = !n;
         var link = el.parentNode;
         var nm = link && link.querySelector('.desk-loc-name');
-        // The name is visually hidden on inactive tabs; a hover says it, and the count.
+        // A hover says the language and what its number counts.
         if (nm) link.setAttribute('data-tip', n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
                                                  : t('locale.langs.hover', { language: nm.textContent }));
       });
@@ -2402,17 +2421,11 @@
     function paintLocaleChrome(code, total) {
       var name = t('lang.' + code);
       document.title = t('meta.locale.title', { language: name });
-      document.getElementById('desk-eyebrow').textContent = t('locale.eyebrow', { LANGUAGE: name.toUpperCase() });
       document.getElementById('col-target').textContent = t('table.col.target', { language: name });
       fQ.setAttribute('placeholder', t('filter.search.placeholder', { language: name }));
-      if (total != null) {
-        var sub = document.getElementById('desk-subtitle');
-        sub.textContent = '';
-        var bdi = document.createElement('bdi');
-        bdi.textContent = LOCALE_INFO[code].endonym;
-        sub.appendChild(bdi);
-        sub.appendChild(document.createTextNode(' · ' + t('locale.subtitle', { total: total })));
-      }
+      // A switch names the language at once; its size follows when its texts are in.
+      document.getElementById('desk-title').textContent =
+        t('locale.title', { language: name, total: total != null ? total : '…' });
       Array.prototype.forEach.call(document.querySelectorAll('.desk-loc'), function (a) {
         var on = a.getAttribute('data-loc') === code;
         a.classList.toggle('is-active', on);
@@ -2449,7 +2462,7 @@
       buildRows(units);
       paintLocaleChrome(code, units.length);
       loadFailedFor = null;
-      countLine.className = 'subtle';     // an earlier failure's styling goes with it
+      countLine.className = 'subtle desk-count';     // an earlier failure's styling goes with it
       // The address's filters apply to whichever load lands first -- the page's own, or
       // a switch made before it finished.
       var first = !booted;
@@ -2494,7 +2507,7 @@
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
-      jobsLoad();
+      flowLoad();
       // Saving off, nothing is on a server and nothing is checked: the load ends here, doing
       // exactly the work it did before 4b (a second paint of the bar here sat on the switch).
       if (SAVE_OFF) return;
@@ -2611,7 +2624,7 @@
       // Say so in the page. A desk that silently shows zero rows looks like
       // "nothing to review", which is the opposite of what has happened.
       countLine.textContent = t('count.failed', { error: err.message });
-      countLine.className = 'subtle desk-status is-error';
+      countLine.className = 'subtle desk-count desk-status is-error';
       loadFailedFor = CODE;                // its own tab now tries again
       noRows.hidden = true;
       note('load-failed', null, err.message, null);
@@ -2687,68 +2700,136 @@
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
 
-    // ── The import file and Gemini (runbook U1) ────────────────────────
-    // Each button starts one job in the engine: the Worker's desk-job-start records it and runs
-    // desk-engine.yml in the private monorepo. Each half's line says where its job stands
-    // (desk-job-get), read again every few seconds while one is open. The engine writes its
-    // results where desk-read finds them -- its stamps and new translations, never a decision --
-    // so a job that ends is followed by a re-read of those two, and the rows repaint.
-    var jobsEl = document.getElementById('jobs');
-    var jobEls = {};
-    ['file-line', 'file-make', 'file-download', 'file-imported', 'file-more', 'file-how', 'file-out-title',
-     'file-out', 'file-notes-title', 'file-notes', 'gemini-line', 'gemini-plan', 'gemini-send', 'gemini-collect']
-      .forEach(function (k) { jobEls[k] = document.getElementById('job-' + k); });
-    var deskJobs = { list: {}, seq: 0, timer: null, readFailed: false, err: { file: '', gemini: '' },
-                     starting: { file: false, gemini: false } };
+    // ── Ask Gemini > Review > Weglot file (the operator's redesign, U3) ─────────────────
+    // One strip above the language, for EVERY language. Its counts: this language's from its rows
+    // (the engine's facts included); every other language's from the storage's summary
+    // (desk-summary: each decision's shape, the engine's facts in it), with this browser's unsent
+    // changes laid over them, as the index counts. Send to Gemini is ONE run over every language
+    // (job locale "all": the engine lets one run be out at a time, whatever its languages). Get the
+    // file makes one Weglot file per language, in parallel. A job reads what is SAVED, so the
+    // buttons wait for "All changes saved".
+    //
+    // The state hangs on a function, which is hoisted with its body: paintBar() and
+    // paintLocaleCounts() can run before this part of the script has, and a let/const read then
+    // throws instead of reading empty (lessons: "a catch that resets state hides an order bug").
+    function flowState() { return flowState.s; }
+    const ALL = 'all';
+    flowState.s = {
+      el: document.getElementById('flow'), els: {}, overlay: document.getElementById('file-overlay'),
+      summary: null, other: Object.create(null), jobs: Object.create(null), seq: 0, timer: null,
+      readFailed: false, err: { ask: '', file: '' }, starting: { ask: 0, file: 0 },
+      sendPlan: null, filesKey: '', loaded: false, saved: Object.create(null)
+    };
+    // The engine's FRESH_MINUTES (cli.py): a Weglot file older than that is out of date (A4-1).
+    const FILE_FRESH_MS = 60 * 60 * 1000;
+    // What a send refused before sending anything leaves no run out (J-2): every other end might.
+    const NOTHING_SENT = ['over-day-cap', 'over-run-cap', 'quota-spent-today', 'run-stuck-submitting', 'nothing-queued',
+                          'bad-amount', 'over-amount', 'credit-probe-failed', 'bad-job', 'engine-not-configured',
+                          'engine-did-not-start', 'no-run', 'run-not-collectable', 'nothing-arrived'];
+    ['ask-n', 'ask-line', 'send', 'collect', 'review-n', 'show', 'file-n', 'file-line', 'files', 'get', 'imported']
+      .forEach(function (k) { flowState.s.els[k] = document.getElementById('flow-' + k); });
 
     function jobOpen(j) { return !!(j && (j.status === 'queued' || j.status === 'running')); }
     // A failure is worded from COPY.md by its code; a code this desk does not know yet reads as
     // the engine's own error, never as a key on screen.
     function jobFailed(code) {
-      var key = 'job.failed.' + code;
+      const key = 'job.failed.' + code;
       return Object.prototype.hasOwnProperty.call(COPY, key) ? t(key) : t('job.failed.engine-error');
     }
-    // A job reads what is SAVED: while this language has unsaved changes (or a conflict), the
-    // panel waits for "All changes saved". `all` is paintBar's unsavedByLocale(), when it has one.
-    function jobsUnsaved(all) {
-      return !!((all || unsavedByLocale())[CODE] || Object.keys(conflicts || {}).length);
-    }
-    function jobCounts() {
-      var file = 0, send = 0;
-      rows.forEach(function (tr) {
-        var st = stage(tr.getAttribute('data-uid'));
-        if (st === 'approved' || st === 'edited') file++;
-        else if (st === 'queued') send++;
-      });
-      return { file: file, send: send };
+    // A line about a finished job stays a day; then the box is quiet again.
+    function recent(j) {
+      const at = Date.parse((j && (j.finishedAt || j.createdAt)) || '');
+      return !isNaN(at) && Date.now() - at < 86400000;
     }
     function jobTip(btn, why) {                      // why '' enables; a disabled control says why
       btn.disabled = !!why;
       if (why) btn.setAttribute('data-tip', why); else btn.removeAttribute('data-tip');
     }
-    // Dollars as the reviewer reads them: cents, and never "about $0.00" for a price above nothing.
-    function jobCost(usd) {
-      var s = Number(usd).toFixed(2);
-      return s === '0.00' && usd > 0 ? '0.01' : s;
-    }
     // The later of the two jobs that send to Gemini or collect from it.
     function latestSend() {
-      var su = deskJobs.list.submit, co = deskJobs.list.collect;
+      const J = flowState.s.jobs[ALL] || {}, su = J.submit, co = J.collect;
       return su && co ? (co.createdAt > su.createdAt ? co : su) : (su || co || null);
     }
+    // A decision saved here, in any language: its time is the storage's (the Worker's answer).
+    function flowSaved(code, at) {
+      const fs = flowState();
+      if (fs && at && !(fs.saved[code] > at)) fs.saved[code] = at;
+    }
+    // A Weglot file is current while it is under an hour old and no decision in its language was
+    // saved after it was asked for -- nor waits unsaved here (the Reviewer's A4-1). The storage's
+    // time for every language comes with the summary; this page's own saves, as they land.
+    function fileCurrent(lc, ex, all) {
+      const fs = flowState.s, made = Date.parse((ex && ex.createdAt) || '');
+      if (isNaN(made) || Date.now() - made > FILE_FRESH_MS) return false;
+      if ((all || unsavedByLocale())[lc]) return false;
+      const sum = fs.summary && fs.summary[lc];
+      const last = [sum && sum.lastAt, fs.saved[lc]].filter(Boolean).sort().pop();
+      return !(last && last > ex.createdAt);
+    }
+    function flowUnsaved(all) {
+      const u = all || unsavedByLocale();
+      if (Object.keys(u).length) return true;
+      return Object.keys(conflicts || {}).length > 0;
+    }
+
+    // ── The counts ─────────────────────────────────────────────────────
+    function flowCounts(lc) {
+      const fs = flowState();
+      if (lc === CODE && rows.length) {
+        const n = { ask: 0, file: 0, check: 0 };
+        rows.forEach(function (tr) {
+          const st = stage(tr.getAttribute('data-uid'));
+          if (st === 'queued') n.ask++;
+          else if (st === 'approved' || st === 'edited') n.file++;
+        });
+        n.check = (WORTH[CODE] || []).filter(function (uid) { return stage(uid) === 'todo'; }).length;
+        return n;
+      }
+      if (fs && fs.other[lc]) return fs.other[lc];
+      const st = readLocale(lc), m = Object.create(null);
+      let check = 0;
+      const add = function (stg, k) { m[stg] = (m[stg] || 0) + k; };
+      const sum = fs && fs.summary && fs.summary[lc];
+      if (sum) {
+        (sum.shapes || []).forEach(function (sh) { add(stageOf(sh[0]), sh[1]); });
+        const was = readSaved(lc), d = deltaBetween(st, was).body;
+        Object.keys(d).forEach(function (uid) { add(stageOf(was[uid]), -1); add(stageOf(st[uid]), 1); });
+        (WORTH[lc] || []).forEach(function (id) {
+          if (stageOf(id in d ? st[id] : (sum.flagged || {})[id]) === 'todo') check++;
+        });
+      } else {
+        Object.keys(st).forEach(function (k) { add(stageOf(st[k]), 1); });
+        check = (WORTH[lc] || []).filter(function (id) { return stageOf(st[id]) === 'todo'; }).length;
+      }
+      const c = function (x) { return Math.max(0, m[x] || 0); };
+      const out = { ask: c('queued'), file: c('approved') + c('edited'), check: check };
+      if (fs) fs.other[lc] = out;
+      return out;
+    }
+    function readSummary() {
+      if (SAVE_OFF) return Promise.resolve();
+      return callProxy({ action: 'desk-summary', flagged: WORTH }, TIMEOUT_MS).then(function (r) {
+        if (!r.ok || !r.body || !r.body.languages) return;
+        flowState.s.summary = r.body.languages;
+        flowState.s.other = Object.create(null);
+        paintLocaleCounts();
+        paintFlow();
+      }).catch(function () {});                  // the counts stay this browser's until it answers
+    }
+
     // Texts named by the engine, each with its reason from COPY.md: the English, then why.
     function jobList(ul, items) {
       ul.textContent = '';
       items.forEach(function (it) {
-        var li = document.createElement('li');
+        const li = document.createElement('li');
         li.className = 'desk-queue-item';
         if (it.unit && sourceText[it.unit] !== undefined) {
-          var src = document.createElement('span');
+          const src = document.createElement('span');
           src.className = 'desk-queue-src';
           renderMarked(src, sourceText[it.unit]);
           li.appendChild(src);
         }
-        var why = document.createElement('span');
+        const why = document.createElement('span');
         why.textContent = t('refusal.' + it.rule) + (it.suffix ? ' ' + t('refusal.suffix.' + it.suffix) : '');
         li.appendChild(why);
         ul.appendChild(li);
@@ -2756,203 +2837,316 @@
       ul.hidden = !items.length;
     }
 
-    function paintJobs(all) {
-      if (!deskJobs || !jobsEl || jobsEl.hidden) return;   // before the script below has run
-      var c = jobCounts(), unsaved = jobsUnsaved(all), L = deskJobs.list, e = jobEls;
-      // ── The import file (F1, F2)
-      var ex = L.export || null, res = (ex && ex.result) || {};
-      var batch = res.batchId || '';
-      var check = L.verify && batch && L.verify.ref === batch ? L.verify : null;
-      var busy = deskJobs.starting.file || jobOpen(ex) || jobOpen(L.verify);
-      var cr = (check && check.status === 'done' && check.result) || null;
-      var line = '', bad = false;
-      if (deskJobs.err.file) { line = deskJobs.err.file; bad = true; }
-      else if (busy && deskJobs.readFailed) line = t('jobs.read.failed');
-      else if (busy) line = t('jobs.working');
-      else if (ex && ex.status === 'failed') { line = jobFailed(ex.error); bad = true; }
-      else if (check && check.status === 'failed') { line = jobFailed(check.error); bad = true; }
-      else if (cr) line = t('jobs.file.live', { live: cr.live, n: cr.rows }) + (cr.waiting > 0 ? ' ' + t('jobs.file.waiting') : '');
-      else if (batch) line = tn('jobs.file.ready', res.rows);
-      else line = t('jobs.file.idle');
-      e['file-line'].textContent = line;
-      e['file-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
-      e['file-make'].textContent = t('jobs.file.make', { n: c.file });
-      jobTip(e['file-make'], busy ? line : unsaved ? t('jobs.unsaved') : c.file ? '' : t('jobs.file.make.none'));
-      var green = !!(cr && !(cr.waiting > 0));
-      e['file-download'].hidden = !batch || jobOpen(ex);
-      e['file-imported'].hidden = !batch || jobOpen(ex) || green;
-      e['file-imported'].textContent = cr ? t('jobs.file.again') : t('jobs.file.imported');
-      jobTip(e['file-imported'], busy ? line : '');
-      // Under it: how to import, and the texts the file left out or took with something to check.
-      var settled = ex && !jobOpen(ex);
-      var out = !settled ? [] : ex.error === 'export-refused'
-        ? (res.file || []).map(function (rule) { return { rule: rule }; }) : (res.refused || []);
-      var warned = settled ? (res.warned || []) : [];
-      var notes = warned.concat(settled ? (res.notes || []).map(function (rule) { return { rule: rule }; }) : []);
-      jobList(e['file-out'], out);
-      jobList(e['file-notes'], notes);
-      // A failed export's line already says "No file was made:" / "Nothing could go in the file:".
-      e['file-out-title'].hidden = !out.length || ex.status === 'failed' && !batch;
-      e['file-out-title'].textContent = out.length ? tn('jobs.file.out', out.length) : '';
-      e['file-notes-title'].hidden = !warned.length;
-      e['file-notes-title'].textContent = warned.length ? tn('jobs.file.notes', warned.length) : '';
-      e['file-how'].hidden = !batch || green || jobOpen(ex);
-      e['file-more'].hidden = e['file-how'].hidden && !out.length && !notes.length;
-
-      // ── Gemini (F3)
-      var pl = L.plan || null, send = latestSend();
-      var fresh = pl && (!send || pl.createdAt > send.createdAt) ? pl : null;
-      var gBusy = deskJobs.starting.gemini || jobOpen(pl) || jobOpen(send);
-      var p = (fresh && fresh.status === 'done' && fresh.result) || null;
-      var stop = p && p.stops && p.stops.length ? p.stops[0] : '';
-      var sr = (send && send.result) || {};
-      line = ''; bad = false;
-      if (deskJobs.err.gemini) { line = deskJobs.err.gemini; bad = true; }
-      else if (gBusy && deskJobs.readFailed) line = t('jobs.read.failed');
-      else if (deskJobs.starting.gemini || jobOpen(pl)) line = t('jobs.working');
-      else if (jobOpen(send)) line = t('jobs.gemini.sending');
-      else if (fresh && fresh.status === 'failed') { line = jobFailed(fresh.error); bad = true; }
-      else if (stop) { line = jobFailed(stop); bad = true; }
-      else if (p && !(p.texts > 0)) line = t('jobs.gemini.nothing');
-      else if (p) line = tn('jobs.gemini.estimate', p.texts, { cost: jobCost(p.estimateUsd) });
-      else if (send && send.status === 'failed') { line = jobFailed(send.error); bad = true; }
-      else if (send && sr.collected === false) line = t('jobs.gemini.slow');
-      else if (send) line = tn('jobs.gemini.arrived', sr.drafts || 0);
-      else line = t('jobs.gemini.idle');
-      e['gemini-line'].textContent = line;
-      e['gemini-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
-      // The price stands until it is sent or asked again: Send (with the amount the job may
-      // spend) takes the place of the button that asked for it.
-      var offer = !!(p && !stop && p.texts > 0 && !gBusy);
-      e['gemini-plan'].hidden = offer;
-      e['gemini-plan'].textContent = tn('jobs.gemini.plan', c.send);
-      jobTip(e['gemini-plan'], gBusy ? line : unsaved ? t('jobs.unsaved') : c.send ? '' : t('jobs.gemini.plan.none'));
-      e['gemini-send'].hidden = !offer;
-      e['gemini-send'].textContent = offer ? t('jobs.gemini.send', { cost: jobCost(p.estimateUsd) }) : '';
-      jobTip(e['gemini-send'], unsaved ? t('jobs.unsaved') : '');
-      e['gemini-collect'].hidden = gBusy || !(send && !jobOpen(send) && sr.runId && sr.collected === false);
-    }
-
-    function pollJobs(ms) {
-      clearTimeout(deskJobs.timer);
-      deskJobs.timer = setTimeout(readJobs, ms);
-    }
-    async function readJobs() {
-      var code = CODE, seq = ++deskJobs.seq;
-      var r = await callProxy({ action: 'desk-job-get', locale: code }, TIMEOUT_MS).catch(function () { return null; });
-      if (seq !== deskJobs.seq || code !== CODE) return;
-      var was = deskJobs.list;
-      deskJobs.readFailed = !(r && r.ok && r.body && r.body.jobs);
-      if (!deskJobs.readFailed) deskJobs.list = r.body.jobs;
-      var now = deskJobs.list;
-      // A job that ended since the last look may have changed what desk-read holds (a price does not).
-      var ended = Object.keys(was).some(function (k) {
-        return k !== 'plan' && jobOpen(was[k]) && now[k] && now[k].id === was[k].id && !jobOpen(now[k]);
+    // ── The strip ──────────────────────────────────────────────────────
+    function paintFlow(all) {
+      const fs = flowState();
+      if (!fs || !fs.el || fs.el.hidden) return;       // before this script has run, or saving off
+      const e = fs.els, unsaved = flowUnsaved(all), tot = { ask: 0, file: 0, check: 0 };
+      LOCALES.forEach(function (lc) {
+        const n = flowCounts(lc);
+        tot.ask += n.ask; tot.file += n.file; tot.check += n.check;
       });
-      paintJobs();
-      if (ended) rereadEngine();
-      var open = Object.keys(now).filter(function (k) { return jobOpen(now[k]); });
-      if (deskJobs.readFailed) pollJobs(15000);
-      else if (open.length) pollJobs(open.indexOf('submit') !== -1 || open.indexOf('collect') !== -1 ? 20000 : 4000);
+      e['ask-n'].textContent = String(tot.ask);
+      e['review-n'].textContent = String(tot.check);
+      e['file-n'].textContent = String(tot.file);
+
+      // Ask Gemini: one run for every language.
+      const pl = (fs.jobs[ALL] || {}).plan || null, send = latestSend(), sr = (send && send.result) || {};
+      const fresh = pl && (!send || pl.createdAt > send.createdAt) ? pl : null;
+      const p = fresh && fresh.status === 'done' ? (fresh.result || {}) : null;
+      const askBusy = fs.starting.ask > 0 || !!fs.sendPlan || jobOpen(pl) || jobOpen(send);
+      let line = '', bad = false;
+      if (fs.err.ask) { line = fs.err.ask; bad = true; }
+      else if (askBusy && fs.readFailed) line = t('jobs.read.failed');
+      else if (jobOpen(send)) line = t('status.sending');
+      else if (askBusy) line = t('jobs.working');
+      else if (fresh && fresh.status === 'failed' && recent(fresh)) { line = jobFailed(fresh.error); bad = true; }
+      else if (p && p.stops && p.stops.length && recent(fresh)) { line = jobFailed(p.stops[0]); bad = true; }
+      else if (p && !(p.texts > 0) && recent(fresh)) line = t('jobs.gemini.nothing');
+      else if (send && send.status === 'failed' && recent(send)) { line = jobFailed(send.error); bad = true; }
+      else if (send && sr.collected === false) line = t('jobs.gemini.slow');
+      else if (send && send.status === 'done' && recent(send)) line = tn('jobs.gemini.arrived', sr.drafts || 0);
+      e['ask-line'].textContent = line;
+      e['ask-line'].className = 'desk-status desk-flow-line' + (bad ? ' is-error' : '');
+      jobTip(e.send, askBusy ? line : unsaved ? t('jobs.unsaved') : tot.ask ? '' : t('flow.ask.none'));
+      // Collect whenever a run may still be out (the Reviewer's J-2): a plan or send stopped on one,
+      // or the last send not known to be collected -- a swept or lost submit names no run.
+      const stillOut = (p && p.stops && p.stops.indexOf('run-still-out') !== -1)
+        || [fresh, send].some(function (j) { return j && j.status === 'failed' && j.error === 'run-still-out'; })
+        || !!(send && !jobOpen(send) && !(send.status === 'done' && sr.collected === true)
+              && !(send.status === 'failed' && NOTHING_SENT.indexOf(send.error) !== -1));
+      e.collect.hidden = askBusy || !stillOut;
+
+      paintShow();
+
+      // Weglot file: one per language, each with its Download and, once checked, how much is live.
+      let fileBusy = fs.starting.file > 0;
+      const fails = [], files = [];
+      LOCALES.forEach(function (lc) {
+        const J = fs.jobs[lc] || {}, ex = J.export || null, res = (ex && ex.result) || {};
+        if (jobOpen(ex) || jobOpen(J.verify)) fileBusy = true;
+        const v = J.verify && res.batchId && J.verify.ref === res.batchId ? J.verify : null;
+        if (ex && ex.status === 'failed' && recent(ex)) {
+          let why = jobFailed(ex.error);
+          if (ex.error === 'export-refused') why += ' ' + (res.file || []).map(function (r) { return t('refusal.' + r); }).join(' ');
+          fails.push(t('flow.failed', { language: t('lang.' + lc), reason: why }));
+        } else if (v && v.status === 'failed' && recent(v)) {
+          fails.push(t('flow.failed', { language: t('lang.' + lc), reason: jobFailed(v.error) }));
+        }
+        if (!res.batchId || jobOpen(ex) || !fileCurrent(lc, ex, all)) return;
+        const vr = v && v.status === 'done' ? (v.result || {}) : null;
+        const green = !!(vr && !(vr.waiting > 0));
+        if (green && !recent(v)) return;         // all of it live, and a day ago: off the list
+        files.push({ lc: lc, vr: vr, green: green });
+      });
+      line = ''; bad = false;
+      if (fs.err.file) { line = fs.err.file; bad = true; }
+      else if (fileBusy && fs.readFailed) line = t('jobs.read.failed');
+      else if (fileBusy) line = t('jobs.working');
+      else if (fails.length) { line = fails.join(' '); bad = true; }
+      e['file-line'].textContent = line;
+      e['file-line'].className = 'desk-status desk-flow-line' + (bad ? ' is-error' : '');
+      jobTip(e.get, fileBusy ? line : unsaved ? t('jobs.unsaved') : tot.file ? '' : t('flow.file.none'));
+      const key = JSON.stringify(files);
+      if (key !== fs.filesKey) {                 // rebuilt only when what it lists changes
+        fs.filesKey = key;
+        e.files.textContent = '';
+        files.forEach(function (f) {
+          const li = document.createElement('li');
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'desk-btn';
+          b.setAttribute('data-file', f.lc);
+          b.textContent = t('flow.file.download', { language: t('lang.' + f.lc) });
+          li.appendChild(b);
+          if (f.vr) {
+            const live = document.createElement('span');
+            live.textContent = t('flow.file.live', { live: f.vr.live || 0, n: f.vr.rows || 0 });
+            li.appendChild(live);
+          }
+          e.files.appendChild(li);
+        });
+        e.files.hidden = !files.length;
+      }
+      const toCheck = files.filter(function (f) { return !f.green; });
+      e.imported.hidden = !toCheck.length;
+      e.imported.textContent = toCheck.some(function (f) { return f.vr; }) ? t('jobs.file.again') : t('jobs.file.imported');
+      jobTip(e.imported, fileBusy ? line : '');
     }
+
+    // Review: this language's texts to check -- repainted with every view (applyFilters), since
+    // "they're in the table now" turns false the moment the reviewer picks another.
+    function paintShow() {
+      const fs = flowState();
+      if (!fs || !fs.el || fs.el.hidden) return;
+      const here = flowCounts(CODE).check;
+      const showing = fState.value === 'check' && !fPage.value && !fQ.value.trim();
+      jobTip(fs.els.show, !here ? t('flow.review.none', { language: t('lang.' + CODE) }) : showing ? t('flow.review.shown') : '');
+    }
+
+    // ── Jobs: start, and read while open ──────────────────────────────
+    async function startJob(half, lc, kind, extra) {
+      const fs = flowState.s;
+      fs.err[half] = '';
+      fs.starting[half]++;
+      paintFlow();
+      const r = await callProxy(Object.assign({ action: 'desk-job-start', locale: lc, kind: kind }, extra || {}), TIMEOUT_MS)
+        .catch(function () { return null; });
+      fs.starting[half]--;
+      const job = r && r.body && r.body.job;
+      // Started, already running (409), or refused by GitHub and failed at once (502): the job says.
+      if (job) (fs.jobs[lc] = fs.jobs[lc] || {})[kind] = job;
+      else if (r && r.status === 429 && /daily/.test((r.body && r.body.error) || '')) fs.err[half] = t('jobs.start.daily');
+      else if (r && r.status === 503) fs.err[half] = t('jobs.start.unavailable');
+      else fs.err[half] = t('jobs.start.failed', { reason: t('save.reason.' + failureReason(r)) });
+      paintFlow();
+      pollJobs(3000);
+      return job || null;
+    }
+    function openLangs() {
+      return [ALL].concat(LOCALES).filter(function (lc) {
+        const J = flowState.s.jobs[lc] || {};
+        return Object.keys(J).some(function (k) { return jobOpen(J[k]); });
+      });
+    }
+    function pollJobs(ms) {
+      clearTimeout(flowState.s.timer);
+      flowState.s.timer = setTimeout(function () { readJobs(openLangs()); }, ms);
+    }
+    async function readJobs(langs) {
+      const fs = flowState.s;
+      if (!langs.length) return;
+      const seq = ++fs.seq;
+      const answers = await Promise.all(langs.map(function (lc) {
+        return callProxy({ action: 'desk-job-get', locale: lc }, TIMEOUT_MS).catch(function () { return null; });
+      }));
+      if (seq !== fs.seq) return;
+      let endedHere = false, endedAny = false, failed = false;
+      langs.forEach(function (lc, i) {
+        const r = answers[i];
+        if (!(r && r.ok && r.body && r.body.jobs)) { failed = true; return; }
+        const was = fs.jobs[lc] || {}, now = r.body.jobs;
+        Object.keys(was).forEach(function (k) {
+          // A price changes nothing the desk reads; a file, a check or new translations do.
+          if (k === 'plan' || !jobOpen(was[k]) || !now[k] || now[k].id !== was[k].id || jobOpen(now[k])) return;
+          endedAny = true;
+          if (lc === CODE || lc === ALL) endedHere = true;
+        });
+        fs.jobs[lc] = now;
+      });
+      fs.readFailed = failed;
+      advanceSend();
+      paintFlow();
+      if (endedHere) rereadEngine();
+      if (endedAny) readSummary();
+      const open = openLangs();
+      if (failed) pollJobs(15000);
+      else if (open.length) {
+        const J = fs.jobs[ALL] || {};
+        pollJobs(open.length === 1 && open[0] === ALL && (jobOpen(J.submit) || jobOpen(J.collect)) ? 20000 : 4000);
+      }
+    }
+    // The page's own Send: once its price is in, the run goes -- at that price, which is the most
+    // the run may spend. Never an older price: only the plan this press started.
+    function advanceSend() {
+      const fs = flowState.s;
+      if (!fs.sendPlan || fs.sendPlan === 'starting') return;
+      const pl = (fs.jobs[ALL] || {}).plan;
+      if (!pl || jobOpen(pl)) return;
+      const mine = pl.id === fs.sendPlan;
+      fs.sendPlan = null;
+      const p = mine && pl.status === 'done' ? pl.result || {} : null;
+      if (!p || !(p.texts > 0) || (p.stops && p.stops.length) || !(p.estimateUsd > 0)) return;   // the line says why
+      startJob('ask', ALL, 'submit', { amount_usd: p.estimateUsd });
+    }
+
     // The engine's stamps and new translations for this language, read again after a job: in
     // memory only, as the load keeps them (WO-25c). The rows they change repaint; one on screen
     // holds its place (ruling #17), and an editor with typing in it keeps it.
     async function rereadEngine() {
-      var code = CODE, seq = loadSeq;
-      var arrived = function () { return rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length; };
-      var before = arrived();
-      var sr = await callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS).catch(function () { return null; });
+      const code = CODE, seq = loadSeq;
+      const arrived = function () { return rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length; };
+      const before = arrived();
+      const sr = await callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS).catch(function () { return null; });
       if (seq !== loadSeq || code !== CODE || !sr || !sr.ok || !sr.body) return;
-      var oldS = engineStamps, oldD = engineDrafts;
+      const oldS = engineStamps, oldD = engineDrafts;
       engineStamps = Object.assign(Object.create(null), sr.body.pipeline || {});
       engineDrafts = Object.assign(Object.create(null), sr.body.drafts || {});
-      var moved = Object.create(null);
-      [oldS, engineStamps, oldD, engineDrafts].forEach(function (m) { for (var u in m) moved[u] = 1; });
+      const moved = Object.create(null);
+      [oldS, engineStamps, oldD, engineDrafts].forEach(function (m) { Object.keys(m).forEach(function (u) { moved[u] = 1; }); });
       rows.forEach(function (tr) {
-        var uid = tr.getAttribute('data-uid');
+        const uid = tr.getAttribute('data-uid');
         if (!moved[uid] || (JSON.stringify(oldS[uid]) === JSON.stringify(engineStamps[uid])
             && JSON.stringify(oldD[uid]) === JSON.stringify(engineDrafts[uid]))) return;
         paint(tr);
-        var wrap = tr.querySelector('.desk-editor');
+        const wrap = tr.querySelector('.desk-editor');
         if (wrap && !wrap.hidden && !editorDirty(tr)) { seedEditor(tr, wrap.querySelector('.desk-edit')); paintEditor(tr); }
         if (!tr.hidden) justActed[uid] = 1;
       });
       applyFilters();
       paintBar();
-      var after = arrived();
+      const after = arrived();
       if (after > before) toast(tn('toast.arrived', after), { level: 'ok', detail: t('toast.arrived.detail') });
     }
 
-    // A language's jobs, on every load: the page's and each switch.
-    function jobsLoad() {
-      if (SAVE_OFF || !jobsEl) return;
-      jobsEl.hidden = false;
-      clearTimeout(deskJobs.timer);
-      deskJobs.seq++;
-      deskJobs.list = {};
-      deskJobs.readFailed = false;
-      deskJobs.err = { file: '', gemini: '' };
-      paintJobs();
-      readJobs();
+    // Every load -- the page's and each switch: the strip follows. The jobs of every language are
+    // read once; the counts of the others again (the language left behind is one of them now).
+    function flowLoad() {
+      const fs = flowState.s;
+      if (SAVE_OFF || !fs.el) return;
+      fs.el.hidden = false;
+      fs.other = Object.create(null);
+      paintFlow();
+      readSummary();
+      if (!fs.loaded) { fs.loaded = true; readJobs([ALL].concat(LOCALES)); }
     }
+    window.addEventListener('storage', function () { flowState.s.other = Object.create(null); paintFlow(); });
+    setInterval(function () { paintFlow(); }, 60000);   // a file ages out of date with the page open
 
-    async function startJob(half, kind, extra) {
-      var code = CODE;
-      deskJobs.err[half] = '';
-      deskJobs.starting[half] = true;
-      paintJobs();
-      var r = await callProxy(Object.assign({ action: 'desk-job-start', locale: code, kind: kind }, extra || {}), TIMEOUT_MS)
-        .catch(function () { return null; });
-      deskJobs.starting[half] = false;
-      if (code !== CODE) return;
-      // Started, already running (409), or refused by GitHub and failed at once (502): the job says.
-      if (r && r.body && r.body.job) deskJobs.list[kind] = r.body.job;
-      else if (r && r.status === 429 && /daily/.test((r.body && r.body.error) || '')) deskJobs.err[half] = t('jobs.start.daily');
-      else if (r && r.status === 503) deskJobs.err[half] = t('jobs.start.unavailable');
-      else deskJobs.err[half] = t('jobs.start.failed', { reason: t('save.reason.' + failureReason(r)) });
-      paintJobs();
-      if (jobOpen(deskJobs.list[kind])) pollJobs(3000);
-    }
+    // ── The buttons ────────────────────────────────────────────────────
+    flowState.s.els.send.addEventListener('click', async function () {
+      const fs = flowState.s;
+      let n = 0;
+      const each = [];
+      LOCALES.forEach(function (lc) {
+        const k = flowCounts(lc).ask;
+        n += k;
+        if (k) each.push(t('flow.ask.confirm.lang', { language: t('lang.' + lc), n: k }));
+      });
+      // Every language's requests, by anyone (the Reviewer's E2-2 ruling): the confirm says how many of each.
+      if (!n || !window.confirm(tn('flow.ask.confirm', n) + ' ' + each.join(' · '))) return;
+      fs.sendPlan = 'starting';
+      const job = await startJob('ask', ALL, 'plan');
+      fs.sendPlan = job && jobOpen(job) ? job.id : null;
+      paintFlow();
+    });
+    flowState.s.els.collect.addEventListener('click', function () {
+      // No ref: the engine collects whichever run is out, whatever its languages (J-2).
+      startJob('ask', ALL, 'collect');
+    });
+    flowState.s.els.show.addEventListener('click', function () {
+      fPage.value = ''; fQ.value = ''; fState.value = 'check';
+      pickView();
+      paintFlow();
+    });
+    flowState.s.els.get.addEventListener('click', function () {
+      LOCALES.forEach(function (lc) { if (flowCounts(lc).file > 0) startJob('file', lc, 'export'); });
+    });
+    flowState.s.els.imported.addEventListener('click', function () {
+      LOCALES.forEach(function (lc) {
+        const J = flowState.s.jobs[lc] || {}, res = (J.export && J.export.result) || {};
+        if (!res.batchId || !fileCurrent(lc, J.export)) return;
+        const v = J.verify && J.verify.ref === res.batchId ? J.verify : null;
+        const vr = v && v.status === 'done' ? (v.result || {}) : null;
+        if (!(vr && !(vr.waiting > 0))) startJob('file', lc, 'verify', { ref: res.batchId });
+      });
+    });
+    flowState.s.els.files.addEventListener('click', function (ev) {
+      const b = ev.target.closest && ev.target.closest('[data-file]');
+      if (b) downloadFile(b.getAttribute('data-file'));
+    });
 
-    async function downloadFile() {
-      var b = ((deskJobs.list.export || {}).result || {}).batchId;
-      if (!b) return;
-      deskJobs.err.file = '';
-      var r = await callProxy({ action: 'desk-export-get', batch_id: b }, TIMEOUT_MS).catch(function () { return null; });
+    // Download: the engine's bytes as they are (a UTF-8 CSV, no byte-order mark: the gates refuse
+    // one), named by its batch; then the window with how to import it and what it left out.
+    async function downloadFile(lc) {
+      const fs = flowState.s, ex = (fs.jobs[lc] || {}).export, res = (ex && ex.result) || {};
+      if (!res.batchId) return;
+      fs.err.file = '';
+      // Someone may have decided since in that language: ask the storage before handing it over.
+      await readSummary();
+      if (!fileCurrent(lc, ex)) { fs.err.file = t('flow.file.stale'); paintFlow(); return; }
+      const r = await callProxy({ action: 'desk-export-get', batch_id: res.batchId }, TIMEOUT_MS).catch(function () { return null; });
+      if (r && r.status === 410) { fs.err.file = t('flow.file.stale'); paintFlow(); return; }
       if (!r || !r.ok || !r.body || !r.body.export) {
-        deskJobs.err.file = t('jobs.file.download.failed', { reason: t('save.reason.' + failureReason(r)) });
-        paintJobs();
+        fs.err.file = t('jobs.file.download.failed', { reason: t('save.reason.' + failureReason(r)) });
+        paintFlow();
         return;
       }
-      // The engine's bytes as they are: a UTF-8 CSV with no byte-order mark (the gates refuse one).
-      var url = URL.createObjectURL(new Blob([r.body.export.csv], { type: 'text/csv;charset=utf-8' }));
-      var a = document.createElement('a');
+      const url = URL.createObjectURL(new Blob([r.body.export.csv], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
       a.href = url;
-      a.download = b + '.csv';
+      a.download = res.batchId + '.csv';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-      paintJobs();
+      paintFlow();
+      document.getElementById('file-title').textContent = t('flow.file.popup', { language: t('lang.' + lc) });
+      document.getElementById('file-rows').textContent = tn('flow.file.rows', res.rows || 0);
+      const out = res.refused || [], warned = res.warned || [];
+      const notes = warned.concat((res.notes || []).map(function (rule) { return { rule: rule }; }));
+      jobList(document.getElementById('file-out'), out);
+      jobList(document.getElementById('file-notes'), notes);
+      const ot = document.getElementById('file-out-title'), nt = document.getElementById('file-notes-title');
+      ot.hidden = !out.length;
+      ot.textContent = out.length ? tn('jobs.file.out', out.length) : '';
+      nt.hidden = !warned.length;
+      nt.textContent = warned.length ? tn('jobs.file.notes', warned.length) : '';
+      fs.overlay.hidden = false;
+      document.getElementById('file-close').focus();
     }
-
-    jobEls['file-make'].addEventListener('click', function () { startJob('file', 'export'); });
-    jobEls['file-download'].addEventListener('click', downloadFile);
-    jobEls['file-imported'].addEventListener('click', function () {
-      var b = ((deskJobs.list.export || {}).result || {}).batchId;
-      if (b) startJob('file', 'verify', { ref: b });
-    });
-    jobEls['gemini-plan'].addEventListener('click', function () { startJob('gemini', 'plan'); });
-    jobEls['gemini-send'].addEventListener('click', function () {
-      var p = (deskJobs.list.plan || {}).result;
-      // The amount is the price the reviewer was shown, unchanged: the job spends no more.
-      if (p && p.estimateUsd > 0) startJob('gemini', 'submit', { amount_usd: p.estimateUsd });
-    });
-    jobEls['gemini-collect'].addEventListener('click', function () {
-      var s = latestSend(), run = s && s.result && s.result.runId;
-      if (run) startJob('gemini', 'collect', { ref: run });
-    });
+    document.getElementById('file-close').addEventListener('click', closeOverlays);
+    flowState.s.overlay.addEventListener('click', function (ev) { if (ev.target === flowState.s.overlay) closeOverlays(); });
 
     // ── Boot ───────────────────────────────────────────────────────────
     loadLocale(null).then(function () {

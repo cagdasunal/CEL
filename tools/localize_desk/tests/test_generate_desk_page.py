@@ -218,8 +218,10 @@ class TestRenderedPage:
     def test_rtl_is_flagged_to_the_row_builder(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={"ar": {"word_to": "مرحبا"}})])
         page = G.render_locale("ar", G.load_units())
-        # Without <bdi> the subtitle renders as "990 — العربية units."
-        assert "<bdi>العربية</bdi>" in page
+        # The heading is the language's English name and its size (U3); the Arabic endonym and its
+        # <bdi> went with the old subtitle, so no right-to-left run sits inside a left-to-right line.
+        assert G.escape(G.t("locale.title", language="Arabic", total=1)) in page
+        assert "العربية</bdi>" not in page.split('<main class="dashboard-main">')[0]
         # One page serves every language (runbook WO-09), so direction comes from the
         # language table, per language, and the page boots into its own.
         assert _locale_info(page)["ar"]["rtl"] is True
@@ -474,12 +476,14 @@ class TestFourthAudit:
 
     def test_the_language_badge_counts_work_left_not_work_done(self, units_dir):
         page = G.render_locale("de", self._units(units_dir))
-        # Counted by outstanding(), which paintLocaleCounts() calls (memoised per stored
-        # value since review round 2 -- every click re-parsed all eight languages).
-        body = page.split("function outstanding(lc, recs)")[1].split("\n    }\n")[0]
-        assert "WORTH[lc]" in body and "=== 'todo'" in body
+        # Counted by flowCounts(lc).check since U3 -- the strip's per-language "to check", so the
+        # tabs and the Review box add up -- which counts flagged texts (WORTH) still to do, and
+        # keeps the other languages' counts until something changes (every click re-parsed all
+        # eight languages before review round 2).
+        body = page.split("function flowCounts(lc)")[1].split("\n    }\n")[0]
+        assert body.count("WORTH[") >= 2 and body.count("=== 'todo'") >= 2 and "fs.other[lc] = out" in body
         counts = page.split("function paintLocaleCounts()")[1].split("\n    }\n")[0]
-        assert "outstanding(lc, state)" in counts and "storedOutstanding(lc)" in counts
+        assert "flowCounts(lc).check" in counts
         assert "raw[k].tray" not in body + counts   # it used to count decided rows
         assert '"de":["here"]' in page             # the baked list excludes the site-wide row
 

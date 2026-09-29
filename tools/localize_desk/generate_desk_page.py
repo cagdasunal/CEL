@@ -266,6 +266,29 @@ def _review_modal() -> str:
 """
 
 
+def _file_modal() -> str:
+    """The window Download opens (U3): how to import the file in Weglot, and the texts it left out
+    or took with something to check. Filled in by the page, per language."""
+    close = escape(t("list.close"))
+    return (
+        '  <div class="cpw-overlay" id="file-overlay" hidden>\n'
+        '    <div class="cpw-modal desk-modal-wide" role="dialog" aria-modal="true" aria-labelledby="file-title">\n'
+        '      <h2 class="cpw-title" id="file-title"></h2>\n'
+        '      <p class="desk-review-sub" id="file-rows"></p>\n'
+        f'      <div class="desk-modal-body">\n{block_html("jobs.file.how")}\n'
+        '        <p class="desk-review-sub" id="file-out-title" hidden></p>\n'
+        '        <ul class="desk-queue-list" id="file-out" hidden></ul>\n'
+        '        <p class="desk-review-sub" id="file-notes-title" hidden></p>\n'
+        '        <ul class="desk-queue-list" id="file-notes" hidden></ul>\n'
+        '      </div>\n'
+        '      <div class="cpw-actions">\n'
+        f'        <button type="button" class="cpw-btn cpw-save" id="file-close">{close}</button>\n'
+        '      </div>\n'
+        '    </div>\n'
+        '  </div>\n'
+    )
+
+
 def render_index(units: list[dict]) -> str:
     total = len(units)
     parts = _head(t("meta.index.title"), t("meta.index.description"))
@@ -771,55 +794,55 @@ __PROXY_JS__
 
 
 def render_locale(code: str, units: list[dict]) -> str:
-    endonym, direction, _flag = _LOCALE[code]
+    _endonym, direction, _flag = _LOCALE[code]
     name = lang_name(code)
     rows = [u for u in units if (u.get("current") or {}).get(code)]
     parts = _head(t("meta.locale.title", language=name),
                   t("meta.locale.description", language=name))
     parts.append(render_admin_open("localization"))
     parts.append('  <div class="dashboard-shell">')
-    # Same markup and classes as render_page_chrome(), written out here so the help
-    # control can live IN the header rather than down among the filters.
-    parts.append('    <header class="dashboard-header">')
-    parts.append('      <div class="brand-text">')
-    parts.append(f'        <p class="eyebrow" id="desk-eyebrow">{escape(t("locale.eyebrow", LANGUAGE=name.upper()))}</p>')
-    parts.append(
-        f'        <p class="subtitle" id="desk-subtitle"><bdi>{escape(endonym)}</bdi> &middot; '
-        f'{escape(t("locale.subtitle", total=len(rows)))}</p>'
-    )
+    # The top of a language page (the operator's redesign, U3, 2026-09-29). First one strip for
+    # EVERY language: Ask Gemini > Review > Weglot file -- each a label, one count and its word,
+    # a line that says only where its job stands, and its button. No price, no step numbers, no
+    # sentences: a disabled button says why on hover, the rest is in How this works. Hidden while
+    # saving is off (nothing is on a server); filled in by the page.
+    parts.append(f'    <section class="desk-flow" id="flow" aria-label="{escape(t("flow.label"))}" hidden>')
+    parts.append('      <div class="desk-flow-step" id="flow-ask-step">')
+    parts.append(f'        <p class="desk-flow-label">{escape(t("flow.ask.label"))}</p>')
+    parts.append(f'        <p class="desk-flow-count"><span id="flow-ask-n">0</span><small>{escape(t("flow.ask.unit"))}</small></p>')
+    parts.append('        <p class="desk-status desk-flow-line" id="flow-ask-line" role="status"></p>')
+    parts.append('        <div class="desk-flow-act">')
+    parts.append(f'          <button type="button" class="desk-btn is-strong" id="flow-send">{escape(t("flow.ask.button"))}</button>')
+    parts.append(f'          <button type="button" class="desk-btn" id="flow-collect" hidden>{escape(t("jobs.gemini.collect"))}</button>')
+    parts.append("        </div>")
     parts.append("      </div>")
-    parts.append('      <button type="button" class="desk-btn desk-header-btn" id="how-open">'
-                 f'{escape(t("locale.help"))}</button>')
-    parts.append("    </header>")
-
-    # The engine's jobs (runbook U1): one panel, two halves -- the import file (F1, F2) and
-    # Gemini (F3). Each half's line says where its job stands (F4). Hidden while saving is off,
-    # and filled in by the page. Existing classes only: the stylesheet is the monorepo's.
-    parts.append(f'    <section id="jobs" aria-label="{escape(t("jobs.label"))}" hidden>')
-    parts.append('      <div class="desk-trays" id="job-file">')
-    parts.append(f'        <h2 class="desk-review-title">{escape(t("jobs.file.title"))}</h2>')
-    parts.append('        <button type="button" class="desk-btn is-strong" id="job-file-make"></button>')
-    parts.append(f'        <button type="button" class="desk-btn" id="job-file-download" hidden>'
-                 f'{escape(t("jobs.file.download"))}</button>')
-    parts.append('        <button type="button" class="desk-btn" id="job-file-imported" hidden></button>')
+    parts.append('      <span class="desk-flow-arrow" aria-hidden="true">&#8250;</span>')
+    parts.append('      <div class="desk-flow-step" id="flow-review-step">')
+    parts.append(f'        <p class="desk-flow-label">{escape(t("flow.review.label"))}</p>')
+    parts.append(f'        <p class="desk-flow-count"><span id="flow-review-n">0</span><small>{escape(t("flow.review.unit"))}</small></p>')
+    parts.append('        <div class="desk-flow-act">')
+    parts.append(f'          <button type="button" class="desk-btn" id="flow-show">{escape(t("flow.review.button"))}</button>')
+    parts.append("        </div>")
     parts.append("      </div>")
-    parts.append('      <p class="desk-review-sub desk-status" id="job-file-line" role="status"></p>')
-    parts.append('      <div id="job-file-more" hidden>')
-    parts.append(f'        <div class="desk-notice" id="job-file-how">{block_html("jobs.file.how")}</div>')
-    parts.append('        <p class="desk-review-sub" id="job-file-out-title" hidden></p>')
-    parts.append('        <ul class="desk-queue-list" id="job-file-out" hidden></ul>')
-    parts.append('        <p class="desk-review-sub" id="job-file-notes-title" hidden></p>')
-    parts.append('        <ul class="desk-queue-list" id="job-file-notes" hidden></ul>')
+    parts.append('      <span class="desk-flow-arrow" aria-hidden="true">&#8250;</span>')
+    parts.append('      <div class="desk-flow-step" id="flow-file-step">')
+    parts.append(f'        <p class="desk-flow-label">{escape(t("flow.file.label"))}</p>')
+    parts.append(f'        <p class="desk-flow-count"><span id="flow-file-n">0</span><small>{escape(t("flow.file.unit"))}</small></p>')
+    parts.append('        <p class="desk-status desk-flow-line" id="flow-file-line" role="status"></p>')
+    parts.append('        <ul class="desk-flow-files" id="flow-files" hidden></ul>')
+    parts.append('        <div class="desk-flow-act">')
+    parts.append(f'          <button type="button" class="desk-btn is-strong" id="flow-get">{escape(t("flow.file.button"))}</button>')
+    parts.append(f'          <button type="button" class="desk-btn" id="flow-imported" hidden>{escape(t("jobs.file.imported"))}</button>')
+    parts.append("        </div>")
     parts.append("      </div>")
-    parts.append('      <div class="desk-trays" id="job-gemini">')
-    parts.append(f'        <h2 class="desk-review-title">{escape(t("jobs.gemini.title"))}</h2>')
-    parts.append('        <button type="button" class="desk-btn is-strong" id="job-gemini-plan"></button>')
-    parts.append('        <button type="button" class="desk-btn is-strong" id="job-gemini-send" hidden></button>')
-    parts.append(f'        <button type="button" class="desk-btn" id="job-gemini-collect" hidden>'
-                 f'{escape(t("jobs.gemini.collect"))}</button>')
-    parts.append("      </div>")
-    parts.append('      <p class="desk-review-sub desk-status" id="job-gemini-line" role="status"></p>')
     parts.append("    </section>")
+
+    # Then the language itself: its name and size, and a round ? for How this works.
+    parts.append('    <header class="dashboard-header desk-head">')
+    parts.append(f'      <h1 class="desk-title" id="desk-title">{escape(t("locale.title", language=name, total=len(rows)))}</h1>')
+    parts.append(f'      <button type="button" class="desk-help" id="how-open" data-tip="{escape(t("locale.help"))}" '
+                 f'aria-label="{escape(t("locale.help"))}">?</button>')
+    parts.append("    </header>")
 
     # Toolbar. The locale strip comes FIRST because switching language while staying
     # on the same page and filter is the move the reviewer makes most.
@@ -862,8 +885,10 @@ def render_locale(code: str, units: list[dict]) -> str:
                  f'placeholder="{escape(t("filter.search.placeholder", language=name))}" '
                  'autocomplete="off">')
     parts.append("        </label>")
+    # "3 of 839", at the end of the one filter row.
+    parts.append('        <span class="desk-toolbar-spacer"></span>')
+    parts.append('        <p class="subtle desk-count" id="count-line" aria-live="polite"></p>')
     parts.append("      </div>")
-    parts.append('      <p class="subtle" id="count-line" aria-live="polite"></p>')
     parts.append("    </div>")
 
     parts.append('    <main class="dashboard-main">')
@@ -922,78 +947,147 @@ def render_locale(code: str, units: list[dict]) -> str:
     parts.append('  <div class="toast-stack" id="toast-stack" role="status" aria-live="polite"></div>')
     parts.append(_how_modal())
     parts.append(_review_modal())
+    parts.append(_file_modal())
     parts.append(_desk_js(code, direction == "rtl", _worth_js(units)))
     parts.append(render_admin_close())
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
 
-# The panel's script (runbook U1), inserted into _desk_js just before it boots, so every name it
+# The strip's script (U3; it replaced U1's panel), inserted into _desk_js just before it boots, so every name it
 # uses is assigned by the time it runs (a hoisted, unassigned name once emptied the decisions:
 # lessons, "a catch that resets state hides an order bug").
-_JOBS_JS = """\
-    // ── The import file and Gemini (runbook U1) ────────────────────────
-    // Each button starts one job in the engine: the Worker's desk-job-start records it and runs
-    // desk-engine.yml in the private monorepo. Each half's line says where its job stands
-    // (desk-job-get), read again every few seconds while one is open. The engine writes its
-    // results where desk-read finds them -- its stamps and new translations, never a decision --
-    // so a job that ends is followed by a re-read of those two, and the rows repaint.
-    var jobsEl = document.getElementById('jobs');
-    var jobEls = {};
-    ['file-line', 'file-make', 'file-download', 'file-imported', 'file-more', 'file-how', 'file-out-title',
-     'file-out', 'file-notes-title', 'file-notes', 'gemini-line', 'gemini-plan', 'gemini-send', 'gemini-collect']
-      .forEach(function (k) { jobEls[k] = document.getElementById('job-' + k); });
-    var deskJobs = { list: {}, seq: 0, timer: null, readFailed: false, err: { file: '', gemini: '' },
-                     starting: { file: false, gemini: false } };
+_FLOW_JS = """\
+    // ── Ask Gemini > Review > Weglot file (the operator's redesign, U3) ─────────────────
+    // One strip above the language, for EVERY language. Its counts: this language's from its rows
+    // (the engine's facts included); every other language's from the storage's summary
+    // (desk-summary: each decision's shape, the engine's facts in it), with this browser's unsent
+    // changes laid over them, as the index counts. Send to Gemini is ONE run over every language
+    // (job locale "all": the engine lets one run be out at a time, whatever its languages). Get the
+    // file makes one Weglot file per language, in parallel. A job reads what is SAVED, so the
+    // buttons wait for "All changes saved".
+    //
+    // The state hangs on a function, which is hoisted with its body: paintBar() and
+    // paintLocaleCounts() can run before this part of the script has, and a let/const read then
+    // throws instead of reading empty (lessons: "a catch that resets state hides an order bug").
+    function flowState() { return flowState.s; }
+    const ALL = 'all';
+    flowState.s = {
+      el: document.getElementById('flow'), els: {}, overlay: document.getElementById('file-overlay'),
+      summary: null, other: Object.create(null), jobs: Object.create(null), seq: 0, timer: null,
+      readFailed: false, err: { ask: '', file: '' }, starting: { ask: 0, file: 0 },
+      sendPlan: null, filesKey: '', loaded: false, saved: Object.create(null)
+    };
+    // The engine's FRESH_MINUTES (cli.py): a Weglot file older than that is out of date (A4-1).
+    const FILE_FRESH_MS = 60 * 60 * 1000;
+    // What a send refused before sending anything leaves no run out (J-2): every other end might.
+    const NOTHING_SENT = ['over-day-cap', 'over-run-cap', 'quota-spent-today', 'run-stuck-submitting', 'nothing-queued',
+                          'bad-amount', 'over-amount', 'credit-probe-failed', 'bad-job', 'engine-not-configured',
+                          'engine-did-not-start', 'no-run', 'run-not-collectable', 'nothing-arrived'];
+    ['ask-n', 'ask-line', 'send', 'collect', 'review-n', 'show', 'file-n', 'file-line', 'files', 'get', 'imported']
+      .forEach(function (k) { flowState.s.els[k] = document.getElementById('flow-' + k); });
 
     function jobOpen(j) { return !!(j && (j.status === 'queued' || j.status === 'running')); }
     // A failure is worded from COPY.md by its code; a code this desk does not know yet reads as
     // the engine's own error, never as a key on screen.
     function jobFailed(code) {
-      var key = 'job.failed.' + code;
+      const key = 'job.failed.' + code;
       return Object.prototype.hasOwnProperty.call(COPY, key) ? t(key) : t('job.failed.engine-error');
     }
-    // A job reads what is SAVED: while this language has unsaved changes (or a conflict), the
-    // panel waits for "All changes saved". `all` is paintBar's unsavedByLocale(), when it has one.
-    function jobsUnsaved(all) {
-      return !!((all || unsavedByLocale())[CODE] || Object.keys(conflicts || {}).length);
-    }
-    function jobCounts() {
-      var file = 0, send = 0;
-      rows.forEach(function (tr) {
-        var st = stage(tr.getAttribute('data-uid'));
-        if (st === 'approved' || st === 'edited') file++;
-        else if (st === 'queued') send++;
-      });
-      return { file: file, send: send };
+    // A line about a finished job stays a day; then the box is quiet again.
+    function recent(j) {
+      const at = Date.parse((j && (j.finishedAt || j.createdAt)) || '');
+      return !isNaN(at) && Date.now() - at < 86400000;
     }
     function jobTip(btn, why) {                      // why '' enables; a disabled control says why
       btn.disabled = !!why;
       if (why) btn.setAttribute('data-tip', why); else btn.removeAttribute('data-tip');
     }
-    // Dollars as the reviewer reads them: cents, and never "about $0.00" for a price above nothing.
-    function jobCost(usd) {
-      var s = Number(usd).toFixed(2);
-      return s === '0.00' && usd > 0 ? '0.01' : s;
-    }
     // The later of the two jobs that send to Gemini or collect from it.
     function latestSend() {
-      var su = deskJobs.list.submit, co = deskJobs.list.collect;
+      const J = flowState.s.jobs[ALL] || {}, su = J.submit, co = J.collect;
       return su && co ? (co.createdAt > su.createdAt ? co : su) : (su || co || null);
     }
+    // A decision saved here, in any language: its time is the storage's (the Worker's answer).
+    function flowSaved(code, at) {
+      const fs = flowState();
+      if (fs && at && !(fs.saved[code] > at)) fs.saved[code] = at;
+    }
+    // A Weglot file is current while it is under an hour old and no decision in its language was
+    // saved after it was asked for -- nor waits unsaved here (the Reviewer's A4-1). The storage's
+    // time for every language comes with the summary; this page's own saves, as they land.
+    function fileCurrent(lc, ex, all) {
+      const fs = flowState.s, made = Date.parse((ex && ex.createdAt) || '');
+      if (isNaN(made) || Date.now() - made > FILE_FRESH_MS) return false;
+      if ((all || unsavedByLocale())[lc]) return false;
+      const sum = fs.summary && fs.summary[lc];
+      const last = [sum && sum.lastAt, fs.saved[lc]].filter(Boolean).sort().pop();
+      return !(last && last > ex.createdAt);
+    }
+    function flowUnsaved(all) {
+      const u = all || unsavedByLocale();
+      if (Object.keys(u).length) return true;
+      return Object.keys(conflicts || {}).length > 0;
+    }
+
+    // ── The counts ─────────────────────────────────────────────────────
+    function flowCounts(lc) {
+      const fs = flowState();
+      if (lc === CODE && rows.length) {
+        const n = { ask: 0, file: 0, check: 0 };
+        rows.forEach(function (tr) {
+          const st = stage(tr.getAttribute('data-uid'));
+          if (st === 'queued') n.ask++;
+          else if (st === 'approved' || st === 'edited') n.file++;
+        });
+        n.check = (WORTH[CODE] || []).filter(function (uid) { return stage(uid) === 'todo'; }).length;
+        return n;
+      }
+      if (fs && fs.other[lc]) return fs.other[lc];
+      const st = readLocale(lc), m = Object.create(null);
+      let check = 0;
+      const add = function (stg, k) { m[stg] = (m[stg] || 0) + k; };
+      const sum = fs && fs.summary && fs.summary[lc];
+      if (sum) {
+        (sum.shapes || []).forEach(function (sh) { add(stageOf(sh[0]), sh[1]); });
+        const was = readSaved(lc), d = deltaBetween(st, was).body;
+        Object.keys(d).forEach(function (uid) { add(stageOf(was[uid]), -1); add(stageOf(st[uid]), 1); });
+        (WORTH[lc] || []).forEach(function (id) {
+          if (stageOf(id in d ? st[id] : (sum.flagged || {})[id]) === 'todo') check++;
+        });
+      } else {
+        Object.keys(st).forEach(function (k) { add(stageOf(st[k]), 1); });
+        check = (WORTH[lc] || []).filter(function (id) { return stageOf(st[id]) === 'todo'; }).length;
+      }
+      const c = function (x) { return Math.max(0, m[x] || 0); };
+      const out = { ask: c('queued'), file: c('approved') + c('edited'), check: check };
+      if (fs) fs.other[lc] = out;
+      return out;
+    }
+    function readSummary() {
+      if (SAVE_OFF) return Promise.resolve();
+      return callProxy({ action: 'desk-summary', flagged: WORTH }, TIMEOUT_MS).then(function (r) {
+        if (!r.ok || !r.body || !r.body.languages) return;
+        flowState.s.summary = r.body.languages;
+        flowState.s.other = Object.create(null);
+        paintLocaleCounts();
+        paintFlow();
+      }).catch(function () {});                  // the counts stay this browser's until it answers
+    }
+
     // Texts named by the engine, each with its reason from COPY.md: the English, then why.
     function jobList(ul, items) {
       ul.textContent = '';
       items.forEach(function (it) {
-        var li = document.createElement('li');
+        const li = document.createElement('li');
         li.className = 'desk-queue-item';
         if (it.unit && sourceText[it.unit] !== undefined) {
-          var src = document.createElement('span');
+          const src = document.createElement('span');
           src.className = 'desk-queue-src';
           renderMarked(src, sourceText[it.unit]);
           li.appendChild(src);
         }
-        var why = document.createElement('span');
+        const why = document.createElement('span');
         why.textContent = t('refusal.' + it.rule) + (it.suffix ? ' ' + t('refusal.suffix.' + it.suffix) : '');
         li.appendChild(why);
         ul.appendChild(li);
@@ -1001,203 +1095,316 @@ _JOBS_JS = """\
       ul.hidden = !items.length;
     }
 
-    function paintJobs(all) {
-      if (!deskJobs || !jobsEl || jobsEl.hidden) return;   // before the script below has run
-      var c = jobCounts(), unsaved = jobsUnsaved(all), L = deskJobs.list, e = jobEls;
-      // ── The import file (F1, F2)
-      var ex = L.export || null, res = (ex && ex.result) || {};
-      var batch = res.batchId || '';
-      var check = L.verify && batch && L.verify.ref === batch ? L.verify : null;
-      var busy = deskJobs.starting.file || jobOpen(ex) || jobOpen(L.verify);
-      var cr = (check && check.status === 'done' && check.result) || null;
-      var line = '', bad = false;
-      if (deskJobs.err.file) { line = deskJobs.err.file; bad = true; }
-      else if (busy && deskJobs.readFailed) line = t('jobs.read.failed');
-      else if (busy) line = t('jobs.working');
-      else if (ex && ex.status === 'failed') { line = jobFailed(ex.error); bad = true; }
-      else if (check && check.status === 'failed') { line = jobFailed(check.error); bad = true; }
-      else if (cr) line = t('jobs.file.live', { live: cr.live, n: cr.rows }) + (cr.waiting > 0 ? ' ' + t('jobs.file.waiting') : '');
-      else if (batch) line = tn('jobs.file.ready', res.rows);
-      else line = t('jobs.file.idle');
-      e['file-line'].textContent = line;
-      e['file-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
-      e['file-make'].textContent = t('jobs.file.make', { n: c.file });
-      jobTip(e['file-make'], busy ? line : unsaved ? t('jobs.unsaved') : c.file ? '' : t('jobs.file.make.none'));
-      var green = !!(cr && !(cr.waiting > 0));
-      e['file-download'].hidden = !batch || jobOpen(ex);
-      e['file-imported'].hidden = !batch || jobOpen(ex) || green;
-      e['file-imported'].textContent = cr ? t('jobs.file.again') : t('jobs.file.imported');
-      jobTip(e['file-imported'], busy ? line : '');
-      // Under it: how to import, and the texts the file left out or took with something to check.
-      var settled = ex && !jobOpen(ex);
-      var out = !settled ? [] : ex.error === 'export-refused'
-        ? (res.file || []).map(function (rule) { return { rule: rule }; }) : (res.refused || []);
-      var warned = settled ? (res.warned || []) : [];
-      var notes = warned.concat(settled ? (res.notes || []).map(function (rule) { return { rule: rule }; }) : []);
-      jobList(e['file-out'], out);
-      jobList(e['file-notes'], notes);
-      // A failed export's line already says "No file was made:" / "Nothing could go in the file:".
-      e['file-out-title'].hidden = !out.length || ex.status === 'failed' && !batch;
-      e['file-out-title'].textContent = out.length ? tn('jobs.file.out', out.length) : '';
-      e['file-notes-title'].hidden = !warned.length;
-      e['file-notes-title'].textContent = warned.length ? tn('jobs.file.notes', warned.length) : '';
-      e['file-how'].hidden = !batch || green || jobOpen(ex);
-      e['file-more'].hidden = e['file-how'].hidden && !out.length && !notes.length;
-
-      // ── Gemini (F3)
-      var pl = L.plan || null, send = latestSend();
-      var fresh = pl && (!send || pl.createdAt > send.createdAt) ? pl : null;
-      var gBusy = deskJobs.starting.gemini || jobOpen(pl) || jobOpen(send);
-      var p = (fresh && fresh.status === 'done' && fresh.result) || null;
-      var stop = p && p.stops && p.stops.length ? p.stops[0] : '';
-      var sr = (send && send.result) || {};
-      line = ''; bad = false;
-      if (deskJobs.err.gemini) { line = deskJobs.err.gemini; bad = true; }
-      else if (gBusy && deskJobs.readFailed) line = t('jobs.read.failed');
-      else if (deskJobs.starting.gemini || jobOpen(pl)) line = t('jobs.working');
-      else if (jobOpen(send)) line = t('jobs.gemini.sending');
-      else if (fresh && fresh.status === 'failed') { line = jobFailed(fresh.error); bad = true; }
-      else if (stop) { line = jobFailed(stop); bad = true; }
-      else if (p && !(p.texts > 0)) line = t('jobs.gemini.nothing');
-      else if (p) line = tn('jobs.gemini.estimate', p.texts, { cost: jobCost(p.estimateUsd) });
-      else if (send && send.status === 'failed') { line = jobFailed(send.error); bad = true; }
-      else if (send && sr.collected === false) line = t('jobs.gemini.slow');
-      else if (send) line = tn('jobs.gemini.arrived', sr.drafts || 0);
-      else line = t('jobs.gemini.idle');
-      e['gemini-line'].textContent = line;
-      e['gemini-line'].className = 'desk-review-sub desk-status' + (bad ? ' is-error' : '');
-      // The price stands until it is sent or asked again: Send (with the amount the job may
-      // spend) takes the place of the button that asked for it.
-      var offer = !!(p && !stop && p.texts > 0 && !gBusy);
-      e['gemini-plan'].hidden = offer;
-      e['gemini-plan'].textContent = tn('jobs.gemini.plan', c.send);
-      jobTip(e['gemini-plan'], gBusy ? line : unsaved ? t('jobs.unsaved') : c.send ? '' : t('jobs.gemini.plan.none'));
-      e['gemini-send'].hidden = !offer;
-      e['gemini-send'].textContent = offer ? t('jobs.gemini.send', { cost: jobCost(p.estimateUsd) }) : '';
-      jobTip(e['gemini-send'], unsaved ? t('jobs.unsaved') : '');
-      e['gemini-collect'].hidden = gBusy || !(send && !jobOpen(send) && sr.runId && sr.collected === false);
-    }
-
-    function pollJobs(ms) {
-      clearTimeout(deskJobs.timer);
-      deskJobs.timer = setTimeout(readJobs, ms);
-    }
-    async function readJobs() {
-      var code = CODE, seq = ++deskJobs.seq;
-      var r = await callProxy({ action: 'desk-job-get', locale: code }, TIMEOUT_MS).catch(function () { return null; });
-      if (seq !== deskJobs.seq || code !== CODE) return;
-      var was = deskJobs.list;
-      deskJobs.readFailed = !(r && r.ok && r.body && r.body.jobs);
-      if (!deskJobs.readFailed) deskJobs.list = r.body.jobs;
-      var now = deskJobs.list;
-      // A job that ended since the last look may have changed what desk-read holds (a price does not).
-      var ended = Object.keys(was).some(function (k) {
-        return k !== 'plan' && jobOpen(was[k]) && now[k] && now[k].id === was[k].id && !jobOpen(now[k]);
+    // ── The strip ──────────────────────────────────────────────────────
+    function paintFlow(all) {
+      const fs = flowState();
+      if (!fs || !fs.el || fs.el.hidden) return;       // before this script has run, or saving off
+      const e = fs.els, unsaved = flowUnsaved(all), tot = { ask: 0, file: 0, check: 0 };
+      LOCALES.forEach(function (lc) {
+        const n = flowCounts(lc);
+        tot.ask += n.ask; tot.file += n.file; tot.check += n.check;
       });
-      paintJobs();
-      if (ended) rereadEngine();
-      var open = Object.keys(now).filter(function (k) { return jobOpen(now[k]); });
-      if (deskJobs.readFailed) pollJobs(15000);
-      else if (open.length) pollJobs(open.indexOf('submit') !== -1 || open.indexOf('collect') !== -1 ? 20000 : 4000);
+      e['ask-n'].textContent = String(tot.ask);
+      e['review-n'].textContent = String(tot.check);
+      e['file-n'].textContent = String(tot.file);
+
+      // Ask Gemini: one run for every language.
+      const pl = (fs.jobs[ALL] || {}).plan || null, send = latestSend(), sr = (send && send.result) || {};
+      const fresh = pl && (!send || pl.createdAt > send.createdAt) ? pl : null;
+      const p = fresh && fresh.status === 'done' ? (fresh.result || {}) : null;
+      const askBusy = fs.starting.ask > 0 || !!fs.sendPlan || jobOpen(pl) || jobOpen(send);
+      let line = '', bad = false;
+      if (fs.err.ask) { line = fs.err.ask; bad = true; }
+      else if (askBusy && fs.readFailed) line = t('jobs.read.failed');
+      else if (jobOpen(send)) line = t('status.sending');
+      else if (askBusy) line = t('jobs.working');
+      else if (fresh && fresh.status === 'failed' && recent(fresh)) { line = jobFailed(fresh.error); bad = true; }
+      else if (p && p.stops && p.stops.length && recent(fresh)) { line = jobFailed(p.stops[0]); bad = true; }
+      else if (p && !(p.texts > 0) && recent(fresh)) line = t('jobs.gemini.nothing');
+      else if (send && send.status === 'failed' && recent(send)) { line = jobFailed(send.error); bad = true; }
+      else if (send && sr.collected === false) line = t('jobs.gemini.slow');
+      else if (send && send.status === 'done' && recent(send)) line = tn('jobs.gemini.arrived', sr.drafts || 0);
+      e['ask-line'].textContent = line;
+      e['ask-line'].className = 'desk-status desk-flow-line' + (bad ? ' is-error' : '');
+      jobTip(e.send, askBusy ? line : unsaved ? t('jobs.unsaved') : tot.ask ? '' : t('flow.ask.none'));
+      // Collect whenever a run may still be out (the Reviewer's J-2): a plan or send stopped on one,
+      // or the last send not known to be collected -- a swept or lost submit names no run.
+      const stillOut = (p && p.stops && p.stops.indexOf('run-still-out') !== -1)
+        || [fresh, send].some(function (j) { return j && j.status === 'failed' && j.error === 'run-still-out'; })
+        || !!(send && !jobOpen(send) && !(send.status === 'done' && sr.collected === true)
+              && !(send.status === 'failed' && NOTHING_SENT.indexOf(send.error) !== -1));
+      e.collect.hidden = askBusy || !stillOut;
+
+      paintShow();
+
+      // Weglot file: one per language, each with its Download and, once checked, how much is live.
+      let fileBusy = fs.starting.file > 0;
+      const fails = [], files = [];
+      LOCALES.forEach(function (lc) {
+        const J = fs.jobs[lc] || {}, ex = J.export || null, res = (ex && ex.result) || {};
+        if (jobOpen(ex) || jobOpen(J.verify)) fileBusy = true;
+        const v = J.verify && res.batchId && J.verify.ref === res.batchId ? J.verify : null;
+        if (ex && ex.status === 'failed' && recent(ex)) {
+          let why = jobFailed(ex.error);
+          if (ex.error === 'export-refused') why += ' ' + (res.file || []).map(function (r) { return t('refusal.' + r); }).join(' ');
+          fails.push(t('flow.failed', { language: t('lang.' + lc), reason: why }));
+        } else if (v && v.status === 'failed' && recent(v)) {
+          fails.push(t('flow.failed', { language: t('lang.' + lc), reason: jobFailed(v.error) }));
+        }
+        if (!res.batchId || jobOpen(ex) || !fileCurrent(lc, ex, all)) return;
+        const vr = v && v.status === 'done' ? (v.result || {}) : null;
+        const green = !!(vr && !(vr.waiting > 0));
+        if (green && !recent(v)) return;         // all of it live, and a day ago: off the list
+        files.push({ lc: lc, vr: vr, green: green });
+      });
+      line = ''; bad = false;
+      if (fs.err.file) { line = fs.err.file; bad = true; }
+      else if (fileBusy && fs.readFailed) line = t('jobs.read.failed');
+      else if (fileBusy) line = t('jobs.working');
+      else if (fails.length) { line = fails.join(' '); bad = true; }
+      e['file-line'].textContent = line;
+      e['file-line'].className = 'desk-status desk-flow-line' + (bad ? ' is-error' : '');
+      jobTip(e.get, fileBusy ? line : unsaved ? t('jobs.unsaved') : tot.file ? '' : t('flow.file.none'));
+      const key = JSON.stringify(files);
+      if (key !== fs.filesKey) {                 // rebuilt only when what it lists changes
+        fs.filesKey = key;
+        e.files.textContent = '';
+        files.forEach(function (f) {
+          const li = document.createElement('li');
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'desk-btn';
+          b.setAttribute('data-file', f.lc);
+          b.textContent = t('flow.file.download', { language: t('lang.' + f.lc) });
+          li.appendChild(b);
+          if (f.vr) {
+            const live = document.createElement('span');
+            live.textContent = t('flow.file.live', { live: f.vr.live || 0, n: f.vr.rows || 0 });
+            li.appendChild(live);
+          }
+          e.files.appendChild(li);
+        });
+        e.files.hidden = !files.length;
+      }
+      const toCheck = files.filter(function (f) { return !f.green; });
+      e.imported.hidden = !toCheck.length;
+      e.imported.textContent = toCheck.some(function (f) { return f.vr; }) ? t('jobs.file.again') : t('jobs.file.imported');
+      jobTip(e.imported, fileBusy ? line : '');
     }
+
+    // Review: this language's texts to check -- repainted with every view (applyFilters), since
+    // "they're in the table now" turns false the moment the reviewer picks another.
+    function paintShow() {
+      const fs = flowState();
+      if (!fs || !fs.el || fs.el.hidden) return;
+      const here = flowCounts(CODE).check;
+      const showing = fState.value === 'check' && !fPage.value && !fQ.value.trim();
+      jobTip(fs.els.show, !here ? t('flow.review.none', { language: t('lang.' + CODE) }) : showing ? t('flow.review.shown') : '');
+    }
+
+    // ── Jobs: start, and read while open ──────────────────────────────
+    async function startJob(half, lc, kind, extra) {
+      const fs = flowState.s;
+      fs.err[half] = '';
+      fs.starting[half]++;
+      paintFlow();
+      const r = await callProxy(Object.assign({ action: 'desk-job-start', locale: lc, kind: kind }, extra || {}), TIMEOUT_MS)
+        .catch(function () { return null; });
+      fs.starting[half]--;
+      const job = r && r.body && r.body.job;
+      // Started, already running (409), or refused by GitHub and failed at once (502): the job says.
+      if (job) (fs.jobs[lc] = fs.jobs[lc] || {})[kind] = job;
+      else if (r && r.status === 429 && /daily/.test((r.body && r.body.error) || '')) fs.err[half] = t('jobs.start.daily');
+      else if (r && r.status === 503) fs.err[half] = t('jobs.start.unavailable');
+      else fs.err[half] = t('jobs.start.failed', { reason: t('save.reason.' + failureReason(r)) });
+      paintFlow();
+      pollJobs(3000);
+      return job || null;
+    }
+    function openLangs() {
+      return [ALL].concat(LOCALES).filter(function (lc) {
+        const J = flowState.s.jobs[lc] || {};
+        return Object.keys(J).some(function (k) { return jobOpen(J[k]); });
+      });
+    }
+    function pollJobs(ms) {
+      clearTimeout(flowState.s.timer);
+      flowState.s.timer = setTimeout(function () { readJobs(openLangs()); }, ms);
+    }
+    async function readJobs(langs) {
+      const fs = flowState.s;
+      if (!langs.length) return;
+      const seq = ++fs.seq;
+      const answers = await Promise.all(langs.map(function (lc) {
+        return callProxy({ action: 'desk-job-get', locale: lc }, TIMEOUT_MS).catch(function () { return null; });
+      }));
+      if (seq !== fs.seq) return;
+      let endedHere = false, endedAny = false, failed = false;
+      langs.forEach(function (lc, i) {
+        const r = answers[i];
+        if (!(r && r.ok && r.body && r.body.jobs)) { failed = true; return; }
+        const was = fs.jobs[lc] || {}, now = r.body.jobs;
+        Object.keys(was).forEach(function (k) {
+          // A price changes nothing the desk reads; a file, a check or new translations do.
+          if (k === 'plan' || !jobOpen(was[k]) || !now[k] || now[k].id !== was[k].id || jobOpen(now[k])) return;
+          endedAny = true;
+          if (lc === CODE || lc === ALL) endedHere = true;
+        });
+        fs.jobs[lc] = now;
+      });
+      fs.readFailed = failed;
+      advanceSend();
+      paintFlow();
+      if (endedHere) rereadEngine();
+      if (endedAny) readSummary();
+      const open = openLangs();
+      if (failed) pollJobs(15000);
+      else if (open.length) {
+        const J = fs.jobs[ALL] || {};
+        pollJobs(open.length === 1 && open[0] === ALL && (jobOpen(J.submit) || jobOpen(J.collect)) ? 20000 : 4000);
+      }
+    }
+    // The page's own Send: once its price is in, the run goes -- at that price, which is the most
+    // the run may spend. Never an older price: only the plan this press started.
+    function advanceSend() {
+      const fs = flowState.s;
+      if (!fs.sendPlan || fs.sendPlan === 'starting') return;
+      const pl = (fs.jobs[ALL] || {}).plan;
+      if (!pl || jobOpen(pl)) return;
+      const mine = pl.id === fs.sendPlan;
+      fs.sendPlan = null;
+      const p = mine && pl.status === 'done' ? pl.result || {} : null;
+      if (!p || !(p.texts > 0) || (p.stops && p.stops.length) || !(p.estimateUsd > 0)) return;   // the line says why
+      startJob('ask', ALL, 'submit', { amount_usd: p.estimateUsd });
+    }
+
     // The engine's stamps and new translations for this language, read again after a job: in
     // memory only, as the load keeps them (WO-25c). The rows they change repaint; one on screen
     // holds its place (ruling #17), and an editor with typing in it keeps it.
     async function rereadEngine() {
-      var code = CODE, seq = loadSeq;
-      var arrived = function () { return rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length; };
-      var before = arrived();
-      var sr = await callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS).catch(function () { return null; });
+      const code = CODE, seq = loadSeq;
+      const arrived = function () { return rows.filter(function (tr) { return stage(tr.getAttribute('data-uid')) === 'arrived'; }).length; };
+      const before = arrived();
+      const sr = await callProxy({ action: 'desk-read', locale: code }, TIMEOUT_MS).catch(function () { return null; });
       if (seq !== loadSeq || code !== CODE || !sr || !sr.ok || !sr.body) return;
-      var oldS = engineStamps, oldD = engineDrafts;
+      const oldS = engineStamps, oldD = engineDrafts;
       engineStamps = Object.assign(Object.create(null), sr.body.pipeline || {});
       engineDrafts = Object.assign(Object.create(null), sr.body.drafts || {});
-      var moved = Object.create(null);
-      [oldS, engineStamps, oldD, engineDrafts].forEach(function (m) { for (var u in m) moved[u] = 1; });
+      const moved = Object.create(null);
+      [oldS, engineStamps, oldD, engineDrafts].forEach(function (m) { Object.keys(m).forEach(function (u) { moved[u] = 1; }); });
       rows.forEach(function (tr) {
-        var uid = tr.getAttribute('data-uid');
+        const uid = tr.getAttribute('data-uid');
         if (!moved[uid] || (JSON.stringify(oldS[uid]) === JSON.stringify(engineStamps[uid])
             && JSON.stringify(oldD[uid]) === JSON.stringify(engineDrafts[uid]))) return;
         paint(tr);
-        var wrap = tr.querySelector('.desk-editor');
+        const wrap = tr.querySelector('.desk-editor');
         if (wrap && !wrap.hidden && !editorDirty(tr)) { seedEditor(tr, wrap.querySelector('.desk-edit')); paintEditor(tr); }
         if (!tr.hidden) justActed[uid] = 1;
       });
       applyFilters();
       paintBar();
-      var after = arrived();
+      const after = arrived();
       if (after > before) toast(tn('toast.arrived', after), { level: 'ok', detail: t('toast.arrived.detail') });
     }
 
-    // A language's jobs, on every load: the page's and each switch.
-    function jobsLoad() {
-      if (SAVE_OFF || !jobsEl) return;
-      jobsEl.hidden = false;
-      clearTimeout(deskJobs.timer);
-      deskJobs.seq++;
-      deskJobs.list = {};
-      deskJobs.readFailed = false;
-      deskJobs.err = { file: '', gemini: '' };
-      paintJobs();
-      readJobs();
+    // Every load -- the page's and each switch: the strip follows. The jobs of every language are
+    // read once; the counts of the others again (the language left behind is one of them now).
+    function flowLoad() {
+      const fs = flowState.s;
+      if (SAVE_OFF || !fs.el) return;
+      fs.el.hidden = false;
+      fs.other = Object.create(null);
+      paintFlow();
+      readSummary();
+      if (!fs.loaded) { fs.loaded = true; readJobs([ALL].concat(LOCALES)); }
     }
+    window.addEventListener('storage', function () { flowState.s.other = Object.create(null); paintFlow(); });
+    setInterval(function () { paintFlow(); }, 60000);   // a file ages out of date with the page open
 
-    async function startJob(half, kind, extra) {
-      var code = CODE;
-      deskJobs.err[half] = '';
-      deskJobs.starting[half] = true;
-      paintJobs();
-      var r = await callProxy(Object.assign({ action: 'desk-job-start', locale: code, kind: kind }, extra || {}), TIMEOUT_MS)
-        .catch(function () { return null; });
-      deskJobs.starting[half] = false;
-      if (code !== CODE) return;
-      // Started, already running (409), or refused by GitHub and failed at once (502): the job says.
-      if (r && r.body && r.body.job) deskJobs.list[kind] = r.body.job;
-      else if (r && r.status === 429 && /daily/.test((r.body && r.body.error) || '')) deskJobs.err[half] = t('jobs.start.daily');
-      else if (r && r.status === 503) deskJobs.err[half] = t('jobs.start.unavailable');
-      else deskJobs.err[half] = t('jobs.start.failed', { reason: t('save.reason.' + failureReason(r)) });
-      paintJobs();
-      if (jobOpen(deskJobs.list[kind])) pollJobs(3000);
-    }
+    // ── The buttons ────────────────────────────────────────────────────
+    flowState.s.els.send.addEventListener('click', async function () {
+      const fs = flowState.s;
+      let n = 0;
+      const each = [];
+      LOCALES.forEach(function (lc) {
+        const k = flowCounts(lc).ask;
+        n += k;
+        if (k) each.push(t('flow.ask.confirm.lang', { language: t('lang.' + lc), n: k }));
+      });
+      // Every language's requests, by anyone (the Reviewer's E2-2 ruling): the confirm says how many of each.
+      if (!n || !window.confirm(tn('flow.ask.confirm', n) + ' ' + each.join(' \u00b7 '))) return;
+      fs.sendPlan = 'starting';
+      const job = await startJob('ask', ALL, 'plan');
+      fs.sendPlan = job && jobOpen(job) ? job.id : null;
+      paintFlow();
+    });
+    flowState.s.els.collect.addEventListener('click', function () {
+      // No ref: the engine collects whichever run is out, whatever its languages (J-2).
+      startJob('ask', ALL, 'collect');
+    });
+    flowState.s.els.show.addEventListener('click', function () {
+      fPage.value = ''; fQ.value = ''; fState.value = 'check';
+      pickView();
+      paintFlow();
+    });
+    flowState.s.els.get.addEventListener('click', function () {
+      LOCALES.forEach(function (lc) { if (flowCounts(lc).file > 0) startJob('file', lc, 'export'); });
+    });
+    flowState.s.els.imported.addEventListener('click', function () {
+      LOCALES.forEach(function (lc) {
+        const J = flowState.s.jobs[lc] || {}, res = (J.export && J.export.result) || {};
+        if (!res.batchId || !fileCurrent(lc, J.export)) return;
+        const v = J.verify && J.verify.ref === res.batchId ? J.verify : null;
+        const vr = v && v.status === 'done' ? (v.result || {}) : null;
+        if (!(vr && !(vr.waiting > 0))) startJob('file', lc, 'verify', { ref: res.batchId });
+      });
+    });
+    flowState.s.els.files.addEventListener('click', function (ev) {
+      const b = ev.target.closest && ev.target.closest('[data-file]');
+      if (b) downloadFile(b.getAttribute('data-file'));
+    });
 
-    async function downloadFile() {
-      var b = ((deskJobs.list.export || {}).result || {}).batchId;
-      if (!b) return;
-      deskJobs.err.file = '';
-      var r = await callProxy({ action: 'desk-export-get', batch_id: b }, TIMEOUT_MS).catch(function () { return null; });
+    // Download: the engine's bytes as they are (a UTF-8 CSV, no byte-order mark: the gates refuse
+    // one), named by its batch; then the window with how to import it and what it left out.
+    async function downloadFile(lc) {
+      const fs = flowState.s, ex = (fs.jobs[lc] || {}).export, res = (ex && ex.result) || {};
+      if (!res.batchId) return;
+      fs.err.file = '';
+      // Someone may have decided since in that language: ask the storage before handing it over.
+      await readSummary();
+      if (!fileCurrent(lc, ex)) { fs.err.file = t('flow.file.stale'); paintFlow(); return; }
+      const r = await callProxy({ action: 'desk-export-get', batch_id: res.batchId }, TIMEOUT_MS).catch(function () { return null; });
+      if (r && r.status === 410) { fs.err.file = t('flow.file.stale'); paintFlow(); return; }
       if (!r || !r.ok || !r.body || !r.body.export) {
-        deskJobs.err.file = t('jobs.file.download.failed', { reason: t('save.reason.' + failureReason(r)) });
-        paintJobs();
+        fs.err.file = t('jobs.file.download.failed', { reason: t('save.reason.' + failureReason(r)) });
+        paintFlow();
         return;
       }
-      // The engine's bytes as they are: a UTF-8 CSV with no byte-order mark (the gates refuse one).
-      var url = URL.createObjectURL(new Blob([r.body.export.csv], { type: 'text/csv;charset=utf-8' }));
-      var a = document.createElement('a');
+      const url = URL.createObjectURL(new Blob([r.body.export.csv], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
       a.href = url;
-      a.download = b + '.csv';
+      a.download = res.batchId + '.csv';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
-      paintJobs();
+      paintFlow();
+      document.getElementById('file-title').textContent = t('flow.file.popup', { language: t('lang.' + lc) });
+      document.getElementById('file-rows').textContent = tn('flow.file.rows', res.rows || 0);
+      const out = res.refused || [], warned = res.warned || [];
+      const notes = warned.concat((res.notes || []).map(function (rule) { return { rule: rule }; }));
+      jobList(document.getElementById('file-out'), out);
+      jobList(document.getElementById('file-notes'), notes);
+      const ot = document.getElementById('file-out-title'), nt = document.getElementById('file-notes-title');
+      ot.hidden = !out.length;
+      ot.textContent = out.length ? tn('jobs.file.out', out.length) : '';
+      nt.hidden = !warned.length;
+      nt.textContent = warned.length ? tn('jobs.file.notes', warned.length) : '';
+      fs.overlay.hidden = false;
+      document.getElementById('file-close').focus();
     }
-
-    jobEls['file-make'].addEventListener('click', function () { startJob('file', 'export'); });
-    jobEls['file-download'].addEventListener('click', downloadFile);
-    jobEls['file-imported'].addEventListener('click', function () {
-      var b = ((deskJobs.list.export || {}).result || {}).batchId;
-      if (b) startJob('file', 'verify', { ref: b });
-    });
-    jobEls['gemini-plan'].addEventListener('click', function () { startJob('gemini', 'plan'); });
-    jobEls['gemini-send'].addEventListener('click', function () {
-      var p = (deskJobs.list.plan || {}).result;
-      // The amount is the price the reviewer was shown, unchanged: the job spends no more.
-      if (p && p.estimateUsd > 0) startJob('gemini', 'submit', { amount_usd: p.estimateUsd });
-    });
-    jobEls['gemini-collect'].addEventListener('click', function () {
-      var s = latestSend(), run = s && s.result && s.result.runId;
-      if (run) startJob('gemini', 'collect', { ref: run });
-    });
+    document.getElementById('file-close').addEventListener('click', closeOverlays);
+    flowState.s.overlay.addEventListener('click', function (ev) { if (ev.target === flowState.s.overlay) closeOverlays(); });
 """
 
 
@@ -1811,7 +2018,7 @@ __STAGE_JS__
       if (c.csv) oc.removeAttribute('data-tip'); else oc.setAttribute('data-tip', t('bar.view.approved.hint'));
       if (c.draft) od.removeAttribute('data-tip'); else od.setAttribute('data-tip', t('bar.view.requested.hint'));
       paintSave(all);
-      paintJobs(all);
+      paintFlow(all);
       // After the frame: reading the bar's position inside a click forced a layout per click
       // (round 3 measured 3.2 -> 10.4 ms with a toast up).
       requestAnimationFrame(placeToasts);
@@ -1898,6 +2105,7 @@ __STAGE_JS__
       // aria-live: rewriting an unchanged line made screen readers repeat it on every key.
       var line = t('count.line', { shown: vis.length, total: rows.length });
       if (countLine.textContent !== line) countLine.textContent = line;
+      paintShow();
       syncPickAll();
       if (cursor >= 0 && rows[cursor] && rows[cursor].hidden) focusRow(-1);
     }
@@ -2341,7 +2549,10 @@ __STAGE_JS__
     var trayList = document.getElementById('tray-list');
     var openTray = null;
 
-    function closeOverlays() { howOverlay.hidden = true; trayOverlay.hidden = true; openTray = null; }
+    function closeOverlays() {
+      howOverlay.hidden = true; trayOverlay.hidden = true; openTray = null;
+      document.getElementById('file-overlay').hidden = true;
+    }
     document.getElementById('how-open').addEventListener('click', function () {
       howOverlay.hidden = false;
       document.getElementById('how-close').focus();
@@ -2741,6 +2952,7 @@ __PROXY_JS__
         now[a.unit] = Object.assign(storedOnly(d.body[a.unit]), { version: a.version });
         out.applied++;
       });
+      if (out.applied) flowSaved(code, r.body.at);
       (r.body.conflicts || []).forEach(function (c) {
         var cur = c.current && hasContent(c.current) ? c.current : null;
         if (sameDecision(hasContent(d.body[c.unit]) ? d.body[c.unit] : null, cur)) {
@@ -3052,30 +3264,20 @@ __PROXY_JS__
       });
     }
 
-    // Each language tab carries its OUTSTANDING count -- rows worth a look that nobody
-    // has decided yet -- so "where is there work left" is answerable without visiting
-    // all eight. It used to count rows already DECIDED, the opposite: a tab you had
-    // finished showed a number and a tab you had not started showed nothing.
-    function outstanding(lc, recs) {
-      return (WORTH[lc] || []).filter(function (uid) { return stageOf(recs[uid]) === 'todo'; }).length;
-    }
-    var outstandingMemo = Object.create(null);
-    function storedOutstanding(lc) {
-      var recs = readLocale(lc), m = outstandingMemo[lc];
-      if (m && m.recs === recs) return m.n;
-      var n = outstanding(lc, recs);
-      outstandingMemo[lc] = { recs: recs, n: n };
-      return n;
-    }
+    // Each language tab carries its OUTSTANDING count -- flagged texts nobody has checked yet,
+    // "to check" -- so "where is there work left" is answerable without visiting all eight. It
+    // used to count rows already DECIDED, the opposite: a tab you had finished showed a number and
+    // a tab you had not started showed nothing. Since U3 it is the strip's own per-language count
+    // (flowCounts), so the tabs and the Review box add up to one number.
     function paintLocaleCounts() {
       Array.prototype.forEach.call(document.querySelectorAll('[data-loc-count]'), function (el) {
         var lc = el.getAttribute('data-loc-count');
-        var n = lc === CODE ? outstanding(lc, state) : storedOutstanding(lc);
+        var n = flowCounts(lc).check;
         el.textContent = n ? String(n) : '';
         el.hidden = !n;
         var link = el.parentNode;
         var nm = link && link.querySelector('.desk-loc-name');
-        // The name is visually hidden on inactive tabs; a hover says it, and the count.
+        // A hover says the language and what its number counts.
         if (nm) link.setAttribute('data-tip', n ? tn('locale.langs.hover_flagged', n, { language: nm.textContent })
                                                  : t('locale.langs.hover', { language: nm.textContent }));
       });
@@ -3118,17 +3320,11 @@ __PROXY_JS__
     function paintLocaleChrome(code, total) {
       var name = t('lang.' + code);
       document.title = t('meta.locale.title', { language: name });
-      document.getElementById('desk-eyebrow').textContent = t('locale.eyebrow', { LANGUAGE: name.toUpperCase() });
       document.getElementById('col-target').textContent = t('table.col.target', { language: name });
       fQ.setAttribute('placeholder', t('filter.search.placeholder', { language: name }));
-      if (total != null) {
-        var sub = document.getElementById('desk-subtitle');
-        sub.textContent = '';
-        var bdi = document.createElement('bdi');
-        bdi.textContent = LOCALE_INFO[code].endonym;
-        sub.appendChild(bdi);
-        sub.appendChild(document.createTextNode(' \u00b7 ' + t('locale.subtitle', { total: total })));
-      }
+      // A switch names the language at once; its size follows when its texts are in.
+      document.getElementById('desk-title').textContent =
+        t('locale.title', { language: name, total: total != null ? total : '\u2026' });
       Array.prototype.forEach.call(document.querySelectorAll('.desk-loc'), function (a) {
         var on = a.getAttribute('data-loc') === code;
         a.classList.toggle('is-active', on);
@@ -3165,7 +3361,7 @@ __PROXY_JS__
       buildRows(units);
       paintLocaleChrome(code, units.length);
       loadFailedFor = null;
-      countLine.className = 'subtle';     // an earlier failure's styling goes with it
+      countLine.className = 'subtle desk-count';     // an earlier failure's styling goes with it
       // The address's filters apply to whichever load lands first -- the page's own, or
       // a switch made before it finished.
       var first = !booted;
@@ -3210,7 +3406,7 @@ __PROXY_JS__
           setTimeout(function () { if (seq === loadSeq) performance.mark('desk-ready:' + code); }, 0);
         });
       }
-      jobsLoad();
+      flowLoad();
       // Saving off, nothing is on a server and nothing is checked: the load ends here, doing
       // exactly the work it did before 4b (a second paint of the bar here sat on the switch).
       if (SAVE_OFF) return;
@@ -3327,7 +3523,7 @@ __PROXY_JS__
       // Say so in the page. A desk that silently shows zero rows looks like
       // "nothing to review", which is the opposite of what has happened.
       countLine.textContent = t('count.failed', { error: err.message });
-      countLine.className = 'subtle desk-status is-error';
+      countLine.className = 'subtle desk-count desk-status is-error';
       loadFailedFor = CODE;                // its own tab now tries again
       noRows.hidden = true;
       note('load-failed', null, err.message, null);
@@ -3403,7 +3599,7 @@ __PROXY_JS__
     });
     window.addEventListener('pageshow', function (ev) { if (ev.persisted) adoptStored(); });
 
-__JOBS_JS__
+__FLOW_JS__
     // ── Boot ───────────────────────────────────────────────────────────
     loadLocale(null).then(function () {
       // With the first language on screen, fetch the rest while the reviewer reads.
@@ -3421,7 +3617,7 @@ __JOBS_JS__
     "__LOCALES__", json.dumps([c for c, *_ in LOCALES])).replace(
     "__HELPERS__", JS_HELPERS + _TIP_JS).replace("__DELTA_JS__", _DELTA_JS).replace(
     "__PROXY_JS__", _PROXY_JS).replace("__SAVE_REASONS__", json.dumps(list(SAVE_REASONS))).replace(
-    "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__JOBS_JS__", _JOBS_JS).replace(
+    "__SAVE_OFF__", "true" if SAVE_OFF else "false").replace("__FLOW_JS__", _FLOW_JS).replace(
     "__COPY__", js_table())
 
 

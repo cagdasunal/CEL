@@ -24,7 +24,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | What the automatic checks point out | **flagged** | worth a look, needs attention, recommendation |
 | The machine that writes new translations | **Gemini** | the machine, the model, the pipeline |
 | Where the translation appears | **the website** | live, the site, production |
-| The file handed to Weglot | **the import file** | the CSV, the export, the export file |
+| The file handed to Weglot | **the Weglot file** | the import file, the CSV, the export |
 | Keeping decisions on the server | **Save** | back up, export, sync |
 | Taking a decision back | **Undo** | remove, clear, reset |
 
@@ -83,15 +83,14 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `index.discard.hint` | Throw away what this browser hasn't saved. Anything already saved stays. | Hover text of that button |
 | `index.discard.confirm.one` | Throw away 1 unsaved change in {language}? Anything already saved stays. | Confirmation |
 | `index.discard.confirm.other` | Throw away {n} unsaved changes in {language}? Anything already saved stays. | Confirmation |
-| `index.footnote` | Nothing here changes the website directly. Approved texts reach the website only when an import file is made and imported into Weglot. | Under the cards |
+| `index.footnote` | Nothing here changes the website directly. Approved texts reach the website only when a Weglot file is made and imported. | Under the cards |
 
 ## One language — header and filters
 
 | Key | Text | Shown where |
 |---|---|---|
-| `locale.eyebrow` | LOCALIZATION DESK · {LANGUAGE} | Small heading, top left |
-| `locale.subtitle` | {total} texts | Under the heading |
-| `locale.help` | How this works | Button, top right |
+| `locale.title` | {language} · {total} texts | Heading of a language page |
+| `locale.help` | How this works | The round ? beside the heading: its hover text and screen-reader name |
 | `locale.langs.label` | Choose a language | Screen-reader name of the language tabs |
 | `locale.langs.hover` | {language} | Hover text of a language tab, nothing flagged left |
 | `locale.langs.hover_flagged.one` | {language} — 1 flagged text not reviewed yet | Hover text of a language tab |
@@ -101,7 +100,7 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `filter.show` | Show | Filter label |
 | `filter.search` | Search | Filter label |
 | `filter.search.placeholder` | English or {language} | Search box, empty (keep it short: the box is narrow) |
-| `show.check` | Flagged — check these first ({n}) | Show filter. Opens by default |
+| `show.check` | To check first ({n}) | Show filter. Opens by default |
 | `show.arrived` | New translations to read ({n}) | Show filter |
 | `show.todo` | Not reviewed yet ({n}) | Show filter |
 | `show.all` | All texts ({n}) | Show filter |
@@ -110,57 +109,63 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | `show.draft` | New translation requested ({n}) | Show filter |
 | `show.sending` | With Gemini ({n}) | Show filter |
 | `show.failed` | Translation failed ({n}) | Show filter |
-| `show.exported` | In the import file ({n}) | Show filter |
+| `show.exported` | In a Weglot file ({n}) | Show filter |
 | `show.live` | On the website ({n}) | Show filter |
-| `count.line` | Showing {shown} of {total} texts | Under the filters |
+| `count.line` | {shown} of {total} | End of the filter row |
 | `count.failed` | Couldn't load the texts ({error}). | Under the filters, when loading fails |
 | `table.empty` | No texts match these filters. | Instead of the table |
 | `table.empty.reset` | Show all texts | Button under that line: clears Page, Show and Search |
 
-## One language — the import file and Gemini
+## One language — the three boxes at the top
 
-The panel under the heading. Each button starts one job in the engine; each half's line says where
-its job stands.
+Ask Gemini, Review and the Weglot file, for every language at once. Each box has a count, its
+button, and a line that says only where its job stands. No price is shown (the operator,
+2026-09-29): the engine caps what a send may spend.
 
 | Key | Text | Shown where |
 |---|---|---|
-| `jobs.label` | The import file and Gemini | Screen-reader name of the panel under the heading |
-| `jobs.working` | Working on it — about a minute. | A half's line, while its job runs |
+| `flow.label` | Ask Gemini, review and get the Weglot file, for every language | Screen-reader name of the three boxes |
+| `flow.ask.label` | Ask Gemini | First box |
+| `flow.ask.unit` | requested | Beside its number |
+| `flow.ask.button` | Send to Gemini | Its button |
+| `flow.ask.none` | Ask Gemini for a new translation with ✦ first | Hover text of that button, with nothing requested |
+| `flow.ask.confirm.one` | Send 1 text to Gemini? | Confirmation, after Send to Gemini |
+| `flow.ask.confirm.other` | Send {n} texts to Gemini? | |
+| `flow.ask.confirm.lang` | {language} {n} | After it, one per language, joined with · ("German 10 · Italian 14") |
+| `flow.review.label` | Review | Second box |
+| `flow.review.unit` | to check | Beside its number |
+| `flow.review.button` | Show them | Its button: this language's, in the table |
+| `flow.review.none` | Nothing to check in {language} | Hover text of that button, with none left in this language |
+| `flow.review.shown` | They're in the table now | Hover text of that button, while the table shows them |
+| `flow.file.label` | Weglot file | Third box |
+| `flow.file.unit` | approved | Beside its number |
+| `flow.file.button` | Get the file | Its button: one file for each language with approved texts |
+| `flow.file.none` | Approve texts with ✓ first | Hover text of that button, with nothing approved |
+| `flow.file.download` | Download {language} | One button per language with a file |
+| `flow.file.live` | {live} of {n} on the website | Beside it, once I imported it has checked the website |
+| `flow.file.stale` | This file is out of date: get the file again. | Its line, when a file was made before a later decision, or over an hour ago |
+| `flow.file.popup` | {language}: the Weglot file | Heading of the window Download opens |
+| `flow.file.rows.one` | 1 text in this file. | Under that heading |
+| `flow.file.rows.other` | {n} texts in this file. | |
+| `flow.failed` | {language}: {reason} | A box's line, when a language's job failed |
+| `jobs.working` | Working on it — about a minute. | A box's line, while its job runs |
 | `jobs.unsaved` | Wait until the bar says “All changes saved”: the file and the requests are made from what's saved. | Hover text of the panel's buttons, while this language has unsaved changes |
-| `jobs.start.failed` | It couldn't start: {reason}. Try again. | A half's line, when the server didn't take the job ({reason} is one of the `save.reason.*` lines) |
-| `jobs.start.unavailable` | This can't run right now. Let the team know. | A half's line, when the server has no engine set up (503) |
-| `jobs.read.failed` | Couldn't check how it's going. Trying again… | A half's line, when reading a job's progress fails |
-| `jobs.file.title` | The import file | Heading of the first half |
-| `jobs.file.idle` | Approved texts reach the website through the import file: get it here, then import it in Weglot. | Its line, before any file |
-| `jobs.file.make` | Get the import file ({n} approved) | Its button (runbook F1) |
-| `jobs.file.make.none` | No approved text is waiting for a file. Approve one first. | Hover text of that button, with nothing approved |
-| `jobs.file.ready.one` | The import file is ready: 1 text. | Its line, once a file is made |
-| `jobs.file.ready.other` | The import file is ready: {n} texts. | |
-| `jobs.file.download` | Download the import file | Button |
+| `jobs.start.failed` | It couldn't start: {reason}. Try again. | A box's line, when the server didn't take the job ({reason} is one of the `save.reason.*` lines) |
+| `jobs.start.unavailable` | This can't run right now. Let the team know. | A box's line, when the server has no engine set up (503) |
+| `jobs.start.daily` | Today's limit is reached: this works again tomorrow. | A box's line, when the server refused the start for the daily cap |
+| `jobs.read.failed` | Couldn't check how it's going. Trying again… | A box's line, when reading a job's progress fails |
 | `jobs.file.out.one` | 1 text isn't in the file: | Heading of the list of texts left out (each line a `refusal.*`) |
 | `jobs.file.out.other` | {n} texts aren't in the file: | |
 | `jobs.file.notes.one` | 1 text went in with something to check: | Heading of the list of texts that went in with a `-WARN` or suffix line |
 | `jobs.file.notes.other` | {n} texts went in with something to check: | |
 | `jobs.file.imported` | I imported it | Button, once a file is ready (runbook F2) |
-| `jobs.file.live` | On the website: {live} of {n} texts. | Its line, after the check |
-| `jobs.file.waiting` | The website can take a few minutes to show an import. Check again in a few minutes. | Under that, while some aren't there yet |
 | `jobs.file.again` | Check again | The same button, then |
-| `jobs.gemini.title` | Gemini | Heading of the second half |
-| `jobs.gemini.idle` | When you ask Gemini for new translations, the requests wait here until you send them. | Its line, before anything is sent |
-| `jobs.gemini.plan.one` | Send 1 request to Gemini | Its button (runbook F3) |
-| `jobs.gemini.plan.other` | Send {n} requests to Gemini | |
-| `jobs.gemini.plan.none` | No requests are waiting. Ask Gemini for a new translation first. | Hover text of that button, with none waiting |
-| `jobs.gemini.estimate.one` | 1 text: about ${cost}. Nothing is sent until you press Send. | Its line, once Gemini's price is known |
-| `jobs.gemini.estimate.other` | {n} texts: about ${cost}. Nothing is sent until you press Send. | |
-| `jobs.gemini.nothing` | Nothing to send: every request is already with Gemini, or was undone. | Its line, when the price check finds no text to send |
-| `jobs.gemini.send` | Send (about ${cost}) | Button after the price (the amount is the ceiling the job may spend) |
-| `jobs.gemini.sending` | With Gemini. It can take up to 20 minutes; you can keep working. | Its line, while Gemini works |
+| `jobs.file.download.failed` | The Weglot file couldn't be downloaded: {reason}. Try again. | Its line, when the download failed ({reason} is one of the `save.reason.*` lines) |
+| `jobs.gemini.nothing` | Nothing to send: every request is already with Gemini, or was undone. | Its line, when Send finds no text to send |
 | `jobs.gemini.arrived.one` | 1 new translation to read. | Its line, when they're back |
 | `jobs.gemini.arrived.other` | {n} new translations to read. | |
 | `jobs.gemini.slow` | Gemini hasn't finished yet. Check again in a few minutes. | Its line, when Gemini is slower than 20 minutes |
 | `jobs.gemini.collect` | Check for new translations | The button then |
-| `jobs.start.daily` | Today's limit is reached: this works again tomorrow. | A half's line, when the server refused the start for the daily cap |
-| `jobs.file.download.failed` | The import file couldn't be downloaded: {reason}. Try again. | Its line, when the download failed ({reason} is one of the `save.reason.*` lines) |
 
 <!-- block jobs.file.how -->
 How to import it in Weglot:
@@ -195,7 +200,7 @@ too. Then come back here and press **I imported it**.
 | `status.queued` | New translation requested | Status badge |
 | `status.sending` | With Gemini… | Status badge |
 | `status.failed` | Translation failed | Status badge (the reason shows on hover) |
-| `status.exported` | In the import file | Status badge |
+| `status.exported` | In a Weglot file | Status badge |
 | `status.live` | On the website | Status badge |
 | `status.conflict` | Changed elsewhere | Status, when someone else saved this text first |
 | `status.conflict.tip` | {who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs. | Hover text of that status |
@@ -283,7 +288,7 @@ too. Then come back here and press **I imported it**.
 | `toast.close` | Close message | Screen-reader name of the × on a message |
 | `toast.approved.one` | 1 text approved | After Approve on a selection |
 | `toast.approved.other` | {n} texts approved | |
-| `toast.approved.detail` | They go to the website once an import file is made and imported into Weglot. | |
+| `toast.approved.detail` | They go to the website once a Weglot file is made and imported. | |
 | `toast.requested.one` | 1 new translation requested | After asking Gemini for a selection |
 | `toast.requested.other` | {n} new translations requested | |
 | `toast.requested.detail` | Send them to Gemini from the top of the page when you're ready. | |
@@ -329,7 +334,7 @@ too. Then come back here and press **I imported it**.
 | `list.csv.title` | Approved | List heading |
 | `list.csv.summary.one` | 1 text is approved and waiting to go to the website. | Under the heading |
 | `list.csv.summary.other` | {n} texts are approved and waiting to go to the website. | Under the heading |
-| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot import file. | Bottom of the list |
+| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot file. | Bottom of the list |
 
 ## Why a text is flagged (under the translation)
 
@@ -346,9 +351,9 @@ too. Then come back here and press **I imported it**.
 | `why.register.fr` | Uses the informal “tu” — the client wants “vous”. | Reason line |
 | `why.register.pt` | Uses “o senhor / a senhora” — the client wants “você”. | Reason line |
 
-## Why a text can't go in the import file
+## Why a text can't go in the Weglot file
 
-Shown under the import file's button, one line per text that was left out; the `-WARN` lines are texts that
+Shown in the window Download opens, one line per text that was left out; the `-WARN` lines are texts that
 went in the file with something to check. A line naming no text ("no file was made") is the whole job's.
 
 | Key | Text | Shown where |
@@ -358,7 +363,7 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `refusal.SUMMARY-OWNED` | The page summary writes this text, so it can't be changed from here. | |
 | `refusal.MARKUP-UNPROVEN` | It has formatting the import can't handle safely yet, so it can't be changed from here for now. | |
 | `refusal.LINK-ONLY-UNPROVEN` | It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now. | |
-| `refusal.CLIENT-RULE` | It breaks one of the client's style rules; the note under the translation says which. Edit it, then approve it again. | |
+| `refusal.CLIENT-RULE` | It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know. | |
 | `refusal.NUMBER-PARITY` | Its numbers don't match the English. Check the prices, dates and amounts, then approve it again. | |
 | `refusal.META-BUDGET` | Too long for a search result. Shorten it, then approve it again. | |
 | `refusal.POISON` | It is far longer than the English and may not be its translation. Check it, then approve it again. | |
@@ -380,7 +385,7 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `refusal.DUPLICATE` | The same text was approved twice with different words. Let the team know. | |
 | `refusal.LANG-MISMATCH` | It was approved in another language's list. Let the team know. | |
 | `refusal.BAD-ROLE` | This kind of text can't be imported. Let the team know. | |
-| `refusal.CLIENT-RULE-WARN` | It went in the file, but it may break one of the client's style rules; the note under the translation says which. | Same place, per text that went in |
+| `refusal.CLIENT-RULE-WARN` | It went in the file, but it may break one of the client's style rules. Let the team know. | Same place, per text that went in |
 | `refusal.PLACEHOLDER-COUNT-WARN` | It went in the file, but it uses a link more or fewer times than the English. Check it on the website. | |
 | `refusal.CSV-INJECTION-WARN` | It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet. | |
 | `refusal.DEDUPED` | Some texts are on more than one page; each went in the file once. | Same place, once for the file |
@@ -411,8 +416,8 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `job.failed.engine-did-not-start` | The job didn't start. Try again in a few minutes. | Job status, when a job failed |
 | `job.failed.engine-stopped` | The job stopped before it finished. Try again; if it stops again, let the team know. | |
 | `job.failed.engine-never-answered` | The job didn't answer for 35 minutes. Try again; if it happens again, let the team know. | |
-| `job.failed.bad-job` | This couldn't be read, so it didn't run. Let the team know. | A half's line, when a job failed |
-| `job.failed.bad-amount` | The price to send wasn't clear, so nothing was sent. Get the price again, then send. | |
+| `job.failed.bad-job` | This couldn't be read, so it didn't run. Let the team know. | A box's line, when a job failed |
+| `job.failed.bad-amount` | The send couldn't be priced, so nothing was sent. Send again. | |
 | `job.failed.engine-error` | Something went wrong while it ran. Try again; if it happens again, let the team know. | |
 | `job.failed.engine-not-configured` | This can't run until the team finishes setting it up. Let the team know. | |
 | `job.failed.storage-error` | The desk's storage didn't answer. Try again in a few minutes. | |
@@ -420,11 +425,11 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `job.failed.manifest-stale` | The texts were out of date, so no file was made. Try again. | |
 | `job.failed.export-refused` | No file was made: | Followed by the file's own reasons (`refusal.*`) |
 | `job.failed.export-empty` | Nothing could go in the file: | Followed by the texts left out (`refusal.*`) |
-| `job.failed.stamps-not-landed` | It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know. | A half's line, when a job failed |
-| `job.failed.batch-not-found` | The import file this check was for can't be found. Let the team know. | |
-| `job.failed.no-batch` | There's no import file to check yet. Get the import file first. | |
+| `job.failed.stamps-not-landed` | It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know. | A box's line, when a job failed |
+| `job.failed.batch-not-found` | The Weglot file this check was for can't be found. Let the team know. | |
+| `job.failed.no-batch` | There's no Weglot file to check yet. Get the file first. | |
 | `job.failed.nothing-queued` | No requests are waiting, so nothing was sent. | |
-| `job.failed.over-amount` | Gemini's price went up since you saw it, so nothing was sent. Get the new price, then send. | |
+| `job.failed.over-amount` | It would have cost more than expected, so nothing was sent. Send again. | |
 | `job.failed.credit-probe-failed` | Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know. | |
 | `job.failed.gemini-error` | Gemini answered with an error. Try again later; if it happens again, let the team know. | |
 | `job.failed.run-still-out` | An earlier send is still with Gemini. Check for new translations first, then send. | Also why Send is blocked (the plan's stops) |
@@ -432,7 +437,7 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `job.failed.quota-spent-today` | Gemini's limit for today is used up. Send again tomorrow. | Also why Send is blocked |
 | `job.failed.over-run-cap` | That's more than one send may cost. Undo some requests, then send the rest. | Also why Send is blocked |
 | `job.failed.over-day-cap` | That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests. | Also why Send is blocked |
-| `job.failed.no-run` | Nothing is waiting with Gemini. | A half's line, when a job failed |
+| `job.failed.no-run` | Nothing is waiting with Gemini. | A box's line, when a job failed |
 | `job.failed.run-unreadable` | The record of an earlier send can't be read, so nothing more can be sent. Let the team know. | |
 | `job.failed.run-not-collectable` | Those requests can't be collected: they were cancelled or already collected. Let the team know. | |
 | `job.failed.nothing-arrived` | Gemini finished, but no new translations came back. Let the team know. | |
@@ -483,7 +488,13 @@ bottom applies one decision to all of them. On the keyboard, `J` and `K` move be
 
 ### Nothing reaches the website by itself
 
-Approved texts reach the website through the import file: **Get the import file** at the top of the page makes it, you import it in Weglot, and **I imported it** checks that the website shows it. Requests go to Gemini with **Send requests to Gemini**; the desk shows what that costs before anything is sent. Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.
+The three boxes at the top work on every language at once.
+
+- **Ask Gemini** counts the new translations you requested with ✦. **Send to Gemini** asks you to confirm the number, then sends them all to Gemini together. Their new translations come back to read, usually within 20 minutes; if Gemini is slower, **Check for new translations** fetches them.
+- **Review** counts the flagged texts nobody has checked yet. **Show them** lists this language's in the table.
+- **Weglot file** counts the approved texts that aren't in a file yet. **Get the file** makes one Weglot file for each language that has some. **Download** a language's file: the window that opens says how to import it in Weglot. Then press **I imported it**, and each file says how many of its texts the website shows; **Check again** looks again while some are missing.
+
+Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.
 
 <!-- /block -->
 

@@ -75,9 +75,15 @@ class TestTheConflictWords:
             assert "choose again, or edit, to keep yours" in copy[key].lower(), key
         assert not [k for k, v in copy.items() if re.search(r"decid(e|ing) again", v, re.I)]
 
+    def test_no_refusal_points_at_a_note_that_is_not_there(self):
+        """The Reviewer's E3-2: the client-rule refusals said "the note under the translation says
+        which" -- the desk shows no such note (WO-36's desk line is not built)."""
+        copy = C.load()
+        assert not [k for k, v in copy.items() if k.startswith("refusal.") and "note under the translation" in v]
+
     def test_approvals_wait_for_the_import_file(self):
         assert C.load()["list.csv.notice"] == ("Nothing reaches the website by itself. Your approvals "
-                                               "are saved and wait for the next Weglot import file.")
+                                               "are saved and wait for the next Weglot file.")
 
 
 class TestTheDocument:
