@@ -1416,3 +1416,12 @@ def test_qa_reads_the_post_title_with_its_body(tmp_path, monkeypatch):
     report = qa_checks("## Wo lernst du 2026 besser Englisch?\n\nIn San Diego.\n", "san diego", "de", [],
                        source_text=seen["qa_sources"][0])
     assert report.checks["fact_grounding_numbers"], report.notes
+
+
+def test_a_cms_read_failure_exits_non_zero(tmp_path, monkeypatch, capsys):
+    """U4-2: a revoked token, a 401 or an API outage made list_items raise; the run logged a
+    warning, reported "no items to process" and exited 0, filling nothing every night."""
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, list_raises=True)
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
+    assert seen["requests"] == [] and phase["requests_built"] == 0
+    assert "CMS read failed" in capsys.readouterr().err

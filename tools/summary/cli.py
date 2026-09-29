@@ -330,15 +330,21 @@ def main(argv: list[str] | None = None) -> int:
 # or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
 # fires; so does a run the hard cost cap stopped (the Manager's ruling: a cap that silently stops
 # every night drains nothing either), and so does a run whose every summary QA rejected (U4-1:
-# otherwise the same posts are re-paid every night, green). A partial run, a day with nothing
-# to do, and a pilot-first confirm stop still exit 0.
+# otherwise the same posts are re-paid every night, green), and a run whose CMS read failed
+# (U4-2: a revoked token read as "no items"). A partial run, a day with nothing to do, and a
+# pilot-first confirm stop still exit 0.
 _NO_WORK_DONE_EXIT_CODE = 3
 
 
 def _no_work_done(ge: Any) -> str:
     """Why a live generate-english phase with work did none of it, or "" when it did some, had
     none, or was a pilot-first confirm stop."""
-    if not isinstance(ge, dict) or not ge.get("requests_built"):
+    if not isinstance(ge, dict):
+        return ""
+    unread = [w for w in ge.get("warnings", []) if "enumeration failed" in w]
+    if unread:  # U4-2: "no items" because the CMS could not be read is not "nothing to do"
+        return f"the CMS read failed ({unread[0][:200]})"
+    if not ge.get("requests_built"):
         return ""
     if not ge.get("submitted"):
         gate = ge.get("cost_gate") or {}
