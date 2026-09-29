@@ -64,6 +64,8 @@ JOB_KINDS = ("export", "verify", "plan", "submit", "collect")
 JOB_ALL, JOB_ALL_KINDS = "all", ("plan", "submit", "collect")
 JOB_RUN_CAP_USD = 40
 JOB_STALE_SEC = 35 * 60
+# A Weglot file is handed over only within the engine's FRESH_MINUTES of being made (U3, A4-1).
+EXPORT_FRESH_SEC = 60 * 60
 JOB_DAILY = 60                  # starts a day per user, a refused one too (each is a billed run)
 JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}")       # verify's batch, collect's run: the runner's rule
 JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{7,63}")
@@ -401,6 +403,10 @@ class DeskStore:
             r = self.decisions.get((loc, u))
             if r is not None:
                 languages[loc]["flagged"][u] = _shape(r["record"].get("tray"), r["record"].get("text") is not None)
+        # When each language's last decision was saved (U3, A4-1): an undone one keeps its time.
+        for (loc, _u), r in self.decisions.items():
+            if loc in languages and r["at"] > languages[loc].get("lastAt", ""):
+                languages[loc]["lastAt"] = r["at"]
         return 200, {"ok": True, "api": API,
                      "readAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                      "languages": languages}
@@ -508,6 +514,12 @@ class DeskStore:
         r = self.exports.get(batch_id)
         if r is None:
             return 404, {"ok": False, "error": "no such file"}
+        try:
+            made = datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")).timestamp()
+        except ValueError:
+            made = None
+        if made is None or datetime.now(timezone.utc).timestamp() - made > EXPORT_FRESH_SEC:
+            return 410, {"ok": False, "error": "this file is out of date -- get the file again"}
         try:
             refused = json.loads(r["refused"])
         except ValueError:
