@@ -985,6 +985,9 @@ _FLOW_JS = """\
     // The engine's FRESH_MINUTES (cli.py): a Weglot file older than that is out of date (A4-1).
     const FILE_FRESH_MS = 60 * 60 * 1000;
     // What a send refused before sending anything leaves no run out (J-2): every other end might.
+    // A collect that ended on these found no run out (or collected it): any other end -- one GitHub
+    // refused to start, one never answered -- leaves the run as it was, still out (the re-check's J-2).
+    const NOTHING_OUT = ['no-run', 'run-not-collectable', 'nothing-arrived'];
     const NOTHING_SENT = ['over-day-cap', 'over-run-cap', 'quota-spent-today', 'run-stuck-submitting', 'nothing-queued',
                           'bad-amount', 'over-amount', 'credit-probe-failed', 'bad-job', 'engine-not-configured',
                           'engine-did-not-start', 'no-run', 'run-not-collectable', 'nothing-arrived'];
@@ -1028,6 +1031,14 @@ _FLOW_JS = """\
       const last = [sum && sum.lastAt, fs.saved[lc]].filter(Boolean).sort().pop();
       return !(last && last > ex.createdAt);
     }
+    // What Get the file would put in a file for a language: its approved texts -- and, once its
+    // latest file is out of date and was not imported, the texts that file held ("In a Weglot
+    // file"), which would otherwise be stuck (the re-check's N-1). The engine exports them again.
+    function fileCount(lc, all) {
+      const n = flowCounts(lc), fs = flowState();
+      const ex = fs && (fs.jobs[lc] || {}).export;
+      return n.file + (n.exported && !(ex && fileCurrent(lc, ex, all)) ? n.exported : 0);
+    }
     function flowUnsaved(all) {
       const u = all || unsavedByLocale();
       if (Object.keys(u).length) return true;
@@ -1038,11 +1049,12 @@ _FLOW_JS = """\
     function flowCounts(lc) {
       const fs = flowState();
       if (lc === CODE && rows.length) {
-        const n = { ask: 0, file: 0, check: 0 };
+        const n = { ask: 0, file: 0, check: 0, exported: 0 };
         rows.forEach(function (tr) {
           const st = stage(tr.getAttribute('data-uid'));
           if (st === 'queued') n.ask++;
           else if (st === 'approved' || st === 'edited') n.file++;
+          else if (st === 'exported') n.exported++;
         });
         n.check = (WORTH[CODE] || []).filter(function (uid) { return stage(uid) === 'todo'; }).length;
         return n;
@@ -1064,7 +1076,7 @@ _FLOW_JS = """\
         check = (WORTH[lc] || []).filter(function (id) { return stageOf(st[id]) === 'todo'; }).length;
       }
       const c = function (x) { return Math.max(0, m[x] || 0); };
-      const out = { ask: c('queued'), file: c('approved') + c('edited'), check: check };
+      const out = { ask: c('queued'), file: c('approved') + c('edited'), check: check, exported: c('exported') };
       if (fs) fs.other[lc] = out;
       return out;
     }
@@ -1103,10 +1115,10 @@ _FLOW_JS = """\
     function paintFlow(all) {
       const fs = flowState();
       if (!fs || !fs.el || fs.el.hidden) return;       // before this script has run, or saving off
-      const e = fs.els, unsaved = flowUnsaved(all), tot = { ask: 0, file: 0, check: 0 };
+      const e = fs.els, unsaved = flowUnsaved(all), tot = { ask: 0, file: 0, check: 0, again: 0 };
       LOCALES.forEach(function (lc) {
-        const n = flowCounts(lc);
-        tot.ask += n.ask; tot.file += n.file; tot.check += n.check;
+        const n = flowCounts(lc), f = fileCount(lc, all);
+        tot.ask += n.ask; tot.file += f; tot.check += n.check; tot.again += f - n.file;
       });
       e['ask-n'].textContent = String(tot.ask);
       e['review-n'].textContent = String(tot.check);
@@ -1136,7 +1148,7 @@ _FLOW_JS = """\
       const stillOut = (p && p.stops && p.stops.indexOf('run-still-out') !== -1)
         || [fresh, send].some(function (j) { return j && j.status === 'failed' && j.error === 'run-still-out'; })
         || !!(send && !jobOpen(send) && !(send.status === 'done' && sr.collected === true)
-              && !(send.status === 'failed' && NOTHING_SENT.indexOf(send.error) !== -1));
+              && !(send.status === 'failed' && (send.kind === 'collect' ? NOTHING_OUT : NOTHING_SENT).indexOf(send.error) !== -1));
       e.collect.hidden = askBusy || !stillOut;
 
       paintShow();
@@ -1169,6 +1181,7 @@ _FLOW_JS = """\
       e['file-line'].textContent = line;
       e['file-line'].className = 'desk-status desk-flow-line' + (bad ? ' is-error' : '');
       jobTip(e.get, fileBusy ? line : unsaved ? t('jobs.unsaved') : tot.file ? '' : t('flow.file.none'));
+      e.get.textContent = tot.again ? t('flow.file.again') : t('flow.file.button');
       const key = JSON.stringify(files);
       if (key !== fs.filesKey) {                 // rebuilt only when what it lists changes
         fs.filesKey = key;
@@ -1269,16 +1282,25 @@ _FLOW_JS = """\
       }
     }
     // The page's own Send: once its price is in, the run goes -- at that price, which is the most
-    // the run may spend. Never an older price: only the plan this press started.
+    // the run may spend. Never an older price: only the plan this press started. And only what the
+    // reviewer confirmed (the re-check's N-2): a plan that found other requests, per language --
+    // anyone's new ✦, an undo, another language -- is asked again with its own counts.
     function advanceSend() {
-      const fs = flowState.s;
-      if (!fs.sendPlan || fs.sendPlan === 'starting') return;
+      const fs = flowState.s, sent = fs.sendPlan;
+      if (!sent || sent === 'starting') return;
       const pl = (fs.jobs[ALL] || {}).plan;
       if (!pl || jobOpen(pl)) return;
-      const mine = pl.id === fs.sendPlan;
       fs.sendPlan = null;
-      const p = mine && pl.status === 'done' ? pl.result || {} : null;
+      const p = pl.id === sent.id && pl.status === 'done' ? pl.result || {} : null;
       if (!p || !(p.texts > 0) || (p.stops && p.stops.length) || !(p.estimateUsd > 0)) return;   // the line says why
+      const by = p.byLocale || null;
+      const same = by ? LOCALES.every(function (lc) { return (by[lc] || 0) === (sent.per[lc] || 0); }) : p.texts === sent.total;
+      if (!same) {
+        const each = by ? LOCALES.filter(function (lc) { return by[lc]; }).map(function (lc) {
+          return t('flow.ask.confirm.lang', { language: t('lang.' + lc), n: by[lc] });
+        }) : [];
+        if (!window.confirm(tn('flow.ask.changed', p.texts) + (each.length ? ' ' + each.join(' \u00b7 ') : ''))) { paintFlow(); return; }
+      }
       startJob('ask', ALL, 'submit', { amount_usd: p.estimateUsd });
     }
 
@@ -1337,9 +1359,12 @@ _FLOW_JS = """\
       });
       // Every language's requests, by anyone (the Reviewer's E2-2 ruling): the confirm says how many of each.
       if (!n || !window.confirm(tn('flow.ask.confirm', n) + ' ' + each.join(' \u00b7 '))) return;
+      // What was confirmed, per language: a plan that finds other requests is asked again (N-2).
+      const per = {};
+      LOCALES.forEach(function (lc) { const k = flowCounts(lc).ask; if (k) per[lc] = k; });
       fs.sendPlan = 'starting';
       const job = await startJob('ask', ALL, 'plan');
-      fs.sendPlan = job && jobOpen(job) ? job.id : null;
+      fs.sendPlan = job && jobOpen(job) ? { id: job.id, per: per, total: n } : null;
       paintFlow();
     });
     flowState.s.els.collect.addEventListener('click', function () {
@@ -1361,7 +1386,7 @@ _FLOW_JS = """\
       if (chip) chip.click();
     });
     flowState.s.els.get.addEventListener('click', function () {
-      LOCALES.forEach(function (lc) { if (flowCounts(lc).file > 0) startJob('file', lc, 'export'); });
+      LOCALES.forEach(function (lc) { if (fileCount(lc) > 0) startJob('file', lc, 'export'); });
     });
     flowState.s.els.imported.addEventListener('click', function () {
       LOCALES.forEach(function (lc) {

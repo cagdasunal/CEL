@@ -131,6 +131,8 @@ button, and a line that says only where its job stands. No price is shown (the o
 | `flow.ask.none` | Ask Gemini for a new translation with ✦ first | Hover text of that button, with nothing requested |
 | `flow.ask.confirm.one` | Send 1 text to Gemini? | Confirmation, after Send to Gemini |
 | `flow.ask.confirm.other` | Send {n} texts to Gemini? | |
+| `flow.ask.changed.one` | The requests changed since you confirmed. Send 1 text to Gemini? | Asked again, when the price check finds other requests than were confirmed |
+| `flow.ask.changed.other` | The requests changed since you confirmed. Send {n} texts to Gemini? | |
 | `flow.ask.confirm.lang` | {language} {n} | After it, one per language, joined with · ("German 10 · Italian 14") |
 | `flow.review.label` | Review | Second box |
 | `flow.review.unit` | to check | Beside its number |
@@ -139,6 +141,7 @@ button, and a line that says only where its job stands. No price is shown (the o
 | `flow.file.label` | Weglot file | Third box |
 | `flow.file.unit` | approved | Beside its number |
 | `flow.file.button` | Get the file | Its button: one file for each language with approved texts |
+| `flow.file.again` | Get the file again | The same button, when texts of an out-of-date file count again |
 | `flow.file.none` | Approve texts with ✓ first | Hover text of that button, with nothing approved |
 | `flow.file.download` | Download {language} | One button per language with a file |
 | `flow.file.live` | {live} of {n} on the website | Beside it, once I imported it has checked the website |

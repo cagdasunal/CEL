@@ -2311,3 +2311,93 @@ def test_asking_gemini_again_on_a_failed_text_is_a_new_ask_not_an_undo(browser):
         assert C.t("status.queued") in _label(page, uid)
         assert not errors, errors
         page.close()
+
+
+def test_an_out_of_date_file_gives_its_texts_back_to_get_the_file_again(browser):
+    """The re-check's N-1: after an hour a file nobody imported is hidden (A4-1), and its texts --
+    "In a Weglot file" -- counted for nothing, so Get the file was disabled with no way back. Once
+    the file is out of date they count again, and the box offers "Get the file again"."""
+    with desk("new") as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a = _visible_uids(page, 1)[0]
+        _act(page, a, "approve")
+        _as_wait(page, "saved")
+        page.locator("#flow-get").click()
+        job = _job(worker, "de", "export")
+        worker.store.seed_export("de-old", "de", "word_from,word_to\n", 1, [], created_at=_ago(61))
+        # Stamped after the approval as the storage saved it (a stamp counts only for that wording).
+        worker.store.pipeline[("de", a)] = {"exportedAt": _plus(worker.store.decisions[("de", a)]["at"], 5)}
+        worker.store.finish_job("de", "export", "done", {"batchId": "de-old", "rows": 1, "stamped": 1, "skipped": {},
+                                                         "refused": [], "warned": [], "notes": []})
+        job["created_at"] = _ago(61)                    # made an hour ago, and never imported
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        _count_is(page, "file", 1)
+        get = page.locator("#flow-get")
+        assert get.is_enabled() and get.inner_text() == C.t("flow.file.again")
+        assert page.locator("#flow-files [data-file]").count() == 0
+        assert not errors, errors
+        page.close()
+
+
+def test_a_send_goes_only_at_the_count_the_reviewer_confirmed(browser):
+    """The re-check's N-2: the reviewer confirmed 1 and the plan found 3 (someone asked for 2 more in
+    French meanwhile) -- and it was sent, unconfirmed. Now a plan that differs asks again, with its own
+    counts; declined, nothing is sent; accepted, that plan's run goes."""
+    with desk("new") as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a = _visible_uids(page, 1)[0]
+        _act(page, a, "queue")
+        _as_wait(page, "saved")
+        said, answers = [], [True, False]
+        page.on("dialog", lambda d: (said.append(d.message), d.accept() if answers.pop(0) else d.dismiss()))
+        page.locator("#flow-send").click()
+        worker.store.finish_job("all", "plan", "done", {"texts": 3, "requests": 3, "estimateUsd": 0.03, "stops": [],
+                                                        "byLocale": {"de": 1, "fr": 2}})
+        _flow_is(page, "ask", "", timeout=15000)
+        assert said[0] == C.tn("flow.ask.confirm", 1) + " " + C.t("flow.ask.confirm.lang", language="German", n=1)
+        assert said[1] == C.tn("flow.ask.changed", 3) + " " + " · ".join(
+            [C.t("flow.ask.confirm.lang", language="German", n=1), C.t("flow.ask.confirm.lang", language="French", n=2)])
+        assert _job(worker, "all", "submit", timeout=2) == {}            # declined: nothing sent
+        # Accepted, the run goes at that plan's estimate.
+        answers[:] = [True, True]
+        page.locator("#flow-send").click()
+        end = time.time() + 15
+        while len([j for j in worker.store.jobs.values() if j["kind"] == "plan"]) < 2 and time.time() < end:
+            time.sleep(0.2)
+        plans = [j for j in worker.store.jobs.values() if j["kind"] == "plan"]
+        worker.store.finish_job("all", "plan", "done", {"texts": 3, "requests": 3, "estimateUsd": 0.03, "stops": [],
+                                                        "byLocale": {"de": 1, "fr": 2}})
+        assert len(plans) == 2
+        # Waited for in the page: a confirm is answered only while Playwright is in a call.
+        _flow_is(page, "ask", C.t("status.sending"))
+        assert said[-1] == said[1] and _job(worker, "all", "submit")["amount_usd"] == 0.03
+        assert not errors, errors
+        page.close()
+
+
+def test_check_for_new_translations_stays_when_github_refuses_the_collect(browser):
+    """The re-check's J-2 leftover: a collect GitHub refused to start never ran -- the run is still
+    out, so the button stays (it vanished, even after a reload)."""
+    with desk("new") as (base, _root, worker):
+        page, errors = _open(browser, base + "/admin/localization/de/?show=all")
+        a = _visible_uids(page, 1)[0]
+        _act(page, a, "queue")
+        _as_wait(page, "saved")
+        page.on("dialog", lambda d: d.accept())
+        page.locator("#flow-send").click()
+        worker.store.finish_job("all", "plan", "done", {"texts": 1, "requests": 1, "estimateUsd": 0.01,
+                                                        "stops": ["run-still-out"], "byLocale": {"de": 1}})
+        collect = page.locator("#flow-collect")
+        collect.wait_for(state="visible", timeout=15000)
+        worker.store.dispatch_status = 422
+        collect.click()
+        _flow_is(page, "ask", C.t("job.failed.engine-did-not-start"))
+        assert collect.is_visible()
+        page.reload()
+        _rows_ready(page)
+        _checked(page)
+        collect.wait_for(state="visible", timeout=15000)
+        assert not errors, errors
+        page.close()
