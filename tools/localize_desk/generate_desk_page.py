@@ -1196,14 +1196,14 @@ _FLOW_JS = """\
       jobTip(e.imported, fileBusy ? line : '');
     }
 
-    // Review: this language's texts to check -- repainted with every view (applyFilters), since
-    // "they're in the table now" turns false the moment the reviewer picks another.
+    // Review: waits only when no language has a text to check (the Manager, U3). Repainted with
+    // every view (applyFilters): the counts of this language move with its rows.
     function paintShow() {
       const fs = flowState();
       if (!fs || !fs.el || fs.el.hidden) return;
-      const here = flowCounts(CODE).check;
-      const showing = fState.value === 'check' && !fPage.value && !fQ.value.trim();
-      jobTip(fs.els.show, !here ? t('flow.review.none', { language: t('lang.' + CODE) }) : showing ? t('flow.review.shown') : '');
+      let total = 0;
+      LOCALES.forEach(function (lc) { total += flowCounts(lc).check; });
+      jobTip(fs.els.show, total ? '' : t('flow.review.none'));
     }
 
     // ── Jobs: start, and read while open ──────────────────────────────
@@ -1346,10 +1346,19 @@ _FLOW_JS = """\
       // No ref: the engine collects whichever run is out, whatever its languages (J-2).
       startJob('ask', ALL, 'collect');
     });
+    // Show them: this language's texts to check when they aren't on screen; when they are, or it
+    // has none, the next language in chip order that has some -- the box counts every language.
     flowState.s.els.show.addEventListener('click', function () {
+      const here = flowCounts(CODE).check;
+      const showing = fState.value === 'check' && !fPage.value && !fQ.value.trim();
       fPage.value = ''; fQ.value = ''; fState.value = 'check';
-      pickView();
-      paintFlow();
+      const i = LOCALES.indexOf(CODE);
+      const next = LOCALES.slice(i + 1).concat(LOCALES.slice(0, i))
+        .filter(function (lc) { return flowCounts(lc).check > 0; })[0];
+      if ((here && !showing) || !next) { pickView(); paintFlow(); return; }
+      syncUrl();                                 // the chips carry the view to the next language
+      const chip = document.querySelector('.desk-loc[data-loc="' + next + '"]');
+      if (chip) chip.click();
     });
     flowState.s.els.get.addEventListener('click', function () {
       LOCALES.forEach(function (lc) { if (flowCounts(lc).file > 0) startJob('file', lc, 'export'); });

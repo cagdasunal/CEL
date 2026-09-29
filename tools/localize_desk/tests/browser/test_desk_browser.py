@@ -2018,13 +2018,20 @@ def test_the_top_of_a_language_page(browser):
         # The Review box adds up the chips' numbers: one count, two places.
         chips = page.evaluate("() => [...document.querySelectorAll('[data-loc-count]')].reduce((a, e) => a + (+e.textContent || 0), 0)")
         _count_is(page, "review", chips)
-        # The page opens on "to check": Show them says they are there; elsewhere it brings them back.
+        # Show them: this language's texts to check, when they aren't on screen...
         show = page.locator("#flow-show")
-        assert show.is_disabled() and show.get_attribute("data-tip") == C.t("flow.review.shown")
         page.select_option("#f-state", "")
         assert show.is_enabled()
         show.click()
-        assert page.locator("#f-state").input_value() == "check" and "show=" in page.url
+        assert page.locator("#f-state").input_value() == "check" and "/localization/de/" in page.url
+        # ...and when they are (the Manager, U3): the next language, in chip order, that has some.
+        nxt = page.evaluate("() => [...document.querySelectorAll('[data-loc-count]')].map(e => [e.dataset.locCount, +e.textContent || 0])"
+                            ".filter(([c, n]) => c !== 'de' && n > 0).map(([c]) => c)[0]")
+        assert nxt and show.is_enabled()
+        show.click()
+        page.wait_for_url(f"**/localization/{nxt}/**")
+        _rows_ready(page)
+        assert page.locator("#f-state").input_value() == "check"
         # No price, no step number, no sentence of its own: Send and Get the file say why they wait.
         send, get = page.locator("#flow-send"), page.locator("#flow-get")
         assert send.is_disabled() and send.get_attribute("data-tip") == C.t("flow.ask.none")

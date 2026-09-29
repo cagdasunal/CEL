@@ -134,9 +134,8 @@ button, and a line that says only where its job stands. No price is shown (the o
 | `flow.ask.confirm.lang` | {language} {n} | After it, one per language, joined with · ("German 10 · Italian 14") |
 | `flow.review.label` | Review | Second box |
 | `flow.review.unit` | to check | Beside its number |
-| `flow.review.button` | Show them | Its button: this language's, in the table |
-| `flow.review.none` | Nothing to check in {language} | Hover text of that button, with none left in this language |
-| `flow.review.shown` | They're in the table now | Hover text of that button, while the table shows them |
+| `flow.review.button` | Show them | Its button: this language's in the table, or the next language with some |
+| `flow.review.none` | Nothing to check in any language | Hover text of that button, with nothing left to check anywhere |
 | `flow.file.label` | Weglot file | Third box |
 | `flow.file.unit` | approved | Beside its number |
 | `flow.file.button` | Get the file | Its button: one file for each language with approved texts |
