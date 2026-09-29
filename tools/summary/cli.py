@@ -187,7 +187,8 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "generate-english only — regenerate every item even if its source "
             "content is unchanged since the last successful run (bypasses the "
-            "summary-state idempotency skip)."
+            "summary-state idempotency skip). Never regenerates a blog post that "
+            "already has a summary (U3-S)."
         ),
     )
     parser.add_argument(
@@ -434,7 +435,7 @@ def _plan_generate_english(args: argparse.Namespace) -> dict[str, Any]:
             "kind": "cms_collection", "collection": slug, "collection_id": cid,
             "locale": "native_per_item" if slug in config.NATIVE_LANGUAGE_COLLECTIONS else "en",
             "content_type": content_type, "translate": translate,
-            # tracker-097: show the tiered model so `plan` reveals blog → Flash.
+            # tracker-097: show each target's model in `plan`.
             "model": config.model_for_content_type(content_type),
         })
     if args.limit:
@@ -751,6 +752,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     # collections enumerate via the Webflow Data API (or get mocked in tests).
     sources: list[tuple[SourceItem, KeywordPlan, str]] = []  # (item, keywords, target)
     # target = "cms" or "static"
+    has_summary_skipped = 0  # U3-S: blog posts left alone because they already have a summary
     if not args.dry_run:
         from tools.summary.webflow_client import WebflowClient
         wf = WebflowClient(dry_run=False)
@@ -782,6 +784,15 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                     if cms_item.is_draft or cms_item.is_archived:
                         continue
                     field_data = cms_item.field_data
+                    # U3-S (2026-09-29), the operator: "Never rewrite or translate already we have".
+                    # A blog post whose summary field has text is never regenerated or re-published:
+                    # not for a changed hash, prompt version or model, and not with --force. Only an
+                    # empty field (or one holding tags and no text) is filled.
+                    if target["content_type"] == "blog_post" and _existing_summary_seed(
+                        field_data.get(config.SUMMARY_CONTENT_FIELD_SLUG, "") or ""
+                    ):
+                        has_summary_skipped += 1
+                        continue
                     title = field_data.get("name") or field_data.get("title", "")
                     slug = field_data.get("slug", "")
                     body = field_data.get("post-body") or field_data.get("description") or ""
@@ -847,8 +858,9 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                 system_blocks=system_blocks,
                 user_message=user_msg,
                 enable_thinking=True,
-                # tracker-097: tier the model by content type (blog → Flash, rest → Pro).
                 model=config.model_for_content_type(item.content_type),
+                # U3-S: the blog generator pins thinking at high (the engine's decision).
+                thinking_level=config.BLOG_THINKING_LEVEL if item.content_type == "blog_post" else "",
             )
             requests.append(req)
         except Exception as e:
@@ -860,6 +872,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         return {
             "target_count": len(plan["targets"]), "sources_resolved": len(sources),
             "requests_built": 0, "idempotency_skipped": idempotency_skipped,
+            "has_summary_skipped": has_summary_skipped,
             "submitted": False, "dry_run": args.dry_run,
             "reason": "no items to process (all unchanged or none resolved)",
             "warnings": warnings,
@@ -1021,6 +1034,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
                         user_message=retry_user,
                         enable_thinking=False,
                         model=orig.model,  # tracker-097: retry on the same tier
+                        thinking_level=orig.thinking_level,
                     )
                 )
         if retry_requests:
@@ -1171,6 +1185,7 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
         "qa_gate": qa_gate_summary,
         "cost_gate": cost_gate, "cache_plan": cache_plan_report,
         "idempotency_skipped": idempotency_skipped,
+        "has_summary_skipped": has_summary_skipped,
         "degraded": degraded,
         "write_log": write_log,
         "manifest_path": str(mpath), "manifest_entries": mcount,

@@ -18,13 +18,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 # (2026-05-21, tracker-097): interactive $2/$12 per 1M; Batch $1/$6; cached read $0.20.
 MODEL_ID = "gemini-3.1-pro-preview"
 
-# tracker-097 model tiering: the bulk blog catalog runs on Flash (cheaper, supports
-# thinking_budget=0); high-value designed pages stay on Pro. QA gate is the backstop.
+# U3-S (2026-09-29): every content type runs on MODEL_ID. The blog tier (tracker-097) sat on
+# gemini-2.5-flash, which now answers 404 "no longer available to new users" for this key, so
+# every blog request failed. The blog generator takes the localization engine's decision
+# (monorepo sites/cel/docs/localize-gemini-models-2026-09-29.md): 3.1 Pro, thinking pinned at
+# BLOG_THINKING_LEVEL. MODEL_BLOG now serves only `link-blogs`, which rewrites summaries that
+# already exist; it is left on the dead model on purpose (the operator: "Never rewrite ...").
 MODEL_BLOG = "gemini-2.5-flash"
-MODEL_BY_CONTENT_TYPE = {
-    "blog_post": MODEL_BLOG,
-    # course / housing / landing default to MODEL_ID (Pro) via model_for_content_type.
-}
+MODEL_BY_CONTENT_TYPE: dict[str, str] = {}
+BLOG_THINKING_LEVEL = "high"
 
 
 def model_for_content_type(content_type: str) -> str:
@@ -50,6 +52,9 @@ OUTPUT_TOKEN_ESTIMATE = {
     ("flash", False): 1300,
 }
 DEFAULT_OUTPUT_TOKEN_ESTIMATE = 1500
+# U3-S: a request pinned at thinking "high" (the blog generator): the answer (~1,300, the old
+# blog allowance) plus the engine doc's 8,000-token thinking floor.
+OUTPUT_TOKEN_ESTIMATE_THINKING_HIGH = 9_300
 
 # Extended thinking budget for content generation (translation passes disable thinking).
 THINKING_BUDGET_TOKENS = 1500

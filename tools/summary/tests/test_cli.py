@@ -1655,3 +1655,126 @@ def test_link_candidate_pool_drops_retired_campus_urls():
         pool = cli._build_link_candidate_pool(ct, idx, "en")
         assert not [u for u in pool if u in la], f"retired LA URL offered for {ct}: {pool}"
     assert keep in cli._build_link_candidate_pool("landing", idx, "en")
+
+
+# ---- U3-S (2026-09-29): a blog post that already has a summary is never regenerated ----
+# The operator: "we have already translations and summaries, don't do that. But there might be
+# some blog posts which misses summaries etc. ... Never rewrite or translate already we have".
+# The blog run fills ONLY an empty summary field. Nothing regenerates a post that has one: not a
+# changed hash, prompt version or model, and not --force.
+
+def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_pass=False):
+    """Drive the live blog pipeline offline. Returns (rc, seen, phase): what reached Gemini
+    (custom ids, and each request's model + thinking level), every Webflow field write, and
+    every publish. fail_first_pass fails every first-pass request, so the retry pass runs."""
+    import types as _types
+    from tools.summary import batch_runner, webflow_client, config, llms_parser
+    from tools.summary import qa as _qa
+
+    monkeypatch.setattr(config, "SUMMARY_STATE_FILE", tmp_path / "summary-state.json")
+    monkeypatch.setattr(config, "WEGLOT_IMPORTS_DIR", tmp_path / "weglot-out")
+    monkeypatch.setattr(cli, "_start_run_watchdog", lambda *_a, **_k: None)
+    monkeypatch.setattr(llms_parser, "fetch_and_parse", lambda *a, **kw: llms_parser.LlmsIndex(entries=[]))
+    monkeypatch.setattr(cli, "_execute_audit", lambda *a, **kw: {})
+    monkeypatch.setattr(_qa, "qa_checks", lambda *a, **kw: _types.SimpleNamespace(passed=True, score=95.0, notes=[]))
+    monkeypatch.setattr(_qa, "boilerplate_pairs", lambda *a, **kw: [])
+
+    blog_cid = config.COLLECTIONS["blog"]
+    items = [
+        webflow_client.CmsItem(
+            id=iid, collection_id=blog_cid,
+            field_data={"name": f"Post {iid}", "slug": f"post-{iid}",
+                        "post-body": "Some blog body text about studying.", **fd},
+            is_archived=False, is_draft=False,
+        )
+        for iid, fd in field_data_by_id.items()
+    ]
+    seen: dict = {"requests": [], "sent": [], "patched": [], "published": []}
+
+    def fake_sync(requests, run_deadline_sec=None, **kw):
+        seen["requests"].extend(r.custom_id for r in requests)
+        seen["sent"].extend((r.custom_id, r.model, r.thinking_level) for r in requests)
+        ok = not (fail_first_pass and not requests[0].custom_id.startswith("retry-"))
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=ok,
+                                         content="## A blog question\n\nA clear answer paragraph.\n" if ok else "",
+                                         error=None if ok else "boom")
+                for r in requests]
+
+    def no_batch(*a, **kw):
+        raise AssertionError("the blog run must not use the Batch API here")
+
+    def fake_patch(self, collection_id, item_id, field_data):
+        seen["patched"].append(item_id)
+        return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
+
+    def fake_publish(self, collection_id, item_ids):
+        seen["published"].extend(item_ids)
+        return webflow_client.WriteResult(dry_run=False, success=True, method="POST", url="x",
+                                          response={"publishedItemIds": item_ids})
+
+    monkeypatch.setattr(batch_runner, "generate_sync", fake_sync)
+    monkeypatch.setattr(batch_runner, "submit_batch", no_batch)
+    monkeypatch.setattr(webflow_client.WebflowClient, "_get_token", lambda self: "fake")
+    monkeypatch.setattr(webflow_client.WebflowClient, "list_items", lambda self, cid, **kw: iter(items))
+    monkeypatch.setattr(webflow_client.WebflowClient, "patch_fields", fake_patch)
+    monkeypatch.setattr(webflow_client.WebflowClient, "publish_items", fake_publish)
+
+    out = tmp_path / "run"
+    rc = cli.main([
+        "generate-english", "--collection", "blog", "--no-dry-run", "--sync",
+        "--confirm-cost", "--publish", "--out-dir", str(out), *extra,
+    ])
+    phase = json.loads((out / "report.json").read_text())["phases"]["generate_english"]
+    return rc, seen, phase
+
+
+def test_blog_post_with_a_summary_is_never_regenerated_even_with_force(tmp_path, monkeypatch):
+    """Only the posts whose summary field is empty reach Gemini, Webflow and publish. --force
+    and a missing or stale hash (no state file here, so every hash "changed") change nothing."""
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {
+        "has": {"summary": "<p>Ein vorhandener Text mit <a href='/de'>Link</a>.</p>"},
+        "empty": {"summary": ""},
+        "missing": {},
+        "tags-only": {"summary": "<p> </p>"},
+        "plain": {"summary": "An existing summary."},
+    }, "--force")
+
+    assert rc == 0
+    assert sorted(seen["patched"]) == ["empty", "missing", "tags-only"], seen
+    assert sorted(seen["published"]) == ["empty", "missing", "tags-only"], seen
+    assert all(not cid.endswith(("-has", "-plain")) for cid in seen["requests"]), seen["requests"]
+    assert len(seen["requests"]) == 3, seen["requests"]
+    assert phase["has_summary_skipped"] == 2
+
+
+def test_blog_run_where_every_post_has_a_summary_sends_and_writes_nothing(tmp_path, monkeypatch):
+    """A post with a summary: no request, no write, no publish — even with --force."""
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {
+        "a": {"summary": "<p>Un résumé existant.</p>"},
+        "b": {"summary": "<p>Un riassunto esistente.</p>"},
+    }, "--force")
+
+    assert rc == 0
+    assert seen == {"requests": [], "sent": [], "patched": [], "published": []}
+    assert phase["requests_built"] == 0
+    assert phase["has_summary_skipped"] == 2
+
+
+def test_blog_autopilot_workflow_cannot_force_a_regeneration():
+    """The daily workflow offers no way to pass --force (the flag has no effect on blog in the
+    code either; this keeps the dispatch form from suggesting otherwise)."""
+    wf = Path(__file__).resolve().parents[3] / ".github" / "workflows" / "blog-summary-autopilot.yml"
+    code = [ln for ln in wf.read_text(encoding="utf-8").splitlines() if not ln.strip().startswith("#")]
+    # ARGS is the summary command's argv (`gh label create --force` elsewhere is not ours).
+    assert not [ln for ln in code if "ARGS" in ln and "--force" in ln], "the autopilot can pass --force"
+    assert not [ln for ln in code if "inputs.force" in ln or ln.strip() == "force:"], \
+        "the autopilot still offers a force input"
+
+
+def test_blog_requests_go_to_the_engines_model_at_thinking_high_retry_included(tmp_path, monkeypatch):
+    """U3-S step 3: every blog request, the retry pass's too, names 3.1 Pro and thinking high."""
+    rc, seen, _phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}, "e2": {"summary": ""}},
+                                      fail_first_pass=True)
+    assert rc == 0
+    assert [cid for cid, _m, _t in seen["sent"]] == ["gen-0-e1", "gen-1-e2", "retry-gen-0-e1", "retry-gen-1-e2"]
+    assert {(m, t) for _cid, m, t in seen["sent"]} == {("gemini-3.1-pro-preview", "high")}
