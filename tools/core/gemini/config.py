@@ -26,6 +26,11 @@ MODEL_ID = "gemini-3.1-pro-preview"
 # already exist; it is left on the dead model on purpose (the operator: "Never rewrite ...").
 MODEL_BLOG = "gemini-2.5-flash"
 MODEL_BY_CONTENT_TYPE: dict[str, str] = {}
+# G-1 (2026-09-29): models the project's key cannot use -- each answers 404 "no longer available to new
+# users" (Google limits 2.5 to past users), though models.list still lists them. client.usable_model()
+# refuses them before any call; MODEL_BLOG (link-blogs, kept dead) is one of them. The same list as the
+# localization engine's (monorepo tools/localize/draft.GONE_MODELS).
+GONE_MODELS = frozenset({"gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"})
 BLOG_THINKING_LEVEL = "high"
 
 

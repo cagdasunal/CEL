@@ -164,6 +164,15 @@ def _est_tokens(text: str) -> int:
     return max(1, len(text) // 4)
 
 
+def usable_model(model: str) -> str:
+    """The model, if the project's key can use it; a gone one (config.GONE_MODELS) is refused here, before a
+    key is read, a client made or a request paid for (G-1)."""
+    if (model or "").removeprefix("models/") in config.GONE_MODELS:
+        raise ValueError(f"{model} is no longer available to this project's key (Gemini answers 404 \"no longer "
+                         f"available to new users\"); the shared config's model is {config.MODEL_ID}")
+    return model
+
+
 def _thinking_level(r: Any, model: str) -> str:
     """The thinking level a request is sent at, "" for a budget: its own (U3-S), else, on Pro with thinking
     off, config.PRO_THINKING_OFF_LEVEL (G-1) -- the one rule the config and the cost estimate both read."""
@@ -620,6 +629,10 @@ def submit_batch(
     submit is rejected, we rebuild the batch without caching and submit once. The
     submitted batch_id is persisted to config.LAST_BATCH_FILE for cancel/retrieve.
     """
+    # G-1: a gone model is refused before the key, the SDK or a call.
+    usable_model(model or (requests[0].model if requests else "") or config.MODEL_ID)
+    for r in requests:
+        usable_model(r.model or model or config.MODEL_ID)
     api_key = os.environ.get(api_key_env, "").strip()
     if not api_key:
         raise RuntimeError(
@@ -714,6 +727,8 @@ def generate_sync(
     """
     if not requests:
         return []
+    for r in requests:                              # G-1: a gone model is refused before any call
+        usable_model(r.model or config.MODEL_ID)
     api_key = os.environ.get(api_key_env, "").strip()
     if not api_key:
         raise RuntimeError(

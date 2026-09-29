@@ -534,3 +534,33 @@ def test_the_budget_and_flash_paths_are_unchanged():
     off = batch_runner.BatchRequest(custom_id="y", system_blocks=[], user_message="u", enable_thinking=False)
     assert batch_runner._build_generation_config(off, "s", model="gemini-3.8-flash")["thinking_config"] == \
         {"thinking_budget": 0}
+
+
+# ── G-1 F2 (2026-09-29): a gone model is refused before any call ─────────────────────────────────────
+GONE = ("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro")      # written out, not read from config
+
+
+def test_only_the_dead_link_blogs_model_names_a_gone_model():
+    """The three 2.5 models answer 404 "no longer available to new users" for the project's key. The only
+    constant still naming one is MODEL_BLOG, kept dead on purpose (link-blogs, never rewrite)."""
+    assert config.MODEL_ID not in GONE
+    assert config.MODEL_BLOG in GONE
+    assert not set(config.MODEL_BY_CONTENT_TYPE.values()) & set(GONE)
+
+
+@pytest.mark.parametrize("gone", GONE)
+def test_a_gone_model_is_refused_before_the_key_or_the_sdk_is_touched(gone, monkeypatch):
+    """A request on a gone model used to reach Gemini and fail there, per request (link-blogs on MODEL_BLOG).
+    It is refused first, naming the model: no key read, no SDK client, no call."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)            # a missing key must not be what stops it
+    def no_client(*a, **k):
+        raise AssertionError("a Gemini client was made for a gone model")
+    monkeypatch.setattr(batch_runner, "_gemini_client", no_client)
+    req = batch_runner.BatchRequest(custom_id="g", system_blocks=[], user_message="u", model=gone)
+    with pytest.raises(ValueError, match=gone):
+        batch_runner.submit_batch([req])
+    with pytest.raises(ValueError, match=gone):
+        batch_runner.submit_batch([batch_runner.BatchRequest(custom_id="d", system_blocks=[], user_message="u")],
+                                  model=gone)
+    with pytest.raises(ValueError, match=gone):
+        batch_runner.generate_sync([req])
