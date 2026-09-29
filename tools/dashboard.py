@@ -47,7 +47,7 @@ def render_logo_mark(extra_class: str = "") -> str:
     cls = f"brand-mark {extra_class}".strip()
     return (
         f'<div class="{cls}">'
-        f'<span class="brand-logo" aria-label="English College">{inline_svg}</span>'
+        f'<span class="brand-logo" aria-label="College of English Language">{inline_svg}</span>'
         f"</div>"
     )
 
@@ -1645,7 +1645,7 @@ def render_sync_status_card(label: str, last_synced: str, is_ok: bool = True) ->
 # Section -> which top-level nav group it belongs to (drives active highlighting).
 _SECTION_GROUP = {
     "offers": "offers", "images": "images", "docs": "docs",
-    "translations": "weglot", "log": "weglot", "localization": "weglot",
+    "translations": "weglot", "log": "weglot", "localization": "localization",
     "summaries": "seo", "files": "seo",
     "housing": "fidelo", "courses": "fidelo",
 }
@@ -1671,17 +1671,17 @@ def render_topbar(active: str = "offers") -> str:
         return "shell-tab-subitem is-active" if active == key else "shell-tab-subitem"
     return f"""\
     <header class="shell-header">
-      <a class="shell-brand" href="/admin/offers/" aria-label="English College">
-        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="English College">
+      <a class="shell-brand" href="/admin/offers/" aria-label="College of English Language">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="College of English Language">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
         <a class="{tab('offers')}" href="/admin/offers/">OFFERS</a>
         <a class="{tab('images')}" href="/admin/images/">IMAGES</a>
         <a class="{tab('docs')}" href="/admin/docs/">DOCS</a>
+        <a class="{tab('localization')}" href="/admin/localization/">LOCALIZATION</a>
         <details class="shell-tab-dropdown">
           <summary class="{grp('weglot')}">WEGLOT {chevron}</summary>
           <ul class="shell-tab-submenu">
-            <li><a class="{sub('localization')}" href="/admin/localization/">Localization Desk</a></li>
             <li><a class="{sub('translations')}" href="/admin/translations/">Translations</a></li>
             <li><a class="{sub('log')}" href="/admin/log/">Synced Posts</a></li>
           </ul>
@@ -1865,7 +1865,7 @@ _SHELL_HTML = """\
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
   <meta http-equiv="refresh" content="0; url=/admin/offers/">
-  <title>English College \u2014 Admin Dashboard</title>
+  <title>College of English Language \u2014 Admin Dashboard</title>
   <link rel="icon" type="image/png" href="/assets/img/favicon.png">
   <script>location.replace('/admin/offers/');</script>
 </head>

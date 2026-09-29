@@ -643,7 +643,7 @@ def render_html(entries: list[dict]) -> str:
     parts.append(f"  {AUTH_SCRIPT_TAG}")
     parts.append('  <meta charset="utf-8">')
     parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
-    parts.append("  <title>CMS images — English College</title>")
+    parts.append("  <title>CMS images — College of English Language</title>")
     parts.append('  <meta name="description" content="Nightly AVIF optimization across all Webflow CMS collections.">')
     parts.append('  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append('  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')

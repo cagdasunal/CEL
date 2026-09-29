@@ -49,9 +49,9 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 
 | Key | Text | Shown where |
 |---|---|---|
-| `meta.index.title` | Localization Desk — English College | Browser tab, language list |
+| `meta.index.title` | Localization Desk — College of English Language | Browser tab, language list |
 | `meta.index.description` | Check how the four Vancouver pages read in every language. | Page description |
-| `meta.locale.title` | {language} — Localization Desk — English College | Browser tab, one language |
+| `meta.locale.title` | {language} — Localization Desk — College of English Language | Browser tab, one language |
 | `meta.locale.description` | Check the {language} translation of the four Vancouver pages. | Page description |
 
 ## Language list (the first page)

@@ -621,7 +621,7 @@ def render_html(items: list[dict] | None = None, log_events: list | None = None)
     parts.append(f"  {AUTH_SCRIPT_TAG}")
     parts.append('  <meta charset="utf-8">')
     parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
-    parts.append("  <title>Offers — English College Admin</title>")
+    parts.append("  <title>Offers — College of English Language Admin</title>")
     parts.append('  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append('  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
     parts.append(f"  {render_favicon_tag()}")
@@ -756,7 +756,7 @@ def main() -> int:
         fallback = (
             "<!DOCTYPE html><html lang='en'><head>"
             f"  {AUTH_SCRIPT_TAG}"
-            '<meta charset=\"utf-8\"><title>Offers — English College Admin</title>'
+            '<meta charset=\"utf-8\"><title>Offers — College of English Language Admin</title>'
             '<link rel="stylesheet" href="/assets/css/dashboard.css"></head>'
             "<body><div class='dashboard-shell'>"
             "<section class='status status-error error'>"
@@ -783,7 +783,7 @@ def main() -> int:
         fallback = (
             "<!DOCTYPE html><html lang='en'><head>"
             f"  {AUTH_SCRIPT_TAG}"
-            '<meta charset=\"utf-8\"><title>Offers — English College Admin</title>'
+            '<meta charset=\"utf-8\"><title>Offers — College of English Language Admin</title>'
             '<link rel="stylesheet" href="/assets/css/dashboard.css"></head>'
             "<body><div class='dashboard-shell'>"
             "<section class='status status-error error'>"
