@@ -133,9 +133,6 @@ def _build_parser() -> argparse.ArgumentParser:
             # tracker-097: orphaned-batch recovery (RC5). A submitted Gemini batch keeps
             # billing after its GHA run is cancelled; these stop / reclaim it by id.
             "cancel-batch", "retrieve-batch",
-            # 2026-05-22: insert internal links into existing under-linked blog summaries
-            # (Flash, link-only — does NOT regenerate the prose).
-            "link-blogs",
             # audit-108 H-1: FREE match-verification gate — fetch each translatable page
             # and report how many of its live summary blocks are present as word_from in
             # the committed CSVs (i.e. will actually apply in Weglot). No spend.
@@ -219,16 +216,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--from-run", type=Path, default=None,
         help=(
-            "link-blogs — directory containing en-summaries.json from "
+            "verify-emit — directory containing en-summaries.json from "
             "a prior generate-english run. Defaults to <out-dir>/en-summaries.json."
-        ),
-    )
-    parser.add_argument(
-        "--max-existing-links", dest="max_existing_links", type=int, default=0,
-        help=(
-            "link-blogs only — process blog summaries that currently have AT MOST this "
-            "many internal links (default 0 = only the zero-link blogs). Raise to also "
-            "top up thinly-linked posts."
         ),
     )
     return parser
@@ -314,8 +303,6 @@ def main(argv: list[str] | None = None) -> int:
                 report["phases"]["generate_english"] = ge
             if args.subcommand in ("audit", "all"):
                 report["phases"]["audit"] = _execute_audit(args, out_dir)
-            if args.subcommand == "link-blogs":
-                report["phases"]["link_blogs"] = _execute_link_blogs(args, out_dir)
     finally:
         report["finished_at"] = _now_iso()
         (out_dir / "report.json").write_text(
@@ -926,8 +913,8 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
             "submitted": False, "cost_gate": cost_gate, "warnings": warnings,
         }
 
-    # Helper to build the EN-summaries manifest (read by verify-emit, link-blogs and the
-    # admin Summaries page).
+    # Helper to build the EN-summaries manifest (read by verify-emit and the admin
+    # Summaries page).
     def _write_en_summaries_manifest(succeeded_results, _sources):
         manifest: dict[str, dict] = {}
         src_by_cid: dict[str, Any] = {}
@@ -1196,295 +1183,11 @@ def _execute_generate_english(args: argparse.Namespace, out_dir: Path) -> dict[s
     }
 
 
-# ---- Link-insertion mode (2026-05-22): add internal links to under-linked blogs ----
-
-_INTERNAL_MD_LINK_RE = re.compile(
-    r"\]\(\s*(?:https?://(?:www\.)?englishcollege\.com|/)[^)]*\)"
-)
-
-
-def _count_internal_md_links(md: str) -> int:
-    """Count internal (englishcollege.com / root-relative) Markdown links in `md`."""
-    return len(_INTERNAL_MD_LINK_RE.findall(md or ""))
-
-
-_MD_LINK_FULL_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-
-
-def _dedup_md_links(md: str) -> str:
-    """Keep the FIRST occurrence of each link target; unwrap later duplicates to plain
-    anchor text (first-occurrence-only). The link-insertion pass occasionally wraps the
-    same URL twice (the 2026-05-22 pilot saw one duplicate); `first_occurrence_only` is a
-    scored, non-critical QA check, so this deterministically fixes it before write-back
-    rather than demoting an otherwise-good summary."""
-    seen: set[str] = set()
-
-    def _repl(m: "re.Match") -> str:
-        url = m.group(2).strip()
-        if url in seen:
-            return m.group(1)  # unwrap the duplicate → plain anchor text
-        seen.add(url)
-        return m.group(0)
-
-    return _MD_LINK_FULL_RE.sub(_repl, md)
-
-
-_LINK_CEILING_WORDS = 80  # mirror qa._LINK_STUFFING_WORDS_PER_LINK
-
 # Acceptance gate for the link-INSERTION pass. Because the pass preserves the prose
 # verbatim (guarded separately by qa.text_preserved), the keyword-PLACEMENT checks
 # (keyword_in_h2 / keyword_in_p1) are intentionally NOT gated here — they judge the
 # original prose, not the links, and a CMS-sourced summary may have no stored keyword_plan.
 # These are the LINK + formatting invariants that actually matter for inserting links:
-_LINK_INSERTION_CRITICAL = (
-    "no_em_dashes", "no_lists", "no_faq_schema",
-    "links_internal_domain", "links_locale_matched", "no_link_stuffing",
-)
-
-
-def _trim_links_to_ceiling(md: str) -> str:
-    """Unwrap excess links (keep the FIRST N) so the link rate stays at/under 1 per ~80
-    words — the QA `no_link_stuffing` ceiling. The link-insertion model occasionally
-    over-links a short post (the 2026-05-22 full run held ~several for stuffing); trimming
-    the tail deterministically recovers them instead of demoting the whole summary. Keeps
-    the earliest links (usually the most contextually anchored).
-
-    Word count is taken on the DE-LINKED text (link markup → anchor text only, URLs
-    dropped). QA's `no_link_stuffing` counts URL tokens as words, which inflates its
-    word_count and would let one extra link through; counting prose+anchors only makes the
-    trim's ceiling a touch stricter than QA's, so a trimmed summary is GUARANTEED to pass
-    (the first full run left 2 blogs at 7 links / 556 words because the trim counted URLs)."""
-    de_linked = _MD_LINK_FULL_RE.sub(lambda m: m.group(1), md)
-    word_count = len(re.findall(r"\b\w+\b", _HTML_TAG_RE.sub(" ", de_linked)))
-    max_links = word_count // _LINK_CEILING_WORDS
-    matches = list(_MD_LINK_FULL_RE.finditer(md))
-    if len(matches) <= max_links:
-        return md
-    # Unwrap every link past the first `max_links` (by position).
-    keep = max(max_links, 0)
-    idx = {"n": 0}
-
-    def _repl(m: "re.Match") -> str:
-        idx["n"] += 1
-        return m.group(0) if idx["n"] <= keep else m.group(1)
-
-    return _MD_LINK_FULL_RE.sub(_repl, md)
-
-
-def _slug_from_url(url: str) -> str:
-    import urllib.parse
-
-    return urllib.parse.urlparse(url).path.rstrip("/").split("/")[-1]
-
-
-def _execute_link_blogs(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:
-    """Insert internal links into existing UNDER-LINKED blog summaries (Flash, link-only).
-
-    The 2026-05-22 internal-linking remediation: 138/241 blog summaries shipped with 0
-    internal links (Flash under-followed the link instruction; the 4-part designed pages
-    were fine). Rather than REGENERATE the prose (the user's explicit constraint: "only
-    set links, do not regenerate texts"), this pass feeds each under-linked summary back
-    to Flash with the locale-filtered link inventory and a strict link-INSERTION prompt:
-    wrap existing phrases in links, change no words. The de-linked output must match the
-    original (`qa.text_preserved`) AND pass the critical QA checks (internal-domain,
-    same-locale, anti-stuffing) or the item is held back (never written). Source summaries
-    come from the `--from-run` manifest; the live blog collection supplies the cms_item_id
-    for the staged write-back. Reuses the generate-english helpers; the generation path is
-    untouched.
-    """
-    from tools.summary import batch_runner, llms_parser
-    from tools.summary.prompt_builder import (
-        build_link_insertion_system_prompt, build_link_insertion_user_message,
-    )
-    from tools.summary.qa import qa_checks, text_preserved
-    from tools.summary.structure import summary_markdown_to_html
-
-    warnings: list[str] = []
-    max_existing = getattr(args, "max_existing_links", 0)
-    locale_filter = args.locale
-
-    # 1. Load the source manifest (existing summaries to link into).
-    from_run = args.from_run or out_dir
-    manifest_path = from_run / "en-summaries.json"
-    if not manifest_path.exists():
-        return {
-            "submitted": False, "requests_built": 0,
-            "reason": f"manifest not found: {manifest_path}",
-            "warnings": ["--from-run must point at a dir containing en-summaries.json"],
-        }
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-
-    # 2. Select under-linked blog targets from the manifest.
-    targets: list[dict[str, Any]] = []
-    for _cid, entry in manifest.items():
-        if entry.get("content_type") != "blog_post":
-            continue
-        md = entry.get("markdown", "") or ""
-        if not md.strip():
-            continue
-        if _count_internal_md_links(md) > max_existing:
-            continue  # already has enough links
-        loc = entry.get("locale", "en")
-        if locale_filter and loc != locale_filter:
-            continue
-        targets.append({
-            "slug": _slug_from_url(entry.get("url", "")),
-            "existing_md": md, "url": entry.get("url", ""), "locale": loc,
-            "kw": entry.get("keyword_plan", {}) or {},
-        })
-
-    # 3. llms.txt → link candidates (live only).
-    llms_index = None
-    if not args.dry_run:
-        try:
-            llms_index = llms_parser.fetch_and_parse(config.LLMS_TXT_URL)
-        except Exception as e:
-            warnings.append(f"llms.txt fetch failed; candidate pool falls back to STATIC_PAGES: {e}")
-
-    # 4. Map slug → cms_item_id from the live blog collection (for the staged write-back).
-    item_ids: dict[str, str] = {}
-    item_titles: dict[str, str] = {}
-    wf = None
-    if not args.dry_run:
-        from tools.summary.webflow_client import WebflowClient
-
-        wf = WebflowClient(dry_run=False)
-        try:
-            for it in wf.list_items(config.COLLECTIONS["blog"]):
-                if it.is_draft or it.is_archived:
-                    continue
-                s = it.field_data.get("slug", "")
-                if s:
-                    item_ids[s] = it.id
-                    item_titles[s] = it.field_data.get("name") or it.field_data.get("title", "")
-        except Exception as e:
-            warnings.append(f"blog collection enumeration failed: {e}")
-
-    # 5. Build link-insertion requests (Flash, no thinking — link-only).
-    requests = []
-    req_meta: dict[str, dict] = {}
-    for i, t in enumerate(targets):
-        cms_item_id = item_ids.get(t["slug"])
-        if (not args.dry_run) and not cms_item_id:
-            warnings.append(f"no live blog item for slug {t['slug']!r}; skipped")
-            continue
-        candidates = _build_link_candidate_pool(
-            "blog_post", llms_index, t["locale"], source_url=t["url"],
-        )
-        user_msg = build_link_insertion_user_message(
-            t["existing_md"], candidates, t["locale"], post_title=item_titles.get(t["slug"], ""),
-        )
-        cid = f"link-{i}-{t['slug'][:40]}"
-        requests.append(batch_runner.BatchRequest(
-            custom_id=cid, system_blocks=build_link_insertion_system_prompt(),
-            user_message=user_msg, enable_thinking=False, model=config.MODEL_BLOG,
-        ))
-        req_meta[cid] = {**t, "cms_item_id": cms_item_id}
-        if args.limit and len(requests) >= args.limit:
-            break
-
-    if not requests:
-        return {
-            "submitted": False, "targets_found": len(targets), "requests_built": 0,
-            "reason": "no under-linked blog targets resolved", "warnings": warnings,
-        }
-
-    # 6. Cost gate — mirror generate-english (hard cap + pilot-first confirm).
-    est_mode = "interactive" if args.sync else "batch"
-    cost_estimate = batch_runner.estimate_batch_cost_usd(requests, mode=est_mode, cached=False)
-    cost_gate = {
-        "projected_usd": round(cost_estimate, 4), "mode": est_mode,
-        "cost_cap_usd": config.MAX_BATCH_COST_USD,
-        "confirm_threshold_usd": config.COST_CONFIRM_THRESHOLD_USD,
-        "confirm_required": False, "confirmed": bool(getattr(args, "confirm_cost", False)),
-        "model_breakdown": {config.MODEL_BLOG: len(requests)},
-    }
-    if cost_estimate > config.MAX_BATCH_COST_USD:
-        warnings.append(
-            f"COST CAP EXCEEDED: ${cost_estimate:.2f} > ${config.MAX_BATCH_COST_USD}. Aborting."
-        )
-        return {"submitted": False, "targets_found": len(targets), "requests_built": len(requests),
-                "cost_gate": cost_gate, "warnings": warnings}
-    if (not args.dry_run) and cost_estimate > config.COST_CONFIRM_THRESHOLD_USD and not getattr(args, "confirm_cost", False):
-        cost_gate["confirm_required"] = True
-        warnings.append(
-            f"COST CONFIRM REQUIRED: projected ${cost_estimate:.2f} > "
-            f"${config.COST_CONFIRM_THRESHOLD_USD:.2f}. Re-run with --confirm-cost."
-        )
-        return {"submitted": False, "targets_found": len(targets), "requests_built": len(requests),
-                "cost_gate": cost_gate, "warnings": warnings}
-
-    # 7. Dry-run: stop at the plan.
-    if args.dry_run:
-        return {"submitted": False, "dry_run": True, "targets_found": len(targets),
-                "requests_built": len(requests), "cost_gate": cost_gate, "warnings": warnings}
-
-    # 8. Submit (Flash; sync or batch).
-    results, handle, batch_ids = _submit_and_wait(requests, args)
-    succeeded = [r for r in results if r.succeeded]
-    failed = [r for r in results if not r.succeeded]
-
-    # 9. Sanitize → QA (link rules + TEXT PRESERVATION) → staged write-back.
-    cms_writes = 0
-    write_failures = 0
-    demoted: list[dict] = []
-    links_added: list[int] = []
-    for r in succeeded:
-        meta = req_meta.get(r.custom_id)
-        if not meta:
-            continue
-        linked = _trim_links_to_ceiling(_dedup_md_links(_sanitize_summary(r.content)))
-        ok_preserved, ratio = text_preserved(meta["existing_md"], linked)
-        rep = qa_checks(
-            linked, (meta["kw"] or {}).get("primary", ""), meta["locale"],
-            _build_link_candidate_pool("blog_post", llms_index, meta["locale"], source_url=meta["url"]),
-            excluded_path_segments=config.EXCLUDED_LINK_PATH_SEGMENTS,
-        )
-        n_links = _count_internal_md_links(linked)
-        # Accept only if the prose is preserved, the LINK/formatting invariants hold (NOT the
-        # keyword-placement checks — those judge the preserved prose, and CMS-sourced blogs
-        # have no stored keyword), and links were actually added (≥1 is a strict improvement
-        # over the current 0; the link_density score still records whether it hit 6–8).
-        link_ok = all(rep.checks.get(c, True) for c in _LINK_INSERTION_CRITICAL)
-        if ok_preserved and link_ok and n_links >= 1:
-            wres = wf.update_item_summary(
-                collection_id=config.COLLECTIONS["blog"], item_id=meta["cms_item_id"],
-                summary_html=summary_markdown_to_html(linked),
-            )
-            if wres.success:
-                cms_writes += 1
-                links_added.append(n_links)
-            else:
-                write_failures += 1
-                warnings.append(f"cms write failed for {meta['slug']}: {wres.error}")
-        else:
-            reasons = []
-            if not ok_preserved:
-                reasons.append(f"text not preserved (sim {ratio:.2f})")
-            if not link_ok:
-                failed_link_checks = [c for c in _LINK_INSERTION_CRITICAL if not rep.checks.get(c, True)]
-                reasons.append("QA link checks: " + ", ".join(failed_link_checks))
-            if n_links < 1:
-                reasons.append("no links added")
-            demoted.append({"slug": meta["slug"], "url": meta["url"], "reason": "; ".join(reasons)})
-
-    review = {
-        "demoted": demoted,
-        "failed": [{"custom_id": f.custom_id, "error": f.error} for f in failed],
-    }
-    (out_dir / "link-blogs-review.json").write_text(
-        json.dumps(review, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
-    avg_links = round(sum(links_added) / len(links_added), 1) if links_added else 0
-    return {
-        "submitted": True, "dry_run": False, "targets_found": len(targets),
-        "requests_built": len(requests), "succeeded": len(succeeded), "failed": len(failed),
-        "cms_writes": cms_writes, "write_failures": write_failures,
-        "avg_links_added": avg_links, "links_added_distribution": sorted(links_added),
-        "demoted_count": len(demoted), "demoted": demoted[:20],
-        "cost_gate": cost_gate, "batch_ids": batch_ids,
-        "review_path": str(out_dir / "link-blogs-review.json"), "warnings": warnings,
-    }
 
 
 def _execute_audit(args: argparse.Namespace, out_dir: Path) -> dict[str, Any]:

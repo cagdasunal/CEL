@@ -50,6 +50,15 @@ def test_translate_and_translate_meta_are_retired(tmp_path: Path):
     assert not [o for o in options if o.split("#")[0].strip() in ("- translate", "- translate-meta")]
 
 
+def test_link_blogs_is_retired(tmp_path: Path):
+    """U3-S batch 3 (the Manager's ruling): link-blogs rewrote summaries that already exist,
+    against the operator's rule "Never rewrite or translate already we have". It's gone."""
+    with pytest.raises(SystemExit) as e:
+        cli.main(["link-blogs", "--dry-run", "--out-dir", str(tmp_path / "lb")])
+    assert e.value.code == 2  # argparse: invalid choice
+    assert not hasattr(cli, "_execute_link_blogs")
+
+
 def test_plan_target_count_includes_static_and_cms(tmp_path: Path):
     cli.main(["plan", "--out-dir", str(tmp_path)])
     data = json.loads((tmp_path / "report.json").read_text())

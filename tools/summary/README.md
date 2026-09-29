@@ -10,9 +10,10 @@ Production pipeline for generating SEO summary content on englishcollege.com pag
 > **identity-preserving re-export shims**, so everything here keeps working unchanged.
 > See [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md).
 
-> **`translate` and `translate-meta` were retired 2026-09-29 (U3-S).** The localization desk
-> is the one translation engine. The operator's rule: "Never rewrite or translate already we
-> have". The sections below that describe the translate phase are history. The rows it wrote in
+> **`translate`, `translate-meta` and `link-blogs` were retired 2026-09-29 (U3-S).** The
+> localization desk is the one translation engine. The operator's rule: "Never rewrite or
+> translate already we have" (link-blogs rewrote summaries that already exist). The sections
+> below that describe them are history. The rows it wrote in
 > `docs/admin/weglot-imports/` stay as they are. The same change makes the blog run fill only
 > an empty summary field and never regenerate a post that has one, `--force` included.
 
@@ -64,7 +65,7 @@ The Summary section was redesigned so it reads like a genuine, designed part of 
 - **Sync (`--sync`)** — instant `generateContent`, validated live (a 2-course run wrote 2/2 staged, QA-passed, in ~1m). Sequential + RPM-limited, so it's for **testing + small runs**, NOT a one-shot full-catalog batch. **Reliability bounds (tracker-138 reopened, 2026-07-09):** every call has a HARD wall-clock timeout (`_GEMINI_CALL_HARD_TIMEOUT_SEC`, 4 min, enforced caller-side in a daemon thread — independent of the SDK honoring its own timeout), and the run honors a budget (`config.SYNC_RUN_DEADLINE_SEC`, 40 min) after which `generate_sync` stops starting calls and returns partial. That is what lets the **blog-summary autopilot** run `--sync` over the whole blog back-catalog safely: each run summarizes as many un-done posts as fit the budget, checkpoints `summary-state.json`, exits cleanly (so the CI job commits state), and the next run continues — draining the backlog over a few bounded runs, then daily runs are true no-ops. *Before the fix it tried the entire ~142-post back-catalog sequentially every run, was SIGKILLed at the 60-min GHA cap before it could checkpoint, and never once succeeded.*
 - **Live-validated**: the 4-part CMS write path was confirmed end-to-end (sync 2-course run → 4 staged fields, QA passed) before any fan-out.
 
-## Internal-link remediation — `link-blogs` mode (2026-05-22)
+## Internal-link remediation — `link-blogs` mode (2026-05-22; retired 2026-09-29, U3-S)
 
 An audit found **138 of 241 blog summaries had ZERO internal links** (Flash under-followed
 the 6–8-link instruction; the 4-part course/housing/landing pages were fine at ~7.5 links).
@@ -282,7 +283,7 @@ Filters:
 | `--limit <n>` | Cap items processed (use during pilot batches). |
 | `--force` | `generate-english` only — regenerate every item even if its source content is unchanged since the last successful run (bypasses the summary-state idempotency skip). **Never regenerates a blog post that already has a summary** (U3-S). |
 | `--sync` | `generate-english` — use synchronous Gemini `generateContent` (instant, no Batch API ≤24h SLA) instead of the Batch API. Higher per-call cost; for **fast testing + small runs** (sync is sequential + RPM-limited, so it does NOT scale to the full catalog / 415 blog posts). The full catalog uses the default (Batch). **Bounded (tracker-138):** a hard per-call timeout + a per-run budget (`config.SYNC_RUN_DEADLINE_SEC`) make a large `--sync` backlog drain incrementally across runs instead of riding the 60-min CI cap. |
-| `--from-run <dir>` | `translate` / `link-blogs` — repo-relative dir holding a committed `en-summaries.json` (the manifest). Required for a standalone `translate` dispatch (the out-dir is fresh per run, so without it translate finds no manifest and no-ops). |
+| `--from-run <dir>` | `verify-emit` — dir holding a committed `en-summaries.json` (the manifest). |
 | `--exclude-blog` | Skip the blog collection (static + courses + housing only). Blog keeps its single-block summary; this just lets the 4-part scope run without regenerating the 415 blog posts. |
 | `--out-dir <path>` | Override the run artifact location. |
 

@@ -180,57 +180,6 @@ def build_user_message(
     return "\n".join(lines)
 
 
-# ---- Link-insertion request (2026-05-22) ----
-#
-# A focused, Flash-optimized pass that INSERTS internal links into an existing blog
-# summary WITHOUT rewriting the prose (the user's "set links, don't regenerate texts").
-# System prompt is the single `link_insertion.md` layer — intentionally NOT the full
-# generation stack (common + blog_post + locale), so the model is told to do ONE thing
-# and the token cost stays minimal on Flash.
-
-
-def build_link_insertion_system_prompt() -> list[dict]:
-    """System prompt for the link-insertion pass: the focused link_insertion.md only."""
-    return [{"type": "text", "text": _load_prompt("link_insertion.md")}]
-
-
-def build_link_insertion_user_message(
-    existing_summary_md: str,
-    link_candidates: Iterable[str],
-    locale: str,
-    post_title: str = "",
-) -> str:
-    """User message for link insertion: the existing summary (to be preserved verbatim)
-    + the locale-filtered candidate URLs. No post body — the summary IS the context, and
-    keeping the message lean keeps the Flash pass cheap."""
-    candidates = list(link_candidates)
-    lines: list[str] = []
-    lines.append(f"## Post locale: {locale}")
-    if post_title:
-        lines.append(f"## Post title: {post_title}")
-    lines.append("")
-    lines.append(
-        "## Existing summary — INSERT links into THIS text, preserving every word"
-    )
-    lines.append("")
-    lines.append(existing_summary_md.strip())
-    lines.append("")
-    lines.append(
-        f"## Internal link candidates (same locale `{locale}`; use ONLY these URLs, "
-        f"each at most once)"
-    )
-    lines.append("")
-    for url in candidates[:60]:
-        lines.append(f"- {url}")
-    lines.append("")
-    lines.append(
-        "## Task\nWrap 6–8 existing phrases in `[phrase](URL)` using the candidates above. "
-        "Change NO words. Return only the edited summary Markdown — no code fences, no "
-        "preamble, no commentary."
-    )
-    return "\n".join(lines)
-
-
 # ---- Translation request ----
 
 
