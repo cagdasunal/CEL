@@ -468,8 +468,9 @@ def _blog_primary(title: str, url: str, text: str, stopwords: frozenset[str]) ->
     """The blog primary keyword: a 2-4 word phrase inside ONE punctuation-bounded part of the
     title (a multi-word place name counts as one word, and may stand alone), first and last
     word a content word. Ranked by: the post uses the phrase; the post uses each of its words;
-    how many of its words the editor put in the slug; longer; used more; earlier part of the
-    title; earlier in it."""
+    how many of its words the editor put in the slug; used more (U4-3: above length, so a long
+    title window the post uses once loses to the phrase it uses throughout); longer; earlier
+    part of the title; earlier in it."""
     def is_content(w: str) -> bool:
         return " " in w or (len(w) >= 3 and w not in stopwords and not w.isdigit())
 
@@ -489,7 +490,7 @@ def _blog_primary(title: str, url: str, text: str, stopwords: frozenset[str]) ->
                 uses = len(re.findall(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", body))
                 all_used = all(w in post_words for w in phrase.split() if is_content(w))
                 in_slug = sum(1 for w in phrase.split() if is_content(w) and w in slug_words)
-                key = (uses > 0, all_used, in_slug, len(phrase.split()), uses, -si, -i)
+                key = (uses > 0, all_used, in_slug, uses, len(phrase.split()), -si, -i)
                 if best is None or key > best[0]:
                     best = (key, phrase)
     if best is not None:
