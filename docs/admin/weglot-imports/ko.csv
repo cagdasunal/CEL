@@ -49,8 +49,13 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"Free Wi-Fi, Rooftop terrace with BBQ area";"무료 와이파이, 루프탑 테라스와 바비큐 공간";Text
 ;en;ko;"Free Wi-Fi, TV per bedroom, full kitchen with dishwasher, no common space";"무료 Wi-Fi, 침실 당 TV, 식기 세척기가 구비된 풀 주방, 공용 공간 없음";Text
 ;en;ko;"Free Wi-Fi, full kitchen with dishwasher";"무료 Wi-Fi, 식기 세척기가 구비된 풀 주방";Text
+;en;ko;"From $270 per week";"$270/주 부터";Text
+;en;ko;"From $290 per week";"$290/주 부터";Text
+;en;ko;"From $320 per week";"$320/주 부터";Text
 ;en;ko;"From $330 per week";"$330/주 부터";Text
+;en;ko;"From $380 per week";"$380/주 부터";Text
 ;en;ko;"From $390/week";"From $999,999/week";Text
+;en;ko;"From $420 per week";"$420/주 부터";Text
 ;en;ko;"From CA$240 per week";"CA$240 /주 부터";Text
 ;en;ko;"From CA$350 per week";"CA$350 /주 부터";Text
 ;en;ko;"From CA$430 per week";"CA$430 /주 부터";Text
@@ -58,6 +63,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"From CA$475 per week";"CA$475 /주 부터";Text
 ;en;ko;"From CA$580 per week";"CA$580 /주 부터";Text
 ;en;ko;"Full focus on your needs";"학생 맞춤화 교육 진행";Text
+;en;ko;"Full kitchen with Dishwasher";"식기세척기가 있는 완비 주방";Text
 ;en;ko;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ko;"Gain relevant experience";"영어 실력 향상과 관련된 경험 쌓기";Text
 ;en;ko;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
@@ -67,14 +73,18 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"Location";"위치";Text
 ;en;ko;"Managed by CEL";"CEL에 의해 운영됨";Text
 ;en;ko;"Max. 35 min by bus to CEL";"CEL까지 버스로 35분";Text
+;en;ko;"Max. 35 min. by bus to CEL";"CEL까지 버스로 35분";Text
 ;en;ko;"Minimum age is 17 years";"최소 연령: 17세";Text
 ;en;ko;"Minimum age is 18 years";"최소 연령: 18세";Text
 ;en;ko;"Most families provide Wifi";"대부분의 호스트 가족들은 무료 Wi-Fi를 제공";Text
 ;en;ko;"New courses start every Monday";"매주 월요일마다 새로운 강좌 준비";Text
 ;en;ko;"No surf experience required";"서핑 경험 없이도 참여 가능";Text
+;en;ko;"Nonstop bus connection";"직통 버스";Text
 ;en;ko;"Pool, BBQ area, fitness center, 5 min walk to Santa Monica Beach";"수영장, 바비큐 공간, 피트니스 센터, 산타모니카 해변까지 도보 5분 거리";Text
 ;en;ko;"Pool, BBQ, small fitness room, jacuzzi";"완비된 주방, 수영장, 바비큐 시설, 피트니스룸, 자쿠지";Text
 ;en;ko;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"완비된 주방, 수영장, 바비큐 시설, 피트니스룸, 자쿠지";Text
+;en;ko;"Pool, fitness room, BBQ, jacuzzi";"피트니스 룸, 바베큐장";Text
+;en;ko;"Pool, fitness, beach volleyball, tennis";"Fitness Room BBQ Area Pool Tennis";Text
 ;en;ko;"Preparation for College & University";"대학 입학 준비를 위한 최상의 프로그램";Text
 ;en;ko;"Prepare for Cambridge exam";"케임브리지 시험 준비";Text
 ;en;ko;"Project based learning";"다양한 프로젝트 기반으로 학습진행";Text
@@ -187,6 +197,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"✓ Minimum duration is 2 weeks";"✓ 최소 기간: 2주";Text
 ;en;ko;"✓ Minimum duration is 3 weeks";"✓ 최소 기간: 3주";Text
 ;en;ko;"✓ Minimum duration is 4 weeks";"✓ 최소 기간: 4주";Text
+;en;ko;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 최소 기간: 4주";Text
 ;en;ko;"✓ Mixed Gender Apartments";"✓ 혼성 성별 아파트";Text
 ;en;ko;"✓ Most Families offer free Wi-Fi";"✓ 대부분의 호스트 가족들은 무료 Wi-Fi를 제공";Text
 ;en;ko;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 체류 중 청소 서비스는 제공되지 않습니다 (청소 도구는 제공됩니다)";Text

@@ -13,7 +13,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"30 Min. by Bus to CEL";"30 minutos de ônibus até a CEL";Text
 ;en;pt;"30 min. by bus to CEL";"30 minutos de ônibus até a CEL";Text
 ;en;pt;"30 min. walk to CEL";"30 minutos andando até a CEL";Text
-;en;pt;"30-75 min. by bus to CEL";"30-75 minutos de ônibus até a CEL";Text
+;en;pt;"30-75 min. by bus to CEL";"35-75 minutos de ônibus até a CEL";Text
 ;en;pt;"30-75 min. by bus to EC";"35-75 minutos de ônibus até a EC";Text
 ;en;pt;"35 min. by bus to CEL";"35 minutos de ônibus até a CEL";Text
 ;en;pt;"4 hours of Surfing per Week";"4 horas de surf por semana";Text
@@ -26,7 +26,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"Apartment Amenities";"Comodidades do apartamento";Text
 ;en;pt;"Apartment Complex Amenities";"Comodidades do complexo de apartamentos";Text
 ;en;pt;"Available in different fields";"Disponível em diferentes áreas";Text
-;en;pt;"Breakfast or breakfast & dinner";"Café da manhã ou meia-pensão";Text
+;en;pt;"Breakfast or breakfast & dinner";"Café da manhã ou café da manhã/jantar";Text
 ;en;pt;"Build career-ready skills";"Competências para a carreira";Text
 ;en;pt;"Business Certificate 23 - BE20+GE3";"Business Certificate 23 - BE20 + GE3";Text
 ;en;pt;"Business Certificate 24 - BE20+GE4";"Business Certificate 24 - BE20 + GE4";Text
@@ -47,10 +47,15 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"For all English and for all surf levels";"Para todos os níveis de inglês e surfe";Text
 ;en;pt;"Free Wi-Fi";"Wi-Fi grátis";Text
 ;en;pt;"Free Wi-Fi, Rooftop terrace with BBQ area";"Wi-Fi gratuito, terraço na cobertura com área de churrasqueira";Text
+;en;pt;"From $270 per week";"A partir de $270 por semana";Text
+;en;pt;"From $290 per week";"A partir de $290 por semana";Text
+;en;pt;"From $320 per week";"A partir de $320 por semana";Text
 ;en;pt;"From $330 per week";"A partir de $330 por semana";Text
 ;en;pt;"From $350/week";"A partir de $350/week";Text
+;en;pt;"From $380 per week";"A partir de $380 por semana";Text
 ;en;pt;"From $390/week";"A partir de $390/week";Text
 ;en;pt;"From $400/week";"A partir de $400/week";Text
+;en;pt;"From $420 per week";"A partir de $420 por semana";Text
 ;en;pt;"From $460/week";"A partir de $460/week";Text
 ;en;pt;"From $550/week";"A partir de $550/week";Text
 ;en;pt;"From $999,999/week";"A partir de $999,999/week";Text
@@ -61,6 +66,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"From CA$475 per week";"A partir de CA$475 por semana";Text
 ;en;pt;"From CA$580 per week";"A partir de CA$580 por semana";Text
 ;en;pt;"Full focus on your needs";"Foco total nas suas necessidades";Text
+;en;pt;"Full kitchen with Dishwasher";"Cozinha completa com lava louças";Text
 ;en;pt;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;pt;"Gain relevant experience";"Ganhe experiência relevante";Text
 ;en;pt;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
@@ -71,13 +77,17 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"Location";"Localização";Text
 ;en;pt;"Managed by CEL";"Operado pela CEL";Text
 ;en;pt;"Max. 35 min by bus to CEL";"35 minutos de ônibus até a CEL";Text
+;en;pt;"Max. 35 min. by bus to CEL";"35 minutos de ônibus até a CEL";Text
 ;en;pt;"Minimum age is 17 years";"Idade mínima: 17 anos";Text
 ;en;pt;"Minimum age is 18 years";"Idade mínima: 18 anos";Text
 ;en;pt;"Most families provide Wifi";"A maioria das famílias oferece Wi-Fi gratuito";Text
 ;en;pt;"New courses start every Monday";"Novos cursos toda Segunda-feira";Text
 ;en;pt;"No surf experience required";"Não é necessária experiência com surf";Text
+;en;pt;"Nonstop bus connection";"Rota de ônibus direto para a escola";Text
 ;en;pt;"Pool, BBQ, small fitness room, jacuzzi";"Cozinha totalmente equipada, piscina, churrasqueira, sala de ginástica, jacuzzi";Text
 ;en;pt;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"Cozinha totalmente equipada, piscina, churrasqueira, sala de ginástica, jacuzzi";Text
+;en;pt;"Pool, fitness room, BBQ, jacuzzi";"Sala de ginástica, área de churrasco";Text
+;en;pt;"Pool, fitness, beach volleyball, tennis";"Fitness Room BBQ Area Pool Tennis";Text
 ;en;pt;"Preparation for College & University";"Preparação para Universidade";Text
 ;en;pt;"Prepare for Cambridge exam";"Preparação para o exame Cambridge";Text
 ;en;pt;"Private bathroom";"Banheiro privativo";Text
@@ -188,6 +198,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"✓ Minimum duration is 2 weeks";"✓ Duração mínima: 2 semanas";Text
 ;en;pt;"✓ Minimum duration is 3 weeks";"✓ Duração mínima: 3 semanas";Text
 ;en;pt;"✓ Minimum duration is 4 weeks";"✓ Duração mínima: 4 semanas";Text
+;en;pt;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duração mínima: 4 semanas";Text
 ;en;pt;"✓ Mixed Gender Apartments";"✓ Apartamentos mistos";Text
 ;en;pt;"✓ Most Families offer free Wi-Fi";"✓ A maioria das famílias oferece Wi-Fi gratuito";Text
 ;en;pt;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ Não há limpeza fornecida durante a estadia (equipamentos de limpeza são fornecidos)";Text

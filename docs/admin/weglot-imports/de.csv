@@ -205,6 +205,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;de;"✓ Minimum duration is 2 weeks";"✓ 2 Wochen Minimum";Text
 ;en;de;"✓ Minimum duration is 3 weeks";"✓ 3 Wochen Minimum";Text
 ;en;de;"✓ Minimum duration is 4 weeks";"✓ 4 Wochen Minimum";Text
+;en;de;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 4 Wochen Minimum";Text
 ;en;de;"✓ Mixed Gender Apartments";"✓ Apartments ohne Geschlechtertrennung";Text
 ;en;de;"✓ Most Families offer free Wi-Fi";"✓ Fast alle Familien bieten kostenloses WLAN";Text
 ;en;de;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ Keine Reinigung während des Aufenthalts (Reinigungsutensilien werden bereitgestellt)";Text

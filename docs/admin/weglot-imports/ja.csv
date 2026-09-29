@@ -46,8 +46,13 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"English Plus TOEFL Exam Preparation";"English Plus TOEFL Exam";Text
 ;en;ja;"Enhance your English while working";"働くことによって英語を上達させる";Text
 ;en;ja;"Free Wi-Fi, Rooftop terrace with BBQ area";"無料Wi-Fi、屋上テラスとバーベキューエリア";Text
+;en;ja;"From $270 per week";"$270/週 から";Text
+;en;ja;"From $290 per week";"$290/週 から";Text
+;en;ja;"From $320 per week";"$320/週 から";Text
 ;en;ja;"From $330 per week";"$330/週 から";Text
+;en;ja;"From $380 per week";"$380/週 から";Text
 ;en;ja;"From $390/week";"From $999,999/week";Text
+;en;ja;"From $420 per week";"$420/週 から";Text
 ;en;ja;"From CA$240 per week";"CA$240 /週 から";Text
 ;en;ja;"From CA$350 per week";"CA$350 /週 から";Text
 ;en;ja;"From CA$430 per week";"CA$430 /週 から";Text
@@ -55,6 +60,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"From CA$475 per week";"CA$475 /週 から";Text
 ;en;ja;"From CA$580 per week";"CA$580 /週 から";Text
 ;en;ja;"Full focus on your needs";"学生の要求を重点的に取り扱う";Text
+;en;ja;"Full kitchen with Dishwasher";"食洗機付きの完全設備のキッチン";Text
 ;en;ja;"Full kitchen, fitness room, BBQ, yoga room";"Full kitchen with dishwasher, fitness room, BBQ, yoga room";Text
 ;en;ja;"Gain relevant experience";"英語上達に関する経験を積む";Text
 ;en;ja;"General English 20 & Surfing";"General English Intensive & Surfing (20 + 4)";Text
@@ -65,13 +71,17 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"Location";"場所";Text
 ;en;ja;"Managed by CEL";"CELが管理しています";Text
 ;en;ja;"Max. 35 min by bus to CEL";"CELまでバスで35分";Text
+;en;ja;"Max. 35 min. by bus to CEL";"CELまでバスで35分";Text
 ;en;ja;"Minimum age is 17 years";"最少年齢:17歳";Text
 ;en;ja;"Minimum age is 18 years";"最少年齢:18歳";Text
 ;en;ja;"Most families provide Wifi";"ほとんどの家族がfree Wi-Fi有り";Text
 ;en;ja;"New courses start every Monday";"毎週月曜日 新しいコース";Text
 ;en;ja;"No surf experience required";"サーフィンの経験は必要なし";Text
+;en;ja;"Nonstop bus connection";"直行バス";Text
 ;en;ja;"Pool, BBQ, small fitness room, jacuzzi";"設備の整ったキッチン、プール、バーベキュー設備、フィットネスルーム、ジャグジー";Text
 ;en;ja;"Pool, BBQ, tennis, basketball, beach volleyball, and fitness";"設備の整ったキッチン、プール、バーベキュー設備、フィットネスルーム、ジャグジー";Text
+;en;ja;"Pool, fitness room, BBQ, jacuzzi";"ジム・BBQ・プール・テニス";Text
+;en;ja;"Pool, fitness, beach volleyball, tennis";"フィットネスジム、バーベキューエリア、プール、テニス";Text
 ;en;ja;"Preparation for College & University";"大学入学の準備";Text
 ;en;ja;"Prepare for Cambridge exam";"ケンブリッジ試験の準備";Text
 ;en;ja;"Private bathroom";"専用バスルーム";Text
@@ -179,6 +189,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"✓ Minimum duration is 2 weeks";"✓ 最短期間:2週間";Text
 ;en;ja;"✓ Minimum duration is 3 weeks";"✓ 最短期間:3週間";Text
 ;en;ja;"✓ Minimum duration is 4 weeks";"✓ 最短期間:4週間";Text
+;en;ja;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 最短期間:4週間";Text
 ;en;ja;"✓ Mixed Gender Apartments";"✓ 男女混合で利用のマンション";Text
 ;en;ja;"✓ Most Families offer free Wi-Fi";"✓ ほとんどの家族がfree Wi-Fi有り";Text
 ;en;ja;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 滞在中は清掃サービスはありません（清掃用具は提供されています）";Text
