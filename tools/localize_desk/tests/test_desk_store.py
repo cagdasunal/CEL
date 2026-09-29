@@ -138,3 +138,14 @@ def test_a_ref_follows_the_runners_rule():
     start = lambda ref: s.handle("desk-job-start", {"locale": "de", "kind": "verify", "ref": ref}, "pat@example.test")[0]
     assert start("de-1.2") == 400 and start("run:1") == 400 and start("a" * 121) == 400
     assert start("a" * 120) == 200
+
+
+def test_plan_submit_and_collect_run_for_all_languages_and_a_file_does_not():
+    """The Manager's ruling (U3): one Gemini run per Send; a Weglot file stays one language at a time."""
+    s = _store()
+    assert s.handle("desk-job-start", {"locale": "all", "kind": "plan"}, "pat@example.test")[0] == 200
+    assert s.handle("desk-job-start", {"locale": "all", "kind": "plan"}, "pat@example.test")[0] == 409
+    assert s.handle("desk-job-start", {"locale": "all", "kind": "export"}, "pat@example.test")[0] == 400
+    code, r = s.handle("desk-job-get", {"locale": "all"}, "pat@example.test")
+    assert code == 200 and r["jobs"]["plan"]["locale"] == "all"
+    assert s.handle("desk-read", {"locale": "all"}, "pat@example.test")[0] == 400

@@ -60,6 +60,8 @@ PAGE = re.compile(r"[a-z0-9_-]{1,80}")
 # The Worker's jobs (runbook U1): the kinds, the one-run cap on a submit's amount, and how long
 # an open job may go unanswered before the sweep fails it.
 JOB_KINDS = ("export", "verify", "plan", "submit", "collect")
+# #1's ruling (U3): one Gemini run per Send, over every language -- these kinds take locale "all".
+JOB_ALL, JOB_ALL_KINDS = "all", ("plan", "submit", "collect")
 JOB_RUN_CAP_USD = 40
 JOB_STALE_SEC = 35 * 60
 JOB_DAILY = 60                  # starts a day per user, a refused one too (each is a billed run)
@@ -427,15 +429,20 @@ class DeskStore:
                 j.update(status="failed", finished_at=_iso(now), error="engine-never-answered")
 
     def _job_start(self, body: dict, email: str) -> tuple[int, dict]:
-        try:
-            locale = self._locale(body)
-        except Invalid as e:
-            return 400, {"ok": False, "error": f"invalid: {e}"}
-        if locale not in REAL_LOCALES:
-            return 400, {"ok": False, "error": "invalid: not a desk language"}
+        if body.get("locale") == JOB_ALL:
+            locale = JOB_ALL
+        else:
+            try:
+                locale = self._locale(body)
+            except Invalid as e:
+                return 400, {"ok": False, "error": f"invalid: {e}"}
+            if locale not in REAL_LOCALES:
+                return 400, {"ok": False, "error": "invalid: not a desk language"}
         kind = body.get("kind")
         if not isinstance(kind, str) or kind not in JOB_KINDS:
             return 400, {"ok": False, "error": "invalid: kind"}
+        if locale == JOB_ALL and kind not in JOB_ALL_KINDS:
+            return 400, {"ok": False, "error": "invalid: only plan, submit and collect run for all languages"}
         amount = None
         if kind == "submit":
             amount = body.get("amount_usd")
@@ -472,10 +479,13 @@ class DeskStore:
         return 200, {"ok": True, "job": _job_out(self.jobs[job_id])}
 
     def _job_get(self, body: dict) -> tuple[int, dict]:
-        try:
-            locale = self._locale(body)
-        except Invalid as e:
-            return 400, {"ok": False, "error": f"invalid: {e}"}
+        if body.get("locale") == JOB_ALL:
+            locale = JOB_ALL
+        else:
+            try:
+                locale = self._locale(body)
+            except Invalid as e:
+                return 400, {"ok": False, "error": f"invalid: {e}"}
         self._sweep(locale)
         if "id" in body:
             job_id = body["id"]
