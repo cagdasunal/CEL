@@ -1663,10 +1663,13 @@ def test_link_candidate_pool_drops_retired_campus_urls():
 # The blog run fills ONLY an empty summary field. Nothing regenerates a post that has one: not a
 # changed hash, prompt version or model, and not --force.
 
-def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_pass=False):
+def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_pass=False,
+                   fail_all=False, fail_ids=(), write_ok=True):
     """Drive the live blog pipeline offline. Returns (rc, seen, phase): what reached Gemini
     (custom ids, and each request's model + thinking level), every Webflow field write, and
-    every publish. fail_first_pass fails every first-pass request, so the retry pass runs."""
+    every publish. fail_first_pass fails every first-pass request, so the retry pass runs;
+    fail_all fails every request, retries included, and fail_ids only those items' requests;
+    write_ok=False fails every Webflow write."""
     import types as _types
     from tools.summary import batch_runner, webflow_client, config, llms_parser
     from tools.summary import qa as _qa
@@ -1694,10 +1697,13 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
     def fake_sync(requests, run_deadline_sec=None, **kw):
         seen["requests"].extend(r.custom_id for r in requests)
         seen["sent"].extend((r.custom_id, r.model, r.thinking_level) for r in requests)
-        ok = not (fail_first_pass and not requests[0].custom_id.startswith("retry-"))
-        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=ok,
-                                         content="## A blog question\n\nA clear answer paragraph.\n" if ok else "",
-                                         error=None if ok else "boom")
+        first_pass_fails = fail_first_pass and not requests[0].custom_id.startswith("retry-")
+
+        def ok(r):
+            return not (fail_all or first_pass_fails or r.custom_id.endswith(tuple(f"-{i}" for i in fail_ids)))
+        return [batch_runner.BatchResult(custom_id=r.custom_id, succeeded=ok(r),
+                                         content="## A blog question\n\nA clear answer paragraph.\n" if ok(r) else "",
+                                         error=None if ok(r) else "boom")
                 for r in requests]
 
     def no_batch(*a, **kw):
@@ -1705,7 +1711,8 @@ def _live_blog_run(tmp_path, monkeypatch, field_data_by_id, *extra, fail_first_p
 
     def fake_patch(self, collection_id, item_id, field_data):
         seen["patched"].append(item_id)
-        return webflow_client.WriteResult(dry_run=False, success=True, method="PATCH", url="x")
+        return webflow_client.WriteResult(dry_run=False, success=write_ok, method="PATCH", url="x",
+                                          error=None if write_ok else "HTTP 500")
 
     def fake_publish(self, collection_id, item_ids):
         seen["published"].extend(item_ids)
@@ -1778,3 +1785,40 @@ def test_blog_requests_go_to_the_engines_model_at_thinking_high_retry_included(t
     assert rc == 0
     assert [cid for cid, _m, _t in seen["sent"]] == ["gen-0-e1", "gen-1-e2", "retry-gen-0-e1", "retry-gen-1-e2"]
     assert {(m, t) for _cid, m, t in seen["sent"]} == {("gemini-3.1-pro-preview", "high")}
+
+
+# ---- U3-S step 5: a run whose every request failed exits non-zero ----
+# The blog autopilot stayed green for weeks while every Gemini request failed (402/429 no
+# credit, then 404 on a gone model). Such a run must fail the workflow step, so its "Notify on
+# failure" alert fires.
+
+def test_every_request_failing_exits_non_zero(tmp_path, monkeypatch, capsys):
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}, "e2": {}}, fail_all=True)
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE != 0
+    assert phase["succeeded"] == 0 and seen["patched"] == []
+    assert "every request failed" in capsys.readouterr().err
+
+
+def test_every_write_failing_exits_non_zero(tmp_path, monkeypatch, capsys):
+    rc, seen, phase = _live_blog_run(tmp_path, monkeypatch, {"e1": {}}, write_ok=False)
+    assert rc == cli._NO_WORK_DONE_EXIT_CODE
+    assert phase["succeeded"] == 1 and seen["published"] == []
+    assert "every write failed" in capsys.readouterr().err
+
+
+def test_partial_success_and_nothing_to_do_still_exit_zero(tmp_path, monkeypatch):
+    """Only a run whose every request failed alerts. One success among failures is a normal day
+    (the rest go to manual review), and a day with nothing to fill is the steady state. (A
+    QA demotion and a cost-gate stop keep exit 0 too: test_generate_english_qa_gate_demotes_
+    critical_fail, test_generate_english_cost_cap_aborts.)"""
+    rc, seen, phase = _live_blog_run(tmp_path / "none", monkeypatch, {"a": {"summary": "<p>Have one.</p>"}})
+    assert rc == 0 and phase["requests_built"] == 0
+
+    rc2, seen2, phase2 = _live_blog_run(tmp_path / "some", monkeypatch, {"x": {}, "y": {}}, fail_ids=("y",))
+    assert rc2 == 0
+    assert seen2["patched"] == ["x"] and phase2["succeeded"] == 1 and phase2["failed"] == 1
+
+
+def test_a_dry_run_never_alerts(tmp_path):
+    assert cli.main(["generate-english", "--collection", "blog", "--dry-run",
+                     "--out-dir", str(tmp_path / "dry")]) == 0

@@ -342,9 +342,36 @@ def main(argv: list[str] | None = None) -> int:
         # with what result — across summaries AND translations). Never raises.
         from tools.summary import run_ledger
         run_ledger.record_run(report, out_dir)
+    if not args.dry_run:
+        reason = _no_work_done(report["phases"].get("generate_english"))
+        if reason:
+            print(f"[summary] ALERT: this run had work and did none of it: {reason}. Exiting "
+                  f"{_NO_WORK_DONE_EXIT_CODE} so the workflow's failure alert fires.", file=sys.stderr)
+            return _NO_WORK_DONE_EXIT_CODE
     if args.dry_run:
         print("[summary] Dry-run complete. No API calls fired, no Webflow writes performed.", file=sys.stderr)
     return 0
+
+
+# U3-S (2026-09-29): the blog autopilot stayed green for weeks while every Gemini request failed
+# (402/429 no credit, then 404 on a gone model). A live run whose every request failed, to Gemini
+# or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
+# fires. A partial run, a day with nothing to do, a run QA demoted to manual review, and a run
+# the cost gates stopped before sending anything still exit 0.
+_NO_WORK_DONE_EXIT_CODE = 3
+
+
+def _no_work_done(ge: Any) -> str:
+    """Why a live generate-english phase's every request failed, or "" when any succeeded (or
+    none was sent)."""
+    if not isinstance(ge, dict) or not ge.get("requests_built") or not ge.get("submitted"):
+        return ""
+    if not (ge.get("qa_gate") or {}).get("checked"):  # no Gemini answer at all, retries included
+        return f"every request failed ({ge.get('failed', 0)} of {ge['requests_built']})"
+    wl = ge.get("write_log") or {}
+    if wl.get("failures") and not (wl.get("cms_writes") or wl.get("static_writes")):
+        return f"every write failed ({wl['failures']})"
+    return ""
 
 
 # ---- Plan-only helpers (informational; used by 'plan' subcommand) ----
