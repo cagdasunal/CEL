@@ -341,15 +341,22 @@ def main(argv: list[str] | None = None) -> int:
 # U3-S (2026-09-29): the blog autopilot stayed green for weeks while every Gemini request failed
 # (402/429 no credit, then 404 on a gone model). A live run whose every request failed, to Gemini
 # or to Webflow, now exits non-zero, so the workflow step fails and its "Notify on failure" alert
-# fires. A partial run, a day with nothing to do, a run QA demoted to manual review, and a run
-# the cost gates stopped before sending anything still exit 0.
+# fires; so does a run the hard cost cap stopped (the Manager's ruling: a cap that silently stops
+# every night drains nothing either). A partial run, a day with nothing to do, a run QA demoted
+# to manual review, and a pilot-first confirm stop still exit 0.
 _NO_WORK_DONE_EXIT_CODE = 3
 
 
 def _no_work_done(ge: Any) -> str:
-    """Why a live generate-english phase's every request failed, or "" when any succeeded (or
-    none was sent)."""
-    if not isinstance(ge, dict) or not ge.get("requests_built") or not ge.get("submitted"):
+    """Why a live generate-english phase with work did none of it, or "" when it did some, had
+    none, or was a pilot-first confirm stop."""
+    if not isinstance(ge, dict) or not ge.get("requests_built"):
+        return ""
+    if not ge.get("submitted"):
+        gate = ge.get("cost_gate") or {}
+        if "projected_usd" in gate and gate["projected_usd"] > gate.get("cost_cap_usd", float("inf")):
+            return (f"it stopped at the cost cap (${gate['projected_usd']:.2f} projected > "
+                    f"${gate['cost_cap_usd']}), so nothing was sent")
         return ""
     if not (ge.get("qa_gate") or {}).get("checked"):  # no Gemini answer at all, retries included
         return f"every request failed ({ge.get('failed', 0)} of {ge['requests_built']})"

@@ -224,7 +224,7 @@ _PASSING = (
 )
 
 
-def _run_home_live(monkeypatch, tmp_path, *, estimate: float, extra_args=()):
+def _run_home_live(monkeypatch, tmp_path, *, estimate: float, extra_args=(), expect_rc=0):
     from tools.summary import page_fetcher, llms_parser
 
     def fake_fetch(url, timeout=20.0):
@@ -260,7 +260,7 @@ def _run_home_live(monkeypatch, tmp_path, *, estimate: float, extra_args=()):
         "generate-english", "--no-dry-run", "--page", "https://www.englishcollege.com/",
         "--out-dir", str(run_dir), *extra_args,
     ])
-    assert rc == 0
+    assert rc == expect_rc
     phase = json.loads((run_dir / "report.json").read_text())["phases"]["generate_english"]
     return phase, submits
 
@@ -284,8 +284,11 @@ def test_confirm_flag_authorizes_paid_run(monkeypatch, tmp_path):
 
 
 def test_cost_cap_blocks_even_with_confirm(monkeypatch, tmp_path):
-    """The hard cap (MAX_BATCH_COST_USD=15) aborts regardless of --confirm-cost."""
-    phase, submits = _run_home_live(monkeypatch, tmp_path, estimate=20.0, extra_args=("--confirm-cost",))
+    """The hard cap (MAX_BATCH_COST_USD=15) aborts regardless of --confirm-cost, and the run exits
+    non-zero (U3-S, the Manager's ruling): a cap that silently stops every night is the same
+    "green but nothing drains" failure as a run whose every request fails."""
+    phase, submits = _run_home_live(monkeypatch, tmp_path, estimate=20.0, extra_args=("--confirm-cost",),
+                                    expect_rc=cli._NO_WORK_DONE_EXIT_CODE)
     assert phase["submitted"] is False
     assert any("COST CAP" in w for w in phase["warnings"])
     assert submits["n"] == 0
