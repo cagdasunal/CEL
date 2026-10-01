@@ -193,8 +193,8 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"✓ Minimum duration is 13 weeks";"✓ 最短期間:13週間";Text
 ;en;ja;"✓ Minimum duration is 2 weeks";"✓ 最短期間:2週間";Text
 ;en;ja;"✓ Minimum duration is 3 weeks";"✓ 最短期間:3週間";Text
+;en;ja;"✓ Minimum duration is 30 days";"✓ 最短期間:4週間";Text
 ;en;ja;"✓ Minimum duration is 4 weeks";"✓ 最短期間:4週間";Text
-;en;ja;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 最短期間:4週間";Text
 ;en;ja;"✓ Mixed Gender Apartments";"✓ 男女混合で利用のマンション";Text
 ;en;ja;"✓ Most Families offer free Wi-Fi";"✓ ほとんどの家族がfree Wi-Fi有り";Text
 ;en;ja;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 滞在中は清掃サービスはありません（清掃用具は提供されています）";Text
@@ -236,6 +236,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ja;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
 ;en;ja;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ ツインルームは、一人でも予約可能。その場合は、二人目の学生(同性)と部屋を共有";Text
 ;en;ja;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 徒歩圏内に食料品店、3rd Street Promenade、メトロライン、公共図書館　等";Text
+;en;ja;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 最短期間:4週間";Text
 ;en;ja;"From $390/week";"From $999,999/week";Text
 ;en;ja;"From $410/week";"From $999,999/week";Text
 ;en;ja;"From $370/Week";"From $370/week";Text

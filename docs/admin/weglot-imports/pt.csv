@@ -197,8 +197,8 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"✓ Minimum duration is 13 weeks";"✓ Duração mínima: 13 semanas";Text
 ;en;pt;"✓ Minimum duration is 2 weeks";"✓ Duração mínima: 2 semanas";Text
 ;en;pt;"✓ Minimum duration is 3 weeks";"✓ Duração mínima: 3 semanas";Text
+;en;pt;"✓ Minimum duration is 30 days";"✓ Duração mínima: 4 semanas";Text
 ;en;pt;"✓ Minimum duration is 4 weeks";"✓ Duração mínima: 4 semanas";Text
-;en;pt;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duração mínima: 4 semanas";Text
 ;en;pt;"✓ Mixed Gender Apartments";"✓ Apartamentos mistos";Text
 ;en;pt;"✓ Most Families offer free Wi-Fi";"✓ A maioria das famílias oferece Wi-Fi gratuito";Text
 ;en;pt;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ Não há limpeza fornecida durante a estadia (equipamentos de limpeza são fornecidos)";Text
@@ -240,6 +240,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;pt;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Os quartos compartilhados podem ser reservados por uma pessoa, e ela dividirá o quarto com outra do mesmo gênero";Text
 ;en;pt;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ Os quartos compartilhados podem ser reservados por uma pessoa, e ela dividirá o quarto com outra do mesmo gênero";Text
 ;en;pt;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ A uma curta distância a pé do supermercado, 3rd Street Promenade, Metroline, Biblioteca pública, e muito mais";Text
+;en;pt;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duração mínima: 4 semanas";Text
 ;en;pt;"From $350/week";"A partir de $350/week";Text
 ;en;pt;"From $390/week";"A partir de $390/week";Text
 ;en;pt;"From $400/week";"A partir de $400/week";Text

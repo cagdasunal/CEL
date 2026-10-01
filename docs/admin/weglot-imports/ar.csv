@@ -188,8 +188,8 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"✓ Minimum duration is 13 weeks";"✓ الحد الأدنى للمدة هو 13 أسابيع";Text
 ;en;ar;"✓ Minimum duration is 2 weeks";"✓ الحد الأدنى للمدة هو 2 أسابيع";Text
 ;en;ar;"✓ Minimum duration is 3 weeks";"✓ الحد الأدنى للمدة هو 3 أسابيع";Text
+;en;ar;"✓ Minimum duration is 30 days";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
 ;en;ar;"✓ Minimum duration is 4 weeks";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
-;en;ar;"✓ Minimum duration is 4 weeks/month/30 days";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
 ;en;ar;"✓ Mixed Gender Apartments";"✓ شقق مختلطة بين الجنسين";Text
 ;en;ar;"✓ Most Families offer free Wi-Fi";"✓ توفر معظم العائلات خدمة الواي فاي المجانية";Text
 ;en;ar;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ لا يتم توفير خدمة التنظيف أثناء الإقامة (يتم توفير معدات التنظيف)";Text
@@ -230,6 +230,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ar;"✓ Twin rooms have two separate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
 ;en;ar;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ الغرف التوأم تحتوي على سريرين منفصلين ويمكن حجزها من قبل شخص واحد وسوف يتشارك الغرفة مع شخص ثاني (نفس الجنس)";Text
 ;en;ar;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ على مسافة قريبة من متجر البقالة ومنتزه الشارع الثالث وميترولاين والمكتبة العامة والمزيد";Text
+;en;ar;"✓ Minimum duration is 4 weeks/month/30 days";"✓ الحد الأدنى للمدة هو 4 أسابيع";Text
 ;en;ar;"From $390/week";"From $999,999/week";Text
 ;en;ar;"From $410/week";"From $999,999/week";Text
 ;en;ar;"From $370/Week";"From $370/week";Text

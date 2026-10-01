@@ -201,8 +201,8 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"✓ Minimum duration is 13 weeks";"✓ 최소 기간: 13주";Text
 ;en;ko;"✓ Minimum duration is 2 weeks";"✓ 최소 기간: 2주";Text
 ;en;ko;"✓ Minimum duration is 3 weeks";"✓ 최소 기간: 3주";Text
+;en;ko;"✓ Minimum duration is 30 days";"✓ 최소 기간: 4주";Text
 ;en;ko;"✓ Minimum duration is 4 weeks";"✓ 최소 기간: 4주";Text
-;en;ko;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 최소 기간: 4주";Text
 ;en;ko;"✓ Mixed Gender Apartments";"✓ 혼성 성별 아파트";Text
 ;en;ko;"✓ Most Families offer free Wi-Fi";"✓ 대부분의 호스트 가족들은 무료 Wi-Fi를 제공";Text
 ;en;ko;"✓ No cleaning provided during stay (cleaning equipment is provided)";"✓ 체류 중 청소 서비스는 제공되지 않습니다 (청소 도구는 제공됩니다)";Text
@@ -248,6 +248,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;ko;"✓ Twin rooms have two seperate beds and can be booked by one person and they will share the room with a 2nd person (same gender)";"✓ 트윈 객실은 한명이 예약 가능. 트윈 객실을 예약한 학생은 다른 학생(같은 성별)과 객실을 공유";Text
 ;en;ko;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ 도보 거리에 위치한 식료품점, 3rd Street Promenade, 메트로라인, 공공 도서관 등";Text
 ;en;ko;"✓ Washer and dryer in the apartment (free for charge)";"✓ 아파트 내 세탁기 및 건조기(무료)";Text
+;en;ko;"✓ Minimum duration is 4 weeks/month/30 days";"✓ 최소 기간: 4주";Text
 ;en;ko;"From $390/week";"From $999,999/week";Text
 ;en;ko;"From $410/week";"From $999,999/week";Text
 ;en;ko;"From $370/Week";"From $370/week";Text

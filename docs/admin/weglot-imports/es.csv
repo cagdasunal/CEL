@@ -223,8 +223,8 @@ id;language_from;language_to;word_from;word_to;type
 ;en;es;"✓ Minimum duration is 13 weeks";"✓ Duración mínima: 13 semanas";Text
 ;en;es;"✓ Minimum duration is 2 weeks";"✓ Duración mínima: 2 semanas";Text
 ;en;es;"✓ Minimum duration is 3 weeks";"✓ Duración mínima: 3 semanas";Text
+;en;es;"✓ Minimum duration is 30 days";"✓ Duración mínima: 4 semanas";Text
 ;en;es;"✓ Minimum duration is 4 weeks";"✓ Duración mínima: 4 semanas";Text
-;en;es;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duración mínima: 4 semanas";Text
 ;en;es;"✓ Mixed Gender Apartments";"✓ Apartamentos de género mixto";Text
 ;en;es;"✓ Mixed gender Student House";"✓ Student House con género mixto";Text
 ;en;es;"✓ Most Families offer free Wi-Fi";"✓ La mayoría de familias ofrecen Wifi gratis";Text
@@ -275,6 +275,7 @@ id;language_from;language_to;word_from;word_to;type
 ;en;es;"✓ Walking distance to grocery store, 3rd Street Promenade, Metroline, Public Library, and more";"✓ A distancia andando de la tienda de comestibles, 3rd street Promenade, línea de metro, tranvía, biblioteca y más";Text
 ;en;es;"✓ Washer and dryer in the apartment (free for charge)";"✓ Lavadora y secadora en el apartamento (gratis)";Text
 ;en;es;"✓ Yoga room";"✓ Sala de yoga";Text
+;en;es;"✓ Minimum duration is 4 weeks/month/30 days";"✓ Duración mínima: 4 semanas";Text
 ;en;es;"From $350/week";"De $350/Semana";Text
 ;en;es;"From $390/week";"De $390/Semana";Text
 ;en;es;"From $400/week";"De $400/Semana";Text
