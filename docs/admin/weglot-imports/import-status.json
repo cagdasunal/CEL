@@ -1,26 +1,21 @@
 {
   "schema": "weglot.import-status.v1",
-  "checked_at": "2026-10-01T04:07:23.050973-07:00",
+  "checked_at": "2026-10-01T04:47:14.202976-07:00",
   "site_base_url": "https://www.englishcollege.com",
   "languages": {
     "de": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/de/courses",
-      "checked_at": "2026-10-01T04:07:26.178307-07:00",
+      "checked_at": "2026-10-01T04:47:14.712118-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Academic English for college success",
-          "word_to": "Akademisches Englisch als Vorbereitung"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "fr": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/fr/courses",
-      "checked_at": "2026-10-01T04:07:27.209824-07:00",
+      "checked_at": "2026-10-01T04:47:15.118916-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -29,7 +24,7 @@
     "es": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/es/courses",
-      "checked_at": "2026-10-01T04:07:28.242033-07:00",
+      "checked_at": "2026-10-01T04:47:15.528070-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
@@ -38,78 +33,46 @@
     "it": {
       "verdict": "imported",
       "url": "https://www.englishcollege.com/it/courses",
-      "checked_at": "2026-10-01T04:07:29.127977-07:00",
+      "checked_at": "2026-10-01T04:47:15.896005-07:00",
       "sentinels_total": 3,
       "sentinels_found": 3,
       "missing": [],
       "http_status": 200
     },
     "ja": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ja/courses",
-      "checked_at": "2026-10-01T04:07:29.515613-07:00",
+      "checked_at": "2026-10-01T04:47:16.309127-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "少人数制クラス(1クラス平均7名)"
-        },
-        {
-          "word_from": "Academic English for college success",
-          "word_to": "大学成功のためのアカデミック英語"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ko": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ko/courses",
-      "checked_at": "2026-10-01T04:07:29.914066-07:00",
+      "checked_at": "2026-10-01T04:47:16.677397-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 2,
-      "missing": [
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "다른 수업과 추가하여 학습 가능"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "pt": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/pt/courses",
-      "checked_at": "2026-10-01T04:07:30.375325-07:00",
+      "checked_at": "2026-10-01T04:47:17.138430-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "Turmas pequenas (média de 7 alunos)"
-        },
-        {
-          "word_from": "Preparation for College & University",
-          "word_to": "Preparação para Universidade"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     },
     "ar": {
-      "verdict": "partial",
+      "verdict": "imported",
       "url": "https://www.englishcollege.com/ar/courses",
-      "checked_at": "2026-10-01T04:07:30.965140-07:00",
+      "checked_at": "2026-10-01T04:47:17.716589-07:00",
       "sentinels_total": 3,
-      "sentinels_found": 1,
-      "missing": [
-        {
-          "word_from": "Small classes (avg. 7 students/class)",
-          "word_to": "فصول صغيرة يتراوح عدد الطلاب (7 طلاب للفصل)"
-        },
-        {
-          "word_from": "Can be combined with other courses",
-          "word_to": "حصص شخصية يمكن دمجها مع الفئات الاخرى"
-        }
-      ],
+      "sentinels_found": 3,
+      "missing": [],
       "http_status": 200
     }
   }
