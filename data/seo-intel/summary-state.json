@@ -1193,27 +1193,19 @@
   },
   "69f13017d106b91d419bab5a": {
     "source_hash": "feb1b9e5eea2907ccad703e0fbe163584b659a54d34fce27979c2abc59890d7e",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-09-30T10:32:56.447318+00:00",
-    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['18']"
+    "generated_at": "2026-10-01T11:00:13.285260+00:00"
   },
   "69dec2a18396b51137af0da7": {
     "source_hash": "2fc13e65cae12a25baf8ce3b208429b5b784348b54a56e167ec148aae24c55c7",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-09-30T10:32:56.447318+00:00",
-    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['25']"
+    "generated_at": "2026-10-01T11:00:13.858645+00:00"
   },
   "69c5296032365e94510525e3": {
     "source_hash": "c91830259c7d2b650f5de0e5837575fa8677040c876b4f0c1061a5f7d99b2fc8",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-09-30T10:32:56.447318+00:00",
-    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['15']"
+    "generated_at": "2026-10-01T11:00:16.528691+00:00"
   },
   "69c27790ef38026c4672d550": {
     "source_hash": "e662a72a03c7ff50179ebd2b1323ac9301857727dd4b03c2c37d998d39e23e0c",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-09-30T10:32:56.447318+00:00",
-    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['00']"
+    "generated_at": "2026-10-01T11:00:17.613214+00:00"
   },
   "69f35193938401fd983eea21": {
     "source_hash": "72230369e8e62e7a6b962d9b84e8b685551f726f3a42541215beb2fa48794e06",
@@ -1334,5 +1326,121 @@
   "699c2e8b443be36a224ba8aa": {
     "source_hash": "1815ad9c8822d0d37dd5ae9ef4d5d1377be8ab015fff58a05f1ef79905769a30",
     "generated_at": "2026-09-30T10:33:15.492193+00:00"
+  },
+  "69695a656111dc662585f98d": {
+    "source_hash": "16312cd9ed7468c9fd572852e3d0411ccc919d0c9c55f22446d2ae1e9f89008c",
+    "failed_attempts": 1,
+    "last_failed_at": "2026-10-01T11:00:11.208075+00:00",
+    "last_error": "QA gate failed: link_in_inventory: link targets not in inventory (invented?): ['/ko/courses', '/ko/san-diego-ca/language-school', '/ko/learn-english-usa', '/ko/post/saendieigoeseoyi-haru-rutin-eohagyeonsusaengi-siljero-gyeongheomhaneun-ilsang', '/ko/housing/cel-shared-apartment-premium-san-diego', '"
+  },
+  "6909a6be0972cc7571ea4e68": {
+    "source_hash": "b28ac5d572bef5378ff783d5968ea6c289395f43e175f80dcc2dc6ddac3e31f5",
+    "failed_attempts": 1,
+    "last_failed_at": "2026-10-01T11:00:11.208075+00:00",
+    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['00']"
+  },
+  "698b40e880735483c66b2aa5": {
+    "source_hash": "8e1d804ec4bd8bf948301a682029f99be136291d51c2506cf4a147ec6054a951",
+    "generated_at": "2026-10-01T11:00:18.088133+00:00"
+  },
+  "698b3c12c4f6c09b81d68b64": {
+    "source_hash": "580604d9d6037a1ef972696967ef8e7b9d57392663dcd19bc432f6a81a0a64da",
+    "generated_at": "2026-10-01T11:00:18.556365+00:00"
+  },
+  "698b02a37e01e80b95eef4e5": {
+    "source_hash": "1dbea5e446bdb6a77daf94bc48692dff53cfcd393de22125a30a27a1e15a85b3",
+    "generated_at": "2026-10-01T11:00:19.151042+00:00"
+  },
+  "698af69f76ca318dfebba967": {
+    "source_hash": "8f6e263f4f1a1f87d42fa7e1e20c5b099a730a4974e5dd148545d64342e6f54c",
+    "generated_at": "2026-10-01T11:00:19.886479+00:00"
+  },
+  "6989f472b5daa4ee7b08db65": {
+    "source_hash": "4146622ec764fefbf044c469c96d14e0843c03a5b52382d949059354f277f8b5",
+    "generated_at": "2026-10-01T11:00:22.863142+00:00"
+  },
+  "6964e0f818044472282dfd56": {
+    "source_hash": "456638d753f14ab65d8f8ed11ed77bedf90bf61bfdf067956070751eb512fbc8",
+    "generated_at": "2026-10-01T11:00:23.984013+00:00"
+  },
+  "6945bf4b27cd4ebe27ff3d62": {
+    "source_hash": "beaa84f16e6175e20c338bd0c224d5f6d52bc9d442c5361fa73506afe79282c8",
+    "generated_at": "2026-10-01T11:00:24.766449+00:00"
+  },
+  "6945b823c521bcbe1446d76f": {
+    "source_hash": "750aa870548baeeeffd8519adff3c420eddbf76ed6ad1532f2c74ff6391e6563",
+    "generated_at": "2026-10-01T11:00:26.439576+00:00"
+  },
+  "69458590498d32aee93e6c12": {
+    "source_hash": "675ebbe90e24acf6bc32596017f4f0411d8270f048acff52e84aac06fa071d5f",
+    "generated_at": "2026-10-01T11:00:28.843923+00:00"
+  },
+  "691ddbe0377fdf9346ac10a5": {
+    "source_hash": "896575f316c139470193db3cc6779f4e67d9efe5e33886346345e01f30b682bc",
+    "generated_at": "2026-10-01T11:00:29.338605+00:00"
+  },
+  "6911cfaad7194b22feb45162": {
+    "source_hash": "acc89ff0c4e23b5c2ecef7d6b9a272e73d32366039eca55b3648f82c68d67012",
+    "generated_at": "2026-10-01T11:00:31.957004+00:00"
+  },
+  "69117f21ece36dd0e079a880": {
+    "source_hash": "92e45e0e874ac5fc928c991e4399b2a9f36e936a70bb7aa108d28014c10cae90",
+    "generated_at": "2026-10-01T11:00:33.386976+00:00"
+  },
+  "69024c44a3416ec2116fdeb8": {
+    "source_hash": "733b13c170a3d69e9ee72708686991a8755c564ba4f16a0e94ea219adf0b71ca",
+    "generated_at": "2026-10-01T11:00:36.762725+00:00"
+  },
+  "69020457922746968c6e5075": {
+    "source_hash": "4d69d214a47ea529e33e0d3c534860212676cbdcd296080b464e5bb11f4f93da",
+    "generated_at": "2026-10-01T11:00:38.178560+00:00"
+  },
+  "6902022a7a357cd3e0b7f4f2": {
+    "source_hash": "0aa0d1f42479701e4342e850617b7fb5ca510d0b493fdbef010942c6a618a1fc",
+    "generated_at": "2026-10-01T11:00:38.630073+00:00"
+  },
+  "68ff863a7f130e51c1a37970": {
+    "source_hash": "8979197e78e9f6dedf80285e8d1606ff397a597d491f9874d4da5f69417913f2",
+    "generated_at": "2026-10-01T11:00:38.963286+00:00"
+  },
+  "68ff848c5d32e90e9116026e": {
+    "source_hash": "9fb2bc9548ec471652561fe08495a10e38b342345bfd308d2e1d03b6be3c353f",
+    "generated_at": "2026-10-01T11:00:39.786963+00:00"
+  },
+  "68f7a17c1ad47d711ab02601": {
+    "source_hash": "c3cfd3de0a12f7da3769cefe0ccab61a3a5c86613cfe265aeb0bbab27c2821db",
+    "generated_at": "2026-10-01T11:00:40.305298+00:00"
+  },
+  "68da66ec4d9dd19c08645d56": {
+    "source_hash": "efa0354d84a051e4817f7dfa6641ffc30da0a364b6e4ed8c4fd79aea487c117f",
+    "generated_at": "2026-10-01T11:00:40.784812+00:00"
+  },
+  "68a452fde7c5c9811fa37a5e": {
+    "source_hash": "767c83d177ed2ee63aff90fa63942d476ae06beaa7181d6ef17eabf8a2ec6672",
+    "generated_at": "2026-10-01T11:00:41.123191+00:00"
+  },
+  "68a4505a5367e2f890c92795": {
+    "source_hash": "45fa71ce8929efe34c1ec2776f79541b64d82b76d092396f37be62339d2bb1f6",
+    "generated_at": "2026-10-01T11:00:41.528181+00:00"
+  },
+  "689a2fdb712a975474896943": {
+    "source_hash": "09e57e566f8333921e2731e374a8b55cd97e976db45c9fd4c6c2151b9eccd84f",
+    "generated_at": "2026-10-01T11:00:42.058758+00:00"
+  },
+  "68945fb7522e948e0732638b": {
+    "source_hash": "f9c463500e437ef714e08031db5255161eb3b9b1ff7d4a0928e0ddc523d8ac6c",
+    "generated_at": "2026-10-01T11:00:43.872834+00:00"
+  },
+  "6893201cbe8af60daf4b3442": {
+    "source_hash": "d6a71d59002b6ffe3a5c4a6e733a6334da98b979e39fb7fb329061a5f4420e0f",
+    "generated_at": "2026-10-01T11:00:44.551062+00:00"
+  },
+  "6893186aeda149008fcb74c0": {
+    "source_hash": "bd9fce8a44c71f82f7f459caa9f8364864e408a1f370c167ff0730af34e6a930",
+    "generated_at": "2026-10-01T11:00:45.250165+00:00"
+  },
+  "68930ba3bf67b1d5ea0ef52b": {
+    "source_hash": "f12217ce8a05337fb07b45253015711bd8f4764ea2d525fe0898c03f7d3b6442",
+    "generated_at": "2026-10-01T11:00:45.667231+00:00"
   }
 }
