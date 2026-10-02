@@ -1329,14 +1329,12 @@
   },
   "69695a656111dc662585f98d": {
     "source_hash": "16312cd9ed7468c9fd572852e3d0411ccc919d0c9c55f22446d2ae1e9f89008c",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-10-01T11:00:11.208075+00:00",
-    "last_error": "QA gate failed: link_in_inventory: link targets not in inventory (invented?): ['/ko/courses', '/ko/san-diego-ca/language-school', '/ko/learn-english-usa', '/ko/post/saendieigoeseoyi-haru-rutin-eohagyeonsusaengi-siljero-gyeongheomhaneun-ilsang', '/ko/housing/cel-shared-apartment-premium-san-diego', '"
+    "generated_at": "2026-10-02T10:10:42.943938+00:00"
   },
   "6909a6be0972cc7571ea4e68": {
     "source_hash": "b28ac5d572bef5378ff783d5968ea6c289395f43e175f80dcc2dc6ddac3e31f5",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-10-01T11:00:11.208075+00:00",
+    "failed_attempts": 2,
+    "last_failed_at": "2026-10-02T10:10:42.584411+00:00",
     "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['00']"
   },
   "698b40e880735483c66b2aa5": {
@@ -1442,5 +1440,39 @@
   "68930ba3bf67b1d5ea0ef52b": {
     "source_hash": "f12217ce8a05337fb07b45253015711bd8f4764ea2d525fe0898c03f7d3b6442",
     "generated_at": "2026-10-01T11:00:45.667231+00:00"
+  },
+  "667453c576e8d35c454cd0bf": {
+    "source_hash": "a8f0d5ba0cf46b8e73fbdebad440298c3818b7d1176fb45bab44f16e9237ea88",
+    "failed_attempts": 1,
+    "last_failed_at": "2026-10-02T10:10:42.584411+00:00",
+    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['19', '20']"
+  },
+  "6891c75d0542a354f14adcf7": {
+    "source_hash": "f732573e69768a61813c23c0f137f08ba724791ca7dc1f7063219794c59540cc",
+    "generated_at": "2026-10-02T10:10:43.203380+00:00"
+  },
+  "67be465b3e0fbc6e456fe397": {
+    "source_hash": "5111e41136397011e8733d364ac7df94d8c0027c8a1c6f9a35baeb8a7ea472a4",
+    "generated_at": "2026-10-02T10:10:43.685515+00:00"
+  },
+  "667453c576e8d35c454cd0c1": {
+    "source_hash": "72cdd99112b57f29e6f96ac31da7a1857ae795bde98959af831000e39d6bf422",
+    "generated_at": "2026-10-02T10:10:43.944189+00:00"
+  },
+  "667453c576e8d35c454cd0ad": {
+    "source_hash": "ad952856774f8241b9eb97be346e7bce7ff38f1f4ebc5e3a8a650d17ff483900",
+    "generated_at": "2026-10-02T10:10:44.758637+00:00"
+  },
+  "667453c576e8d35c454cd0a1": {
+    "source_hash": "b29c6b07c3b5ee154bfa64fb727c13ba7d79b87de7f2861eccd797e1d0614321",
+    "generated_at": "2026-10-02T10:10:45.512651+00:00"
+  },
+  "667453c576e8d35c454cd080": {
+    "source_hash": "e4fede08485da6ae536e87bdc8a832635b0c5320d04f6eb2a310eef6b8f3c6f7",
+    "generated_at": "2026-10-02T10:10:45.924332+00:00"
+  },
+  "667453c576e8d35c454cd07a": {
+    "source_hash": "fd249685c31ca9c92b974f06cf773c5af70cc81b6a35199c419ef0fad0d20f59",
+    "generated_at": "2026-10-02T10:10:46.164567+00:00"
   }
 }
