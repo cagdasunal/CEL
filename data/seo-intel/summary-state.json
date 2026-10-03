@@ -1443,9 +1443,7 @@
   },
   "667453c576e8d35c454cd0bf": {
     "source_hash": "a8f0d5ba0cf46b8e73fbdebad440298c3818b7d1176fb45bab44f16e9237ea88",
-    "failed_attempts": 1,
-    "last_failed_at": "2026-10-02T10:10:42.584411+00:00",
-    "last_error": "QA gate failed: fact_grounding_numbers: numbers not in the post: ['19', '20']"
+    "generated_at": "2026-10-03T09:24:28.882564+00:00"
   },
   "6891c75d0542a354f14adcf7": {
     "source_hash": "f732573e69768a61813c23c0f137f08ba724791ca7dc1f7063219794c59540cc",
