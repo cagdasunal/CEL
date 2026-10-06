@@ -1596,8 +1596,15 @@ DASHBOARD_CSS_LINK = f'<link rel="stylesheet" href="{DASHBOARD_CSS_HREF}">'
 # Gate scripts for /admin/* sub-pages: dashboard-config.js MUST load before
 # auth.js (auth.js reads window.CEL_DISPATCH_URL to validate the session).
 # _SHELL_HTML inlines the same order for the main dashboard shell.
+#
+# The BugHerd feedback widget rides the same tag so it reaches every /admin/* page that
+# already imports AUTH_SCRIPT_TAG (all section builders, the docs pages and the desk).
+BUGHERD_SCRIPT_TAG = ('<script type="text/javascript" '
+                      'src="https://www.bugherd.com/sidebarv2.js?apikey=kki8eriv8ny3yxythbrubg" '
+                      'async="true"></script>')
 AUTH_SCRIPT_TAG = ('<script src="/assets/js/dashboard-config.js"></script>\n'
-                   '  <script src="/assets/js/auth.js"></script>')
+                   '  <script src="/assets/js/auth.js"></script>\n'
+                   '  ' + BUGHERD_SCRIPT_TAG)
 
 FAVICON_HREF = "/assets/img/favicon.png"
 
