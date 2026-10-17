@@ -74,25 +74,9 @@
     "zip_file": "weglot-imports.zip"
   },
   "fidelo_run_summary": {
-    "changed": [
-      "course::business-certificate::en",
-      "course::cambridge-exam::en",
-      "course::english-academic-skills::en",
-      "course::english-plus-cambridge-prep::en",
-      "course::english-career-development::en",
-      "course::english-plus-experience::en",
-      "course::english-plus-surfing::en",
-      "course::english-plus-toefl-exam-preparation::en",
-      "course::english-plus-volunteering::en",
-      "course::general-english::en",
-      "course::general-english-plus-academic-skills::en",
-      "course::global-pathway-preparation::en",
-      "course::ielts-preparation::en",
-      "course::private-lessons::en",
-      "course::toefl-preparation::en"
-    ],
+    "changed": [],
     "counts": {
-      "course_changed": 15,
+      "course_changed": 0,
       "course_fetched": 135,
       "course_skipped_empty_key": 0,
       "errors": 0,
@@ -101,22 +85,22 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-10-16T09:11:42.044903+00:00",
+      "executed_at": "2026-10-17T08:42:32.582790+00:00",
       "held_back": 0,
       "mode": "upsert-courses+upsert-variants",
       "publish_errors": 0,
-      "published": 6,
+      "published": 0,
       "total": 15,
-      "unchanged": 6,
-      "updated": 9
+      "unchanged": 15,
+      "updated": 0
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-10-16T09:02:40Z",
+    "finished_at": "2026-10-17T08:34:11Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-10-16T09:11:38.036117+00:00",
+      "executed_at": "2026-10-17T08:42:27.993385+00:00",
       "held_back": 0,
       "mode": "upsert",
       "publish_errors": 0,
@@ -128,7 +112,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-10-16T08:59:30Z",
+    "started_at": "2026-10-17T08:31:18Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -140,7 +124,7 @@
       "updated": 2
     }
   },
-  "generated_at": "2026-10-16T09:12:08.709163+00:00",
+  "generated_at": "2026-10-17T08:42:36.839897+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
