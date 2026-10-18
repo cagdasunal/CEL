@@ -85,7 +85,7 @@
     },
     "courses": {
       "errors": 0,
-      "executed_at": "2026-10-17T08:42:32.582790+00:00",
+      "executed_at": "2026-10-18T09:01:22.105984+00:00",
       "held_back": 0,
       "mode": "upsert-courses+upsert-variants",
       "publish_errors": 0,
@@ -96,11 +96,11 @@
     },
     "dry_run": false,
     "errors": [],
-    "finished_at": "2026-10-17T08:34:11Z",
+    "finished_at": "2026-10-18T08:52:08Z",
     "housing": {
       "created": 0,
       "errors": 0,
-      "executed_at": "2026-10-17T08:42:27.993385+00:00",
+      "executed_at": "2026-10-18T09:01:16.839845+00:00",
       "held_back": 0,
       "mode": "upsert",
       "publish_errors": 0,
@@ -112,7 +112,7 @@
     "only_locale": null,
     "only_slug": null,
     "schema": "fidelo.run-summary.v1",
-    "started_at": "2026-10-17T08:31:18Z",
+    "started_at": "2026-10-18T08:48:58Z",
     "variants": {
       "created": 0,
       "errors": 0,
@@ -124,7 +124,7 @@
       "updated": 2
     }
   },
-  "generated_at": "2026-10-17T08:42:36.839897+00:00",
+  "generated_at": "2026-10-18T09:01:28.185946+00:00",
   "languages": [
     {
       "csv_file": "ar.csv",
