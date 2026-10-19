@@ -443,6 +443,8 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `job.failed.run-unreadable` | The record of an earlier send can't be read, so nothing more can be sent. Let the team know. | |
 | `job.failed.run-not-collectable` | Those requests can't be collected: they were cancelled or already collected. Let the team know. | |
 | `job.failed.nothing-arrived` | Gemini finished, but no new translations came back. Let the team know. | |
+| `job.failed.page-not-found` | This page can't be found, so nothing was translated. Let the team know. | A box's line, when a page job failed |
+| `job.failed.unit-not-on-page` | That paragraph is no longer on this page, so nothing was translated. Reload the page and try again. | A box's line, when a paragraph job failed |
 
 ## How this works (the help window)
 

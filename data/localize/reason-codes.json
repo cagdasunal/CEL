@@ -78,6 +78,7 @@
   "over-amount",
   "over-day-cap",
   "over-run-cap",
+  "page-not-found",
   "quota-spent-today",
   "refresh-stopped",
   "run-not-collectable",
@@ -85,6 +86,7 @@
   "run-stuck-submitting",
   "run-unreadable",
   "stamps-not-landed",
-  "storage-error"
+  "storage-error",
+  "unit-not-on-page"
  ]
 }

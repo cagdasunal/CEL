@@ -59,7 +59,7 @@ UNIT = re.compile(r"[0-9a-f]{16}")
 PAGE = re.compile(r"[a-z0-9_-]{1,80}")
 # The Worker's jobs (runbook U1): the kinds, the one-run cap on a submit's amount, and how long
 # an open job may go unanswered before the sweep fails it.
-JOB_KINDS = ("export", "verify", "plan", "submit", "collect")
+JOB_KINDS = ("export", "verify", "plan", "submit", "collect", "translate-page", "retranslate")
 # #1's ruling (U3): one Gemini run per Send, over every language -- these kinds take locale "all".
 JOB_ALL, JOB_ALL_KINDS = "all", ("plan", "submit", "collect")
 JOB_RUN_CAP_USD = 40
@@ -70,6 +70,13 @@ JOB_DAILY = 60                  # starts a day per user, a refused one too (each
 JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}")       # verify's batch, collect's run: the runner's rule
 JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{7,63}")
 BATCH_ID = JOB_REF
+# Desk v2 (CEL-022): a job that works on ONE page carries it in `ref` as JSON text -- the Worker's JOB_PAGES,
+# JOB_REF_JSON and jobRefJson. The desk sends the object; it is stored in a fixed key order, only these keys.
+JOB_PAGES = ("cost-of-studying-english", "how-long-to-learn-english", "vancouver", "vs-toronto")
+JOB_REF_JSON = {"translate-page": ("page", "note", "keepEdited"),
+                "retranslate": ("page", "unit", "note", "keepEdited"), "export": ("page",)}
+JOB_NOTE_MAX = 500
+_CONTROL = re.compile("[\u0000-\u001f\u007f]")
 
 
 class Invalid(ValueError):
@@ -114,6 +121,41 @@ def _iso(t: datetime) -> str:
     return t.strftime("%Y-%m-%dT%H:%M:%S.") + f"{t.microsecond // 1000:03d}Z"
 
 
+def _job_ref_json(kind: str, ref) -> str | None:
+    """The Worker's jobRefJson(): the stored text of a job's ref, or None when it is not one this kind takes."""
+    keys = JOB_REF_JSON.get(kind)
+    if keys is None or not isinstance(ref, dict) or not all(k in keys for k in ref):
+        return None
+    if not isinstance(ref.get("page"), str) or ref["page"] not in JOB_PAGES:
+        return None
+    out = {"page": ref["page"]}
+    if "unit" in ref:
+        if not isinstance(ref["unit"], str) or not UNIT.fullmatch(ref["unit"]):
+            return None
+        out["unit"] = ref["unit"]
+    if "note" in ref:
+        n = ref["note"]
+        if (not isinstance(n, str) or _js_len(n) < 1 or _js_len(n) > JOB_NOTE_MAX or not _well_formed(n)
+                or _CONTROL.search(n)):
+            return None
+        out["note"] = n
+    if kind != "export":
+        if not isinstance(ref.get("keepEdited"), bool):
+            return None
+        out["keepEdited"] = ref["keepEdited"]
+    return _dumps(out)
+
+
+def _job_ref_out(r: dict):
+    """The Worker's jobRefOut(): a page job's ref is the object it was sent as; text that is not JSON as it is."""
+    if r["kind"] not in JOB_REF_JSON:
+        return r["ref"]
+    try:
+        return json.loads(r["ref"])
+    except ValueError:
+        return r["ref"]
+
+
 def _job_out(r: dict | None) -> dict | None:
     """The Worker's jobOut(): the row in the desk's names, each optional field only when set."""
     if r is None:
@@ -122,7 +164,7 @@ def _job_out(r: dict | None) -> dict | None:
     if r.get("amount_usd") is not None:
         out["amountUsd"] = r["amount_usd"]
     if r.get("ref"):
-        out["ref"] = r["ref"]
+        out["ref"] = _job_ref_out(r)
     out["requestedBy"] = r["requested_by"]
     out["createdAt"] = r["created_at"]
     for k, name in (("started_at", "startedAt"), ("finished_at", "finishedAt")):
@@ -460,8 +502,14 @@ class DeskStore:
             return 400, {"ok": False, "error": "invalid: only a submit carries an amount"}
         ref = body.get("ref")
         if ref is not None:
-            if kind not in ("verify", "collect") or not isinstance(ref, str) or not JOB_REF.fullmatch(ref):
+            if kind in JOB_REF_JSON:
+                ref = _job_ref_json(kind, ref)
+                if ref is None:
+                    return 400, {"ok": False, "error": "invalid: ref"}
+            elif kind not in ("verify", "collect") or not isinstance(ref, str) or not JOB_REF.fullmatch(ref):
                 return 400, {"ok": False, "error": "invalid: ref"}
+        elif kind != "export" and kind in JOB_REF_JSON:       # the page to work on is not optional
+            return 400, {"ok": False, "error": "invalid: ref"}
         if not self.engine_configured:
             return 503, {"ok": False, "error": "the engine is not configured"}
         now = datetime.now(timezone.utc).timestamp()

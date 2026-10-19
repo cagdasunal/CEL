@@ -140,6 +140,59 @@ def test_a_ref_follows_the_runners_rule():
     assert start("a" * 120) == 200
 
 
+def test_a_page_job_carries_its_page_in_ref_as_json_and_gives_it_back_as_the_object():
+    """Desk v2 (CEL-022): translate-page / retranslate / an export for a page. The stored text is canonical."""
+    s = _store()
+    ref = {"keepEdited": False, "note": "förmlicher", "unit": "a" * 16, "page": "vancouver"}
+    code, r = s.handle("desk-job-start", {"locale": "de", "kind": "retranslate", "ref": ref}, "pat@example.test")
+    assert code == 200 and r["job"]["ref"] == {"page": "vancouver", "unit": "a" * 16, "note": "förmlicher", "keepEdited": False}
+    assert s.jobs[r["job"]["id"]]["ref"] == '{"page":"vancouver","unit":"aaaaaaaaaaaaaaaa","note":"förmlicher","keepEdited":false}'
+    assert s.dispatched == [r["job"]["id"]]
+    code, got = s.handle("desk-job-get", {"locale": "de"}, "pat@example.test")
+    assert code == 200 and got["jobs"]["retranslate"]["ref"]["unit"] == "a" * 16
+    code, r2 = s.handle("desk-job-start", {"locale": "es", "kind": "export", "ref": {"page": "vs-toronto"}}, "pat@example.test")
+    assert code == 200 and r2["job"]["ref"] == {"page": "vs-toronto"}
+    assert s.handle("desk-job-start", {"locale": "pt", "kind": "export"}, "pat@example.test")[0] == 200
+
+
+def test_a_page_job_is_one_open_job_per_language_whatever_the_page():
+    s = _store()
+    start = lambda loc, page: s.handle("desk-job-start", {"locale": loc, "kind": "translate-page",
+                                                          "ref": {"page": page, "keepEdited": True}}, "pat@example.test")
+    assert start("de", "vancouver")[0] == 200
+    code, r = start("de", "vs-toronto")
+    assert code == 409 and r["job"]["ref"] == {"page": "vancouver", "keepEdited": True}
+    assert start("fr", "vancouver")[0] == 200
+
+
+def test_a_page_job_refuses_what_the_worker_refuses():
+    s = _store()
+    ok = {"page": "vancouver", "keepEdited": True}
+    bad = [
+        ("translate-page", None), ("translate-page", "vancouver"), ("translate-page", []),
+        ("translate-page", {"page": "home", "keepEdited": True}), ("translate-page", {"page": "vancouver"}),
+        ("translate-page", {**ok, "keepEdited": "true"}), ("translate-page", {**ok, "unit": "a" * 16}),
+        ("translate-page", {**ok, "langs": ["de"]}), ("retranslate", {**ok, "unit": "A" * 16}),
+        ("retranslate", {**ok, "unit": "a" * 16 + "\n"}), ("retranslate", {**ok, "unit": None}),
+        ("retranslate", {**ok, "note": ""}), ("retranslate", {**ok, "note": "x" * 501}),
+        ("retranslate", {**ok, "note": "a\nb"}), ("retranslate", {**ok, "note": "\ud800"}),
+        ("export", {"page": "home"}), ("export", {}), ("export", "vancouver"), ("export", {**ok}),
+        ("plan", {"page": "vancouver"}), ("verify", {"page": "vancouver"}),
+    ]
+    for kind, ref in bad:
+        assert s.handle("desk-job-start", {"locale": "de", "kind": kind, "ref": ref}, "pat@example.test")[0] == 400, (kind, ref)
+    assert s.handle("desk-job-start", {"locale": "de", "kind": "translate-page"}, "pat@example.test")[0] == 400
+    assert s.handle("desk-job-start", {"locale": "all", "kind": "translate-page", "ref": ok}, "pat@example.test")[0] == 400
+    assert s.handle("desk-job-start", {"locale": "de", "kind": "translate-page", "amount_usd": 1, "ref": ok},
+                    "pat@example.test")[0] == 400
+    assert s.dispatched == []
+    # A note of 500 UTF-16 units is taken, an emoji counting as two, as the Worker counts it.
+    assert s.handle("desk-job-start", {"locale": "de", "kind": "retranslate", "ref": {**ok, "note": "\U0001F600" * 250}},
+                    "pat@example.test")[0] == 200
+    assert s.handle("desk-job-start", {"locale": "fr", "kind": "retranslate", "ref": {**ok, "note": "\U0001F600" * 251}},
+                    "pat@example.test")[0] == 400
+
+
 def test_plan_submit_and_collect_run_for_all_languages_and_a_file_does_not():
     """The Manager's ruling (U3): one Gemini run per Send; a Weglot file stays one language at a time."""
     s = _store()
