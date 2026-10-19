@@ -26,6 +26,11 @@ BORDER_STRONG  = "rgba(55,51,44,0.18)"
 MUTED          = "rgba(55,51,44,0.65)"
 PANEL          = "rgba(55,51,44,0.04)"
 
+# The dashboard's own version (semver): the ONE source of the number every admin page shows in its footer.
+# A release step bumps it together with its CHANGELOG entry and the tag `dashboard-v<version>`; nothing
+# else types the number (decisions 2026-10-19 23:44, CEL-042).
+DASHBOARD_VERSION = "1.0.0"
+
 _XML_PROLOG_RE = re.compile(r"^\s*<\?xml[^?]*\?>\s*", re.DOTALL)
 _DOCTYPE_RE    = re.compile(r"^\s*<!DOCTYPE[^>]*>\s*", re.DOTALL | re.IGNORECASE)
 
@@ -553,6 +558,9 @@ SHELL_CSS = """
   }
   .shell-tab-subitem:hover { background: var(--stripe); color: var(--accent); }
   .shell-tab-subitem.is-active { background: var(--stripe); color: var(--accent); font-weight: 600; }
+
+  .shell-footer { margin-top: auto; padding: 12px 20px 16px; text-align: right; }
+  .shell-version { margin: 0; font-size: var(--fs-xs); color: var(--faint); }
 
   .shell-content { flex: 1 1 auto; min-height: 0; }
   .shell-content iframe {
@@ -1792,6 +1800,16 @@ ADMIN_CHROME_MODAL = """\
       <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
     </form>
   </div>"""
+
+
+def render_version_footer() -> str:
+    """The dashboard's version, at the foot of every admin page: the number is DASHBOARD_VERSION, never typed."""
+    return f'  <footer class="shell-footer"><p class="shell-version">Dashboard {DASHBOARD_VERSION}</p></footer>'
+
+
+# Every admin page prints the change-password modal just before the shell's closing tag (render_admin_close,
+# and tools/dashboard_docs.py by hand), so the version footer travels with it: no page can miss it.
+ADMIN_CHROME_MODAL = ADMIN_CHROME_MODAL + "\n" + render_version_footer()
 
 
 # Account-menu behavior for every admin page: identity (from the validated

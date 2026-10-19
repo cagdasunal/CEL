@@ -1903,3 +1903,516 @@ def test_an_exported_page_turns_edited_at_once_and_exported_again_only_after_a_n
         e.page.wait_for_selector(READY)
         wait_cells_known(e.page)
         expect(cell(e.page, PAGE_KEY, LANG)).to_have_attribute("data-status", "exported")
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# 14. CEL-036: the filter and "Next to check" (status bar)
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# The categories, for the open page and language: EDITED = a saved decision with `text`
+# (data-source="edit"); NEW FROM GEMINI = a draft and no edit (data-source="draft"); FLAGGED = the
+# desk-read answer has a finding for the wording the page shows (a 'live' finding: no draft, no edit). TO CHECK = (new or flagged) and not edited and not yet
+# seen in this browser and shown by the filter. Alt+Enter (Option+Return on a Mac) does what the button does.
+C36_FILTERS = ["all", "new", "edited", "flagged"]
+C36_WORDS = ["doc.filter.all", "doc.filter.new", "doc.filter.edited", "doc.filter.flagged"]
+
+
+def _c36_tn(key: str, n: int, **values):
+    """COPY.md's singular/plural text, or None while the key is not there yet (the wording check is skipped)."""
+    try:
+        return C.tn(key, n, **values)
+    except KeyError:
+        return None
+
+
+def _c36_plan(data: dict) -> dict:
+    """Eight texts of the default page, picked from the page data (never by id), spread over the first four
+    sections (so every outline entry the filters leave empty is a real, hidden one):
+
+        d1 d2 | d3 | d4 f8 | d5 e7 d6        (document order; the bars are section borders)
+
+    drafts  d1..d6 (Gemini wrote them)       edited  d2, d5 (they have a draft too) and e7 (it has none)
+    findings d3, d5, d6 and f8 (live findings); only f8 is FLAGGED: it shows the live wording (no draft, no edit);
+            d3 and d6 show Gemini's draft and d5 an edit, so a finding on the live text does not flag them
+    new     = drafts nobody edited           = d1 d3 d4 d6
+    to check = new or flagged, not edited    = d1 d3 d4 f8 d6   (d5 is flagged but edited: out)"""
+    by_id = {b["id"]: b for b in data["blocks"]}
+    order = [b["id"] for b in data["blocks"]]
+    groups = [[u for u in s["ids"] if clean(by_id[u])] for s in sections(data)[1:]]
+    groups = [g for g in groups if g]
+    assert len(groups) >= 4 and all(len(g) >= n for g, n in zip(groups, (2, 1, 2, 3))), \
+        "the page data has too few plain texts in its first four sections for this test"
+    d1, d2 = groups[0][:2]
+    (d3,) = groups[1][:1]
+    d4, f8 = groups[2][:2]
+    d5, e7, d6 = groups[3][:3]
+    drafts, edited, findings_on = [d1, d2, d3, d4, d5, d6], [d2, d5, e7], [d3, d5, f8, d6]
+    flagged = [f8]               # a live finding flags only a text that shows the live wording (no draft, no edit)
+    new = [u for u in drafts if u not in edited]
+    to_check = sorted(set(new) | (set(flagged) - set(edited)), key=order.index)
+    assert len({d1, d2, d3, d4, d5, d6, e7, f8}) == 8
+    assert new == [d1, d3, d4, d6] and to_check == [d1, d3, d4, f8, d6]
+    source = {u: "edit" if u in edited else "draft" if u in drafts else "none"
+              for u in set(drafts) | set(edited) | set(flagged)}
+    return {"order": order, "drafts": drafts, "edited": edited, "flagged": flagged, "new": new,
+            "to_check": to_check, "source": source, "findings_on": findings_on}
+
+
+def _c36_seed(plan: dict):
+    """Gemini's drafts, ANOTHER editor's saved texts and the engine's findings, in the stand-in before the page
+    loads. Findings go in the way the engine writes them (`DeskStore.seed_findings`, the rows of
+    storage.findings_statements): the stand-in answers desk-read with `findings` only when there are some."""
+    import hashlib
+    by_id = {b["id"]: b for b in _stage_data()["blocks"]}
+
+    def seed(env):
+        for u in plan["drafts"]:
+            draft(env.store, u, "Entwurf " + u)
+        for u in plan["edited"]:
+            other_write(env.store, u, "Bearbeitet " + u, 0)
+        rows = []
+        for u in plan["findings_on"]:
+            live = by_id[u].get("w", {}).get(LANG) or by_id[u]["en"]
+            rows.append({"unit_id": u, "subject": "live", "subject_sha": hashlib.sha256(live.encode()).hexdigest(),
+                         "rule": "test-rule", "severity": "warn", "message": "A test finding",
+                         "cite": "A test guideline", "hits": [by_id[u]["en"][:8]]})
+        env.store.seed_findings(LANG, rows)
+    return seed
+
+
+def _c36_choose(page, value: str):
+    """Pick a filter the way a reader does: the click on the list takes the caret out of any text first."""
+    page.evaluate("() => { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }")
+    page.select_option("#doc-filter", value=value)
+
+
+def _c36_shown(page) -> list[str]:
+    return page.eval_on_selector_all("li.doc-block", "els => els.filter(l => !l.hidden).map(l => l.dataset.uid)")
+
+
+def _c36_assert_shown(page, plan: dict, want, sources: bool = False):
+    """Exactly `want` is shown, in document order: by the `hidden` attribute, by what the reader gets (a hidden
+    block takes no room: the attribute must not lose to the block's own `display: grid`), and -- with `sources`
+    -- each shown text is of the category the seed gave it."""
+    keep = set(want)
+    want_ids = [u for u in plan["order"] if u in keep]
+    assert len(want_ids) == len(keep), "a wanted text is not on the page"
+    got = _c36_shown(page)
+    assert got == want_ids, (f"shown {len(got)} texts, wanted {len(want_ids)}: "
+                             f"extra {[u for u in got if u not in keep]}, missing {[u for u in want_ids if u not in got]}")
+    assert page.locator("li.doc-block[hidden]").count() == len(plan["order"]) - len(want_ids)
+    assert page.locator("li.doc-block:visible").count() == len(want_ids), \
+        "a block with the hidden attribute still takes room on the page"
+    if sources:
+        for u in want_ids:
+            assert blk(page, u).get_attribute("data-source") == plan["source"][u], u
+
+
+def _c36_count(page, n: int):
+    """The line beside Next to check: {n} left, or at zero Nothing left to check with the button off."""
+    line = page.locator("#doc-next-count")
+    want = _c36_tn("doc.next.left", n) if n else maybe_t("doc.next.none")
+    if want is not None:
+        expect(line).to_have_text(want)
+    elif n:
+        expect(line).to_have_text(re.compile(rf"(^|\D){n}(\D|$)"))
+    else:
+        expect(line).not_to_have_text(re.compile(r"\d"))
+    if n:
+        expect(page.locator("#doc-next")).to_be_enabled()
+    else:
+        expect(page.locator("#doc-next")).to_be_disabled()
+
+
+def _c36_focus_in(page, uid: str):
+    """The caret is in that text's translation field (`document.activeElement` is inside the block)."""
+    page.wait_for_function("""uid => { const a = document.activeElement;
+        const f = a && a.closest ? a.closest('.doc-tgt') : null, li = a && a.closest ? a.closest('li.doc-block') : null;
+        return !!f && !!li && li.dataset.uid === uid; }""", arg=uid, timeout=5000)
+
+
+def _c36_active_uid(page):
+    return page.evaluate("""() => { const a = document.activeElement, li = a && a.closest ? a.closest('li.doc-block') : null;
+        return li ? li.dataset.uid : null; }""")
+
+
+def _c36_top(page, uid: str) -> float:
+    """The text sits near the top of the screen (within 200 px), however the page scrolled to get it there."""
+    page.wait_for_function("""uid => { const t = document.querySelector('li.doc-block[data-uid="' + uid + '"]')
+        .getBoundingClientRect().top; return t > -2 && t < 200; }""", arg=uid, timeout=5000)
+    return page.evaluate("""uid => document.querySelector('li.doc-block[data-uid="' + uid + '"]')
+        .getBoundingClientRect().top""", uid)
+
+
+def _c36_next(page, uid: str, left: int, *, top: bool = True):
+    """Click Next to check: the caret is in `uid`, near the top, and `left` texts are still to check."""
+    page.locator("#doc-next").click()
+    _c36_focus_in(page, uid)
+    if top:
+        t = _c36_top(page, uid)
+        assert -2 < t < 200, t
+    _c36_count(page, left)
+
+
+# ── the bar's own controls ─────────────────────────────────────────────────────────────────────
+def test_the_status_bar_holds_the_filter_and_the_next_to_check_button_nothing_to_check_yet(browser):
+    """No drafts, no edits, no findings: the filter has its four choices in order (All texts, New from Gemini,
+    Edited, Flagged by a check), the button is there with its key and is off, and the line says why."""
+    with doc(browser) as e:
+        assert e.page.locator("#doc-status #doc-filter").count() == 1
+        sel = e.page.locator("#doc-filter")
+        assert sel.evaluate("el => el.tagName") == "SELECT"
+        expect(sel).to_have_class(re.compile(r"\bdesk-select\b"))
+        assert e.page.eval_on_selector_all("#doc-filter option", "els => els.map(o => o.value)") == C36_FILTERS
+        words = e.page.eval_on_selector_all("#doc-filter option", "els => els.map(o => o.textContent.trim())")
+        assert len(set(words)) == 4 and all(words), words
+        for key, got in zip(C36_WORDS, words):
+            want = maybe_t(key)
+            if want is not None:
+                assert got == want, (key, got, want)
+        assert sel.input_value() == "all"
+        assert e.page.locator("#doc-status #doc-next").count() == 1
+        btn = e.page.locator("#doc-next")
+        assert btn.evaluate("el => el.tagName") == "BUTTON" and btn.get_attribute("type") == "button"
+        expect(btn).to_have_class(re.compile(r"\bdesk-btn\b"))
+        assert btn.get_attribute("aria-keyshortcuts") == "Alt+Enter"
+        word = maybe_t("doc.next")
+        if word is not None:
+            expect(btn).to_contain_text(word)
+        mac = e.page.evaluate("() => /Mac|iPhone|iPad/.test(navigator.platform || '')")
+        keys = maybe_t("doc.keys.next.mac" if mac else "doc.keys.next.other")
+        if keys is not None:
+            expect(btn.locator(".doc-kbd")).to_have_text(keys)
+        else:
+            expect(btn.locator(".doc-kbd")).not_to_be_empty()
+        assert e.page.locator("#doc-status #doc-next-count").count() == 1
+        _c36_count(e.page, 0)                                  # disabled, "Nothing left to check"
+
+
+@pytest.mark.parametrize("flt", ["new", "edited", "flagged"])
+def test_with_nothing_seeded_each_filter_shows_no_text_and_every_outline_entry_goes(browser, flt):
+    """The empty cases: no draft, no saved text, and a desk-read answer without `findings` at all."""
+    plan = {"order": [b["id"] for b in _stage_data()["blocks"]]}
+    with doc(browser) as e:
+        _c36_assert_shown(e.page, plan, plan["order"])       # All texts: every one
+        _c36_choose(e.page, flt)
+        _c36_assert_shown(e.page, plan, [])
+        rows = e.page.eval_on_selector_all("#doc-outline-list > li",
+                                           "els => els.map(l => [l.hidden, l.getClientRects().length > 0])")
+        assert rows and all(h and not r for h, r in rows), rows
+        _c36_choose(e.page, "all")
+        _c36_assert_shown(e.page, plan, plan["order"])
+
+
+# ── the filter ─────────────────────────────────────────────────────────────────────────────────
+def test_the_new_from_gemini_filter_shows_exactly_the_drafts_nobody_edited(browser):
+    plan = _c36_plan(_stage_data())
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        # the seed reached the page: four drafts nobody edited, three edited texts (two of them have a draft too)
+        assert e.page.locator('li.doc-block[data-source="draft"]').count() == len(plan["new"]) == 4
+        assert e.page.locator('li.doc-block[data-source="edit"]').count() == len(plan["edited"]) == 3
+        _c36_assert_shown(e.page, plan, plan["order"])            # All texts: every one
+        _c36_choose(e.page, "new")
+        _c36_assert_shown(e.page, plan, plan["new"], sources=True)
+        for u in (set(plan["drafts"]) - set(plan["new"])):        # a draft that was edited is NOT new
+            assert blk(e.page, u).get_attribute("hidden") is not None, u
+        for u in plan["flagged"]:                                 # a finding alone does not make a text new
+            if u not in plan["new"]:
+                assert blk(e.page, u).get_attribute("hidden") is not None, u
+        _c36_choose(e.page, "all")
+        _c36_assert_shown(e.page, plan, plan["order"])
+
+
+def test_the_edited_filter_shows_exactly_the_edited_texts_and_an_edit_moves_a_text_from_new_to_edited(browser):
+    plan = _c36_plan(_stage_data())
+    d1, text = plan["new"][0], "Neu bearbeitet"
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_choose(e.page, "edited")
+        _c36_assert_shown(e.page, plan, plan["edited"], sources=True)     # d2, d5 (with a draft) and e7 (without)
+        _c36_choose(e.page, "all")
+        edit(e.page, d1, text)                                    # a draft text, edited through the page
+        wait_text(e.store, d1, text)
+        expect(blk(e.page, d1)).to_have_attribute("data-source", "edit")
+        _c36_choose(e.page, "new")
+        _c36_assert_shown(e.page, plan, [u for u in plan["new"] if u != d1])
+        _c36_choose(e.page, "edited")
+        _c36_assert_shown(e.page, plan, plan["edited"] + [d1])
+        assert field_value(e.page, d1) == text
+
+
+def test_the_flagged_filter_shows_exactly_the_texts_with_findings(browser):
+    plan = _c36_plan(_stage_data())
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_choose(e.page, "flagged")
+        # f8 only: it shows the live wording the finding is about. d3 and d6 (a Gemini draft) and d5 (an edit)
+        # have a live finding too, but the page shows another wording for them, so they are not flagged
+        _c36_assert_shown(e.page, plan, plan["flagged"], sources=True)
+        assert {blk(e.page, u).get_attribute("data-source") for u in plan["flagged"]} == {"none"}
+        for u in plan["new"]:
+            if u not in plan["flagged"]:
+                assert blk(e.page, u).get_attribute("hidden") is not None, u
+        _c36_choose(e.page, "all")
+        _c36_assert_shown(e.page, plan, plan["order"])
+
+
+# ── the outline follows the filter ─────────────────────────────────────────────────────────────
+OUTLINE_JS = """() => [...document.querySelectorAll('#doc-outline-list > li')].map(li => ({
+    hidden: li.hidden, drawn: li.getClientRects().length > 0,
+    count: li.querySelector('.doc-outline-count').textContent.trim() }))"""
+
+
+def test_the_outline_counts_follow_the_filter_and_an_entry_with_no_match_goes(browser):
+    data = _stage_data()
+    plan, secs = _c36_plan(data), sections(data)
+    hit_by = {"new": set(plan["new"]), "edited": set(plan["edited"]), "flagged": set(plan["flagged"])}
+    edited = set(plan["edited"])
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        assert len(e.page.evaluate(OUTLINE_JS)) == len(secs)
+        for flt, hit in hit_by.items():
+            _c36_choose(e.page, flt)
+            rows = e.page.evaluate(OUTLINE_JS)
+            zero = 0
+            for s, row in zip(secs, rows):
+                m = [u for u in s["ids"] if u in hit]
+                if not m:
+                    zero += 1
+                    assert row["hidden"] and not row["drawn"], (flt, s["name"], row)
+                    continue
+                assert not row["hidden"] and row["drawn"], (flt, s["name"], row)
+                assert row["count"] == C.tn("doc.outline.count", len(m), edited=len([u for u in m if u in edited])), \
+                    (flt, s["name"], row)
+            assert zero >= 3, (flt, zero)                         # a 0-match entry really was in play
+            shown = _c36_shown(e.page)
+            assert sorted(shown) == sorted(hit)
+            seen = sum(int(re.match(r"\d+", r["count"]).group()) for r in rows if r["drawn"])
+            assert seen == len(shown), (flt, seen, len(shown))    # the entries add up to the texts that show
+        _c36_choose(e.page, "all")                                # back to the full list and the first counts
+        rows = e.page.evaluate(OUTLINE_JS)
+        for s, row in zip(secs, rows):
+            assert not row["hidden"] and row["drawn"], (s["name"], row)
+            assert row["count"] == C.tn("doc.outline.count", len(s["ids"]),
+                                        edited=len([u for u in s["ids"] if u in edited])), (s["name"], row)
+
+
+def test_on_a_phone_the_sections_select_drops_the_same_entries(browser):
+    data = _stage_data()
+    plan, secs = _c36_plan(data), sections(data)
+    hit_by = {"new": set(plan["new"]), "edited": set(plan["edited"]), "flagged": set(plan["flagged"])}
+    norm = lambda s: " ".join(s.split())                           # noqa: E731
+    every = [norm(s["name"]) for s in secs]
+
+    def listed(page):
+        return [norm(x) for x in page.evaluate("""() => [...document.querySelector('#doc-sections').options]
+            .filter(o => !o.hidden && !o.disabled).map(o => o.textContent)""")]
+
+    with doc(browser, seed=_c36_seed(plan), size=(375, 812)) as e:
+        expect(e.page.locator("#doc-sections")).to_be_visible()
+        assert listed(e.page) == every
+        for flt, hit in hit_by.items():
+            _c36_choose(e.page, flt)
+            want = [norm(s["name"]) for s in secs if any(u in hit for u in s["ids"])]
+            assert 0 < len(want) < len(every)
+            assert listed(e.page) == want, flt
+        _c36_choose(e.page, "all")
+        assert listed(e.page) == every
+
+
+# ── Next to check ──────────────────────────────────────────────────────────────────────────────
+def test_next_to_check_walks_the_texts_in_document_order_and_ends_with_the_button_off(browser):
+    plan = _c36_plan(_stage_data())
+    todo = plan["to_check"]                                       # d1 d3 d4 f8 d6: d2, d5, e7 are edited
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_count(e.page, len(todo))
+        assert len(todo) == 5
+        # the first press goes to the first text and has left none; each press after that leaves one more
+        for i, uid in enumerate(todo):
+            _c36_next(e.page, uid, len(todo) - i)
+        e.page.locator("#doc-next").click()                       # the last one is left too: nothing is left
+        _c36_count(e.page, 0)
+
+
+def test_next_to_check_wraps_to_the_first_text_still_unseen_and_skips_the_seen_ones(browser):
+    plan = _c36_plan(_stage_data())
+    d1, d3, d4, f8, d6 = plan["to_check"]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        # under Flagged only f8 is to check (d3, d5 and d6 show another wording than the finding's)
+        _c36_choose(e.page, "flagged")
+        _c36_count(e.page, 1)
+        _c36_next(e.page, f8, 1, top=False)                       # f8 is open, not yet left
+        _c36_choose(e.page, "all")
+        _c36_count(e.page, 5)                                     # d1 d3 d4 f8 d6
+        _c36_next(e.page, d6, 4)                                  # f8 left (seen); the next after it is d6
+        _c36_next(e.page, d1, 3)                                  # d6 left; wraps round to d1, the first unseen
+        _c36_next(e.page, d3, 2)
+        _c36_next(e.page, d4, 1)                                  # f8, seen, was skipped
+        e.page.locator("#doc-next").click()                       # d4 left: all of them are seen
+        _c36_count(e.page, 0)
+
+
+def test_an_edit_takes_a_text_out_of_what_is_left_to_check(browser):
+    plan = _c36_plan(_stage_data())
+    d1, d3, d4, f8, d6 = plan["to_check"]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_count(e.page, 5)
+        edit(e.page, d1, "Neu bearbeitet")                        # a draft, the first to check
+        expect(blk(e.page, d1)).to_have_attribute("data-source", "edit")
+        _c36_count(e.page, 4)
+        edit(e.page, f8, "Auch bearbeitet")                       # flagged only: typing makes it an edited text
+        _c36_count(e.page, 3)
+        e.page.evaluate("() => document.activeElement.blur()")
+        _c36_next(e.page, d3, 3)                                  # d1 is no longer first: an edited text is skipped
+        _c36_next(e.page, d4, 2)
+        _c36_next(e.page, d6, 1)                                  # f8, edited, is skipped
+
+
+# ── the keyboard: Alt+Enter ────────────────────────────────────────────────────────────────────────
+def test_alt_n_on_the_page_does_what_the_button_does(browser):
+    plan = _c36_plan(_stage_data())
+    d1, d3 = plan["to_check"][:2]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_count(e.page, 5)
+        assert e.page.evaluate("() => document.activeElement === document.body")
+        for chord in ("Alt+Shift+Enter", "Control+Alt+Enter"):      # only Alt and N together
+            e.page.keyboard.press(chord)
+        time.sleep(0.3)
+        assert e.page.evaluate("() => document.activeElement === document.body")
+        _c36_count(e.page, 5)
+        e.page.keyboard.press("Alt+Enter")                         # the same as the first click ...
+        _c36_focus_in(e.page, d1)
+        assert -2 < _c36_top(e.page, d1) < 200
+        _c36_count(e.page, 5)
+        e.page.evaluate("() => document.activeElement.blur()")
+        e.page.keyboard.press("Alt+Enter")                         # ... and as the second: d1 is left
+        _c36_focus_in(e.page, d3)
+        assert -2 < _c36_top(e.page, d3) < 200
+        _c36_count(e.page, 4)
+        assert field_value(e.page, d1) == "Entwurf " + d1 and field_value(e.page, d3) == "Entwurf " + d3
+
+
+def test_alt_n_with_the_caret_in_a_text_moves_on_and_leaves_that_text_exactly_as_it_was(browser):
+    plan = _c36_plan(_stage_data())
+    d1, d3 = plan["to_check"][:2]
+    # Playwright sends an Alt chord without any text, so an inserted character cannot show here by itself: the
+    # page's promise is that it calls preventDefault. A listener on `window` runs after the page's own (on
+    # `document`) and records whether the Alt+N keydown was already cancelled by then.
+    watch = ("window.__altN = []; window.addEventListener('keydown', ev => {"
+             " if (ev.altKey && ev.key === 'Enter') window.__altN.push(ev.defaultPrevented); });")
+    with doc(browser, seed=_c36_seed(plan), init=(watch,)) as e:
+        tgt(e.page, d1).click()                                   # the caret is in d1 (a reader clicked it)
+        _c36_focus_in(e.page, d1)
+        before = field_value(e.page, d1)
+        assert before == "Entwurf " + d1
+        e.page.keyboard.press("Alt+Enter")
+        _c36_focus_in(e.page, d3)                                 # moved on to the next text to check
+        assert e.page.evaluate("() => window.__altN") == [True], "the page left the Alt+N keystroke to the text"
+        assert -2 < _c36_top(e.page, d3) < 200
+        assert field_value(e.page, d1) == before                  # no character went into the text it left ...
+        assert field_value(e.page, d3) == "Entwurf " + d3         # ... nor into the one it opened
+        assert blk(e.page, d1).get_attribute("data-source") == "draft"
+        _c36_count(e.page, 4)                                     # d1 was left: it counts as looked at
+        time.sleep(0.8)                                           # longer than the autosave pause and its max wait
+        assert dec(e.store, d1) is None and dec(e.store, d3) is None, "the key made a save"
+        assert d1 not in (e.page.evaluate("() => localStorage.getItem('cel-doc-pending')") or "")
+        expect(bar(e.page)).to_have_attribute("data-state", "saved")
+
+
+def test_a_plain_n_in_a_text_is_typed_and_does_not_jump(browser):
+    plan = _c36_plan(_stage_data())
+    d1 = plan["to_check"][0]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_count(e.page, 5)
+        tgt(e.page, d1).click()
+        caret_at_start(e.page, d1)
+        e.page.keyboard.press("n")
+        wait_text(e.store, d1, "nEntwurf " + d1)                  # the letter was typed: the text is edited
+        assert field_value(e.page, d1) == "nEntwurf " + d1
+        time.sleep(0.3)
+        assert _c36_active_uid(e.page) == d1, "a plain n moved the caret out of the text"
+        expect(blk(e.page, d1)).to_have_attribute("data-source", "edit")
+        _c36_count(e.page, 4)                                     # edited: out of what is left to check
+        assert field_value(e.page, plan["to_check"][1]) == "Entwurf " + plan["to_check"][1]
+
+
+# ── seen survives a reload ─────────────────────────────────────────────────────────────────────
+def test_texts_already_seen_stay_seen_after_a_reload(browser):
+    plan = _c36_plan(_stage_data())
+    d1, d3, d4, f8, d6 = plan["to_check"]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_next(e.page, d1, 5)
+        _c36_next(e.page, d3, 4)
+        _c36_next(e.page, d4, 3)                                  # d1 and d3 were left; d4 is open
+        raw = e.page.evaluate("() => localStorage.getItem('cel-doc-seen')")
+        assert raw and d1 in raw and d3 in raw and d4 not in raw, raw
+        e.page.reload()
+        e.page.wait_for_selector(READY)
+        _c36_count(e.page, 3)                                     # the same count after the reload: d4, f8, d6
+        _c36_next(e.page, d4, 3)                                  # and it starts at d4, not at d1 or d3
+
+
+# ── a chosen filter is followed to the letter, caret or not (CEL-036, found by hand before hand-off) ──
+def _c36_choose_keeping_focus(page, value: str):
+    """Choose a filter WITHOUT the list taking the focus (a script, or a helper that sets the list): the caret
+    stays in the text it was in, which is the case the page's keep-the-caret's-text guard must not apply to."""
+    page.evaluate("""v => { const s = document.getElementById('doc-filter'); s.value = v;
+        s.dispatchEvent(new Event('change', { bubbles: true })); }""", value)
+
+
+def test_a_chosen_filter_hides_the_text_the_caret_is_in_when_it_does_not_match(browser):
+    """Next to check leaves the caret in a text; choosing Edited or Flagged then must show only the edited /
+    flagged texts, that one included only if it matches. (The caret's text is kept only when the page re-reads
+    while someone types, never against a filter just chosen.)"""
+    plan = _c36_plan(_stage_data())
+    d1 = plan["to_check"][0]
+    assert d1 not in plan["edited"] and d1 not in plan["flagged"]
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_next(e.page, d1, 5)
+        assert _c36_active_uid(e.page) == d1
+        _c36_choose_keeping_focus(e.page, "edited")
+        assert _c36_active_uid(e.page) == d1 or _c36_active_uid(e.page) is None   # the caret may go with its text
+        _c36_assert_shown(e.page, plan, plan["edited"])
+        _c36_choose_keeping_focus(e.page, "flagged")
+        _c36_assert_shown(e.page, plan, plan["flagged"])
+        _c36_choose_keeping_focus(e.page, "all")
+        _c36_assert_shown(e.page, plan, plan["order"])
+
+
+# ── the shortcut must not take a typing key or fire behind a window (Reviewer's pre-review, CEL-036) ──
+def test_option_n_is_left_to_the_text_so_n_with_a_tilde_can_still_be_typed(browser):
+    """On a Mac Option+N is the tilde dead key (n gives ñ, ã, õ): the page must not cancel it inside a text,
+    and must not jump."""
+    plan = _c36_plan(_stage_data())
+    d1 = plan["to_check"][0]
+    seen = "window.__optN = []; window.addEventListener('keydown', function (ev) {" \
+           " if (ev.altKey && ev.code === 'KeyN') window.__optN.push(ev.defaultPrevented); });"
+    with doc(browser, seed=_c36_seed(plan), init=(seen,)) as e:
+        _c36_next(e.page, d1, 5)
+        e.page.keyboard.press("Alt+KeyN")
+        assert e.page.evaluate("() => window.__optN") == [False], "the page cancelled Option+N inside a text"
+        assert _c36_active_uid(e.page) == d1                      # and did not jump
+        _c36_count(e.page, 5)
+
+
+def test_alt_enter_does_nothing_while_a_window_is_open_over_the_page(browser):
+    """The translate confirm holds the focus (Tab goes round its buttons): the shortcut must not move the
+    caret to a text behind it."""
+    plan = _c36_plan(_stage_data())
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_count(e.page, 5)
+        e.page.locator("#doc-translate").click()
+        expect(e.page.locator("#doc-confirm")).to_be_visible()
+        e.page.keyboard.press("Alt+Enter")
+        assert _c36_active_uid(e.page) is None, "the shortcut moved the focus to a text behind the open window"
+        _c36_count(e.page, 5)
+        e.page.locator("#doc-confirm-cancel").click()
+        e.page.keyboard.press("Alt+Enter")                        # closed again: it works
+        _c36_focus_in(e.page, plan["to_check"][0])
+
+
+def test_a_finding_flags_only_the_wording_the_page_shows(browser):
+    """A 'live' finding is about Weglot's current text: a text with a Gemini draft (or an edit) shows another
+    wording, so it is not flagged by it; a text showing the live wording is."""
+    plan = _c36_plan(_stage_data())
+    with doc(browser, seed=_c36_seed(plan)) as e:
+        _c36_choose(e.page, "flagged")
+        shown = _c36_shown(e.page)
+        for u in shown:
+            assert blk(e.page, u).get_attribute("data-source") == "none", u   # no draft, no edit: the live wording

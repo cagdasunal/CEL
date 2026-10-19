@@ -624,6 +624,20 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.sections` | Sections | Label of the list of sections on a narrow screen |
 | `doc.words.one` | {n} word | Bottom bar: the size of the page in this language |
 | `doc.words.other` | {n} words | |
+| `doc.filter.label` | Show | Label of the list in the bottom bar that narrows the page to some of its texts |
+| `doc.filter.all` | All texts | In that list: every text of the page |
+| `doc.filter.new` | New from Gemini | In that list: texts Gemini wrote that you have not edited |
+| `doc.filter.edited` | Edited | In that list: texts you have edited |
+| `doc.filter.flagged` | Flagged by a check | In that list: texts our automatic checks point out |
+| `doc.filter.empty` | No text matches this filter. Choose All texts to see the whole page again. | Above the page, when the chosen filter leaves no text |
+| `doc.next` | Next to check | Button in the bottom bar: goes to the next text from Gemini or from a check that you have not looked at yet |
+| `doc.next.left.one` | {n} left | Beside that button: how many texts are still to look at |
+| `doc.next.left.other` | {n} left | |
+| `doc.next.none` | Nothing left to check | Beside that button, when every such text has been looked at |
+| `doc.keys.next.mac` | ⌥↵ | The keys that do the same as Next to check, on a Mac |
+| `doc.keys.next.other` | Alt+Enter | The same, on any other computer |
+| `doc.version` | Desk {version} | Bottom bar: the version of the localization desk; a link to what changed in it |
+| `doc.version.tip` | See what changed in this version | Hover on that version |
 | `doc.tools.label` | Actions for this text | Screen-reader name of the buttons beside the open text |
 | `doc.tool.weglot` | Use Weglot's text | Button beside the open text, when Show Weglot is on |
 | `doc.tool.revert` | Undo this | Button beside a text you have edited |

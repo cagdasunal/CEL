@@ -35,7 +35,7 @@
     window.DOC_TIMING || {});
   const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
   const UNDO_CAP = 100;
-  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot' };
+  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot', seen: 'cel-doc-seen' };
   const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
 
   // The block labels, spelled out so the copy check sees every key.
@@ -108,7 +108,7 @@
   // ── state ──────────────────────────────────────────────────────────────────────────
   const S = { page: null, lang: null, doc: null, loading: true, token: 0 };
   const L = {};                      // per language: {loaded, decisions, drafts, pipeline}
-  LANGS.forEach(function (c) { L[c] = { loaded: false, decisions: {}, drafts: {}, pipeline: {} }; });
+  LANGS.forEach(function (c) { L[c] = { loaded: false, decisions: {}, drafts: {}, pipeline: {}, findings: {} }; });
   const PI = new Map();              // page -> {count, ids}
   const PAGE_CACHE = new Map();      // page -> data
   let P = lsGet(KEYS.pending) || {}; // unsent: {lang: {uid: {record, base, page, conflict?}}}
@@ -705,7 +705,7 @@
   function gridSoon() {
     if (gridQueued) return;
     gridQueued = true;
-    setTimeout(function () { gridQueued = false; paintGrid(); paintOutline(); paintWords(); }, 0);
+    setTimeout(function () { gridQueued = false; paintGrid(); paintOutline(); paintWords(); updateNext(); }, 0);
   }
 
   // ── the banner: not translated yet / a translation under way ───────────────────────
@@ -923,8 +923,104 @@
     }
     return text.trim().split(/\s+/).filter(Boolean).length;
   }
-  function jumpTo(uid) {
+  // ── the filter and "Next to check" (CEL-036) ────────────────────────────────────
+  // What the page already knows about a text, in this language: EDITED (a decision with a wording),
+  // NEW from Gemini (a draft and no edit), FLAGGED by a check (the language's findings from desk-read).
+  // "To check" is a text from Gemini or a check that has not been edited and has not been looked at in
+  // this browser: pressing Next to check moves on from a text, which counts as looking at it.
+  let filter = 'all';
+  let cursor = null;                 // the text Next to check last went to
+  function isEdited(uid) { const r = curRec(S.lang, uid); return !!(r && r.text); }
+  function isNew(uid) { const d = L[S.lang].drafts[uid]; return !!(d && d.text) && !isEdited(uid); }
+  // A finding belongs to one wording (its `subject`: 'live' = Weglot's current text, 'draft' = Gemini's;
+  // the engine writes only 'live' for now, and deletes the stale ones every run). A text is flagged only by a
+  // finding on the wording the page shows: an edited text is a saved wording no check has run on, and a
+  // text with a Gemini draft shows the draft, not the live text the finding is about.
+  function isFlagged(uid) {
+    const f = L[S.lang].findings[uid];
+    if (!f || !f.length) return false;
+    const d = L[S.lang].drafts[uid];
+    const shown = isEdited(uid) ? 'edit' : (d && d.text ? 'draft' : 'live');
+    return f.some(function (x) { return x.subject === shown; });
+  }
+  function matches(uid) {
+    if (filter === 'new') return isNew(uid);
+    if (filter === 'edited') return isEdited(uid);
+    if (filter === 'flagged') return isFlagged(uid);
+    return true;
+  }
+  function seenKey(uid) { return S.lang + '|' + uid; }
+  function markSeen(uid) {
+    const m = lsGet(KEYS.seen) || {};
+    if (m[seenKey(uid)]) return;
+    m[seenKey(uid)] = 1;
+    lsSet(KEYS.seen, m);
+  }
+  // `seen` is the stored map, read once by a caller that asks about many texts.
+  function toCheck(uid, seen) {
+    return !isEdited(uid) && (isNew(uid) || isFlagged(uid)) && !(seen || lsGet(KEYS.seen) || {})[seenKey(uid)];
+  }
+  // The texts to check that show, in the page's order.
+  function candidates() {
+    if (!S.doc) return [];
+    const seen = lsGet(KEYS.seen) || {};
+    return S.doc.blocks.map(function (d) { return d.id; }).filter(function (uid) {
+      const b = M.get(uid);
+      return b && !b.d.lock && !b.li.hidden && toCheck(uid, seen);
+    });
+  }
+  function updateNext() {
+    const btn = $('doc-next'), count = $('doc-next-count');
+    if (!btn) return;
+    const n = S.loading ? 0 : candidates().length;
+    btn.disabled = !n;
+    count.textContent = S.loading ? '' : (n ? tn('doc.next.left', n) : t('doc.next.none'));
+  }
+  // Show the texts the filter keeps. When the page re-reads (new drafts arrive) a text with the caret
+  // in it stays, whatever it matches now: the text being typed in must never vanish. A filter the
+  // reviewer has just chosen (`chosen`) is followed to the letter.
+  function applyFilter(chosen) {
+    let shown = 0;
+    M.forEach(function (b, uid) {
+      const keep = matches(uid) || (!chosen && b.li.contains(document.activeElement));
+      b.li.hidden = !keep;
+      if (keep) shown++;
+    });
+    $('doc-filter-empty').hidden = !(filter !== 'all' && M.size && !shown);
+    paintOutline();
+    updateNext();
+  }
+  // A window is open over the page: the translate confirm, the history drawer, the export and re-translate windows.
+  function windowOpen() {
+    return !$('doc-history').hidden || !!document.querySelector('.cpw-overlay:not([hidden])');
+  }
+  function goNext() {
+    if (S.loading || !S.doc) return;
+    const order = S.doc.blocks.map(function (d) { return d.id; });
+    const at = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.doc-block') : null;
+    const cur = at ? at.getAttribute('data-uid') : cursor;
+    if (cur && M.has(cur) && toCheck(cur)) markSeen(cur);        // moving on from a text means it was looked at
+    const list = candidates();
+    if (!list.length) { updateNext(); return; }
+    const from = cur ? order.indexOf(cur) : -1;
+    const uid = list.filter(function (u) { return order.indexOf(u) > from; })[0] || list[0];
     const b = M.get(uid);
+    cursor = uid;
+    try { b.li.scrollIntoView({ behavior: 'auto', block: 'start' }); } catch (_) {}
+    b.tgt.focus({ preventScroll: true });
+    caretEnd(b.tgt);
+    b.li.setAttribute('data-flash', '1');
+    setTimeout(function () { b.li.removeAttribute('data-flash'); }, 1000);
+    updateNext();
+  }
+
+  function jumpTo(uid) {
+    let b = M.get(uid);
+    if (b && b.li.hidden) {       // a section's first text the filter hides: go to its first text that shows
+      const o = outline.filter(function (x) { return x.target === uid; })[0];
+      const first = o && shownIds(o)[0];
+      b = first ? M.get(first) : null;
+    }
     if (!b) return;
     const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     try { b.li.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' }); } catch (_) {}
@@ -962,25 +1058,37 @@
       const opt = h('option', null, o.name);
       opt.value = o.target;
       sel.appendChild(opt);
+      o.li = li; o.opt = opt;
     });
     sel.onchange = function () { jumpTo(sel.value); };
     paintOutline();
   }
+  // With a filter on, an entry counts the texts the filter leaves in it, and an entry with none is
+  // out of the list (and out of the Sections select) until the filter is back on All texts.
+  function shownIds(o) {
+    if (filter === 'all') return o.ids;
+    return o.ids.filter(function (uid) { const b = M.get(uid); return b && !b.li.hidden; });
+  }
   function paintOutline() {
     outline.forEach(function (o) {
       let edited = 0;
-      o.ids.forEach(function (uid) { const r = curRec(S.lang, uid); if (r && r.text) edited++; });
-      o.count.textContent = tn('doc.outline.count', o.ids.length, { edited: edited });
+      const ids = shownIds(o);
+      ids.forEach(function (uid) { const r = curRec(S.lang, uid); if (r && r.text) edited++; });
+      o.count.textContent = tn('doc.outline.count', ids.length, { edited: edited });
+      const gone = filter !== 'all' && !ids.length;
+      if (o.li) o.li.hidden = gone;
+      if (o.opt) { o.opt.hidden = gone; o.opt.disabled = gone; }
     });
     spy();
   }
   // The section being read: the last heading whose top has passed the top of the screen.
   function spy() {
     spyQueued = false;
-    let now = outline[0] || null;
+    let now = outline.filter(function (o) { return !(o.li && o.li.hidden); })[0] || null;
     outline.forEach(function (o) {
-      const b = M.get(o.target);
-      if (b && b.li.getBoundingClientRect().top <= 140) now = o;
+      if (o.li && o.li.hidden) return;
+      const b = M.get(filter === 'all' ? o.target : (shownIds(o)[0] || o.target));
+      if (b && !b.li.hidden && b.li.getBoundingClientRect().top <= 140) now = o;
     });
     outline.forEach(function (o) {
       if (o === now) o.btn.setAttribute('aria-current', 'true'); else o.btn.removeAttribute('aria-current');
@@ -1033,6 +1141,7 @@
       L[lang].decisions = r.body.decisions || {};
       L[lang].drafts = r.body.drafts || {};
       L[lang].pipeline = r.body.pipeline || {};
+      L[lang].findings = r.body.findings || {};
       L[lang].loaded = true;
       restoreConflicts(lang);
     });
@@ -1044,11 +1153,12 @@
       if (!r || !r.ok || !r.body) return;
       L[lang].drafts = r.body.drafts || {};
       L[lang].pipeline = r.body.pipeline || {};
+      L[lang].findings = r.body.findings || {};
       Object.keys(r.body.decisions || {}).forEach(function (uid) {
         const mine = P[lang] && P[lang][uid];
         if (!mine) L[lang].decisions[uid] = r.body.decisions[uid];
       });
-      if (lang === S.lang) M.forEach(function (b, uid) { paintBlock(uid); });
+      if (lang === S.lang) { M.forEach(function (b, uid) { paintBlock(uid); }); applyFilter(); }
       gridSoon();
     });
   }
@@ -1086,6 +1196,7 @@
       if (at < blocks.length) { setTimeout(slice, 0); return; }
       M.forEach(function (b, uid) { paintBlock(uid); });
       buildOutline(data);
+      applyFilter();
       paintWords();
       $('doc').setAttribute('data-state', 'ready');
       updateBar();
@@ -1096,6 +1207,7 @@
     closeHistory();
     readError = false;
     S.page = page; S.lang = lang; S.loading = true;
+    cursor = null;
     const token = ++S.token;
     remember();
     headings();
@@ -1106,6 +1218,8 @@
     outline = [];
     $('doc-words').textContent = '';
     M.clear();
+    $('doc-filter-empty').hidden = true;
+    updateNext();
     paintUndo();
     updateBar();
     paintGrid();
@@ -1173,6 +1287,13 @@
     $('doc-undo').addEventListener('click', undo);
     $('doc-redo').addEventListener('click', redo);
     $('doc-weglot').addEventListener('change', function (ev) { weglot(ev.target.checked); });
+    $('doc-filter').addEventListener('change', function (ev) {
+      filter = ev.target.value;
+      applyFilter(true);
+      const spot = $('doc-blocks');
+      try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - 140), behavior: 'auto' }); } catch (_) {}
+    });
+    $('doc-next').addEventListener('click', goNext);
     $('doc-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
     $('doc-banner-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
     $('doc-confirm-cancel').addEventListener('click', closeConfirm);
@@ -1190,6 +1311,15 @@
         if (ev.shiftKey && at === first) { ev.preventDefault(); last.focus(); }
         else if (!ev.shiftKey && at === last) { ev.preventDefault(); first.focus(); }
         else if (at !== first && at !== last) { ev.preventDefault(); last.focus(); }
+        return;
+      }
+      // Next to check: Alt+Enter (Option+Return on a Mac), the caret in a text included. It is a key that
+      // types nothing in any layout (Option+a letter is a dead key on a Mac: n gives ñ, ã, õ) and that the
+      // text field does nothing with on its own. Not while a window (translate, history, export) is open.
+      if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey && ev.key === 'Enter' && !ev.isComposing && ev.keyCode !== 229) {
+        if (windowOpen()) return;
+        ev.preventDefault();
+        goNext();
         return;
       }
       if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
@@ -1210,6 +1340,9 @@
   function boot() {
     wire();
     paintUndo();
+    $('doc-filter').value = filter;       // a browser may bring back an old choice from a visit before
+    const nextKeys = $('doc-next').querySelector('.doc-kbd');
+    if (nextKeys) nextKeys.textContent = t(IS_MAC ? 'doc.keys.next.mac' : 'doc.keys.next.other');
     weglot(lsGet(KEYS.weglot) === true);
     const at = startPoint();
     // Unsent changes of an earlier visit go out as soon as the page is up.

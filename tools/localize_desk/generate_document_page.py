@@ -70,6 +70,13 @@ VERSION = "desk-v2"
 # housing names on 78). Every other text is shown and editable; one that is also on other pages
 # says so under itself (`out`, `outEg`).
 CHROME_MIN_PAGES = 30
+
+# The localization desk's version (semver), the ONE source of the number the document page shows in its
+# status bar. A release step bumps it with its CHANGELOG entry and the tag `desk-v<version>` (decisions
+# 2026-10-19 23:44, CEL-042). DESK_CHANGELOG_URL is where the link goes: the desk's section of the CHANGELOG in the PUBLIC CEL repo
+# (the monorepo is private: the client could not open its CHANGELOG; ruling 2026-10-19 23:58).
+DESK_VERSION = "2.1.0"
+DESK_CHANGELOG_URL = "https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md"
 META_BLOCKS = ("meta-title", "meta-description")
 
 
@@ -322,10 +329,14 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-save[data-state="error"]::before, .doc-save[data-state="refused"]::before, .doc-save[data-state="stopped"]::before { background: var(--err); }
 .doc-save .desk-btn { padding: 2px 10px; font-size: var(--fs-xs); }
 .doc-status-mid { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
-.doc-status-end { display: flex; align-items: center; gap: 12px; }
+.doc-status-end { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.doc-desk-version { font-size: var(--fs-sm); color: var(--muted); text-decoration: none; white-space: nowrap; }
+.doc-desk-version:hover, .doc-desk-version:focus-visible { color: var(--fg); text-decoration: underline; }
 .doc-status .desk-btn { padding: 4px 12px; }
 .doc-kbd { margin-inline-start: 6px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-xs); font-weight: 400; color: var(--muted); }
 .doc-kbd:empty { display: none; }
+.doc-filter-wrap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 600; }
+.doc-next-count { font-size: var(--fs-sm); color: var(--muted); }
 .doc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
 .doc-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 .doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -370,6 +381,11 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
   .doc-tools .desk-btn, .doc-tools .desk-btn + .desk-btn { border: 1px solid var(--border-strong); border-radius: 999px; }
   .doc-status { padding: 8px 12px; }
   .doc-status-mid { flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .doc-status .doc-kbd { display: none; }
+  .doc-status-mid { gap: 6px; }
+  .doc-status-mid .desk-btn { padding: 4px 8px; }
+  .doc-filter-wrap .desk-select { padding-inline: 6px; }
+  .doc-filter-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .doc .toast-stack { bottom: 100px; }
   .doc-drawer { bottom: 0; max-height: 60vh; }
   .doc-drawer > header { padding: 14px 12px 0; }
@@ -466,6 +482,7 @@ def _dom() -> str:
         '      <div class="doc-sheets">\n'
         f'        <label class="doc-sections-wrap"><span class="doc-sections-label">{escape(t("doc.sections"))}</span>\n'
         '          <select id="doc-sections" class="desk-select doc-sections"></select></label>\n'
+        f'        <div id="doc-filter-empty" class="doc-banner" hidden><p>{escape(t("doc.filter.empty"))}</p></div>\n'
         '        <div id="doc-heads" class="doc-heads" aria-hidden="true">\n'
         '          <span class="doc-head doc-head-en"></span><span class="doc-head doc-head-tgt"></span>'
         '<span class="doc-head doc-head-weglot" hidden></span></div>\n'
@@ -477,10 +494,21 @@ def _dom() -> str:
         '      <div class="doc-status-mid">\n'
         f'        <button type="button" id="doc-undo" class="desk-btn" disabled><span class="doc-btn-label">{escape(t("doc.undo"))}</span> <kbd class="doc-kbd"></kbd></button>\n'
         f'        <button type="button" id="doc-redo" class="desk-btn" disabled><span class="doc-btn-label">{escape(t("doc.redo"))}</span> <kbd class="doc-kbd"></kbd></button>\n'
+        f'        <label class="doc-filter-wrap"><span class="doc-filter-label">{escape(t("doc.filter.label"))}</span>\n'
+        '          <select id="doc-filter" class="desk-select doc-filter">\n'
+        f'            <option value="all">{escape(t("doc.filter.all"))}</option>\n'
+        f'            <option value="new">{escape(t("doc.filter.new"))}</option>\n'
+        f'            <option value="edited">{escape(t("doc.filter.edited"))}</option>\n'
+        f'            <option value="flagged">{escape(t("doc.filter.flagged"))}</option>\n'
+        '          </select></label>\n'
+        f'        <button type="button" id="doc-next" class="desk-btn" aria-keyshortcuts="Alt+Enter" disabled><span class="doc-btn-label">{escape(t("doc.next"))}</span> <kbd class="doc-kbd"></kbd></button>\n'
+        '        <span id="doc-next-count" class="doc-next-count"></span>\n'
         '      </div>\n'
         '      <div class="doc-status-end">\n'
         '        <label class="doc-toggle"><input type="checkbox" id="doc-weglot">'
         f' <span>{escape(t("doc.weglot.toggle"))}</span></label>\n'
+        f'        <a id="doc-desk-version" class="doc-desk-version" href="{escape(DESK_CHANGELOG_URL)}" target="_blank" '
+        f'rel="noopener" data-tip="{escape(t("doc.version.tip"))}">{escape(t("doc.version", version=DESK_VERSION))}</a>\n'
         '        <span id="doc-words" class="doc-words"></span>\n'
         '      </div>\n'
         '    </footer>\n'

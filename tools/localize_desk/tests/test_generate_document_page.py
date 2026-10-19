@@ -892,7 +892,8 @@ class TestPageShell:
     def test_the_sheets_are_the_sections_select_the_heads_and_the_blocks(self, page):
         dom = _dom(page)
         assert _shape(dom.kids_of_class("doc-sheets")) == [
-            "label.doc-sections-wrap", "div#doc-heads.doc-heads", "ol#doc-blocks.doc-blocks"]
+            "label.doc-sections-wrap", "div#doc-filter-empty.doc-banner", "div#doc-heads.doc-heads",
+            "ol#doc-blocks.doc-blocks"]
         assert _shape(dom.kids_of_class("doc-sections-wrap")) == [
             "span.doc-sections-label", "select#doc-sections.desk-select.doc-sections"]
         assert dom.kids_of_id("doc-sections") == []
@@ -904,15 +905,49 @@ class TestPageShell:
         dom = _dom(page)
         assert _shape(dom.kids_of_id("doc-status")) == [
             "p#doc-save.doc-save", "div.doc-status-mid", "div.doc-status-end"]
-        assert _shape(dom.kids_of_class("doc-status-mid")) == ["button#doc-undo.desk-btn", "button#doc-redo.desk-btn"]
-        for ident, key in (("doc-undo", "doc.undo"), ("doc-redo", "doc.redo")):
+        assert _shape(dom.kids_of_class("doc-status-mid")) == [
+            "button#doc-undo.desk-btn", "button#doc-redo.desk-btn", "label.doc-filter-wrap",
+            "button#doc-next.desk-btn", "span#doc-next-count.doc-next-count"]
+        for ident, key in (("doc-undo", "doc.undo"), ("doc-redo", "doc.redo"), ("doc-next", "doc.next")):
             assert _shape(dom.kids_of_id(ident)) == ["span.doc-btn-label", "kbd.doc-kbd"]
             assert dom.text_of(ident) == C.t(key)
-        assert _main_markup(page).count('<kbd class="doc-kbd"></kbd>') == 2          # the runtime fills them
-        assert _shape(dom.kids_of_class("doc-status-end")) == ["label.doc-toggle", "span#doc-words.doc-words"]
+        assert _main_markup(page).count('<kbd class="doc-kbd"></kbd>') == 3          # the runtime fills them
+        assert _shape(dom.kids_of_class("doc-status-end")) == ["label.doc-toggle", "a#doc-desk-version.doc-desk-version", "span#doc-words.doc-words"]
         assert _shape(dom.kids_of_class("doc-toggle")) == ["input#doc-weglot", "span"]
         assert dom.by_id("doc-weglot")["type"] == "checkbox"
         assert dom.text_of("doc-words") == "" and dom.text_of("doc-save") == ""
+
+    def test_the_status_bar_holds_the_filter_and_next_to_check_in_copy_md_words(self, page):
+        """CEL-036: a list that narrows the page (All / New from Gemini / Edited / Flagged) and a Next to
+        check button with a shortcut; every word is COPY.md's, the key label and the count are the runtime's."""
+        dom = _dom(page)
+        assert _shape(dom.kids_of_class("doc-filter-wrap")) == ["span.doc-filter-label", "select#doc-filter.desk-select.doc-filter"]
+        assert dom.text_of("doc-next-count") == ""                                  # the runtime says how many are left
+        markup = _main_markup(page)
+        for value, key in (("all", "doc.filter.all"), ("new", "doc.filter.new"),
+                           ("edited", "doc.filter.edited"), ("flagged", "doc.filter.flagged")):
+            assert f'<option value="{value}">{C.t(key)}</option>' in markup, key
+        assert markup.index('value="all"') < markup.index('value="new"') < markup.index('value="edited"') < markup.index('value="flagged"')
+        assert C.t("doc.filter.label") in " ".join(s for _o, s in dom.texts)
+        assert dom.by_id("doc-next")["aria-keyshortcuts"] == "Alt+Enter"
+        assert "disabled" in dom.by_id("doc-next")                                  # nothing to go to until a page is open
+        empty = dom.by_id("doc-filter-empty")
+        assert "hidden" in empty and "doc-banner" in empty["class"]
+        assert C.t("doc.filter.empty") in " ".join(s for _o, s in dom.texts)
+
+    def test_the_status_bar_shows_the_desk_version_from_the_one_source_and_links_to_what_changed(self, page):
+        """CEL-042: 'Desk <version>' in the status bar; the number is DESK_VERSION (typed nowhere else) and the
+        words are COPY.md's; it opens the CHANGELOG's desk section in a new tab."""
+        dom = _dom(page)
+        link = dom.by_id("doc-desk-version")
+        assert re.fullmatch(r"\d+\.\d+\.\d+", GD.DESK_VERSION)
+        assert dom.text_of("doc-desk-version") == C.t("doc.version", version=GD.DESK_VERSION) == f"Desk {GD.DESK_VERSION}"
+        assert link["href"] == GD.DESK_CHANGELOG_URL and link["target"] == "_blank" and "noopener" in link["rel"]
+        # The client opens this link: the PUBLIC CEL repo's CHANGELOG (the monorepo is private and answers a 404).
+        assert GD.DESK_CHANGELOG_URL == "https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md"
+        assert link["data-tip"] == C.t("doc.version.tip")
+        src = Path(GD.__file__).read_text(encoding="utf-8")
+        assert len(re.findall(r'"\d+\.\d+\.\d+"', src)) == 1                  # the number is typed once
 
     def test_the_history_drawer_is_a_dialog_with_a_title_a_note_and_an_empty_strip(self, page):
         dom = _dom(page)

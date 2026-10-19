@@ -489,6 +489,9 @@
   .shell-tab-subitem:hover { background: var(--stripe); color: var(--accent); }
   .shell-tab-subitem.is-active { background: var(--stripe); color: var(--accent); font-weight: 600; }
 
+  .shell-footer { margin-top: auto; padding: 12px 20px 16px; text-align: right; }
+  .shell-version { margin: 0; font-size: var(--fs-xs); color: var(--faint); }
+
   .shell-content { flex: 1 1 auto; min-height: 0; }
   .shell-content iframe {
     border: 0;
