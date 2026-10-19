@@ -23,7 +23,8 @@ from localize_desk import recommend as R  # noqa: E402
 
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parents[1]
-SOURCES = [TOOLS / "generate_desk_page.py", TOOLS / "recommend.py"]
+SOURCES = [TOOLS / "generate_desk_page.py", TOOLS / "recommend.py",
+           TOOLS / "generate_document_page.py", TOOLS / "document_desk.js", TOOLS / "document_export.js"]
 KEY = re.compile(r"""['"]([a-z][a-z0-9_]*(?:\.[a-z0-9_\-]+)+)['"]""")
 
 

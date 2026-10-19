@@ -38,7 +38,12 @@ from pathlib import Path
 DOCS = Path(__file__).resolve().parents[2] / "docs"
 BASE = "https://cel.englishcollege.com"
 LOCALES = ("de", "fr", "es", "pt", "it", "ja", "ko", "ar")
-_PAGES = ["admin/localization/index.html"] + [f"admin/localization/{c}/index.html" for c in LOCALES]
+_PAGES = (["admin/localization/index.html"] + [f"admin/localization/{c}/index.html" for c in LOCALES]
+          + ["admin/localization/document/index.html"])
+# The document page (desk v2) reads one data file per page, and pages.json before them.
+DOC_PAGES = ("vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english")
+_DOC_DATA = ["admin/localization/document/data/pages.json"] + [
+    f"admin/localization/document/data/{k}.json" for k in DOC_PAGES]
 # A stylesheet's address may carry its content's hash (?v=..., U3): the file is the path before it.
 _ASSET = re.compile(r'(?:src|href)="/([^"?#]+[.](?:js|css))(?:[?][^"#]*)?"')
 _LINK = re.compile(r'href="/([^"#]+)"')
@@ -46,7 +51,7 @@ _LINK = re.compile(r'href="/([^"#]+)"')
 
 def served_files(docs: Path = DOCS) -> list[str]:
     """The desk's pages and data, and every same-origin script and stylesheet they load."""
-    paths = _PAGES + [f"admin/localization/{c}/units.json" for c in LOCALES]
+    paths = _PAGES + [f"admin/localization/{c}/units.json" for c in LOCALES] + _DOC_DATA
     for page in (docs / p for p in _PAGES if (docs / p).is_file()):
         paths += _ASSET.findall(page.read_text(encoding="utf-8"))
     return sorted({p for p in paths if (docs / p).is_file()})

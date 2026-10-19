@@ -528,3 +528,167 @@ says where saving stands; hover over it to see what that means.
 A text you're editing keeps what you typed, even if someone else saves it meanwhile. When you
 save yours, it is marked as changed elsewhere, so you choose which wording stays.
 <!-- /block -->
+
+## Document view (desk v2)
+
+One page of the website read as a document: every text in the order the page shows it, English beside the translation, the translation edited in place. The saving lines (`autosave.*`, `save.reason.*`), the failed-job lines (`job.failed.*`), the refusals (`refusal.*`), the language and page names and the word for the home page (`row.shared.home`) are the ones above; this section holds only what is new.
+
+| Key | Text | Shown where |
+|---|---|---|
+| `doc.meta.title` | Document view — Localization Desk — College of English Language | Browser tab, document view |
+| `doc.meta.description` | Read a page as a document, English beside its translation, and edit the translation in place. | Page description |
+| `doc.title` | {page} — {language} | Heading of the open page and language |
+| `doc.grid.label` | Pages and languages | Heading of the grid at the top |
+| `doc.grid.corner` | Page | Top-left cell of the grid |
+| `doc.status.none` | Not translated | A grid cell with no text in that language |
+| `doc.status.drafted` | Drafted | A grid cell where Gemini's drafts are waiting to be read |
+| `doc.status.edited` | Edited | A grid cell with texts you have edited |
+| `doc.status.exported` | Exported | A grid cell whose texts are in a Weglot file |
+| `doc.status.unknown` | Checking… | A grid cell until that language has been read from the server |
+| `doc.status.translating` | Translating… | A grid cell whose page Gemini is translating now |
+| `doc.status.queued` | Queued | A grid cell whose page waits for the one Gemini is translating |
+| `doc.cell.count.one` | {n} of {total} text | Under the status in a grid cell |
+| `doc.cell.count.other` | {n} of {total} texts | |
+| `doc.cell.aria` | {page}, {language}: {status} | Screen-reader name of a grid cell |
+| `doc.undo` | Undo | Button above the page |
+| `doc.redo` | Redo | Button above the page |
+| `doc.undo.tip` | Undo your last change ({keys}) | Hover on Undo |
+| `doc.redo.tip` | Redo ({keys}) | Hover on Redo |
+| `doc.undo.none` | Nothing to undo | Hover on Undo when it is off |
+| `doc.redo.none` | Nothing to redo | Hover on Redo when it is off |
+| `doc.keys.undo.mac` | ⌘Z | The keys, in the Undo hover, on a Mac |
+| `doc.keys.undo.other` | Ctrl+Z | The keys, in the Undo hover, elsewhere |
+| `doc.keys.redo.mac` | ⇧⌘Z | The keys, in the Redo hover, on a Mac |
+| `doc.keys.redo.other` | Ctrl+Shift+Z | The keys, in the Redo hover, elsewhere |
+| `doc.weglot.toggle` | Show Weglot | Checkbox above the page |
+| `doc.translate` | Translate page | Button above the page, and in the window it opens |
+| `doc.head.en` | English — the website | Head of the English column |
+| `doc.head.tgt` | {language} — draft and your edits | Head of the translation column |
+| `doc.head.weglot` | Weglot (on the website) | Head of the third column, when Show Weglot is on |
+| `doc.block.meta-title` | Page title | Beside a text: what kind of text it is |
+| `doc.block.og-title` | Title when shared | |
+| `doc.block.meta-description` | Page description | |
+| `doc.block.h1` | Heading 1 | |
+| `doc.block.h2` | Heading 2 | |
+| `doc.block.h3` | Heading 3 | |
+| `doc.block.h4` | Heading 4 | |
+| `doc.block.h5` | Heading 5 | |
+| `doc.block.h6` | Heading 6 | |
+| `doc.block.p` | Paragraph | |
+| `doc.block.li` | List item | |
+| `doc.block.button` | Button | |
+| `doc.block.link` | Link | |
+| `doc.block.other` | Text | |
+| `doc.locked.tag` | Locked | Beside a text that can't be edited here |
+| `doc.locked.noise` | Numbers and symbols are left as they are. | Under a locked text of numbers or symbols |
+| `doc.also` | Also on {pages}. A change here changes it there too. | Under a text that is on other pages of the four |
+| `doc.shared.one` | Also used on 1 other page ({example}). Your wording becomes the wording there too. | Under a text that is also on a page outside the four |
+| `doc.shared.other` | Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too. | |
+| `doc.text.saving` | Saving… | Under a text, while its change is sent |
+| `doc.text.saved` | Saved | Under a text, once its change is on the server |
+| `doc.text.error` | Not saved yet — trying again | Under a text whose change did not go through |
+| `doc.text.edited` | Edited | Under a text that has your edit |
+| `doc.empty.cell` | Not translated yet | Inside an empty translation box |
+| `doc.history` | History | Button under a text |
+| `doc.history.title` | History of this text | Heading of the history panel |
+| `doc.history.note` | Every change is saved on the server. Nothing is lost when you close the tab. | Top of the history panel |
+| `doc.history.empty` | No saved changes yet. This text still reads as it first arrived. | History panel, for a text with no changes |
+| `doc.history.draft` | Gemini's draft | History panel: who wrote that version |
+| `doc.history.you` | You | History panel: who wrote that version |
+| `doc.history.restore` | Restore this version | Button on a version in the history panel |
+| `doc.history.close` | Close | Button on the history panel |
+| `doc.history.restored` | Restored. Undo brings it back. | Message after Restore |
+| `doc.history.failed` | Couldn't read the history. Try again in a moment. | History panel, when it can't be read |
+| `doc.conflict.text` | {who} saved this text first: “{text}” | Under a text someone else saved before you |
+| `doc.conflict.gone` | Someone else undid this text before you saved it. | Under a text someone else undid |
+| `doc.conflict.mine` | Keep mine | Button under that line |
+| `doc.conflict.theirs` | Take theirs | Button under that line |
+| `doc.loading` | Loading the page… | Where the texts will be, while they load |
+| `doc.load.failed` | Couldn't load this page. Reload to try again. | Where the texts will be, when they can't load |
+| `doc.read.failed` | Couldn't read what's saved on the server. Reload to try again. | Above the page, when the saved texts can't be read |
+| `doc.banner.none` | This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it. | Banner, on a page with no translation in that language |
+| `doc.job.queued` | Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done. | Banner, after Translate page |
+| `doc.job.waiting` | Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open. | Banner, when another page is still being translated into that language (the queue lives in this window) |
+| `doc.job.done` | New drafts from Gemini are ready. | Message when a translation finishes |
+| `doc.job.failed` | The translation did not finish: {reason} | Banner, when a translation failed |
+| `doc.job.failed.unknown` | something went wrong. Try again. | The reason, when none of the lines above fits |
+| `doc.job.error` | Couldn't start the translation. Try again in a moment. | Message, when Translate page can't reach the server |
+| `doc.confirm.title` | Translate this page with Gemini? | Heading of the window Translate page opens |
+| `doc.confirm.body.one` | Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept. | In that window |
+| `doc.confirm.body.other` | Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept. | |
+| `doc.confirm.cancel` | Cancel | Button in that window |
+| `doc.outline.title` | On this page | Heading of the list of sections beside the page |
+| `doc.outline.search` | Search result | The list's first entry: the page title and description as a search engine shows them |
+| `doc.outline.count.one` | {n} text · {edited} edited | Under each entry of that list |
+| `doc.outline.count.other` | {n} texts · {edited} edited | |
+| `doc.sections` | Sections | Label of the list of sections on a narrow screen |
+| `doc.words.one` | {n} word | Bottom bar: the size of the page in this language |
+| `doc.words.other` | {n} words | |
+| `doc.tools.label` | Actions for this text | Screen-reader name of the buttons beside the open text |
+| `doc.tool.weglot` | Use Weglot's text | Button beside the open text, when Show Weglot is on |
+| `doc.tool.revert` | Undo this | Button beside a text you have edited |
+| `doc.chars.one` | {n} character | Under the page title and description: how long they are |
+| `doc.chars.other` | {n} characters | |
+
+## Export and re-translate (desk v2)
+
+The Export window (pages x languages, one Weglot file for each) and the Re-translate windows of the document view. The refusals (`refusal.*`), the failed-job lines (`job.failed.*`, `doc.job.failed.unknown`), the saving reasons (`save.reason.*`) and `flow.file.stale` are the ones above; this section holds only what is new.
+
+| Key | Text | Shown where |
+|---|---|---|
+| `export.button` | Export | Button above the document |
+| `export.title` | Export the Weglot file | Heading of the Export window |
+| `export.grid.page` | Page | Top-left cell of the Export window's grid |
+| `export.all.pages` | All pages | Row of the Export window's grid that ticks a whole language |
+| `export.all.languages` | All languages | Column of the Export window's grid that ticks a whole page |
+| `export.aria.all` | All pages, all languages | Screen-reader name of the box that ticks everything |
+| `export.aria.col` | All pages, {language} | Screen-reader name of a language's box |
+| `export.aria.row` | {page}, all languages | Screen-reader name of a page's box |
+| `export.aria.cell` | {page}, {language} | Screen-reader name of one page and language |
+| `export.count.none` | Nothing selected yet | Under the grid, when no box is ticked |
+| `export.count.one` | 1 file will be made | Under the grid |
+| `export.count.other` | {n} files will be made | |
+| `export.cancel` | Cancel | Button in the Export window |
+| `export.go` | Export | Button in the Export window |
+| `export.close` | Close | Button, when the export has finished |
+| `export.download` | Download again | Button, when the export has finished |
+| `export.jump` | Show | Button beside a text in the list of what was left out |
+| `export.more` | Show {n} more | Button at the end of a long list |
+| `export.step.waiting` | Waiting | A file's line, before its turn |
+| `export.step.saving` | Saving your texts… | A file's line, while its texts are saved |
+| `export.step.queued` | Waiting for the engine… | A file's line, while the engine has not started it |
+| `export.step.running` | Making the file… | A file's line, while the engine makes it |
+| `export.step.done.one` | 1 text in the file | A file's line, when it is made |
+| `export.step.done.other` | {n} texts in the file | |
+| `export.step.nothing` | Nothing to export yet | A file's line, when the page has no translation in that language |
+| `export.step.failed` | Not made: {reason} | A file's line, when it could not be made |
+| `export.group.refused.one` | 1 text is not in the file because a check refused it | List after an export |
+| `export.group.refused.other` | {n} texts are not in the file because a check refused them | |
+| `export.group.empty.one` | 1 text has no translation yet, so it is not in the file | List after an export |
+| `export.group.empty.other` | {n} texts have no translation yet, so they are not in the file | |
+| `export.group.orphan.one` | 1 edit belongs to English text that has changed, so it is not in the file | List after an export |
+| `export.group.orphan.other` | {n} edits belong to English text that has changed, so they are not in the file | |
+| `export.group.conflict.one` | 1 text was changed by someone else while you exported, so it is not in the file | List after an export |
+| `export.group.conflict.other` | {n} texts were changed by someone else while you exported, so they are not in the file | |
+| `export.group.unsaved.one` | 1 text could not be saved, so it is not in the file | List after an export |
+| `export.group.unsaved.other` | {n} texts could not be saved, so they are not in the file | |
+| `export.reason.refused-by-server` | The desk could not save this text, so it was not exported. | Under a text the desk could not save |
+| `export.error.write` | Your texts could not be saved: {reason} | Inside a file's failed line |
+| `export.error.start` | The export could not start: {reason} | Inside a file's failed line |
+| `export.error.download` | The file is ready but could not be downloaded: {reason} | Inside a file's failed line |
+| `retr.button` | Re-translate | Button beside the open text |
+| `retr.page.button` | Re-translate page | Button above the document |
+| `retr.text.title` | Re-translate this text | Heading of the window |
+| `retr.text.body` | Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo. | The window's text |
+| `retr.note.label` | Note for Gemini (optional) | Above the box where you can tell Gemini what to change |
+| `retr.text.go` | Re-translate | Button in the window |
+| `retr.page.title` | Re-translate this page | Heading of the window |
+| `retr.page.body` | Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits. | The window's text |
+| `retr.page.mine` | Include my edits | Box in the window |
+| `retr.page.go` | Re-translate page | Button in the window |
+| `retr.cancel` | Cancel | Button in the windows |
+| `retr.started` | Gemini is working on it. The new text appears here when it is ready. | Message, when the job starts |
+| `retr.done` | The new translation is ready. | Message, when the job has finished |
+| `retr.failed` | The new translation did not arrive: {reason} | Message, when the job failed |
+| `retr.busy` | Gemini is already re-translating in this language. Try again when it has finished. | Message, when a re-translation is already running |
+| `retr.none-arrived` | No new text arrived. | Message, when the job finished without a new text |

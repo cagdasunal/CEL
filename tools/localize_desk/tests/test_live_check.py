@@ -191,3 +191,65 @@ def test_a_check_overtaken_by_a_newer_push_hands_over(pages, tmp_path, monkeypat
     assert L.main(argv) == 1
     monkeypatch.setattr(L, "_main_head", lambda repo: None)     # unknown: never a pass
     assert L.main(argv) == 1
+
+
+# ── The document page (desk v2): its page and its data files are checked like the v1 desk's ──────
+
+DOC = "admin/localization/document"
+DOC_FILES = [f"{DOC}/index.html", f"{DOC}/data/pages.json"] + [f"{DOC}/data/{k}.json" for k in L.DOC_PAGES]
+
+
+def _doc_tree(root: Path, body: str = "desk") -> Path:
+    for p in DOC_FILES:
+        f = root / p
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(f"{body}:{p}", encoding="utf-8")
+    return root
+
+
+def test_the_document_page_and_all_its_data_are_listed(tmp_path):
+    docs = _doc_tree(_tree(tmp_path / "docs"))
+    files = L.served_files(docs)
+    assert [p for p in DOC_FILES if p not in files] == []
+    # pages.json and one file per page: nothing else under data/ is invented
+    assert sorted(p for p in files if p.startswith(f"{DOC}/data/")) == sorted(DOC_FILES[1:])
+    # and the v1 desk's files are still all there
+    assert "admin/localization/de/units.json" in files
+
+
+def test_a_document_file_that_is_not_there_is_skipped_not_invented(tmp_path):
+    docs = _doc_tree(_tree(tmp_path / "docs"))
+    (docs / DOC_FILES[3]).unlink()
+    files = L.served_files(docs)
+    assert DOC_FILES[3] not in files and DOC_FILES[2] in files
+    assert not [p for p in L.served_files(_tree(tmp_path / "plain")) if "/document/" in p]
+
+
+def test_the_document_pages_are_the_desks():
+    """The check's list is the generator's, so a fifth page cannot go unchecked."""
+    from localize_desk import generate_desk_page as G
+    assert L.DOC_PAGES == tuple(G.PAGE_KEYS)
+
+
+def test_the_document_page_is_read_at_the_url_a_reviewer_asks_for(tmp_path):
+    urls = L.reviewer_urls(_doc_tree(_tree(tmp_path / "docs")))
+    assert urls[f"{DOC}/index.html"][0] == f"{DOC}/"
+    assert urls[f"{DOC}/data/pages.json"] == [f"{DOC}/data/pages.json"]
+
+
+def test_the_real_checkout_lists_the_document_page_when_it_is_committed():
+    if not (L.DOCS / DOC / "index.html").is_file():
+        pytest.skip("the document page is not generated in this checkout yet")
+    files = L.served_files()
+    assert f"{DOC}/index.html" in files and f"{DOC}/data/pages.json" in files
+    for key in L.DOC_PAGES:
+        assert f"{DOC}/data/{key}.json" in files
+
+
+def test_a_stale_document_data_file_is_named(pages, tmp_path):
+    served, base, _seen = pages
+    docs = _doc_tree(_tree(tmp_path / "docs"))
+    _doc_tree(served)
+    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == []
+    (served / DOC_FILES[2]).write_text("yesterday", encoding="utf-8")
+    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == [DOC_FILES[2]]

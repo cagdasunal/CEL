@@ -1,0 +1,33 @@
+/* The Export window and Re-translate of the document page (CEL-027). Tokens only; indigo only on the
+   one primary button and on focus (the desk's colour rule). Inlined by generate_document_page.py. */
+.ex-modal .cpw-modal { max-width: 860px; max-height: calc(100vh - 48px); overflow: auto; }
+.ex-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.ex-grid th, .ex-grid td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: start; white-space: nowrap; }
+.ex-grid .ex-lang, .ex-grid .ex-check { text-align: center; }
+.ex-grid thead th { font-weight: 500; }
+.ex-page { font-weight: 500; }
+.ex-grid input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.ex-count { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+.ex-progress { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.ex-file { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.ex-file-name { font-weight: 500; }
+.ex-file-state { color: var(--muted); font-size: var(--fs-sm); }
+.ex-file[data-state="done"] .ex-file-state, .ex-file[data-state="failed"] .ex-file-state { color: var(--fg); }
+.ex-file[data-state="failed"] { border-color: var(--border-strong); }
+.ex-result { display: flex; flex-direction: column; gap: 14px; }
+.ex-group-title { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 500; }
+.ex-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ex-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.ex-item-text { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.ex-item-reason { flex: 1 1 100%; font-size: var(--fs-sm); color: var(--muted); }
+.ex-item .desk-btn { padding: 3px 12px; }
+.ex-more { color: var(--muted); font-size: var(--fs-sm); }
+.ex-note-label { font-size: var(--fs-sm); color: var(--muted); }
+.ex-note { width: 100%; font: inherit; font-size: var(--fs-base); padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); resize: vertical; }
+.ex-note:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+.ex-mine { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ex-mine input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+@media (max-width: 767px) {
+  .ex-modal .cpw-modal { padding: 16px; }
+  .ex-grid th, .ex-grid td { padding: 6px 4px; }
+}

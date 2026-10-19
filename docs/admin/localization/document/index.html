@@ -1,0 +1,2798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/assets/js/dashboard-config.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script type="text/javascript" src="https://www.bugherd.com/sidebarv2.js?apikey=kki8eriv8ny3yxythbrubg" async="true"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document view — Localization Desk — College of English Language</title>
+  <meta name="description" content="Read a page as a document, English beside its translation, and edit the translation in place.">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+  <link rel="stylesheet" href="/assets/css/dashboard.css?v=2b191c58e6">
+<style>
+/* The always-open field's spike styles (monorepo runbook WO-22). Colours are the
+   dashboard's tokens, with fallbacks so the spike renders on a bare page; WO-22's build
+   decides the chip colours for real. Chip labels are real text in the token (rich_field.js). */
+
+/* pre-wrap is load-bearing: under the default `normal`, Chrome types a no-break space
+   for every second space and at the end of a line, and the saved text would carry U+00A0
+   the reviewer never typed (tests/browser/test_rich_field.py proves it both ways). */
+.rf-field {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 1.5em;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #d8d0bd);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--elevated, #fbf7ee);
+  line-height: 1.5;
+}
+.rf-field:focus-visible { outline: 2px solid var(--focus, #5d60ee); outline-offset: 1px; }
+
+.rf-token {
+  display: inline-block;
+  margin: 0 1px;
+  padding: 0 4px;
+  border-radius: 999px;
+  font-size: 0.75em;
+  line-height: 1.5;
+  vertical-align: baseline;
+  background: var(--stripe, #efe7d4);
+  color: var(--muted, #6f6758);
+  user-select: none;
+  cursor: default;
+  unicode-bidi: isolate;      /* a chip's label never reorders the text around it */
+}
+
+/* The document page (desk v2, design B): an outline beside the sheets, a status bar below them. */
+html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
+.doc { --doc-topbar: 53px; padding: 8px 0 0; }
+
+/* The pages x languages grid */
+.doc-gridwrap { margin: 8px 0 28px; }
+.doc-grid-title { margin: 0 0 8px; font-size: var(--fs-base); font-weight: 600; }
+.doc-grid { width: 100%; min-width: 720px; border-collapse: collapse; }
+.doc-grid th, .doc-grid td { padding: 4px; text-align: start; vertical-align: top; }
+.doc-grid thead th { font-size: var(--fs-sm); font-weight: 600; color: var(--muted); white-space: nowrap; }
+.doc-grid-page { padding-inline-end: 12px; font-size: var(--fs-md); font-weight: 600; white-space: nowrap; }
+.doc-flag { margin-inline-end: 4px; }
+.doc-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--fg); font: inherit; font-size: var(--fs-sm); text-align: start; cursor: pointer; }
+.doc-cell:hover { background: var(--stripe); }
+.doc-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-cell-status { font-weight: 600; }
+.doc-cell-count { color: var(--muted); font-size: var(--fs-xs); }
+.doc-cell[data-status="unknown"] .doc-cell-status, .doc-cell[data-status="none"] .doc-cell-status { color: var(--muted); font-weight: 400; }
+.doc-cell[data-status="exported"] .doc-cell-status { color: var(--ok); }
+.doc-cell[aria-pressed="true"] { border-color: var(--fg); }
+.doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count { font-weight: 700; }
+
+/* The title and the one button above the sheets */
+.doc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; min-height: 72px; padding: 12px 0; border-top: 1px solid var(--border); }
+.doc-title { margin: 0; font-size: var(--fs-xl); font-weight: 650; }
+.doc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.doc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); color: var(--notice-fg); }
+.doc-banner p { flex: 1 1 320px; margin: 0; font-size: var(--fs-base); }
+
+/* The outline rail, then the sheets on a recessed area */
+.doc-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
+.doc-outline { position: sticky; top: calc(var(--doc-topbar) + 16px); max-height: calc(100vh - var(--doc-topbar) - 76px); overflow-y: auto; padding: 4px 12px 16px 0; }
+.doc-outline-title { margin: 0 0 10px 12px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.doc-outline-list { margin: 0; padding: 0; list-style: none; }
+.doc-outline-item { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: none; color: var(--fg); font: inherit; text-align: start; cursor: pointer; }
+.doc-outline-item:hover { background: var(--stripe); }
+.doc-outline-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.doc-outline-item[aria-current="true"] { box-shadow: inset 2px 0 0 var(--fg); font-weight: 700; }
+.doc-outline-name { display: block; font-size: var(--fs-md); line-height: 1.3; }
+.doc-outline-count { display: block; margin-top: 2px; font-size: var(--fs-xs); font-weight: 400; color: var(--muted); }
+.doc-sheets { --doc-pad: 48px; min-width: 0; min-height: 60vh; padding: 24px; border-inline-start: 1px solid var(--border); background: var(--panel); }
+.doc-sheets:has(.doc-blocks[data-weglot="on"]) { --doc-pad: 28px; }
+.doc-sections-wrap { display: none; align-items: center; gap: 8px; max-width: 1400px; margin: 0 auto 12px; font-size: var(--fs-sm); font-weight: 600; }
+.doc-sections { flex: 1 1 auto; min-width: 0; }
+
+/* The sheet heads, and the blocks: one grid row across the sheets */
+.doc-heads { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; max-width: 1400px; margin: 0 auto; }
+.doc-head { padding: 14px var(--doc-pad) 10px; border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; background: var(--elevated); font-size: var(--fs-sm); font-weight: 650; }
+.doc-blocks { max-width: 1400px; margin: 0 auto; padding: 0; list-style: none; }
+.doc-blocks[data-weglot="on"] { --doc-pad: 28px; }
+.doc-block { --doc-mt: 16px; --doc-mb: 10px; position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto auto 1fr; column-gap: 24px; scroll-margin-top: 64px; }
+.doc-blocks[data-weglot="on"] .doc-block { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.doc-block::before, .doc-block::after { content: ""; grid-row: 1 / -1; border-inline: 1px solid var(--border); background: var(--elevated); }
+.doc-block::before { grid-column: 1; }
+.doc-block::after { grid-column: 2; }
+.doc-block:last-child::before, .doc-block:last-child::after, .doc-block:last-child > .doc-weglot { border-bottom: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); }
+.doc-block:hover::before, .doc-block:hover::after, .doc-block:hover > .doc-weglot, .doc-block:focus-within::before, .doc-block:focus-within::after, .doc-block:focus-within > .doc-weglot { background-image: linear-gradient(var(--stripe), var(--stripe)); }
+.doc-block[data-flash] { background: var(--selected); }
+.doc-block[data-flash]::before, .doc-block[data-flash]::after, .doc-block[data-flash] > .doc-weglot { background-image: linear-gradient(var(--selected), var(--selected)); }
+.doc-en, .doc-block > .doc-tgt { margin: var(--doc-mt) var(--doc-pad) var(--doc-mb); }
+.doc-en { grid-column: 1; grid-row: 1; white-space: pre-wrap; }
+.doc-block > .doc-tgt { position: relative; grid-column: 2; grid-row: 1; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; }
+.doc-weglot { grid-column: 3; grid-row: 1 / -1; padding: var(--doc-mt) var(--doc-pad) var(--doc-mb); border-inline: 1px solid var(--border); background: var(--elevated); color: var(--muted); cursor: default; white-space: pre-wrap; }
+.doc-tag { position: absolute; z-index: 2; top: 2px; inset-inline-start: var(--doc-pad); font-size: var(--fs-xs); line-height: 1.3; color: var(--muted); opacity: 0; pointer-events: none; transition: opacity 0.12s; }
+.doc-block:hover .doc-tag, .doc-block:focus-within .doc-tag { opacity: 1; }
+
+/* Type of text, from the block's tag: the page's own hierarchy, at the page's own sizes. Structure
+   comes from the type alone; there is no gutter. */
+.doc-block .doc-en, .doc-block .doc-tgt, .doc-block .doc-weglot { font-size: var(--fs-doc-body); line-height: 1.6; overflow-wrap: anywhere; }
+.doc-block[data-b="h1"] :is(.doc-en, .doc-tgt, .doc-weglot) { font-size: var(--fs-doc-h1); font-weight: 700; line-height: 1.2; }
+.doc-block:is([data-b="h2"], [data-b="h3"]) :is(.doc-en, .doc-tgt, .doc-weglot) { font-size: var(--fs-doc-h2); font-weight: 650; line-height: 1.3; }
+.doc-block:is([data-b="h4"], [data-b="h5"], [data-b="h6"]) :is(.doc-en, .doc-tgt, .doc-weglot) { font-size: calc(var(--fs-doc-body) + 1px); font-weight: 650; line-height: 1.35; }
+.doc-block[data-b="button"] :is(.doc-en, .doc-tgt) { width: fit-content; max-width: calc(100% - 2 * var(--doc-pad)); padding: 6px 18px; border: 1px solid var(--border-strong); border-radius: 999px; font-size: var(--fs-base); font-weight: 600; line-height: 1.4; }
+.doc-block:is([data-b="meta-title"], [data-b="meta-description"]) :is(.doc-en, .doc-tgt) { padding: 10px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
+.doc-block[data-b="meta-title"] :is(.doc-en, .doc-tgt, .doc-weglot) { font-size: var(--fs-lg); font-weight: 600; line-height: 1.35; }
+.doc-block[data-b="meta-description"] :is(.doc-en, .doc-tgt, .doc-weglot) { font-size: var(--fs-md); color: var(--muted); line-height: 1.5; }
+.doc-block[data-b="h1"] { --doc-mt: 28px; --doc-mb: 12px; }
+.doc-block[data-b="h2"] { --doc-mt: 28px; --doc-mb: 8px; }
+.doc-block:is([data-b="h3"], [data-b="h4"], [data-b="h5"], [data-b="h6"]) { --doc-mt: 20px; --doc-mb: 6px; }
+.doc-block[data-b="li"] { --doc-mt: 4px; --doc-mb: 4px; }
+.doc-block[data-b="button"] { --doc-mt: 12px; --doc-mb: 12px; }
+.doc-block:is([data-b="meta-title"], [data-b="meta-description"]) { --doc-mt: 8px; --doc-mb: 8px; }
+.doc-block:last-child { --doc-mb: 28px; }
+
+/* The open text: indigo is the focus ring and the outline of the text being edited, nothing else.
+   An edited text carries a 3px bar of the text colour at reduced opacity; a locked one is muted. */
+.doc-block > .doc-tgt:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.doc-tgt:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+.doc-block[data-source="edit"] .doc-tgt::after { content: ""; position: absolute; inset-block: 2px; inset-inline-start: -14px; width: 3px; border-radius: var(--radius-sm); background: var(--fg); opacity: 0.35; }
+.doc-block:not([data-lock=""]) :is(.doc-en, .doc-tgt) { color: var(--muted); cursor: default; }
+
+/* What a block says about itself, under its translation: the colour of the note, nothing else moves */
+.doc-note { position: relative; grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin: 0 var(--doc-pad); font-size: var(--fs-xs); line-height: 1.4; color: var(--muted); }
+.doc-note:empty, .doc-note > :empty { display: none; }
+.doc-note > * { padding-bottom: 8px; }
+.doc-note-chars { font-size: var(--fs-xs); color: var(--muted); }
+.doc-block[data-state="saving"] .doc-note { color: var(--muted); }
+.doc-block[data-state="error"] .doc-note { color: var(--err); }
+.doc-block[data-state="conflict"] .doc-note { color: var(--warn); }
+.doc-conflict { position: relative; grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 var(--doc-pad) var(--doc-mb); font-size: var(--fs-sm); color: var(--warn); }
+.doc-conflict > span { flex: 1 0 100%; }
+
+/* The toolbar floats just above the open translation, right-aligned, only while focus is in the block */
+.doc-tools { position: absolute; z-index: 4; top: -12px; inset-inline-end: 12px; display: flex; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--elevated); box-shadow: 0 8px 24px var(--border); visibility: hidden; opacity: 0; transition: opacity 0.12s; }
+.doc-blocks[data-weglot="on"] .doc-tools { inset-inline-end: calc((100% - 48px) / 3 + 36px); }
+.doc-block:focus-within .doc-tools { visibility: visible; opacity: 1; }
+.doc-tools .desk-btn { padding: 5px 12px; border: 0; border-radius: 0; font-size: var(--fs-xs); }
+.doc-tools .desk-btn + .desk-btn { border-inline-start: 1px solid var(--border); }
+.doc-tool-weglot, .doc-tool-revert { display: none; }
+.doc-blocks[data-weglot="on"] .doc-tool-weglot { display: inline-block; }
+.doc-block[data-source="edit"] .doc-tool-revert { display: inline-block; }
+
+/* The status bar: where saving stands, undo / redo, Show Weglot and the page's size */
+.doc-status { position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-height: 44px; padding: 6px 24px; border-top: 1px solid var(--border); background: var(--elevated); }
+.doc-save { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: var(--fs-sm); }
+.doc-save::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.doc-save:empty::before { display: none; }
+.doc-save[data-state="loading"], .doc-save[data-state="saving"] { color: var(--muted); }
+.doc-save[data-state="loading"]::before, .doc-save[data-state="saving"]::before { background: var(--faint); }
+.doc-save[data-state="retrying"], .doc-save[data-state="offline"], .doc-save[data-state="conflict"] { color: var(--warn); }
+.doc-save[data-state="retrying"]::before, .doc-save[data-state="offline"]::before, .doc-save[data-state="conflict"]::before { background: var(--warn); }
+.doc-save[data-state="error"], .doc-save[data-state="refused"], .doc-save[data-state="stopped"] { color: var(--err); }
+.doc-save[data-state="error"]::before, .doc-save[data-state="refused"]::before, .doc-save[data-state="stopped"]::before { background: var(--err); }
+.doc-save .desk-btn { padding: 2px 10px; font-size: var(--fs-xs); }
+.doc-status-mid { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
+.doc-status-end { display: flex; align-items: center; gap: 12px; }
+.doc-status .desk-btn { padding: 4px 12px; }
+.doc-kbd { margin-inline-start: 6px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-xs); font-weight: 400; color: var(--muted); }
+.doc-kbd:empty { display: none; }
+.doc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.doc-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+.doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-words { font-size: var(--fs-sm); color: var(--muted); }
+.doc .toast-stack { bottom: 60px; }
+
+/* The history of one text: a drawer over the foot of the sheets, versions side by side, newest on the right */
+.doc-drawer { position: fixed; left: 0; right: 0; bottom: 44px; z-index: 30; display: flex; flex-direction: column; max-height: 50vh; overflow: auto; border-top: 1px solid var(--border-strong); background: var(--elevated); animation: doc-slide 0.25s ease-out; }
+@keyframes doc-slide { from { transform: translateY(100%); } to { transform: none; } }
+.doc-drawer > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 24px 0; }
+.doc-drawer > header h2 { margin: 0; font-size: var(--fs-lg); }
+.doc-history-note { margin: 4px 24px 0; font-size: var(--fs-sm); color: var(--muted); }
+.doc-history-list { display: flex; flex-direction: row; align-items: flex-start; gap: 16px; margin: 0; padding: 12px 24px 20px; overflow-x: auto; list-style: none; }
+.doc-version { flex: 0 0 260px; min-width: 260px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.doc-version-meta { display: block; font-size: var(--fs-sm); color: var(--muted); }
+.doc-version-text { margin-top: 6px; font-size: var(--fs-md); overflow-wrap: anywhere; }
+.doc-version .doc-restore { margin-top: 12px; }
+.doc-version-empty { font-size: var(--fs-sm); color: var(--muted); }
+
+/* A tablet loses the rail (the Sections list takes its place) and gives the sheets the room */
+@media (max-width: 1024px) {
+  .doc-layout { grid-template-columns: minmax(0, 1fr); }
+  .doc-outline { display: none; }
+  .doc-sections-wrap { display: flex; }
+  .doc-sheets { --doc-pad: 32px; padding: 20px 16px; }
+  .doc-sheets:has(.doc-blocks[data-weglot="on"]), .doc-blocks[data-weglot="on"] { --doc-pad: 20px; }
+}
+/* A phone: one column. English (muted, small) above the translation above Weglot; the toolbar sits under the text */
+@media (max-width: 767px) {
+  .doc-heads { display: none; }
+  .doc-sheets { padding: 12px; }
+  .doc-block, .doc-blocks[data-weglot="on"] .doc-block { --doc-pad: 0px; display: block; padding: 0 16px; border-inline: 1px solid var(--border); background: var(--elevated); }
+  .doc-block::before, .doc-block::after { display: none; }
+  .doc-block:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 var(--radius) var(--radius); }
+  .doc-tag { position: static; display: block; padding-top: 8px; opacity: 1; }
+  .doc-block .doc-en { font-size: var(--fs-base); color: var(--muted); }
+  .doc-weglot { padding: 4px 0 8px; border-inline: 0; background: none; }
+  .doc-block[data-source="edit"] .doc-tgt::after { inset-inline-start: -10px; }
+  .doc-note, .doc-conflict { margin-inline: 0; }
+  .doc-tools, .doc-blocks[data-weglot="on"] .doc-tools { position: static; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; display: none; }
+  .doc-block:focus-within .doc-tools, .doc-blocks[data-weglot="on"] .doc-block:focus-within .doc-tools { display: flex; visibility: visible; opacity: 1; }
+  .doc-tools .desk-btn, .doc-tools .desk-btn + .desk-btn { border: 1px solid var(--border-strong); border-radius: 999px; }
+  .doc-status { padding: 8px 12px; }
+  .doc-status-mid { flex-basis: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .doc .toast-stack { bottom: 100px; }
+  .doc-drawer { bottom: 0; max-height: 60vh; }
+  .doc-drawer > header { padding: 14px 12px 0; }
+  .doc-history-note { margin-inline: 12px; }
+  .doc-history-list { padding-inline: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .doc-drawer { animation: none; }
+  .doc-tag, .doc-tools { transition: none; }
+}
+
+.doc-weglot[hidden], .doc-head-weglot[hidden], .doc-conflict[hidden], .doc-banner[hidden], .doc-drawer[hidden], .doc-sections-wrap[hidden], .doc-tools[hidden] { display: none; }
+.doc [hidden] { display: none; }
+
+/* The Export window and Re-translate of the document page (CEL-027). Tokens only; indigo only on the
+   one primary button and on focus (the desk's colour rule). Inlined by generate_document_page.py. */
+.ex-modal .cpw-modal { max-width: 860px; max-height: calc(100vh - 48px); overflow: auto; }
+.ex-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.ex-grid th, .ex-grid td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: start; white-space: nowrap; }
+.ex-grid .ex-lang, .ex-grid .ex-check { text-align: center; }
+.ex-grid thead th { font-weight: 500; }
+.ex-page { font-weight: 500; }
+.ex-grid input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.ex-count { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+.ex-progress { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.ex-file { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.ex-file-name { font-weight: 500; }
+.ex-file-state { color: var(--muted); font-size: var(--fs-sm); }
+.ex-file[data-state="done"] .ex-file-state, .ex-file[data-state="failed"] .ex-file-state { color: var(--fg); }
+.ex-file[data-state="failed"] { border-color: var(--border-strong); }
+.ex-result { display: flex; flex-direction: column; gap: 14px; }
+.ex-group-title { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 500; }
+.ex-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.ex-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.ex-item-text { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.ex-item-reason { flex: 1 1 100%; font-size: var(--fs-sm); color: var(--muted); }
+.ex-item .desk-btn { padding: 3px 12px; }
+.ex-more { color: var(--muted); font-size: var(--fs-sm); }
+.ex-note-label { font-size: var(--fs-sm); color: var(--muted); }
+.ex-note { width: 100%; font: inherit; font-size: var(--fs-base); padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--bg); color: var(--fg); resize: vertical; }
+.ex-note:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(93,96,238,0.18); }
+.ex-mine { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.ex-mine input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+@media (max-width: 767px) {
+  .ex-modal .cpw-modal { padding: 16px; }
+  .ex-grid th, .ex-grid td { padding: 6px 4px; }
+}
+</style>
+</head>
+<body>
+  <div class="shell-root">
+    <header class="shell-header">
+      <a class="shell-brand" href="/admin/offers/" aria-label="College of English Language">
+        <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="College of English Language">
+      </a>
+      <nav class="shell-tabs" aria-label="Dashboard sections">
+        <a class="shell-tab" href="/admin/offers/">OFFERS</a>
+        <a class="shell-tab" href="/admin/images/">IMAGES</a>
+        <a class="shell-tab" href="/admin/docs/">DOCS</a>
+        <a class="shell-tab is-active" href="/admin/localization/">LOCALIZATION</a>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">WEGLOT <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/translations/">Translations</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/log/">Synced Posts</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">SEO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/summaries/">Summaries</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/files/">Files</a></li>
+          </ul>
+        </details>
+        <details class="shell-tab-dropdown">
+          <summary class="shell-tab">FIDELO <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+          <ul class="shell-tab-submenu">
+            <li><a class="shell-tab-subitem" href="/admin/housing/">Housing</a></li>
+            <li><a class="shell-tab-subitem" href="/admin/courses/">Courses</a></li>
+          </ul>
+        </details>
+      </nav>
+      <details class="shell-user" id="shell-user">
+        <summary class="shell-user-trigger"><span id="shell-user-name">Account</span> <svg class="shell-tab-chevron" aria-hidden="true" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg></summary>
+        <div class="shell-user-menu">
+          <div class="shell-user-info">
+            <p class="shell-user-field"><span class="shell-user-k">Name</span><span class="shell-user-v" id="shell-user-fullname">&mdash;</span></p>
+            <p class="shell-user-field"><span class="shell-user-k">Email</span><span class="shell-user-v" id="shell-user-email">&mdash;</span></p>
+          </div>
+          <button type="button" class="shell-user-action" id="shell-change-pw">Change password</button>
+          <button type="button" class="shell-user-action shell-user-signout" id="shell-logout">Sign out</button>
+        </div>
+      </details>
+    </header>
+  <div class="dashboard-shell">
+<main id="doc" class="doc" data-state="loading">
+    <section class="doc-gridwrap" aria-labelledby="doc-grid-title">
+      <h2 id="doc-grid-title" class="doc-grid-title">Pages and languages</h2>
+      <div class="scroll-x"><table id="doc-grid" class="doc-grid">
+        <thead><tr><th scope="col">Page</th><th scope="col" class="doc-grid-lang" data-lang="de"><span class="doc-flag" aria-hidden="true">🇩🇪</span>German</th><th scope="col" class="doc-grid-lang" data-lang="fr"><span class="doc-flag" aria-hidden="true">🇫🇷</span>French</th><th scope="col" class="doc-grid-lang" data-lang="es"><span class="doc-flag" aria-hidden="true">🇪🇸</span>Spanish</th><th scope="col" class="doc-grid-lang" data-lang="pt"><span class="doc-flag" aria-hidden="true">🇧🇷</span>Portuguese</th><th scope="col" class="doc-grid-lang" data-lang="it"><span class="doc-flag" aria-hidden="true">🇮🇹</span>Italian</th><th scope="col" class="doc-grid-lang" data-lang="ja"><span class="doc-flag" aria-hidden="true">🇯🇵</span>Japanese</th><th scope="col" class="doc-grid-lang" data-lang="ko"><span class="doc-flag" aria-hidden="true">🇰🇷</span>Korean</th><th scope="col" class="doc-grid-lang" data-lang="ar"><span class="doc-flag" aria-hidden="true">🇸🇦</span>Arabic</th></tr></thead>
+        <tbody>
+          <tr data-page="vancouver"><th scope="row" class="doc-grid-page">Vancouver</th><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
+          <tr data-page="vs-toronto"><th scope="row" class="doc-grid-page">Vancouver vs Toronto</th><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
+          <tr data-page="cost-of-studying-english"><th scope="row" class="doc-grid-page">Cost of studying English</th><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
+          <tr data-page="how-long-to-learn-english"><th scope="row" class="doc-grid-page">How long to learn English</th><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <header id="doc-bar" class="doc-bar">
+      <h1 id="doc-title" class="doc-title"></h1>
+      <div class="doc-actions">
+        <button type="button" id="doc-translate" class="desk-btn">Translate page</button>
+      </div>
+    </header>
+    <div id="doc-banner" class="doc-banner" hidden><p id="doc-banner-text"></p>
+      <button type="button" id="doc-banner-translate" class="desk-btn is-strong" hidden>Translate page</button></div>
+    <div class="doc-layout">
+      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title">
+        <h2 id="doc-outline-title" class="doc-outline-title">On this page</h2>
+        <ol id="doc-outline-list" class="doc-outline-list"></ol>
+      </nav>
+      <div class="doc-sheets">
+        <label class="doc-sections-wrap"><span class="doc-sections-label">Sections</span>
+          <select id="doc-sections" class="desk-select doc-sections"></select></label>
+        <div id="doc-heads" class="doc-heads" aria-hidden="true">
+          <span class="doc-head doc-head-en"></span><span class="doc-head doc-head-tgt"></span><span class="doc-head doc-head-weglot" hidden></span></div>
+        <ol id="doc-blocks" class="doc-blocks" data-weglot="off"></ol>
+      </div>
+    </div>
+    <footer id="doc-status" class="doc-status">
+      <p id="doc-save" class="doc-save" role="status" aria-live="polite" data-state="loading"></p>
+      <div class="doc-status-mid">
+        <button type="button" id="doc-undo" class="desk-btn" disabled><span class="doc-btn-label">Undo</span> <kbd class="doc-kbd"></kbd></button>
+        <button type="button" id="doc-redo" class="desk-btn" disabled><span class="doc-btn-label">Redo</span> <kbd class="doc-kbd"></kbd></button>
+      </div>
+      <div class="doc-status-end">
+        <label class="doc-toggle"><input type="checkbox" id="doc-weglot"> <span>Show Weglot</span></label>
+        <span id="doc-words" class="doc-words"></span>
+      </div>
+    </footer>
+    <aside id="doc-history" class="doc-drawer" role="dialog" aria-modal="false" aria-labelledby="doc-history-title" hidden>
+      <header><h2 id="doc-history-title">History of this text</h2>
+        <button type="button" id="doc-history-close" class="desk-btn">Close</button></header>
+      <p class="doc-history-note">Every change is saved on the server. Nothing is lost when you close the tab.</p>
+      <ol id="doc-history-list" class="doc-history-list"></ol>
+    </aside>
+    <div id="doc-confirm" class="cpw-overlay" hidden><div class="cpw-modal" role="dialog" aria-modal="true" aria-labelledby="doc-confirm-title">
+      <h2 id="doc-confirm-title" class="cpw-title"></h2><p id="doc-confirm-body"></p>
+      <div class="cpw-actions"><button type="button" id="doc-confirm-cancel" class="cpw-btn cpw-cancel">Cancel</button>
+        <button type="button" id="doc-confirm-ok" class="cpw-btn cpw-save">Translate page</button></div></div></div>
+    <div id="doc-toasts" class="toast-stack" aria-live="polite"></div>
+</main>
+  </div>
+  <div class="cpw-overlay" id="cpw-overlay" hidden>
+    <form class="cpw-modal" id="cpw-form" autocomplete="off">
+      <h2 class="cpw-title">Change password</h2>
+      <div class="cpw-readonly">
+        <p class="cpw-field"><span class="cpw-k">First name</span><span class="cpw-v" id="cpw-first">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Last name</span><span class="cpw-v" id="cpw-last">&mdash;</span></p>
+        <p class="cpw-field"><span class="cpw-k">Email</span><span class="cpw-v" id="cpw-email">&mdash;</span></p>
+      </div>
+      <label class="cpw-label">Current password<input type="password" id="cpw-current" class="cpw-input" autocomplete="current-password" required></label>
+      <label class="cpw-label">New password<input type="password" id="cpw-new" class="cpw-input" autocomplete="new-password" required></label>
+      <label class="cpw-label">Confirm new password<input type="password" id="cpw-confirm" class="cpw-input" autocomplete="new-password" required></label>
+      <div class="cpw-actions">
+        <button type="button" class="cpw-btn cpw-cancel" id="cpw-cancel">Cancel</button>
+        <button type="submit" class="cpw-btn cpw-save" id="cpw-save">Save</button>
+      </div>
+      <div class="cpw-status" id="cpw-status" role="status" aria-live="polite"></div>
+    </form>
+  </div>
+  </div>
+  <script>(function () {
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function fullName(u) { return [u.firstName || '', u.lastName || ''].join(' ').trim() || (u.email || 'Account'); }
+    var currentUser = (window.__CEL_USER__ && window.__CEL_USER__.email) ? window.__CEL_USER__ : null;
+    var changePwBtn = document.getElementById('shell-change-pw');
+    if (currentUser && currentUser.email) {
+      setText('shell-user-name', currentUser.firstName || currentUser.email);
+      setText('shell-user-fullname', fullName(currentUser));
+      setText('shell-user-email', currentUser.email);
+      setText('cpw-first', currentUser.firstName || '—');
+      setText('cpw-last', currentUser.lastName || '—');
+      setText('cpw-email', currentUser.email);
+    } else if (changePwBtn) {
+      changePwBtn.style.display = 'none';
+    }
+
+    var logoutBtn = document.getElementById('shell-logout');
+    if (logoutBtn) logoutBtn.addEventListener('click', function () {
+      document.cookie = 'cel_session=; Max-Age=0; Path=/; Secure; SameSite=Strict';
+      location.replace('/');
+    });
+
+    function sha256hex(str) {
+      return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (buf) {
+        return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+      });
+    }
+    function innerHash(pw) { return sha256hex(pw); }
+    function pwHashOf(pw) { return sha256hex(pw).then(sha256hex); }
+
+    var DISPATCH_URL = (typeof window.CEL_DISPATCH_URL === 'string') ? window.CEL_DISPATCH_URL : '';
+    function callProxy(payload) {
+      if (!DISPATCH_URL) return Promise.reject(new Error('Password tool not configured yet.'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      return fetch(DISPATCH_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+        .then(function (resp) {
+          return resp.json().catch(function () { return {}; }).then(function (j) {
+            return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+          });
+        });
+    }
+
+    var overlay = document.getElementById('cpw-overlay');
+    var cpwForm = document.getElementById('cpw-form');
+    var cpwStatus = document.getElementById('cpw-status');
+    var cpwSave = document.getElementById('cpw-save');
+    if (changePwBtn && overlay && cpwForm) {
+      function closeModal() {
+        overlay.setAttribute('hidden', '');
+        cpwForm.reset();
+        cpwStatus.textContent = '';
+        cpwStatus.className = 'cpw-status';
+        cpwSave.disabled = false;
+      }
+      changePwBtn.addEventListener('click', function () {
+        var dd = document.getElementById('shell-user');
+        if (dd) dd.removeAttribute('open');
+        overlay.removeAttribute('hidden');
+        document.getElementById('cpw-current').focus();
+      });
+      document.getElementById('cpw-cancel').addEventListener('click', closeModal);
+      overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeModal(); });
+      cpwForm.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!currentUser || !currentUser.email) return;
+        var cur = document.getElementById('cpw-current').value;
+        var nw = document.getElementById('cpw-new').value;
+        var cf = document.getElementById('cpw-confirm').value;
+        if (!cur || !nw) return;
+        if (nw !== cf) {
+          cpwStatus.textContent = 'New passwords do not match.';
+          cpwStatus.className = 'cpw-status is-error';
+          return;
+        }
+        cpwSave.disabled = true;
+        cpwStatus.textContent = 'Saving…';
+        cpwStatus.className = 'cpw-status';
+        Promise.all([innerHash(cur), pwHashOf(nw)]).then(function (h) {
+          return callProxy({ action: 'changepw', email: currentUser.email, cur_hash: h[0], new_pw_hash: h[1] });
+        }).then(function (r) {
+          if (r.ok) {
+            cpwStatus.textContent = '✓ Saved — use your new password next time you sign in.';
+            cpwStatus.className = 'cpw-status is-ok';
+          } else {
+            cpwStatus.textContent = '✗ Current password is incorrect.';
+            cpwStatus.className = 'cpw-status is-error';
+            cpwSave.disabled = false;
+          }
+        }).catch(function () {
+          cpwStatus.textContent = '✗ Could not save right now. Please try again.';
+          cpwStatus.className = 'cpw-status is-error';
+          cpwSave.disabled = false;
+        });
+      });
+    }
+})();
+</script>
+<script>
+var SAVE_OFF = false;
+var COPY = {"jobs.file.how":"How to import it in Weglot:\n\n- Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”\n- Check that Weglot's “… updated translations will be imported.” shows the same number as this file.\n- Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”\n- Press **Import**.\n\nIf Weglot lists a text under **Errors**, let the team know: the check after the import will show it\ntoo. Then come back here and press **I imported it**.","how.body":"### What you're looking at\n\nEach row is one text from the website — a heading, a sentence, a button. On the left is the\nEnglish. On the right is what visitors in this language see today. Weglot translated all of\nit by machine, and nobody has checked it yet.\n\n### Your three choices\n\n- **Approve** (the tick) — the translation is right as it is.\n- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.\n- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.\n\nEach text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.\n\n### New translations from Gemini\n\nWhen Gemini sends a new translation, it is shown in place of the website's, marked *New\ntranslation to read*, with the website's words under it. Approve it as it is, change it, or ask\nfor another. *Show* → *New translations to read* lists only them.\n\n### Start with the flagged texts\n\nOur automatic checks look for mistakes that are almost always real: English left\nuntranslated, a price or date that changed, a missing link, or the wrong form of address\nfor the client's rules. Flagged texts say why under the translation, and *Flagged — check\nthese first* shows only them. That is usually a handful per language, not hundreds.\n\nSome texts also appear on other pages of the website. Weglot keeps one translation for all\nof them, so they say so and can't be changed from here yet.\n\n### Working faster\n\nTick any texts — or the box in the heading to take everything on screen — and the bar at the\nbottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,\n`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.\n\n### Nothing reaches the website by itself\n\nThe three boxes at the top work on every language at once.\n\n- **Ask Gemini** counts the new translations you requested with ✦. **Send to Gemini** asks you to confirm the number, then sends them all to Gemini together. Their new translations come back to read, usually within 20 minutes; if Gemini is slower, **Check for new translations** fetches them.\n- **Review** counts the flagged texts nobody has checked yet. **Show them** lists this language's in the table.\n- **Weglot file** counts the approved texts that aren't in a file yet. **Get the file** makes one Weglot file for each language that has some. **Download** a language's file: the window that opens says how to import it in Weglot. Then press **I imported it**, and each file says how many of its texts the website shows; **Check again** looks again while some are missing.\n\nBoth lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.","how.saving.off":"### Saving\n\nYour decisions are kept in this browser as you make them. Saving them to the server is\nswitched off for now, until it can keep them private — so keep using this browser, and don't\nclear its history or site data. Once saving is back, you'll be able to close the tab and carry\non from another computer.","how.saving.on":"### Saving\n\nYour decisions are saved by themselves a moment after you stop clicking. The bar at the bottom\nsays where saving stands; hover over it to see what that means.\n\n- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.\n- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.\n- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.\n- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.\n\nA text you're editing keeps what you typed, even if someone else saves it meanwhile. When you\nsave yours, it is marked as changed elsewhere, so you choose which wording stays.","lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","meta.index.description":"Check how the four Vancouver pages read in every language.","meta.locale.title":"{language} — Localization Desk — College of English Language","meta.locale.description":"Check the {language} translation of the four Vancouver pages.","index.eyebrow":"LOCALIZATION DESK","index.subtitle":"Check how the four Vancouver pages read in each language, and fix what reads wrong.","index.intro.title":"Pick a language to start","index.intro.text":"Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those.","index.card.open":"Review {language}","index.card.texts":"{total} texts","index.card.flagged.one":"1 flagged","index.card.flagged.other":"{n} flagged","index.card.flagged.none":"Nothing flagged","index.card.progress":"{done} of {total} reviewed","index.card.start":"Start reviewing →","index.card.continue":"Continue →","index.chip.arrived.one":"1 new translation to read","index.chip.arrived.other":"{n} new translations to read","index.chip.failed.one":"1 translation failed","index.chip.failed.other":"{n} translations failed","index.chip.sending":"{n} with Gemini","index.chip.approved":"{n} approved","index.chip.requested.one":"1 new translation requested","index.chip.requested.other":"{n} new translations requested","index.summary.failed":"Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again.","index.discard.button":"Discard {n} unsaved","index.discard.hint":"Throw away what this browser hasn't saved. Anything already saved stays.","index.discard.confirm.one":"Throw away 1 unsaved change in {language}? Anything already saved stays.","index.discard.confirm.other":"Throw away {n} unsaved changes in {language}? Anything already saved stays.","index.footnote":"Nothing here changes the website directly. Approved texts reach the website only when a Weglot file is made and imported.","locale.title":"{language} · {total} texts","locale.help":"How this works","locale.langs.label":"Choose a language","locale.langs.hover":"{language}","locale.langs.hover_flagged.one":"{language} — 1 flagged text not reviewed yet","locale.langs.hover_flagged.other":"{language} — {n} flagged texts not reviewed yet","filter.page":"Page","filter.page.all":"All pages","filter.show":"Show","filter.search":"Search","filter.search.placeholder":"English or {language}","show.check":"To check first ({n})","show.arrived":"New translations to read ({n})","show.todo":"Not reviewed yet ({n})","show.all":"All texts ({n})","show.csv":"Approved ({n})","show.edited":"Approved with your edit ({n})","show.draft":"New translation requested ({n})","show.sending":"With Gemini ({n})","show.failed":"Translation failed ({n})","show.exported":"In a Weglot file ({n})","show.live":"On the website ({n})","count.line":"{shown} of {total}","count.failed":"Couldn't load the texts ({error}).","table.empty":"No texts match these filters.","table.empty.reset":"Show all texts","flow.label":"Ask Gemini, review and get the Weglot file, for every language","flow.ask.label":"Ask Gemini","flow.ask.unit":"requested","flow.ask.button":"Send to Gemini","flow.ask.none":"Ask Gemini for a new translation with ✦ first","flow.ask.confirm.one":"Send 1 text to Gemini?","flow.ask.confirm.other":"Send {n} texts to Gemini?","flow.ask.changed.one":"The requests changed since you confirmed. Send 1 text to Gemini?","flow.ask.changed.other":"The requests changed since you confirmed. Send {n} texts to Gemini?","flow.ask.confirm.lang":"{language} {n}","flow.review.label":"Review","flow.review.unit":"to check","flow.review.button":"Show them","flow.review.none":"Nothing to check in any language","flow.file.label":"Weglot file","flow.file.unit":"approved","flow.file.button":"Get the file","flow.file.again":"Get the file again","flow.file.none":"Approve texts with ✓ first","flow.file.download":"Download {language}","flow.file.live":"{live} of {n} on the website","flow.file.stale":"This file is out of date: get the file again.","flow.file.popup":"{language}: the Weglot file","flow.file.rows.one":"1 text in this file.","flow.file.rows.other":"{n} texts in this file.","flow.failed":"{language}: {reason}","jobs.working":"Working on it — about a minute.","jobs.unsaved":"Wait until the bar says “All changes saved”: the file and the requests are made from what's saved.","jobs.start.failed":"It couldn't start: {reason}. Try again.","jobs.start.unavailable":"This can't run right now. Let the team know.","jobs.start.daily":"Today's limit is reached: this works again tomorrow.","jobs.read.failed":"Couldn't check how it's going. Trying again…","jobs.file.out.one":"1 text isn't in the file:","jobs.file.out.other":"{n} texts aren't in the file:","jobs.file.notes.one":"1 text went in with something to check:","jobs.file.notes.other":"{n} texts went in with something to check:","jobs.file.imported":"I imported it","jobs.file.again":"Check again","jobs.file.download.failed":"The Weglot file couldn't be downloaded: {reason}. Try again.","jobs.gemini.nothing":"Nothing to send: every request is already with Gemini, or was undone.","jobs.gemini.arrived.one":"1 new translation to read.","jobs.gemini.arrived.other":"{n} new translations to read.","jobs.gemini.slow":"Gemini hasn't finished yet. Check again in a few minutes.","jobs.gemini.collect":"Check for new translations","table.pick_all":"Select every text shown","table.col.source":"English","table.col.target":"{language} on the website now","table.col.status":"Status","table.col.actions":"Your decision","row.pick":"Select this text","row.shared.one":"Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet.","row.shared.other":"Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet.","row.shared.home":"the home page","row.website_now":"On the website now:","status.todo":"Not reviewed yet","status.arrived":"New translation to read","status.approved":"Approved","status.edited":"Approved with your edit","status.queued":"New translation requested","status.sending":"With Gemini…","status.failed":"Translation failed","status.exported":"In a Weglot file","status.live":"On the website","status.conflict":"Changed elsewhere","status.conflict.tip":"{who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs.","status.conflict.gone":"Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs.","conflict.take_theirs":"Use theirs","conflict.take_theirs.hint":"Replace your decision with the one saved first","action.approve":"Approve — this translation is right","action.approve.on":"Approved — click to undo","action.edit":"Write your own translation","action.queue":"Ask Gemini for a new translation","action.queue.on":"New translation requested — click to undo","editor.label":"Your translation","editor.cancel":"Cancel","editor.save.hint":"Change the wording first","editor.save":"Save changes","editor.unsaved":"Not saved yet","editor.links":"Keep the link markers <a wg-1=\"\"> and <\/a> around the words that are a link.","editor.discard":"Throw away what you typed in this box?","bar.selected":"{n} selected","bar.clear":"Clear selection","bar.queue":"Ask Gemini for new translations","bar.approve":"Approve selected","bar.summary.approved":"{n} approved","bar.summary.requested.one":"1 new translation requested","bar.summary.requested.other":"{n} new translations requested","bar.view.approved":"View approved","bar.view.approved_n":"View approved ({n})","bar.view.requested":"View requests","bar.view.requested_n":"View requests ({n})","bar.view.approved.hint":"Nothing approved yet: approve a text, and it's listed here","bar.view.requested.hint":"No new translations requested yet: ask Gemini for one, and it's listed here","save.off.button":"Kept in this browser","save.off.title":"Saving is switched off for now","save.off.elsewhere":"+ {n} in other languages","save.off.hint":"Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data.","autosave.saved":"All changes saved","autosave.checking":"Checking for changes…","autosave.checking.hint":"This is what this computer saved last. Anything saved on another computer since shows up in a moment.","autosave.saved.hint":"Your decisions are on the server: you can close this page, or carry on from another computer.","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.saving.hint":"Changes are saved by themselves a moment after you stop clicking.","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.retrying.hint":"Nothing is lost: your changes are kept on this computer and saved as soon as the server answers.","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.offline.hint":"They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer.","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.hint":"Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.refused.hint":"These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page.","autosave.stopped":"Saving stopped: {reason}","autosave.stopped.hint":"Nothing is lost: your changes are kept on this computer.","autosave.stopped.title":"Saving stopped","autosave.stopped.detail":"Nothing is lost — your changes are kept on this computer. ({reason})","autosave.retry":"Try again","autosave.retry.hint":"Save your changes now","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","save.conflicts.title":"Someone else saved first","save.conflicts.detail.one":"1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs.","save.conflicts.detail.other":"{n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs.","save.refused.title":"Some texts weren't saved","save.refused.detail.one":"1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed.","save.refused.detail.other":"{n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed.","toast.close":"Close message","toast.approved.one":"1 text approved","toast.approved.other":"{n} texts approved","toast.approved.detail":"They go to the website once a Weglot file is made and imported.","toast.requested.one":"1 new translation requested","toast.requested.other":"{n} new translations requested","toast.requested.detail":"Send them to Gemini from the top of the page when you're ready.","toast.already.one":"1 was already set.","toast.already.other":"{n} were already set.","toast.inflight.title":"Nothing changed","toast.inflight.one":"1 text is with Gemini right now. You can decide once it comes back.","toast.inflight.other":"{n} texts are with Gemini right now. You can decide once they come back.","toast.edited.title":"Approved with your edit","toast.edited.detail":"It's saved with your other decisions — the bar at the bottom says when.","toast.undone.title":"Undone","toast.undone.one":"1 text is back to what it was before.","toast.undone.other":"{n} texts are back to what they were before.","toast.arrived.one":"1 new translation to read","toast.arrived.other":"{n} new translations to read","toast.arrived.detail":"Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again.","toast.storage.title":"This browser can't keep a copy of your work","toast.storage.detail":"Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for \"All changes saved\" before you close this tab, and let us know.","toast.saved_load.title":"Couldn't load decisions saved earlier","toast.saved_load.detail":"You may not see decisions made on another computer. Reload before reviewing.","toast.load.title":"This language couldn't be loaded","toast.load.detail":"{error}. Please reload the page, and let us know if it keeps happening.","list.close":"Close","list.select_all":"Select all","list.select_all.label":"Select every text shown","list.selected":"{n} selected","list.undo":"Undo","list.undo.hint":"Tick the texts you want to undo","list.undo_n":"Undo {n}","list.undo_all":"Undo all","list.undo_all.confirm":"Undo all {n}? Each goes back to what it was before.","list.row.undo":"Undo — back to what it was before","list.row.undo.label":"Undo this text","list.draft.title":"New translations requested","list.draft.summary.one":"1 text is waiting for a new translation from Gemini.","list.draft.summary.other":"{n} texts are waiting for a new translation from Gemini.","list.draft.notice":"This list is saved with your decisions. Send the requests to Gemini from the top of the page.","list.csv.title":"Approved","list.csv.summary.one":"1 text is approved and waiting to go to the website.","list.csv.summary.other":"{n} texts are approved and waiting to go to the website.","list.csv.notice":"Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot file.","why.empty":"There is no translation.","why.english":"Still in English.","why.link":"A link is missing or has moved.","why.number":"A number differs from the English ({numbers}).","why.numbers":"The numbers don't match the English.","why.register.de":"Uses the formal “Sie” — the client wants the informal “du”.","why.register.es":"Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine).","why.register.it":"Uses the formal “Lei” — the client wants “tu”.","why.register.fr":"Uses the informal “tu” — the client wants “vous”.","why.register.pt":"Uses “o senhor / a senhora” — the client wants “você”.","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then approve it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then approve it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then approve it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo the approval.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then approve it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Approve both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was approved. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was approved. Review it again.","refusal.UNSIGNED":"The approval wasn't saved through the desk. Approve it again.","refusal.BAD-SIGNATURE":"The approval doesn't match what was saved. Approve it again.","refusal.UNREGISTERED":"The approval doesn't say who made it. Approve it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and the approval doesn't say who made it. Approve it again.","refusal.DUPLICATE":"The same text was approved twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was approved in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The approvals couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not approved, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was approved. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"The approval doesn't record which wording it was given for. Approve it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The approved wording is empty. Write one, or undo the approval.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","how.title":"How this works","how.close":"Close","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","doc.grid.label":"Pages and languages","doc.grid.corner":"Page","doc.status.none":"Not translated","doc.status.drafted":"Drafted","doc.status.edited":"Edited","doc.status.exported":"Exported","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show Weglot","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — draft and your edits","doc.head.weglot":"Weglot (on the website)","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.text.saving":"Saving…","doc.text.saved":"Saved","doc.text.error":"Not saved yet — trying again","doc.text.edited":"Edited","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use Weglot's text","doc.tool.revert":"Undo this","doc.chars.one":"{n} character","doc.chars.other":"{n} characters","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.download":"Download again","export.jump":"Show","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.page.button":"Re-translate page","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.none-arrived":"No new text arrived."};
+    function t(key, vals) {
+      var s = COPY[key];
+      if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
+      return s.replace(/\{([A-Za-z_]+)\}/g, function (m, name) {
+        if (!vals || !(name in vals)) { console.error('COPY.md ' + key + ' needs {' + name + '}'); return m; }
+        return String(vals[name]);
+      });
+    }
+    function tn(key, n, vals) {
+      var v = { n: n };
+      for (var k in (vals || {})) v[k] = vals[k];
+      return t(key + (n === 1 ? '.one' : '.other'), v);
+    }
+    function callProxy(payload, ms) {
+      var url = window.CEL_DISPATCH_URL;
+      if (!url) return Promise.reject(new Error('not configured'));
+      var m = document.cookie.match(/(?:^|; )cel_session=([^;]*)/);
+      payload.token = m ? m[1] : '';
+      var ctl = ms && window.AbortController ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, ms) : null;
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: ctl ? ctl.signal : undefined
+      }).then(function (resp) {
+        return resp.json().catch(function () { return {}; }).then(function (j) {
+          return { status: resp.status, ok: resp.ok && j.ok !== false, body: j };
+        });
+      }).finally(function () { if (timer) clearTimeout(timer); });
+    }
+
+    (function () {
+      var tip = document.createElement('div');
+      tip.className = 'desk-tip';
+      tip.setAttribute('role', 'tooltip');
+      tip.hidden = true;
+      document.body.appendChild(tip);
+      var owner = null, timer = null;
+      function hide() { clearTimeout(timer); timer = null; owner = null; tip.hidden = true; }
+      function show(el) {
+        var text = el.getAttribute('data-tip');
+        if (!text) { hide(); return; }
+        owner = el;
+        tip.textContent = text;
+        tip.hidden = false;
+        var r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8;
+        var top = r.top - h - gap;
+        if (top < gap) top = r.bottom + gap;
+        var left = Math.min(Math.max(gap, r.left + r.width / 2 - w / 2), window.innerWidth - w - gap);
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+      }
+      function later(el, ms) { clearTimeout(timer); timer = setTimeout(function () { show(el); }, ms); }
+      document.addEventListener('pointerover', function (ev) {
+        if (ev.pointerType === 'touch') return;
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el !== owner) later(el, 100);
+      });
+      document.addEventListener('pointerout', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && (!ev.relatedTarget || !el.contains(ev.relatedTarget))) hide();
+      });
+      document.addEventListener('focusin', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (el && el.matches(':focus-visible')) show(el);
+      });
+      document.addEventListener('focusout', hide);
+      document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(); });
+      window.addEventListener('scroll', hide, true);
+      document.addEventListener('pointerdown', function (ev) {
+        var el = ev.target.closest && ev.target.closest('[data-tip]');
+        if (ev.pointerType === 'touch' && el) later(el, 500);
+      });
+      ['pointerup', 'pointercancel'].forEach(function (type) {
+        document.addEventListener(type, function (ev) {
+          if (ev.pointerType === 'touch') { clearTimeout(timer); if (!tip.hidden) setTimeout(hide, 1500); }
+        });
+      });
+      // A click changes what the control says ("Approved -- click to undo"): say it now.
+      document.addEventListener('click', function () {
+        var el = owner;
+        if (el) setTimeout(function () { if (owner === el) show(el); }, 0);
+      });
+    })();
+</script>
+<script type="application/json" id="doc-config">{"locales":[{"code":"de","endonym":"Deutsch","dir":"ltr","flag":"🇩🇪"},{"code":"fr","endonym":"Français","dir":"ltr","flag":"🇫🇷"},{"code":"es","endonym":"Español","dir":"ltr","flag":"🇪🇸"},{"code":"pt","endonym":"Português","dir":"ltr","flag":"🇧🇷"},{"code":"it","endonym":"Italiano","dir":"ltr","flag":"🇮🇹"},{"code":"ja","endonym":"日本語","dir":"ltr","flag":"🇯🇵"},{"code":"ko","endonym":"한국어","dir":"ltr","flag":"🇰🇷"},{"code":"ar","endonym":"العربية","dir":"rtl","flag":"🇸🇦"}],"pages":["vancouver","vs-toronto","cost-of-studying-english","how-long-to-learn-english"],"data":"/admin/localization/document/data/","version":"desk-v2"}</script>
+<script>
+/*
+ * The always-open translation field -- a SPIKE for monorepo runbook WO-22 (guard G13).
+ *
+ * WO-22 replaces the desk's edit box with Weglot's kind of field: always open, the link
+ * markers shown as chips. Before anything is built on it, this proves -- in a real browser,
+ * against the whole corpus -- that such a field can hold a translation without changing it:
+ *   - no-break spaces (U+00A0) survive, and typing never adds one;
+ *   - Japanese / Korean IME: no key acts while a composition is open (R28);
+ *   - Arabic, right to left, with chips;
+ *   - paste arrives as plain text, and can never forge a marker;
+ *   - every text round-trips its <a wg-N=""> markers byte for byte (R29);
+ *   - native undo works;
+ *   - no edit, by any path, changes the markers: an edit over a selection that takes one
+ *     does nothing (typing, paste), an IME composition cannot take one, and anything else
+ *     that would is rolled back (#5 review, 2026-09-28).
+ * tests/browser/test_rich_field.py is the matrix. If it cannot pass, WO-22 stops here.
+ *
+ * A translation carries exactly two kinds of markup (measured on all 11,214 texts):
+ * Weglot's link markers <a wg-N="">...</a>, and one raw <br>. They are rendered as tokens
+ * the reviewer cannot edit or delete; everything else is plain text. The field is built
+ * with DOM calls only, never by assigning markup (the desk's rule: site copy is data).
+ * A token's label is real text inside it (the pair's number, or the raw marker under
+ * "Show HTML"); the text is never read back -- a token serialises as its data-raw.
+ */
+(function () {
+  'use strict';
+
+  const TOKEN = /(<a wg-[0-9]+="">|<\/a>|<br>)/;
+  const TOKEN_ALL = /<a wg-[0-9]+="">|<\/a>|<br>/g;
+  const IS_TOKEN = /^(?:<a wg-[0-9]+="">|<\/a>|<br>)$/;
+  const MARK = { open: '‹', close: '›', break: '↵' };   // ‹ › ↵
+  const ATTACHED = new WeakMap();                          // field -> detach()
+
+  function label(tok, showHtml) {
+    const side = tok.getAttribute('data-side');
+    tok.textContent = showHtml ? tok.getAttribute('data-raw')
+      : side === 'break' ? MARK.break : MARK[side] + tok.getAttribute('data-link');
+  }
+
+  function tokenEl(raw, link) {
+    const s = document.createElement('span');
+    s.className = 'rf-token';
+    s.contentEditable = 'false';
+    // A dir attribute takes the chip out of the field's dir=auto: under "Show HTML" its
+    // raw marker's Latin letters flipped an Arabic field that starts with a link to LTR.
+    s.setAttribute('dir', 'ltr');
+    s.setAttribute('data-raw', raw);
+    if (raw === '<br>') s.setAttribute('data-side', 'break');
+    else {
+      s.setAttribute('data-side', raw === '</a>' ? 'close' : 'open');
+      s.setAttribute('data-link', link);
+    }
+    label(s, false);
+    return s;
+  }
+
+  // Text -> field. Each closing marker takes the number of the link it closes, so a pair of
+  // chips shows one number.
+  function render(el, text) {
+    el.textContent = '';
+    const open = [];
+    String(text).split(TOKEN).forEach(function (part) {
+      if (!part) return;
+      if (!IS_TOKEN.test(part)) { el.appendChild(document.createTextNode(part)); return; }
+      const m = part.match(/wg-([0-9]+)/);
+      if (m) { open.push(m[1]); el.appendChild(tokenEl(part, m[1])); }
+      else el.appendChild(tokenEl(part, part === '</a>' ? (open.pop() || '') : ''));
+    });
+  }
+
+  // Field -> text. Adjacent text is joined before anything is stripped, so a marker typed
+  // across two text nodes is caught too. Markers come ONLY from tokens: typed or pasted
+  // marker syntax is removed, or the reviewer could forge a link Weglot would then import.
+  // Elements the browser adds while editing (a formatting span, a placeholder <br>) give
+  // up their text and nothing else.
+  function serialize(el) {
+    let out = '', text = '';
+    function flush() { out += text.replace(TOKEN_ALL, ''); text = ''; }
+    (function walk(node) {
+      for (let c = node.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType === 3) text += c.nodeValue;
+        else if (c.nodeType === 1) {
+          if (c.hasAttribute('data-raw')) { flush(); out += c.getAttribute('data-raw'); }
+          else if (c.tagName !== 'BR') walk(c);
+        }
+      }
+    })(el);
+    flush();
+    return out;
+  }
+
+  // The markers in document order: the one thing no edit may change.
+  function markers(el) {
+    return Array.prototype.map.call(el.querySelectorAll('.rf-token'),
+      function (t) { return t.getAttribute('data-raw'); }).join('\u0000');
+  }
+
+  function caretAtEnd(el) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+
+  // The selection's ranges inside the field.
+  function selectionIn(el) {
+    const s = window.getSelection(), out = [];
+    for (let i = 0; s && i < s.rangeCount; i++) {
+      const r = s.getRangeAt(i);
+      if (el.contains(r.commonAncestorContainer)) out.push(r);
+    }
+    return out;
+  }
+
+  function touchesToken(el, ranges) {
+    const tokens = el.querySelectorAll('.rf-token');
+    for (const sr of ranges) {
+      const r = document.createRange();
+      r.setStart(sr.startContainer, sr.startOffset);
+      r.setEnd(sr.endContainer, sr.endOffset);
+      for (const tok of tokens) if (r.intersectsNode(tok)) return true;
+    }
+    return false;
+  }
+
+  function attach(el, opts) {
+    opts = opts || {};
+    // Attached again (a re-render into the same element): the old listeners go first, or
+    // every paste would land twice.
+    if (ATTACHED.has(el)) ATTACHED.get(el)();
+    const original = String(opts.text || '');
+    el.classList.add('rf-field');
+    el.contentEditable = 'true';
+    el.setAttribute('dir', 'auto');       // the text's own direction, as the desk's cells
+    el.setAttribute('spellcheck', 'false');
+    render(el, original);
+    const expected = markers(el);
+    let composing = false;
+    let lastGood = original;
+    const on = [];
+    function listen(type, fn) { el.addEventListener(type, fn); on.push([type, fn]); }
+
+    // The backstop, after every edit: markers that changed by ANY path (a future browser, an
+    // editing command, an undo that replays a refused edit) put the field back to its last
+    // good text. The guards below keep this from ever being the reviewer's experience.
+    function settle() {
+      if (markers(el) !== expected) {
+        render(el, lastGood);
+        caretAtEnd(el);
+      } else {
+        lastGood = serialize(el);
+      }
+    }
+
+    // A composition cannot be cancelled, and the first thing it does is replace the
+    // selection. When that selection takes a marker, it collapses to its end first: the
+    // composed text goes in, nothing selected goes out.
+    listen('compositionstart', function () {
+      composing = true;
+      const ranges = selectionIn(el);
+      if (touchesToken(el, ranges)) window.getSelection().collapseToEnd();
+    });
+    listen('compositionend', function () { composing = false; settle(); });
+    listen('input', function (ev) { if (!composing && !ev.isComposing) settle(); });
+
+    listen('keydown', function (ev) {
+      // Mid-composition every key belongs to the IME: Enter picks a candidate, it does not
+      // commit the row (R28). keyCode 229 is how Chrome marks such a key.
+      if (composing || ev.isComposing || ev.keyCode === 229) return;
+      if (ev.key === 'Enter') {
+        ev.preventDefault();               // one paragraph: no text in the corpus breaks a line
+        if ((ev.metaKey || ev.ctrlKey) && opts.onCommit) opts.onCommit(serialize(el));
+        return;
+      }
+      if (ev.key === 'Escape') {
+        ev.preventDefault();
+        render(el, original);
+        lastGood = original;
+        if (opts.onCancel) opts.onCancel();
+      }
+    });
+
+    listen('beforeinput', function (ev) {
+      const t = ev.inputType || '';
+      if (t === 'historyUndo' || t === 'historyRedo') return;
+      // Structure is not the reviewer's to change: no new paragraphs, no bold, no dropped
+      // markup -- and no edit that would take a marker with it.
+      if (t === 'insertParagraph' || t === 'insertLineBreak' || t.indexOf('format') === 0 ||
+          t === 'insertFromDrop' || t === 'deleteByDrag') { ev.preventDefault(); return; }
+      const ranges = ev.getTargetRanges ? ev.getTargetRanges() : [];
+      if (touchesToken(el, ranges)) ev.preventDefault();
+    });
+
+    // Paste arrives as plain text on one line, with any marker syntax taken out. It goes in
+    // through the browser's own editing command, so Undo takes it back out -- and that
+    // command fires no beforeinput, so the marker guard is applied here: a paste over a
+    // selection that takes a marker does nothing, as typing over it does (#5 review E-1).
+    // A clipboard with only HTML gives its text, read in an inert document (nothing in it
+    // runs or loads).
+    listen('paste', function (ev) {
+      ev.preventDefault();
+      if (touchesToken(el, selectionIn(el))) return;
+      const cd = ev.clipboardData;
+      let text = (cd && cd.getData('text/plain')) || '';
+      if (!text && cd && cd.getData('text/html')) {
+        text = new DOMParser().parseFromString(cd.getData('text/html'), 'text/html').body.textContent || '';
+      }
+      text = text.replace(TOKEN_ALL, '').replace(/[\r\n\t]+/g, ' ');
+      if (text) document.execCommand('insertText', false, text);
+    });
+    listen('drop', function (ev) { ev.preventDefault(); });
+
+    function detach() {
+      on.forEach(function (h) { el.removeEventListener(h[0], h[1]); });
+      ATTACHED.delete(el);
+    }
+    ATTACHED.set(el, detach);
+
+    return {
+      detach: detach,
+      value: function () { return serialize(el); },
+      changed: function () { return serialize(el) !== original; },
+      // "Show HTML": each chip shows its marker exactly as Weglot stores it.
+      showHtml: function (on) {
+        el.classList.toggle('rf-show-html', !!on);
+        el.querySelectorAll('.rf-token').forEach(function (tok) { label(tok, !!on); });
+      }
+    };
+  }
+
+  window.RichField = { render: render, serialize: serialize, attach: attach };
+})();
+</script>
+<script>
+/*
+ * The document page of the localization desk (desk v2, CEL-026): one page read as a document,
+ * English on the left, the translation on the right (Weglot's wording as an optional third
+ * column), every translation editable in place.
+ *
+ * generate_document_page.py inlines this file, after rich_field.js, into
+ * /admin/localization/document/. It reads three globals the page defines first: COPY with
+ * t() / tn() (every word comes from COPY.md), callProxy() (the Worker door) and SAVE_OFF.
+ * The contract between the generator, this file and the tests: runtime/out/loc2/CEL-026/contract.md.
+ *
+ * What it does, and how, in one paragraph: a text is saved the way the v1 desk saves one (desk-write,
+ * the Worker keeps a version of every change, `base` = the version this page last saw), so
+ *   - autosave is a quiet 2 s / 10 s ceiling queue in chunks of 50 under one cross-tab lock;
+ *   - undo, redo and "restore" are ordinary writes: nothing here can overwrite a version this
+ *     page has not seen, the Worker answers "conflict" and the reviewer chooses (keep mine / take theirs);
+ *   - the server's own history is the backup, and History per text reads it (desk-history {unit}).
+ * DOM is built with createElement / textContent only: texts are data, never markup.
+ */
+(function () {
+  'use strict';
+
+  const cfgNode = document.getElementById('doc-config');
+  if (!cfgNode || !window.RichField || typeof callProxy !== 'function') return;
+  const CFG = JSON.parse(cfgNode.textContent);
+  const LOCALES = CFG.locales;
+  const PAGES = CFG.pages;
+  const DATA = CFG.data;
+  const LANGS = LOCALES.map(function (l) { return l.code; });
+
+  const DESK_CLIENT = 1;                       // the Worker's DESK_MIN_CLIENT: below it, it says reload
+  const CHUNK = 50;                            // texts per desk-write (the free plan's 10 ms CPU)
+  const RETRY_MS = [2000, 5000, 15000, 30000, 60000];
+  const STOPS = ['reload', 'signed_out', 'cap', 'daily', 'refused'];   // saving waits for the reviewer
+  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000 },
+    window.DOC_TIMING || {});
+  const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
+  const UNDO_CAP = 100;
+  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot' };
+  const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
+
+  // The block labels, spelled out so the copy check sees every key.
+  const BLOCK_KEY = {
+    'meta-title': 'doc.block.meta-title', 'meta-description': 'doc.block.meta-description',
+    h1: 'doc.block.h1', h2: 'doc.block.h2', h3: 'doc.block.h3', h4: 'doc.block.h4', h5: 'doc.block.h5',
+    h6: 'doc.block.h6', p: 'doc.block.p', li: 'doc.block.li', button: 'doc.block.button',
+    link: 'doc.block.link', other: 'doc.block.other'
+  };
+  const STATUS_KEY = {
+    none: 'doc.status.none', drafted: 'doc.status.drafted', edited: 'doc.status.edited',
+    exported: 'doc.status.exported', unknown: 'doc.status.unknown',
+    translating: 'doc.status.translating', queued: 'doc.status.queued'
+  };
+  const FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];   // what a decision record may carry
+
+  const $ = function (id) { return document.getElementById(id); };
+  function h(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+
+  // ── storage (a browser that refuses it must not break the page) ───────────────────
+  let storageWarned = false;
+  function lsGet(key) {
+    try { const s = localStorage.getItem(key); return s === null ? null : JSON.parse(s); } catch (_) { return null; }
+  }
+  function lsSet(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (_) {
+      if (!storageWarned) { storageWarned = true; toast(t('toast.storage.title'), 'warn'); }
+      return false;
+    }
+  }
+
+  // ── decision records ───────────────────────────────────────────────────────────────
+  // canon(): only the fields a record may carry, in one fixed order, empty ones dropped; null
+  // when nothing is left (= no decision). Two records are the same when their canon text is.
+  function canon(r) {
+    if (!r) return null;
+    const out = {};
+    FIELDS.forEach(function (k) {
+      const v = r[k];
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return;
+      out[k] = v;
+    });
+    return Object.keys(out).length ? out : null;
+  }
+  const same = function (a, b) { return JSON.stringify(canon(a)) === JSON.stringify(canon(b)); };
+  // A wording typed here IS the decision (ruling #55 A11, #63: leaving a changed field approves it with
+  // your edit): `against`, when given, stamps the v1 decision (`tray:'csv'`, `approvedAgainst` = the wording
+  // the website shows now) so the page export takes the text. No text means no edit: the stamp goes with it.
+  function withText(r, text, against) {
+    const next = Object.assign({}, r || {});
+    if (text) {
+      next.text = text;
+      if (typeof against === 'string') { next.tray = 'csv'; next.approvedAgainst = against; }
+    } else { delete next.text; delete next.tray; delete next.approvedAgainst; }
+    return canon(next);
+  }
+  // What the website shows for this text in this language now: Weglot's wording, or the English where
+  // Weglot has none yet (the page shows English there; the export reads the same line).
+  function liveWording(uid) {
+    const b = M.get(uid), d = b ? b.d : null;
+    return d ? ((d.w && d.w[S.lang]) || d.en || '') : '';
+  }
+  function decide(uid, text) { return withText(curRec(S.lang, uid), text, liveWording(uid)); }
+
+  // ── state ──────────────────────────────────────────────────────────────────────────
+  const S = { page: null, lang: null, doc: null, loading: true, token: 0 };
+  const L = {};                      // per language: {loaded, decisions, drafts, pipeline}
+  LANGS.forEach(function (c) { L[c] = { loaded: false, decisions: {}, drafts: {}, pipeline: {} }; });
+  const PI = new Map();              // page -> {count, ids}
+  const PAGE_CACHE = new Map();      // page -> data
+  let P = lsGet(KEYS.pending) || {}; // unsent: {lang: {uid: {record, base, page, conflict?}}}
+  const C = {};                      // conflicts: {lang: {uid: {current}}}
+  const U = lsGet(KEYS.undo) || {};  // undo stacks: {"lang/page": {undo: [], redo: []}}
+  const M = new Map();               // uid -> block model of the open document
+  const net = { timer: null, maxTimer: null, running: false, again: false, retry: 0, failure: null,
+                stopped: null, inflight: new Set(), refused: new Set() };
+  let group = null, groupTimer = null;
+  let readError = false;
+  let focusBack = null;
+
+  function pend(lang) { return P[lang] || (P[lang] = {}); }
+  function conf(lang) { return C[lang] || (C[lang] = {}); }
+  function serverRec(lang, uid) { return canon(L[lang].decisions[uid]); }
+  function serverVer(lang, uid) { const d = L[lang].decisions[uid]; return d ? d.version || 0 : 0; }
+  function curRec(lang, uid) {
+    const e = P[lang] && P[lang][uid];
+    return e ? e.record : serverRec(lang, uid);
+  }
+  function effText(lang, uid) {
+    const r = curRec(lang, uid);
+    if (r && r.text) return r.text;
+    const d = L[lang].drafts[uid];
+    return d && d.text ? d.text : '';
+  }
+  function who() {
+    const u = window.__CEL_USER__ || {};
+    return u.email || '';
+  }
+  function persistPending() {
+    const out = {};
+    Object.keys(P).forEach(function (lang) {
+      const ids = Object.keys(P[lang]);
+      if (ids.length) out[lang] = P[lang];
+    });
+    lsSet(KEYS.pending, out);
+  }
+  function pendingTotal() {
+    let n = 0;
+    Object.keys(P).forEach(function (lang) {
+      Object.keys(P[lang]).forEach(function (uid) {
+        if (!P[lang][uid].conflict && !net.refused.has(lang + '|' + uid)) n++;
+      });
+    });
+    return n;
+  }
+  function conflictTotal() {
+    let n = 0;
+    Object.keys(C).forEach(function (lang) { n += Object.keys(C[lang]).length; });
+    return n;
+  }
+
+  // ── toasts ─────────────────────────────────────────────────────────────────────────
+  function toast(message, level) {
+    const stack = $('doc-toasts');
+    if (!stack) return;
+    const node = h('div', 'toast is-' + (level || 'ok'));
+    node.appendChild(h('span', 'toast-title', message));
+    stack.appendChild(node);
+    setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 4000);
+  }
+
+  // ── the Worker ─────────────────────────────────────────────────────────────────────
+  // Why a save stopped, as a COPY.md save.reason.* key (the same words as the v1 desk).
+  function failureReason(r) {
+    if (!r) return 'offline';
+    if (r.status === 409) return 'reload';
+    if (r.status === 401) return 'signed_out';
+    if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'daily' : 'cap';
+    if (r.status === 503) return 'unavailable';
+    if (r.status === 400 || r.status === 403) return 'refused';
+    return 'trouble';
+  }
+  function call(payload) {
+    return callProxy(payload, TIMING.timeout).catch(function () { return null; });
+  }
+
+  // ── autosave ───────────────────────────────────────────────────────────────────────
+  function changed() {
+    persistPending();
+    updateBar();
+    schedule();
+    gridSoon();
+  }
+  function schedule() {
+    if (SAVE_OFF_ON || net.stopped) return;
+    clearTimeout(net.timer);
+    net.timer = setTimeout(run, TIMING.quiet);
+    if (!net.maxTimer) net.maxTimer = setTimeout(run, TIMING.maxWait);
+  }
+  function run() {
+    clearTimeout(net.timer); clearTimeout(net.maxTimer);
+    net.timer = null; net.maxTimer = null;
+    if (SAVE_OFF_ON) return;
+    if (net.running) { net.again = true; return; }
+    net.running = true;
+    const task = function () {
+      return save().catch(function () {}).then(function () {
+        net.running = false;
+        if (net.again) { net.again = false; run(); }
+      });
+    };
+    if (navigator.locks && navigator.locks.request) navigator.locks.request('cel-desk-save', task);
+    else task();
+  }
+  function langOrder() {
+    return [S.lang].concat(LANGS.filter(function (c) { return c !== S.lang; })).filter(Boolean);
+  }
+  function sendable(lang) {
+    return Object.keys(pend(lang)).filter(function (uid) {
+      return !pend(lang)[uid].conflict && !net.refused.has(lang + '|' + uid);
+    });
+  }
+  async function save() {
+    const order = langOrder();
+    for (let i = 0; i < order.length; i++) {
+      const lang = order[i];
+      for (;;) {
+        const ids = sendable(lang).slice(0, CHUNK);
+        if (!ids.length) break;
+        const sent = {};
+        const changes = ids.map(function (uid) {
+          const e = P[lang][uid];
+          sent[uid] = JSON.stringify(e.record);
+          net.inflight.add(lang + '|' + uid);
+          return { unit: uid, page: e.page, base: e.base, record: e.record };
+        });
+        paintMany(lang, ids);
+        updateBar();
+        const r = await call({ action: 'desk-write', locale: lang, client: DESK_CLIENT, changes: changes });
+        ids.forEach(function (uid) { net.inflight.delete(lang + '|' + uid); });
+        if (!r || !r.ok) {
+          failed(failureReason(r));
+          paintMany(lang, ids);
+          updateBar();
+          return;
+        }
+        net.retry = 0; net.failure = null; net.stopped = null;
+        written(lang, ids, sent, r.body || {});
+        updateBar();
+        gridSoon();
+      }
+    }
+  }
+  function failed(why) {
+    net.failure = why;
+    if (STOPS.indexOf(why) >= 0) { net.stopped = why; return; }
+    const wait = RETRY_MS[Math.min(net.retry, RETRY_MS.length - 1)];
+    net.retry++;
+    clearTimeout(net.timer);
+    net.timer = setTimeout(run, wait);
+  }
+  function written(lang, ids, sent, body) {
+    const applied = {}, conflicts = {}, refused = {};
+    (body.applied || []).forEach(function (a) { applied[a.unit] = a.version; });
+    (body.conflicts || []).forEach(function (c) { conflicts[c.unit] = c.current || null; });
+    (body.refused || []).forEach(function (x) { refused[x.unit] = true; });
+    const now = new Date().toISOString();
+    ids.forEach(function (uid) {
+      const e = P[lang] && P[lang][uid];
+      if (!e) return;
+      if (Object.prototype.hasOwnProperty.call(applied, uid)) {
+        const ver = applied[uid];
+        // The server holds what was SENT, not what the box says now: typed (or undone) again while the
+        // write was on its way, the entry stays and is sent next, on top of this version.
+        L[lang].decisions[uid] = Object.assign({}, JSON.parse(sent[uid]) || {}, { page: e.page, version: ver, by: who(), at: now });
+        if (JSON.stringify(e.record) === sent[uid]) delete P[lang][uid];
+        else e.base = ver;                       // typed again while it was on its way: build on this version
+        const b = M.get(uid);
+        if (b && lang === S.lang) { b.savedUntil = Date.now() + 3000; setTimeout(function () { paintBlock(uid); }, 3100); }
+      } else if (Object.prototype.hasOwnProperty.call(conflicts, uid)) {
+        e.conflict = true;
+        conf(lang)[uid] = { current: conflicts[uid] };
+      } else {
+        net.refused.add(lang + '|' + uid);      // refused, or not mentioned: never resent in a loop
+      }
+    });
+    persistPending();
+    paintMany(lang, ids);
+  }
+
+  // ── the conflict the Worker reports: someone saved the same text after the version this page saw ─
+  function keepMine(uid) {
+    const lang = S.lang, e = pend(lang)[uid], c = conf(lang)[uid];
+    if (!e || !c) return;
+    e.base = c.current ? c.current.version || 0 : 0;
+    delete e.conflict;
+    delete conf(lang)[uid];
+    changed();
+    paintBlock(uid);
+  }
+  function takeTheirs(uid) {
+    const lang = S.lang, c = conf(lang)[uid];
+    if (!c) return;
+    if (c.current) L[lang].decisions[uid] = c.current; else delete L[lang].decisions[uid];
+    delete pend(lang)[uid];
+    delete conf(lang)[uid];
+    persistPending();
+    changed();
+    paintBlock(uid, true);
+  }
+
+  // ── making a change ────────────────────────────────────────────────────────────────
+  // The one way a text changes: edit, undo, redo, restore. `next` is the whole new record.
+  function changeRecord(uid, next) {
+    const lang = S.lang, before = curRec(lang, uid);
+    next = canon(next);
+    if (same(before, next)) return false;
+    const e = pend(lang)[uid];
+    const base = e ? e.base : serverVer(lang, uid);
+    net.refused.delete(lang + '|' + uid);
+    // Back to what this page holds as the server's version is "nothing to send" -- unless a write of this
+    // text is on its way: the server will have that one, so this change must follow it (re-based when
+    // the write lands, see written()).
+    if (e && e.conflict) { e.record = next; }
+    else if (same(next, serverRec(lang, uid)) && base === serverVer(lang, uid) && !net.inflight.has(lang + '|' + uid)) delete pend(lang)[uid];
+    else pend(lang)[uid] = { record: next, base: base, page: S.page };
+    changed();
+    return true;
+  }
+
+  // ── undo / redo (one stack pair per document: language + page) ─────────────────────
+  function stack() {
+    const k = S.lang + '/' + S.page;
+    return U[k] || (U[k] = { undo: [], redo: [] });
+  }
+  function saveStacks() {
+    const out = {};
+    Object.keys(U).forEach(function (k) { if (U[k].undo.length || U[k].redo.length) out[k] = U[k]; });
+    lsSet(KEYS.undo, out);
+  }
+  function closeGroup() {
+    clearTimeout(groupTimer);
+    if (!group) return;
+    const g = group;
+    group = null;
+    const to = curRec(S.lang, g.uid);
+    if (!same(g.from, to)) {
+      const s = stack();
+      s.undo.push({ uid: g.uid, from: g.from, to: to });
+      if (s.undo.length > UNDO_CAP) s.undo.shift();
+      s.redo = [];
+      saveStacks();
+    }
+    paintUndo();
+  }
+  function onInput(uid, rf) {
+    if (!group || group.uid !== uid) { closeGroup(); group = { uid: uid, from: curRec(S.lang, uid) }; }
+    changeRecord(uid, decide(uid, rf.value()));
+    paintBlock(uid);
+    clearTimeout(groupTimer);
+    groupTimer = setTimeout(closeGroup, TIMING.undoPause);
+    paintUndo();
+  }
+  // An undo / redo step may change only the text it was made on. The stacks outlive a reload and a
+  // re-read, so the text can stand at somebody else's version by now: then the step is NOT written
+  // but held as a conflict (keep mine / take theirs, fix 15), exactly as when the Worker reports one.
+  function holdAsConflict(uid, wanted) {
+    const lang = S.lang, e = pend(lang)[uid];
+    if (e) e.record = canon(wanted);
+    else pend(lang)[uid] = { record: canon(wanted), base: serverVer(lang, uid), page: S.page };
+    pend(lang)[uid].conflict = true;
+    conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    net.refused.delete(lang + '|' + uid);
+    changed();
+  }
+  function step(dir) {
+    closeGroup();
+    const s = stack();
+    const from = dir < 0 ? s.undo : s.redo, to = dir < 0 ? s.redo : s.undo;
+    const entry = from[from.length - 1];
+    if (!entry) return;
+    const lang = S.lang, uid = entry.uid, e = pend(lang)[uid];
+    const standing = same(curRec(lang, uid), dir < 0 ? entry.to : entry.from);
+    from.pop();
+    // Not the state this step made, and an unsent change of this page's own that the stack does not
+    // know about: the step has nothing to stand on and is dropped, never written over it.
+    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); return; }
+    to.push(entry);
+    const wanted = dir < 0 ? entry.from : entry.to;
+    if (standing) changeRecord(uid, wanted); else holdAsConflict(uid, wanted);
+    saveStacks();
+    paintBlock(uid, true);
+    reveal(uid);
+    paintUndo();
+  }
+  const undo = function () { step(-1); };
+  const redo = function () { step(1); };
+  function reveal(uid) {
+    const b = M.get(uid);
+    if (!b) return;
+    try { b.li.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+    b.li.setAttribute('data-flash', '1');
+    setTimeout(function () { b.li.removeAttribute('data-flash'); }, 1000);
+  }
+  function keysFor(kind) {
+    const k = kind === 'undo'
+      ? (IS_MAC ? 'doc.keys.undo.mac' : 'doc.keys.undo.other')
+      : (IS_MAC ? 'doc.keys.redo.mac' : 'doc.keys.redo.other');
+    return t(k);
+  }
+  function paintUndo() {
+    const s = stack();
+    const u = $('doc-undo'), r = $('doc-redo');
+    const canU = s.undo.length > 0 || !!group, canR = s.redo.length > 0;
+    u.disabled = !canU; r.disabled = !canR;
+    const ut = canU ? t('doc.undo.tip', { keys: keysFor('undo') }) : t('doc.undo.none');
+    const rt = canR ? t('doc.redo.tip', { keys: keysFor('redo') }) : t('doc.redo.none');
+    u.setAttribute('data-tip', ut); u.setAttribute('aria-label', ut);
+    r.setAttribute('data-tip', rt); r.setAttribute('aria-label', rt);
+    const uk = u.querySelector('.doc-kbd'), rk = r.querySelector('.doc-kbd');
+    if (uk) uk.textContent = keysFor('undo');
+    if (rk) rk.textContent = keysFor('redo');
+  }
+
+  // ── the text cells ─────────────────────────────────────────────────────────────────
+  function blockLabel(d) {
+    if (d.b === 'meta-title' && d.r === 'og_title') return t('doc.block.og-title');
+    return t(BLOCK_KEY[d.b] || BLOCK_KEY.other);
+  }
+  function lockReason(d) {
+    if (d.lock === 'summary') return t('refusal.SUMMARY-OWNED');
+    if (d.lock === 'link') return t('refusal.LINK-ONLY-UNPROVEN');
+    return t('doc.locked.noise');
+  }
+  function caretEnd(el) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+  function attachField(b, text) {
+    const el = b.tgt;
+    b.rf = window.RichField.attach(el, {
+      text: text,
+      onCommit: function () { el.blur(); }
+    });
+    return b.rf;
+  }
+  function buildBlock(d) {
+    const lang = S.lang;
+    const li = h('li', 'doc-block');
+    li.setAttribute('data-uid', d.id);
+    li.setAttribute('data-b', d.b);
+    li.setAttribute('data-state', 'idle');
+    li.setAttribute('data-lock', d.lock || '');
+    li.setAttribute('data-source', 'none');
+    const b = { d: d, li: li, savedUntil: 0 };
+    li.appendChild(h('span', 'doc-tag', blockLabel(d)));
+    const en = h('div', 'doc-en');
+    en.setAttribute('lang', 'en');
+    window.RichField.render(en, d.en);
+    li.appendChild(en);
+    b.en = en;
+    const tgt = h('div', 'doc-tgt');
+    tgt.setAttribute('lang', lang);
+    tgt.setAttribute('role', 'textbox');
+    tgt.setAttribute('aria-label', blockLabel(d));
+    if (d.lock) tgt.setAttribute('aria-readonly', 'true');
+    b.tgt = tgt;
+    li.appendChild(tgt);
+    const wg = h('div', 'doc-weglot');
+    wg.setAttribute('lang', lang);
+    wg.setAttribute('dir', 'auto');
+    window.RichField.render(wg, (d.w && d.w[lang]) || '');
+    wg.hidden = $('doc-blocks').getAttribute('data-weglot') !== 'on';
+    li.appendChild(wg);
+    b.wg = wg;
+    const note = h('p', 'doc-note');
+    b.state = h('span', 'doc-note-state');
+    b.lockNote = h('span', 'doc-note-lock');
+    b.also = h('span', 'doc-note-also');
+    b.shared = h('span', 'doc-note-shared');
+    note.appendChild(b.state); note.appendChild(b.lockNote); note.appendChild(b.also); note.appendChild(b.shared);
+    li.appendChild(note);
+    const box = h('div', 'doc-conflict');
+    box.hidden = true;
+    b.conflictText = h('span');
+    const mine = h('button', 'desk-btn doc-keep-mine', t('doc.conflict.mine'));
+    mine.type = 'button';
+    const theirs = h('button', 'desk-btn doc-take-theirs', t('doc.conflict.theirs'));
+    theirs.type = 'button';
+    box.appendChild(b.conflictText); box.appendChild(mine); box.appendChild(theirs);
+    li.appendChild(box);
+    b.box = box;
+    mine.addEventListener('click', function () { keepMine(d.id); });
+    theirs.addEventListener('click', function () { takeTheirs(d.id); });
+
+    if (d.lock) {
+      b.lockNote.textContent = t('doc.locked.tag') + ' — ' + lockReason(d);
+      tgt.setAttribute('dir', 'auto');
+      window.RichField.render(tgt, (d.w && d.w[lang]) || '');
+    } else {
+      tgt.setAttribute('data-placeholder', t('doc.empty.cell'));
+      attachField(b, effText(lang, d.id));
+      tgt.addEventListener('input', function () { onInput(d.id, b.rf); });
+      // Edit > Undo, a phone's shake and the like reach the field as beforeinput: they go to the
+      // page's one undo stack too, never to the browser's own history of this field.
+      tgt.addEventListener('beforeinput', function (ev) {
+        if (ev.inputType === 'historyUndo') { ev.preventDefault(); undo(); }
+        else if (ev.inputType === 'historyRedo') { ev.preventDefault(); redo(); }
+      });
+      tgt.addEventListener('focus', function () { li.setAttribute('data-open', '1'); });
+      tgt.addEventListener('blur', function () {
+        li.removeAttribute('data-open');
+        closeGroup();
+        paintBlock(d.id);
+      });
+      // Esc leaves the text (the typing is already kept); the field's own Esc would put back
+      // what the text was when the page opened.
+      tgt.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') { ev.stopImmediatePropagation(); ev.preventDefault(); tgt.blur(); }
+      }, true);
+      en.addEventListener('click', function () {
+        const sel = window.getSelection && window.getSelection().toString();
+        if (!sel) tgt.focus();
+      });
+      // The actions for this text float above it while focus is inside the block (CSS :focus-within).
+      const tools = h('div', 'doc-tools');
+      tools.setAttribute('role', 'toolbar');
+      tools.setAttribute('aria-label', t('doc.tools.label'));
+      const hb = h('button', 'desk-btn doc-history-btn', t('doc.history'));
+      const wb = h('button', 'desk-btn doc-tool-weglot', t('doc.tool.weglot'));
+      const rb = h('button', 'desk-btn doc-tool-revert', t('doc.tool.revert'));
+      [hb, wb, rb].forEach(function (x) { x.type = 'button'; });
+      tools.appendChild(hb);
+      // Weglot has no wording for this text: no "Use Weglot's text" button (it would erase the edit).
+      if (d.w && d.w[lang]) tools.appendChild(wb);
+      tools.appendChild(rb);
+      hb.addEventListener('click', function () { openHistory(d.id, hb); });
+      wb.addEventListener('click', function () { commitText(d.id, (d.w && d.w[lang]) || ''); });
+      rb.addEventListener('click', function () { commitText(d.id, ''); });
+      li.appendChild(tools);
+      b.hist = hb;
+    }
+    if (d.b === 'meta-title' || d.b === 'meta-description') {
+      b.chars = h('span', 'doc-note-chars');
+      note.appendChild(b.chars);
+    }
+    if (d.also && d.also.length) {
+      b.also.textContent = t('doc.also', { pages: d.also.map(function (p) { return t('page.' + p); }).join(', ') });
+    }
+    // A text that also stands on pages outside these four (a shared body text): one translation
+    // serves them all, and the reviewer is told so.
+    if (d.out) {
+      const eg = d.outEg === '/' ? t('row.shared.home') : (d.outEg || '');
+      b.shared.textContent = tn('doc.shared', d.out, { example: eg });
+    }
+    M.set(d.id, b);
+    return b;
+  }
+
+  function stateOf(lang, uid, b) {
+    if (conf(lang)[uid]) return 'conflict';
+    const key = lang + '|' + uid;
+    if (net.inflight.has(key)) return 'saving';
+    if (net.refused.has(key)) return 'error';
+    if (P[lang] && P[lang][uid]) return net.failure ? 'error' : 'dirty';
+    if (b && b.savedUntil > Date.now()) return 'saved';
+    return 'idle';
+  }
+  function paintBlock(uid, rerender) {
+    const b = M.get(uid);
+    if (!b) return;
+    const lang = S.lang;
+    const d = b.d;
+    const rec = curRec(lang, uid);
+    const draft = L[lang].drafts[uid];
+    b.li.setAttribute('data-source', rec && rec.text ? 'edit' : (draft && draft.text ? 'draft' : 'none'));
+    if (!d.lock) {
+      const text = effText(lang, uid);
+      const focused = document.activeElement === b.tgt;
+      if (rerender || (!focused && b.rf.value() !== text)) {
+        attachField(b, text);
+        if (focused) { b.tgt.focus(); caretEnd(b.tgt); }       // an undo from inside the text keeps the caret there
+      }
+    }
+    const st = stateOf(lang, uid, b);
+    b.li.setAttribute('data-state', st);
+    let label = '';
+    if (!d.lock) {
+      if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
+      else if (st === 'saved') label = t('doc.text.saved');
+      else if (st === 'error') label = t('doc.text.error');
+      else if (rec && rec.text) label = t('doc.text.edited');
+    }
+    b.state.textContent = label;
+    if (b.chars) {
+      const shown = d.lock ? ((d.w && d.w[lang]) || '') : effText(lang, uid);
+      b.chars.textContent = shown ? tn('doc.chars', plain(shown).length) : '';
+    }
+    const c = conf(lang)[uid];
+    b.box.hidden = !c;
+    if (c) {
+      const cur = c.current;
+      b.conflictText.textContent = cur && cur.text
+        ? t('doc.conflict.text', { who: cur.by || '', text: cur.text })
+        : t('doc.conflict.gone');
+    }
+  }
+  function paintMany(lang, ids) {
+    if (lang !== S.lang) return;
+    ids.forEach(function (uid) { paintBlock(uid); });
+  }
+
+  // ── the save bar ───────────────────────────────────────────────────────────────────
+  function updateBar() {
+    const bar = $('doc-save');
+    if (!bar) return;
+    const n = pendingTotal();
+    const conflicts = conflictTotal();
+    let state = 'saved', text = '';
+    if (S.loading) { state = 'loading'; text = t('doc.loading'); }
+    else if (conflicts) { state = 'conflict'; text = tn('autosave.conflict', conflicts); }
+    else if (net.stopped) { state = 'stopped'; text = t('autosave.stopped', { reason: t('save.reason.' + net.failure) }); }
+    else if (net.failure && n) {
+      state = navigator.onLine === false ? 'offline' : 'retrying';
+      text = state === 'offline' ? tn('autosave.offline', n) : tn('autosave.retrying', n, { reason: t('save.reason.' + net.failure) });
+    }
+    else if (n && (SAVE_OFF_ON || navigator.onLine === false)) { state = 'offline'; text = tn('autosave.offline', n); }
+    else if (n) { state = 'saving'; text = tn('autosave.saving', n); }
+    else if (net.refused.size) { state = 'refused'; text = tn('autosave.refused', net.refused.size); }
+    else text = t('autosave.saved');
+    bar.setAttribute('data-state', state);
+    bar.textContent = '';
+    bar.appendChild(document.createTextNode(text));
+    if (state === 'stopped' || state === 'retrying') {
+      const retry = h('button', 'desk-btn', t('autosave.retry'));
+      retry.type = 'button';
+      retry.id = 'doc-save-retry';
+      retry.addEventListener('click', function () { net.stopped = null; net.retry = 0; run(); updateBar(); });
+      bar.appendChild(retry);
+    }
+  }
+
+  // ── the grid: pages x languages ────────────────────────────────────────────────────
+  // A text counts as exported only for the wording it was exported for: the Worker counts the stamp
+  // at or after the decision (cloudflare-worker.js deskShape), so a change made since -- saved or
+  // not yet sent -- puts it back to "edited".
+  function exportedNow(lang, uid) {
+    const p = L[lang].pipeline[uid];
+    if (!p || !p.exportedAt) return false;
+    if (P[lang] && P[lang][uid]) return false;
+    const d = L[lang].decisions[uid];
+    if (d && d.at) {
+      const decided = Date.parse(d.at), exported = Date.parse(p.exportedAt);
+      if (!isNaN(decided) && !isNaN(exported) && exported < decided) return false;
+    }
+    return true;
+  }
+  function statusOf(page, lang) {
+    const info = PI.get(page), l = L[lang];
+    if (!info || !l.loaded) return null;
+    let nText = 0, nEdit = 0, nExp = 0;
+    info.ids.forEach(function (uid) {
+      const r = curRec(lang, uid), d = l.drafts[uid];
+      const edited = !!(r && r.text);
+      if (!edited && !(d && d.text)) return;
+      nText++;
+      if (edited) nEdit++;
+      if (exportedNow(lang, uid)) nExp++;
+    });
+    const status = !nText ? 'none' : (nExp === nText ? 'exported' : (nEdit ? 'edited' : 'drafted'));
+    return { status: status, n: nText, total: info.ids.length };
+  }
+  function paintGrid() {
+    PAGES.forEach(function (page) {
+      LANGS.forEach(function (lang) {
+        const cell = document.querySelector('.doc-cell[data-page="' + page + '"][data-lang="' + lang + '"]');
+        if (!cell) return;
+        const s = statusOf(page, lang);
+        let status = s ? s.status : 'unknown';
+        // The language's open translate-page job (one per language) shows on its page's cell; a page
+        // waiting behind it shows as queued.
+        const js = jstate(lang);
+        if (js.job && js.page === page) status = 'translating';
+        else if (js.waiting.indexOf(page) >= 0) status = 'queued';
+        cell.setAttribute('data-status', status);
+        cell.setAttribute('aria-pressed', page === S.page && lang === S.lang ? 'true' : 'false');
+        cell.querySelector('.doc-cell-status').textContent = t(STATUS_KEY[status]);
+        cell.querySelector('.doc-cell-count').textContent =
+          s && s.status !== 'none' ? tn('doc.cell.count', s.n, { total: s.total }) : '';
+        cell.setAttribute('aria-label', t('doc.cell.aria', {
+          page: t('page.' + page), language: t('lang.' + lang), status: t(STATUS_KEY[status])
+        }));
+      });
+    });
+    paintBanner();
+  }
+  let gridQueued = false;
+  function gridSoon() {
+    if (gridQueued) return;
+    gridQueued = true;
+    setTimeout(function () { gridQueued = false; paintGrid(); paintOutline(); paintWords(); }, 0);
+  }
+
+  // ── the banner: not translated yet / a translation under way ───────────────────────
+  function paintBanner() {
+    const box = $('doc-banner'), text = $('doc-banner-text'), go = $('doc-banner-translate');
+    if (!box) return;
+    let msg = '', button = false;
+    if (S.loading) { box.hidden = true; return; }
+    const js = jstate(S.lang);
+    if (readError) { msg = t('doc.read.failed'); }
+    else if (js.waiting.indexOf(S.page) >= 0) {
+      msg = t('doc.job.waiting', { page: t('page.' + js.page), language: t('lang.' + S.lang) });
+    }
+    else if (runningHere()) { msg = t('doc.job.queued'); }
+    else if (js.failed && js.failed.page === S.page) { msg = js.failed.message; }
+    else {
+      const s = statusOf(S.page, S.lang);
+      if (s && s.status === 'none') { msg = t('doc.banner.none', { language: t('lang.' + S.lang) }); button = true; }
+    }
+    box.hidden = !msg;
+    text.textContent = msg;
+    go.hidden = !button;
+    $('doc-translate').disabled = readError || runningHere() || js.waiting.indexOf(S.page) >= 0;
+    $('doc-translate').hidden = button;       // one Translate page at a time: the banner's while the page is untranslated
+  }
+
+  // ── translate page ─────────────────────────────────────────────────────────────────
+  // The Worker allows one open translate-page job per language. Asking for more pages while one runs
+  // QUEUES them here, every one, in the order asked: each starts by itself when the one before it ends
+  // (plan v2 fix 8). The queue lives in this window only, and the banner says so.
+  const J = {};                       // per language: {job, page, waiting: [pages], failed, timer}
+  function jstate(lang) { return J[lang] || (J[lang] = { job: null, page: null, waiting: [], failed: null, timer: null }); }
+  function runningHere() { const js = jstate(S.lang); return !!(js.job && js.page === S.page); }
+  let confirmReturn = null;
+  function openConfirm(opener) {
+    if (readError || runningHere() || jstate(S.lang).waiting.indexOf(S.page) >= 0) return;
+    const n = (PI.get(S.page) || { ids: [] }).ids.length;
+    $('doc-confirm-title').textContent = t('doc.confirm.title');
+    $('doc-confirm-body').textContent = tn('doc.confirm.body', n, { language: t('lang.' + S.lang) });
+    confirmReturn = opener || $('doc-translate');
+    $('doc-confirm').hidden = false;
+    $('doc-confirm-ok').focus();
+  }
+  function closeConfirm() {
+    $('doc-confirm').hidden = true;
+    if (confirmReturn && confirmReturn.focus) confirmReturn.focus();
+    confirmReturn = null;
+  }
+  function jobWatch(lang, j) {
+    const js = jstate(lang);
+    js.job = j;
+    js.page = j.ref && j.ref.page ? j.ref.page : S.page;
+    js.failed = null;
+    paintBanner();
+    gridSoon();
+    clearTimeout(js.timer);
+    js.timer = setTimeout(function poll() {
+      call({ action: 'desk-job-get', locale: lang, id: j.id }).then(function (r) {
+        const cur = r && r.ok && r.body && r.body.job;
+        if (!cur || cur.status === 'queued' || cur.status === 'running') { js.timer = setTimeout(poll, TIMING.poll); return; }
+        const page = js.page;
+        js.job = null;
+        if (cur.status === 'done') {
+          toast(t('doc.job.done'));
+          refreshLang(lang);
+        } else {
+          const code = cur.error || '';
+          const reason = COPY['job.failed.' + code] ? t('job.failed.' + code) : t('doc.job.failed.unknown');
+          js.failed = { page: page, message: t('doc.job.failed', { reason: reason }) };
+        }
+        drain(lang);
+      });
+    }, TIMING.poll);
+  }
+  function enqueue(js, page, front) {
+    if (js.waiting.indexOf(page) >= 0) return;
+    if (front) js.waiting.unshift(page); else js.waiting.push(page);
+  }
+  function dequeue(js, page) {
+    js.waiting = js.waiting.filter(function (p) { return p !== page; });
+  }
+  // The job in this language is over (or a start failed): the page first in line starts.
+  function drain(lang) {
+    const next = jstate(lang).waiting.shift();
+    if (next) startJob(lang, next, true); else { paintBanner(); gridSoon(); }
+  }
+  function startJob(lang, page, fromQueue) {
+    closeConfirm();
+    const js = jstate(lang);
+    js.failed = null;
+    call({ action: 'desk-job-start', locale: lang, kind: 'translate-page', ref: { page: page, keepEdited: true } })
+      .then(function (r) {
+        if (r && r.ok && r.body && r.body.job) {
+          dequeue(js, page);
+          jobWatch(lang, Object.assign({}, r.body.job, { ref: { page: page } }));
+          return;
+        }
+        if (r && r.status === 409) {
+          const running = (r.body && r.body.job) || null;
+          const on = running && running.ref && running.ref.page ? running.ref.page : page;
+          if (running && running.id) {
+            // Another page runs first: ours follows it, behind the pages already waiting (a page that
+            // was first in line goes back to the front).
+            if (on === page) dequeue(js, page); else enqueue(js, page, fromQueue);
+            jobWatch(lang, running);
+            return;
+          }
+        }
+        dequeue(js, page);
+        toast(t('doc.job.error'), 'err');
+        // A page that could not start does not hold the ones behind it.
+        if (js.waiting.length && !js.job) drain(lang); else { paintBanner(); gridSoon(); }
+      });
+  }
+  function checkJob(lang) {
+    call({ action: 'desk-job-get', locale: lang }).then(function (r) {
+      const js = jstate(lang);
+      if (!r || !r.ok || js.job) return;
+      const latest = r.body && r.body.jobs && r.body.jobs['translate-page'];
+      if (!latest || (latest.status !== 'queued' && latest.status !== 'running')) return;
+      jobWatch(lang, latest);
+    });
+  }
+
+  // ── history of one text ────────────────────────────────────────────────────────────
+  let histUid = null;
+  function closeHistory() {
+    const aside = $('doc-history');
+    if (!aside || aside.hidden) return;
+    aside.hidden = true;
+    histUid = null;
+    if (focusBack && focusBack.focus) focusBack.focus();
+    focusBack = null;
+  }
+  function stamp(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString();
+  }
+  function versionRow(uid, text, meta, onRestore, version) {
+    const li = h('li', 'doc-version');
+    if (version !== undefined) li.setAttribute('data-version', String(version));
+    li.appendChild(h('span', 'doc-version-meta', meta));
+    const body = h('div', 'doc-version-text');
+    body.setAttribute('dir', 'auto');
+    body.setAttribute('lang', S.lang);
+    window.RichField.render(body, text);
+    li.appendChild(body);
+    const btn = h('button', 'desk-btn doc-restore', t('doc.history.restore'));
+    btn.type = 'button';
+    btn.addEventListener('click', onRestore);
+    li.appendChild(btn);
+    return li;
+  }
+  function openHistory(uid, opener) {
+    const lang = S.lang;
+    histUid = uid;
+    focusBack = opener || null;
+    const aside = $('doc-history'), list = $('doc-history-list');
+    list.textContent = '';
+    aside.hidden = false;
+    $('doc-history-close').focus();
+    if (SAVE_OFF_ON) { list.appendChild(h('li', 'doc-version-empty', t('doc.history.empty'))); return; }
+    call({ action: 'desk-history', locale: lang, unit: uid }).then(function (r) {
+      if (histUid !== uid || lang !== S.lang) return;
+      list.textContent = '';
+      if (!r || !r.ok || !r.body) { list.appendChild(h('li', 'doc-version-empty', t('doc.history.failed'))); return; }
+      // A strip of cards, oldest on the left, the newest on the right: Gemini's draft first.
+      const draft = L[lang].drafts[uid];
+      if (draft && draft.text) {
+        list.appendChild(versionRow(uid, draft.text, t('doc.history.draft') + (draft.arrivedAt ? ' · ' + stamp(draft.arrivedAt) : ''),
+          function () { restore(uid, ''); }));
+      }
+      (r.body.history || []).filter(function (x) { return x.text; }).reverse().forEach(function (x) {
+        const meta = (x.byName || x.by || t('doc.history.you')) + ' · ' + stamp(x.at);
+        list.appendChild(versionRow(uid, x.text, meta, function () { restore(uid, x.text); }, x.version));
+      });
+      if (!list.firstChild) list.appendChild(h('li', 'doc-version-empty', t('doc.history.empty')));
+      list.scrollLeft = list.scrollWidth;
+    });
+  }
+  // One change that is its own undo step: a restore, "Use Weglot's text", "Undo this". All are
+  // ordinary writes of the wording (a version of their own), so Undo takes any of them back.
+  function commitText(uid, text) {
+    closeGroup();
+    const from = curRec(S.lang, uid);
+    if (changeRecord(uid, decide(uid, text))) {
+      const s = stack();
+      s.undo.push({ uid: uid, from: from, to: curRec(S.lang, uid) });
+      if (s.undo.length > UNDO_CAP) s.undo.shift();
+      s.redo = [];
+      saveStacks();
+    }
+    paintBlock(uid, true);
+    paintUndo();
+    reveal(uid);
+  }
+  function restore(uid, text) {
+    commitText(uid, text);
+    toast(t('doc.history.restored'));
+    closeHistory();
+  }
+
+  // ── "On this page": the outline, its counts, and the word count ───────────────────
+  let outline = [];                  // [{target, name, ids, btn, count}]
+  let spyQueued = false, wordsTimer = null;
+  const segmenters = {};
+  function plain(text) { return String(text || '').replace(/<a wg-[0-9]+="">|<\/a>|<br>/g, ''); }
+  function countWords(text, lang) {
+    if (!text) return 0;
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const seg = segmenters[lang] || (segmenters[lang] = new Intl.Segmenter(lang, { granularity: 'word' }));
+      let n = 0;
+      for (const s of seg.segment(text)) if (s.isWordLike) n++;
+      return n;
+    }
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+  function jumpTo(uid) {
+    const b = M.get(uid);
+    if (!b) return;
+    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try { b.li.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' }); } catch (_) {}
+  }
+  function buildOutline(data) {
+    outline = [];
+    const search = { target: null, name: t('doc.outline.search'), ids: [] };
+    let cur = null;
+    data.blocks.forEach(function (d) {
+      if (d.b === 'meta-title' || d.b === 'meta-description') {
+        if (!search.target) search.target = d.id;
+        if (!d.lock) search.ids.push(d.id);
+        return;
+      }
+      // A section is what the unit's own `section` names (the page's h3 section titles; the h1 and the
+      // small h2 taglines carry one too): a new entry where it changes, at the block that starts it.
+      const sec = plain(d.sec || '');
+      if (sec && (!cur || cur.sec !== sec)) { cur = { target: d.id, name: sec, sec: sec, ids: [] }; outline.push(cur); }
+      if (cur && !d.lock) cur.ids.push(d.id);
+    });
+    if (search.target) outline.unshift(search);
+    const list = $('doc-outline-list'), sel = $('doc-sections');
+    list.textContent = ''; sel.textContent = '';
+    outline.forEach(function (o) {
+      const li = h('li');
+      o.btn = h('button', 'doc-outline-item');
+      o.btn.type = 'button';
+      o.btn.setAttribute('data-target', o.target);
+      o.count = h('span', 'doc-outline-count');
+      o.btn.appendChild(h('span', 'doc-outline-name', o.name));
+      o.btn.appendChild(o.count);
+      o.btn.addEventListener('click', function () { jumpTo(o.target); });
+      li.appendChild(o.btn);
+      list.appendChild(li);
+      const opt = h('option', null, o.name);
+      opt.value = o.target;
+      sel.appendChild(opt);
+    });
+    sel.onchange = function () { jumpTo(sel.value); };
+    paintOutline();
+  }
+  function paintOutline() {
+    outline.forEach(function (o) {
+      let edited = 0;
+      o.ids.forEach(function (uid) { const r = curRec(S.lang, uid); if (r && r.text) edited++; });
+      o.count.textContent = tn('doc.outline.count', o.ids.length, { edited: edited });
+    });
+    spy();
+  }
+  // The section being read: the last heading whose top has passed the top of the screen.
+  function spy() {
+    spyQueued = false;
+    let now = outline[0] || null;
+    outline.forEach(function (o) {
+      const b = M.get(o.target);
+      if (b && b.li.getBoundingClientRect().top <= 140) now = o;
+    });
+    outline.forEach(function (o) {
+      if (o === now) o.btn.setAttribute('aria-current', 'true'); else o.btn.removeAttribute('aria-current');
+    });
+    if (now) $('doc-sections').value = now.target;
+  }
+  function paintWords() {
+    clearTimeout(wordsTimer);
+    wordsTimer = setTimeout(function () {
+      let n = 0;
+      M.forEach(function (b, uid) {
+        const shown = b.d.lock ? ((b.d.w && b.d.w[S.lang]) || '') : effText(S.lang, uid);
+        n += countWords(plain(shown), S.lang);
+      });
+      $('doc-words').textContent = S.loading ? '' : tn('doc.words', n, { n: n.toLocaleString() });
+    }, 250);
+  }
+
+  // ── loading ────────────────────────────────────────────────────────────────────────
+  function getJson(path) {
+    return fetch(path, { cache: 'no-cache' }).then(function (resp) {
+      if (!resp.ok) throw new Error('load');
+      return resp.json();
+    });
+  }
+  function getPage(page) {
+    if (PAGE_CACHE.has(page)) return Promise.resolve(PAGE_CACHE.get(page));
+    return getJson(DATA + page + '.json').then(function (d) { PAGE_CACHE.set(page, d); return d; });
+  }
+  function getInfo() {
+    if (PI.size) return Promise.resolve();
+    return getJson(DATA + 'pages.json').then(function (d) {
+      d.pages.forEach(function (p) { PI.set(p.key, p); });
+    });
+  }
+  // A conflict is kept in storage as the entry's `conflict` flag; what the other editor saved is read
+  // again from the server, so a reload shows the same choice (keep mine / take theirs) and the edit is
+  // neither sent over it nor forgotten.
+  function restoreConflicts(lang) {
+    const mine = P[lang] || {};
+    Object.keys(mine).forEach(function (uid) {
+      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    });
+  }
+  function ensureLang(lang) {
+    if (L[lang].loaded) return Promise.resolve();
+    if (SAVE_OFF_ON) { L[lang].loaded = true; return Promise.resolve(); }
+    return call({ action: 'desk-read', locale: lang }).then(function (r) {
+      if (!r || !r.ok || !r.body) throw new Error('read');
+      L[lang].decisions = r.body.decisions || {};
+      L[lang].drafts = r.body.drafts || {};
+      L[lang].pipeline = r.body.pipeline || {};
+      L[lang].loaded = true;
+      restoreConflicts(lang);
+    });
+  }
+  // The language read again (a translation finished): new drafts show where nothing was edited.
+  function refreshLang(lang) {
+    if (SAVE_OFF_ON) return Promise.resolve();
+    return call({ action: 'desk-read', locale: lang }).then(function (r) {
+      if (!r || !r.ok || !r.body) return;
+      L[lang].drafts = r.body.drafts || {};
+      L[lang].pipeline = r.body.pipeline || {};
+      Object.keys(r.body.decisions || {}).forEach(function (uid) {
+        const mine = P[lang] && P[lang][uid];
+        if (!mine) L[lang].decisions[uid] = r.body.decisions[uid];
+      });
+      if (lang === S.lang) M.forEach(function (b, uid) { paintBlock(uid); });
+      gridSoon();
+    });
+  }
+  function remember() {
+    lsSet(KEYS.last, { page: S.page, lang: S.lang });
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', S.page);
+      url.searchParams.set('lang', S.lang);
+      window.history.replaceState(null, '', url.pathname + url.search);
+    } catch (_) {}
+  }
+  function headings() {
+    const lang = S.lang;
+    $('doc-title').textContent = t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) });
+    document.querySelector('.doc-head-en').textContent = t('doc.head.en');
+    document.querySelector('.doc-head-tgt').textContent = t('doc.head.tgt', { language: t('lang.' + lang) });
+    document.querySelector('.doc-head-weglot').textContent = t('doc.head.weglot');
+  }
+  function build(data, token) {
+    const list = $('doc-blocks');
+    list.textContent = '';
+    M.clear();
+    const blocks = data.blocks;
+    let at = 0;
+    (function slice() {
+      if (token !== S.token) return;
+      const end = Math.min(blocks.length, at + (at === 0 ? 40 : 80));
+      const frag = document.createDocumentFragment();
+      for (; at < end; at++) {
+        const b = buildBlock(blocks[at]);
+        frag.appendChild(b.li);
+      }
+      list.appendChild(frag);
+      if (at < blocks.length) { setTimeout(slice, 0); return; }
+      M.forEach(function (b, uid) { paintBlock(uid); });
+      buildOutline(data);
+      paintWords();
+      $('doc').setAttribute('data-state', 'ready');
+      updateBar();
+    })();
+  }
+  async function open(page, lang) {
+    closeGroup();
+    closeHistory();
+    readError = false;
+    S.page = page; S.lang = lang; S.loading = true;
+    const token = ++S.token;
+    remember();
+    headings();
+    $('doc').setAttribute('data-state', 'loading');
+    $('doc-blocks').textContent = '';
+    $('doc-outline-list').textContent = '';
+    $('doc-sections').textContent = '';
+    outline = [];
+    $('doc-words').textContent = '';
+    M.clear();
+    paintUndo();
+    updateBar();
+    paintGrid();
+    let data;
+    try {
+      data = await getPage(page);
+      await getInfo();
+    } catch (_) {
+      if (token !== S.token) return;
+      S.loading = false;
+      $('doc').setAttribute('data-state', 'error');
+      $('doc-banner').hidden = false;
+      $('doc-banner-text').textContent = t('doc.load.failed');
+      $('doc-banner-translate').hidden = true;
+      updateBar();
+      return;
+    }
+    try { await ensureLang(lang); } catch (_) { readError = true; }
+    if (token !== S.token) return;
+    S.doc = data;
+    S.loading = false;
+    if (readError) {
+      $('doc').setAttribute('data-state', 'error');
+      updateBar();
+      paintBanner();
+      return;
+    }
+    build(data, token);
+    paintGrid();
+    checkJob(lang);
+    // With the first language on screen, read the rest for the grid, one at a time.
+    const rest = LANGS.filter(function (c) { return c !== lang && !L[c].loaded; });
+    (function next() {
+      const c = rest.shift();
+      if (!c || token !== S.token) return;
+      // Each language also says whether a translate-page job is open for it (the grid shows it).
+      ensureLang(c).catch(function () {}).then(function () { checkJob(c); updateBar(); gridSoon(); setTimeout(next, 0); });
+    })();
+  }
+
+  // ── wiring ─────────────────────────────────────────────────────────────────────────
+  function weglot(on) {
+    $('doc-blocks').setAttribute('data-weglot', on ? 'on' : 'off');
+    document.querySelector('.doc-head-weglot').hidden = !on;
+    M.forEach(function (b) { b.wg.hidden = !on; });
+    $('doc-weglot').checked = on;
+    lsSet(KEYS.weglot, on);
+  }
+  function startPoint() {
+    const q = new URLSearchParams(window.location.search);
+    const last = lsGet(KEYS.last) || {};
+    let page = q.get('page'), lang = q.get('lang');
+    if (PAGES.indexOf(page) < 0) page = PAGES.indexOf(last.page) >= 0 ? last.page : PAGES[0];
+    if (LANGS.indexOf(lang) < 0) lang = LANGS.indexOf(last.lang) >= 0 ? last.lang : LANGS[0];
+    return { page: page, lang: lang };
+  }
+  function wire() {
+    document.querySelectorAll('.doc-cell').forEach(function (cell) {
+      cell.addEventListener('click', function () {
+        const page = cell.getAttribute('data-page'), lang = cell.getAttribute('data-lang');
+        if (page === S.page && lang === S.lang) return;
+        open(page, lang);
+      });
+    });
+    $('doc-undo').addEventListener('click', undo);
+    $('doc-redo').addEventListener('click', redo);
+    $('doc-weglot').addEventListener('change', function (ev) { weglot(ev.target.checked); });
+    $('doc-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
+    $('doc-banner-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
+    $('doc-confirm-cancel').addEventListener('click', closeConfirm);
+    $('doc-confirm-ok').addEventListener('click', function () { startJob(S.lang, S.page); });
+    $('doc-history-close').addEventListener('click', closeHistory);
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') {
+        if (!$('doc-confirm').hidden) { closeConfirm(); return; }
+        if (!$('doc-history').hidden) { closeHistory(); return; }
+      }
+      // The confirm window holds the focus: Tab goes round its two buttons.
+      if (ev.key === 'Tab' && !$('doc-confirm').hidden) {
+        const first = $('doc-confirm-cancel'), last = $('doc-confirm-ok');
+        const at = document.activeElement;
+        if (ev.shiftKey && at === first) { ev.preventDefault(); last.focus(); }
+        else if (!ev.shiftKey && at === last) { ev.preventDefault(); first.focus(); }
+        else if (at !== first && at !== last) { ev.preventDefault(); last.focus(); }
+        return;
+      }
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      const k = ev.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      // ONE undo stack (Manager Ruling): inside a text being typed too, the page's undo runs and the
+      // browser's own is stopped, so Undo means the same thing wherever the caret is.
+      ev.preventDefault();
+      if (k === 'y' || ev.shiftKey) redo(); else undo();
+    });
+    window.addEventListener('scroll', function () {
+      if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+    }, { passive: true });
+    window.addEventListener('online', function () { run(); updateBar(); });
+    window.addEventListener('offline', updateBar);
+  }
+
+  function boot() {
+    wire();
+    paintUndo();
+    weglot(lsGet(KEYS.weglot) === true);
+    const at = startPoint();
+    // Unsent changes of an earlier visit go out as soon as the page is up.
+    if (pendingTotal()) { updateBar(); schedule(); }
+    open(at.page, at.lang);
+  }
+  // The one door document_export.js (CEL-027: the Export window and Re-translate) comes in by. It is
+  // inlined after this file and reads these; nothing else does. `pending` is a function because P is
+  // read from storage once and a module must not hold a copy of it.
+  window.DocDesk = {
+    S: S, L: L, PI: PI, M: M, U: U, PAGES: PAGES, LANGS: LANGS, CHUNK: CHUNK, TIMING: TIMING,
+    saveOff: SAVE_OFF_ON, client: DESK_CLIENT,
+    pending: function () { return P; }, sendable: sendable,
+    call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
+    curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
+    withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
+    paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
+    failureReason: failureReason, who: who
+  };
+  boot();
+})();
+</script>
+<script>
+/*
+ * The Export window and Re-translate of the document page (desk v2, CEL-027).
+ *
+ * generate_document_page.py inlines this file right after document_desk.js, which hands it the
+ * page's state and a few of its functions as `window.DocDesk` (the one door; see the block before
+ * `boot()` there). Everything this file shows is built with createElement / textContent and every
+ * word comes from COPY.md. The contract with the tests: runtime/out/loc2/CEL-027/contract.md.
+ *
+ *   Export        pick pages x languages -> for each (page, language), one after the other: the page's
+ *                 texts become decisions (the reviewer's edit, else Gemini's draft, approved against the
+ *                 wording the website shows now) through desk-write in chunks of 50 -> the engine's
+ *                 export job for that page -> its Weglot file. One file is downloaded as it is, several
+ *                 as one zip made here. What was left out is listed, and a click shows the paragraph.
+ *   Re-translate  one text (with an optional note) or the whole page, as the engine's retranslate job;
+ *                 the old wording of a text stays on the undo stack.
+ */
+(function () {
+  'use strict';
+
+  // ── pure helpers (also loaded by node for the zip test) ─────────────────────────────
+  const CRC_TABLE = (function () {
+    const table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function concat(parts) {
+    let total = 0;
+    parts.forEach(function (p) { total += p.length; });
+    const out = new Uint8Array(total);
+    let at = 0;
+    parts.forEach(function (p) { out.set(p, at); at += p.length; });
+    return out;
+  }
+  // A zip of stored (uncompressed) files: [{name, data: Uint8Array}] -> Uint8Array. Names are UTF-8.
+  function zip(files, when) {
+    const enc = new TextEncoder();
+    const time = ((when.getHours() << 11) | (when.getMinutes() << 5) | (when.getSeconds() >> 1)) & 0xFFFF;
+    const date = (((when.getFullYear() - 1980) << 9) | ((when.getMonth() + 1) << 5) | when.getDate()) & 0xFFFF;
+    const parts = [], central = [];
+    let offset = 0;
+    files.forEach(function (f) {
+      const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+      lh.setUint16(10, time, true); lh.setUint16(12, date, true); lh.setUint32(14, crc, true);
+      lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(lh.buffer), name, f.data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+      ch.setUint16(8, 0x0800, true); ch.setUint16(12, time, true); ch.setUint16(14, date, true);
+      ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true);
+      ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      offset += 30 + name.length + size;
+    });
+    const dir = concat(central);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true); end.setUint32(12, dir.length, true); end.setUint32(16, offset, true);
+    return concat(parts.concat([dir, new Uint8Array(end.buffer)]));
+  }
+  // The decision a text is exported as: the reviewer's wording else Gemini's draft, approved against
+  // the wording the website shows now (the English where the page shows English). null = nothing to say.
+  function exportRecord(rec, draftText, block, lang, canon) {
+    const edit = rec && rec.text ? rec.text : '';
+    const text = edit || draftText || '';
+    if (!text) return null;
+    return canon(Object.assign({}, rec || {}, { tray: 'csv', text: text, approvedAgainst: (block.w && block.w[lang]) || block.en }));
+  }
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { crc32: crc32, zip: zip, exportRecord: exportRecord };
+  }
+
+  const D = typeof window !== 'undefined' ? window.DocDesk : null;
+  if (!D || D.saveOff) return;
+
+  // ── the page's state and doors ──────────────────────────────────────────────────────
+  const S = D.S, L = D.L, M = D.M, PAGES = D.PAGES, LANGS = D.LANGS, TIMING = D.TIMING;
+  const CFG = JSON.parse(document.getElementById('doc-config').textContent);
+  const FLAG = {};
+  CFG.locales.forEach(function (l) { FLAG[l.code] = l.flag; });
+  const NOTE_MAX = 500;                          // the Worker's JOB_NOTE_MAX
+  const SHOWN = 50;                              // list items shown per group before "and N more"
+
+  // Spelled out so the copy check sees every key.
+  const STEP_KEY = {
+    waiting: 'export.step.waiting', saving: 'export.step.saving', queued: 'export.step.queued',
+    running: 'export.step.running', nothing: 'export.step.nothing'
+  };
+  const GROUP_KEY = {
+    refused: 'export.group.refused', orphan: 'export.group.orphan', conflict: 'export.group.conflict',
+    empty: 'export.group.empty', unsaved: 'export.group.unsaved'
+  };
+  const GROUP_ORDER = ['refused', 'orphan', 'conflict', 'unsaved', 'empty'];
+
+  const $ = function (id) { return document.getElementById(id); };
+  function h(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+  function button(id, cls, text) {
+    const b = h('button', cls, text);
+    b.type = 'button';
+    if (id) b.id = id;
+    return b;
+  }
+  function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+  async function until(test, ms) {
+    const end = Date.now() + ms;
+    while (Date.now() < end) {
+      if (test()) return true;
+      await sleep(50);
+    }
+    return test();
+  }
+  function ready() { return !S.loading && $('doc').getAttribute('data-state') === 'ready'; }
+  function snippet(s) {
+    const plain = String(s || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    return plain.length > 80 ? plain.slice(0, 79) + '…' : plain;
+  }
+  function jobReason(job) {
+    const code = (job && job.error) || '';
+    return COPY['job.failed.' + code] ? t('job.failed.' + code) : t('doc.job.failed.unknown');
+  }
+  function why(r) { return t('save.reason.' + D.failureReason(r)); }
+
+  // ── windows ─────────────────────────────────────────────────────────────────────────
+  // The same overlay and box the page's own confirm window uses.
+  function makeOverlay(id, titleId) {
+    const root = h('div', 'cpw-overlay');
+    root.id = id;
+    root.hidden = true;
+    const box = h('div', 'cpw-modal');
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-labelledby', titleId);
+    root.appendChild(box);
+    $('doc').appendChild(root);
+    return { root: root, box: box };
+  }
+  const opened = [];                              // the windows that are open, last = on top
+  let busy = false;                               // an export is running: Escape waits
+  function openOverlay(o, opener, focus) {
+    o.opener = opener || null;
+    o.root.hidden = false;
+    opened.push(o);
+    if (focus) focus.focus();
+  }
+  function closeOverlay(o) {
+    o.root.hidden = true;
+    const at = opened.indexOf(o);
+    if (at >= 0) opened.splice(at, 1);
+    const back = o.opener;
+    o.opener = null;
+    if (back && back.focus) back.focus();
+  }
+  document.addEventListener('keydown', function (ev) {
+    const top = opened[opened.length - 1];
+    if (!top) return;
+    if (ev.key === 'Escape') {
+      ev.stopPropagation();
+      if (!busy) top.close();
+      return;
+    }
+    if (ev.key !== 'Tab') return;
+    const items = Array.prototype.filter.call(
+      top.box.querySelectorAll('button, input, textarea, select, [href]'),
+      function (e) { return !e.disabled && !e.hidden && e.offsetParent !== null; });
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1], at = document.activeElement;
+    if (ev.shiftKey && (at === first || !top.box.contains(at))) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && (at === last || !top.box.contains(at))) { ev.preventDefault(); first.focus(); }
+  }, true);
+
+  // ── the buttons ─────────────────────────────────────────────────────────────────────
+  const exportButton = button('doc-export', 'desk-btn is-primary', t('export.button'));
+  const pageButton = button('doc-retranslate-page', 'desk-btn', t('retr.page.button'));
+  (function mountButtons() {
+    const bar = document.querySelector('#doc-bar .doc-actions');
+    if (!bar) return;
+    bar.insertBefore(pageButton, $('doc-translate'));
+    bar.appendChild(exportButton);
+  })();
+  function paintButtons() { pageButton.disabled = !ready(); }
+  new MutationObserver(paintButtons).observe($('doc'), { attributes: true, attributeFilter: ['data-state'] });
+  paintButtons();
+
+  // ── the job, watched ────────────────────────────────────────────────────────────────
+  // The engine's answer to desk-job-get, polled; null when the desk could not reach it for good.
+  async function watch(lang, id, onState) {
+    let misses = 0;
+    for (;;) {
+      await sleep(TIMING.poll);
+      const r = await D.call({ action: 'desk-job-get', locale: lang, id: id });
+      const job = r && r.ok && r.body && r.body.job;
+      if (!job) { if (++misses >= 8) return null; continue; }
+      misses = 0;
+      if (job.status === 'queued' || job.status === 'running') { if (onState) onState(job.status); continue; }
+      return job;
+    }
+  }
+
+  // ── Export ──────────────────────────────────────────────────────────────────────────
+  const ex = makeOverlay('ex-modal', 'ex-title');
+  ex.close = closeEx;
+  const exTitle = h('h2', 'cpw-title', t('export.title'));
+  exTitle.id = 'ex-title';
+  const exSelect = h('div', 'ex-select');
+  const exCount = h('p', 'ex-count');
+  exCount.id = 'ex-count';
+  exCount.setAttribute('aria-live', 'polite');
+  const exProgress = h('ol', 'ex-progress');
+  exProgress.id = 'ex-progress';
+  exProgress.hidden = true;
+  const exResult = h('div', 'ex-result');
+  exResult.id = 'ex-result';
+  exResult.hidden = true;
+  const exCancel = button('ex-cancel', 'cpw-btn cpw-cancel', t('export.cancel'));
+  const exGo = button('ex-go', 'cpw-btn cpw-save', t('export.go'));
+  const exDownload = button('ex-download', 'desk-btn', t('export.download'));
+  const exClose = button('ex-close', 'cpw-btn cpw-cancel', t('export.close'));
+  exDownload.hidden = true;
+  exClose.hidden = true;
+  const exActions = h('div', 'cpw-actions');
+  [exDownload, exClose, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
+  [exTitle, exSelect, exCount, exProgress, exResult, exActions].forEach(function (e) { ex.box.appendChild(e); });
+  ex.root.classList.add('ex-modal');
+
+  const sel = {};                                 // "page|lang" -> true
+  const boxes = { cell: {}, row: {}, col: {}, all: null };
+  function pickedCells() {
+    const out = [];
+    PAGES.forEach(function (p) { LANGS.forEach(function (l) { if (sel[p + '|' + l]) out.push({ page: p, lang: l }); }); });
+    return out;
+  }
+  function syncSelection() {
+    const n = pickedCells().length;
+    PAGES.forEach(function (p) {
+      const on = LANGS.filter(function (l) { return sel[p + '|' + l]; }).length;
+      LANGS.forEach(function (l) { boxes.cell[p + '|' + l].checked = !!sel[p + '|' + l]; });
+      boxes.row[p].checked = on === LANGS.length;
+      boxes.row[p].indeterminate = on > 0 && on < LANGS.length;
+    });
+    LANGS.forEach(function (l) {
+      const on = PAGES.filter(function (p) { return sel[p + '|' + l]; }).length;
+      boxes.col[l].checked = on === PAGES.length;
+      boxes.col[l].indeterminate = on > 0 && on < PAGES.length;
+    });
+    const total = PAGES.length * LANGS.length;
+    boxes.all.checked = n === total;
+    boxes.all.indeterminate = n > 0 && n < total;
+    exCount.textContent = n ? tn('export.count', n) : t('export.count.none');
+    exGo.disabled = n === 0;
+  }
+  function pickBox(label, change) {
+    const i = document.createElement('input');
+    i.type = 'checkbox';
+    i.setAttribute('aria-label', label);
+    i.addEventListener('change', function () { change(i.checked); syncSelection(); });
+    return i;
+  }
+  function buildSelect() {
+    exSelect.textContent = '';
+    const wrap = h('div', 'scroll-x');
+    const table = h('table', 'ex-grid');
+    table.id = 'ex-grid';
+    const head = document.createElement('tr');
+    head.appendChild(h('th', null, t('export.grid.page'))).setAttribute('scope', 'col');
+    head.appendChild(h('th', null, t('export.all.languages'))).setAttribute('scope', 'col');
+    LANGS.forEach(function (l) {
+      const th = h('th', 'ex-lang');
+      th.setAttribute('scope', 'col');
+      th.setAttribute('data-lang', l);
+      th.setAttribute('aria-label', t('lang.' + l));
+      const flag = h('span', 'doc-flag', FLAG[l] || '');
+      flag.setAttribute('aria-hidden', 'true');
+      th.appendChild(flag);
+      th.appendChild(document.createTextNode(l.toUpperCase()));
+      head.appendChild(th);
+    });
+    table.appendChild(document.createElement('thead')).appendChild(head);
+    const body = document.createElement('tbody');
+    const all = document.createElement('tr');
+    all.appendChild(h('th', 'ex-page', t('export.all.pages'))).setAttribute('scope', 'row');
+    boxes.all = pickBox(t('export.aria.all'), function (on) {
+      PAGES.forEach(function (p) { LANGS.forEach(function (l) { sel[p + '|' + l] = on; }); });
+    });
+    boxes.all.id = 'ex-all';
+    all.appendChild(h('td', 'ex-check')).appendChild(boxes.all);
+    LANGS.forEach(function (l) {
+      boxes.col[l] = pickBox(t('export.aria.col', { language: t('lang.' + l) }), function (on) {
+        PAGES.forEach(function (p) { sel[p + '|' + l] = on; });
+      });
+      boxes.col[l].setAttribute('data-col', l);
+      all.appendChild(h('td', 'ex-check')).appendChild(boxes.col[l]);
+    });
+    body.appendChild(all);
+    PAGES.forEach(function (p) {
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-page', p);
+      tr.appendChild(h('th', 'ex-page', t('page.' + p))).setAttribute('scope', 'row');
+      boxes.row[p] = pickBox(t('export.aria.row', { page: t('page.' + p) }), function (on) {
+        LANGS.forEach(function (l) { sel[p + '|' + l] = on; });
+      });
+      boxes.row[p].setAttribute('data-row', p);
+      tr.appendChild(h('td', 'ex-check')).appendChild(boxes.row[p]);
+      LANGS.forEach(function (l) {
+        const c = pickBox(t('export.aria.cell', { page: t('page.' + p), language: t('lang.' + l) }), function (on) {
+          sel[p + '|' + l] = on;
+        });
+        c.setAttribute('data-page', p);
+        c.setAttribute('data-lang', l);
+        boxes.cell[p + '|' + l] = c;
+        tr.appendChild(h('td', 'ex-check')).appendChild(c);
+      });
+      body.appendChild(tr);
+    });
+    table.appendChild(body);
+    wrap.appendChild(table);
+    exSelect.appendChild(wrap);
+  }
+  function openEx() {
+    if (busy) return;
+    Object.keys(sel).forEach(function (k) { delete sel[k]; });
+    if (S.page && S.lang) sel[S.page + '|' + S.lang] = true;
+    buildSelect();
+    syncSelection();
+    exSelect.hidden = false;
+    exCount.hidden = false;
+    exProgress.hidden = true;
+    exResult.hidden = true;
+    exProgress.textContent = '';
+    exResult.textContent = '';
+    exCancel.hidden = false;
+    exGo.hidden = false;
+    exDownload.hidden = true;
+    exClose.hidden = true;
+    lastDownload = null;
+    openOverlay(ex, exportButton, exGo.disabled ? exCancel : exGo);
+  }
+  function closeEx() { if (!busy) closeOverlay(ex); }
+  exportButton.addEventListener('click', openEx);
+  exCancel.addEventListener('click', closeEx);
+  exClose.addEventListener('click', closeEx);
+
+  // One file's row in the list, and its state.
+  function fileRow(cell) {
+    const li = h('li', 'ex-file');
+    li.setAttribute('data-page', cell.page);
+    li.setAttribute('data-lang', cell.lang);
+    li.appendChild(h('span', 'ex-file-name', t('page.' + cell.page) + ' · ' + t('lang.' + cell.lang)));
+    li.appendChild(h('span', 'ex-file-state'));
+    exProgress.appendChild(li);
+    return li;
+  }
+  function setState(li, state, text) {
+    li.setAttribute('data-state', state);
+    li.querySelector('.ex-file-state').textContent = text !== undefined ? text : t(STEP_KEY[state]);
+  }
+  // The language has no edit the autosave can still send (a conflict, or one the Worker refused, stays
+  // in P for good: the autosave never resends it); false after a minute.
+  async function flush(lang) {
+    const end = Date.now() + 60000;
+    for (;;) {
+      if (!D.sendable(lang).length) return true;
+      if (Date.now() > end) return false;
+      D.saveNow();
+      await sleep(Math.max(100, Math.min(500, TIMING.quiet)));
+    }
+  }
+  function item(cell, block, extra) {
+    return Object.assign({ page: cell.page, lang: cell.lang, uid: block ? block.id : '', en: block ? block.en : '' }, extra || {});
+  }
+
+  // Step 1 for one (page, language): the page's texts become decisions. Returns the work found.
+  async function approve(cell, out) {
+    const lang = cell.lang, page = cell.page;
+    const data = await D.getPage(page);
+    await D.ensureLang(lang);
+    const decisions = L[lang].decisions, drafts = L[lang].drafts;
+    const changes = [];
+    let kept = 0, written = 0;                    // kept = already the very record; written = the server applied
+    data.blocks.forEach(function (b) {
+      // An edit still held back is never exported over: someone else's newer version (conflict), or a
+      // change the Worker refused (unsaved).
+      const held = D.pending()[lang] && D.pending()[lang][b.id];
+      if (held) {
+        if (held.conflict) out.conflict.push(item(cell, b));
+        else out.unsaved.push(item(cell, b, { reason: t('export.reason.refused-by-server') }));
+        return;
+      }
+      const rec = D.canon(decisions[b.id]);
+      const next = exportRecord(rec, drafts[b.id] && drafts[b.id].text, b, lang, D.canon);
+      if (!next) { out.empty.push(item(cell, b)); return; }
+      if (D.same(rec, next)) { kept++; return; }
+      changes.push({ unit: b.id, page: page, base: D.serverVer(lang, b.id), record: next });
+    });
+    const byId = {};
+    data.blocks.forEach(function (b) { byId[b.id] = b; });
+    for (let i = 0; i < changes.length; i += D.CHUNK) {
+      const part = changes.slice(i, i + D.CHUNK);
+      const r = await D.call({ action: 'desk-write', locale: lang, client: D.client, changes: part });
+      if (!r || !r.ok || !r.body) return { error: t('export.error.write', { reason: why(r) }), data: data, byId: byId };
+      const applied = {}, conflicts = {};
+      (r.body.applied || []).forEach(function (a) { applied[a.unit] = a.version; });
+      (r.body.conflicts || []).forEach(function (c) { conflicts[c.unit] = true; });
+      const now = new Date().toISOString();
+      part.forEach(function (c) {
+        if (Object.prototype.hasOwnProperty.call(applied, c.unit)) {
+          written++;
+          decisions[c.unit] = Object.assign({}, c.record, { page: page, version: applied[c.unit], by: D.who(), at: now });
+        } else if (conflicts[c.unit]) {
+          out.conflict.push(item(cell, byId[c.unit]));
+        } else {
+          out.unsaved.push(item(cell, byId[c.unit], { reason: t('export.reason.refused-by-server') }));
+        }
+      });
+    }
+    D.gridSoon();
+    return { written: written, kept: kept, data: data, byId: byId };
+  }
+
+  // The export job for one page: started (after any export of that language that is still open),
+  // watched, and its file fetched. Returns {job} or {error}.
+  async function runJob(cell, li) {
+    const lang = cell.lang;
+    let job = null;
+    for (let tries = 0; tries < 6 && !job; tries++) {
+      const r = await D.call({ action: 'desk-job-start', locale: lang, kind: 'export', ref: { page: cell.page } });
+      if (r && r.ok && r.body && r.body.job) { job = r.body.job; break; }
+      if (r && r.status === 409 && r.body && r.body.job && r.body.job.id) {
+        setState(li, 'queued');
+        await watch(lang, r.body.job.id);
+        continue;
+      }
+      return { error: t('export.error.start', { reason: why(r) }) };
+    }
+    if (!job) return { error: t('export.error.start', { reason: why(null) }) };
+    setState(li, 'queued');
+    const done = await watch(lang, job.id, function (status) { setState(li, status === 'running' ? 'running' : 'queued'); });
+    if (!done) return { error: t('save.reason.offline') };
+    if (done.status !== 'done') return { error: jobReason(done), job: done };
+    return { job: done };
+  }
+
+  async function exportOne(cell, li, files) {
+    const out = { refused: [], orphan: [], conflict: [], unsaved: [], empty: [] };
+    setState(li, 'saving');
+    if (!(await flush(cell.lang))) { setState(li, 'failed', t('export.step.failed', { reason: t('export.error.write', { reason: why(null) }) })); return out; }
+    let found;
+    try { found = await approve(cell, out); } catch (_) { found = { error: t('export.error.write', { reason: why(null) }) }; }
+    if (found.error) { setState(li, 'failed', t('export.step.failed', { reason: found.error })); return out; }
+    if (!found.written && !found.kept) { setState(li, 'nothing'); return out; }
+    const run = await runJob(cell, li);
+    // A job that ended failed still says what it refused (every text refused = "export-refused"): list it.
+    const result = (run.job && run.job.result) || {};
+    (result.refused || []).forEach(function (r) {
+      const block = found.byId[r.unit] || null;
+      if (r.rule === 'EXPORT-SKIP-NO-LONGER-ON-THE-PAGE') {
+        const saved = L[cell.lang].decisions[r.unit];
+        out.orphan.push(item(cell, null, { uid: r.unit, en: snippet(saved && saved.text) }));
+      } else {
+        out.refused.push(item(cell, block, { uid: r.unit, reason: COPY['refusal.' + r.rule] ? t('refusal.' + r.rule) : '' }));
+      }
+    });
+    if (run.error) { setState(li, 'failed', t('export.step.failed', { reason: run.error })); return out; }
+    if (!result.batchId || !result.rows) { setState(li, 'nothing'); return out; }
+    const got = await D.call({ action: 'desk-export-get', batch_id: result.batchId });
+    if (got && got.status === 410) { setState(li, 'failed', t('export.step.failed', { reason: t('flow.file.stale') })); return out; }
+    if (!got || !got.ok || !got.body || !got.body.export) {
+      setState(li, 'failed', t('export.step.failed', { reason: t('export.error.download', { reason: why(got) }) }));
+      return out;
+    }
+    files.push({ name: 'weglot-' + cell.lang + '-' + cell.page + '.csv', csv: got.body.export.csv });
+    setState(li, 'done', tn('export.step.done', result.rows));
+    return out;
+  }
+
+  let lastDownload = null;
+  function saveBlob(name, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  }
+  function stampName(when) {
+    const p = function (n) { return String(n).padStart(2, '0'); };
+    return when.getFullYear() + p(when.getMonth() + 1) + p(when.getDate()) + '-' + p(when.getHours()) + p(when.getMinutes());
+  }
+  function prepareDownload(files) {
+    if (!files.length) return null;
+    if (files.length === 1) {
+      return { name: files[0].name, blob: new Blob([files[0].csv], { type: 'text/csv;charset=utf-8' }) };
+    }
+    const enc = new TextEncoder(), when = new Date();
+    const bytes = zip(files.map(function (f) { return { name: f.name, data: enc.encode(f.csv) }; }), when);
+    return { name: 'weglot-export-' + stampName(when) + '.zip', blob: new Blob([bytes], { type: 'application/zip' }) };
+  }
+
+  async function jump(page, lang, uid) {
+    closeOverlay(ex);
+    if (S.page !== page || S.lang !== lang) D.open(page, lang);
+    await until(function () { return S.page === page && S.lang === lang && ready() && M.has(uid); }, 20000);
+    if (M.has(uid)) D.reveal(uid);
+  }
+  function renderResult(all, cells) {
+    exResult.textContent = '';
+    const many = cells.length > 1;
+    GROUP_ORDER.forEach(function (kind) {
+      const items = [];
+      all.forEach(function (r) { r[kind].forEach(function (i) { items.push(i); }); });
+      if (!items.length) return;
+      const group = h('div', 'ex-group');
+      group.setAttribute('data-kind', kind);
+      group.appendChild(h('h3', 'ex-group-title', tn(GROUP_KEY[kind], items.length)));
+      const list = h('ul', 'ex-items');
+      const add = function (i) {
+        const li = h('li', 'ex-item');
+        li.setAttribute('data-page', i.page);
+        li.setAttribute('data-lang', i.lang);
+        li.setAttribute('data-uid', i.uid);
+        const text = (many ? t('page.' + i.page) + ' · ' + t('lang.' + i.lang) + ': ' : '') + snippet(i.en);
+        li.appendChild(h('span', 'ex-item-text', text));
+        if (i.reason) li.appendChild(h('span', 'ex-item-reason', i.reason));
+        if (kind !== 'orphan') {
+          const go = button(null, 'desk-btn ex-jump', t('export.jump'));
+          go.addEventListener('click', function () { jump(i.page, i.lang, i.uid); });
+          li.appendChild(go);
+        }
+        list.appendChild(li);
+      };
+      items.slice(0, SHOWN).forEach(add);
+      if (items.length > SHOWN) {
+        // The rest are one click away (every text left out is listed, Outcome).
+        const more = h('li', 'ex-more');
+        const rest = button(null, 'desk-btn ex-show-more', t('export.more', { n: items.length - SHOWN }));
+        rest.addEventListener('click', function () {
+          more.remove();
+          items.slice(SHOWN).forEach(add);
+        });
+        more.appendChild(rest);
+        list.appendChild(more);
+      }
+      group.appendChild(list);
+      exResult.appendChild(group);
+    });
+  }
+
+  async function runExport() {
+    const cells = pickedCells();
+    if (!cells.length || busy) return;
+    busy = true;
+    exSelect.hidden = true;
+    exCount.hidden = true;
+    exCancel.hidden = true;
+    exGo.hidden = true;
+    exProgress.textContent = '';
+    exProgress.hidden = false;
+    exResult.hidden = true;
+    const rows = cells.map(function (c) { const li = fileRow(c); setState(li, 'waiting'); return li; });
+    const files = [], all = [];
+    for (let i = 0; i < cells.length; i++) {
+      all.push(await exportOne(cells[i], rows[i], files));
+    }
+    const langs = {};
+    cells.forEach(function (c) { langs[c.lang] = true; });
+    await Promise.all(Object.keys(langs).map(function (l) { return D.refreshLang(l); }));
+    D.gridSoon();
+    busy = false;
+    renderResult(all, cells);
+    exResult.hidden = false;
+    lastDownload = prepareDownload(files);
+    exClose.hidden = false;
+    exDownload.hidden = !lastDownload;
+    if (lastDownload) saveBlob(lastDownload.name, lastDownload.blob);
+    exClose.focus();
+  }
+  exGo.addEventListener('click', runExport);
+  exDownload.addEventListener('click', function () { if (lastDownload) saveBlob(lastDownload.name, lastDownload.blob); });
+
+  // ── Re-translate ────────────────────────────────────────────────────────────────────
+  const rt = makeOverlay('rt-modal', 'rt-title');
+  rt.close = function () { closeOverlay(rt); };
+  const rtTitle = h('h2', 'cpw-title', t('retr.text.title'));
+  rtTitle.id = 'rt-title';
+  const rtBody = h('p', null, t('retr.text.body'));
+  rtBody.id = 'rt-body';
+  const rtLabel = h('label', 'ex-note-label', t('retr.note.label'));
+  rtLabel.setAttribute('for', 'rt-note');
+  const rtNote = document.createElement('textarea');
+  rtNote.id = 'rt-note';
+  rtNote.className = 'ex-note';
+  rtNote.rows = 3;
+  rtNote.maxLength = NOTE_MAX;
+  // Ctrl/Cmd+Z in the note is the note's own undo, not the page's.
+  rtNote.addEventListener('keydown', function (ev) { if (ev.ctrlKey || ev.metaKey) ev.stopPropagation(); });
+  const rtCancel = button('rt-cancel', 'cpw-btn cpw-cancel', t('retr.cancel'));
+  const rtGo = button('rt-go', 'cpw-btn cpw-save', t('retr.text.go'));
+  const rtActions = h('div', 'cpw-actions');
+  rtActions.appendChild(rtCancel);
+  rtActions.appendChild(rtGo);
+  [rtTitle, rtBody, rtLabel, rtNote, rtActions].forEach(function (e) { rt.box.appendChild(e); });
+
+  const rp = makeOverlay('rp-modal', 'rp-title');
+  rp.close = function () { closeOverlay(rp); };
+  const rpTitle = h('h2', 'cpw-title', t('retr.page.title'));
+  rpTitle.id = 'rp-title';
+  const rpBody = h('p', null, t('retr.page.body'));
+  rpBody.id = 'rp-body';
+  const rpLabel = h('label', 'ex-mine');
+  const rpMine = document.createElement('input');
+  rpMine.type = 'checkbox';
+  rpMine.id = 'rp-mine';
+  rpLabel.appendChild(rpMine);
+  rpLabel.appendChild(document.createTextNode(' ' + t('retr.page.mine')));
+  const rpCancel = button('rp-cancel', 'cpw-btn cpw-cancel', t('retr.cancel'));
+  const rpGo = button('rp-go', 'cpw-btn cpw-save', t('retr.page.go'));
+  const rpActions = h('div', 'cpw-actions');
+  rpActions.appendChild(rpCancel);
+  rpActions.appendChild(rpGo);
+  [rpTitle, rpBody, rpLabel, rpActions].forEach(function (e) { rp.box.appendChild(e); });
+
+  // The job, started; its end handled by `done(job)` once the language is read again.
+  async function startRetranslate(lang, kind, ref, done) {
+    const r = await D.call({ action: 'desk-job-start', locale: lang, kind: kind, ref: ref });
+    if (!r || !r.ok || !r.body || !r.body.job) {
+      if (r && r.status === 409) D.toast(t('retr.busy'), 'warn');
+      else D.toast(t('retr.failed', { reason: why(r) }), 'err');
+      return;
+    }
+    D.toast(t('retr.started'));
+    const job = await watch(lang, r.body.job.id);
+    if (!job || job.status !== 'done') {
+      D.toast(t('retr.failed', { reason: job ? jobReason(job) : t('save.reason.offline') }), 'err');
+      return;
+    }
+    await D.refreshLang(lang);
+    done();
+  }
+  // A new draft is SHOWN: the text's own edit is cleared, and the wording it had goes on the undo stack.
+  function adopt(lang, page, uid, shown) {
+    const rec = D.curRec(lang, uid);
+    const next = D.withText(rec, '');
+    const key = lang + '/' + page;
+    const stack = D.U[key] || (D.U[key] = { undo: [], redo: [] });
+    stack.undo.push({ uid: uid, from: D.withText(rec, shown), to: next });
+    if (stack.undo.length > 100) stack.undo.shift();
+    stack.redo = [];
+    D.changeRecord(uid, next);
+    D.saveStacks();
+    D.paintBlock(uid, true);
+    D.paintUndo();
+  }
+  let rtCtx = null;
+  function openText(uid, opener) {
+    if (!ready()) return;
+    rtCtx = { uid: uid, lang: S.lang, page: S.page, shown: D.effText(S.lang, uid) };
+    rtNote.value = '';
+    openOverlay(rt, opener, rtNote);
+  }
+  rtCancel.addEventListener('click', rt.close);
+  rtGo.addEventListener('click', function () {
+    const ctx = rtCtx;
+    if (!ctx) return;
+    // The Worker refuses a note with a control character (a new line is one): they become a space.
+    const note = rtNote.value.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const ref = { page: ctx.page, unit: ctx.uid };
+    if (note) ref.note = note;
+    ref.keepEdited = true;
+    const block = M.get(ctx.uid);
+    closeOverlay(rt);
+    if (block && block.tgt) { try { block.tgt.focus(); } catch (_) {} }
+    startRetranslate(ctx.lang, 'retranslate', ref, function () {
+      const draft = L[ctx.lang].drafts[ctx.uid];
+      if (!draft || !draft.text || draft.text === ctx.shown) { D.toast(t('retr.none-arrived'), 'warn'); return; }
+      if (S.lang === ctx.lang && S.page === ctx.page && M.has(ctx.uid)) adopt(ctx.lang, ctx.page, ctx.uid, ctx.shown);
+      D.toast(t('retr.done'));
+      D.gridSoon();
+    });
+  });
+  function openPage() {
+    if (!ready()) return;
+    rpMine.checked = false;
+    openOverlay(rp, pageButton, rpGo);
+  }
+  pageButton.addEventListener('click', openPage);
+  rpCancel.addEventListener('click', rp.close);
+  rpGo.addEventListener('click', function () {
+    const lang = S.lang, page = S.page, mine = rpMine.checked;
+    // The texts the reviewer has edited, and what they say now: with "include my edits" they get
+    // Gemini's new wording, each one undoable.
+    const before = {};
+    Object.keys(L[lang].decisions).forEach(function (uid) {
+      const r = D.curRec(lang, uid);
+      if (r && r.text && M.has(uid)) before[uid] = r.text;
+    });
+    closeOverlay(rp);
+    // The whole page is the engine's translate-page job (a retranslate with no text always keeps edits).
+    startRetranslate(lang, 'translate-page', { page: page, keepEdited: !mine }, function () {
+      if (mine && S.lang === lang && S.page === page) {
+        Object.keys(before).forEach(function (uid) {
+          const d = L[lang].drafts[uid];
+          if (d && d.text && d.text !== before[uid]) adopt(lang, page, uid, before[uid]);
+        });
+      }
+      D.toast(t('retr.done'));
+      D.gridSoon();
+    });
+  });
+
+  // A "Re-translate" in each text's floating toolbar.
+  function addToTool(li) {
+    const tools = li.querySelector('.doc-tools');
+    if (!tools || tools.querySelector('.doc-tool-retranslate')) return;
+    const b = button(null, 'desk-btn doc-tool-retranslate', t('retr.button'));
+    b.addEventListener('click', function () { openText(li.getAttribute('data-uid'), b); });
+    tools.insertBefore(b, tools.firstChild);
+  }
+  const list = $('doc-blocks');
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      m.addedNodes.forEach(function (n) { if (n.nodeType === 1 && n.classList.contains('doc-block')) addToTool(n); });
+    });
+  }).observe(list, { childList: true });
+  list.querySelectorAll('.doc-block').forEach(addToTool);
+})();
+</script>
+</body>
+</html>

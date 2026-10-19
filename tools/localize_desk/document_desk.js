@@ -1,0 +1,1233 @@
+/*
+ * The document page of the localization desk (desk v2, CEL-026): one page read as a document,
+ * English on the left, the translation on the right (Weglot's wording as an optional third
+ * column), every translation editable in place.
+ *
+ * generate_document_page.py inlines this file, after rich_field.js, into
+ * /admin/localization/document/. It reads three globals the page defines first: COPY with
+ * t() / tn() (every word comes from COPY.md), callProxy() (the Worker door) and SAVE_OFF.
+ * The contract between the generator, this file and the tests: runtime/out/loc2/CEL-026/contract.md.
+ *
+ * What it does, and how, in one paragraph: a text is saved the way the v1 desk saves one (desk-write,
+ * the Worker keeps a version of every change, `base` = the version this page last saw), so
+ *   - autosave is a quiet 2 s / 10 s ceiling queue in chunks of 50 under one cross-tab lock;
+ *   - undo, redo and "restore" are ordinary writes: nothing here can overwrite a version this
+ *     page has not seen, the Worker answers "conflict" and the reviewer chooses (keep mine / take theirs);
+ *   - the server's own history is the backup, and History per text reads it (desk-history {unit}).
+ * DOM is built with createElement / textContent only: texts are data, never markup.
+ */
+(function () {
+  'use strict';
+
+  const cfgNode = document.getElementById('doc-config');
+  if (!cfgNode || !window.RichField || typeof callProxy !== 'function') return;
+  const CFG = JSON.parse(cfgNode.textContent);
+  const LOCALES = CFG.locales;
+  const PAGES = CFG.pages;
+  const DATA = CFG.data;
+  const LANGS = LOCALES.map(function (l) { return l.code; });
+
+  const DESK_CLIENT = 1;                       // the Worker's DESK_MIN_CLIENT: below it, it says reload
+  const CHUNK = 50;                            // texts per desk-write (the free plan's 10 ms CPU)
+  const RETRY_MS = [2000, 5000, 15000, 30000, 60000];
+  const STOPS = ['reload', 'signed_out', 'cap', 'daily', 'refused'];   // saving waits for the reviewer
+  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000 },
+    window.DOC_TIMING || {});
+  const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
+  const UNDO_CAP = 100;
+  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot' };
+  const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
+
+  // The block labels, spelled out so the copy check sees every key.
+  const BLOCK_KEY = {
+    'meta-title': 'doc.block.meta-title', 'meta-description': 'doc.block.meta-description',
+    h1: 'doc.block.h1', h2: 'doc.block.h2', h3: 'doc.block.h3', h4: 'doc.block.h4', h5: 'doc.block.h5',
+    h6: 'doc.block.h6', p: 'doc.block.p', li: 'doc.block.li', button: 'doc.block.button',
+    link: 'doc.block.link', other: 'doc.block.other'
+  };
+  const STATUS_KEY = {
+    none: 'doc.status.none', drafted: 'doc.status.drafted', edited: 'doc.status.edited',
+    exported: 'doc.status.exported', unknown: 'doc.status.unknown',
+    translating: 'doc.status.translating', queued: 'doc.status.queued'
+  };
+  const FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];   // what a decision record may carry
+
+  const $ = function (id) { return document.getElementById(id); };
+  function h(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+
+  // ── storage (a browser that refuses it must not break the page) ───────────────────
+  let storageWarned = false;
+  function lsGet(key) {
+    try { const s = localStorage.getItem(key); return s === null ? null : JSON.parse(s); } catch (_) { return null; }
+  }
+  function lsSet(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (_) {
+      if (!storageWarned) { storageWarned = true; toast(t('toast.storage.title'), 'warn'); }
+      return false;
+    }
+  }
+
+  // ── decision records ───────────────────────────────────────────────────────────────
+  // canon(): only the fields a record may carry, in one fixed order, empty ones dropped; null
+  // when nothing is left (= no decision). Two records are the same when their canon text is.
+  function canon(r) {
+    if (!r) return null;
+    const out = {};
+    FIELDS.forEach(function (k) {
+      const v = r[k];
+      if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return;
+      out[k] = v;
+    });
+    return Object.keys(out).length ? out : null;
+  }
+  const same = function (a, b) { return JSON.stringify(canon(a)) === JSON.stringify(canon(b)); };
+  // A wording typed here IS the decision (ruling #55 A11, #63: leaving a changed field approves it with
+  // your edit): `against`, when given, stamps the v1 decision (`tray:'csv'`, `approvedAgainst` = the wording
+  // the website shows now) so the page export takes the text. No text means no edit: the stamp goes with it.
+  function withText(r, text, against) {
+    const next = Object.assign({}, r || {});
+    if (text) {
+      next.text = text;
+      if (typeof against === 'string') { next.tray = 'csv'; next.approvedAgainst = against; }
+    } else { delete next.text; delete next.tray; delete next.approvedAgainst; }
+    return canon(next);
+  }
+  // What the website shows for this text in this language now: Weglot's wording, or the English where
+  // Weglot has none yet (the page shows English there; the export reads the same line).
+  function liveWording(uid) {
+    const b = M.get(uid), d = b ? b.d : null;
+    return d ? ((d.w && d.w[S.lang]) || d.en || '') : '';
+  }
+  function decide(uid, text) { return withText(curRec(S.lang, uid), text, liveWording(uid)); }
+
+  // ── state ──────────────────────────────────────────────────────────────────────────
+  const S = { page: null, lang: null, doc: null, loading: true, token: 0 };
+  const L = {};                      // per language: {loaded, decisions, drafts, pipeline}
+  LANGS.forEach(function (c) { L[c] = { loaded: false, decisions: {}, drafts: {}, pipeline: {} }; });
+  const PI = new Map();              // page -> {count, ids}
+  const PAGE_CACHE = new Map();      // page -> data
+  let P = lsGet(KEYS.pending) || {}; // unsent: {lang: {uid: {record, base, page, conflict?}}}
+  const C = {};                      // conflicts: {lang: {uid: {current}}}
+  const U = lsGet(KEYS.undo) || {};  // undo stacks: {"lang/page": {undo: [], redo: []}}
+  const M = new Map();               // uid -> block model of the open document
+  const net = { timer: null, maxTimer: null, running: false, again: false, retry: 0, failure: null,
+                stopped: null, inflight: new Set(), refused: new Set() };
+  let group = null, groupTimer = null;
+  let readError = false;
+  let focusBack = null;
+
+  function pend(lang) { return P[lang] || (P[lang] = {}); }
+  function conf(lang) { return C[lang] || (C[lang] = {}); }
+  function serverRec(lang, uid) { return canon(L[lang].decisions[uid]); }
+  function serverVer(lang, uid) { const d = L[lang].decisions[uid]; return d ? d.version || 0 : 0; }
+  function curRec(lang, uid) {
+    const e = P[lang] && P[lang][uid];
+    return e ? e.record : serverRec(lang, uid);
+  }
+  function effText(lang, uid) {
+    const r = curRec(lang, uid);
+    if (r && r.text) return r.text;
+    const d = L[lang].drafts[uid];
+    return d && d.text ? d.text : '';
+  }
+  function who() {
+    const u = window.__CEL_USER__ || {};
+    return u.email || '';
+  }
+  function persistPending() {
+    const out = {};
+    Object.keys(P).forEach(function (lang) {
+      const ids = Object.keys(P[lang]);
+      if (ids.length) out[lang] = P[lang];
+    });
+    lsSet(KEYS.pending, out);
+  }
+  function pendingTotal() {
+    let n = 0;
+    Object.keys(P).forEach(function (lang) {
+      Object.keys(P[lang]).forEach(function (uid) {
+        if (!P[lang][uid].conflict && !net.refused.has(lang + '|' + uid)) n++;
+      });
+    });
+    return n;
+  }
+  function conflictTotal() {
+    let n = 0;
+    Object.keys(C).forEach(function (lang) { n += Object.keys(C[lang]).length; });
+    return n;
+  }
+
+  // ── toasts ─────────────────────────────────────────────────────────────────────────
+  function toast(message, level) {
+    const stack = $('doc-toasts');
+    if (!stack) return;
+    const node = h('div', 'toast is-' + (level || 'ok'));
+    node.appendChild(h('span', 'toast-title', message));
+    stack.appendChild(node);
+    setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 4000);
+  }
+
+  // ── the Worker ─────────────────────────────────────────────────────────────────────
+  // Why a save stopped, as a COPY.md save.reason.* key (the same words as the v1 desk).
+  function failureReason(r) {
+    if (!r) return 'offline';
+    if (r.status === 409) return 'reload';
+    if (r.status === 401) return 'signed_out';
+    if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'daily' : 'cap';
+    if (r.status === 503) return 'unavailable';
+    if (r.status === 400 || r.status === 403) return 'refused';
+    return 'trouble';
+  }
+  function call(payload) {
+    return callProxy(payload, TIMING.timeout).catch(function () { return null; });
+  }
+
+  // ── autosave ───────────────────────────────────────────────────────────────────────
+  function changed() {
+    persistPending();
+    updateBar();
+    schedule();
+    gridSoon();
+  }
+  function schedule() {
+    if (SAVE_OFF_ON || net.stopped) return;
+    clearTimeout(net.timer);
+    net.timer = setTimeout(run, TIMING.quiet);
+    if (!net.maxTimer) net.maxTimer = setTimeout(run, TIMING.maxWait);
+  }
+  function run() {
+    clearTimeout(net.timer); clearTimeout(net.maxTimer);
+    net.timer = null; net.maxTimer = null;
+    if (SAVE_OFF_ON) return;
+    if (net.running) { net.again = true; return; }
+    net.running = true;
+    const task = function () {
+      return save().catch(function () {}).then(function () {
+        net.running = false;
+        if (net.again) { net.again = false; run(); }
+      });
+    };
+    if (navigator.locks && navigator.locks.request) navigator.locks.request('cel-desk-save', task);
+    else task();
+  }
+  function langOrder() {
+    return [S.lang].concat(LANGS.filter(function (c) { return c !== S.lang; })).filter(Boolean);
+  }
+  function sendable(lang) {
+    return Object.keys(pend(lang)).filter(function (uid) {
+      return !pend(lang)[uid].conflict && !net.refused.has(lang + '|' + uid);
+    });
+  }
+  async function save() {
+    const order = langOrder();
+    for (let i = 0; i < order.length; i++) {
+      const lang = order[i];
+      for (;;) {
+        const ids = sendable(lang).slice(0, CHUNK);
+        if (!ids.length) break;
+        const sent = {};
+        const changes = ids.map(function (uid) {
+          const e = P[lang][uid];
+          sent[uid] = JSON.stringify(e.record);
+          net.inflight.add(lang + '|' + uid);
+          return { unit: uid, page: e.page, base: e.base, record: e.record };
+        });
+        paintMany(lang, ids);
+        updateBar();
+        const r = await call({ action: 'desk-write', locale: lang, client: DESK_CLIENT, changes: changes });
+        ids.forEach(function (uid) { net.inflight.delete(lang + '|' + uid); });
+        if (!r || !r.ok) {
+          failed(failureReason(r));
+          paintMany(lang, ids);
+          updateBar();
+          return;
+        }
+        net.retry = 0; net.failure = null; net.stopped = null;
+        written(lang, ids, sent, r.body || {});
+        updateBar();
+        gridSoon();
+      }
+    }
+  }
+  function failed(why) {
+    net.failure = why;
+    if (STOPS.indexOf(why) >= 0) { net.stopped = why; return; }
+    const wait = RETRY_MS[Math.min(net.retry, RETRY_MS.length - 1)];
+    net.retry++;
+    clearTimeout(net.timer);
+    net.timer = setTimeout(run, wait);
+  }
+  function written(lang, ids, sent, body) {
+    const applied = {}, conflicts = {}, refused = {};
+    (body.applied || []).forEach(function (a) { applied[a.unit] = a.version; });
+    (body.conflicts || []).forEach(function (c) { conflicts[c.unit] = c.current || null; });
+    (body.refused || []).forEach(function (x) { refused[x.unit] = true; });
+    const now = new Date().toISOString();
+    ids.forEach(function (uid) {
+      const e = P[lang] && P[lang][uid];
+      if (!e) return;
+      if (Object.prototype.hasOwnProperty.call(applied, uid)) {
+        const ver = applied[uid];
+        // The server holds what was SENT, not what the box says now: typed (or undone) again while the
+        // write was on its way, the entry stays and is sent next, on top of this version.
+        L[lang].decisions[uid] = Object.assign({}, JSON.parse(sent[uid]) || {}, { page: e.page, version: ver, by: who(), at: now });
+        if (JSON.stringify(e.record) === sent[uid]) delete P[lang][uid];
+        else e.base = ver;                       // typed again while it was on its way: build on this version
+        const b = M.get(uid);
+        if (b && lang === S.lang) { b.savedUntil = Date.now() + 3000; setTimeout(function () { paintBlock(uid); }, 3100); }
+      } else if (Object.prototype.hasOwnProperty.call(conflicts, uid)) {
+        e.conflict = true;
+        conf(lang)[uid] = { current: conflicts[uid] };
+      } else {
+        net.refused.add(lang + '|' + uid);      // refused, or not mentioned: never resent in a loop
+      }
+    });
+    persistPending();
+    paintMany(lang, ids);
+  }
+
+  // ── the conflict the Worker reports: someone saved the same text after the version this page saw ─
+  function keepMine(uid) {
+    const lang = S.lang, e = pend(lang)[uid], c = conf(lang)[uid];
+    if (!e || !c) return;
+    e.base = c.current ? c.current.version || 0 : 0;
+    delete e.conflict;
+    delete conf(lang)[uid];
+    changed();
+    paintBlock(uid);
+  }
+  function takeTheirs(uid) {
+    const lang = S.lang, c = conf(lang)[uid];
+    if (!c) return;
+    if (c.current) L[lang].decisions[uid] = c.current; else delete L[lang].decisions[uid];
+    delete pend(lang)[uid];
+    delete conf(lang)[uid];
+    persistPending();
+    changed();
+    paintBlock(uid, true);
+  }
+
+  // ── making a change ────────────────────────────────────────────────────────────────
+  // The one way a text changes: edit, undo, redo, restore. `next` is the whole new record.
+  function changeRecord(uid, next) {
+    const lang = S.lang, before = curRec(lang, uid);
+    next = canon(next);
+    if (same(before, next)) return false;
+    const e = pend(lang)[uid];
+    const base = e ? e.base : serverVer(lang, uid);
+    net.refused.delete(lang + '|' + uid);
+    // Back to what this page holds as the server's version is "nothing to send" -- unless a write of this
+    // text is on its way: the server will have that one, so this change must follow it (re-based when
+    // the write lands, see written()).
+    if (e && e.conflict) { e.record = next; }
+    else if (same(next, serverRec(lang, uid)) && base === serverVer(lang, uid) && !net.inflight.has(lang + '|' + uid)) delete pend(lang)[uid];
+    else pend(lang)[uid] = { record: next, base: base, page: S.page };
+    changed();
+    return true;
+  }
+
+  // ── undo / redo (one stack pair per document: language + page) ─────────────────────
+  function stack() {
+    const k = S.lang + '/' + S.page;
+    return U[k] || (U[k] = { undo: [], redo: [] });
+  }
+  function saveStacks() {
+    const out = {};
+    Object.keys(U).forEach(function (k) { if (U[k].undo.length || U[k].redo.length) out[k] = U[k]; });
+    lsSet(KEYS.undo, out);
+  }
+  function closeGroup() {
+    clearTimeout(groupTimer);
+    if (!group) return;
+    const g = group;
+    group = null;
+    const to = curRec(S.lang, g.uid);
+    if (!same(g.from, to)) {
+      const s = stack();
+      s.undo.push({ uid: g.uid, from: g.from, to: to });
+      if (s.undo.length > UNDO_CAP) s.undo.shift();
+      s.redo = [];
+      saveStacks();
+    }
+    paintUndo();
+  }
+  function onInput(uid, rf) {
+    if (!group || group.uid !== uid) { closeGroup(); group = { uid: uid, from: curRec(S.lang, uid) }; }
+    changeRecord(uid, decide(uid, rf.value()));
+    paintBlock(uid);
+    clearTimeout(groupTimer);
+    groupTimer = setTimeout(closeGroup, TIMING.undoPause);
+    paintUndo();
+  }
+  // An undo / redo step may change only the text it was made on. The stacks outlive a reload and a
+  // re-read, so the text can stand at somebody else's version by now: then the step is NOT written
+  // but held as a conflict (keep mine / take theirs, fix 15), exactly as when the Worker reports one.
+  function holdAsConflict(uid, wanted) {
+    const lang = S.lang, e = pend(lang)[uid];
+    if (e) e.record = canon(wanted);
+    else pend(lang)[uid] = { record: canon(wanted), base: serverVer(lang, uid), page: S.page };
+    pend(lang)[uid].conflict = true;
+    conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    net.refused.delete(lang + '|' + uid);
+    changed();
+  }
+  function step(dir) {
+    closeGroup();
+    const s = stack();
+    const from = dir < 0 ? s.undo : s.redo, to = dir < 0 ? s.redo : s.undo;
+    const entry = from[from.length - 1];
+    if (!entry) return;
+    const lang = S.lang, uid = entry.uid, e = pend(lang)[uid];
+    const standing = same(curRec(lang, uid), dir < 0 ? entry.to : entry.from);
+    from.pop();
+    // Not the state this step made, and an unsent change of this page's own that the stack does not
+    // know about: the step has nothing to stand on and is dropped, never written over it.
+    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); return; }
+    to.push(entry);
+    const wanted = dir < 0 ? entry.from : entry.to;
+    if (standing) changeRecord(uid, wanted); else holdAsConflict(uid, wanted);
+    saveStacks();
+    paintBlock(uid, true);
+    reveal(uid);
+    paintUndo();
+  }
+  const undo = function () { step(-1); };
+  const redo = function () { step(1); };
+  function reveal(uid) {
+    const b = M.get(uid);
+    if (!b) return;
+    try { b.li.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+    b.li.setAttribute('data-flash', '1');
+    setTimeout(function () { b.li.removeAttribute('data-flash'); }, 1000);
+  }
+  function keysFor(kind) {
+    const k = kind === 'undo'
+      ? (IS_MAC ? 'doc.keys.undo.mac' : 'doc.keys.undo.other')
+      : (IS_MAC ? 'doc.keys.redo.mac' : 'doc.keys.redo.other');
+    return t(k);
+  }
+  function paintUndo() {
+    const s = stack();
+    const u = $('doc-undo'), r = $('doc-redo');
+    const canU = s.undo.length > 0 || !!group, canR = s.redo.length > 0;
+    u.disabled = !canU; r.disabled = !canR;
+    const ut = canU ? t('doc.undo.tip', { keys: keysFor('undo') }) : t('doc.undo.none');
+    const rt = canR ? t('doc.redo.tip', { keys: keysFor('redo') }) : t('doc.redo.none');
+    u.setAttribute('data-tip', ut); u.setAttribute('aria-label', ut);
+    r.setAttribute('data-tip', rt); r.setAttribute('aria-label', rt);
+    const uk = u.querySelector('.doc-kbd'), rk = r.querySelector('.doc-kbd');
+    if (uk) uk.textContent = keysFor('undo');
+    if (rk) rk.textContent = keysFor('redo');
+  }
+
+  // ── the text cells ─────────────────────────────────────────────────────────────────
+  function blockLabel(d) {
+    if (d.b === 'meta-title' && d.r === 'og_title') return t('doc.block.og-title');
+    return t(BLOCK_KEY[d.b] || BLOCK_KEY.other);
+  }
+  function lockReason(d) {
+    if (d.lock === 'summary') return t('refusal.SUMMARY-OWNED');
+    if (d.lock === 'link') return t('refusal.LINK-ONLY-UNPROVEN');
+    return t('doc.locked.noise');
+  }
+  function caretEnd(el) {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+  function attachField(b, text) {
+    const el = b.tgt;
+    b.rf = window.RichField.attach(el, {
+      text: text,
+      onCommit: function () { el.blur(); }
+    });
+    return b.rf;
+  }
+  function buildBlock(d) {
+    const lang = S.lang;
+    const li = h('li', 'doc-block');
+    li.setAttribute('data-uid', d.id);
+    li.setAttribute('data-b', d.b);
+    li.setAttribute('data-state', 'idle');
+    li.setAttribute('data-lock', d.lock || '');
+    li.setAttribute('data-source', 'none');
+    const b = { d: d, li: li, savedUntil: 0 };
+    li.appendChild(h('span', 'doc-tag', blockLabel(d)));
+    const en = h('div', 'doc-en');
+    en.setAttribute('lang', 'en');
+    window.RichField.render(en, d.en);
+    li.appendChild(en);
+    b.en = en;
+    const tgt = h('div', 'doc-tgt');
+    tgt.setAttribute('lang', lang);
+    tgt.setAttribute('role', 'textbox');
+    tgt.setAttribute('aria-label', blockLabel(d));
+    if (d.lock) tgt.setAttribute('aria-readonly', 'true');
+    b.tgt = tgt;
+    li.appendChild(tgt);
+    const wg = h('div', 'doc-weglot');
+    wg.setAttribute('lang', lang);
+    wg.setAttribute('dir', 'auto');
+    window.RichField.render(wg, (d.w && d.w[lang]) || '');
+    wg.hidden = $('doc-blocks').getAttribute('data-weglot') !== 'on';
+    li.appendChild(wg);
+    b.wg = wg;
+    const note = h('p', 'doc-note');
+    b.state = h('span', 'doc-note-state');
+    b.lockNote = h('span', 'doc-note-lock');
+    b.also = h('span', 'doc-note-also');
+    b.shared = h('span', 'doc-note-shared');
+    note.appendChild(b.state); note.appendChild(b.lockNote); note.appendChild(b.also); note.appendChild(b.shared);
+    li.appendChild(note);
+    const box = h('div', 'doc-conflict');
+    box.hidden = true;
+    b.conflictText = h('span');
+    const mine = h('button', 'desk-btn doc-keep-mine', t('doc.conflict.mine'));
+    mine.type = 'button';
+    const theirs = h('button', 'desk-btn doc-take-theirs', t('doc.conflict.theirs'));
+    theirs.type = 'button';
+    box.appendChild(b.conflictText); box.appendChild(mine); box.appendChild(theirs);
+    li.appendChild(box);
+    b.box = box;
+    mine.addEventListener('click', function () { keepMine(d.id); });
+    theirs.addEventListener('click', function () { takeTheirs(d.id); });
+
+    if (d.lock) {
+      b.lockNote.textContent = t('doc.locked.tag') + ' — ' + lockReason(d);
+      tgt.setAttribute('dir', 'auto');
+      window.RichField.render(tgt, (d.w && d.w[lang]) || '');
+    } else {
+      tgt.setAttribute('data-placeholder', t('doc.empty.cell'));
+      attachField(b, effText(lang, d.id));
+      tgt.addEventListener('input', function () { onInput(d.id, b.rf); });
+      // Edit > Undo, a phone's shake and the like reach the field as beforeinput: they go to the
+      // page's one undo stack too, never to the browser's own history of this field.
+      tgt.addEventListener('beforeinput', function (ev) {
+        if (ev.inputType === 'historyUndo') { ev.preventDefault(); undo(); }
+        else if (ev.inputType === 'historyRedo') { ev.preventDefault(); redo(); }
+      });
+      tgt.addEventListener('focus', function () { li.setAttribute('data-open', '1'); });
+      tgt.addEventListener('blur', function () {
+        li.removeAttribute('data-open');
+        closeGroup();
+        paintBlock(d.id);
+      });
+      // Esc leaves the text (the typing is already kept); the field's own Esc would put back
+      // what the text was when the page opened.
+      tgt.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape') { ev.stopImmediatePropagation(); ev.preventDefault(); tgt.blur(); }
+      }, true);
+      en.addEventListener('click', function () {
+        const sel = window.getSelection && window.getSelection().toString();
+        if (!sel) tgt.focus();
+      });
+      // The actions for this text float above it while focus is inside the block (CSS :focus-within).
+      const tools = h('div', 'doc-tools');
+      tools.setAttribute('role', 'toolbar');
+      tools.setAttribute('aria-label', t('doc.tools.label'));
+      const hb = h('button', 'desk-btn doc-history-btn', t('doc.history'));
+      const wb = h('button', 'desk-btn doc-tool-weglot', t('doc.tool.weglot'));
+      const rb = h('button', 'desk-btn doc-tool-revert', t('doc.tool.revert'));
+      [hb, wb, rb].forEach(function (x) { x.type = 'button'; });
+      tools.appendChild(hb);
+      // Weglot has no wording for this text: no "Use Weglot's text" button (it would erase the edit).
+      if (d.w && d.w[lang]) tools.appendChild(wb);
+      tools.appendChild(rb);
+      hb.addEventListener('click', function () { openHistory(d.id, hb); });
+      wb.addEventListener('click', function () { commitText(d.id, (d.w && d.w[lang]) || ''); });
+      rb.addEventListener('click', function () { commitText(d.id, ''); });
+      li.appendChild(tools);
+      b.hist = hb;
+    }
+    if (d.b === 'meta-title' || d.b === 'meta-description') {
+      b.chars = h('span', 'doc-note-chars');
+      note.appendChild(b.chars);
+    }
+    if (d.also && d.also.length) {
+      b.also.textContent = t('doc.also', { pages: d.also.map(function (p) { return t('page.' + p); }).join(', ') });
+    }
+    // A text that also stands on pages outside these four (a shared body text): one translation
+    // serves them all, and the reviewer is told so.
+    if (d.out) {
+      const eg = d.outEg === '/' ? t('row.shared.home') : (d.outEg || '');
+      b.shared.textContent = tn('doc.shared', d.out, { example: eg });
+    }
+    M.set(d.id, b);
+    return b;
+  }
+
+  function stateOf(lang, uid, b) {
+    if (conf(lang)[uid]) return 'conflict';
+    const key = lang + '|' + uid;
+    if (net.inflight.has(key)) return 'saving';
+    if (net.refused.has(key)) return 'error';
+    if (P[lang] && P[lang][uid]) return net.failure ? 'error' : 'dirty';
+    if (b && b.savedUntil > Date.now()) return 'saved';
+    return 'idle';
+  }
+  function paintBlock(uid, rerender) {
+    const b = M.get(uid);
+    if (!b) return;
+    const lang = S.lang;
+    const d = b.d;
+    const rec = curRec(lang, uid);
+    const draft = L[lang].drafts[uid];
+    b.li.setAttribute('data-source', rec && rec.text ? 'edit' : (draft && draft.text ? 'draft' : 'none'));
+    if (!d.lock) {
+      const text = effText(lang, uid);
+      const focused = document.activeElement === b.tgt;
+      if (rerender || (!focused && b.rf.value() !== text)) {
+        attachField(b, text);
+        if (focused) { b.tgt.focus(); caretEnd(b.tgt); }       // an undo from inside the text keeps the caret there
+      }
+    }
+    const st = stateOf(lang, uid, b);
+    b.li.setAttribute('data-state', st);
+    let label = '';
+    if (!d.lock) {
+      if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
+      else if (st === 'saved') label = t('doc.text.saved');
+      else if (st === 'error') label = t('doc.text.error');
+      else if (rec && rec.text) label = t('doc.text.edited');
+    }
+    b.state.textContent = label;
+    if (b.chars) {
+      const shown = d.lock ? ((d.w && d.w[lang]) || '') : effText(lang, uid);
+      b.chars.textContent = shown ? tn('doc.chars', plain(shown).length) : '';
+    }
+    const c = conf(lang)[uid];
+    b.box.hidden = !c;
+    if (c) {
+      const cur = c.current;
+      b.conflictText.textContent = cur && cur.text
+        ? t('doc.conflict.text', { who: cur.by || '', text: cur.text })
+        : t('doc.conflict.gone');
+    }
+  }
+  function paintMany(lang, ids) {
+    if (lang !== S.lang) return;
+    ids.forEach(function (uid) { paintBlock(uid); });
+  }
+
+  // ── the save bar ───────────────────────────────────────────────────────────────────
+  function updateBar() {
+    const bar = $('doc-save');
+    if (!bar) return;
+    const n = pendingTotal();
+    const conflicts = conflictTotal();
+    let state = 'saved', text = '';
+    if (S.loading) { state = 'loading'; text = t('doc.loading'); }
+    else if (conflicts) { state = 'conflict'; text = tn('autosave.conflict', conflicts); }
+    else if (net.stopped) { state = 'stopped'; text = t('autosave.stopped', { reason: t('save.reason.' + net.failure) }); }
+    else if (net.failure && n) {
+      state = navigator.onLine === false ? 'offline' : 'retrying';
+      text = state === 'offline' ? tn('autosave.offline', n) : tn('autosave.retrying', n, { reason: t('save.reason.' + net.failure) });
+    }
+    else if (n && (SAVE_OFF_ON || navigator.onLine === false)) { state = 'offline'; text = tn('autosave.offline', n); }
+    else if (n) { state = 'saving'; text = tn('autosave.saving', n); }
+    else if (net.refused.size) { state = 'refused'; text = tn('autosave.refused', net.refused.size); }
+    else text = t('autosave.saved');
+    bar.setAttribute('data-state', state);
+    bar.textContent = '';
+    bar.appendChild(document.createTextNode(text));
+    if (state === 'stopped' || state === 'retrying') {
+      const retry = h('button', 'desk-btn', t('autosave.retry'));
+      retry.type = 'button';
+      retry.id = 'doc-save-retry';
+      retry.addEventListener('click', function () { net.stopped = null; net.retry = 0; run(); updateBar(); });
+      bar.appendChild(retry);
+    }
+  }
+
+  // ── the grid: pages x languages ────────────────────────────────────────────────────
+  // A text counts as exported only for the wording it was exported for: the Worker counts the stamp
+  // at or after the decision (cloudflare-worker.js deskShape), so a change made since -- saved or
+  // not yet sent -- puts it back to "edited".
+  function exportedNow(lang, uid) {
+    const p = L[lang].pipeline[uid];
+    if (!p || !p.exportedAt) return false;
+    if (P[lang] && P[lang][uid]) return false;
+    const d = L[lang].decisions[uid];
+    if (d && d.at) {
+      const decided = Date.parse(d.at), exported = Date.parse(p.exportedAt);
+      if (!isNaN(decided) && !isNaN(exported) && exported < decided) return false;
+    }
+    return true;
+  }
+  function statusOf(page, lang) {
+    const info = PI.get(page), l = L[lang];
+    if (!info || !l.loaded) return null;
+    let nText = 0, nEdit = 0, nExp = 0;
+    info.ids.forEach(function (uid) {
+      const r = curRec(lang, uid), d = l.drafts[uid];
+      const edited = !!(r && r.text);
+      if (!edited && !(d && d.text)) return;
+      nText++;
+      if (edited) nEdit++;
+      if (exportedNow(lang, uid)) nExp++;
+    });
+    const status = !nText ? 'none' : (nExp === nText ? 'exported' : (nEdit ? 'edited' : 'drafted'));
+    return { status: status, n: nText, total: info.ids.length };
+  }
+  function paintGrid() {
+    PAGES.forEach(function (page) {
+      LANGS.forEach(function (lang) {
+        const cell = document.querySelector('.doc-cell[data-page="' + page + '"][data-lang="' + lang + '"]');
+        if (!cell) return;
+        const s = statusOf(page, lang);
+        let status = s ? s.status : 'unknown';
+        // The language's open translate-page job (one per language) shows on its page's cell; a page
+        // waiting behind it shows as queued.
+        const js = jstate(lang);
+        if (js.job && js.page === page) status = 'translating';
+        else if (js.waiting.indexOf(page) >= 0) status = 'queued';
+        cell.setAttribute('data-status', status);
+        cell.setAttribute('aria-pressed', page === S.page && lang === S.lang ? 'true' : 'false');
+        cell.querySelector('.doc-cell-status').textContent = t(STATUS_KEY[status]);
+        cell.querySelector('.doc-cell-count').textContent =
+          s && s.status !== 'none' ? tn('doc.cell.count', s.n, { total: s.total }) : '';
+        cell.setAttribute('aria-label', t('doc.cell.aria', {
+          page: t('page.' + page), language: t('lang.' + lang), status: t(STATUS_KEY[status])
+        }));
+      });
+    });
+    paintBanner();
+  }
+  let gridQueued = false;
+  function gridSoon() {
+    if (gridQueued) return;
+    gridQueued = true;
+    setTimeout(function () { gridQueued = false; paintGrid(); paintOutline(); paintWords(); }, 0);
+  }
+
+  // ── the banner: not translated yet / a translation under way ───────────────────────
+  function paintBanner() {
+    const box = $('doc-banner'), text = $('doc-banner-text'), go = $('doc-banner-translate');
+    if (!box) return;
+    let msg = '', button = false;
+    if (S.loading) { box.hidden = true; return; }
+    const js = jstate(S.lang);
+    if (readError) { msg = t('doc.read.failed'); }
+    else if (js.waiting.indexOf(S.page) >= 0) {
+      msg = t('doc.job.waiting', { page: t('page.' + js.page), language: t('lang.' + S.lang) });
+    }
+    else if (runningHere()) { msg = t('doc.job.queued'); }
+    else if (js.failed && js.failed.page === S.page) { msg = js.failed.message; }
+    else {
+      const s = statusOf(S.page, S.lang);
+      if (s && s.status === 'none') { msg = t('doc.banner.none', { language: t('lang.' + S.lang) }); button = true; }
+    }
+    box.hidden = !msg;
+    text.textContent = msg;
+    go.hidden = !button;
+    $('doc-translate').disabled = readError || runningHere() || js.waiting.indexOf(S.page) >= 0;
+    $('doc-translate').hidden = button;       // one Translate page at a time: the banner's while the page is untranslated
+  }
+
+  // ── translate page ─────────────────────────────────────────────────────────────────
+  // The Worker allows one open translate-page job per language. Asking for more pages while one runs
+  // QUEUES them here, every one, in the order asked: each starts by itself when the one before it ends
+  // (plan v2 fix 8). The queue lives in this window only, and the banner says so.
+  const J = {};                       // per language: {job, page, waiting: [pages], failed, timer}
+  function jstate(lang) { return J[lang] || (J[lang] = { job: null, page: null, waiting: [], failed: null, timer: null }); }
+  function runningHere() { const js = jstate(S.lang); return !!(js.job && js.page === S.page); }
+  let confirmReturn = null;
+  function openConfirm(opener) {
+    if (readError || runningHere() || jstate(S.lang).waiting.indexOf(S.page) >= 0) return;
+    const n = (PI.get(S.page) || { ids: [] }).ids.length;
+    $('doc-confirm-title').textContent = t('doc.confirm.title');
+    $('doc-confirm-body').textContent = tn('doc.confirm.body', n, { language: t('lang.' + S.lang) });
+    confirmReturn = opener || $('doc-translate');
+    $('doc-confirm').hidden = false;
+    $('doc-confirm-ok').focus();
+  }
+  function closeConfirm() {
+    $('doc-confirm').hidden = true;
+    if (confirmReturn && confirmReturn.focus) confirmReturn.focus();
+    confirmReturn = null;
+  }
+  function jobWatch(lang, j) {
+    const js = jstate(lang);
+    js.job = j;
+    js.page = j.ref && j.ref.page ? j.ref.page : S.page;
+    js.failed = null;
+    paintBanner();
+    gridSoon();
+    clearTimeout(js.timer);
+    js.timer = setTimeout(function poll() {
+      call({ action: 'desk-job-get', locale: lang, id: j.id }).then(function (r) {
+        const cur = r && r.ok && r.body && r.body.job;
+        if (!cur || cur.status === 'queued' || cur.status === 'running') { js.timer = setTimeout(poll, TIMING.poll); return; }
+        const page = js.page;
+        js.job = null;
+        if (cur.status === 'done') {
+          toast(t('doc.job.done'));
+          refreshLang(lang);
+        } else {
+          const code = cur.error || '';
+          const reason = COPY['job.failed.' + code] ? t('job.failed.' + code) : t('doc.job.failed.unknown');
+          js.failed = { page: page, message: t('doc.job.failed', { reason: reason }) };
+        }
+        drain(lang);
+      });
+    }, TIMING.poll);
+  }
+  function enqueue(js, page, front) {
+    if (js.waiting.indexOf(page) >= 0) return;
+    if (front) js.waiting.unshift(page); else js.waiting.push(page);
+  }
+  function dequeue(js, page) {
+    js.waiting = js.waiting.filter(function (p) { return p !== page; });
+  }
+  // The job in this language is over (or a start failed): the page first in line starts.
+  function drain(lang) {
+    const next = jstate(lang).waiting.shift();
+    if (next) startJob(lang, next, true); else { paintBanner(); gridSoon(); }
+  }
+  function startJob(lang, page, fromQueue) {
+    closeConfirm();
+    const js = jstate(lang);
+    js.failed = null;
+    call({ action: 'desk-job-start', locale: lang, kind: 'translate-page', ref: { page: page, keepEdited: true } })
+      .then(function (r) {
+        if (r && r.ok && r.body && r.body.job) {
+          dequeue(js, page);
+          jobWatch(lang, Object.assign({}, r.body.job, { ref: { page: page } }));
+          return;
+        }
+        if (r && r.status === 409) {
+          const running = (r.body && r.body.job) || null;
+          const on = running && running.ref && running.ref.page ? running.ref.page : page;
+          if (running && running.id) {
+            // Another page runs first: ours follows it, behind the pages already waiting (a page that
+            // was first in line goes back to the front).
+            if (on === page) dequeue(js, page); else enqueue(js, page, fromQueue);
+            jobWatch(lang, running);
+            return;
+          }
+        }
+        dequeue(js, page);
+        toast(t('doc.job.error'), 'err');
+        // A page that could not start does not hold the ones behind it.
+        if (js.waiting.length && !js.job) drain(lang); else { paintBanner(); gridSoon(); }
+      });
+  }
+  function checkJob(lang) {
+    call({ action: 'desk-job-get', locale: lang }).then(function (r) {
+      const js = jstate(lang);
+      if (!r || !r.ok || js.job) return;
+      const latest = r.body && r.body.jobs && r.body.jobs['translate-page'];
+      if (!latest || (latest.status !== 'queued' && latest.status !== 'running')) return;
+      jobWatch(lang, latest);
+    });
+  }
+
+  // ── history of one text ────────────────────────────────────────────────────────────
+  let histUid = null;
+  function closeHistory() {
+    const aside = $('doc-history');
+    if (!aside || aside.hidden) return;
+    aside.hidden = true;
+    histUid = null;
+    if (focusBack && focusBack.focus) focusBack.focus();
+    focusBack = null;
+  }
+  function stamp(iso) {
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString();
+  }
+  function versionRow(uid, text, meta, onRestore, version) {
+    const li = h('li', 'doc-version');
+    if (version !== undefined) li.setAttribute('data-version', String(version));
+    li.appendChild(h('span', 'doc-version-meta', meta));
+    const body = h('div', 'doc-version-text');
+    body.setAttribute('dir', 'auto');
+    body.setAttribute('lang', S.lang);
+    window.RichField.render(body, text);
+    li.appendChild(body);
+    const btn = h('button', 'desk-btn doc-restore', t('doc.history.restore'));
+    btn.type = 'button';
+    btn.addEventListener('click', onRestore);
+    li.appendChild(btn);
+    return li;
+  }
+  function openHistory(uid, opener) {
+    const lang = S.lang;
+    histUid = uid;
+    focusBack = opener || null;
+    const aside = $('doc-history'), list = $('doc-history-list');
+    list.textContent = '';
+    aside.hidden = false;
+    $('doc-history-close').focus();
+    if (SAVE_OFF_ON) { list.appendChild(h('li', 'doc-version-empty', t('doc.history.empty'))); return; }
+    call({ action: 'desk-history', locale: lang, unit: uid }).then(function (r) {
+      if (histUid !== uid || lang !== S.lang) return;
+      list.textContent = '';
+      if (!r || !r.ok || !r.body) { list.appendChild(h('li', 'doc-version-empty', t('doc.history.failed'))); return; }
+      // A strip of cards, oldest on the left, the newest on the right: Gemini's draft first.
+      const draft = L[lang].drafts[uid];
+      if (draft && draft.text) {
+        list.appendChild(versionRow(uid, draft.text, t('doc.history.draft') + (draft.arrivedAt ? ' · ' + stamp(draft.arrivedAt) : ''),
+          function () { restore(uid, ''); }));
+      }
+      (r.body.history || []).filter(function (x) { return x.text; }).reverse().forEach(function (x) {
+        const meta = (x.byName || x.by || t('doc.history.you')) + ' · ' + stamp(x.at);
+        list.appendChild(versionRow(uid, x.text, meta, function () { restore(uid, x.text); }, x.version));
+      });
+      if (!list.firstChild) list.appendChild(h('li', 'doc-version-empty', t('doc.history.empty')));
+      list.scrollLeft = list.scrollWidth;
+    });
+  }
+  // One change that is its own undo step: a restore, "Use Weglot's text", "Undo this". All are
+  // ordinary writes of the wording (a version of their own), so Undo takes any of them back.
+  function commitText(uid, text) {
+    closeGroup();
+    const from = curRec(S.lang, uid);
+    if (changeRecord(uid, decide(uid, text))) {
+      const s = stack();
+      s.undo.push({ uid: uid, from: from, to: curRec(S.lang, uid) });
+      if (s.undo.length > UNDO_CAP) s.undo.shift();
+      s.redo = [];
+      saveStacks();
+    }
+    paintBlock(uid, true);
+    paintUndo();
+    reveal(uid);
+  }
+  function restore(uid, text) {
+    commitText(uid, text);
+    toast(t('doc.history.restored'));
+    closeHistory();
+  }
+
+  // ── "On this page": the outline, its counts, and the word count ───────────────────
+  let outline = [];                  // [{target, name, ids, btn, count}]
+  let spyQueued = false, wordsTimer = null;
+  const segmenters = {};
+  function plain(text) { return String(text || '').replace(/<a wg-[0-9]+="">|<\/a>|<br>/g, ''); }
+  function countWords(text, lang) {
+    if (!text) return 0;
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const seg = segmenters[lang] || (segmenters[lang] = new Intl.Segmenter(lang, { granularity: 'word' }));
+      let n = 0;
+      for (const s of seg.segment(text)) if (s.isWordLike) n++;
+      return n;
+    }
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  }
+  function jumpTo(uid) {
+    const b = M.get(uid);
+    if (!b) return;
+    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try { b.li.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' }); } catch (_) {}
+  }
+  function buildOutline(data) {
+    outline = [];
+    const search = { target: null, name: t('doc.outline.search'), ids: [] };
+    let cur = null;
+    data.blocks.forEach(function (d) {
+      if (d.b === 'meta-title' || d.b === 'meta-description') {
+        if (!search.target) search.target = d.id;
+        if (!d.lock) search.ids.push(d.id);
+        return;
+      }
+      // A section is what the unit's own `section` names (the page's h3 section titles; the h1 and the
+      // small h2 taglines carry one too): a new entry where it changes, at the block that starts it.
+      const sec = plain(d.sec || '');
+      if (sec && (!cur || cur.sec !== sec)) { cur = { target: d.id, name: sec, sec: sec, ids: [] }; outline.push(cur); }
+      if (cur && !d.lock) cur.ids.push(d.id);
+    });
+    if (search.target) outline.unshift(search);
+    const list = $('doc-outline-list'), sel = $('doc-sections');
+    list.textContent = ''; sel.textContent = '';
+    outline.forEach(function (o) {
+      const li = h('li');
+      o.btn = h('button', 'doc-outline-item');
+      o.btn.type = 'button';
+      o.btn.setAttribute('data-target', o.target);
+      o.count = h('span', 'doc-outline-count');
+      o.btn.appendChild(h('span', 'doc-outline-name', o.name));
+      o.btn.appendChild(o.count);
+      o.btn.addEventListener('click', function () { jumpTo(o.target); });
+      li.appendChild(o.btn);
+      list.appendChild(li);
+      const opt = h('option', null, o.name);
+      opt.value = o.target;
+      sel.appendChild(opt);
+    });
+    sel.onchange = function () { jumpTo(sel.value); };
+    paintOutline();
+  }
+  function paintOutline() {
+    outline.forEach(function (o) {
+      let edited = 0;
+      o.ids.forEach(function (uid) { const r = curRec(S.lang, uid); if (r && r.text) edited++; });
+      o.count.textContent = tn('doc.outline.count', o.ids.length, { edited: edited });
+    });
+    spy();
+  }
+  // The section being read: the last heading whose top has passed the top of the screen.
+  function spy() {
+    spyQueued = false;
+    let now = outline[0] || null;
+    outline.forEach(function (o) {
+      const b = M.get(o.target);
+      if (b && b.li.getBoundingClientRect().top <= 140) now = o;
+    });
+    outline.forEach(function (o) {
+      if (o === now) o.btn.setAttribute('aria-current', 'true'); else o.btn.removeAttribute('aria-current');
+    });
+    if (now) $('doc-sections').value = now.target;
+  }
+  function paintWords() {
+    clearTimeout(wordsTimer);
+    wordsTimer = setTimeout(function () {
+      let n = 0;
+      M.forEach(function (b, uid) {
+        const shown = b.d.lock ? ((b.d.w && b.d.w[S.lang]) || '') : effText(S.lang, uid);
+        n += countWords(plain(shown), S.lang);
+      });
+      $('doc-words').textContent = S.loading ? '' : tn('doc.words', n, { n: n.toLocaleString() });
+    }, 250);
+  }
+
+  // ── loading ────────────────────────────────────────────────────────────────────────
+  function getJson(path) {
+    return fetch(path, { cache: 'no-cache' }).then(function (resp) {
+      if (!resp.ok) throw new Error('load');
+      return resp.json();
+    });
+  }
+  function getPage(page) {
+    if (PAGE_CACHE.has(page)) return Promise.resolve(PAGE_CACHE.get(page));
+    return getJson(DATA + page + '.json').then(function (d) { PAGE_CACHE.set(page, d); return d; });
+  }
+  function getInfo() {
+    if (PI.size) return Promise.resolve();
+    return getJson(DATA + 'pages.json').then(function (d) {
+      d.pages.forEach(function (p) { PI.set(p.key, p); });
+    });
+  }
+  // A conflict is kept in storage as the entry's `conflict` flag; what the other editor saved is read
+  // again from the server, so a reload shows the same choice (keep mine / take theirs) and the edit is
+  // neither sent over it nor forgotten.
+  function restoreConflicts(lang) {
+    const mine = P[lang] || {};
+    Object.keys(mine).forEach(function (uid) {
+      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    });
+  }
+  function ensureLang(lang) {
+    if (L[lang].loaded) return Promise.resolve();
+    if (SAVE_OFF_ON) { L[lang].loaded = true; return Promise.resolve(); }
+    return call({ action: 'desk-read', locale: lang }).then(function (r) {
+      if (!r || !r.ok || !r.body) throw new Error('read');
+      L[lang].decisions = r.body.decisions || {};
+      L[lang].drafts = r.body.drafts || {};
+      L[lang].pipeline = r.body.pipeline || {};
+      L[lang].loaded = true;
+      restoreConflicts(lang);
+    });
+  }
+  // The language read again (a translation finished): new drafts show where nothing was edited.
+  function refreshLang(lang) {
+    if (SAVE_OFF_ON) return Promise.resolve();
+    return call({ action: 'desk-read', locale: lang }).then(function (r) {
+      if (!r || !r.ok || !r.body) return;
+      L[lang].drafts = r.body.drafts || {};
+      L[lang].pipeline = r.body.pipeline || {};
+      Object.keys(r.body.decisions || {}).forEach(function (uid) {
+        const mine = P[lang] && P[lang][uid];
+        if (!mine) L[lang].decisions[uid] = r.body.decisions[uid];
+      });
+      if (lang === S.lang) M.forEach(function (b, uid) { paintBlock(uid); });
+      gridSoon();
+    });
+  }
+  function remember() {
+    lsSet(KEYS.last, { page: S.page, lang: S.lang });
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', S.page);
+      url.searchParams.set('lang', S.lang);
+      window.history.replaceState(null, '', url.pathname + url.search);
+    } catch (_) {}
+  }
+  function headings() {
+    const lang = S.lang;
+    $('doc-title').textContent = t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) });
+    document.querySelector('.doc-head-en').textContent = t('doc.head.en');
+    document.querySelector('.doc-head-tgt').textContent = t('doc.head.tgt', { language: t('lang.' + lang) });
+    document.querySelector('.doc-head-weglot').textContent = t('doc.head.weglot');
+  }
+  function build(data, token) {
+    const list = $('doc-blocks');
+    list.textContent = '';
+    M.clear();
+    const blocks = data.blocks;
+    let at = 0;
+    (function slice() {
+      if (token !== S.token) return;
+      const end = Math.min(blocks.length, at + (at === 0 ? 40 : 80));
+      const frag = document.createDocumentFragment();
+      for (; at < end; at++) {
+        const b = buildBlock(blocks[at]);
+        frag.appendChild(b.li);
+      }
+      list.appendChild(frag);
+      if (at < blocks.length) { setTimeout(slice, 0); return; }
+      M.forEach(function (b, uid) { paintBlock(uid); });
+      buildOutline(data);
+      paintWords();
+      $('doc').setAttribute('data-state', 'ready');
+      updateBar();
+    })();
+  }
+  async function open(page, lang) {
+    closeGroup();
+    closeHistory();
+    readError = false;
+    S.page = page; S.lang = lang; S.loading = true;
+    const token = ++S.token;
+    remember();
+    headings();
+    $('doc').setAttribute('data-state', 'loading');
+    $('doc-blocks').textContent = '';
+    $('doc-outline-list').textContent = '';
+    $('doc-sections').textContent = '';
+    outline = [];
+    $('doc-words').textContent = '';
+    M.clear();
+    paintUndo();
+    updateBar();
+    paintGrid();
+    let data;
+    try {
+      data = await getPage(page);
+      await getInfo();
+    } catch (_) {
+      if (token !== S.token) return;
+      S.loading = false;
+      $('doc').setAttribute('data-state', 'error');
+      $('doc-banner').hidden = false;
+      $('doc-banner-text').textContent = t('doc.load.failed');
+      $('doc-banner-translate').hidden = true;
+      updateBar();
+      return;
+    }
+    try { await ensureLang(lang); } catch (_) { readError = true; }
+    if (token !== S.token) return;
+    S.doc = data;
+    S.loading = false;
+    if (readError) {
+      $('doc').setAttribute('data-state', 'error');
+      updateBar();
+      paintBanner();
+      return;
+    }
+    build(data, token);
+    paintGrid();
+    checkJob(lang);
+    // With the first language on screen, read the rest for the grid, one at a time.
+    const rest = LANGS.filter(function (c) { return c !== lang && !L[c].loaded; });
+    (function next() {
+      const c = rest.shift();
+      if (!c || token !== S.token) return;
+      // Each language also says whether a translate-page job is open for it (the grid shows it).
+      ensureLang(c).catch(function () {}).then(function () { checkJob(c); updateBar(); gridSoon(); setTimeout(next, 0); });
+    })();
+  }
+
+  // ── wiring ─────────────────────────────────────────────────────────────────────────
+  function weglot(on) {
+    $('doc-blocks').setAttribute('data-weglot', on ? 'on' : 'off');
+    document.querySelector('.doc-head-weglot').hidden = !on;
+    M.forEach(function (b) { b.wg.hidden = !on; });
+    $('doc-weglot').checked = on;
+    lsSet(KEYS.weglot, on);
+  }
+  function startPoint() {
+    const q = new URLSearchParams(window.location.search);
+    const last = lsGet(KEYS.last) || {};
+    let page = q.get('page'), lang = q.get('lang');
+    if (PAGES.indexOf(page) < 0) page = PAGES.indexOf(last.page) >= 0 ? last.page : PAGES[0];
+    if (LANGS.indexOf(lang) < 0) lang = LANGS.indexOf(last.lang) >= 0 ? last.lang : LANGS[0];
+    return { page: page, lang: lang };
+  }
+  function wire() {
+    document.querySelectorAll('.doc-cell').forEach(function (cell) {
+      cell.addEventListener('click', function () {
+        const page = cell.getAttribute('data-page'), lang = cell.getAttribute('data-lang');
+        if (page === S.page && lang === S.lang) return;
+        open(page, lang);
+      });
+    });
+    $('doc-undo').addEventListener('click', undo);
+    $('doc-redo').addEventListener('click', redo);
+    $('doc-weglot').addEventListener('change', function (ev) { weglot(ev.target.checked); });
+    $('doc-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
+    $('doc-banner-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
+    $('doc-confirm-cancel').addEventListener('click', closeConfirm);
+    $('doc-confirm-ok').addEventListener('click', function () { startJob(S.lang, S.page); });
+    $('doc-history-close').addEventListener('click', closeHistory);
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') {
+        if (!$('doc-confirm').hidden) { closeConfirm(); return; }
+        if (!$('doc-history').hidden) { closeHistory(); return; }
+      }
+      // The confirm window holds the focus: Tab goes round its two buttons.
+      if (ev.key === 'Tab' && !$('doc-confirm').hidden) {
+        const first = $('doc-confirm-cancel'), last = $('doc-confirm-ok');
+        const at = document.activeElement;
+        if (ev.shiftKey && at === first) { ev.preventDefault(); last.focus(); }
+        else if (!ev.shiftKey && at === last) { ev.preventDefault(); first.focus(); }
+        else if (at !== first && at !== last) { ev.preventDefault(); last.focus(); }
+        return;
+      }
+      if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
+      const k = ev.key.toLowerCase();
+      if (k !== 'z' && k !== 'y') return;
+      // ONE undo stack (Manager Ruling): inside a text being typed too, the page's undo runs and the
+      // browser's own is stopped, so Undo means the same thing wherever the caret is.
+      ev.preventDefault();
+      if (k === 'y' || ev.shiftKey) redo(); else undo();
+    });
+    window.addEventListener('scroll', function () {
+      if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+    }, { passive: true });
+    window.addEventListener('online', function () { run(); updateBar(); });
+    window.addEventListener('offline', updateBar);
+  }
+
+  function boot() {
+    wire();
+    paintUndo();
+    weglot(lsGet(KEYS.weglot) === true);
+    const at = startPoint();
+    // Unsent changes of an earlier visit go out as soon as the page is up.
+    if (pendingTotal()) { updateBar(); schedule(); }
+    open(at.page, at.lang);
+  }
+  // The one door document_export.js (CEL-027: the Export window and Re-translate) comes in by. It is
+  // inlined after this file and reads these; nothing else does. `pending` is a function because P is
+  // read from storage once and a module must not hold a copy of it.
+  window.DocDesk = {
+    S: S, L: L, PI: PI, M: M, U: U, PAGES: PAGES, LANGS: LANGS, CHUNK: CHUNK, TIMING: TIMING,
+    saveOff: SAVE_OFF_ON, client: DESK_CLIENT,
+    pending: function () { return P; }, sendable: sendable,
+    call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
+    curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
+    withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
+    paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
+    failureReason: failureReason, who: who
+  };
+  boot();
+})();
