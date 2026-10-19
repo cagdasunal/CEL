@@ -17,7 +17,9 @@ It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
     (runbook WO-33) -- over the same page map deploy.sh loads;
   * the desk's jobs (desk-job-start / desk-job-get / desk-export-get, runbook U1), from the same
     stand-in: nothing is dispatched, and a test plays the engine (`store.finish_job`,
-    `store.seed_export`).
+    `store.seed_export`);
+  * the client's translation rules (desk-rules-read / desk-rules-write / desk-rules-history, monorepo
+    CEL-038), from the same stand-in: no rules are published until a test or a click publishes one.
 
 The copy is served as committed: saving on since M1. --save-off serves it with saving
 switched off, the desk's one switch back; --save-on (saving on whatever the pages say) was how
@@ -76,7 +78,9 @@ class MockWorker:
         self.inflight = 0
         self.max_inflight = 0
         # The desk storage (WO-16's actions), as the deployed Worker will answer them.
-        self.store = DeskStore.from_units_dir(UNITS_DIR)
+        # The signed-in test reviewer is named in the user store, as a live reviewer is: the rules answers carry byName.
+        self.store = DeskStore.from_units_dir(
+            UNITS_DIR, users=[{"email": REVIEWER, "firstName": "Test", "lastName": "Reviewer"}])
 
     def handle(self, body: dict) -> tuple[int, dict]:
         action = body.get("action")
@@ -97,7 +101,8 @@ class MockWorker:
                 with self.lock:
                     self.inflight -= 1
         if action in ("desk-read", "desk-history", "desk-summary",
-                      "desk-job-start", "desk-job-get", "desk-export-get"):
+                      "desk-job-start", "desk-job-get", "desk-export-get",
+                      "desk-rules-read", "desk-rules-write", "desk-rules-history"):
             return self._desk(action, body)
         return 400, {"error": "invalid action"}
 

@@ -202,3 +202,136 @@ def test_plan_submit_and_collect_run_for_all_languages_and_a_file_does_not():
     code, r = s.handle("desk-job-get", {"locale": "all"}, "pat@example.test")
     assert code == 200 and r["jobs"]["plan"]["locale"] == "all"
     assert s.handle("desk-read", {"locale": "all"}, "pat@example.test")[0] == 400
+
+
+# ── the client's translation rules (monorepo CEL-038 Worker, CEL-043 stand-in) ─────────────────
+# The contract, answer for answer against the real Worker, is the monorepo's differential test; these are the
+# CEL-side guards the rules page's click tests lean on.
+PAT, KIM = "pat@example.test", "kim@example.test"
+
+
+def _rules(store, action, **body):
+    return store.handle(f"desk-rules-{action}", body, PAT)
+
+
+def _publish(store, scope, text, base, who=PAT):
+    return store.handle("desk-rules-write", {"scope": scope, "body": text, "baseVersion": base}, who)
+
+
+def test_a_scope_nobody_published_reads_as_version_zero_with_no_body():
+    s = _store()
+    code, r = _rules(s, "read", scope="de")
+    assert (code, r["version"], r["body"]) == (200, 0, None) and "updatedBy" not in r
+    assert _rules(s, "history", scope="de")[1]["history"] == []
+
+
+def test_a_publish_moves_the_version_and_a_restore_is_a_write_of_an_old_body():
+    s = _store()
+    assert _publish(s, "de", "One", 0, PAT)[1]["version"] == 1
+    code, r = _publish(s, "de", "Two", 1, KIM)
+    assert (code, r["version"], r["updatedBy"]) == (200, 2, KIM)
+    code, r = _publish(s, "de", "One", 2)                       # restore v1: v3, not a rewind
+    assert (code, r["version"]) == (200, 3)
+    hist = _rules(s, "history", scope="de")[1]["history"]
+    assert [(h["version"], h["body"]) for h in hist] == [(3, "One"), (2, "Two"), (1, "One")]
+    assert _rules(s, "read", scope="de")[1]["body"] == "One"
+
+
+def test_a_stale_base_is_a_409_with_the_winner_and_the_text_in_use_is_never_a_conflict():
+    s = _store()
+    _publish(s, "fr", "One", 0)
+    _publish(s, "fr", "Two", 1, KIM)
+    code, r = _publish(s, "fr", "Three", 1)
+    assert code == 409 and r["current"]["version"] == 2 and r["current"]["updatedBy"] == KIM
+    assert _publish(s, "fr", "Three", 0)[0] == 409              # base 0 on a scope that is there
+    for base in (0, 1, 2, 9):                                  # Kim's own text, whatever the base: nothing to publish
+        code, r = _publish(s, "fr", "Two", base)
+        assert (code, r.get("unchanged"), r["version"]) == (200, True, 2)
+    assert len(_rules(s, "history", scope="fr")[1]["history"]) == 2
+    code, r = _publish(s, "es", "x", 3)                         # nothing there at all
+    assert code == 409 and r["current"] == {"scope": "es", "version": 0, "body": None}
+
+
+def test_the_scope_rule_is_the_workers_and_there_is_no_draft_route():
+    s = _store()
+    for ok in ("global", "de", "glossary:ja", "brief:vancouver:ar", "brief:vs-toronto:de"):
+        assert _rules(s, "read", scope=ok)[0] == 200, ok
+    for bad in ("", "zz", "DE", "glossary:zz", "glossary:de:de", "brief:de", "brief:home:de", "foo:de",
+                "x:vancouver:de", "glossary:vancouver:de", None, 7, ["de"]):
+        for action, extra in (("read", {}), ("write", {"body": "x", "baseVersion": 0}), ("history", {})):
+            code, r = _rules(s, action, scope=bad, **extra)
+            assert (code, r["error"]) == (400, "invalid: unknown rules scope"), (action, bad)
+    assert _rules(s, "read")[0] == 400
+    assert s.handle("desk-rules-draft", {"scope": "de", "body": "x"}, PAT) == (400, {"error": "invalid action"})
+    assert s.rules == {}
+
+
+def test_a_body_follows_the_workers_rules_in_bytes_and_in_javascripts_idea_of_blank():
+    s = _store()
+    for bad in (None, 7, ["x"], "", " \n\t", " ", "﻿", " "):
+        assert _publish(s, "ko", bad, 0)[1]["error"] in ("invalid: body must be text", "invalid: a rules block cannot be empty")
+    assert _publish(s, "ko", "a\ud800", 0)[1]["error"] == "invalid: body is not valid text"
+    for base in (-1, 1.5, "0", True, None, 2 ** 53, 10 ** 400):    # the last: JavaScript reads Infinity; no OverflowError here
+        assert _publish(s, "ko", "x", base)[1]["error"] == "invalid: bad baseVersion"
+    assert s.rules == {}
+    for i, odd in enumerate(("\u0085", "\u001c", "᠎", "​")):   # not blank in JavaScript, blank to Python's strip()
+        assert _publish(s, "ko", odd, i)[0] == 200, repr(odd)
+    assert _publish(s, "ar", "a" * 262144, 0)[0] == 200 and _publish(s, "ar", "a" * 262145, 1)[0] == 400
+    assert _publish(s, "ja", "語" * 87381 + "a", 0)[0] == 200 and _publish(s, "ja", "語" * 87382, 1)[0] == 400
+    assert _publish(s, "fr", "\U0001F600" * 65536, 0)[0] == 200 and _publish(s, "fr", "\U0001F600" * 65537, 1)[0] == 400
+
+
+def test_the_history_keeps_the_last_fifty_versions_newest_first():
+    s = _store()
+    for i in range(52):
+        assert _publish(s, "it", f"Version {i + 1}", i)[0] == 200
+    hist = _rules(s, "history", scope="it")[1]["history"]
+    assert [h["version"] for h in hist] == list(range(52, 2, -1)) and hist[0]["body"] == "Version 52"
+
+
+def test_a_name_comes_from_the_user_store_for_the_rules_answers_only():
+    users = [{"email": PAT, "firstName": " Pat ", "lastName": "Hoffmann"}, {"email": KIM, "firstName": "", "lastName": None}]
+    s = DeskStore({U1: {"vancouver"}}, users=users)
+    _publish(s, "de", "One", 0, PAT)
+    _publish(s, "de", "Two", 1, KIM)
+    assert _rules(s, "history", scope="de")[1]["history"][1]["byName"] == "Pat Hoffmann"
+    assert "byName" not in _rules(s, "read", scope="de")[1]                  # Kim has no name
+    code, r = _publish(s, "de", "Three", 1, KIM)
+    assert code == 409 and "byName" not in r["current"]
+    _publish(s, "de", "Four", 2, PAT)
+    assert _rules(s, "read", scope="de")[1]["byName"] == "Pat Hoffmann"
+    nameless = _store()
+    assert nameless.users == [] and "byName" not in _publish(nameless, "de", "One", 0)[1]
+    _write(s, [{"unit": U1, "page": "vancouver", "base": 0, "record": {"tray": "csv"}}])
+    assert "byName" not in s.handle("desk-history", {"locale": "de", "unit": U1}, PAT)[1]["history"][0]
+
+
+def test_the_rules_are_apart_from_the_desks_decisions():
+    s = _store()
+    _write(s, [{"unit": U1, "page": "vancouver", "base": 0, "record": {"tray": "csv", "text": "Hallo"}}])
+    before = s.handle("desk-read", {"locale": "de"}, PAT)[1]["decisions"]
+    _publish(s, "de", "Rules", 0)
+    after = s.handle("desk-read", {"locale": "de"}, PAT)[1]
+    assert after["decisions"] == before and "rules" not in after and "version" not in after
+
+
+def test_the_harness_answers_the_rules_actions_and_a_fault_can_be_set_on_them():
+    root = H.stage_copy()
+    try:
+        worker = H.MockWorker(root)
+        code, r = worker.handle({"action": "desk-rules-write", "scope": "de", "body": "Rules", "baseVersion": 0})
+        assert (code, r["version"], r["updatedBy"]) == (200, 1, "reviewer@example.test")
+        read = worker.handle({"action": "desk-rules-read", "scope": "de"})[1]
+        assert read["body"] == "Rules" and read["byName"] == "Test Reviewer"      # the harness signs in as Test Reviewer
+        code, r = worker.store.handle("desk-rules-write", {"scope": "de", "body": "Other", "baseVersion": 0}, "kim@example.test")
+        assert code == 409 and r["current"]["byName"] == "Test Reviewer"
+        assert len(worker.handle({"action": "desk-rules-history", "scope": "de"})[1]["history"]) == 1
+        worker.action_faults["desk-rules-write"] = {"status": 429, "error": "over the cap"}
+        assert worker.handle({"action": "desk-rules-write", "scope": "de", "body": "More", "baseVersion": 1}) == \
+            (429, {"ok": False, "error": "over the cap"})
+        assert worker.handle({"action": "desk-rules-read", "scope": "de"})[0] == 200          # only the named action
+        assert worker.handle({"action": "desk-rules-draft", "scope": "de"})[0] == 400
+        assert worker.calls.count("desk-rules-write") == 2
+    finally:
+        import shutil
+        shutil.rmtree(root, ignore_errors=True)

@@ -25,9 +25,16 @@ job at once); `engine_configured` False stands for a Worker with no GitHub crede
 ENGINE_SECRET (503). A user's starts are capped per day as the Worker caps them (JOB_DAILY).
 `desk-job-get` and `desk-export-get` read them back.
 
+The client's translation rules (schema v5, monorepo CEL-038 / CEL-043): `desk-rules-read` /
+`desk-rules-write` / `desk-rules-history`, one Markdown body per scope ('global', a language,
+'glossary:<lang>', 'brief:<page>:<lang>') with a version. `desk-rules-write` IS the publish: the
+editor's draft lives in the reviewer's browser, so there is no draft action here either, and
+restoring a version is a write of its body. `byName` beside an email comes from `users` (the
+Worker's user store, `{email, firstName, lastName}`; none = nameless); desk-history's does not.
+
 What it leaves out: the session check (the harness signs everyone in), the signature's
-value (it is never returned), and the per-user cap (it needs thousands of requests; the
-Worker's own tests hold it).
+value (it is never returned), and the per-user caps (they need thousands of requests; the
+Worker's own tests hold them -- a click test makes a 429 with the harness's `action_faults`).
 """
 from __future__ import annotations
 
@@ -77,6 +84,13 @@ JOB_REF_JSON = {"translate-page": ("page", "note", "keepEdited"),
                 "retranslate": ("page", "unit", "note", "keepEdited"), "export": ("page",)}
 JOB_NOTE_MAX = 500
 _CONTROL = re.compile("[\u0000-\u001f\u007f]")
+# The client's translation rules (CEL-038 Worker): its RULES_MAX_BYTES and RULES_HISTORY_LIMIT, and the whitespace
+# String.prototype.trim() removes -- not Python's str.strip() ("\x85" and "\x1c" are not blank in JavaScript,
+# "﻿" is).
+RULES_MAX_BYTES = 262_144
+RULES_HISTORY_LIMIT = 50
+_JS_SPACE = ("\t\n\u000b\u000c\r              "
+             "    　﻿")
 
 
 class Invalid(ValueError):
@@ -109,6 +123,16 @@ def _js_str(v) -> str:
     if isinstance(v, float) and v.is_integer():
         return str(int(v))
     return v if isinstance(v, str) else json.dumps(v)
+
+
+def _js_trim(s: str) -> str:
+    """String.prototype.trim()."""
+    return s.strip(_JS_SPACE)
+
+
+def _norm_email(e) -> str:
+    """The Worker's normEmail(): String(e || '').trim().toLowerCase()."""
+    return _js_trim(_js_str(e)).lower()
 
 
 def _dumps(value) -> str:
@@ -229,7 +253,8 @@ def sig_input(locale: str, unit: str, record: dict, by: str, at: str) -> str:
 class DeskStore:
     """desk-read / desk-write / desk-history over in-memory tables shaped like schema.sql's."""
 
-    def __init__(self, page_map: dict[str, set[str]] | None = None, signing_key: str = "harness-key"):
+    def __init__(self, page_map: dict[str, set[str]] | None = None, signing_key: str = "harness-key",
+                 users: list[dict] | None = None):
         self.units: set[tuple[str, str]] = {(SMOKE_UNIT, SMOKE_PAGE)}
         for unit, pages in (page_map or {}).items():
             self.units.update((unit, p) for p in pages)
@@ -247,6 +272,11 @@ class DeskStore:
         self.dispatch_status = 204
         self.engine_configured = True
         self.job_starts: list[tuple[str, float]] = []      # (who, when): the Worker's attempts rows
+        # schema v5 (CEL-038): the client's rules, scope -> {body, version, updated_at, updated_by}, and every
+        # published version of every scope (append-only). `users` is the Worker's user store, for byName only.
+        self.rules: dict[str, dict] = {}
+        self.rules_history: list[dict] = []
+        self.users: list[dict] = list(users or [])
         self.lock = threading.Lock()
 
     @classmethod
@@ -311,6 +341,12 @@ class DeskStore:
                 return self._job_get(body)
             if action == "desk-export-get":
                 return self._export_get(body)
+            if action == "desk-rules-read":
+                return self._rules_read(body)
+            if action == "desk-rules-write":
+                return self._rules_write(body, email)
+            if action == "desk-rules-history":
+                return self._rules_history(body)
         return 400, {"error": "invalid action"}
 
     @staticmethod
@@ -575,3 +611,101 @@ class DeskStore:
         return 200, {"ok": True, "export": {"batchId": r["batch_id"], "locale": r["locale"], "rows": r["rows"],
                                             "createdAt": r["created_at"], "csv": r["csv"],
                                             "refused": refused if isinstance(refused, list) else []}}
+
+    # ── the client's translation rules (schema v5; the Worker's rulesScope / deskRules*) ────────
+    @staticmethod
+    def _rules_scope(body: dict) -> str:
+        """The Worker's rulesScope(): 'global', a real language (not the smoke's), 'glossary:<lang>' or
+        'brief:<page>:<lang>' for one of the four desk pages; anything else is refused."""
+        scope = body.get("scope")
+        scope = scope if isinstance(scope, str) else ""
+        p = scope.split(":")
+        ok = (scope == "global" or scope in REAL_LOCALES
+              or (len(p) == 2 and p[0] == "glossary" and p[1] in REAL_LOCALES)
+              or (len(p) == 3 and p[0] == "brief" and p[1] in JOB_PAGES and p[2] in REAL_LOCALES))
+        if not ok:
+            raise Invalid("unknown rules scope")
+        return scope
+
+    def _rules_names(self) -> dict[str, str]:
+        """The Worker's rulesNames(): normalised email -> 'First Last', for the users who have a name."""
+        names: dict[str, str] = {}
+        for u in self.users:
+            name = " ".join(p for p in (_js_trim(_js_str(u.get("firstName"))), _js_trim(_js_str(u.get("lastName")))) if p)
+            if name:
+                names[_norm_email(u.get("email"))] = name
+        return names
+
+    def _rules_row(self, r: dict, scope: str) -> dict:
+        """The Worker's rulesRow(): a stored version as the editor reads it, the name beside the email when known."""
+        out = {"scope": scope, "version": r["version"], "body": r["body"], "updatedAt": r["updated_at"],
+               "updatedBy": r["updated_by"]}
+        name = self._rules_names().get(_norm_email(r["updated_by"]))
+        if name:
+            out["byName"] = name
+        return out
+
+    def _rules_read(self, body: dict) -> tuple[int, dict]:
+        try:
+            scope = self._rules_scope(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        r = self.rules.get(scope)
+        if r is None:           # never published: version 0 with no body, the editor's empty state
+            return 200, {"ok": True, "api": API, "scope": scope, "version": 0, "body": None}
+        return 200, {"ok": True, "api": API, **self._rules_row(r, scope)}
+
+    def _rules_write(self, body: dict, email: str) -> tuple[int, dict]:
+        """The PUBLISH: the only thing that moves a scope's version or appends to its history."""
+        try:
+            scope = self._rules_scope(body)
+            text = body.get("body")
+            if not isinstance(text, str):
+                raise Invalid("body must be text")
+            if not text.strip(_JS_SPACE):
+                raise Invalid("a rules block cannot be empty")
+            if not _well_formed(text):
+                raise Invalid("body is not valid text")
+            if len(text.encode("utf-8")) > RULES_MAX_BYTES:
+                raise Invalid(f"body is over {RULES_MAX_BYTES} bytes")
+            base = body.get("baseVersion")
+            try:
+                ok = _safe_int(base) and base >= 0
+            except OverflowError:       # JSON "1" + 400 zeros: JavaScript reads Infinity, which is not a safe integer
+                ok = False
+            if not ok:
+                raise Invalid("bad baseVersion")
+            base = int(base)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        at = _iso(datetime.now(timezone.utc))
+        cur = self.rules.get(scope)
+        # Written by this request: an update of the version the editor was looking at (and only when the text
+        # really changes), or the first insert (base 0, nothing there yet).
+        if cur is not None and base > 0 and cur["version"] == base and cur["body"] != text:
+            cur.update(body=text, version=base + 1, updated_at=at, updated_by=email)
+            wrote = True
+        elif cur is None and base == 0:
+            cur = self.rules[scope] = {"body": text, "version": 1, "updated_at": at, "updated_by": email}
+            wrote = True
+        else:
+            wrote = False
+        if wrote:
+            self.rules_history.append({"scope": scope, **cur})
+            return 200, {"ok": True, "api": API, "scope": scope, "version": cur["version"], "at": at,
+                         "updatedBy": email}
+        # The text in use is the text sent, whatever version the editor saw: nothing to publish and no conflict
+        # (a publish re-sent after a lost answer, a double click).
+        if cur is not None and cur["body"] == text:
+            return 200, {"ok": True, "api": API, "scope": scope, "version": cur["version"], "unchanged": True}
+        current = self._rules_row(cur, scope) if cur is not None else {"scope": scope, "version": 0, "body": None}
+        return 409, {"ok": False, "error": "someone published these rules first", "api": API, "current": current}
+
+    def _rules_history(self, body: dict) -> tuple[int, dict]:
+        try:
+            scope = self._rules_scope(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        rows = sorted((h for h in self.rules_history if h["scope"] == scope), key=lambda h: -h["version"])
+        return 200, {"ok": True, "api": API, "scope": scope,
+                     "history": [self._rules_row(h, scope) for h in rows[:RULES_HISTORY_LIMIT]]}
