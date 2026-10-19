@@ -999,6 +999,11 @@ SHELL_CSS = """
     .shell-header { padding: 8px 12px; gap: 8px; flex-wrap: wrap; }
     .shell-content iframe { height: calc(100vh - 110px); }
   }
+  @media (max-width: 767px) {
+    .shell-tabs { flex-wrap: wrap; }
+    .shell-tab-dropdown { position: static; }
+    .shell-tab-submenu { left: 12px; right: 12px; }
+  }
   @media (max-width: 600px) {
     .dashboard-shell { padding: 12px 16px 0; }
     .shell-tab { padding: 6px 10px; font-size: var(--fs-md); }

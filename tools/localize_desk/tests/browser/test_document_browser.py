@@ -1716,9 +1716,6 @@ def test_on_a_phone_the_columns_stack_and_nothing_of_the_page_sticks_out(browser
         assert e.page.eval_on_selector("#doc", OVERFLOW_JS) == []
 
 
-@pytest.mark.xfail(strict=True, reason="the ADMIN SHELL's tab bar (.shell-tab, .shell-tab-submenu from "
-                   "render_admin_open) is wider than a phone on every admin page, the v1 desk and the index "
-                   "included (scrollWidth 589 at 375): not the document page; contract 7.4 asks for none")
 @pytest.mark.parametrize("width", [375, 320])
 def test_the_whole_page_does_not_scroll_sideways_on_a_phone(browser, width):
     with doc(browser, size=(width, 800)) as e:
