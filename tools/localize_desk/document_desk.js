@@ -496,6 +496,7 @@
     const el = b.tgt;
     b.rf = window.RichField.attach(el, {
       text: text,
+      tip: LINKS.tip,
       onCommit: function () { el.blur(); }
     });
     return b.rf;
@@ -591,6 +592,23 @@
     b.warn = warn;
   }
 
+  // A link in the text is a link, not a number (CEL-096): the hover names it ("Link 1"), and a chip in the field being
+  // edited says which end it is. What a text lacks of the English's links is said once, in the note row.
+  const LINKS = {
+    tip: function (side, n) {
+      if (side === 'close') return t('doc.link.end', { n: n });
+      return side === 'open' ? t('doc.link.start', { n: n }) : '';
+    }
+  };
+  const LINKS_READ = {
+    tip: function (side, n) { return t('doc.link', { n: n }); }
+  };
+  const LINK_WARN = { missing: 'doc.link.warn.missing', extra: 'doc.link.warn.extra', order: 'doc.link.warn.order', broken: 'doc.link.warn.broken' };
+  function linkNote(d, text) {
+    const p = window.RichField.linkProblem(d.en, text);
+    return p ? t(LINK_WARN[p.kind], { n: p.n }) : '';
+  }
+
   function buildBlock(d) {
     const lang = S.lang;
     const li = h('li', 'doc-block');
@@ -603,7 +621,7 @@
     li.appendChild(h('span', 'doc-tag', blockLabel(d)));
     const en = h('div', 'doc-en');
     en.setAttribute('lang', 'en');
-    window.RichField.render(en, d.en);
+    window.RichField.read(en, d.en, LINKS_READ);
     li.appendChild(en);
     b.en = en;
     const tgt = h('div', 'doc-tgt');
@@ -616,7 +634,7 @@
     const wg = h('div', 'doc-weglot');
     wg.setAttribute('lang', lang);
     wg.setAttribute('dir', 'auto');
-    window.RichField.render(wg, (d.w && d.w[lang]) || '');
+    window.RichField.read(wg, (d.w && d.w[lang]) || '', LINKS_READ);
     if (!(d.w && d.w[lang])) wg.setAttribute('data-placeholder', t('doc.weglot.none'));
     wg.hidden = $('doc-blocks').getAttribute('data-weglot') !== 'on';
     li.appendChild(wg);
@@ -625,8 +643,9 @@
     b.state = h('span', 'doc-note-state');
     b.lockNote = h('span', 'doc-note-lock');
     b.same = h('span', 'doc-note-same');
+    b.links = h('span', 'doc-note-links');
     note.appendChild(b.state); note.appendChild(b.lockNote);
-    note.appendChild(b.same);
+    note.appendChild(b.same); note.appendChild(b.links);
     li.appendChild(note);
     buildSharedNote(b, note);    // a text that is also on other pages: one small marker, not a line of the page (CEL-072)
     const box = h('div', 'doc-conflict');
@@ -647,7 +666,7 @@
       b.lockNote.textContent = t('doc.locked.tag');
       if (why) b.lockNote.setAttribute('data-tip', why);       // the reason is on hover, not a line of the page (CEL-075 item 18)
       tgt.setAttribute('dir', 'auto');
-      window.RichField.render(tgt, (d.w && d.w[lang]) || '');
+      window.RichField.read(tgt, (d.w && d.w[lang]) || '', LINKS_READ);
     } else {
       tgt.setAttribute('data-placeholder', t('doc.empty.cell'));
       attachField(b, effText(lang, d.id));
@@ -752,6 +771,7 @@
     if (isFlagged(uid)) b.li.setAttribute('data-flagged', '');
     else b.li.removeAttribute('data-flagged');
     b.state.textContent = label;
+    b.links.textContent = d.lock ? '' : linkNote(d, effText(lang, uid));
     // One small mark when the text is word for word what Weglot has (the reviewer can skip it). Shown only
     // while the Weglot column is on (CSS); nothing is highlighted otherwise.
     const wgText = (d.w && d.w[lang]) || '';
@@ -1272,7 +1292,7 @@
     const body = h('div', 'doc-version-text');
     body.setAttribute('dir', 'auto');
     body.setAttribute('lang', S.lang);
-    window.RichField.render(body, text);
+    window.RichField.read(body, text, LINKS_READ);
     li.appendChild(body);
     const btn = h('button', 'desk-btn doc-restore', t('doc.history.restore'));
     btn.type = 'button';

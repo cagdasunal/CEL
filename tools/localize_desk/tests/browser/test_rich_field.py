@@ -212,7 +212,8 @@ def test_show_html_shows_the_markers_and_changes_nothing(page):
     assert labels == ['<a wg-1="">', "</a>", '<a wg-2="">', "</a>"]
     assert _value(page) == LINKED
     page.evaluate("() => rf.showHtml(false)")
-    assert page.locator("#f .rf-token").first.inner_text() == "‹1"
+    # CEL-096: a chip carries no number, only its end's bracket
+    assert page.locator("#f .rf-token").all_inner_texts() == ["‹", "›", "‹", "›"]
 
 
 # ---- #5 review (2026-09-28): edits over a selection, the live field, the character classes ----

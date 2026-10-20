@@ -387,6 +387,7 @@ html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block'
 .doc-note > * { padding-bottom: 8px; }
 .doc-note-chars { font-size: var(--fs-sm); color: var(--doc-muted); }
 .doc-note-same { font-size: var(--fs-sm); color: var(--doc-muted); }
+.doc-note-links { flex: 1 1 100%; font-size: var(--fs-sm); color: var(--doc-flag); }   /* a link the text lacks (CEL-096); empty = no room */
 .doc-blocks:not([data-weglot="on"]) .doc-note-same { display: none; }
 .doc-block[data-state="saving"] .doc-note { color: var(--doc-muted); }
 .doc-block[data-source="edit"][data-state="idle"] .doc-note-state { color: var(--doc-edited-ink); font-weight: 500; }

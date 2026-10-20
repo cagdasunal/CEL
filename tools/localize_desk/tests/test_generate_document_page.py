@@ -1706,7 +1706,7 @@ class TestPageCss:
         shell or in the contract's runtime-built markup."""
         runtime = {"doc-block", "doc-tag", "doc-en", "doc-tgt", "doc-weglot", "doc-note", "doc-note-chars",
                    "doc-save-more", "doc-seen-reset",
-                   "doc-note-same", "doc-note-state", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
+                   "doc-note-same", "doc-note-links", "doc-note-state", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
                    "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore",
                    "doc-shared", "doc-shared-mark", "doc-shared-pop", "doc-shared-pop-text", "doc-shared-pop-list",

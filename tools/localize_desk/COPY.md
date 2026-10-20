@@ -260,6 +260,13 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.block.other` | Text | |
 | `doc.locked.tag` | Locked | Beside a text that can't be edited here; its reason is the tip on it |
 | `doc.locked.noise` | Numbers and symbols are left as they are. | Under a locked text of numbers or symbols |
+| `doc.link` | Link {n} | Hover on the words of a link, in the English, the website's text and the history (the words carry a dotted underline) |
+| `doc.link.start` | Link {n} starts here | Hover on the first chip of a link in the text being edited |
+| `doc.link.end` | Link {n} ends here | Hover on the second chip of a link in the text being edited |
+| `doc.link.warn.missing` | Link {n} from the English is missing in this text. Re-translate it. | Under a text that lacks a link the English has |
+| `doc.link.warn.extra` | This text has a link {n} that the English doesn't. Re-translate it. | Under a text that has a link the English lacks |
+| `doc.link.warn.order` | The links are in a different order than in the English, so they would open the wrong pages. Re-translate it. | Under a text whose links are in another order |
+| `doc.link.warn.broken` | A link in this text has no start or no end. Re-translate it. | Under a text with a link that is not closed or not opened |
 | `doc.also` | Also on {pages}. A change here changes it there too. | The marker's tooltip and popover of a text that is on other pages of the four; once in the note under the text while it has focus |
 | `doc.shared.one` | Also used on 1 other page ({example}). Your wording becomes the wording there too. | The marker's tooltip and popover of a text that is also on a page outside the four; once in the note under the text while it has focus |
 | `doc.shared.other` | Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too. | |
