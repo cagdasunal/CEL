@@ -191,6 +191,7 @@ def weglot_ids(n: int) -> list[str]:
 SHEET, TRAY, HOVER, WEGLOT_BG = (241, 234, 216), (231, 222, 199), (236, 228, 207), (234, 226, 204)
 INK, INK_SRC, MUTED = (43, 39, 34), (71, 66, 58), (100, 93, 81)
 EDITED, EDITED_INK, FLAG, FLAG_BG = (168, 95, 10), (138, 77, 7), (163, 54, 31), (237, 220, 198)
+ERR = (160, 38, 36)                                             # the dashboard's --err #A02624
 
 
 # ── 1. surfaces, ink and type, at the three desktop widths ────────────────────────────────────────
@@ -261,12 +262,33 @@ def test_an_edited_text_has_an_ochre_bar_and_its_word_in_ochre(browser):
         edit(p, u, "Geaenderter Text")
         li = f'li.doc-block[data-uid="{u}"]'
         expect(p.locator(li)).to_have_attribute("data-source", "edit")
+        expect(p.locator(li)).to_have_attribute("data-state", "idle", timeout=10000)     # "Edited" is the idle word
         assert rgb(css(p, f"{li} .doc-tgt", "backgroundColor", "::after")) == EDITED
         assert css(p, f"{li} .doc-tgt", "width", "::after") == "3px"
         assert css(p, f"{li} .doc-tgt", "opacity", "::after") == "1"
         assert rgb(css(p, f"{li} .doc-note-state", "color")) == EDITED_INK
         assert css(p, f"{li} .doc-note-state", "fontWeight") == "500"
         assert contrast(EDITED, SHEET) >= 3 and contrast(EDITED_INK, SHEET) >= 4.5
+
+
+
+def test_only_the_word_edited_is_ochre_an_edited_texts_other_states_keep_their_colours(browser):
+    """CEL-070 round 1, fix 1: doc-spec.md §3 keeps the saving and error notes as they were; only "Edited" is
+    ochre. The same edited text, painted saving, not saved and idle."""
+    (u,) = plain_ids(1)
+    with doc(browser, seed=lambda e: draft(e.store, u, "Alter Entwurf")) as e:
+        p = e.page
+        edit(p, u, "Geaenderter Text")
+        li = f'li.doc-block[data-uid="{u}"]'
+        expect(p.locator(li)).to_have_attribute("data-source", "edit")
+        expect(p.locator(li)).to_have_attribute("data-state", "idle", timeout=10000)
+        seen = {}
+        for state in ("error", "saving", "idle"):
+            p.evaluate("([s, st]) => document.querySelector(s).setAttribute('data-state', st)", [li, state])
+            seen[state] = (rgb(css(p, f"{li} .doc-note-state", "color")), css(p, f"{li} .doc-note-state", "fontWeight"))
+        assert seen["error"] == (ERR, "400"), seen
+        assert seen["saving"] == (MUTED, "400"), seen
+        assert seen["idle"] == (EDITED_INK, "500"), seen
 
 
 # ── 4. a flagged text carries a mark ──────────────────────────────────────────────────────────────

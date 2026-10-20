@@ -345,10 +345,10 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-note-same { font-size: var(--fs-sm); color: var(--doc-muted); }
 .doc-blocks:not([data-weglot="on"]) .doc-note-same { display: none; }
 .doc-block[data-state="saving"] .doc-note { color: var(--doc-muted); }
-.doc-block[data-source="edit"] .doc-note-state { color: var(--doc-edited-ink); font-weight: 500; }
+.doc-block[data-source="edit"][data-state="idle"] .doc-note-state { color: var(--doc-edited-ink); font-weight: 500; }
 .doc-block[data-state="error"] .doc-note { color: var(--err); }
-.doc-block[data-state="conflict"] .doc-note { color: var(--warn); }
-.doc-conflict { position: relative; grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 var(--doc-pad) var(--doc-mb); font-size: var(--fs-sm); color: var(--warn); }
+.doc-block[data-state="conflict"] .doc-note { color: var(--notice-fg); }
+.doc-conflict { position: relative; grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 var(--doc-pad) var(--doc-mb); font-size: var(--fs-sm); color: var(--notice-fg); }
 .doc-conflict > span { flex: 1 0 100%; }
 
 /* The toolbar floats just above the open translation, right-aligned, only while focus is in the block or the pointer is over it */
@@ -368,7 +368,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-save:empty::before { display: none; }
 .doc-save[data-state="loading"], .doc-save[data-state="saving"] { color: var(--doc-muted); }
 .doc-save[data-state="loading"]::before, .doc-save[data-state="saving"]::before { background: var(--faint); }
-.doc-save[data-state="retrying"], .doc-save[data-state="offline"], .doc-save[data-state="conflict"] { color: var(--warn); }
+.doc-save[data-state="retrying"], .doc-save[data-state="offline"], .doc-save[data-state="conflict"] { color: var(--notice-fg); }
 .doc-save[data-state="retrying"]::before, .doc-save[data-state="offline"]::before, .doc-save[data-state="conflict"]::before { background: var(--warn); }
 .doc-save[data-state="error"], .doc-save[data-state="refused"], .doc-save[data-state="stopped"] { color: var(--err); }
 .doc-save[data-state="error"]::before, .doc-save[data-state="refused"]::before, .doc-save[data-state="stopped"]::before { background: var(--err); }

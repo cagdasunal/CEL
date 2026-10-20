@@ -1425,6 +1425,31 @@ class TestPageCss:
                              ("--doc-flag", "--doc-sheet"), ("--doc-flag", "--doc-flag-bg")):
             assert self._ratio(t[mark], t[ground]) >= 3, (mark, ground, self._ratio(t[mark], t[ground]))
 
+    def test_every_text_colour_the_document_view_draws_is_4_5_to_1_on_the_sheet_and_its_hover(self):
+        """Not only the --doc-* inks: every `color` DOC_CSS sets (the dashboard's --err, --ok, --fg, the warning's
+        text ...), resolved from dashboard.css, holds AA on the sheet and its hover (CEL-070 round 1, fix 2: --warn
+        was 4.09:1 there). The banner sits on its own --notice-bg, not on a sheet."""
+        dash = (Path(GD.__file__).resolve().parents[2] / "docs" / "assets" / "css" / "dashboard.css").read_text(encoding="utf-8")
+        t = self._tokens()
+
+        def hexof(name):
+            if name in t:
+                return t[name]
+            m = re.search(rf"{re.escape(name)}:\s*(#[0-9a-fA-F]{{6}});", dash)
+            assert m, name
+            return m.group(1).upper()
+        seen = set()
+        for sel, prop, value in _declarations(GD.DOC_CSS):
+            if prop != "color" or sel.startswith(".doc-banner"):
+                continue
+            m = re.fullmatch(r"var\((--[a-z0-9-]+)\)", value)
+            assert m, (sel, value)
+            seen.add(m.group(1))
+            for ground in ("--doc-sheet", "--doc-sheet-hover"):
+                ratio = self._ratio(hexof(m.group(1)), t[ground])
+                assert ratio >= 4.5, (sel, m.group(1), ground, round(ratio, 2))
+        assert {"--err", "--ok", "--fg", "--notice-fg", "--doc-muted"} <= seen, seen
+
     def test_no_surface_of_the_document_view_is_white_or_near_white(self):
         t = self._tokens()
         for surface in ("--doc-tray", "--doc-sheet", "--doc-sheet-hover", "--doc-weglot-bg", "--doc-flag-bg"):
@@ -1473,7 +1498,7 @@ class TestPageCss:
     def test_edited_is_a_3px_ochre_bar_and_the_word_edited_is_ochre(self):
         body = _rule('.doc-block[data-source="edit"] .doc-tgt::after')
         assert "width: 3px" in body and "background: var(--doc-edited)" in body and "opacity" not in body
-        word = _rule('.doc-block[data-source="edit"] .doc-note-state')
+        word = _rule('.doc-block[data-source="edit"][data-state="idle"] .doc-note-state')     # "Edited" only (round 1, fix 1)
         assert "color: var(--doc-edited-ink)" in word and "font-weight: 500" in word
 
     def test_a_flagged_text_has_a_brick_bar_and_a_tint_drawn_without_moving_the_layout(self):
@@ -1503,7 +1528,7 @@ class TestPageCss:
     def test_a_blocks_state_is_the_notes_colour_only(self):
         assert _rule('.doc-block[data-state="saving"] .doc-note') == "color: var(--doc-muted);"
         assert _rule('.doc-block[data-state="error"] .doc-note') == "color: var(--err);"
-        assert _rule('.doc-block[data-state="conflict"] .doc-note') == "color: var(--warn);"
+        assert _rule('.doc-block[data-state="conflict"] .doc-note') == "color: var(--notice-fg);"     # the warning's text colour at AA on the sheet (CEL-070 round 1)
 
     def test_the_character_count_is_a_quiet_muted_sm_line(self):
         body = _rule(".doc-note-chars")
