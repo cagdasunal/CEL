@@ -286,7 +286,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 /* The open text: indigo is the focus ring and the outline of the text being edited, nothing else.
    An edited text carries a 3px bar of the text colour at reduced opacity; a locked one is muted. */
 .doc-block > .doc-tgt:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.doc-tgt:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
+.doc-tgt:empty::before, .doc-weglot:empty::before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
 .doc-block[data-source="edit"] .doc-tgt::after { content: ""; position: absolute; inset-block: 2px; inset-inline-start: -14px; width: 3px; border-radius: var(--radius-sm); background: var(--fg); opacity: 0.35; }
 .doc-block:not([data-lock=""]) :is(.doc-en, .doc-tgt) { color: var(--muted); cursor: default; }
 
@@ -295,6 +295,8 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-note:empty, .doc-note > :empty { display: none; }
 .doc-note > * { padding-bottom: 8px; }
 .doc-note-chars { font-size: var(--fs-xs); color: var(--muted); }
+.doc-note-same { font-size: var(--fs-xs); color: var(--muted); }
+.doc-blocks:not([data-weglot="on"]) .doc-note-same { display: none; }
 .doc-block[data-state="saving"] .doc-note { color: var(--muted); }
 .doc-block[data-state="error"] .doc-note { color: var(--err); }
 .doc-block[data-state="conflict"] .doc-note { color: var(--warn); }

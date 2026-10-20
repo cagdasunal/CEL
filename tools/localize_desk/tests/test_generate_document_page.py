@@ -1368,7 +1368,18 @@ class TestPageCss:
         assert "color: var(--muted)" in body and "cursor: default" in body
 
     def test_the_empty_cell_shows_its_placeholder_attribute(self):
-        assert "content: attr(data-placeholder)" in _rule(".doc-tgt:empty::before")
+        assert "content: attr(data-placeholder)" in _rule(".doc-tgt:empty::before, .doc-weglot:empty::before")
+
+    def test_a_text_weglot_has_no_wording_for_says_so_with_the_same_placeholder_rule(self):
+        """CEL-060: the Weglot column's empty cell reads `data-placeholder` (COPY `doc.weglot.none`)."""
+        selectors = [s for s, _b in _rules(GD.DOC_CSS)]
+        assert ".doc-tgt:empty::before, .doc-weglot:empty::before" in selectors
+        assert "doc.weglot.none" in Path(GD.DOC_JS).read_text(encoding="utf-8")
+
+    def test_the_same_as_weglot_mark_is_a_quiet_xs_line_shown_only_with_the_column_on(self):
+        body = _rule(".doc-note-same")
+        assert "font-size: var(--fs-xs)" in body and "color: var(--muted)" in body
+        assert "display: none" in _rule('.doc-blocks:not([data-weglot="on"]) .doc-note-same')
 
     def test_a_blocks_state_is_the_notes_colour_only(self):
         assert _rule('.doc-block[data-state="saving"] .doc-note') == "color: var(--muted);"
@@ -1507,7 +1518,7 @@ class TestPageCss:
         """A rule for `.doc-typo` would style nothing: each `.doc-*` class in the sheet is in the
         shell or in the contract's runtime-built markup."""
         runtime = {"doc-block", "doc-tag", "doc-en", "doc-tgt", "doc-weglot", "doc-note", "doc-note-chars",
-                   "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
+                   "doc-note-same", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
                    "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore"}
         in_shell = set()

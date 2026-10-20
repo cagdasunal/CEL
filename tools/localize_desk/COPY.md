@@ -566,6 +566,8 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.head.en` | English — the website | Head of the English column |
 | `doc.head.tgt` | {language} — draft and your edits | Head of the translation column |
 | `doc.head.weglot` | Weglot (on the website) | Head of the third column, when Show Weglot is on |
+| `doc.weglot.none` | No Weglot translation yet | Inside the third column, for a text Weglot has no wording for |
+| `doc.weglot.same` | Same as Weglot | Under a text, when Show Weglot is on and the text is word for word what Weglot has |
 | `doc.block.meta-title` | Page title | Beside a text: what kind of text it is |
 | `doc.block.og-title` | Title when shared | |
 | `doc.block.meta-description` | Page description | |

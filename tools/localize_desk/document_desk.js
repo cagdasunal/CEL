@@ -504,6 +504,7 @@
     wg.setAttribute('lang', lang);
     wg.setAttribute('dir', 'auto');
     window.RichField.render(wg, (d.w && d.w[lang]) || '');
+    if (!(d.w && d.w[lang])) wg.setAttribute('data-placeholder', t('doc.weglot.none'));
     wg.hidden = $('doc-blocks').getAttribute('data-weglot') !== 'on';
     li.appendChild(wg);
     b.wg = wg;
@@ -512,7 +513,9 @@
     b.lockNote = h('span', 'doc-note-lock');
     b.also = h('span', 'doc-note-also');
     b.shared = h('span', 'doc-note-shared');
+    b.same = h('span', 'doc-note-same');
     note.appendChild(b.state); note.appendChild(b.lockNote); note.appendChild(b.also); note.appendChild(b.shared);
+    note.appendChild(b.same);
     li.appendChild(note);
     const box = h('div', 'doc-conflict');
     box.hidden = true;
@@ -627,6 +630,10 @@
       else if (rec && rec.text) label = t('doc.text.edited');
     }
     b.state.textContent = label;
+    // One small mark when the text is word for word what Weglot has (the reviewer can skip it). Shown only
+    // while the Weglot column is on (CSS); nothing is highlighted otherwise.
+    const wgText = (d.w && d.w[lang]) || '';
+    b.same.textContent = !d.lock && wgText && effText(lang, uid) === wgText ? t('doc.weglot.same') : '';
     if (b.chars) {
       const shown = d.lock ? ((d.w && d.w[lang]) || '') : effText(lang, uid);
       b.chars.textContent = shown ? tn('doc.chars', plain(shown).length) : '';
