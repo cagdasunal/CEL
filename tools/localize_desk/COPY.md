@@ -425,8 +425,8 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.empty` | No {language} rules yet. | Language without rules |
 | `rules.summary` | {n} requests from your documents | Summary heading of one language |
 | `rules.summary.sub` | Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out. | Line under the summary heading |
-| `rules.by.check` | Checked | Done-by pill and card: an engine check stops a draft |
-| `rules.by.check.cap` | stopped automatically if a draft breaks it | Summary card caption |
+| `rules.by.check` | Checked | Done-by pill and card: an engine check stops a draft, or the engine itself carries it out |
+| `rules.by.check.cap` | checked automatically or built into the engine | Summary card caption (true of its "Built in" requests too, CEL-099) |
 | `rules.by.prompt` | In the prompt | Done-by pill and card: the request is in what Gemini reads |
 | `rules.by.prompt.cap` | written into what Gemini reads for every draft | Summary card caption |
 | `rules.by.none` | Not yet | Done-by pill and card: not carried out yet |
@@ -448,6 +448,47 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.how.none.flag` | Gemini cannot leave a note for the editor yet | Why a flag request is not carried out |
 | `rules.how.none.keywords` | No keyword list for this language yet | Why the keyword-placement request is not carried out |
 | `rules.how.none.schema` | The desk translates the visible text only | Why the machine-readable currency request is not carried out |
+| `rules.quality` | Our quality checks | Heading of our own rules and checks, under the client's sections |
+| `rules.qc.auto` | Checked automatically | Pill of a check the engine runs when a Weglot file is built |
+| `rules.qc.idiom` | Idiomatic {language} for a native reader; facts, numbers, names and links unchanged | Our quality checks: prompt rule |
+| `rules.qc.order` | Gemini reads the whole English page in document order, as one document | Our quality checks: prompt rule |
+| `rules.qc.length` | Page titles within {title} half-width units, descriptions within {description}; a Chinese, Japanese or Korean character counts as 2 | Our quality checks: prompt rule |
+| `rules.qc.digits` | Every digit of the English kept, none added, no number written out as a word | Our quality checks: prompt rule |
+| `rules.qc.figures` | No figure the English does not give | Our quality checks: prompt rule |
+| `rules.qc.dash` | No em dash or spaced en dash; the en dash in a number range stays | Our quality checks: prompt rule |
+| `rules.qc.links` | Every link kept, in the same place and order | Our quality checks: prompt rule |
+| `rules.qc.never_eszett` | No ß: ss instead | Our quality checks: German check |
+| `rules.qc.informal_du` | du, not the formal Sie in the middle of a sentence | Our quality checks: German check |
+| `rules.qc.tu_not_usted` | tú, never usted | Our quality checks: Spanish check |
+| `rules.qc.latam_vocabulary` | Spain's coste, coche, piso compartido, móvil and ordenador are stopped | Our quality checks: Spanish check |
+| `rules.qc.vous_not_tu` | vous, never tu | Our quality checks: French check |
+| `rules.qc.nbsp_before_punctuation` | A non-breaking space before ; : ? ! and » (flagged, never stopped) | Our quality checks: French check, warns only |
+| `rules.qc.nbsp_after_guillemet` | A non-breaking space after « (flagged, never stopped) | Our quality checks: French check, warns only |
+| `rules.qc.tu_not_lei` | tu, not the courtesy Lei (La preghiamo, Le ricordiamo) after the start of a sentence | Our quality checks: Italian check |
+| `rules.qc.tuition_terminology` | Tuition as costo, prezzo or tariffe, not tasse universitarie, tasse scolastiche or retta (flagged, never stopped) | Our quality checks: Italian check, warns only |
+| `rules.qc.never_propina` | Never propina (it means a bribe in Brazil): mensalidade or valor do curso | Our quality checks: Portuguese check |
+| `rules.qc.no_european_portuguese` | European Portuguese words are stopped: autocarro, casa de banho, pequeno-almoço, comboio, telemóvel, ecrã and others | Our quality checks: Portuguese check |
+| `rules.qc.no_fullwidth_currency` | No full-width currency sign: the half-width $ only | Our quality checks: Japanese check |
+| `rules.qc.brand_must_not_translate` | Known wrong translations of the school's brand names are stopped | Our quality checks: check in every language |
+| `rules.qc.g0_row_sanity` | No empty translation, and no row made for another language's file | Our quality checks: export check |
+| `rules.qc.g1_export_presence` | Every English text is one the website has today | Our quality checks: export check |
+| `rules.qc.g2_unit_resolves` | Every translation still belongs to the English text it was made for | Our quality checks: export check |
+| `rules.qc.g3_placeholders` | Every link of the English, in the same order, and no other markup | Our quality checks: export check |
+| `rules.qc.g3_placeholder_count_warn` | A link used more or fewer times than in the English is named in the export summary | Our quality checks: export check, warns only |
+| `rules.qc.g4_numbers` | Every number of the English is there, and no number is added | Our quality checks: export check |
+| `rules.qc.g5_formatter` | Page titles within {title} half-width units, descriptions within {description}: a longer one is stopped | Our quality checks: export check |
+| `rules.qc.g6_poison` | No very short English text paired with a long translation (a mismatched row) | Our quality checks: export check |
+| `rules.qc.g7_duplicates` | Each English text once per language | Our quality checks: export check |
+| `rules.qc.g8_og_twin` | The title shared on social media is the same as the page title | Our quality checks: export check |
+| `rules.qc.g9_override_named` | A text a person forced through must name that person, or it is stopped | Our quality checks: export check |
+| `rules.qc.g10_signatures` | Every approval carries a valid signature that names its reviewer | Our quality checks: export check |
+| `rules.qc.g11_size` | One file per language, under {mb} MB, plain UTF-8 | Our quality checks: export check |
+| `rules.qc.g12_containment` | The menu and footer are never exported with a page | Our quality checks: export check |
+| `rules.qc.g13_freshness` | The English page list is recent, and the English has not changed since it was read | Our quality checks: export check |
+| `rules.qc.g16_csv_injection` | No text starts with = or @, which a spreadsheet would run as a formula | Our quality checks: export check |
+| `rules.qc.g16_csv_injection_warn` | A text that starts with +, - or a tab is named in the export summary | Our quality checks: export check, warns only |
+| `rules.qc.g18_client_rules` | The language checks above run again on the words that ship | Our quality checks: export check |
+| `rules.qc.g18_client_rules_warn` | A text a flag-only check catches still ships and is named in the export summary | Our quality checks: export check, warns only |
 | `rules.tone` | Your tone examples | Heading of the tone examples |
 | `rules.tone.good` | Good | Label of a good tone example |
 | `rules.tone.bad` | Bad — do not do this | Label of a bad tone example |

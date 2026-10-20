@@ -11,7 +11,9 @@ spec runtime/out/loc2/rules-editor-spec.md in the monorepo).
 This file writes ONE page and no data: the rule bodies are the client's documents and this
 repository is public, so the page reads them from the Worker at run time, behind sign-in. The page
 inlines only rules_done_by.json (how the tool carries each line out, keyed by a hash of the line: no
-client words; built in the monorepo by runtime/out/loc2/CEL-089/build_done_by.py).
+client words; built in the monorepo by runtime/out/loc2/CEL-089/build_done_by.py) and rules_quality.json
+(our own quality checks per language, "Our quality checks": COPY keys and the numbers they show, built from
+the engine's draft.py, gates.py and rules/ by runtime/out/loc2/CEL-099/build_quality.py).
 Every word comes from COPY.md (the "Rules page" section).
 
     cd tools && python3 -m localize_desk.generate_rules_page
@@ -37,6 +39,7 @@ OUT_DIR = S.OUT_ROOT / "rules"
 PAGE_JS = HERE / "rules_page.js"
 MD_JS = HERE / "rules_md.js"
 DONE_BY = HERE / "rules_done_by.json"
+QUALITY = HERE / "rules_quality.json"
 
 # Page CSS: tokens only (no hex, no rgba, no !important). One readable column on the page's own cream.
 RULES_CSS = """
@@ -76,7 +79,7 @@ RULES_CSS = """
 .rules .r-sec { scroll-margin-top: 76px; }
 .rules .r-sub { margin: 16px 0 4px; font-size: var(--fs-base); font-weight: 500; }
 .rules .r-ctx { margin: 12px 0 0; font-size: var(--fs-md); color: var(--muted); }
-.rules .r-req { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rules .r-req, .rules .r-qc { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .rules .r-words { font-size: 15px; line-height: 1.55; overflow-wrap: anywhere; }
 .rules .r-cell { display: inline-block; margin: 0 18px 2px 0; }
 .rules .r-cell-h { display: block; font-size: var(--fs-xs); color: var(--muted); }
@@ -155,7 +158,8 @@ def _config() -> str:
     cfg = {"locales": [{"code": code, "name": S.lang_name(code), "flag": flag}
                        for code, _endonym, _dir, flag in S.LOCALES],
            "pages": list(S.PAGE_KEYS),
-           "doneBy": json.loads(_read(DONE_BY, "rules_done_by.json"))}
+           "doneBy": json.loads(_read(DONE_BY, "rules_done_by.json")),
+           "quality": json.loads(_read(QUALITY, "rules_quality.json"))}
     return json.dumps(cfg, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 

@@ -41,6 +41,9 @@ def _dynamic_families() -> set[str]:
     keys |= {f"refusal.{r}" for r in codes["refusal"] + codes["export_skip"]}
     keys |= {f"refusal.suffix.{x}" for x in codes["refusal_suffix"]}
     keys |= {f"job.failed.{c}" for c in codes["job_failed"]}
+    # CEL-099: the rules page's "Our quality checks", worded as 'rules.qc.' + key (rules_quality.json)
+    quality = json.loads((TOOLS / "rules_quality.json").read_text(encoding="utf-8"))
+    keys |= {f"rules.qc.{e[1]}" for lines in quality["langs"].values() for e in lines}
     return keys
 
 

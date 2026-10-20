@@ -180,7 +180,8 @@ def words(page):
 def test_a_language_shows_its_own_rules_first_then_its_glossary_then_its_briefs(browser):
     with rules(browser) as env:
         p = env.page
-        assert section_texts(p) == ["rules-s7", "rules-glossary", "rules-briefs"]     # no shared section
+        # no shared section; our quality checks under the client's sections (CEL-099)
+        assert section_texts(p) == ["rules-s7", "rules-quality", "rules-glossary", "rules-briefs"]
         expect(p.locator("#rules-s7 h2")).to_have_text("Language rules")
         expect(p.locator("#rules-glossary h2")).to_have_text(t("rules.glossary"))
         expect(p.locator("#rules-briefs h2")).to_have_text(t("rules.briefs"))
@@ -335,7 +336,7 @@ def test_the_summary_sits_on_top_and_the_section_list_beside_the_requests_at_eve
         rail, doc, lead = box(".r-rail"), box(".r-doc"), box(".r-lead")
         assert lead[3] <= rail[1] and lead[3] <= doc[1], (lead, rail, doc)          # the summary is above both
         assert rail[0] + rail[2] <= doc[0], (rail, doc)                            # the list left of the requests
-        assert p.locator(".r-rail a").count() == 3                                 # §7, glossary, briefs
+        assert p.locator(".r-rail a").count() == 4                     # §7, our quality checks, glossary, briefs
         assert p.evaluate("document.documentElement.scrollWidth <= window.innerWidth")   # no sideways scroll
 
 
@@ -372,7 +373,9 @@ def test_a_card_filters_the_requests_and_pressing_it_again_or_show_all_clears_it
         expect(p.locator('.r-stat[data-by="prompt"]')).to_have_attribute("aria-pressed", "true")
         expect(words(p)).to_have_text(["SYNTH-PLAIN line", "ElementSYNTH-CELLDEx"])
         expect(p.locator(".r-filterline")).to_contain_text(t("rules.filter.some", k=2, n=4))
-        expect(p.locator(".r-rail a .r-rail-n")).to_have_text(["1", "1", "", "", ""])    # §2, §6, §12, glossary, briefs
+        # §2 and §6 only: §12 holds no such request, and the quality checks, glossary and briefs hold none (CEL-099)
+        expect(p.locator(".r-rail a .r-rail-n")).to_have_text(["1", "1"])
+        assert section_texts(p) == ["rules-s2", "rules-s6"]
         p.locator('.r-stat[data-by="prompt"]').click()
         expect(words(p)).to_have_count(4)
         p.locator('.r-stat[data-by="none"]').click()

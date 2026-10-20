@@ -152,9 +152,27 @@ def test_config_carries_the_eight_locales(config):
 
 def test_config_carries_the_locales_and_the_page_keys_and_nothing_of_the_editor(config):
     # CEL-080: no checked or suggested rules. CEL-085: the desk's page keys, for the keyword briefs it shows read-only.
-    # CEL-089: the Done-by map of option A.
-    assert set(config) == {"locales", "pages", "doneBy"}
+    # CEL-089: the Done-by map of option A. CEL-099: our quality checks per language.
+    assert set(config) == {"locales", "pages", "doneBy", "quality"}
     assert config["pages"] == list(S.PAGE_KEYS)
+
+
+def test_the_quality_list_holds_copy_keys_and_numbers_only(config):
+    # CEL-099: per language [kind, key, params], built from the engine's sources in the monorepo
+    # (runtime/out/loc2/CEL-099/build_quality.py): every key is a COPY line, every number one its words show,
+    # and no rule id or client word (the repository is public).
+    q = config["quality"]
+    assert set(q) == {"langs"} and set(q["langs"]) == {code for code, *_ in S.LOCALES}
+    table = C.load()
+    for lang, lines in q["langs"].items():
+        kinds = [e[0] for e in lines]
+        assert kinds and set(kinds) == {"prompt", "check"}, lang
+        assert kinds == sorted(kinds, key=lambda k: k != "prompt"), lang            # the prompt's rules first
+        for kind, key, params in lines:
+            assert re.fullmatch(r"[a-z0-9_]+", key), (lang, key)
+            line = table[f"rules.qc.{key}"]
+            assert all(isinstance(v, int) and "{" + p + "}" in line for p, v in params.items()), (lang, key)
+            assert not re.findall(r"\{(\w+)\}", line) or set(re.findall(r"\{(\w+)\}", line)) <= set(params) | {"language"}
 
 
 def test_the_done_by_map_holds_hashes_and_codes_and_no_client_words(config):

@@ -179,6 +179,9 @@
     const got = (DONE.langs[lang] || {})[fnv(raw)];
     return { by: got ? got[0] : 'prompt', code: got ? got[1] || '' : '', warn: got ? got[2] || '' : '' };
   }
+  // Our own quality rules (CEL-099): per language [kind, key, params], built from the engine's draft.py, gates.py and
+  // rules/ (runtime/out/loc2/CEL-099/build_quality.py); the words are COPY's `rules.qc.<key>`, the numbers the source's.
+  const QUALITY = (CFG.quality || {}).langs || {};
   function howText(d) {
     return d.by === 'prompt' || !HOW_KEY[d.code] ? t('rules.how.prompt') : t(HOW_KEY[d.code]);
   }
@@ -315,6 +318,25 @@
     });
     return sec;
   }
+  function renderQuality(lang) {
+    const sec = section('rules-quality', t('rules.quality'));
+    QUALITY[lang].forEach(function (e) {
+      const row = h('div', 'r-qc');
+      row.dataset.kind = e[0];
+      row.appendChild(h('div', 'r-words', t('rules.qc.' + e[1], Object.assign({ language: langName(lang) }, e[2]))));
+      const side = h('div', 'r-side');
+      if (e[0] === 'prompt') side.appendChild(pill('prompt'));
+      else {
+        const p = h('span', 'r-by check');
+        p.appendChild(h('span', 'r-mk'));
+        p.appendChild(document.createTextNode(t('rules.qc.auto')));
+        side.appendChild(p);
+      }
+      row.appendChild(side);
+      sec.appendChild(row);
+    });
+    return sec;
+  }
   function renderTone(doc) {
     const sec = section('rules-tone', t('rules.tone'));
     const box = h('div', 'r-pairs');
@@ -442,6 +464,7 @@
     if (s.state === 'error') { wrap.appendChild(notice(lang)); return wrap; }
     if (isSeedNone(s.body)) {
       wrap.appendChild(h('p', 'r-empty', t('rules.empty', { language: langName(lang) })));
+      if ((QUALITY[lang] || []).length) wrap.appendChild(renderQuality(lang));     // ours apply without the client's
       return wrap;
     }
     const doc = readBlock(lang, s.body);
@@ -450,19 +473,29 @@
     const rail = h('nav', 'r-rail');
     rail.setAttribute('aria-label', t('rules.sections'));
     const main = h('div', 'r-doc');
+    // With a card pressed, a section holding no matching request is not drawn, nor its rail entry: the tone examples,
+    // our quality checks, the glossary and the briefs hold no request at all (CEL-089 Found 3).
+    const all = S.by === 'all';
     doc.secs.forEach(function (x) {
-      const n = x.rows.filter(function (r) { return r.kind === 'req' && (S.by === 'all' || r.d.by === S.by); }).length;
+      const n = x.rows.filter(function (r) { return r.kind === 'req' && (all || r.d.by === S.by); }).length;
+      if (!all && !n) return;
       rail.appendChild(railLink('rules-s' + x.no, x.title, n, x.no));
       main.appendChild(renderSec(x));
     });
-    if (doc.pairs.length || doc.drift.length) {
+    if (all && (QUALITY[lang] || []).length) {
+      rail.appendChild(railLink('rules-quality', t('rules.quality')));
+      main.appendChild(renderQuality(lang));
+    }
+    if (all && (doc.pairs.length || doc.drift.length)) {
       rail.appendChild(railLink('rules-tone', t('rules.tone')));
       main.appendChild(renderTone(doc));
     }
-    rail.appendChild(railLink('rules-glossary', t('rules.glossary')));
-    main.appendChild(renderGlossary());
-    rail.appendChild(railLink('rules-briefs', t('rules.briefs')));
-    main.appendChild(renderBriefs());
+    if (all) {
+      rail.appendChild(railLink('rules-glossary', t('rules.glossary')));
+      main.appendChild(renderGlossary());
+      rail.appendChild(railLink('rules-briefs', t('rules.briefs')));
+      main.appendChild(renderBriefs());
+    }
     layout.appendChild(rail);
     layout.appendChild(main);
     wrap.appendChild(layout);
