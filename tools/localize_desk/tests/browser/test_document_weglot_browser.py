@@ -247,7 +247,7 @@ def test_the_column_is_never_sent_the_same_edit_writes_the_same_bytes_with_it_on
     # the export refuses a text whose Weglot wording moved meanwhile). The column adds nothing else to a write.
     (change,) = json.loads(on[0])
     assert change["record"].pop("approvedAgainst") == wording(uid)
-    assert wording(uid) not in json.dumps(change), change
+    assert wording(uid) not in json.dumps(change, ensure_ascii=False), change      # raw text: an escaped ü would hide it
 
 
 def _export_requests(browser, uids, with_column: bool) -> list:
@@ -288,7 +288,8 @@ def test_export_excludes_the_column_the_same_requests_with_it_on_and_off(browser
     # (`approvedAgainst`, CEL-026: the export refuses a text whose Weglot wording moved meanwhile); nowhere else
     stamps = [c["record"].pop("approvedAgainst") for a, b in on if a == "desk-write" for c in b["changes"]]
     assert sorted(stamps) == sorted(wording(u) for u in uids), stamps
-    assert not any(wording(u) in json.dumps(on) for u in uids), "Weglot's wording travels beyond the stamp"
+    # ensure_ascii=False: the default escapes ü, and an escaped wording is never a substring of the dump
+    assert not any(wording(u) in json.dumps(on, ensure_ascii=False) for u in uids), "Weglot's wording travels beyond the stamp"
 
 
 @pytest.mark.parametrize("width", [1280, 1440, 2560])
