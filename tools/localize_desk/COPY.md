@@ -248,9 +248,11 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.block.other` | Text | |
 | `doc.locked.tag` | Locked | Beside a text that can't be edited here |
 | `doc.locked.noise` | Numbers and symbols are left as they are. | Under a locked text of numbers or symbols |
-| `doc.also` | Also on {pages}. A change here changes it there too. | Under a text that is on other pages of the four |
-| `doc.shared.one` | Also used on 1 other page ({example}). Your wording becomes the wording there too. | Under a text that is also on a page outside the four |
+| `doc.also` | Also on {pages}. A change here changes it there too. | The marker's tooltip and popover of a text that is on other pages of the four; once in the note under the text while it has focus |
+| `doc.shared.one` | Also used on 1 other page ({example}). Your wording becomes the wording there too. | The marker's tooltip and popover of a text that is also on a page outside the four; once in the note under the text while it has focus |
 | `doc.shared.other` | Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too. | |
+| `doc.mark.one` | Shared with 1 other page. | The shared-text marker's accessible name, read before the sentence (its chip shows the count) |
+| `doc.mark.other` | Shared with {n} other pages. | |
 | `doc.text.saving` | Saving… | Under a text, while its change is sent |
 | `doc.text.saved` | Saved | Under a text, once its change is on the server |
 | `doc.text.error` | Not saved yet — trying again | Under a text whose change did not go through |

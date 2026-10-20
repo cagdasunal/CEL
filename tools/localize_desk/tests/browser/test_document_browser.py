@@ -506,6 +506,23 @@ def test_a_link_only_text_accepts_typing_and_keeps_its_markers(browser):
         assert tgt(e.page, b["id"]).locator(".rf-token").count() == len(MARK.findall(w))
 
 
+def mark_name(b: dict) -> str:
+    """The marker's accessible name (CEL-072): the count its chip shows, in words, then the sentence."""
+    return C.tn("doc.mark", len(b.get("also", [])) + b.get("out", 0)) + " " + shared_sentence(b)
+
+
+def shared_sentence(b: dict) -> str:
+    """What a shared text's marker says (CEL-072), built from COPY.md: the sentence about the other pages of the four, then
+    the one about the pages outside them, joined by a space."""
+    parts = []
+    if b.get("also"):
+        parts.append(C.t("doc.also", pages=", ".join(C.t(f"page.{p}") for p in b["also"])))
+    if b.get("out"):
+        eg = C.t("row.shared.home") if b.get("outEg") == "/" else b.get("outEg", "")
+        parts.append(C.tn("doc.shared", b["out"], example=eg))
+    return " ".join(parts)
+
+
 @pytest.mark.parametrize("variant", ["home", "one", "many"])
 def test_a_text_used_outside_the_four_pages_is_editable_and_says_so(browser, variant):
     data = _stage_data()
@@ -523,7 +540,11 @@ def test_a_text_used_outside_the_four_pages_is_editable_and_says_so(browser, var
         li = blk(e.page, b["id"])
         assert li.get_attribute("data-lock") == ""
         expect(li.locator(".doc-tgt")).to_have_attribute("contenteditable", "true")
-        expect(li.locator(".doc-note")).to_contain_text(C.tn("doc.shared", b["out"], example=eg))
+        # The sentence is the marker's (CEL-072): its label, not a line of the page. The note under the text holds none of it.
+        expect(li.locator(".doc-shared-mark")).to_have_attribute("aria-label", mark_name(b))
+        expect(li.locator(".doc-shared-mark")).to_have_attribute("data-tip", shared_sentence(b))
+        assert C.tn("doc.shared", b["out"], example=eg) in shared_sentence(b)
+        expect(li.locator(".doc-note")).to_have_text("", use_inner_text=True)         # nothing is SHOWN under the text
 
 
 def test_a_text_that_is_also_on_another_page_of_the_four_says_so(browser):
@@ -533,15 +554,18 @@ def test_a_text_that_is_also_on_another_page_of_the_four_says_so(browser):
     b = next((x for x in also if len(x["also"]) == 1), also[0])
     labels = [C.t(f"page.{p}") for p in b["also"]]
     with doc(browser) as e:
-        note = blk(e.page, b["id"]).locator(".doc-note")
+        li = blk(e.page, b["id"])
+        mark = li.locator(".doc-shared-mark")
+        expect(mark).to_have_attribute("aria-label", mark_name(b))           # the marker says it (CEL-072)
+        said = mark.get_attribute("aria-label")
         if len(labels) == 1:
-            expect(note).to_contain_text(C.t("doc.also", pages=labels[0]))
+            assert C.t("doc.also", pages=labels[0]) in said
         else:
             head, tail = C.t("doc.also", pages="\0").split("\0")
-            expect(note).to_contain_text(head.strip())
-            expect(note).to_contain_text(tail.strip())
+            assert head.strip() in said and tail.strip() in said
             for label in labels:
-                expect(note).to_contain_text(label)
+                assert label in said
+        expect(li.locator(".doc-note")).to_have_text("", use_inner_text=True)  # and the note under the text shows none of it
 
 
 @pytest.mark.parametrize("key", PAGES)
@@ -757,10 +781,13 @@ def test_what_is_written_under_a_text_is_not_painted_over(browser, what):
     data = _stage_data()
     with doc(browser) as e:
         if what in ("shared", "also"):
+            # The sentence moved into the marker (CEL-072): the marker is what must be on top, and the note holds nothing.
             b = next(x for x in data["blocks"] if x.get("out" if what == "shared" else "also"))
-            note = blk(e.page, b["id"]).locator(".doc-note")
-            expect(note).not_to_be_empty()
-            assert on_top(note), "the note is painted under the block's column background"
+            li = blk(e.page, b["id"])
+            expect(li.locator(".doc-note")).to_have_text("", use_inner_text=True)
+            mark = li.locator(".doc-shared-mark")
+            expect(mark).to_be_visible()
+            assert on_top(mark), "the shared-text marker is painted under the block's column background"
         elif what == "state":
             (u,) = pick(data, 1)
             edit(e.page, u, "Ein Text")

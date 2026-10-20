@@ -286,13 +286,24 @@ class TestEveryTextIsEditable:
         _write(units_dir, "vs-toronto", [_unit("z")])
         plain, shared = _blocks(GD.load_documents(units_dir))
         assert list(plain) == ["id", "b", "r", "sec", "en", "lock", "w"]
-        assert list(shared) == ["id", "b", "r", "sec", "en", "lock", "also", "out", "outEg", "w"]
+        assert list(shared) == ["id", "b", "r", "sec", "en", "lock", "also", "out", "outEg", "outAll", "w"]
+
+    def test_a_text_on_several_outside_pages_carries_all_their_paths_sorted(self, units_dir):
+        """CEL-072: the sentence says `N other pages (<example>, …)`; the popover lists them all."""
+        _write(units_dir, "vancouver", [_unit("a", pages=["/vancouver", "/zebra", "/housing", "/apple"])])
+        for key in S.PAGE_KEYS[1:]:
+            _write(units_dir, key, [_unit("x")])
+        (b,) = _blocks(GD.load_documents(units_dir))[:1]
+        assert (b["out"], b["outEg"], b["outAll"]) == (3, "/apple", ["/apple", "/housing", "/zebra"])
 
     def test_the_real_corpus_has_no_locked_text_at_all(self):
         _raw, docs = _real_corpus()
         for key, doc in docs.items():
             assert [b["id"] for b in doc["blocks"] if b["lock"]] == [], key
-            assert all(("out" in b) == ("outEg" in b) for b in doc["blocks"]), key
+            assert all(("out" in b) == ("outEg" in b) == ("outAll" in b) for b in doc["blocks"]), key
+            # the popover lists every page outside the four (CEL-072): the whole sorted list, whose first is the example
+            assert all(b["outAll"] == sorted(b["outAll"]) and b["outAll"][0] == b["outEg"] and len(b["outAll"]) == b["out"]
+                       for b in doc["blocks"] if "outAll" in b), key
 
 
 # ── The site's menu and footer are left out ─────────────────────────────────────────────
@@ -1342,6 +1353,29 @@ class TestPageCss:
             elif prop == "box-shadow" and value != "none":
                 assert re.search(r"var\(--[a-z-]+\)$", value), (sel, prop, value)
 
+    def test_the_shared_marker_and_popover_are_cream_never_the_near_white_elevated(self):
+        """Review CEL-072 fix 1 (Ruling 00:29: no near-white --elevated as a background for a card, modal or
+        popover; WCAG AA): the marker chip and the popover sit on --surface (the rules page's floating menu does
+        the same), their text is --fg, and --fg on --surface (values read from the dashboard stylesheet) is 4.5:1 or more."""
+        for sel in (".doc-shared-mark", ".doc-shared-pop"):
+            body = _rule(sel)
+            assert "background: var(--surface)" in body and "--elevated" not in body, (sel, body)
+            assert "color: var(--fg)" in body, (sel, body)
+        assert "color: var(--fg)" in _rule(".doc-shared-pop-list")
+        assert "--muted" not in _rule(".doc-shared-pop-list") and "--muted" not in _rule(".doc-shared-mark")
+        dash = (Path(GD.__file__).resolve().parents[2] / "docs" / "assets" / "css" / "dashboard.css").read_text(encoding="utf-8")
+
+        def hexrgb(name):
+            m = re.search(rf"{re.escape(name)}:\s*#([0-9a-fA-F]{{6}});", dash)
+            assert m, name
+            return [int(m.group(1)[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+
+        def lum(rgb):
+            ch = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
+            return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+        la, lb = lum(hexrgb("--fg")), lum(hexrgb("--surface"))
+        assert (max(la, lb) + 0.05) / (min(la, lb) + 0.05) >= 4.5
+
     def test_no_important_and_no_title(self):
         assert "!important" not in GD.DOC_CSS
         assert not re.search(r"\btitle\b\s*=", GD.DOC_CSS)
@@ -1533,7 +1567,9 @@ class TestPageCss:
         runtime = {"doc-block", "doc-tag", "doc-en", "doc-tgt", "doc-weglot", "doc-note", "doc-note-chars",
                    "doc-note-same", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
-                   "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore"}
+                   "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore",
+                   "doc-shared", "doc-shared-mark", "doc-shared-pop", "doc-shared-pop-text", "doc-shared-pop-list",
+                   "doc-shared-warn", "doc-shared-pop-up"}
         in_shell = set()
         for _tag, attrs in _dom(page).elems:
             in_shell |= set((attrs.get("class") or "").split())

@@ -160,6 +160,7 @@ def load_documents(units_dir: Path | str | None = None) -> dict[str, dict]:
             if outside:
                 item["out"] = len(outside)
                 item["outEg"] = outside[0]
+                item["outAll"] = outside                 # the popover lists them (CEL-072); outEg stays for the sentence
             item["w"] = words
             blocks.append(item)
         out[key] = {"page": key, "path": path_of[key], "built": doc.get("built_at") or "",
@@ -289,6 +290,22 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-block[data-source="edit"] .doc-tgt::after { content: ""; position: absolute; inset-block: 2px; inset-inline-start: -14px; width: 3px; border-radius: var(--radius-sm); background: var(--fg); opacity: 0.35; }
 .doc-block:not([data-lock=""]) :is(.doc-en, .doc-tgt) { color: var(--muted); cursor: default; }
 
+/* A text that is also on other pages: one small count in the translation's right gutter, a popover on click, and the
+   sentence in the note row under the text while it has focus. The marker and the popover are overlays: no row or column changes size (CEL-072). An absolutely
+   positioned grid item with `grid-column: 2` alone reaches the container's far edge (its auto end is the padding edge), so the
+   cell is named with both lines: `2 / 3`, `1 / 2`. */
+.doc-shared { position: absolute; z-index: 3; grid-column: 2 / 3; grid-row: 1 / 2; inset-inline-end: 2px; inset-block-end: 6px; }
+.doc-shared-mark { min-width: 18px; height: 20px; padding: 0 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--fg); font-size: var(--fs-xs); line-height: 18px; text-align: center; cursor: pointer; }
+.doc-shared-mark:hover, .doc-shared-mark[aria-expanded="true"] { border-color: var(--border-strong); color: var(--fg); }
+.doc-shared-mark:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-shared-pop { position: absolute; z-index: 6; top: calc(100% + 6px); inset-inline-end: 0; width: 340px; max-width: 70vw; max-height: 260px; overflow: auto; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); box-shadow: 0 8px 24px var(--border-strong); color: var(--fg); font-size: var(--fs-sm); font-weight: 400; line-height: 1.5; text-align: start; }
+.doc-shared-pop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-shared-pop-up { top: auto; bottom: calc(100% + 6px); }
+.doc-shared-pop-text { margin: 0 0 8px; }
+.doc-shared-pop-list { margin: 0; padding: 0; list-style: none; color: var(--fg); font-size: var(--fs-xs); }
+.doc-shared-pop-list li { padding: 2px 0; overflow-wrap: anywhere; }
+.doc-shared-warn { flex: 1 1 100%; }
+
 /* What a block says about itself, under its translation: the colour of the note, nothing else moves */
 .doc-note { position: relative; grid-column: 2; grid-row: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin: 0 var(--doc-pad); font-size: var(--fs-xs); line-height: 1.4; color: var(--muted); }
 .doc-note:empty, .doc-note > :empty { display: none; }
@@ -372,6 +389,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
   .doc-weglot { padding: 4px 0 8px; border-inline: 0; background: none; }
   .doc-block[data-source="edit"] .doc-tgt::after { inset-inline-start: -10px; }
   .doc-note, .doc-conflict { margin-inline: 0; }
+  .doc-shared { position: relative; inset: auto; display: block; margin: 0 0 8px; text-align: end; }
   .doc-tools, .doc-blocks[data-weglot="on"] .doc-tools { position: static; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; display: none; }
   .doc-block:focus-within .doc-tools, .doc-blocks[data-weglot="on"] .doc-block:focus-within .doc-tools { display: flex; visibility: visible; opacity: 1; }
   .doc-tools .desk-btn, .doc-tools .desk-btn + .desk-btn { border: 1px solid var(--border-strong); border-radius: 999px; }

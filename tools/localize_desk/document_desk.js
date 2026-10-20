@@ -478,6 +478,97 @@
     });
     return b.rf;
   }
+  // ── a text that is also on other pages (CEL-072) ────────────────────────────────────────────────────
+  // One translation serves every page that carries the same English, so a wording saved here is the wording there. The
+  // reviewer is told, but not in a line of the page: ONE small marker (the number of other pages) sits in the translation's
+  // gutter; hover or keyboard focus shows the sentence (the desk's tooltip), a click opens a popover that lists the pages
+  // by path, and the sentence shows once, in the note row under the text, while the text has focus. The marker and the
+  // popover take no room in the grid; the note row is empty (0 high) until then, exactly as for a text that is not shared.
+  function sharedSentence(d) {
+    const parts = [];
+    if (d.also && d.also.length) {
+      parts.push(t('doc.also', { pages: d.also.map(function (p) { return t('page.' + p); }).join(', ') }));
+    }
+    if (d.out) {
+      const eg = d.outEg === '/' ? t('row.shared.home') : (d.outEg || '');
+      parts.push(tn('doc.shared', d.out, { example: eg }));
+    }
+    return parts.join(' ');
+  }
+  function sharedPaths(d) {
+    const out = [];
+    (d.also || []).forEach(function (k) { const pi = PI.get(k); if (pi && pi.path) out.push(pi.path); });
+    (d.outAll || (d.outEg ? [d.outEg] : [])).forEach(function (p) { out.push(p); });
+    return out;
+  }
+  let sharedOpen = null;                  // {pop, mark}: the one popover that is open
+  function closeShared(refocus) {
+    if (!sharedOpen) return;
+    const o = sharedOpen;
+    sharedOpen = null;
+    o.pop.remove();
+    o.mark.setAttribute('aria-expanded', 'false');
+    if (refocus && o.mark.focus) o.mark.focus();
+  }
+  // A click anywhere else closes it. Escape closes it first and alone: the capturing listener stops the key before the page's
+  // own Escape (which closes the confirm window, then the history panel), so one press never closes two things.
+  document.addEventListener('click', function (ev) { if (sharedOpen && !sharedOpen.pop.contains(ev.target)) closeShared(false); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && sharedOpen) { ev.stopImmediatePropagation(); ev.preventDefault(); closeShared(true); }
+  }, true);
+  function openShared(b) {
+    closeShared(false);
+    const sentence = sharedSentence(b.d);
+    const pop = h('div', 'doc-shared-pop');
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-modal', 'false');
+    pop.setAttribute('aria-label', sentence);
+    pop.setAttribute('tabindex', '-1');
+    pop.appendChild(h('p', 'doc-shared-pop-text', sentence));
+    const list = h('ul', 'doc-shared-pop-list');
+    sharedPaths(b.d).forEach(function (p) { list.appendChild(h('li', null, p === '/' ? t('row.shared.home') : p)); });
+    pop.appendChild(list);
+    // Focus leaving the marker and its popover (Tab on, a click elsewhere) closes it; a click inside it does not.
+    pop.addEventListener('focusout', function (ev) {
+      if (!ev.relatedTarget || !b.sharedBox.contains(ev.relatedTarget)) closeShared(false);
+    });
+    b.sharedBox.appendChild(pop);
+    // Under the marker unless that runs into the bottom edge (the status bar) and there is room above it.
+    const bar = $('doc-status');
+    const floor = bar && !bar.hidden ? bar.getBoundingClientRect().top : window.innerHeight;
+    if (pop.getBoundingClientRect().bottom > floor - 4 && b.mark.getBoundingClientRect().top - pop.offsetHeight - 10 >= 4) {
+      pop.classList.add('doc-shared-pop-up');
+    }
+    b.mark.setAttribute('aria-expanded', 'true');
+    sharedOpen = { pop: pop, mark: b.mark };
+    pop.focus();
+  }
+  function buildSharedNote(b, note) {
+    const d = b.d;
+    const n = (d.also ? d.also.length : 0) + (d.out || 0);
+    if (!n) return;
+    const sentence = sharedSentence(d);
+    const box = h('span', 'doc-shared');
+    const mark = h('button', 'doc-shared-mark', String(n));
+    mark.type = 'button';
+    mark.setAttribute('aria-label', tn('doc.mark', n) + ' ' + sentence);   // the name holds the count the chip shows (WCAG 2.5.3)
+    mark.setAttribute('data-tip', sentence);
+    mark.setAttribute('aria-haspopup', 'dialog');
+    mark.setAttribute('aria-expanded', 'false');
+    mark.addEventListener('click', function (ev) {
+      ev.stopPropagation();               // the page's outside-click handler must not close what this click opens
+      if (sharedOpen && sharedOpen.mark === mark) closeShared(true); else openShared(b);
+    });
+    box.appendChild(mark);
+    b.li.appendChild(box);
+    b.sharedBox = box;
+    b.mark = mark;
+    const warn = h('span', 'doc-shared-warn', sentence);        // first line of the note row, shown while the text has focus
+    warn.hidden = true;
+    note.insertBefore(warn, note.firstChild);
+    b.warn = warn;
+  }
+
   function buildBlock(d) {
     const lang = S.lang;
     const li = h('li', 'doc-block');
@@ -511,12 +602,11 @@
     const note = h('p', 'doc-note');
     b.state = h('span', 'doc-note-state');
     b.lockNote = h('span', 'doc-note-lock');
-    b.also = h('span', 'doc-note-also');
-    b.shared = h('span', 'doc-note-shared');
     b.same = h('span', 'doc-note-same');
-    note.appendChild(b.state); note.appendChild(b.lockNote); note.appendChild(b.also); note.appendChild(b.shared);
+    note.appendChild(b.state); note.appendChild(b.lockNote);
     note.appendChild(b.same);
     li.appendChild(note);
+    buildSharedNote(b, note);    // a text that is also on other pages: one small marker, not a line of the page (CEL-072)
     const box = h('div', 'doc-conflict');
     box.hidden = true;
     b.conflictText = h('span');
@@ -545,9 +635,13 @@
         if (ev.inputType === 'historyUndo') { ev.preventDefault(); undo(); }
         else if (ev.inputType === 'historyRedo') { ev.preventDefault(); redo(); }
       });
-      tgt.addEventListener('focus', function () { li.setAttribute('data-open', '1'); });
+      tgt.addEventListener('focus', function () {
+        li.setAttribute('data-open', '1');
+        if (b.warn) b.warn.hidden = false;      // the sentence shows once, in the note row, when editing starts
+      });
       tgt.addEventListener('blur', function () {
         li.removeAttribute('data-open');
+        if (b.warn) b.warn.hidden = true;
         closeGroup();
         paintBlock(d.id);
       });
@@ -581,15 +675,6 @@
     if (d.b === 'meta-title' || d.b === 'meta-description') {
       b.chars = h('span', 'doc-note-chars');
       note.appendChild(b.chars);
-    }
-    if (d.also && d.also.length) {
-      b.also.textContent = t('doc.also', { pages: d.also.map(function (p) { return t('page.' + p); }).join(', ') });
-    }
-    // A text that also stands on pages outside these four (a shared body text): one translation
-    // serves them all, and the reviewer is told so.
-    if (d.out) {
-      const eg = d.outEg === '/' ? t('row.shared.home') : (d.outEg || '');
-      b.shared.textContent = tn('doc.shared', d.out, { example: eg });
     }
     M.set(d.id, b);
     return b;
