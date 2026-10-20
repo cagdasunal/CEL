@@ -1,5 +1,17 @@
 # Changelog
 
+## desk-v2.3.0 / dashboard-v1.2.0 - 2026-10-20
+
+- Desk: a new layout. Pages are listed as a tree by their web address on the left, the open page's address shows in a row above the text, and the languages are tabs (Alt+1 to Alt+8 switch language, / or Cmd/Ctrl+K finds a page). The old grid of pages and languages is gone.
+- Desk: calmer colours and type in the document view: the page sheets sit on the page's cream, text and muted text are easy to read, an edited text has an ochre bar and a flagged text a brick bar and tint.
+- Desk: small fixes: the Export window greys out a page that is still being translated or is queued with no text, and the refusal lines and the Re-translate count say plainly what happened.
+- Translation rules page: each language opens with a summary of how many requests came from your documents and three cards that show how each one is handled (checked by the tool, in the instructions to the translator, not handled yet); the cards filter the list, and the requests follow your documents' own section order.
+- Translation rules page: under your requests, each language now lists our own quality checks: the instructions we add for the translator and the checks the tool runs when a Weglot file is built, each marked "In the prompt" or "Checked automatically". The "Checked" card now says "checked automatically or built into the engine", and with a card filter on, sections with nothing to show are hidden.
+- Update log: `docs/log.txt` no longer lists the retired Weglot upload lines, only the sitemap and `llms.txt` times.
+- Desk: the status bar shows "Desk 2.3.0".
+- Dashboard: a slimmer 40 px top bar on every dashboard page, with its menus opening over the desk's rows. The document and rules pages show "Dashboard 1.2.0" when this release lands; the other dashboard pages after their next pipeline run.
+- Rollback: revert the release commit and the release's own changes here (`324f00d2e` the update log, `2c6b04549` the rules page quality checks, `79c500839`, `89791b431`, `b027a3581` the shell and top bar, `54130874d` the desk fixes, `121611fbe` the rules page v2), newest first, and for the document colours and type revert `26b252e07` then `bcca0ea8c` (they sit in the 2.2.0 release's range, not in this one). The monorepo reverts its own release commit and `0a7b8c75c`. No Worker or database change in this release.
+
 ## desk-v2.2.0 / dashboard-v1.1.0 - 2026-10-20
 
 - Desk: the old language-by-language desk is gone. The Localization menu opens the document desk, `/admin/localization/` redirects to it, and the 8 old language pages (`/admin/localization/{de,fr,es,pt,it,ja,ko,ar}/` and their `units.json`) no longer exist.
