@@ -389,6 +389,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.done` | The new translation is ready. | Message, when the job has finished |
 | `retr.failed` | The new translation did not arrive: {reason} | Message, when the job failed |
 | `retr.busy` | Gemini is already re-translating in this language. Try again when it has finished. | Message, when a re-translation is already running |
+| `retr.wait` | Gemini is re-translating another text in this language. Re-translate is on again when it has finished. | Tooltip of the Re-translate buttons of the other texts, while one text of the language is being re-translated |
 | `retr.timeout` | Gemini did not answer in time. Try again. | The reason in the message, when a re-translation never finished |
 | `retr.none-arrived` | No new text arrived. | Message, when the job finished without a new text |
 

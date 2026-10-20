@@ -187,6 +187,37 @@ def test_item_5_a_job_that_never_ends_is_given_up_with_a_reason(browser):
         expect(blk(p, u).locator(".doc-tool-retranslate")).to_be_enabled()
 
 
+def test_item_5_while_one_text_is_re_translated_the_other_texts_say_why_they_wait(browser):
+    a, b = plain_ids(2)
+
+    def seed(e):
+        draft(e.store, a, "Alter Entwurf A")
+        draft(e.store, b, "Alter Entwurf B")
+
+    with doc(browser, seed=seed) as e:
+        p = e.page
+        _open_retranslate(p, a)
+        own = blk(p, a).locator(".doc-tool-retranslate")
+        other = blk(p, b).locator(".doc-tool-retranslate")
+        # the Worker keeps one open re-translate job per language: a second Re-translate would only be refused as busy
+        expect(own).to_be_disabled()
+        expect(other).to_be_disabled()
+        expect(other).to_have_attribute("data-tip", C.t("retr.wait"))     # the desk's tooltip, not the browser's `title`
+        expect(own).not_to_have_attribute("data-tip", C.t("retr.wait"))
+        e.store.finish_job(LANG, "retranslate", "done", {"drafts": 1})
+        expect(other).to_be_enabled()
+        expect(own).to_be_enabled()
+        expect(other).not_to_have_attribute("data-tip", C.t("retr.wait"))
+
+
+def test_item_5_the_desk_watches_longer_than_the_worker_keeps_a_job_open(browser):
+    with doc(browser) as e:
+        wait = e.page.evaluate("window.DocDesk.TIMING.jobMax")
+        # The Worker fails an open job only after 35 min (JOB_STALE_MS, cloudflare-worker.js): giving up before that
+        # leaves the job open there, and the next Try again answers busy while the toast said it had ended.
+        assert wait > 35 * 60 * 1000, wait
+
+
 # ── 12. a text that is not saved says why, and the bar can go to it ──────────────────────────────
 def test_item_12_a_refused_text_says_so_and_the_bar_goes_to_it(browser):
     far = plain_ids(1, after=150)[0]
@@ -330,4 +361,13 @@ def test_item_19_a_finished_export_says_how_many_files_were_made(browser):
         with p.expect_download():
             e.store.finish_job(LANG, "export", "done", {"batchId": "b-done", "rows": 1, "refused": [], "warned": [],
                                                         "notes": [], "skipped": {}})
-        expect(p.locator("#ex-result .ex-headline")).to_have_text(C.t("export.result.done", done=1, total=1))
+        head = p.locator("#ex-result .ex-headline")
+        expect(head).to_have_text(C.t("export.result.done", done=1, total=1))
+        # a rule of its own on the Export window's scale (its neighbours `.ex-count` and `.ex-group-title` set theirs):
+        # no browser margin on a bare <p>, the medium size, weight 500 like a group title
+        look = head.evaluate("""el => { const cs = getComputedStyle(el), probe = document.createElement('span');
+            probe.style.fontSize = 'var(--fs-md)'; el.appendChild(probe);
+            const md = getComputedStyle(probe).fontSize; probe.remove();
+            return { top: cs.marginTop, bottom: cs.marginBottom, weight: cs.fontWeight, size: cs.fontSize, md: md }; }""")
+        assert look["top"] == "0px" and look["bottom"] == "0px", look
+        assert look["weight"] == "500" and look["size"] == look["md"], look

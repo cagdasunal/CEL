@@ -31,7 +31,9 @@
   const CHUNK = 50;                            // texts per desk-write (the free plan's 10 ms CPU)
   const RETRY_MS = [2000, 5000, 15000, 30000, 60000];
   const STOPS = ['reload', 'signed_out', 'cap', 'daily', 'refused'];   // saving waits for the reviewer
-  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000 },
+  // jobMax: how long a Re-translate is watched before the desk calls it failed. It stays ABOVE the Worker's own sweep of
+  // an open job (JOB_STALE_MS, 35 min): giving up earlier leaves the job open on the Worker, and Try again answers busy.
+  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000, jobMax: 2400000 },
     window.DOC_TIMING || {});
   const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
   const UNDO_CAP = 100;
@@ -1537,6 +1539,13 @@
       if (lang === S.lang && M.has(uid)) paintBlock(uid);
     },
     isRetranslating: function (lang, uid) { return RT.has(lang + '|' + uid); },
+    // The Worker keeps ONE open re-translate job per language: while any text of the language runs, no other can start.
+    isRetranslatingLang: function (lang) {
+      const head = lang + '|';
+      let any = false;
+      RT.forEach(function (k) { if (k.indexOf(head) === 0) any = true; });
+      return any;
+    },
     retranslatePage: null,           // document_export.js fills this: the whole-page window the one Translate page opens (CEL-073)
     startPageJob: function (lang, page, opts) { startJob(lang, page, false, opts); }   // that window starts its job through the desk's
   };

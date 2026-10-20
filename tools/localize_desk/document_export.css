@@ -15,6 +15,7 @@
 .ex-file[data-state="done"] .ex-file-state, .ex-file[data-state="failed"] .ex-file-state { color: var(--fg); }
 .ex-file[data-state="failed"] { border-color: var(--border-strong); }
 .ex-result { display: flex; flex-direction: column; gap: 14px; }
+.ex-headline { margin: 0; font-size: var(--fs-md); font-weight: 500; }
 .ex-group-title { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 500; }
 .ex-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .ex-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }

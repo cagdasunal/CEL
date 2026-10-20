@@ -711,10 +711,10 @@
     }
     D.toast(t('retr.started'));
     // The text says it is being re-translated (and its button is off) until the job ends, however it ends.
-    if (ref.unit) { D.setRetranslating(lang, ref.unit, true); markRetranslating(ref.unit, true); }
+    if (ref.unit) { D.setRetranslating(lang, ref.unit, true); markRetranslating(); }
     let job;
-    try { job = await watch(lang, r.body.job.id, null, TIMING.jobMax || 900000); }
-    finally { if (ref.unit) { D.setRetranslating(lang, ref.unit, false); markRetranslating(ref.unit, false); } }
+    try { job = await watch(lang, r.body.job.id, null, TIMING.jobMax); }
+    finally { if (ref.unit) { D.setRetranslating(lang, ref.unit, false); markRetranslating(); } }
     if (!job || job.status !== 'done') {
       const reason = job ? (job.timedOut ? t('retr.timeout') : jobReason(job)) : t('save.reason.offline');
       D.toast(t('retr.failed', { reason: reason }), 'err');
@@ -796,10 +796,19 @@
     });
   });
 
-  // The Re-translate button of a text whose job is on its way is off.
-  function markRetranslating(uid, on) {
-    const b = document.querySelector('li.doc-block[data-uid="' + uid + '"] .doc-tool-retranslate');
-    if (b) b.disabled = on;
+  // The Worker keeps ONE open re-translate job per language, so while a text of the open language is being re-translated
+  // every Re-translate button of that language is off (a second one would only be refused as busy); the other texts'
+  // buttons say why in the desk's own tooltip (`data-tip`; the browser's `title` is not used on the desk, ruling #51).
+  function paintRetranslate(li) {
+    const b = li.querySelector('.doc-tool-retranslate');
+    if (!b) return;
+    const own = D.isRetranslating(S.lang, li.getAttribute('data-uid'));
+    const busy = D.isRetranslatingLang(S.lang);
+    b.disabled = busy;
+    if (busy && !own) b.setAttribute('data-tip', t('retr.wait')); else b.removeAttribute('data-tip');
+  }
+  function markRetranslating() {
+    document.querySelectorAll('li.doc-block').forEach(paintRetranslate);
   }
   // A "Re-translate" in each text's floating toolbar.
   function addToTool(li) {
@@ -807,8 +816,8 @@
     if (!tools || tools.querySelector('.doc-tool-retranslate')) return;
     const b = button(null, 'desk-btn doc-tool-retranslate', t('retr.button'));
     b.addEventListener('click', function () { openText(li.getAttribute('data-uid'), b); });
-    b.disabled = D.isRetranslating(S.lang, li.getAttribute('data-uid'));
     tools.insertBefore(b, tools.firstChild);
+    paintRetranslate(li);
   }
   const list = $('doc-blocks');
   new MutationObserver(function (muts) {
