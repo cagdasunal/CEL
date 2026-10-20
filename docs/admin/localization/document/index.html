@@ -189,6 +189,10 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-save[data-state="error"], .doc-save[data-state="refused"], .doc-save[data-state="stopped"] { color: var(--err); }
 .doc-save[data-state="error"]::before, .doc-save[data-state="refused"]::before, .doc-save[data-state="stopped"]::before { background: var(--err); }
 .doc-save .desk-btn { padding: 2px 10px; font-size: var(--fs-xs); }
+.doc-save-more { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); }
+.doc-save-more:empty { display: none; }
+.doc-save-more .desk-btn, .doc-seen-reset { padding: 2px 10px; font-size: var(--fs-xs); }
+.doc-seen-reset[hidden] { display: none; }
 .doc-status-mid { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
 .doc-status-end { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .doc-desk-version { font-size: var(--fs-sm); color: var(--muted); text-decoration: none; white-space: nowrap; }
@@ -279,6 +283,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .ex-file[data-state="done"] .ex-file-state, .ex-file[data-state="failed"] .ex-file-state { color: var(--fg); }
 .ex-file[data-state="failed"] { border-color: var(--border-strong); }
 .ex-result { display: flex; flex-direction: column; gap: 14px; }
+.ex-headline { margin: 0; font-size: var(--fs-md); font-weight: 500; }
 .ex-group-title { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 500; }
 .ex-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .ex-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
@@ -533,7 +538,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 </script>
 <script>
 var SAVE_OFF = false;
-var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then approve it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then approve it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then approve it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo the approval.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then approve it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Approve both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was approved. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was approved. Review it again.","refusal.UNSIGNED":"The approval wasn't saved through the desk. Approve it again.","refusal.BAD-SIGNATURE":"The approval doesn't match what was saved. Approve it again.","refusal.UNREGISTERED":"The approval doesn't say who made it. Approve it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and the approval doesn't say who made it. Approve it again.","refusal.DUPLICATE":"The same text was approved twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was approved in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The approvals couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not approved, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was approved. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"The approval doesn't record which wording it was given for. Approve it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The approved wording is empty. Write one, or undo the approval.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","doc.grid.label":"Pages and languages","doc.grid.corner":"Page","doc.status.none":"Not translated","doc.status.drafted":"Drafted","doc.status.edited":"Edited","doc.status.exported":"Exported","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show Weglot","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — draft and your edits","doc.head.weglot":"Weglot (on the website)","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.saving":"Saving…","doc.text.saved":"Saved","doc.text.error":"Not saved yet — trying again","doc.text.edited":"Edited","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"New from Gemini","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use Weglot's text","doc.tool.revert":"Undo this","doc.chars.one":"{n} character","doc.chars.other":"{n} characters","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.download":"Download again","export.jump":"Show","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or approved.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or approved.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.shared":"Shared rules","rules.shared.all":"Shared — all languages","rules.shared.label":"Shared — applies to all 8 languages","rules.lang":"{language} rules","rules.lang.pending":"changes not in use","rules.lang.pending.btn":"Other languages have changes not in use","rules.outline":"On this page","rules.none":"No rules yet","rules.count.rules.one":"{n} rule","rules.count.rules.other":"{n} rules","rules.count.terms.one":"{n} term","rules.count.terms.other":"{n} terms","rules.count.briefs.one":"{n} brief","rules.count.briefs.other":"{n} briefs","rules.next":"The next translation of every page in {language} uses these rules","rules.pending.one":"· {n} change not in use","rules.pending.other":"· {n} changes not in use","rules.draft.saving":"Saving draft…","rules.draft.saved":"Not in use yet — only in this browser","rules.draft.hint":"Your draft is kept in this browser until you press Use these rules. Gemini keeps using the rules in use.","rules.inuse":"In use","rules.use":"Use these rules","rules.use.title":"Make these rules the ones in use?","rules.use.body":"The next translation of every page in {language} will use them. Earlier translations keep the version they were made with.","rules.use.body.shared":"You changed the shared rules, so this changes all 8 languages.","rules.use.disabled":"There are no changes to put in use yet","rules.undo.confirm.title":"Put the earlier rules back?","rules.undo.confirm.body":"This puts these rules back to how they were before, for everyone and right away: {list}.","rules.undo.confirm.go":"Put them back","rules.redo.confirm.title":"Use these rules again?","rules.redo.confirm.body":"This puts these rules in use again, for everyone and right away: {list}.","rules.redo.confirm.go":"Use them again","rules.using":"Putting the rules in use…","rules.toast.used":"In use: {list}.","rules.toast.used.undo":"Undo brings back the previous versions.","rules.toast.used.undo.some":"Undo brings back the earlier versions of: {list}.","rules.toast.partial":"In use: {done}. Not in use yet: {rest}.","rules.toast.undo.partial":"Undo done for {done}; {scope} changed since.","rules.scope.global":"Shared rules","rules.scope.lang":"{language} rules","rules.scope.glossary":"{language} glossary","rules.scope.brief":"{page} brief ({language})","rules.history":"History","rules.history.title":"History","rules.history.change":"Show change","rules.history.loading":"Reading the versions…","rules.history.none":"No versions yet.","rules.close":"Close","rules.restore":"Restore this version","rules.restore.body":"Restore v{n}? The rules go back to how they were on {date}. v{m} stays in History.","rules.toast.restored":"Restored v{n}. Undo brings v{m} back.","rules.toast.restored.undone":"The version before the restore is back in use.","rules.brief.inuse":"v{n} in use","rules.checked":"Checked automatically","rules.checked.warn":"This rule is checked automatically. The check refuses a text only while the rules still say it; edited away, it only warns.","rules.shared.warn":"This changes every language.","rules.edited":"Edited","rules.undothis":"Undo this","rules.undo.edit":"edit","rules.ph":"Type here","rules.empty":"No {language} rules from you yet. Gemini uses the shared rules only.","rules.suggested":"Suggested by CEL (not confirmed)","rules.suggested.use":"Start from the suggested ones","rules.suggested.empty":"Start empty","rules.suggested.first":"Register","rules.toast.suggested":"Suggested rules added. Edit them as you like.","rules.conflict":"{name} published {scope} first (v{n}, {time}).","rules.conflict.someone":"Someone","rules.conflict.theirs":"Use theirs","rules.conflict.mine":"Keep mine and use it","rules.glossary":"Glossary","rules.glossary.en":"English","rules.glossary.keep":"Don't translate","rules.glossary.add":"Add a term","rules.remove":"Remove","rules.briefs":"Page briefs","rules.brief.none":"No brief for this page yet","rules.brief.add":"Add a brief","rules.error":"The rules could not be put in use. Your draft is kept in this browser.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again. Your draft is kept in this browser.","rules.error.cap":"Too many changes in a short time. Wait a few minutes, then press Try again.","rules.error.daily":"Today's limit of changes is reached. Try again tomorrow; your draft is kept in this browser.","rules.error.refused":"These rules were not accepted (an empty or too long text). Your draft is kept in this browser.","rules.error.read":"The rules could not be read.","rules.error.history":"The versions could not be read.","rules.retry":"Try again","rules.offline":"Offline — your draft is kept in this browser"};
+var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.where":"In {language}, {page}","autosave.conflict.go":"Go to it","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then approve it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then approve it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then approve it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo the approval.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then approve it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Approve both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was approved. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was approved. Review it again.","refusal.UNSIGNED":"The approval wasn't saved through the desk. Approve it again.","refusal.BAD-SIGNATURE":"The approval doesn't match what was saved. Approve it again.","refusal.UNREGISTERED":"The approval doesn't say who made it. Approve it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and the approval doesn't say who made it. Approve it again.","refusal.DUPLICATE":"The same text was approved twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was approved in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The approvals couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not approved, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was approved. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"The approval doesn't record which wording it was given for. Approve it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The approved wording is empty. Write one, or undo the approval.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","doc.grid.label":"Pages and languages","doc.grid.corner":"Page","doc.status.none":"Not translated","doc.status.drafted":"Drafted","doc.status.edited":"Edited","doc.status.exported":"Exported","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show Weglot","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — draft and your edits","doc.head.weglot":"Weglot (on the website)","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.saving":"Saving…","doc.text.saved":"Saved","doc.text.error":"Not saved yet — trying again","doc.text.refused":"Not saved — the server refused this text. Edit it to try again.","doc.text.stopped":"Not saved — saving has stopped. See the bar below.","doc.text.offline":"Not saved yet — you are offline. It is kept on this computer.","doc.text.retranslating":"Gemini is re-translating this text…","doc.save.go":"Go to the text","doc.text.edited":"Edited","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"New from Gemini","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.next.again.one":"Show 1 looked-at text again","doc.next.again.other":"Show {n} looked-at texts again","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use Weglot's text","doc.tool.revert":"Undo this","doc.chars.one":"{n} character","doc.chars.other":"{n} characters","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made, in one zip","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.stop":"Stop after this file","export.stopping":"Stopping after this file…","export.download":"Download again","export.jump":"Show","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.stopped":"Not started — you stopped the export","export.result.done":"Files made: {done} of {total}. The download has started.","export.result.stopped":"You stopped the export. Files made: {done} of {total}; what was made is downloading.","export.result.none":"No file was made.","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or approved.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or approved.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.wait":"Gemini is re-translating another text in this language. Re-translate is on again when it has finished.","retr.timeout":"Gemini did not answer in time. Try again.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.shared":"Shared rules","rules.shared.all":"Shared — all languages","rules.shared.label":"Shared — applies to all 8 languages","rules.lang":"{language} rules","rules.lang.pending":"changes not in use","rules.lang.pending.btn":"Other languages have changes not in use","rules.outline":"On this page","rules.none":"No rules yet","rules.count.rules.one":"{n} rule","rules.count.rules.other":"{n} rules","rules.count.terms.one":"{n} term","rules.count.terms.other":"{n} terms","rules.count.briefs.one":"{n} brief","rules.count.briefs.other":"{n} briefs","rules.next":"The next translation of every page in {language} uses these rules","rules.pending.one":"· {n} change not in use","rules.pending.other":"· {n} changes not in use","rules.draft.saving":"Saving draft…","rules.draft.saved":"Not in use yet — only in this browser","rules.draft.hint":"Your draft is kept in this browser until you press Use these rules. Gemini keeps using the rules in use.","rules.inuse":"In use","rules.use":"Use these rules","rules.use.title":"Make these rules the ones in use?","rules.use.body":"The next translation of every page in {language} will use them. Earlier translations keep the version they were made with.","rules.use.body.shared":"You changed the shared rules, so this changes all 8 languages.","rules.use.disabled":"There are no changes to put in use yet","rules.undo.confirm.title":"Put the earlier rules back?","rules.undo.confirm.body":"This puts these rules back to how they were before, for everyone and right away: {list}.","rules.undo.confirm.go":"Put them back","rules.redo.confirm.title":"Use these rules again?","rules.redo.confirm.body":"This puts these rules in use again, for everyone and right away: {list}.","rules.redo.confirm.go":"Use them again","rules.using":"Putting the rules in use…","rules.toast.used":"In use: {list}.","rules.toast.used.undo":"Undo brings back the previous versions.","rules.toast.used.undo.some":"Undo brings back the earlier versions of: {list}.","rules.toast.partial":"In use: {done}. Not in use yet: {rest}.","rules.toast.undo.partial":"Undo done for {done}; {scope} changed since.","rules.scope.global":"Shared rules","rules.scope.lang":"{language} rules","rules.scope.glossary":"{language} glossary","rules.scope.brief":"{page} brief ({language})","rules.history":"History","rules.history.title":"History","rules.history.change":"Show change","rules.history.loading":"Reading the versions…","rules.history.none":"No versions yet.","rules.close":"Close","rules.restore":"Restore this version","rules.restore.body":"Restore v{n}? The rules go back to how they were on {date}. v{m} stays in History.","rules.toast.restored":"Restored v{n}. Undo brings v{m} back.","rules.toast.restored.undone":"The version before the restore is back in use.","rules.brief.inuse":"v{n} in use","rules.checked":"Checked automatically","rules.checked.warn":"This rule is checked automatically. The check refuses a text only while the rules still say it; edited away, it only warns.","rules.shared.warn":"This changes every language.","rules.edited":"Edited","rules.undothis":"Undo this","rules.undo.edit":"edit","rules.ph":"Type here","rules.empty":"No {language} rules from you yet. Gemini uses the shared rules only.","rules.suggested":"Suggested by CEL (not confirmed)","rules.suggested.use":"Start from the suggested ones","rules.suggested.empty":"Start empty","rules.suggested.first":"Register","rules.toast.suggested":"Suggested rules added. Edit them as you like.","rules.conflict":"{name} published {scope} first (v{n}, {time}).","rules.conflict.someone":"Someone","rules.conflict.theirs":"Use theirs","rules.conflict.mine":"Keep mine and use it","rules.glossary":"Glossary","rules.glossary.en":"English","rules.glossary.keep":"Don't translate","rules.glossary.add":"Add a term","rules.remove":"Remove","rules.briefs":"Page briefs","rules.brief.none":"No brief for this page yet","rules.brief.add":"Add a brief","rules.error":"The rules could not be put in use. Your draft is kept in this browser.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again. Your draft is kept in this browser.","rules.error.cap":"Too many changes in a short time. Wait a few minutes, then press Try again.","rules.error.daily":"Today's limit of changes is reached. Try again tomorrow; your draft is kept in this browser.","rules.error.refused":"These rules were not accepted (an empty or too long text). Your draft is kept in this browser.","rules.error.read":"The rules could not be read.","rules.error.history":"The versions could not be read.","rules.retry":"Try again","rules.offline":"Offline — your draft is kept in this browser"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -891,7 +896,9 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   const CHUNK = 50;                            // texts per desk-write (the free plan's 10 ms CPU)
   const RETRY_MS = [2000, 5000, 15000, 30000, 60000];
   const STOPS = ['reload', 'signed_out', 'cap', 'daily', 'refused'];   // saving waits for the reviewer
-  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000 },
+  // jobMax: how long a Re-translate is watched before the desk calls it failed. It stays ABOVE the Worker's own sweep of
+  // an open job (JOB_STALE_MS, 35 min): giving up earlier leaves the job open on the Worker, and Try again answers busy.
+  const TIMING = Object.assign({ quiet: 2000, maxWait: 10000, undoPause: 1500, timeout: 20000, poll: 15000, jobMax: 2400000 },
     window.DOC_TIMING || {});
   const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
   const UNDO_CAP = 100;
@@ -995,6 +1002,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
 
   function pend(lang) { return P[lang] || (P[lang] = {}); }
   function conf(lang) { return C[lang] || (C[lang] = {}); }
+  const RT = new Set();     // 'lang|uid' of a text whose Re-translate is on its way (document_export.js reports it; CEL-077)
   function serverRec(lang, uid) { return canon(L[lang].decisions[uid]); }
   function serverVer(lang, uid) { const d = L[lang].decisions[uid]; return d ? d.version || 0 : 0; }
   function curRec(lang, uid) {
@@ -1162,7 +1170,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
         if (b && lang === S.lang) { b.savedUntil = Date.now() + 3000; setTimeout(function () { paintBlock(uid); }, 3100); }
       } else if (Object.prototype.hasOwnProperty.call(conflicts, uid)) {
         e.conflict = true;
-        conf(lang)[uid] = { current: conflicts[uid] };
+        conf(lang)[uid] = { current: conflicts[uid], page: e.page };
       } else {
         net.refused.add(lang + '|' + uid);      // refused, or not mentioned: never resent in a loop
       }
@@ -1252,7 +1260,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     if (e) e.record = canon(wanted);
     else pend(lang)[uid] = { record: canon(wanted), base: serverVer(lang, uid), page: S.page };
     pend(lang)[uid].conflict = true;
-    conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    conf(lang)[uid] = { current: L[lang].decisions[uid] || null, page: pend(lang)[uid].page };
     net.refused.delete(lang + '|' + uid);
     changed();
   }
@@ -1540,6 +1548,14 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     return b;
   }
 
+  // Why a text is not saved, in the words of its cause (CEL-077 item 12): refused by the server, saving stopped,
+  // offline, or just trying again.
+  function errorLabel(lang, uid) {
+    if (net.refused.has(lang + '|' + uid)) return t('doc.text.refused');
+    if (net.stopped) return t('doc.text.stopped');
+    if (navigator.onLine === false) return t('doc.text.offline');
+    return t('doc.text.error');
+  }
   function stateOf(lang, uid, b) {
     if (conf(lang)[uid]) return 'conflict';
     const key = lang + '|' + uid;
@@ -1569,11 +1585,15 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     b.li.setAttribute('data-state', st);
     let label = '';
     if (!d.lock) {
-      if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
+      if (st === 'dirty' && navigator.onLine === false) label = t('doc.text.offline');
+      else if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
       else if (st === 'saved') label = t('doc.text.saved');
-      else if (st === 'error') label = t('doc.text.error');
+      else if (st === 'error') label = errorLabel(lang, uid);
       else if (rec && rec.text) label = t('doc.text.edited');
     }
+    // A Re-translate on its way is said on the text itself, whatever else is true of it (CEL-077 item 5)
+    if (RT.has(lang + '|' + uid)) { label = t('doc.text.retranslating'); b.li.setAttribute('data-retranslating', ''); }
+    else b.li.removeAttribute('data-retranslating');
     b.state.textContent = label;
     // One small mark when the text is word for word what Weglot has (the reviewer can skip it). Shown only
     // while the Weglot column is on (CSS); nothing is highlighted otherwise.
@@ -1624,6 +1644,61 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       retry.id = 'doc-save-retry';
       retry.addEventListener('click', function () { net.stopped = null; net.retry = 0; run(); updateBar(); });
       bar.appendChild(retry);
+    }
+    barMore(state);
+  }
+  // Where the trouble is, beside the bar (its own element: the bar's own text stays the count). A conflict names
+  // the language and the page and goes there; an unsaved or refused text on the open page can be gone to.
+  function conflictList() {
+    const out = [];
+    Object.keys(C).forEach(function (lang) {
+      Object.keys(C[lang]).forEach(function (uid) {
+        const e = P[lang] && P[lang][uid];
+        out.push({ lang: lang, uid: uid, page: (C[lang][uid] && C[lang][uid].page) || (e && e.page) || S.page });
+      });
+    });
+    const here = function (c) { return c.lang === S.lang && c.page === S.page ? 1 : 0; };
+    out.sort(function (a, b) { return here(b) - here(a); });       // the open page and language first
+    return out;
+  }
+  let conflictAt = 0;
+  function goConflict() {
+    const list = conflictList();
+    if (!list.length) return;
+    const c = list[conflictAt++ % list.length];
+    if (c.lang === S.lang && c.page === S.page) jumpTo(c.uid);
+    else open(c.page, c.lang).then(function () { jumpTo(c.uid); });
+  }
+  function unsavedTarget() {
+    if (!S.doc) return null;
+    const mine = P[S.lang] || {};
+    const hit = S.doc.blocks.filter(function (d) { return mine[d.id] || net.refused.has(S.lang + '|' + d.id); })[0];
+    return hit ? hit.id : null;
+  }
+  function barMore(state) {
+    const bar = $('doc-save');
+    let more = $('doc-save-more');
+    if (!more) { more = h('span', 'doc-save-more'); more.id = 'doc-save-more'; bar.parentNode.insertBefore(more, bar.nextSibling); }
+    more.textContent = '';
+    if (state === 'conflict') {
+      const first = conflictList()[0];
+      if (first) {
+        more.appendChild(document.createTextNode(t('autosave.conflict.where', { language: t('lang.' + first.lang), page: t('page.' + first.page) })));
+        const go = h('button', 'desk-btn', t('autosave.conflict.go'));
+        go.type = 'button';
+        go.id = 'doc-conflict-go';
+        go.addEventListener('click', goConflict);
+        more.appendChild(go);
+      }
+    } else if (state === 'stopped' || state === 'retrying' || state === 'offline' || state === 'refused') {
+      const uid = unsavedTarget();
+      if (uid) {
+        const go = h('button', 'desk-btn', t('doc.save.go'));
+        go.type = 'button';
+        go.id = 'doc-save-go';
+        go.addEventListener('click', function () { jumpTo(uid); });
+        more.appendChild(go);
+      }
     }
   }
 
@@ -1982,12 +2057,35 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       return b && !b.d.lock && !b.li.hidden && toCheck(uid, seen);
     });
   }
+  // The texts of this page the reviewer has looked at (Next marks them): they are not counted again until asked.
+  function seenHere() {
+    if (!S.doc) return [];
+    const seen = lsGet(KEYS.seen) || {};
+    return S.doc.blocks.map(function (d) { return d.id; }).filter(function (uid) { return seen[seenKey(uid)]; });
+  }
+  function showSeenAgain() {
+    const m = lsGet(KEYS.seen) || {};
+    seenHere().forEach(function (uid) { delete m[seenKey(uid)]; });
+    lsSet(KEYS.seen, m);
+    updateNext();
+  }
   function updateNext() {
     const btn = $('doc-next'), count = $('doc-next-count');
     if (!btn) return;
     const n = S.loading ? 0 : candidates().length;
     btn.disabled = !n;
     count.textContent = S.loading ? '' : (n ? tn('doc.next.left', n) : t('doc.next.none'));
+    let again = $('doc-seen-reset');
+    if (!again) {
+      again = h('button', 'desk-btn doc-seen-reset', '');
+      again.type = 'button';
+      again.id = 'doc-seen-reset';
+      again.addEventListener('click', showSeenAgain);
+      count.parentNode.insertBefore(again, count.nextSibling);
+    }
+    const m = S.loading ? 0 : seenHere().length;
+    again.hidden = !m;
+    again.textContent = m ? tn('doc.next.again', m) : '';
   }
   // Show the texts the filter keeps. When the page re-reads (new drafts arrive) a text with the caret
   // in it stays, whatever it matches now: the text being typed in must never vanish. A filter the
@@ -2150,7 +2248,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   function restoreConflicts(lang) {
     const mine = P[lang] || {};
     Object.keys(mine).forEach(function (uid) {
-      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null, page: mine[uid].page };
     });
   }
   function ensureLang(lang) {
@@ -2386,6 +2484,18 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
     paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
     failureReason: failureReason, who: who,
+    setRetranslating: function (lang, uid, on) {
+      if (on) RT.add(lang + '|' + uid); else RT.delete(lang + '|' + uid);
+      if (lang === S.lang && M.has(uid)) paintBlock(uid);
+    },
+    isRetranslating: function (lang, uid) { return RT.has(lang + '|' + uid); },
+    // The Worker keeps ONE open re-translate job per language: while any text of the language runs, no other can start.
+    isRetranslatingLang: function (lang) {
+      const head = lang + '|';
+      let any = false;
+      RT.forEach(function (k) { if (k.indexOf(head) === 0) any = true; });
+      return any;
+    },
     retranslatePage: null,           // document_export.js fills this: the whole-page window the one Translate page opens (CEL-073)
     startPageJob: function (lang, page, opts) { startJob(lang, page, false, opts); }   // that window starts its job through the desk's
   };
@@ -2491,7 +2601,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   // Spelled out so the copy check sees every key.
   const STEP_KEY = {
     waiting: 'export.step.waiting', saving: 'export.step.saving', queued: 'export.step.queued',
-    running: 'export.step.running', nothing: 'export.step.nothing'
+    running: 'export.step.running', nothing: 'export.step.nothing', stopped: 'export.step.stopped'
   };
   const GROUP_KEY = {
     refused: 'export.group.refused', orphan: 'export.group.orphan', conflict: 'export.group.conflict',
@@ -2590,10 +2700,13 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
 
   // ── the job, watched ────────────────────────────────────────────────────────────────
   // The engine's answer to desk-job-get, polled; null when the desk could not reach it for good.
-  async function watch(lang, id, onState) {
+  // `maxMs`: give up on a job that never ends and call it failed (CEL-077 item 5); 0 = poll as long as it takes.
+  async function watch(lang, id, onState, maxMs) {
     let misses = 0;
+    const began = Date.now();
     for (;;) {
       await sleep(TIMING.poll);
+      if (maxMs && Date.now() - began > maxMs) return { status: 'failed', timedOut: true };
       const r = await D.call({ action: 'desk-job-get', locale: lang, id: id });
       const job = r && r.ok && r.body && r.body.job;
       if (!job) { if (++misses >= 8) return null; continue; }
@@ -2622,10 +2735,19 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   const exGo = button('ex-go', 'cpw-btn cpw-save', t('export.go'));
   const exDownload = button('ex-download', 'desk-btn', t('export.download'));
   const exClose = button('ex-close', 'cpw-btn cpw-cancel', t('export.close'));
+  const exStop = button('ex-stop', 'cpw-btn cpw-cancel', t('export.stop'));
   exDownload.hidden = true;
   exClose.hidden = true;
+  exStop.hidden = true;
+  let stopRequested = false;
+  exStop.addEventListener('click', function () {
+    // The file being made cannot be taken back (its job is already running); the next ones are not started.
+    stopRequested = true;
+    exStop.disabled = true;
+    exStop.textContent = t('export.stopping');
+  });
   const exActions = h('div', 'cpw-actions');
-  [exDownload, exClose, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
+  [exDownload, exClose, exStop, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
   [exTitle, exSelect, exCount, exProgress, exResult, exActions].forEach(function (e) { ex.box.appendChild(e); });
   ex.root.classList.add('ex-modal');
 
@@ -2928,8 +3050,13 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     await until(function () { return S.page === page && S.lang === lang && ready() && M.has(uid); }, 20000);
     if (M.has(uid)) D.reveal(uid);
   }
-  function renderResult(all, cells) {
+  function renderResult(all, cells, made) {
     exResult.textContent = '';
+    // One line on top that says how it ended (the download starts by itself, so the end is said, not implied)
+    const head = !made ? t('export.result.none')
+      : stopRequested ? t('export.result.stopped', { done: made, total: cells.length })
+      : t('export.result.done', { done: made, total: cells.length });
+    exResult.appendChild(h('p', 'ex-headline', head));
     const many = cells.length > 1;
     GROUP_ORDER.forEach(function (kind) {
       const items = [];
@@ -2982,17 +3109,23 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     exProgress.textContent = '';
     exProgress.hidden = false;
     exResult.hidden = true;
+    stopRequested = false;
+    exStop.disabled = false;
+    exStop.textContent = t('export.stop');
+    exStop.hidden = false;
     const rows = cells.map(function (c) { const li = fileRow(c); setState(li, 'waiting'); return li; });
     const files = [], all = [];
     for (let i = 0; i < cells.length; i++) {
+      if (stopRequested) { setState(rows[i], 'stopped'); continue; }
       all.push(await exportOne(cells[i], rows[i], files));
     }
+    exStop.hidden = true;
     const langs = {};
     cells.forEach(function (c) { langs[c.lang] = true; });
     await Promise.all(Object.keys(langs).map(function (l) { return D.refreshLang(l); }));
     D.gridSoon();
     busy = false;
-    renderResult(all, cells);
+    renderResult(all, cells, files.length);
     exResult.hidden = false;
     lastDownload = prepareDownload(files);
     exClose.hidden = false;
@@ -3082,9 +3215,14 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       return;
     }
     D.toast(t('retr.started'));
-    const job = await watch(lang, r.body.job.id);
+    // The text says it is being re-translated (and its button is off) until the job ends, however it ends.
+    if (ref.unit) { D.setRetranslating(lang, ref.unit, true); markRetranslating(); }
+    let job;
+    try { job = await watch(lang, r.body.job.id, null, TIMING.jobMax); }
+    finally { if (ref.unit) { D.setRetranslating(lang, ref.unit, false); markRetranslating(); } }
     if (!job || job.status !== 'done') {
-      D.toast(t('retr.failed', { reason: job ? jobReason(job) : t('save.reason.offline') }), 'err');
+      const reason = job ? (job.timedOut ? t('retr.timeout') : jobReason(job)) : t('save.reason.offline');
+      D.toast(t('retr.failed', { reason: reason }), 'err');
       return;
     }
     await D.refreshLang(lang);
@@ -3163,6 +3301,20 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     });
   });
 
+  // The Worker keeps ONE open re-translate job per language, so while a text of the open language is being re-translated
+  // every Re-translate button of that language is off (a second one would only be refused as busy); the other texts'
+  // buttons say why in the desk's own tooltip (`data-tip`; the browser's `title` is not used on the desk, ruling #51).
+  function paintRetranslate(li) {
+    const b = li.querySelector('.doc-tool-retranslate');
+    if (!b) return;
+    const own = D.isRetranslating(S.lang, li.getAttribute('data-uid'));
+    const busy = D.isRetranslatingLang(S.lang);
+    b.disabled = busy;
+    if (busy && !own) b.setAttribute('data-tip', t('retr.wait')); else b.removeAttribute('data-tip');
+  }
+  function markRetranslating() {
+    document.querySelectorAll('li.doc-block').forEach(paintRetranslate);
+  }
   // A "Re-translate" in each text's floating toolbar.
   function addToTool(li) {
     const tools = li.querySelector('.doc-tools');
@@ -3170,6 +3322,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     const b = button(null, 'desk-btn doc-tool-retranslate', t('retr.button'));
     b.addEventListener('click', function () { openText(li.getAttribute('data-uid'), b); });
     tools.insertBefore(b, tools.firstChild);
+    paintRetranslate(li);
   }
   const list = $('doc-blocks');
   new MutationObserver(function (muts) {

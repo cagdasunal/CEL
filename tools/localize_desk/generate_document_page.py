@@ -341,6 +341,10 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-save[data-state="error"], .doc-save[data-state="refused"], .doc-save[data-state="stopped"] { color: var(--err); }
 .doc-save[data-state="error"]::before, .doc-save[data-state="refused"]::before, .doc-save[data-state="stopped"]::before { background: var(--err); }
 .doc-save .desk-btn { padding: 2px 10px; font-size: var(--fs-xs); }
+.doc-save-more { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--muted); }
+.doc-save-more:empty { display: none; }
+.doc-save-more .desk-btn, .doc-seen-reset { padding: 2px 10px; font-size: var(--fs-xs); }
+.doc-seen-reset[hidden] { display: none; }
 .doc-status-mid { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: 8px; min-width: 0; }
 .doc-status-end { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .doc-desk-version { font-size: var(--fs-sm); color: var(--muted); text-decoration: none; white-space: nowrap; }
