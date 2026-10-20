@@ -467,3 +467,55 @@ def test_show_html_keeps_an_arabic_field_right_to_left(page):
     _field(page, '<a wg-1="">اتصل بنا</a> للمزيد.', lang="ar")
     page.evaluate("() => rf.showHtml(true)")
     assert page.evaluate("() => getComputedStyle(document.getElementById('f')).direction") == "rtl"
+
+
+# ── CEL-096: a link reads as a link ────────────────────────────────────────────────────────────
+L1, L2 = '<a wg-1="">One</a>', '<a wg-2="">Two</a>'
+ONE_TWO = L1 + " " + L2
+
+
+def _bare(page):
+    """The script and style with no field attached: read() and linkProblem() are called straight."""
+    page.set_content('<!doctype html><html><body><div id="f" lang="de"></div></body></html>')
+    page.add_style_tag(path=str(SPIKE / "rich_field.css"))
+    page.add_script_tag(path=str(SPIKE / "rich_field.js"))
+
+
+@pytest.mark.parametrize("source, text, want", [
+    pytest.param(ONE_TWO, ONE_TWO, None, id="same"),
+    pytest.param(ONE_TWO, "", None, id="an empty text has nothing to compare"),
+    pytest.param(ONE_TWO, "   ", None, id="a blank text has nothing to compare"),
+    pytest.param(ONE_TWO, L1 + " Zwei", {"kind": "missing", "n": "2"}, id="missing"),
+    pytest.param(L1, ONE_TWO, {"kind": "extra", "n": "2"}, id="extra"),
+    pytest.param(ONE_TWO, L2 + " " + L1, {"kind": "order", "n": ""}, id="order swapped"),
+    pytest.param(ONE_TWO, L2 + L2 + L1, {"kind": "order", "n": ""}, id="order by first occurrence"),
+    pytest.param(L1 + L2 + L1, L1 + L1 + L2, {"kind": "order", "n": ""}, id="order by sequence"),
+    pytest.param(L1 + L2 + L1, L1 + L2 + L1, None, id="a repeated link in its place"),
+    pytest.param(ONE_TWO, L1 + ' <a wg-2="">Zwei', {"kind": "broken", "n": "2"}, id="left open"),
+    pytest.param(ONE_TWO, ONE_TWO + "</a>", {"kind": "broken", "n": ""}, id="closed twice"),
+])
+def test_link_problem_follows_the_engines_order_of_checks(page, source, text, want):
+    """gates.py g3_placeholders: the set of links, then first-occurrence order, then the whole sequence when every
+    link is used as often as in the English, then balance. The desk says it in the same order."""
+    _bare(page)
+    assert page.evaluate("([s, t]) => RichField.linkProblem(s, t)", [source, text]) == want
+
+
+def test_read_draws_the_words_of_a_link_and_no_marker(page):
+    _bare(page)
+    page.evaluate("t => RichField.read(document.getElementById('f'), t, { tip: (side, n) => 'Link ' + n })", ONE_TWO + "<br>end")
+    assert page.locator("#f .rf-link").all_inner_texts() == ["One", "Two"]
+    assert [page.locator("#f .rf-link").nth(i).get_attribute("data-tip") for i in range(2)] == ["Link 1", "Link 2"]
+    tokens = page.locator("#f .rf-token")
+    assert tokens.count() == 1 and tokens.first.get_attribute("data-side") == "break"      # a break stays its chip
+    assert "‹" not in page.inner_text("#f") and "›" not in page.inner_text("#f")
+
+
+@pytest.mark.parametrize("text", [
+    ONE_TWO, "A<br>B", L1 + ' <a wg-2="">left open', "stray </a> close", '<a wg-1="">a<a wg-2="">b</a>c</a>', "plain",
+], ids=["two links", "a break", "a link left open", "a close with nothing open", "nested", "plain"])
+def test_a_read_column_still_stands_for_its_markers(page, text):
+    """read() draws no marker, yet what it draws serialises back to the very text (nothing in the data is lost)."""
+    _bare(page)
+    got = page.evaluate("t => { const el = document.getElementById('f'); RichField.read(el, t, {}); return RichField.serialize(el); }", text)
+    assert got == text

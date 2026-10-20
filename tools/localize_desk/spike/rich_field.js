@@ -22,7 +22,8 @@
  * A token's label is real text inside it (a bare ‹ or ›, or the raw marker under
  * "Show HTML"); the text is never read back -- a token serialises as its data-raw.
  *
- * CEL-096: no number is shown. A reviewer reads a link as a link:
+ * CEL-096: no number is drawn in the text (only the hover and the note under it name "Link N"). A reviewer
+ * reads a link as a link:
  *   - in a column nobody types in, read() wraps the words between a pair in one dotted-underlined
  *     span (the hover names it, "Link 1");
  *   - in the field being edited, a pair is two compact chips (‹ and ›) that light up together on
