@@ -1389,11 +1389,29 @@
     const shown = isEdited(uid) ? 'edit' : (d && d.text ? 'draft' : 'live');
     return f.some(function (x) { return x.subject === shown; });
   }
+  // LINKS and BUTTONS (CEL-107) are read from the text itself, the same in every language: a Button is the engine's
+  // `button` block tag; a Link is its `link` block tag or an anchor marker in the English (a link inside a sentence).
+  // A button that is an anchor has both, so it shows under Links and under Buttons.
+  const LINK_MARK = /<a wg-\d+="">/;
+  function isLinkBlock(d) { return d.b === 'link' || LINK_MARK.test(d.en || ''); }
+  function isButtonBlock(d) { return d.b === 'button'; }
   function matches(uid) {
     if (filter === 'new') return isNew(uid);
     if (filter === 'edited') return isEdited(uid);
     if (filter === 'flagged') return isFlagged(uid);
+    if (filter === 'links') { const b = M.get(uid); return !!b && isLinkBlock(b.d); }
+    if (filter === 'buttons') { const b = M.get(uid); return !!b && isButtonBlock(b.d); }
     return true;
+  }
+  // The two choices carry the number of the open page's texts they keep ("Links (12)"); the plain word while no page is up.
+  function paintFilterCounts(data) {
+    [['links', 'doc.filter.links', isLinkBlock], ['buttons', 'doc.filter.buttons', isButtonBlock]].forEach(function (x) {
+      const opt = document.querySelector('#doc-filter option[value="' + x[0] + '"]');
+      if (!opt) return;
+      opt.textContent = data
+        ? t('doc.filter.counted', { filter: t(x[1]), n: data.blocks.filter(function (d) { return x[2](d); }).length })
+        : t(x[1]);
+    });
   }
   function seenKey(uid) { return S.lang + '|' + uid; }
   // 'lang|uid' -> 1 for every text moved on from; the Export window counts the Gemini drafts nobody looked at (CEL-075 item 2).
@@ -1691,6 +1709,7 @@
       if (at < blocks.length) { setTimeout(slice, 0); return; }
       M.forEach(function (b, uid) { paintBlock(uid); });
       buildOutline(data);
+      paintFilterCounts(data);
       applyFilter();
       paintWords();
       $('doc').setAttribute('data-state', 'ready');
@@ -1714,6 +1733,7 @@
     $('doc-words').textContent = '';
     M.clear();
     $('doc-filter-empty').hidden = true;
+    paintFilterCounts(null);
     updateNext();
     paintUndo();
     updateBar();

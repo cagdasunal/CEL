@@ -609,6 +609,8 @@ def _dom() -> str:
         f'            <option value="new">{escape(t("doc.filter.new"))}</option>\n'
         f'            <option value="edited">{escape(t("doc.filter.edited"))}</option>\n'
         f'            <option value="flagged">{escape(t("doc.filter.flagged"))}</option>\n'
+        f'            <option value="links">{escape(t("doc.filter.links"))}</option>\n'
+        f'            <option value="buttons">{escape(t("doc.filter.buttons"))}</option>\n'
         '          </select></label>\n'
         f'        <button type="button" id="doc-next" class="desk-btn" aria-keyshortcuts="Alt+Enter" disabled><span class="doc-btn-label">{escape(t("doc.next"))}</span> <kbd class="doc-kbd"></kbd></button>\n'
         '        <span id="doc-next-count" class="doc-next-count"></span>\n'

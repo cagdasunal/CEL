@@ -2081,7 +2081,9 @@ def test_an_exported_page_turns_edited_at_once_and_exported_again_only_after_a_n
 # (data-source="edit"); NEW FROM GEMINI = a draft and no edit (data-source="draft"); FLAGGED = the
 # desk-read answer has a finding for the wording the page shows (a 'live' finding: no draft, no edit). TO CHECK = (new or flagged) and not edited and not yet
 # seen in this browser and shown by the filter. Alt+Enter (Option+Return on a Mac) does what the button does.
-C36_FILTERS = ["all", "new", "edited", "flagged"]
+C36_FILTERS = ["all", "new", "edited", "flagged", "links", "buttons"]
+# The first four are plain words; Links and Buttons carry a count once a page is open (CEL-107), so their words are
+# checked in test_document_filter_links_buttons_browser.py
 C36_WORDS = ["doc.filter.all", "doc.filter.new", "doc.filter.edited", "doc.filter.flagged"]
 
 
@@ -2224,8 +2226,9 @@ def _c36_next(page, uid: str, left: int, *, top: bool = True):
 
 # ── the bar's own controls ─────────────────────────────────────────────────────────────────────
 def test_the_status_bar_holds_the_filter_and_the_next_to_check_button_nothing_to_check_yet(browser):
-    """No drafts, no edits, no findings: the filter has its four choices in order (All texts, Gemini's draft,
-    Edited, Flagged by a check), the button is there with its key and is off, and the line says why."""
+    """No drafts, no edits, no findings: the filter has its six choices in order (All texts, Gemini's draft,
+    Edited, Flagged by a check, then Links and Buttons with their counts: CEL-107, tested in
+    test_document_filter_links_buttons_browser.py), the button is there with its key and is off, and the line says why."""
     with doc(browser) as e:
         assert e.page.locator("#doc-status #doc-filter").count() == 1
         sel = e.page.locator("#doc-filter")
@@ -2233,7 +2236,7 @@ def test_the_status_bar_holds_the_filter_and_the_next_to_check_button_nothing_to
         expect(sel).to_have_class(re.compile(r"\bdesk-select\b"))
         assert e.page.eval_on_selector_all("#doc-filter option", "els => els.map(o => o.value)") == C36_FILTERS
         words = e.page.eval_on_selector_all("#doc-filter option", "els => els.map(o => o.textContent.trim())")
-        assert len(set(words)) == 4 and all(words), words
+        assert len(set(words)) == 6 and all(words), words
         for key, got in zip(C36_WORDS, words):
             want = maybe_t(key)
             if want is not None:

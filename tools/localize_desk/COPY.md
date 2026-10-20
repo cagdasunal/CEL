@@ -324,6 +324,9 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.filter.new` | Gemini's draft | In that list: texts Gemini wrote that you have not edited |
 | `doc.filter.edited` | Edited | In that list: texts you have edited |
 | `doc.filter.flagged` | Flagged by a check | In that list: texts our automatic checks point out |
+| `doc.filter.links` | Links | In that list: texts that are a link or have a link in them |
+| `doc.filter.buttons` | Buttons | In that list: texts that are a button (a call to action) |
+| `doc.filter.counted` | {filter} ({n}) | In that list, once the page is open: Links and Buttons with how many texts of the page they keep |
 | `doc.filter.empty` | No text matches this filter. Choose All texts to see the whole page again. | Above the page, when the chosen filter leaves no text |
 | `doc.next` | Next to check | Button in the bottom bar: goes to the next text from Gemini or from a check that you have not looked at yet |
 | `doc.next.left.one` | {n} left | Beside that button: how many texts are still to look at |

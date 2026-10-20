@@ -981,16 +981,19 @@ class TestPageShell:
         assert dom.text_of("doc-words") == "" and dom.text_of("doc-save") == ""
 
     def test_the_status_bar_holds_the_filter_and_next_to_check_in_copy_md_words(self, page):
-        """CEL-036: a list that narrows the page (All / New from Gemini / Edited / Flagged) and a Next to
-        check button with a shortcut; every word is COPY.md's, the key label and the count are the runtime's."""
+        """CEL-036: a list that narrows the page (All / New from Gemini / Edited / Flagged, then Links and Buttons
+        from CEL-107) and a Next to check button with a shortcut; every word is COPY.md's, the key label and the
+        count are the runtime's (the Links and Buttons numbers are filled in by the page once a page is open)."""
         dom = _dom(page)
         assert _shape(dom.kids_of_class("doc-filter-wrap")) == ["span.doc-filter-label", "select#doc-filter.desk-select.doc-filter"]
         assert dom.text_of("doc-next-count") == ""                                  # the runtime says how many are left
         markup = _main_markup(page)
         for value, key in (("all", "doc.filter.all"), ("new", "doc.filter.new"),
-                           ("edited", "doc.filter.edited"), ("flagged", "doc.filter.flagged")):
+                           ("edited", "doc.filter.edited"), ("flagged", "doc.filter.flagged"),
+                           ("links", "doc.filter.links"), ("buttons", "doc.filter.buttons")):
             assert f'<option value="{value}">{_html.escape(C.t(key))}</option>' in markup, key
-        assert markup.index('value="all"') < markup.index('value="new"') < markup.index('value="edited"') < markup.index('value="flagged"')
+        assert (markup.index('value="all"') < markup.index('value="new"') < markup.index('value="edited"')
+                < markup.index('value="flagged"') < markup.index('value="links"') < markup.index('value="buttons"'))
         assert C.t("doc.filter.label") in " ".join(s for _o, s in dom.texts)
         assert dom.by_id("doc-next")["aria-keyshortcuts"] == "Alt+Enter"
         assert "disabled" in dom.by_id("doc-next")                                  # nothing to go to until a page is open
