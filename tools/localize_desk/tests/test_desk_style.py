@@ -78,3 +78,17 @@ def test_the_rules_page_sets_no_native_title_tooltips():
     typed, markup = _title_offenders(RULES_JS)
     assert not typed, f"rules_page.js sets .title {len(typed)} times"
     assert not markup, f"rules_page.js carries title= {len(markup)} times"
+
+
+def test_the_desk_stylesheet_has_no_rule_for_a_class_nothing_uses():
+    """CEL-054 (cleanup C5): DESK_CSS carried 170 selectors of the first desk's classes (cards, flow strip, review modal, trays)
+    that nothing builds any more. A rule for a class no source names is dead weight that hides what the live desk uses: every
+    desk-*, toast*, scroll-x and dashboard-shell class the sheet styles is named by the desk's sources or by the shell."""
+    css = re.sub(r"/\*.*?\*/", "", _desk_css(), flags=re.S)
+    styled = set(re.findall(r"\.((?:desk-|toast)[\w-]*|scroll-x|dashboard-shell)", css))
+    sources = GEN + RULES_JS + DASH.replace(_desk_css(), "")
+    used = set(re.findall(r"(?<![\w-])((?:desk-|toast)[\w-]*|scroll-x|dashboard-shell)(?![\w-])", sources))
+    pending = {"toast-close"}          # CEL-075's Close button on a message that stays (it lands in the same train)
+    dead = sorted(c for c in styled if c not in used and c not in pending)
+    assert not dead, f"DESK_CSS styles classes nothing uses: {dead}"
+    assert len(styled) >= 8, "the scan found almost nothing: it could not fail"

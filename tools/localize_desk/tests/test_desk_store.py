@@ -68,19 +68,13 @@ def test_the_harness_answers_the_desk_actions_from_the_real_page_map():
         shutil.rmtree(root, ignore_errors=True)
 
 
-def test_the_summary_counts_shapes_and_answers_flagged_texts():
-    """desk-summary (runbook WO-18): the index's counts, as the shapes stageOf() reads."""
+def test_desk_summary_is_not_an_action_any_more():
+    """CEL-054: the first desk's index counts are gone from the Worker; the stand-in refuses the action as it does."""
     s = _store()
-    _write(s, [{"unit": U1, "page": "vancouver", "base": 0, "record": {"tray": "csv", "text": "Hallo"}},
-               {"unit": U2, "page": "vs-toronto", "base": 0, "record": {"tray": "draft"}}])
-    code, r = s.handle("desk-summary", {"flagged": {"de": [U1], "fr": [U1]}}, "pat@example.test")
-    assert code == 200 and list(r["languages"]) == ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"]
-    assert r["languages"]["de"]["shapes"] == [[{"tray": "csv", "text": True}, 1], [{"tray": "draft"}, 1]]
-    assert r["languages"]["de"]["flagged"] == {U1: {"tray": "csv", "text": True}}
-    assert r["languages"]["fr"] == {"shapes": [], "flagged": {}}
-    assert "Hallo" not in str(r), "no reviewer's wording travels to the index"
-    code, r = s.handle("desk-summary", {"flagged": {"zz": [U1]}}, "pat@example.test")
-    assert code == 400
+    _write(s, [{"unit": U1, "page": "vancouver", "base": 0, "record": {"tray": "csv", "text": "Hallo"}}])
+    for body in ({"locale": "de"}, {"locale": "de", "flagged": {"de": [U1]}}):
+        code, r = s.handle("desk-summary", body, "pat@example.test")
+        assert code == 400 and r.get("ok") is not True and "languages" not in r
 
 
 def test_an_id_with_a_trailing_newline_is_refused_as_the_worker_refuses_it():
@@ -98,14 +92,15 @@ def _stamp(minutes_ago: float) -> str:
 def test_a_job_the_engine_never_answered_is_failed_and_frees_its_language():
     """The Worker's sweep (U1), which the parity test cannot reach: it has no clock to move."""
     s = _store()
-    _c, r = s.handle("desk-job-start", {"locale": "de", "kind": "plan"}, "pat@example.test")
+    page = {"page": "vancouver", "keepEdited": True}
+    _c, r = s.handle("desk-job-start", {"locale": "de", "kind": "translate-page", "ref": page}, "pat@example.test")
     s.jobs[r["job"]["id"]]["created_at"] = _stamp(34)
     _c, got = s.handle("desk-job-get", {"locale": "de"}, "pat@example.test")
-    assert got["jobs"]["plan"]["status"] == "queued"                     # 34 minutes: left alone
+    assert got["jobs"]["translate-page"]["status"] == "queued"           # 34 minutes: left alone
     s.jobs[r["job"]["id"]].update(status="running", started_at=_stamp(36))
     _c, got = s.handle("desk-job-get", {"locale": "de"}, "pat@example.test")
-    assert got["jobs"]["plan"]["status"] == "failed" and got["jobs"]["plan"]["error"] == "engine-never-answered"
-    assert s.handle("desk-job-start", {"locale": "de", "kind": "plan"}, "pat@example.test")[0] == 200
+    assert got["jobs"]["translate-page"]["status"] == "failed" and got["jobs"]["translate-page"]["error"] == "engine-never-answered"
+    assert s.handle("desk-job-start", {"locale": "de", "kind": "translate-page", "ref": page}, "pat@example.test")[0] == 200
 
 
 def test_the_harness_plays_the_engine_for_the_desks_jobs():
@@ -133,11 +128,16 @@ def test_a_users_job_starts_are_capped_per_day_as_the_worker_caps_them():
     assert s.handle("desk-job-start", {"locale": "fr", "kind": "export"}, "kim@example.test")[0] == 200
 
 
-def test_a_ref_follows_the_runners_rule():
+def test_the_first_desks_kinds_are_refused_with_what_they_used_to_take():
+    """CEL-054: verify, plan, submit and collect are gone, with their batch / run refs and their amount."""
     s = _store()
-    start = lambda ref: s.handle("desk-job-start", {"locale": "de", "kind": "verify", "ref": ref}, "pat@example.test")[0]
-    assert start("de-1.2") == 400 and start("run:1") == 400 and start("a" * 121) == 400
-    assert start("a" * 120) == 200
+    for kind, extra in (("verify", {"ref": "de-1"}), ("verify", {}), ("plan", {}), ("submit", {"amount_usd": 3.42}),
+                        ("collect", {"ref": "20260929T101500Z"}), ("collect", {"ref": "run:1"})):
+        code, r = s.handle("desk-job-start", {"locale": "de", "kind": kind, **extra}, "pat@example.test")
+        assert (code, r["error"]) == (400, "invalid: kind"), (kind, extra)
+    assert s.jobs == {} and s.dispatched == []
+    code, r = s.handle("desk-job-start", {"locale": "de", "kind": "export", "amount_usd": 1}, "pat@example.test")
+    assert (code, r["error"]) == (400, "invalid: a job carries no amount")
 
 
 def test_a_page_job_carries_its_page_in_ref_as_json_and_gives_it_back_as_the_object():
@@ -193,15 +193,16 @@ def test_a_page_job_refuses_what_the_worker_refuses():
                     "pat@example.test")[0] == 400
 
 
-def test_plan_submit_and_collect_run_for_all_languages_and_a_file_does_not():
-    """The Manager's ruling (U3): one Gemini run per Send; a Weglot file stays one language at a time."""
+def test_the_locale_all_is_not_a_language_to_any_job():
+    """CEL-054: one Gemini run for every language went with plan, submit and collect."""
     s = _store()
-    assert s.handle("desk-job-start", {"locale": "all", "kind": "plan"}, "pat@example.test")[0] == 200
-    assert s.handle("desk-job-start", {"locale": "all", "kind": "plan"}, "pat@example.test")[0] == 409
-    assert s.handle("desk-job-start", {"locale": "all", "kind": "export"}, "pat@example.test")[0] == 400
-    code, r = s.handle("desk-job-get", {"locale": "all"}, "pat@example.test")
-    assert code == 200 and r["jobs"]["plan"]["locale"] == "all"
+    ref = {"page": "vancouver", "keepEdited": True}
+    for kind, extra in (("export", {}), ("translate-page", {"ref": ref}), ("retranslate", {"ref": ref}),
+                        ("plan", {}), ("submit", {"amount_usd": 1.5})):
+        assert s.handle("desk-job-start", {"locale": "all", "kind": kind, **extra}, "pat@example.test")[0] == 400, kind
+    assert s.handle("desk-job-get", {"locale": "all"}, "pat@example.test")[0] == 400
     assert s.handle("desk-read", {"locale": "all"}, "pat@example.test")[0] == 400
+    assert s.dispatched == []
 
 
 # ── the client's translation rules (monorepo CEL-038 Worker, CEL-043 stand-in) ─────────────────

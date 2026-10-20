@@ -25,11 +25,7 @@ On 2026-04-14 `POST /projects/settings` silently stripped `excluded_languages` f
 
 ## The retired CSV path
 
-Until 2026-04-22 the exclusions were written to `weglot.csv` for a manual dashboard import by `tools/weglot/sync_exclusions.py` (`.github/workflows/weglot-sync.yml`, every 15 minutes), which also confirmed an import and cleared the CSV. That workflow is **disabled** (manual run only); `sync_exclusions.py` stays as the rollback path. `data/weglot.csv` therefore exists only if that path is re-enabled.
-
-To re-enable it: uncomment the `schedule:` block in `weglot-sync.yml` and comment out the one in `content-pipeline.yml`.
-
-**Lesson (2026-10-06):** the sync was disabled with two rows still in the CSV. Both were imported by hand, but with the sync off nothing could mark them done, and the daily report filed a new issue every day — 172 open, none closed. `weglot-daily-report.yml` now runs `tools/weglot/pending_report.py`, which ignores rows Weglot already excludes and keeps one self-closing issue.
+Until 2026-04-22 the exclusions were written to `weglot.csv` for a manual dashboard import by `tools/weglot/sync_exclusions.py` (`.github/workflows/weglot-sync.yml`). The API sync replaced it. The legacy sync, its workflow and the daily report that filed one issue for rows still waiting for an import (`weglot-daily-report.yml`, `pending_report.py`, the `.weglot-last-check` stamp) were removed on 2026-10-20 (CEL-071); nothing reads `data/weglot.csv` any more. They are in git history if the CSV path is ever needed again.
 
 ## Key Behaviors
 
@@ -45,12 +41,8 @@ To re-enable it: uncomment the `schedule:` block in `weglot-sync.yml` and commen
 |---|---|
 | `tools/weglot/api_sync.py` | The sync (Content Pipeline Step 1) |
 | `tools/weglot/test_api_sync.py` | Tests for it |
-| `tools/weglot/pending_report.py` | Daily report: one issue for rows still waiting for a manual import |
-| `tools/weglot/test_pending_report.py` | Tests for it |
-| `tools/weglot/sync_exclusions.py` | Legacy CSV sync (disabled, rollback path) |
 | `data/weglot-exclusions.json` | Tracked state |
 | `data/weglot-sitemap-exclusions.json` | Sitemap filter data |
-| `data/weglot.csv` | Legacy CSV — only exists if the CSV path is re-enabled |
 
 ## GitHub Actions Secrets
 

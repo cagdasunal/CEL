@@ -12,7 +12,7 @@ desk change is not done until it has been clicked through here (process doc §9)
 It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
   * auth.js replaced by a stub that signs you in as a test reviewer;
   * dashboard-config.js pointing the desk at this server's mock Worker;
-  * the Worker's desk storage actions (desk-read / desk-write / desk-history / desk-summary), answered by
+  * the Worker's desk storage actions (desk-read / desk-write / desk-history), answered by
     `desk_store.DeskStore` -- held to the real Worker by the monorepo's differential test
     (runbook WO-33) -- over the same page map deploy.sh loads;
   * the desk's jobs (desk-job-start / desk-job-get / desk-export-get, runbook U1), from the same
@@ -69,7 +69,7 @@ class MockWorker:
         # failing after the write landed); {"status": 200, "empty": True} answers with no body;
         # {"delay": seconds} holds the answer back (a slow storage), then answers normally.
         self.desk_fault: dict | None = None
-        # The same for any other storage action, by name: {"desk-summary": {"status": 503}}.
+        # The same for any other storage action, by name: {"desk-history": {"status": 503}}.
         self.action_faults: dict[str, dict] = {}
         # Every action the desk asked for, in order -- what a test checks was never sent.
         self.calls: list[str] = []
@@ -100,7 +100,7 @@ class MockWorker:
             finally:
                 with self.lock:
                     self.inflight -= 1
-        if action in ("desk-read", "desk-history", "desk-summary",
+        if action in ("desk-read", "desk-history",
                       "desk-job-start", "desk-job-get", "desk-export-get",
                       "desk-rules-read", "desk-rules-write", "desk-rules-history"):
             return self._desk(action, body)

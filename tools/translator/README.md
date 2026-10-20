@@ -129,8 +129,8 @@ id;language_from;language_to;word_from;word_to;type     (semicolon, minimal-quot
   this CSV** (live locale files are already 538–593 rows and import fine). Largest live
   file ≈ 222 KB, so the warning is dormant headroom that fires only if the consolidated
   CSV genuinely grows toward 5 MB. Callers should surface `report.warnings` to their run
-  report (the summary CLI does); the authoritative post-import completeness check is the
-  sentinel verifier (`docs/admin/weglot-imports/import-status.json`).
+  report (the summary CLI does); the post-import completeness check is a look at the live page
+  (the dashboard's sentinel verifier, `check_import_status`, was retired with the Translations page, CEL-071).
 
 (The summary tool's `csv_emitter.py` re-export shim was removed with its translate command,
 2026-09-29, U3-S.)

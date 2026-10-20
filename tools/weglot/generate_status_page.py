@@ -68,19 +68,12 @@ PUBLIC_SITEMAP_URL = "https://cel.englishcollege.com/sitemap.xml"
 PUBLIC_LLMS_URL = "https://cel.englishcollege.com/llms.txt"
 
 # Weglot translation CSVs — published to CEL repo and served by GitHub Pages
-PUBLIC_WEGLOT_CSV_URL_TEMPLATE = "https://cel.englishcollege.com/admin/weglot-imports/{lang}.csv"
-PUBLIC_WEGLOT_MANIFEST_URL = "https://cel.englishcollege.com/admin/weglot-imports/manifest.json"
-WEGLOT_CSV_LANGUAGES = ("de", "fr", "es", "it", "ja", "ko", "pt", "ar")
 WEGLOT_CSV_DIR = EXTERNAL_REPO_ROOT / "admin" / "weglot-imports"
-WEGLOT_IMPORT_STATUS_FILE = WEGLOT_CSV_DIR / "import-status.json"
 PUBLIC_WEGLOT_ZIP_URL = "https://cel.englishcollege.com/admin/weglot-imports/weglot-imports.zip"
-PUBLIC_WEGLOT_MATRIX_URL = "https://cel.englishcollege.com/admin/weglot-imports/all-languages.csv"
 WEGLOT_ZIP_FILE = WEGLOT_CSV_DIR / "weglot-imports.zip"
-WEGLOT_MATRIX_FILE = WEGLOT_CSV_DIR / "all-languages.csv"
 # Written by the summary tool's translate phase (tools/summary, CEL-only) next to
 # the CSVs; surfaces per-locale + per-item translation coverage on /admin/#summaries.
 WEGLOT_TRANSLATION_STATUS_FILE = WEGLOT_CSV_DIR / "translation-status.json"
-TRANSLATIONS_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "translations" / "index.html"
 FILES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "files" / "index.html"
 SUMMARIES_OUTPUT_FILE = EXTERNAL_REPO_ROOT / "admin" / "summaries" / "index.html"
 
@@ -202,63 +195,6 @@ def file_mtime_iso(path: Path) -> str | None:
         return ts.isoformat()
     except OSError:
         return None
-
-
-def load_import_status() -> dict:
-    """Read import-status.json if present.
-
-    Returns: {language_code: status_dict, ...} (the inner "languages" dict),
-    or {} when the file is missing or unparseable. Never raises — the badge
-    is non-essential UI; missing status must not break dashboard regen.
-    """
-    if not WEGLOT_IMPORT_STATUS_FILE.exists():
-        return {}
-    try:
-        data = json.loads(WEGLOT_IMPORT_STATUS_FILE.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {}
-    if not isinstance(data, dict):
-        return {}
-    langs = data.get("languages")
-    if not isinstance(langs, dict):
-        return {}
-    return langs
-
-
-def render_import_badge(status: dict | None) -> str:
-    """Render an inline HTML badge for one language's import status.
-
-    Returns an empty string (no badge) when status is None or verdict is
-    "no_csv". All other verdicts render a <span class="badge-..."> with a
-    prefixed glyph. When checked_at is present, an adjacent muted timestamp
-    span is appended so users can see how fresh the verdict is.
-    """
-    if not status:
-        return ""
-    verdict = status.get("verdict")
-    if verdict == "imported":
-        badge = '<span class="badge-ok">✓ Imported</span>'
-    elif verdict == "partial":
-        found = int(status.get("sentinels_found", 0))
-        total = int(status.get("sentinels_total", 0))
-        badge = f'<span class="badge-partial">⚠ Partial ({found}/{total})</span>'
-    elif verdict == "pending":
-        badge = '<span class="badge-failed">⚠ Pending import</span>'
-    elif verdict == "no_sentinels":
-        badge = '<span class="badge-partial">⚠ Cannot verify</span>'
-    elif verdict == "check_failed":
-        code = status.get("http_status")
-        suffix = f" (HTTP {int(code)})" if isinstance(code, int) else ""
-        badge = f'<span class="badge-failed">⚠ Check failed{escape(suffix)}</span>'
-    elif verdict == "no_csv":
-        return ""
-    else:
-        return ""
-    ts_iso = status.get("checked_at")
-    if ts_iso:
-        ts_pretty = iso_to_sd(ts_iso)
-        badge += f' <span class="badge-when">(checked {escape(ts_pretty)})</span>'
-    return badge
 
 
 # ---------------------------------------------------------------------------
@@ -481,6 +417,20 @@ def render_files_html() -> str:
     parts.append(f'        <a href="{escape(PUBLIC_LLMS_URL)}">View</a>')
     parts.append("      </div>")
     parts.append(f'      <p class="subtle">{_mtime_note(EXTERNAL_REPO_ROOT / "llms.txt")}</p>')
+    parts.append("    </li>")
+
+    # The Fidelo ZIP (Fidelo/<lang>.csv for the 8 non-English locales): the client downloads it and imports each CSV in
+    # the Weglot Dashboard. It lived on the retired /admin/translations/ page (CEL-071).
+    parts.append("    <li>")
+    parts.append('      <div class="file-row">')
+    parts.append('        <span class="file-name">Fidelo translations — Download all (ZIP: Fidelo/&lt;lang&gt;.csv, all 8 languages)</span>')
+    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_ZIP_URL)}" download>Download ZIP</a>')
+    parts.append("      </div>")
+    ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
+    note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
+    parts.append(f'      <p class="subtle">{note_zip} — unzip, then import each <code>Fidelo/&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
+    # The client's import instruction, as the retired /admin/translations/ page worded it (CEL-071 round 1).
+    parts.append('      <p class="subtle">Import each into the Weglot Dashboard (with “Overwrite existing translations” on) to replace machine translations with authoritative copy. <em>Summary paragraphs &amp; page meta are handled by the summary pipeline and are not listed here.</em></p>')
     parts.append("    </li>")
 
     parts.append("  </ul>")
@@ -862,96 +812,6 @@ def render_summaries_html() -> str:
     return "\n".join(parts) + "\n"
 
 
-def render_translations_html() -> str:
-    """Render /admin/translations/ — Weglot CSV downloads, FIDELO SYNC FILES ONLY.
-
-    The download is a single ZIP of `Fidelo/<lang>.csv` (course & housing on-page
-    text — titles, bullets, USP facts, accordion sections), one per non-English
-    locale, straight from the Fidelo exporter.
-
-    Summary paragraphs + page meta are NO LONGER offered here (2026-05-26): they are
-    produced and imported via the summary block-reuse pipeline (`tools/summary`), not
-    this dashboard. Keep this page Fidelo-only — do not re-add a Summaries download.
-    """
-    now = now_san_diego()
-    parts = []
-    parts.append("<!DOCTYPE html>")
-    parts.append('<html lang="en">')
-    parts.append("<head>")
-    parts.append(f"  {AUTH_SCRIPT_TAG}")
-    parts.append('  <meta charset="utf-8">')
-    parts.append('  <meta name="viewport" content="width=device-width, initial-scale=1">')
-    parts.append("  <title>Weglot Translations — College of English Language</title>")
-    parts.append('  <meta name="description" content="Download Weglot import CSVs: Fidelo on-page text (course & housing titles, bullets, USP facts) for all 8 non-English locales.">')
-    parts.append('  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
-    parts.append('  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">')
-    parts.append(f'  {render_favicon_tag()}')
-    parts.append('  ' + DASHBOARD_CSS_LINK)
-    parts.append("</head>")
-    parts.append("<body>")
-    parts.append(render_admin_open("translations"))
-    parts.append('  <div class="dashboard-shell">')
-
-    # Intro
-    parts.append('    <section class="status status-ok">')
-    parts.append('      <p class="status-label">Weglot CSV downloads — Fidelo sync files.</p>')
-    parts.append('      <p>Download the single ZIP below. It unzips into a <strong>Fidelo/</strong> folder with one <code>&lt;lang&gt;.csv</code> per non-English locale — course &amp; housing on-page text (titles, bullets, USP facts, accordion sections). Import each into the Weglot Dashboard (with “Overwrite existing translations” on) to replace machine translations with authoritative copy. <em>Summary paragraphs &amp; page meta are handled by the summary pipeline and are not listed here.</em></p>')
-    parts.append("    </section>")
-
-    parts.append("    <h2>Weglot import files</h2>")
-    parts.append('    <ul class="files">')
-
-    # The ONE download — a ZIP with the Fidelo/ folder (Fidelo sync files only).
-    parts.append("    <li>")
-    parts.append('      <div class="file-row">')
-    parts.append('        <span class="file-name">Fidelo translations — Download all (ZIP: Fidelo/&lt;lang&gt;.csv, all 8 languages)</span>')
-    parts.append(f'        <a href="{escape(PUBLIC_WEGLOT_ZIP_URL)}" download>Download ZIP</a>')
-    parts.append("      </div>")
-    ts_zip = file_mtime_iso(WEGLOT_ZIP_FILE)
-    note_zip = f"Last updated on {escape(iso_to_sd(ts_zip))}" if ts_zip else "Not yet generated"
-    parts.append(f'      <p class="subtle">{note_zip} — unzip, then import each <code>Fidelo/&lt;lang&gt;.csv</code> in the Weglot Dashboard.</p>')
-    parts.append("    </li>")
-
-    parts.append("  </ul>")
-
-    # Per-language import status — INFO ONLY (no per-file download; everything
-    # ships in the ZIP above). Kept so the operator still sees what's imported.
-    parts.append("    <h2>Per-language import status</h2>")
-    import_status_by_lang = load_import_status()
-    parts.append('    <ul class="files">')
-    for lang in WEGLOT_CSV_LANGUAGES:
-        lang_name = LANGUAGE_NAMES.get(lang, lang.upper())
-        csv_path = WEGLOT_CSV_DIR / f"{lang}.csv"
-        ts = file_mtime_iso(csv_path)
-        note = f"Last updated on {escape(iso_to_sd(ts))}" if ts else "Not yet generated"
-        badge = render_import_badge(import_status_by_lang.get(lang))
-        parts.append("    <li>")
-        parts.append('      <div class="file-row">')
-        parts.append(f'        <span class="file-name">{escape(lang_name)} ({lang})</span>')
-        parts.append("      </div>")
-        if badge:
-            parts.append(f'      <p class="subtle">{note} {badge}</p>')
-        else:
-            parts.append(f'      <p class="subtle">{note}</p>')
-        parts.append("    </li>")
-
-    parts.append("  </ul>")
-
-    # Footer
-    parts.append("  <footer>")
-    parts.append(
-        f'    This page was generated on {escape(fmt_sd(now))}. '
-        f'Next check within 15 minutes.'
-    )
-    parts.append("  </footer>")
-    parts.append("  </div>")
-    parts.append(render_admin_close())
-    parts.append("</body>")
-    parts.append("</html>")
-
-    return "\n".join(parts) + "\n"
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -962,8 +822,6 @@ def write_status_page() -> None:
     write_shell_html(EXTERNAL_REPO_ROOT)
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(render_html(), encoding="utf-8")
-    TRANSLATIONS_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    TRANSLATIONS_OUTPUT_FILE.write_text(render_translations_html(), encoding="utf-8")
     FILES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     FILES_OUTPUT_FILE.write_text(render_files_html(), encoding="utf-8")
     SUMMARIES_OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -973,7 +831,6 @@ def write_status_page() -> None:
 def main() -> int:
     write_status_page()
     print(f"[status_page] Wrote {OUTPUT_FILE}", flush=True)
-    print(f"[status_page] Wrote {TRANSLATIONS_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {FILES_OUTPUT_FILE}", flush=True)
     print(f"[status_page] Wrote {SUMMARIES_OUTPUT_FILE}", flush=True)
     return 0

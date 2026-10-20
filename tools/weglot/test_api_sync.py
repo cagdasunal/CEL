@@ -6,6 +6,7 @@ contain newlines (exception reprs, Weglot/CMS response bodies). A bare
 output variables. content-pipeline.yml consumes `steps.weglot.outputs.error`, so a
 corrupt block would feed garbage to `update_log.py --error`.
 """
+import json
 import sys
 from pathlib import Path
 
@@ -165,3 +166,41 @@ def test_success_path_stays_quiet(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("GITHUB_OUTPUT", str(tmp_path / "out"))
     api_sync.emit_github_output(True, 3, ["a", "b", "c"])
     assert capsys.readouterr().err == ""
+
+
+# ── save_state writes only when the exclusions changed (CEL-071 row 4b) ─────────────────────────
+def _state_in(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_sync, "DATA_DIR", tmp_path)
+    monkeypatch.setattr(api_sync, "STATE_FILE", tmp_path / "weglot-exclusions.json")
+    return tmp_path / "weglot-exclusions.json"
+
+
+def test_save_state_does_not_rewrite_an_unchanged_state(tmp_path, monkeypatch):
+    path = _state_in(tmp_path, monkeypatch)
+    state = {"last_sync": None, "exclusions": {"a-post": {"language": "fr", "excluded_from": ["de"]}}}
+    api_sync.save_state(state)
+    first = path.read_bytes()
+    api_sync.save_state(api_sync.load_state())            # the next run: same exclusions, new clock
+    assert path.read_bytes() == first, "a run that changed nothing must leave the file byte-identical"
+
+
+def test_save_state_writes_when_an_exclusion_is_added_and_stamps_it(tmp_path, monkeypatch):
+    path = _state_in(tmp_path, monkeypatch)
+    api_sync.save_state({"last_sync": None, "exclusions": {"a-post": {"language": "fr"}}})
+    before = json.loads(path.read_text(encoding="utf-8"))
+    state = api_sync.load_state()
+    state["exclusions"]["b-post"] = {"language": "de"}
+    api_sync.save_state(state)
+    after = json.loads(path.read_text(encoding="utf-8"))
+    assert set(after["exclusions"]) == {"a-post", "b-post"}
+    assert after["last_sync"] and after["last_sync"] != before["last_sync"]
+
+
+def test_save_state_writes_a_missing_or_unreadable_file(tmp_path, monkeypatch):
+    path = _state_in(tmp_path, monkeypatch)
+    state = {"last_sync": None, "exclusions": {}}
+    api_sync.save_state(state)
+    assert path.exists()
+    path.write_text("{not json", encoding="utf-8")
+    api_sync.save_state(state)
+    assert json.loads(path.read_text(encoding="utf-8"))["exclusions"] == {}

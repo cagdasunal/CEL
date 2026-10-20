@@ -14,8 +14,7 @@ client handshake, the record's shape, the size limit, history. Change the Worker
 together, or that test fails (monorepo runbook WO-33, decision (b)).
 
 desk-read also carries the engine's findings (schema v2, WO-36; `seed_findings` puts them in).
-`desk-summary` (runbook WO-18) is the index's: each language's decisions as the shapes the
-desk's stageOf() reads, with their counts, and the shape of each flagged text it names.
+(`desk-summary`, the first desk's index counts, was removed with it in CEL-054: the Worker and this refuse it as an unknown action.)
 
 The desk's jobs (runbook U1): `desk-job-start` records a job the way the Worker does, and
 "dispatches" it by adding its id to `dispatched` -- no engine runs here. The harness plays the
@@ -41,7 +40,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-import math
 import re
 import threading
 import uuid
@@ -56,7 +54,6 @@ SMOKE_LOCALE, SMOKE_PAGE, SMOKE_UNIT = "zz", "_smoke", "0000000000000000"
 MAX_CHANGES = 200
 MAX_TEXT = 8000
 MAX_BYTES = 1_900_000
-MAX_FLAGGED = 8000
 # The Worker's per-user cap (DESK_CAP), which this stand-in does not enforce (see above). The
 # desk's own ceiling is held to it (runbook WO-18), and these to the Worker by the parity test.
 CAP_CHANGES, CAP_WINDOW_SEC = 2000, 600
@@ -64,19 +61,15 @@ CAP_CHANGES, CAP_WINDOW_SEC = 2000, 600
 # JavaScript's does not -- so "<id>\n" passed here and was refused by the Worker (parity test).
 UNIT = re.compile(r"[0-9a-f]{16}")
 PAGE = re.compile(r"[a-z0-9_-]{1,80}")
-# The Worker's jobs (runbook U1): the kinds, the one-run cap on a submit's amount, and how long
-# an open job may go unanswered before the sweep fails it.
-JOB_KINDS = ("export", "verify", "plan", "submit", "collect", "translate-page", "retranslate")
-# #1's ruling (U3): one Gemini run per Send, over every language -- these kinds take locale "all".
-JOB_ALL, JOB_ALL_KINDS = "all", ("plan", "submit", "collect")
-JOB_RUN_CAP_USD = 40
+# The Worker's jobs (runbook U1): the kinds, and how long an open job may go unanswered before the sweep fails it.
+# Desk v2 has three, each for ONE language (CEL-054 removed verify, plan, submit and collect, and the locale "all").
+JOB_KINDS = ("export", "translate-page", "retranslate")
 JOB_STALE_SEC = 35 * 60
 # A Weglot file is handed over only within the engine's FRESH_MINUTES of being made (U3, A4-1).
 EXPORT_FRESH_SEC = 60 * 60
 JOB_DAILY = 60                  # starts a day per user, a refused one too (each is a billed run)
-JOB_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}")       # verify's batch, collect's run: the runner's rule
 JOB_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{7,63}")
-BATCH_ID = JOB_REF
+BATCH_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,119}")      # a Weglot file's batch id: the runner's rule
 # Desk v2 (CEL-022): a job that works on ONE page carries it in `ref` as JSON text -- the Worker's JOB_PAGES,
 # JOB_REF_JSON and jobRefJson. The desk sends the object; it is stored in a fixed key order, only these keys.
 JOB_PAGES = ("cost-of-studying-english", "how-long-to-learn-english", "vancouver", "vs-toronto")
@@ -234,15 +227,6 @@ def record_of(raw) -> dict:
     return out
 
 
-def _shape(tray, edited: bool) -> dict:
-    """The Worker's deskShape(): what stageOf() reads of a decision, and nothing else."""
-    out: dict = {}
-    if tray:
-        out["tray"] = tray
-    if edited:
-        out["text"] = True
-    return out
-
 
 def sig_input(locale: str, unit: str, record: dict, by: str, at: str) -> str:
     """The Worker's deskSigInput -- byte for byte (data/localize/desk-signature-vectors.json)."""
@@ -333,8 +317,6 @@ class DeskStore:
                 return self._write(body, email)
             if action == "desk-history":
                 return self._history(body)
-            if action == "desk-summary":
-                return self._summary(body)
             if action == "desk-job-start":
                 return self._job_start(body, email)
             if action == "desk-job-get":
@@ -448,47 +430,6 @@ class DeskStore:
                      "decisions": decisions, "pipeline": pipeline, "drafts": drafts,
                      **({"findings": findings} if findings else {})}
 
-    def _summary(self, body: dict) -> tuple[int, dict]:
-        pairs: list[tuple[str, str]] = []
-        try:
-            f = body.get("flagged")
-            if f is not None:
-                if not isinstance(f, dict):
-                    raise Invalid("flagged must be an object of lists")
-                for locale, ids in f.items():
-                    if locale not in REAL_LOCALES:
-                        raise Invalid("unknown language")
-                    if not isinstance(ids, list):
-                        raise Invalid("flagged must be an object of lists")
-                    for u in ids:
-                        if not isinstance(u, str) or not UNIT.fullmatch(u):
-                            raise Invalid("bad text id")
-                        pairs.append((locale, u))
-                if len(pairs) > MAX_FLAGGED:
-                    raise Invalid(f"more than {MAX_FLAGGED} flagged texts")
-        except Invalid as e:
-            return 400, {"ok": False, "error": f"invalid: {e}"}
-        counts: dict[tuple[str, str | None, bool], int] = {}
-        for (loc, _u), r in self.decisions.items():
-            if loc != SMOKE_LOCALE:
-                key = (loc, r["record"].get("tray"), r["record"].get("text") is not None)
-                counts[key] = counts.get(key, 0) + 1
-        languages = {loc: {"shapes": [], "flagged": {}} for loc in REAL_LOCALES}
-        # SQLite's ORDER BY tray, edited: no tray first, then csv, draft; unedited first.
-        for loc, tray, edited in sorted(counts, key=lambda k: (k[0], k[1] is not None, k[1] or "", k[2])):
-            languages[loc]["shapes"].append([_shape(tray, edited), counts[(loc, tray, edited)]])
-        for loc, u in pairs:
-            r = self.decisions.get((loc, u))
-            if r is not None:
-                languages[loc]["flagged"][u] = _shape(r["record"].get("tray"), r["record"].get("text") is not None)
-        # When each language's last decision was saved (U3, A4-1): an undone one keeps its time.
-        for (loc, _u), r in self.decisions.items():
-            if loc in languages and r["at"] > languages[loc].get("lastAt", ""):
-                languages[loc]["lastAt"] = r["at"]
-        return 200, {"ok": True, "api": API,
-                     "readAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-                     "languages": languages}
-
     def _history(self, body: dict) -> tuple[int, dict]:
         try:
             locale = self._locale(body)
@@ -513,38 +454,23 @@ class DeskStore:
                 j.update(status="failed", finished_at=_iso(now), error="engine-never-answered")
 
     def _job_start(self, body: dict, email: str) -> tuple[int, dict]:
-        if body.get("locale") == JOB_ALL:
-            locale = JOB_ALL
-        else:
-            try:
-                locale = self._locale(body)
-            except Invalid as e:
-                return 400, {"ok": False, "error": f"invalid: {e}"}
-            if locale not in REAL_LOCALES:
-                return 400, {"ok": False, "error": "invalid: not a desk language"}
+        try:
+            locale = self._locale(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
+        if locale not in REAL_LOCALES:
+            return 400, {"ok": False, "error": "invalid: not a desk language"}
         kind = body.get("kind")
         if not isinstance(kind, str) or kind not in JOB_KINDS:
             return 400, {"ok": False, "error": "invalid: kind"}
-        if locale == JOB_ALL and kind not in JOB_ALL_KINDS:
-            return 400, {"ok": False, "error": "invalid: only plan, submit and collect run for all languages"}
-        amount = None
-        if kind == "submit":
-            amount = body.get("amount_usd")
-            if (not isinstance(amount, (int, float)) or isinstance(amount, bool) or not math.isfinite(amount)
-                    or amount <= 0 or amount > JOB_RUN_CAP_USD):
-                return 400, {"ok": False, "error": "invalid: amount_usd must be the plan's estimate, "
-                                                   f"above 0 and at most {JOB_RUN_CAP_USD}"}
-        elif "amount_usd" in body:                    # JavaScript's `!== undefined`: a null counts
-            return 400, {"ok": False, "error": "invalid: only a submit carries an amount"}
+        if "amount_usd" in body:                      # JavaScript's `!== undefined`: a null counts
+            return 400, {"ok": False, "error": "invalid: a job carries no amount"}
         ref = body.get("ref")
         if ref is not None:
-            if kind in JOB_REF_JSON:
-                ref = _job_ref_json(kind, ref)
-                if ref is None:
-                    return 400, {"ok": False, "error": "invalid: ref"}
-            elif kind not in ("verify", "collect") or not isinstance(ref, str) or not JOB_REF.fullmatch(ref):
+            ref = _job_ref_json(kind, ref)
+            if ref is None:
                 return 400, {"ok": False, "error": "invalid: ref"}
-        elif kind != "export" and kind in JOB_REF_JSON:       # the page to work on is not optional
+        elif kind != "export":                        # the page to work on is not optional
             return 400, {"ok": False, "error": "invalid: ref"}
         if not self.engine_configured:
             return 503, {"ok": False, "error": "the engine is not configured"}
@@ -559,7 +485,7 @@ class DeskStore:
             return 409, {"ok": False, "error": "already running", "job": _job_out(open_)}
         job_id = str(uuid.uuid4())
         self.jobs[job_id] = {"id": job_id, "kind": kind, "locale": locale, "status": "queued",
-                             "amount_usd": amount, "ref": ref, "requested_by": email,
+                             "amount_usd": None, "ref": ref, "requested_by": email,
                              "created_at": _iso(datetime.now(timezone.utc))}
         if self.dispatch_status not in (200, 204):
             self.jobs[job_id].update(status="failed", finished_at=_iso(datetime.now(timezone.utc)),
@@ -569,13 +495,10 @@ class DeskStore:
         return 200, {"ok": True, "job": _job_out(self.jobs[job_id])}
 
     def _job_get(self, body: dict) -> tuple[int, dict]:
-        if body.get("locale") == JOB_ALL:
-            locale = JOB_ALL
-        else:
-            try:
-                locale = self._locale(body)
-            except Invalid as e:
-                return 400, {"ok": False, "error": f"invalid: {e}"}
+        try:
+            locale = self._locale(body)
+        except Invalid as e:
+            return 400, {"ok": False, "error": f"invalid: {e}"}
         self._sweep(locale)
         if "id" in body:
             job_id = body["id"]

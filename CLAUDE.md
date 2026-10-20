@@ -62,5 +62,5 @@ mirrored file, ask before editing; do not blindly copy in either direction.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — the canonical design (layout, the leaf rule, extraction
   pattern, testing, execution protocol). When this file disagrees with ARCHITECTURE.md on `tools/`
   internals, ARCHITECTURE.md wins and this file gets fixed.
-- `.github/workflows/` — the cron fleet (summary, content-pipeline, weglot-sync, offers-*, blog-image,
+- `.github/workflows/` — the cron fleet (summary, content-pipeline, offers-*, blog-image,
   arabic-css, sitemap-llms, stress-test, lint-workflows).

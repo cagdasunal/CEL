@@ -83,7 +83,6 @@ on:
       - "Content Pipeline"
       - "Offers Auto-Extend"
       - "Update Sitemap & LLMs.txt"
-      - "Weglot Daily Report"
     types: [completed]
 
 permissions:

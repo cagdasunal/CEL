@@ -269,8 +269,26 @@ def load_state() -> dict:
     return {"last_sync": None, "exclusions": {}}
 
 
+def _without_stamp(state: dict) -> dict:
+    return {k: v for k, v in state.items() if k != "last_sync"}
+
+
 def save_state(state: dict) -> None:
+    """Write the state file only when it changed.
+
+    `last_sync` moves on every call, so rewriting the file for the stamp alone made the
+    15-minute content pipeline commit on every run (43 "pipeline: run" commits between
+    2026-10-13 and 2026-10-20) although nothing had changed. Nothing reads `last_sync`
+    except `--status`, which prints whatever the last real change stamped.
+    """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE) as f:
+                if _without_stamp(json.load(f)) == _without_stamp(state):
+                    return
+        except (OSError, ValueError):
+            pass                       # unreadable file: write it fresh
     to_write = {**state, "last_sync": datetime.now(timezone.utc).isoformat()}
     with open(STATE_FILE, "w") as f:
         json.dump(to_write, f, indent=2, sort_keys=False)

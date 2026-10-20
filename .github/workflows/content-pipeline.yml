@@ -71,18 +71,6 @@ jobs:
         if: steps.weglot.outputs.error != ''
         run: python tools/weglot/update_log.py --event error --error "${{ steps.weglot.outputs.error }}"
 
-      - name: Step 4d — Check Weglot CSV import status
-        if: always()
-        timeout-minutes: 3
-        continue-on-error: true
-        run: |
-          python3 -m tools.weglot.check_import_status \
-            --csv-dir docs/admin/weglot-imports \
-            --out docs/admin/weglot-imports/import-status.json
-          if [ -f docs/admin/weglot-imports/import-status.json ]; then
-            python3 -c "import json; s=json.load(open('docs/admin/weglot-imports/import-status.json')); print('verdicts:', {c: i['verdict'] for c, i in s['languages'].items()})"
-          fi
-
       - name: Step 4e — Generate HTML status page
         if: always()
         env:
@@ -103,15 +91,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # Merge driver for the deterministic build artifacts tagged
-          # `merge=keepLatest` in .gitattributes (the dashboard HTML + import
-          # status). `cp %B %A` resolves a conflict to %B = "theirs" = the
+          # `merge=keepLatest` in .gitattributes (the dashboard HTML). `cp %B %A` resolves a conflict to %B = "theirs" = the
           # commit being REPLAYED during a rebase = THIS run's fresh output, so
           # an overlapping run's regenerated copy wins instead of dying red.
           # (Note the rebase ours/theirs inversion: during rebase, %A is the
           # upstream base and %B is the commit we're replaying.) Lives in
           # .git/config, so it must be (re)registered here every run.
           git config merge.keepLatest.driver 'cp %B %A'
-          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/translations/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html docs/admin/weglot-imports/import-status.json 2>/dev/null || true
+          git add data/weglot-exclusions.json data/weglot-sitemap-exclusions.json data/log-state.json docs/sitemap.xml docs/llms.txt docs/admin/log/index.html docs/admin/index.html docs/assets/css/dashboard.css docs/assets/js/dashboard-config.js docs/admin/offers/index.html docs/admin/summaries/index.html docs/admin/files/index.html 2>/dev/null || true
           git diff --cached --quiet && echo "nothing to commit" || git commit -m "pipeline: run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           # Push with retry. On rejection, rebase onto the run that beat us; the
           # keepLatest driver auto-resolves the generated-file conflicts that

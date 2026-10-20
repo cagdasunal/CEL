@@ -438,13 +438,13 @@ The script's `ensure_summary_field` auto-creates the field on the first live run
 ### "Static page summary written but not visible on the live page"
 The script does NOT auto-write to static pages (audit-086 H-1). After a live run, navigate to `cel.englishcollege.com/admin/weglot-imports/static-summaries/`, download the relevant `.summary.md` file, and paste the Markdown into the Rich Text element on the page in Webflow Designer. Publish.
 
-### "CSV import status shows pending"
+### "CSV rows are not live on the site"
 The script appends rows to `docs/admin/weglot-imports/<lang>.csv` but Weglot doesn't auto-ingest. After a live run, the user must:
 1. Go to Weglot Dashboard → Translations → Import/Export
 2. For each language, click "Import" and upload the corresponding `<lang>.csv`
 3. Confirm the rows imported
 
-The dashboard's "Translations" tab shows the per-language import status badge.
+(The dashboard no longer shows a per-language import badge; check the live page.)
 
 ### Local test suite fails after a change
 `python3 -m pytest tools/summary/tests/ -q` should pass clean. If a test fails after a config change, check whether the assertion is stale (e.g., the cache_control shape changed when `ttl: "1h"` was added — `test_prompt_builder.py` was updated).

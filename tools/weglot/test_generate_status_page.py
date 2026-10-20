@@ -105,3 +105,15 @@ def test_a_freeze_the_pipeline_would_refuse_holds_every_paste(tmp_path, monkeypa
     assert gsp.frozen_paste_slugs() is None
     assert gsp.render_files_html().count("Do not paste") == 2
 
+
+
+def test_the_files_page_keeps_the_clients_import_instruction():
+    """CEL-071 round 1: the retired Translations page told the client to import the ZIP's CSVs with "Overwrite
+    existing translations" on; that sentence lives under the Fidelo ZIP row of /admin/files/ now."""
+    from tools.weglot import generate_status_page as gsp
+    page = gsp.render_files_html()
+    zip_at = page.index("Download all (ZIP")
+    note = page[zip_at:page.index("Manual paste files")]
+    assert "Overwrite existing translations" in note
+    assert "replace machine translations with authoritative copy" in note
+    assert "Summary paragraphs &amp; page meta are handled by the summary pipeline" in note
