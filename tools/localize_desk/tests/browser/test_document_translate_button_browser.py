@@ -241,8 +241,33 @@ def pick(data: dict, n: int = 1, *, lang: str = LANG, need_w: bool = False) -> l
     return out
 
 
+def _now(page):
+    """CEL-069: the open page (the tree row marked current) and the open language (the selected tab)."""
+    return page.evaluate("""() => [(document.querySelector('.doc-tree-page[aria-current="page"]') || {dataset: {}}).dataset.page || null,
+        (document.querySelector('.doc-tab[aria-selected="true"]') || {dataset: {}}).dataset.lang || null]""")
+
+
 def cell(page, key, lang):
-    return page.locator(f'.doc-cell[data-page="{key}"][data-lang="{lang}"]')
+    """CEL-069 (the grid's cell before): where the shell shows (page, language) -- the tree row while `lang` is the
+    open language, the language tab while `key` is the open page; neither: the tab is clicked first (the page
+    stays). Either carries data-status, the status word (.doc-st-word) and the count in its data-tip."""
+    cur_page, cur_lang = _now(page)
+    if lang == cur_lang:
+        return page.locator(f'.doc-tree-page[data-page="{key}"]')
+    if key == cur_page:
+        return page.locator(f'#doc-tab-{lang}')
+    page.locator(f'#doc-tab-{lang}').click()
+    page.wait_for_function("""l => document.querySelector('#doc').dataset.state === 'ready'
+        && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""", arg=lang, timeout=20000)
+    return page.locator(f'.doc-tree-page[data-page="{key}"]')
+
+
+def expect_count(c, text):
+    """The count the grid's cell printed is the end of the row's / tab's hover text now (empty: no count)."""
+    if text:
+        expect(c).to_have_attribute("data-tip", re.compile(re.escape(" · " + text) + "$"))
+    else:
+        expect(c).not_to_have_attribute("data-tip", re.compile(r" · \d+ of \d+"))
 
 
 def blocks_of(key: str = PAGE_KEY) -> list[dict]:

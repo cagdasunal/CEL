@@ -244,8 +244,12 @@ def test_every_text_the_reader_sees_is_4_5_to_1_or_more_against_its_own_ground(b
             "the translation on its sheet": (css(p, f"{li} .doc-tgt", "color"), css(p, li, "backgroundColor", "::after")),
             "the note under the translation": (css(p, f"{li} .doc-note", "color"), css(p, li, "backgroundColor", "::after")),
             "the sheet heads": (css(p, ".doc-head", "color"), css(p, ".doc-head", "backgroundColor")),
-            "an outline name": (css(p, ".doc-outline-name", "color"), None),
-            "the outline title": (css(p, ".doc-outline-title", "color"), None),
+            # CEL-069: the outline lives in the page tree (its title is for screen readers only); the shell's own texts
+            "an outline name, in the tree": (css(p, ".doc-outline-name", "color"), css(p, ".doc-tree", "backgroundColor")),
+            "a page name in the tree": (css(p, ".doc-tree-name", "color"), css(p, ".doc-tree", "backgroundColor")),
+            "a folder row in the tree": (css(p, ".doc-tree-fold", "color"), css(p, ".doc-tree", "backgroundColor")),
+            "a language tab at rest": (css(p, '.doc-tab[aria-selected="false"]', "color"), None),
+            "the path's folder": (css(p, ".doc-path-dir", "color"), None),
             "the words count in the bar": (css(p, ".doc-words", "color"), css(p, ".doc-status", "backgroundColor")),
             "the desk version in the bar": (css(p, ".doc-desk-version", "color"), css(p, ".doc-status", "backgroundColor")),
         }

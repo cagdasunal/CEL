@@ -223,55 +223,98 @@ DOC_TOKENS = """\
 # whole height, so a note or a conflict line under the translation stays on the paper; the
 # texts sit on them with margins. A third sheet (Weglot) is the Weglot cell itself.
 DOC_CSS = """\
-/* The document page (desk v2, design B): an outline beside the sheets, a status bar below them. */
-html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
-.doc { --doc-topbar: 53px; padding: 8px 0 0; }
+/* The document page (desk v2, design B) in the Option B shell (CEL-069, CEL-068 shell-spec.md): a page tree on
+   the left, a path row and language tabs over the sheets, a status bar below them. */
+html { scroll-padding-top: 128px; scroll-padding-bottom: 64px; }   /* + a block's 64 px margin: it lands just under the sticky rows (bar 53, path 52, tabs 38, heads) */
+.dashboard-shell:has(> .doc) { padding: 0; }
+.doc { --doc-topbar: 53px; padding: 0; }
+.doc-app { display: grid; grid-template-columns: var(--tree-w) minmax(0, 1fr); align-items: start; }
+.doc-main { min-width: 0; }
+.doc-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* The pages x languages grid */
-.doc-gridwrap { margin: 8px 0 28px; }
-.doc-grid-title { margin: 0 0 8px; font-size: var(--fs-base); font-weight: 600; }
-.doc-grid { width: 100%; min-width: 720px; border-collapse: collapse; }
-.doc-grid th, .doc-grid td { padding: 4px; text-align: start; vertical-align: top; }
-.doc-grid thead th { font-size: var(--fs-sm); font-weight: 600; color: var(--doc-muted); white-space: nowrap; }
-.doc-grid-page { padding-inline-end: 12px; font-size: var(--fs-md); font-weight: 600; white-space: nowrap; }
-.doc-flag { margin-inline-end: 4px; }
-.doc-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--fg); font: inherit; font-size: var(--fs-sm); text-align: start; cursor: pointer; }
-.doc-cell:hover { background: var(--stripe); }
-.doc-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.doc-cell-status { font-weight: 600; }
-.doc-cell-count { color: var(--doc-muted); font-size: var(--fs-xs); }
-.doc-cell[data-status="unknown"] .doc-cell-status, .doc-cell[data-status="none"] .doc-cell-status { color: var(--doc-muted); font-weight: 400; }
-.doc-cell[data-status="exported"] .doc-cell-status { color: var(--ok); }
-.doc-cell[data-status="failed"] .doc-cell-status { color: var(--err); }
-.doc-cell[aria-pressed="true"] { border-color: var(--fg); }
-.doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count { font-weight: 700; }
+/* A status mark: Option B's shapes, shell-spec §1 colours (3:1 on every shell background) */
+.doc-st { display: inline-block; flex: none; width: 8px; height: 8px; border: 1.5px solid var(--doc-muted); border-radius: 50%; }
+.doc-st[data-s="queued"] { border-color: var(--doc-progress); border-style: dashed; }
+.doc-st[data-s="translating"] { border-color: var(--doc-progress); background: var(--doc-progress); }
+.doc-st[data-s="drafted"] { border-color: var(--accent); background: var(--accent); }
+.doc-st[data-s="edited"] { border-color: var(--accent); background-image: linear-gradient(var(--accent), var(--accent)); background-size: 50% 100%; background-repeat: no-repeat; }
+.doc-st[data-s="exported"] { border-color: var(--ok); background: var(--ok); }
+.doc-st[data-s="failed"] { border-color: var(--err); }
+.doc-st[data-s="unknown"] { border-style: dotted; }
 
-/* The title and the one button above the sheets */
-.doc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; min-height: 72px; padding: 12px 0; border-top: 1px solid var(--border); }
-.doc-title { margin: 0; font-size: var(--fs-xl); font-weight: 500; letter-spacing: -0.006em; }
-.doc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.doc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); color: var(--notice-fg); }
+/* The page tree (left): filter, folders, pages, the open page's sections */
+.doc-tree { position: sticky; top: var(--doc-topbar); display: flex; flex-direction: column; height: calc(100vh - var(--doc-topbar) - 44px); border-inline-end: 1px solid var(--border); background: var(--tree-bg); }
+.doc-tree-filter { display: flex; align-items: center; gap: 6px; height: 32px; margin: 12px 12px 6px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--doc-sheet); }
+.doc-tree-filter:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-tree-filter input { flex: 1; min-width: 0; border: 0; background: none; color: var(--doc-ink); font: inherit; font-size: var(--fs-md); outline: none; }
+.doc-tree-filter input::placeholder { color: var(--doc-placeholder); opacity: 1; }
+.doc-kbd-hint { padding: 0 5px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--stage); color: var(--doc-muted); font-family: var(--mono); font-size: var(--fs-xs); line-height: 16px; }
+.doc-tree-list { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+.doc-tree-fold { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 6px 4px; border: 0; background: none; color: var(--doc-muted); font-family: var(--mono); font-size: var(--fs-sm); text-align: start; cursor: pointer; }
+.doc-tree-fold svg { width: 11px; height: 11px; transition: transform .12s; }
+.doc-tree-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.doc-tree-n { margin-inline-start: auto; font-family: inherit; font-size: var(--fs-xs); }
+.doc-tree-page { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 8px; width: 100%; padding: 6px 8px 6px 23px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--doc-ink); font: inherit; text-align: start; cursor: pointer; }
+.doc-tree-page:hover { background: var(--doc-sheet-hover); }
+.doc-tree-page.is-kb, .doc-tree-page[aria-current="page"] { background: var(--doc-sheet); }
+.doc-tree-slug { overflow: hidden; font-family: var(--mono); font-size: var(--fs-md); white-space: nowrap; text-overflow: ellipsis; }
+.doc-tree-page[aria-current="page"] .doc-tree-slug { color: var(--accent-strong); }
+.doc-tree-name { grid-column: 1; overflow: hidden; color: var(--doc-muted); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
+.doc-tree-page .doc-st { grid-row: 1 / span 2; grid-column: 2; }
+.doc-tree-page:focus-visible, .doc-tree-fold:focus-visible, .doc-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-tree-none { margin: 0; padding: 12px 8px; color: var(--doc-muted); font-size: var(--fs-md); }
+
+/* The open page's sections, nested under its row in the tree (today's outline, moved in) */
+.doc-outline { margin: 2px 0 6px 23px; padding-inline-start: 10px; border-inline-start: 1px solid var(--border-strong); }
+.doc-outline-list { margin: 0; padding: 0; list-style: none; }
+.doc-outline-item { display: block; width: 100%; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--doc-muted); font: inherit; text-align: start; cursor: pointer; }
+.doc-outline-item:hover { background: var(--doc-sheet-hover); color: var(--doc-ink); }
+.doc-outline-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.doc-outline-item[aria-current="true"] { background: var(--doc-sheet-hover); color: var(--doc-ink); }
+.doc-outline-name { display: block; font-size: var(--fs-sm); line-height: 1.35; }
+.doc-outline-count { display: block; margin-top: 1px; font-size: var(--fs-xs); color: var(--doc-muted); }
+
+/* The path row: the page's path and name, then its actions */
+.doc-bar { position: sticky; top: var(--doc-topbar); z-index: 21; display: flex; align-items: center; gap: 12px; height: var(--ctx-h); padding: 0 24px; background: var(--bg); }
+.doc-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0; font-size: var(--fs-path); font-weight: 400; }
+.doc-path { overflow: hidden; font-family: var(--mono); white-space: nowrap; text-overflow: ellipsis; }
+.doc-path-dir { color: var(--doc-muted); }
+.doc-path-leaf { color: var(--doc-ink); }
+.doc-path-name { color: var(--doc-muted); font-size: var(--fs-md); white-space: nowrap; }
+.doc-actions { display: flex; flex: none; align-items: center; gap: 8px; margin-inline-start: auto; }
+.doc-switch { display: inline-flex; align-items: center; gap: 6px; color: var(--doc-ink); font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
+.doc-switch input { appearance: none; position: relative; width: 28px; height: 16px; margin: 0; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--doc-tray); cursor: pointer; }
+.doc-switch input::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: var(--doc-muted); transition: transform .12s; }
+.doc-switch input:checked { border-color: var(--accent); background: var(--accent); }
+.doc-switch input:checked::after { background: var(--doc-sheet); transform: translateX(12px); }
+.doc-switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The language tabs over the sheets */
+.doc-tabs { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h)); z-index: 20; display: flex; align-items: flex-end; gap: 2px; height: var(--tabs-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.doc-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--tabs-h); padding: 0 10px; border: 0; border-bottom: 2px solid var(--bg); background: none; color: var(--doc-muted); font: inherit; font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
+.doc-tab:hover { color: var(--doc-ink); }
+.doc-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--doc-ink); font-weight: 500; }
+.doc-tabs-hint { align-self: center; margin-inline-start: auto; color: var(--doc-muted); font-size: var(--fs-xs); white-space: nowrap; }
+@media (max-width: 1439px) {
+  .doc-path-name { display: none; }
+}
+@media (max-width: 1279px) {
+  .doc { --tree-w: 248px; }
+  .doc-tabs-hint { display: none; }
+}
+
+.doc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 16px 24px; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); color: var(--notice-fg); }
 .doc-banner p { flex: 1 1 320px; margin: 0; font-size: var(--fs-base); }
 
-/* The outline rail, then the sheets on a recessed area */
-.doc-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
-.doc-outline { position: sticky; top: calc(var(--doc-topbar) + 16px); max-height: calc(100vh - var(--doc-topbar) - 76px); overflow-y: auto; padding: 4px 12px 16px 0; }
-.doc-outline-title { margin: 0 0 10px 12px; font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--doc-muted); }
-.doc-outline-list { margin: 0; padding: 0; list-style: none; }
-.doc-outline-item { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: none; color: var(--fg); font: inherit; text-align: start; cursor: pointer; }
-.doc-outline-item:hover { background: var(--stripe); }
-.doc-outline-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.doc-outline-item[aria-current="true"] { box-shadow: inset 2px 0 0 var(--doc-ink); font-weight: 500; }
-.doc-outline-item[aria-current="true"] .doc-outline-name { color: var(--doc-ink); }
-.doc-outline-name { display: block; font-size: var(--fs-md); line-height: 1.35; color: var(--doc-ink-src); }
-.doc-outline-count { display: block; margin-top: 2px; font-size: var(--fs-sm); font-weight: 400; color: var(--doc-muted); }
+/* The sheets on a recessed area */
+.doc-layout { display: block; }
 .doc-sheets { --doc-pad: 48px; min-width: 0; min-height: 60vh; padding: 24px; border-inline-start: 1px solid var(--border); background: var(--doc-tray); }
 .doc-sheets:has(.doc-blocks[data-weglot="on"]) { --doc-pad: 28px; }
 .doc-sections-wrap { display: none; align-items: center; gap: 8px; max-width: 1400px; margin: 0 auto 12px; font-size: var(--fs-sm); font-weight: 600; }
 .doc-sections { flex: 1 1 auto; min-width: 0; }
 
 /* The sheet heads, and the blocks: one grid row across the sheets */
-.doc-heads { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; max-width: 1400px; margin: 0 auto; }
+.doc-heads { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h) + var(--tabs-h)); z-index: 10; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; max-width: 1400px; margin: 0 auto; }
 .doc-head { padding: 14px var(--doc-pad) 10px; border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; background: var(--doc-sheet); color: var(--doc-ink-src); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0.01em; }
 .doc-blocks { max-width: 1400px; margin: 0 auto; padding: 0; list-style: none; }
 .doc-blocks[data-weglot="on"] { --doc-pad: 28px; }
@@ -386,9 +429,6 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-kbd:empty { display: none; }
 .doc-filter-wrap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 500; }
 .doc-next-count { font-size: var(--fs-sm); color: var(--doc-muted); }
-.doc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 500; cursor: pointer; }
-.doc-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
-.doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .doc-words { font-size: var(--fs-sm); color: var(--doc-muted); }
 /* Messages stay above the BugHerd tab (fixed, right 0, bottom 10 px, 70 px high): 110 px, as much as the status bar keeps free at its right end */
 .doc .toast-stack { bottom: 110px; }
@@ -409,7 +449,6 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 
 /* A tablet loses the rail (the Sections list takes its place) and gives the sheets the room */
 @media (max-width: 1024px) {
-  .doc-layout { grid-template-columns: minmax(0, 1fr); }
   .doc-outline { display: none; }
   .doc-sections-wrap { display: flex; }
   .doc-sheets { --doc-pad: 32px; padding: 20px 16px; }
@@ -417,6 +456,13 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 }
 /* A phone: one column. English (muted, small) above the translation above Weglot; the toolbar sits under the text */
 @media (max-width: 767px) {
+  .doc-app { grid-template-columns: minmax(0, 1fr); }
+  .doc-tree { position: static; height: auto; max-height: 40vh; border-inline-end: 0; border-bottom: 1px solid var(--border); }
+  .doc-bar { position: static; flex-wrap: wrap; height: auto; padding: 8px 12px; }
+  .doc-title { flex-wrap: wrap; }
+  .doc-path { white-space: normal; overflow-wrap: anywhere; }
+  .doc-actions { flex: 1 1 100%; flex-wrap: wrap; margin-inline-start: 0; }
+  .doc-tabs { position: static; overflow-x: auto; padding: 0 12px; }
   .doc-heads { display: none; }
   .doc-sheets { padding: 12px; }
   .doc-block, .doc-blocks[data-weglot="on"] .doc-block { --doc-pad: 0px; display: block; padding: 0 16px; border-inline: 1px solid var(--border); background: var(--doc-sheet); }
@@ -483,32 +529,36 @@ def _config() -> str:
     return _dump(cfg).replace("</", "<\\/")      # `</` would end the enclosing <script>
 
 
-def _grid() -> str:
-    """The pages x languages table. The cells say "checking" until the runtime has read the
-    language; their count and status are the runtime's."""
-    heads = "".join(
-        f'<th scope="col" class="doc-grid-lang" data-lang="{code}">'
-        f'<span class="doc-flag" aria-hidden="true">{flag}</span>{escape(S.lang_name(code))}</th>'
-        for code, _endonym, _dir, flag in S.LOCALES)
-    unknown = escape(t("doc.status.unknown"))
-    rows = []
-    for key in S.PAGE_KEYS:
-        cells = "".join(
-            f'<td><button type="button" class="doc-cell" data-page="{key}" data-lang="{code}" '
-            f'data-status="unknown" aria-pressed="false">'
-            f'<span class="doc-cell-status">{unknown}</span><span class="doc-cell-count"></span>'
-            f'</button></td>'
-            for code, *_ in S.LOCALES)
-        rows.append(f'<tr data-page="{key}"><th scope="row" class="doc-grid-page">'
-                    f'{escape(t("page." + key))}</th>{cells}</tr>')
+def _tree() -> str:
+    """The page tree's frame (CEL-069): the filter and an empty list the runtime fills from pages.json (each page's
+    path, grouped by folder), plus the open page's sections (today's outline, moved under its row by the runtime)."""
     return (
-        '    <section class="doc-gridwrap" aria-labelledby="doc-grid-title">\n'
-        f'      <h2 id="doc-grid-title" class="doc-grid-title">{escape(t("doc.grid.label"))}</h2>\n'
-        '      <div class="scroll-x"><table id="doc-grid" class="doc-grid">\n'
-        f'        <thead><tr><th scope="col">{escape(t("doc.grid.corner"))}</th>{heads}</tr></thead>\n'
-        '        <tbody>\n          ' + "\n          ".join(rows) + '\n        </tbody>\n'
-        '      </table></div>\n'
-        '    </section>\n'
+        f'    <aside id="doc-tree" class="doc-tree" aria-label="{escape(t("nav.tree.label"))}">\n'
+        '      <label class="doc-tree-filter">'
+        f'<span class="doc-sr">{escape(t("nav.tree.filter"))}</span>'
+        f'<input type="search" id="doc-tree-filter" placeholder="{escape(t("nav.tree.filter"))}" autocomplete="off" '
+        'spellcheck="false" aria-controls="doc-tree-list" aria-keyshortcuts="/ Control+K Meta+K">'
+        '<kbd class="doc-kbd-hint" aria-hidden="true">/</kbd></label>\n'
+        f'      <div id="doc-tree-list" class="doc-tree-list" role="tree" aria-label="{escape(t("nav.tree.label"))}"></div>\n'
+        '      <p id="doc-tree-none" class="doc-tree-none" hidden></p>\n'
+        '      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title" hidden>\n'
+        f'        <h2 id="doc-outline-title" class="doc-sr">{escape(t("doc.outline.title"))}</h2>\n'
+        '        <ol id="doc-outline-list" class="doc-outline-list"></ol>\n'
+        '      </nav>\n'
+        '    </aside>\n'
+    )
+
+
+def _tabs() -> str:
+    """The language tabs (CEL-069): one per language in the LOCALES order, each with the open page's status mark."""
+    tabs = "".join(
+        f'<button type="button" id="doc-tab-{code}" class="doc-tab" role="tab" data-lang="{code}" aria-selected="false" '
+        f'tabindex="-1" aria-keyshortcuts="Alt+{i}"><span class="doc-st" data-s="unknown" aria-hidden="true"></span>'
+        f'<span class="doc-tab-name">{escape(S.lang_name(code))}</span><span class="doc-st-word doc-sr"></span></button>'
+        for i, (code, *_rest) in enumerate(S.LOCALES, 1))
+    return (
+        f'      <div id="doc-tabs" class="doc-tabs" role="tablist" aria-label="{escape(t("nav.tabs.label"))}">{tabs}'
+        f'<span class="doc-tabs-hint" aria-hidden="true">{escape(t("nav.tabs.hint"))}</span></div>\n'
     )
 
 
@@ -517,21 +567,23 @@ def _dom() -> str:
     translate = escape(t("doc.translate"))
     return (
         '<main id="doc" class="doc" data-state="loading">\n'
-        + _grid() +
+        '  <div class="doc-app">\n'
+        + _tree() +
+        '    <div class="doc-main">\n'
         '    <header id="doc-bar" class="doc-bar">\n'
-        '      <h1 id="doc-title" class="doc-title"></h1>\n'
+        '      <h1 id="doc-title" class="doc-title"><span class="doc-path"><span class="doc-path-dir"></span>'
+        '<span class="doc-path-leaf"></span></span><span class="doc-path-name"></span></h1>\n'
         '      <div class="doc-actions">\n'
+        '        <label class="doc-switch"><input type="checkbox" id="doc-weglot" role="switch">'
+        f'<span>{escape(t("doc.weglot.toggle"))}</span></label>\n'
         f'        <a id="doc-rules" class="desk-btn" href="/admin/localization/rules/">{escape(t("doc.rules"))}</a>\n'
         f'        <button type="button" id="doc-translate" class="desk-btn">{translate}</button>\n'
         '      </div>\n'
         '    </header>\n'
+        + _tabs() +
         '    <div id="doc-banner" class="doc-banner" hidden><p id="doc-banner-text"></p>\n'
         f'      <button type="button" id="doc-banner-translate" class="desk-btn is-strong" hidden>{translate}</button></div>\n'
         '    <div class="doc-layout">\n'
-        '      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title">\n'
-        f'        <h2 id="doc-outline-title" class="doc-outline-title">{escape(t("doc.outline.title"))}</h2>\n'
-        '        <ol id="doc-outline-list" class="doc-outline-list"></ol>\n'
-        '      </nav>\n'
         '      <div class="doc-sheets">\n'
         f'        <label class="doc-sections-wrap"><span class="doc-sections-label">{escape(t("doc.sections"))}</span>\n'
         '          <select id="doc-sections" class="desk-select doc-sections"></select></label>\n'
@@ -542,6 +594,8 @@ def _dom() -> str:
         '        <ol id="doc-blocks" class="doc-blocks" data-weglot="off"></ol>\n'
         '      </div>\n'
         '    </div>\n'
+        '    </div>\n'
+        '  </div>\n'
         '    <footer id="doc-status" class="doc-status">\n'
         '      <p id="doc-save" class="doc-save" role="status" aria-live="polite" data-state="loading"></p>\n'
         '      <div class="doc-status-mid">\n'
@@ -558,8 +612,6 @@ def _dom() -> str:
         '        <span id="doc-next-count" class="doc-next-count"></span>\n'
         '      </div>\n'
         '      <div class="doc-status-end">\n'
-        '        <label class="doc-toggle"><input type="checkbox" id="doc-weglot">'
-        f' <span>{escape(t("doc.weglot.toggle"))}</span></label>\n'
         f'        <a id="doc-desk-version" class="doc-desk-version" href="{escape(DESK_CHANGELOG_URL)}" target="_blank" '
         f'rel="noopener" data-tip="{escape(t("doc.version.tip"))}">{escape(t("doc.version", version=DESK_VERSION))}</a>\n'
         '        <span id="doc-words" class="doc-words"></span>\n'
@@ -594,7 +646,7 @@ def render_page() -> str:
 
     head = S._head(t("doc.meta.title"), t("doc.meta.description"))
     assert head[-2:] == ["</head>", "<body>"], "desk_shared._head changed its ending"
-    style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", rich_css + "\n" + DOC_TOKENS + "\n" + DOC_CSS + "\n" + export_css) + "</style>"
+    style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", rich_css + "\n" + DOC_TOKENS + "\n" + SHELL_TOKENS + "\n" + DOC_CSS + "\n" + export_css) + "</style>"
 
     # Globals first: the switch back to "saving off", the copy, and the helpers v1 shares
     # (t / tn, the sign-in Worker call, the tooltip). The runtime and the field come after.
@@ -616,6 +668,17 @@ def render_page() -> str:
     parts.append("</body>")
     parts.append("</html>")
     return "\n".join(parts)
+
+
+# The shell's own tokens (CEL-069, CEL-068 shell-spec §1): the sizes, the in-progress brown of a status mark, the tree's
+# ground; the ink, muted and cream tokens are CEL-070's DOC_TOKENS (both are set on .doc, which holds the whole shell).
+SHELL_TOKENS = """\
+.doc {
+  --doc-progress: #7A4314;
+  --tree-w: 288px; --ctx-h: 52px; --tabs-h: 38px; --tree-bg: var(--doc-tray); --fs-path: 15px;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+"""
 
 
 # ── The build ───────────────────────────────────────────────────────────────

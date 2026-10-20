@@ -255,15 +255,13 @@
   const sel = {};                                 // "page|lang" -> true
   const none = {};                                // "page|lang" -> true: nothing to export there (greyed)
   const boxes = { cell: {}, row: {}, col: {}, all: null };
-  // A page in a language with no draft and no edit has nothing to export: the grid already says so
-  // (paintGrid: data-status "none", or "failed" for a page whose translation did not finish: it has no text either,
-  // CEL-075 items 11 and 20). "translating" and "queued" replace the status the page's texts would give (paintGrid), so
-  // those cells ask statusOf: no text yet is nothing too (CEL-093), a re-translated page with texts stays pickable.
+  // A page in a language with no draft and no edit has nothing to export: the desk's tree and tabs already say so
+  // (navStatus: "none", or "failed" for a page whose translation did not finish: it has no text either,
+  // CEL-075 items 11 and 20). "translating" and "queued" replace the status the page's texts would give (navStatus), so
+  // those ask statusOf: no text yet is nothing too (CEL-093), a re-translated page with texts stays pickable.
   // "unknown" (language not read yet) is not "nothing": it stays pickable.
   function noneCell(p, l) {
-    const c = document.querySelector('.doc-cell[data-page="' + p + '"][data-lang="' + l + '"]');
-    const st = c && c.getAttribute('data-status');
-    if (!c) return false;
+    const st = D && typeof D.navStatus === 'function' ? D.navStatus(p, l).status : '';
     if (st === 'none' || st === 'failed') return true;
     if (st !== 'translating' && st !== 'queued') return false;
     const s = D.statusOf(p, l);

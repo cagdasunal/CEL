@@ -408,12 +408,39 @@ def lone_taglines(data: dict) -> list[tuple[dict, str]]:
     return out
 
 
+def _now(page):
+    """CEL-069: the open page (the tree row marked current) and the open language (the selected tab)."""
+    return page.evaluate("""() => [(document.querySelector('.doc-tree-page[aria-current="page"]') || {dataset: {}}).dataset.page || null,
+        (document.querySelector('.doc-tab[aria-selected="true"]') || {dataset: {}}).dataset.lang || null]""")
+
+
 def cell(page, key, lang):
-    return page.locator(f'.doc-cell[data-page="{key}"][data-lang="{lang}"]')
+    """CEL-069 (the grid's cell before): where the shell shows (page, language) -- the tree row while `lang` is the
+    open language, the language tab while `key` is the open page; neither: the tab is clicked first (the page
+    stays). Either carries data-status, the status word (.doc-st-word) and the count in its data-tip."""
+    cur_page, cur_lang = _now(page)
+    if lang == cur_lang:
+        return page.locator(f'.doc-tree-page[data-page="{key}"]')
+    if key == cur_page:
+        return page.locator(f'#doc-tab-{lang}')
+    page.locator(f'#doc-tab-{lang}').click()
+    page.wait_for_function("""l => document.querySelector('#doc').dataset.state === 'ready'
+        && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""", arg=lang, timeout=20000)
+    return page.locator(f'.doc-tree-page[data-page="{key}"]')
+
+
+def expect_count(c, text):
+    """The count the grid's cell printed is the end of the row's / tab's hover text now (empty: no count)."""
+    if text:
+        expect(c).to_have_attribute("data-tip", re.compile(re.escape(" · " + text) + "$"))
+    else:
+        expect(c).not_to_have_attribute("data-tip", re.compile(r" · \d+ of \d+"))
 
 
 def wait_cells_known(page):
-    page.wait_for_function("document.querySelectorAll('.doc-cell[data-status=\"unknown\"]').length === 0",
+    """CEL-069: every tree row and every language tab knows its status."""
+    page.wait_for_function("document.querySelectorAll('.doc-tree-page').length > 0 && document.querySelectorAll("
+                           "'.doc-tree-page[data-status=\"unknown\"], .doc-tab[data-status=\"unknown\"], .doc-tab:not([data-status])').length === 0",
                            timeout=15000)
 
 
@@ -422,11 +449,17 @@ def bar(page):
 
 
 def open_cell(page, key, lang):
-    cell(page, key, lang).click()
+    """CEL-069: the language tab, then the page's row in the tree (each keeps the other)."""
+    cur_page, cur_lang = _now(page)
+    if lang != cur_lang:
+        page.locator(f'#doc-tab-{lang}').click()
+    if key != cur_page:
+        page.locator(f'.doc-tree-page[data-page="{key}"]').click()
     page.wait_for_function(
         """([k, l]) => document.querySelector('#doc').dataset.state === 'ready'
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.page === k
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.lang === l""",
+            && !!document.querySelector('.doc-tree-page[aria-current="page"]')
+            && document.querySelector('.doc-tree-page[aria-current="page"]').dataset.page === k
+            && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""",
         arg=[key, lang], timeout=20000)
 
 
@@ -596,34 +629,44 @@ def test_no_site_menu_or_footer_text_is_among_the_english_texts(browser, key):
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
-# 2. the grid
+# 2. the page tree and the language tabs (CEL-069; the grid before)
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
-def test_the_grid_is_four_pages_by_eight_languages_and_marks_the_open_cell(browser):
+def test_the_tree_lists_the_four_pages_by_path_and_the_tabs_the_eight_languages_and_both_mark_the_open_one(browser):
     with doc(browser) as e:
-        rows = e.page.locator("#doc-grid tbody tr")
-        assert rows.count() == 4
-        assert e.page.eval_on_selector_all("#doc-grid tbody tr", "els => els.map(r => r.dataset.page)") == PAGES
-        for i in range(4):
-            assert rows.nth(i).locator(".doc-cell").count() == 8
-        assert e.page.eval_on_selector_all(
-            "#doc-grid thead th.doc-grid-lang", "els => els.map(x => x.dataset.lang)") == LANGS
-        expect(e.page.locator('#doc-grid thead th[data-lang="de"]')).to_contain_text(C.t("lang.de"))
-        pressed = e.page.locator('.doc-cell[aria-pressed="true"]')
-        assert pressed.count() == 1
-        assert pressed.get_attribute("data-page") == PAGE_KEY and pressed.get_attribute("data-lang") == "de"
         wait_cells_known(e.page)
+        paths = {p["key"]: p["path"] for p in e.pages["pages"]}
+        rows = e.page.locator(".doc-tree-page")
+        assert rows.count() == 4
+        assert e.page.eval_on_selector_all(".doc-tree-page", "els => els.map(r => r.dataset.page)") == PAGES
+        # one folder, its own page first, the slugs in mono, the names under them
+        assert e.page.eval_on_selector_all(".doc-tree-fold", "els => els.map(f => f.dataset.dir)") == ["/vancouver/"]
+        expect(e.page.locator(".doc-tree-fold .doc-tree-n")).to_have_text("4")
+        assert e.page.eval_on_selector_all(".doc-tree-slug", "els => els.map(s => s.textContent)") == \
+            [paths[k] if k == "vancouver" else paths[k].split("/")[-1] for k in PAGES]
+        assert e.page.eval_on_selector_all(".doc-tree-name", "els => els.map(s => s.textContent)") == [C.t(f"page.{k}") for k in PAGES]
+        assert e.page.eval_on_selector_all(".doc-tab", "els => els.map(x => x.dataset.lang)") == LANGS
+        expect(e.page.locator("#doc-tab-de .doc-tab-name")).to_have_text(C.t("lang.de"))
+        current = e.page.locator('.doc-tree-page[aria-current="page"]')
+        assert current.count() == 1 and current.get_attribute("data-page") == PAGE_KEY
+        selected = e.page.locator('.doc-tab[aria-selected="true"]')
+        assert selected.count() == 1 and selected.get_attribute("data-lang") == "de"
+        # the path row: the folder, the slug, the page's name; the heading's name is page + language
+        expect(e.page.locator(".doc-path")).to_have_text(paths[PAGE_KEY])
+        expect(e.page.locator(".doc-path-name")).to_have_text(C.t(f"page.{PAGE_KEY}"))
+        expect(e.page.locator("#doc-title")).to_have_attribute(
+            "aria-label", C.t("doc.title", page=C.t(f"page.{PAGE_KEY}"), language=C.t("lang.de")))
         # a fresh store has nothing anywhere
         for key in PAGES:
             for lang in LANGS:
                 c = cell(e.page, key, lang)
                 assert c.get_attribute("data-status") == "none", (key, lang)
-                expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.none"))
+                expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.none"))
                 # the Ask's own words (the empty state "Not translated yet" is another key, doc.banner.*)
-                expect(c.locator(".doc-cell-status")).to_have_text("Not translated")
-                expect(c.locator(".doc-cell-count")).to_have_text("")
+                expect(c.locator(".doc-st-word")).to_have_text("Not translated")
+                expect_count(c, "")
         expect(cell(e.page, PAGE_KEY, "de")).to_have_attribute(
-            "aria-label", C.t("doc.cell.aria", page=C.t(f"page.{PAGE_KEY}"), language=C.t("lang.de"),
-                              status=C.t("doc.status.none")))
+            "data-tip", paths[PAGE_KEY] + " · " + C.t("doc.cell.aria", page=C.t(f"page.{PAGE_KEY}"), language=C.t("lang.de"),
+                                                      status=C.t("doc.status.none")))
 
 
 def test_the_grid_reads_drafted_edited_exported_and_not_translated(browser):
@@ -650,31 +693,31 @@ def test_the_grid_reads_drafted_edited_exported_and_not_translated(browser):
         for key, (status, n) in want.items():
             c = cell(e.page, key, "de")
             assert c.get_attribute("data-status") == status, key
-            expect(c.locator(".doc-cell-status")).to_have_text(C.t(f"doc.status.{status}"))
-            expect(c.locator(".doc-cell-count")).to_have_text(
-                C.tn("doc.cell.count", n, total=total[key]) if n else "")
+            expect(c.locator(".doc-st-word")).to_have_text(C.t(f"doc.status.{status}"))
+            expect_count(c, C.tn("doc.cell.count", n, total=total[key]) if n else "")
         # the four labels, word for word: Not translated / Gemini's draft / Edited / In a Weglot file (CEL-075 items 3, 16)
         for key, label in (("vs-toronto", "Not translated"), ("vancouver", "Gemini's draft"), (PAGE_KEY, "Edited"),
                            ("how-long-to-learn-english", "In a Weglot file")):
-            expect(cell(e.page, key, "de").locator(".doc-cell-status")).to_have_text(label)
+            expect(cell(e.page, key, "de").locator(".doc-st-word")).to_have_text(label)
         for key in PAGES:                                      # a language with nothing
             c = cell(e.page, key, "fr")
             assert c.get_attribute("data-status") == "none"
-            expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.none"))
-            expect(c.locator(".doc-cell-status")).to_have_text("Not translated")
+            expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.none"))
+            expect(c.locator(".doc-st-word")).to_have_text("Not translated")
 
 
 def test_clicking_a_cell_opens_that_page_and_language(browser):
     with doc(browser) as e:
         open_cell(e.page, "vancouver", "fr")
-        expect(e.page.locator("#doc-title")).to_have_text(
-            C.t("doc.title", page=C.t("page.vancouver"), language=C.t("lang.fr")))
+        expect(e.page.locator("#doc-title")).to_have_attribute(
+            "aria-label", C.t("doc.title", page=C.t("page.vancouver"), language=C.t("lang.fr")))
         query = e.page.evaluate("() => location.search")
         assert "page=vancouver" in query and "lang=fr" in query
         van = _json(e.root, "vancouver")
         ids = e.page.eval_on_selector_all("li.doc-block", "els => els.map(l => l.dataset.uid)")
         assert ids == [b["id"] for b in van["blocks"]]
-        assert e.page.locator('.doc-cell[aria-pressed="true"]').count() == 1
+        assert e.page.locator('.doc-tree-page[aria-current="page"]').count() == 1
+        assert e.page.locator('.doc-tab[aria-selected="true"]').count() == 1
         assert e.page.locator('.doc-tgt').first.get_attribute("lang") == "fr"
 
 
@@ -1634,7 +1677,7 @@ def test_a_finished_translation_clears_the_banner_and_shows_the_drafts(browser):
         c = cell(e.page, PAGE_KEY, "fr")
         expect(c).to_have_attribute("data-status", "translating")
         if status:
-            expect(c.locator(".doc-cell-status")).to_have_text(status)
+            expect(c.locator(".doc-st-word")).to_have_text(status)
         mine = _ids(e)[:3]
         for i, uid in enumerate(mine):
             draft(e.store, uid, f"Brouillon {i}", lang="fr")
@@ -1642,8 +1685,8 @@ def test_a_finished_translation_clears_the_banner_and_shows_the_drafts(browser):
         expect(e.page.locator("#doc-banner")).to_be_hidden()
         expect(e.page.locator("#doc-toasts")).to_contain_text(C.t("doc.job.done"))
         expect(c).to_have_attribute("data-status", "drafted")
-        expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.drafted"))
-        expect(c.locator(".doc-cell-count")).to_have_text(C.tn("doc.cell.count", 3, total=len(_ids(e))))
+        expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.drafted"))
+        expect_count(c, C.tn("doc.cell.count", 3, total=len(_ids(e))))
         for i, uid in enumerate(mine):
             wait_value(e.page, uid, f"Brouillon {i}")
             assert blk(e.page, uid).get_attribute("data-source") == "draft"
@@ -1667,7 +1710,7 @@ def test_every_page_asked_while_a_job_runs_waits_in_line_in_order(browser):
         queued = maybe_t("doc.status.queued")
         if queued:
             for key in (second, third):
-                expect(cell(e.page, key, "fr").locator(".doc-cell-status")).to_have_text(queued)
+                expect(cell(e.page, key, "fr").locator(".doc-st-word")).to_have_text(queued)
         assert cell(e.page, "how-long-to-learn-english", "fr").get_attribute("data-status") == "none"
         time.sleep(0.5)
         assert len(_jobs(e)) == 1, "a waiting page created a second job"
@@ -1689,7 +1732,7 @@ def test_every_page_asked_while_a_job_runs_waits_in_line_in_order(browser):
 
         e.store.finish_job("fr", "translate-page", "done", {"drafts": 0})
         e.page.wait_for_function(
-            "document.querySelectorAll('.doc-cell[data-status=\"translating\"], .doc-cell[data-status=\"queued\"]')"
+            "document.querySelectorAll('.doc-tree-page[data-status=\"translating\"], .doc-tree-page[data-status=\"queued\"], .doc-tab[data-status=\"translating\"], .doc-tab[data-status=\"queued\"]')"
             ".length === 0", timeout=8000)
 
 
@@ -1728,7 +1771,7 @@ def test_a_second_page_waits_in_line_and_starts_by_itself_when_the_first_ends(br
         expect(c_van).to_have_attribute("data-status", "queued")        # it waits behind the first
         queued = maybe_t("doc.status.queued")
         if queued:
-            expect(c_van.locator(".doc-cell-status")).to_have_text(queued)
+            expect(c_van.locator(".doc-st-word")).to_have_text(queued)
         expect(cell(e.page, PAGE_KEY, "fr")).to_have_attribute("data-status", "translating")
         assert cell(e.page, "vs-toronto", "fr").get_attribute("data-status") == "none"
         time.sleep(0.5)
@@ -1750,7 +1793,7 @@ def test_a_second_page_waits_in_line_and_starts_by_itself_when_the_first_ends(br
         # when that one ends, nothing in the grid is translating or queued any more
         e.store.finish_job("fr", "translate-page", "done", {"drafts": 0})
         e.page.wait_for_function(
-            "document.querySelectorAll('.doc-cell[data-status=\"translating\"], .doc-cell[data-status=\"queued\"]')"
+            "document.querySelectorAll('.doc-tree-page[data-status=\"translating\"], .doc-tree-page[data-status=\"queued\"], .doc-tab[data-status=\"translating\"], .doc-tab[data-status=\"queued\"]')"
             ".length === 0", timeout=8000)
 
 
@@ -2010,11 +2053,11 @@ def test_an_exported_page_turns_edited_at_once_and_exported_again_only_after_a_n
     with doc(browser, seed=seed, timing=slow) as e:
         c = cell(e.page, PAGE_KEY, LANG)
         expect(c).to_have_attribute("data-status", "exported")
-        expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.exported"))
+        expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.exported"))
         edit(e.page, d1, "Neu bearbeitet")
         expect(c).to_have_attribute("data-status", "edited", timeout=1500)         # no reload, no save yet
         assert dec(e.store, d1) is None
-        expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.edited"))
+        expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.edited"))
         wait_text(e.store, d1, "Neu bearbeitet", timeout=8.0)
         expect(c).to_have_attribute("data-status", "edited")                       # saved: still not exported
 

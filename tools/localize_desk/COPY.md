@@ -209,9 +209,12 @@ One page of the website read as a document: every text in the order the page sho
 |---|---|---|
 | `doc.meta.title` | Document view — Localization Desk — College of English Language | Browser tab, document view |
 | `doc.meta.description` | Read a page as a document, English beside its translation, and edit the translation in place. | Page description |
-| `doc.title` | {page} — {language} | Heading of the open page and language |
-| `doc.grid.label` | Pages and languages | Heading of the grid at the top |
-| `doc.grid.corner` | Page | Top-left cell of the grid |
+| `doc.title` | {page} — {language} | Screen-reader name of the path row's heading |
+| `nav.tree.label` | Pages | Screen-reader name of the page tree |
+| `nav.tree.filter` | Filter pages by path or name | Filter at the top of the page tree |
+| `nav.tree.none` | No page matches “{q}”. | The filter matches no page |
+| `nav.tabs.label` | Languages | Screen-reader name of the language tabs |
+| `nav.tabs.hint` | ⌥1–8 language · / pages | Hint at the end of the language tabs |
 | `doc.status.none` | Not translated | A grid cell with no text in that language |
 | `doc.status.drafted` | Gemini's draft | A grid cell where Gemini's drafts are waiting to be read |
 | `doc.status.edited` | Edited | A grid cell with texts you have edited |
@@ -220,9 +223,9 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.status.translating` | Translating… | A grid cell whose page Gemini is translating now |
 | `doc.status.queued` | Queued | A grid cell whose page waits for the one Gemini is translating |
 | `doc.status.failed` | Failed | A grid cell whose page has no text yet because its translation did not finish |
-| `doc.cell.count.one` | {n} of {total} text | Under the status in a grid cell |
+| `doc.cell.count.one` | {n} of {total} text | In the hover text of a page row and a language tab |
 | `doc.cell.count.other` | {n} of {total} texts | |
-| `doc.cell.aria` | {page}, {language}: {status} | Screen-reader name of a grid cell |
+| `doc.cell.aria` | {page}, {language}: {status} | Hover text of a page row and a language tab |
 | `doc.undo` | Undo | Button in the bar at the bottom |
 | `doc.redo` | Redo | Button in the bar at the bottom |
 | `doc.undo.tip` | Undo your last change ({keys}) | Hover on Undo |
@@ -234,7 +237,7 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.keys.undo.other` | Ctrl+Z | The keys, in the Undo hover, elsewhere |
 | `doc.keys.redo.mac` | ⇧⌘Z | The keys, in the Redo hover, on a Mac |
 | `doc.keys.redo.other` | Ctrl+Shift+Z | The keys, in the Redo hover, elsewhere |
-| `doc.weglot.toggle` | Show the website's text | Checkbox in the bar at the bottom |
+| `doc.weglot.toggle` | Show the website's text | Switch in the path row (CEL-069) |
 | `doc.translate` | Translate page | Button above the page, and in the window it opens |
 | `doc.head.en` | English — the website | Head of the English column |
 | `doc.head.tgt` | {language} — Gemini's draft and your edits | Head of the translation column |

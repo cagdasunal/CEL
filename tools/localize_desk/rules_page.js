@@ -481,6 +481,11 @@
   }
 
   // ── the language tabs ────────────────────────────────────────────────────────────
+  // "Back to the desk" opens the desk on the language shown here (CEL-069, shell-spec §4).
+  function deskLink() {
+    const a = document.getElementById('rules-desk');
+    if (a) a.setAttribute('href', '/admin/localization/document/?lang=' + encodeURIComponent(S.lang));
+  }
   function choose(code, focus) {
     if (!known(code)) return;
     const b = tabs.find(function (x) { return x.dataset.lang === code; });
@@ -490,10 +495,22 @@
       const u = new URL(location.href);
       u.searchParams.set('lang', code);
       history.replaceState(null, '', u);
+      deskLink();
       load();
     }
     if (focus && b) b.focus();
   }
+  // Alt+1..8 picks the language (shell-spec §5): Alt alone (AltGr = Ctrl+Alt types), the digit's code (on a Mac
+  // `key` is the character), no IME composition, focus outside a text box. Otherwise the key is left alone.
+  document.addEventListener('keydown', function (e) {
+    if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+    const at = document.activeElement;
+    if (at && (/^(INPUT|TEXTAREA|SELECT)$/.test(at.tagName) || (at.closest && at.closest('[contenteditable]:not([contenteditable="false"])')))) return;
+    const m = /^Digit([1-8])$/.exec(e.code || '');
+    if (!m || !LOCALES[Number(m[1]) - 1]) return;
+    e.preventDefault();
+    choose(LOCALES[Number(m[1]) - 1].code, false);
+  });
   tabs.forEach(function (b, i) {
     b.addEventListener('click', function () { choose(b.dataset.lang, false); });
     b.addEventListener('keydown', function (e) {
@@ -508,5 +525,6 @@
     });
   });
 
+  deskLink();
   load();
 })();

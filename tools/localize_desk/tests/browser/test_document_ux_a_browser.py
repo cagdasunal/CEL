@@ -247,12 +247,39 @@ def pick(data: dict, n: int = 1, *, lang: str = LANG, need_w: bool = False) -> l
     return out
 
 
+def _now(page):
+    """CEL-069: the open page (the tree row marked current) and the open language (the selected tab)."""
+    return page.evaluate("""() => [(document.querySelector('.doc-tree-page[aria-current="page"]') || {dataset: {}}).dataset.page || null,
+        (document.querySelector('.doc-tab[aria-selected="true"]') || {dataset: {}}).dataset.lang || null]""")
+
+
 def cell(page, key, lang):
-    return page.locator(f'.doc-cell[data-page="{key}"][data-lang="{lang}"]')
+    """CEL-069 (the grid's cell before): where the shell shows (page, language) -- the tree row while `lang` is the
+    open language, the language tab while `key` is the open page; neither: the tab is clicked first (the page
+    stays). Either carries data-status, the status word (.doc-st-word) and the count in its data-tip."""
+    cur_page, cur_lang = _now(page)
+    if lang == cur_lang:
+        return page.locator(f'.doc-tree-page[data-page="{key}"]')
+    if key == cur_page:
+        return page.locator(f'#doc-tab-{lang}')
+    page.locator(f'#doc-tab-{lang}').click()
+    page.wait_for_function("""l => document.querySelector('#doc').dataset.state === 'ready'
+        && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""", arg=lang, timeout=20000)
+    return page.locator(f'.doc-tree-page[data-page="{key}"]')
+
+
+def expect_count(c, text):
+    """The count the grid's cell printed is the end of the row's / tab's hover text now (empty: no count)."""
+    if text:
+        expect(c).to_have_attribute("data-tip", re.compile(re.escape(" · " + text) + "$"))
+    else:
+        expect(c).not_to_have_attribute("data-tip", re.compile(r" · \d+ of \d+"))
 
 
 def wait_cells_known(page):
-    page.wait_for_function("document.querySelectorAll('.doc-cell[data-status=\"unknown\"]').length === 0",
+    """CEL-069: every tree row and every language tab knows its status."""
+    page.wait_for_function("document.querySelectorAll('.doc-tree-page').length > 0 && document.querySelectorAll("
+                           "'.doc-tree-page[data-status=\"unknown\"], .doc-tab[data-status=\"unknown\"], .doc-tab:not([data-status])').length === 0",
                            timeout=15000)
 
 
@@ -355,11 +382,17 @@ def _edit_served_block(env, uid, **fields):
 
 # ── copied from test_document_browser.py ──
 def open_cell(page, key, lang):
-    cell(page, key, lang).click()
+    """CEL-069: the language tab, then the page's row in the tree (each keeps the other)."""
+    cur_page, cur_lang = _now(page)
+    if lang != cur_lang:
+        page.locator(f'#doc-tab-{lang}').click()
+    if key != cur_page:
+        page.locator(f'.doc-tree-page[data-page="{key}"]').click()
     page.wait_for_function(
         """([k, l]) => document.querySelector('#doc').dataset.state === 'ready'
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.page === k
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.lang === l""",
+            && !!document.querySelector('.doc-tree-page[aria-current="page"]')
+            && document.querySelector('.doc-tree-page[aria-current="page"]').dataset.page === k
+            && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""",
         arg=[key, lang], timeout=20000)
 
 
@@ -437,7 +470,7 @@ def test_item_3_a_finished_export_says_how_to_import_it_and_the_grid_says_in_a_w
         expect(steps.locator("p.ex-how-note")).to_have_text(C.t("export.how.errors"))
         assert p.evaluate("() => document.querySelector('#ex-result').firstElementChild.className") == "ex-how"
         p.locator("#ex-close").click()
-        status = cell(p, PAGE_KEY, LANG).locator(".doc-cell-status")
+        status = cell(p, PAGE_KEY, LANG).locator(".doc-st-word")
         expect(cell(p, PAGE_KEY, LANG)).to_have_attribute("data-status", "exported")
         expect(status).to_have_text("In a Weglot file")                  # the words of the fix, pinned on purpose
         assert C.t("doc.status.exported") == "In a Weglot file"
@@ -545,7 +578,7 @@ def test_item_15_the_website_s_text_is_not_called_weglot(browser):
     (u,) = pick(_stage_data(), 1, need_w=True)
     with doc(browser) as e:
         p = e.page
-        toggle = p.locator("label.doc-toggle")
+        toggle = p.locator("label.doc-switch")                          # CEL-069: the path row's switch (same checkbox)
         expect(toggle).to_have_text("Show the website's text")           # the words of the fix, pinned on purpose
         toggle.locator("input").check()
         expect(p.locator(".doc-head-weglot")).to_have_text("The website's text")
@@ -566,7 +599,7 @@ def test_item_16_gemini_s_wording_has_one_name_and_the_terms_table_says_so(brows
     with doc(browser, seed=lambda env: draft(env.store, u, "Entwurf eins")) as e:
         p = e.page
         wait_cells_known(p)
-        expect(cell(p, PAGE_KEY, LANG).locator(".doc-cell-status")).to_have_text("Gemini's draft")
+        expect(cell(p, PAGE_KEY, LANG).locator(".doc-st-word")).to_have_text("Gemini's draft")
         expect(p.locator("#doc-filter option[value=new]")).to_have_text("Gemini's draft")
         expect(p.locator(".doc-head-tgt")).to_have_text(f"{C.t('lang.' + LANG)} — Gemini's draft and your edits")
     words = C.load()
@@ -623,13 +656,13 @@ def test_item_20_a_failed_translation_reads_failed_in_the_grid(browser):
     with doc(browser, lang="fr") as e:
         p = e.page
         expect(cell(p, PAGE_KEY, "fr")).to_have_attribute("data-status", "none")
-        expect(cell(p, PAGE_KEY, "fr").locator(".doc-cell-status")).to_have_text(C.t("doc.status.none"))
+        expect(cell(p, PAGE_KEY, "fr").locator(".doc-st-word")).to_have_text(C.t("doc.status.none"))
         _start_from_banner(e)
         until(lambda: len(_jobs(e)) == 1, what="the job")
         e.store.finish_job("fr", "translate-page", "failed", None, error="engine-stopped")
         open_cell(p, "vancouver", "fr")                                           # away from the failed page: the grid still says so
         expect(cell(p, PAGE_KEY, "fr")).to_have_attribute("data-status", "failed")
-        expect(cell(p, PAGE_KEY, "fr").locator(".doc-cell-status")).to_have_text("Failed")      # the word of the fix, pinned on purpose
+        expect(cell(p, PAGE_KEY, "fr").locator(".doc-st-word")).to_have_text("Failed")      # the word of the fix, pinned on purpose
         assert C.t("doc.status.failed") == "Failed"
         expect(cell(p, "vancouver", "fr")).to_have_attribute("data-status", "none")   # another page is not Failed
         # the Export window treats a Failed page as it treats a Not translated one: nothing to export, greyed, with its reason

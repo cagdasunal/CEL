@@ -401,7 +401,7 @@ def test_the_desks_translation_rules_link_opens_the_rules_page_on_the_desks_lang
             expect(link).to_have_text(t("doc.rules"))
             expect(link).to_have_attribute("href", "/admin/localization/rules/?lang=fr")
             # the desk moves to another language: the link follows it
-            pg.locator('.doc-cell[data-page="cost-of-studying-english"][data-lang="de"]').click()
+            pg.locator('#doc-tab-de').click()                               # CEL-069: the language tab (the page stays)
             expect(link).to_have_attribute("href", "/admin/localization/rules/?lang=de")
             link.click()
             pg.wait_for_selector(READY, timeout=20000)

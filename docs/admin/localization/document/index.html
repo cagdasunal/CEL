@@ -64,55 +64,104 @@
   --fs-doc-h2: 21px;
 }
 
-/* The document page (desk v2, design B): an outline beside the sheets, a status bar below them. */
-html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
-.doc { --doc-topbar: 53px; padding: 8px 0 0; }
+.doc {
+  --doc-progress: #7A4314;
+  --tree-w: 288px; --ctx-h: 52px; --tabs-h: 38px; --tree-bg: var(--doc-tray); --fs-path: 15px;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
 
-/* The pages x languages grid */
-.doc-gridwrap { margin: 8px 0 28px; }
-.doc-grid-title { margin: 0 0 8px; font-size: var(--fs-base); font-weight: 600; }
-.doc-grid { width: 100%; min-width: 720px; border-collapse: collapse; }
-.doc-grid th, .doc-grid td { padding: 4px; text-align: start; vertical-align: top; }
-.doc-grid thead th { font-size: var(--fs-sm); font-weight: 600; color: var(--doc-muted); white-space: nowrap; }
-.doc-grid-page { padding-inline-end: 12px; font-size: var(--fs-md); font-weight: 600; white-space: nowrap; }
-.doc-flag { margin-inline-end: 4px; }
-.doc-cell { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; color: var(--fg); font: inherit; font-size: var(--fs-sm); text-align: start; cursor: pointer; }
-.doc-cell:hover { background: var(--stripe); }
-.doc-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.doc-cell-status { font-weight: 600; }
-.doc-cell-count { color: var(--doc-muted); font-size: var(--fs-xs); }
-.doc-cell[data-status="unknown"] .doc-cell-status, .doc-cell[data-status="none"] .doc-cell-status { color: var(--doc-muted); font-weight: 400; }
-.doc-cell[data-status="exported"] .doc-cell-status { color: var(--ok); }
-.doc-cell[data-status="failed"] .doc-cell-status { color: var(--err); }
-.doc-cell[aria-pressed="true"] { border-color: var(--fg); }
-.doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count { font-weight: 700; }
+/* The document page (desk v2, design B) in the Option B shell (CEL-069, CEL-068 shell-spec.md): a page tree on
+   the left, a path row and language tabs over the sheets, a status bar below them. */
+html { scroll-padding-top: 128px; scroll-padding-bottom: 64px; }   /* + a block's 64 px margin: it lands just under the sticky rows (bar 53, path 52, tabs 38, heads) */
+.dashboard-shell:has(> .doc) { padding: 0; }
+.doc { --doc-topbar: 53px; padding: 0; }
+.doc-app { display: grid; grid-template-columns: var(--tree-w) minmax(0, 1fr); align-items: start; }
+.doc-main { min-width: 0; }
+.doc-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* The title and the one button above the sheets */
-.doc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; min-height: 72px; padding: 12px 0; border-top: 1px solid var(--border); }
-.doc-title { margin: 0; font-size: var(--fs-xl); font-weight: 500; letter-spacing: -0.006em; }
-.doc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.doc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 0 0 16px; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); color: var(--notice-fg); }
+/* A status mark: Option B's shapes, shell-spec §1 colours (3:1 on every shell background) */
+.doc-st { display: inline-block; flex: none; width: 8px; height: 8px; border: 1.5px solid var(--doc-muted); border-radius: 50%; }
+.doc-st[data-s="queued"] { border-color: var(--doc-progress); border-style: dashed; }
+.doc-st[data-s="translating"] { border-color: var(--doc-progress); background: var(--doc-progress); }
+.doc-st[data-s="drafted"] { border-color: var(--accent); background: var(--accent); }
+.doc-st[data-s="edited"] { border-color: var(--accent); background-image: linear-gradient(var(--accent), var(--accent)); background-size: 50% 100%; background-repeat: no-repeat; }
+.doc-st[data-s="exported"] { border-color: var(--ok); background: var(--ok); }
+.doc-st[data-s="failed"] { border-color: var(--err); }
+.doc-st[data-s="unknown"] { border-style: dotted; }
+
+/* The page tree (left): filter, folders, pages, the open page's sections */
+.doc-tree { position: sticky; top: var(--doc-topbar); display: flex; flex-direction: column; height: calc(100vh - var(--doc-topbar) - 44px); border-inline-end: 1px solid var(--border); background: var(--tree-bg); }
+.doc-tree-filter { display: flex; align-items: center; gap: 6px; height: 32px; margin: 12px 12px 6px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--doc-sheet); }
+.doc-tree-filter:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-tree-filter input { flex: 1; min-width: 0; border: 0; background: none; color: var(--doc-ink); font: inherit; font-size: var(--fs-md); outline: none; }
+.doc-tree-filter input::placeholder { color: var(--doc-placeholder); opacity: 1; }
+.doc-kbd-hint { padding: 0 5px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--stage); color: var(--doc-muted); font-family: var(--mono); font-size: var(--fs-xs); line-height: 16px; }
+.doc-tree-list { flex: 1; overflow-y: auto; padding: 4px 8px 12px; }
+.doc-tree-fold { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 6px 4px; border: 0; background: none; color: var(--doc-muted); font-family: var(--mono); font-size: var(--fs-sm); text-align: start; cursor: pointer; }
+.doc-tree-fold svg { width: 11px; height: 11px; transition: transform .12s; }
+.doc-tree-fold[aria-expanded="false"] svg { transform: rotate(-90deg); }
+.doc-tree-n { margin-inline-start: auto; font-family: inherit; font-size: var(--fs-xs); }
+.doc-tree-page { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 8px; width: 100%; padding: 6px 8px 6px 23px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--doc-ink); font: inherit; text-align: start; cursor: pointer; }
+.doc-tree-page:hover { background: var(--doc-sheet-hover); }
+.doc-tree-page.is-kb, .doc-tree-page[aria-current="page"] { background: var(--doc-sheet); }
+.doc-tree-slug { overflow: hidden; font-family: var(--mono); font-size: var(--fs-md); white-space: nowrap; text-overflow: ellipsis; }
+.doc-tree-page[aria-current="page"] .doc-tree-slug { color: var(--accent-strong); }
+.doc-tree-name { grid-column: 1; overflow: hidden; color: var(--doc-muted); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
+.doc-tree-page .doc-st { grid-row: 1 / span 2; grid-column: 2; }
+.doc-tree-page:focus-visible, .doc-tree-fold:focus-visible, .doc-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.doc-tree-none { margin: 0; padding: 12px 8px; color: var(--doc-muted); font-size: var(--fs-md); }
+
+/* The open page's sections, nested under its row in the tree (today's outline, moved in) */
+.doc-outline { margin: 2px 0 6px 23px; padding-inline-start: 10px; border-inline-start: 1px solid var(--border-strong); }
+.doc-outline-list { margin: 0; padding: 0; list-style: none; }
+.doc-outline-item { display: block; width: 100%; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--doc-muted); font: inherit; text-align: start; cursor: pointer; }
+.doc-outline-item:hover { background: var(--doc-sheet-hover); color: var(--doc-ink); }
+.doc-outline-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.doc-outline-item[aria-current="true"] { background: var(--doc-sheet-hover); color: var(--doc-ink); }
+.doc-outline-name { display: block; font-size: var(--fs-sm); line-height: 1.35; }
+.doc-outline-count { display: block; margin-top: 1px; font-size: var(--fs-xs); color: var(--doc-muted); }
+
+/* The path row: the page's path and name, then its actions */
+.doc-bar { position: sticky; top: var(--doc-topbar); z-index: 21; display: flex; align-items: center; gap: 12px; height: var(--ctx-h); padding: 0 24px; background: var(--bg); }
+.doc-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0; font-size: var(--fs-path); font-weight: 400; }
+.doc-path { overflow: hidden; font-family: var(--mono); white-space: nowrap; text-overflow: ellipsis; }
+.doc-path-dir { color: var(--doc-muted); }
+.doc-path-leaf { color: var(--doc-ink); }
+.doc-path-name { color: var(--doc-muted); font-size: var(--fs-md); white-space: nowrap; }
+.doc-actions { display: flex; flex: none; align-items: center; gap: 8px; margin-inline-start: auto; }
+.doc-switch { display: inline-flex; align-items: center; gap: 6px; color: var(--doc-ink); font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
+.doc-switch input { appearance: none; position: relative; width: 28px; height: 16px; margin: 0; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--doc-tray); cursor: pointer; }
+.doc-switch input::after { content: ""; position: absolute; top: 1px; left: 1px; width: 12px; height: 12px; border-radius: 50%; background: var(--doc-muted); transition: transform .12s; }
+.doc-switch input:checked { border-color: var(--accent); background: var(--accent); }
+.doc-switch input:checked::after { background: var(--doc-sheet); transform: translateX(12px); }
+.doc-switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The language tabs over the sheets */
+.doc-tabs { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h)); z-index: 20; display: flex; align-items: flex-end; gap: 2px; height: var(--tabs-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.doc-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--tabs-h); padding: 0 10px; border: 0; border-bottom: 2px solid var(--bg); background: none; color: var(--doc-muted); font: inherit; font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
+.doc-tab:hover { color: var(--doc-ink); }
+.doc-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--doc-ink); font-weight: 500; }
+.doc-tabs-hint { align-self: center; margin-inline-start: auto; color: var(--doc-muted); font-size: var(--fs-xs); white-space: nowrap; }
+@media (max-width: 1439px) {
+  .doc-path-name { display: none; }
+}
+@media (max-width: 1279px) {
+  .doc { --tree-w: 248px; }
+  .doc-tabs-hint { display: none; }
+}
+
+.doc-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin: 16px 24px; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); color: var(--notice-fg); }
 .doc-banner p { flex: 1 1 320px; margin: 0; font-size: var(--fs-base); }
 
-/* The outline rail, then the sheets on a recessed area */
-.doc-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
-.doc-outline { position: sticky; top: calc(var(--doc-topbar) + 16px); max-height: calc(100vh - var(--doc-topbar) - 76px); overflow-y: auto; padding: 4px 12px 16px 0; }
-.doc-outline-title { margin: 0 0 10px 12px; font-size: var(--fs-xs); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--doc-muted); }
-.doc-outline-list { margin: 0; padding: 0; list-style: none; }
-.doc-outline-item { display: block; width: 100%; padding: 7px 10px; border: 0; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; background: none; color: var(--fg); font: inherit; text-align: start; cursor: pointer; }
-.doc-outline-item:hover { background: var(--stripe); }
-.doc-outline-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.doc-outline-item[aria-current="true"] { box-shadow: inset 2px 0 0 var(--doc-ink); font-weight: 500; }
-.doc-outline-item[aria-current="true"] .doc-outline-name { color: var(--doc-ink); }
-.doc-outline-name { display: block; font-size: var(--fs-md); line-height: 1.35; color: var(--doc-ink-src); }
-.doc-outline-count { display: block; margin-top: 2px; font-size: var(--fs-sm); font-weight: 400; color: var(--doc-muted); }
+/* The sheets on a recessed area */
+.doc-layout { display: block; }
 .doc-sheets { --doc-pad: 48px; min-width: 0; min-height: 60vh; padding: 24px; border-inline-start: 1px solid var(--border); background: var(--doc-tray); }
 .doc-sheets:has(.doc-blocks[data-weglot="on"]) { --doc-pad: 28px; }
 .doc-sections-wrap { display: none; align-items: center; gap: 8px; max-width: 1400px; margin: 0 auto 12px; font-size: var(--fs-sm); font-weight: 600; }
 .doc-sections { flex: 1 1 auto; min-width: 0; }
 
 /* The sheet heads, and the blocks: one grid row across the sheets */
-.doc-heads { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; max-width: 1400px; margin: 0 auto; }
+.doc-heads { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h) + var(--tabs-h)); z-index: 10; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; max-width: 1400px; margin: 0 auto; }
 .doc-head { padding: 14px var(--doc-pad) 10px; border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; background: var(--doc-sheet); color: var(--doc-ink-src); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0.01em; }
 .doc-blocks { max-width: 1400px; margin: 0 auto; padding: 0; list-style: none; }
 .doc-blocks[data-weglot="on"] { --doc-pad: 28px; }
@@ -227,9 +276,6 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-kbd:empty { display: none; }
 .doc-filter-wrap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 500; }
 .doc-next-count { font-size: var(--fs-sm); color: var(--doc-muted); }
-.doc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 500; cursor: pointer; }
-.doc-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
-.doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .doc-words { font-size: var(--fs-sm); color: var(--doc-muted); }
 /* Messages stay above the BugHerd tab (fixed, right 0, bottom 10 px, 70 px high): 110 px, as much as the status bar keeps free at its right end */
 .doc .toast-stack { bottom: 110px; }
@@ -250,7 +296,6 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 
 /* A tablet loses the rail (the Sections list takes its place) and gives the sheets the room */
 @media (max-width: 1024px) {
-  .doc-layout { grid-template-columns: minmax(0, 1fr); }
   .doc-outline { display: none; }
   .doc-sections-wrap { display: flex; }
   .doc-sheets { --doc-pad: 32px; padding: 20px 16px; }
@@ -258,6 +303,13 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 }
 /* A phone: one column. English (muted, small) above the translation above Weglot; the toolbar sits under the text */
 @media (max-width: 767px) {
+  .doc-app { grid-template-columns: minmax(0, 1fr); }
+  .doc-tree { position: static; height: auto; max-height: 40vh; border-inline-end: 0; border-bottom: 1px solid var(--border); }
+  .doc-bar { position: static; flex-wrap: wrap; height: auto; padding: 8px 12px; }
+  .doc-title { flex-wrap: wrap; }
+  .doc-path { white-space: normal; overflow-wrap: anywhere; }
+  .doc-actions { flex: 1 1 100%; flex-wrap: wrap; margin-inline-start: 0; }
+  .doc-tabs { position: static; overflow-x: auto; padding: 0 12px; }
   .doc-heads { display: none; }
   .doc-sheets { padding: 12px; }
   .doc-block, .doc-blocks[data-weglot="on"] .doc-block { --doc-pad: 0px; display: block; padding: 0 16px; border-inline: 1px solid var(--border); background: var(--doc-sheet); }
@@ -380,32 +432,29 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
     </header>
   <div class="dashboard-shell">
 <main id="doc" class="doc" data-state="loading">
-    <section class="doc-gridwrap" aria-labelledby="doc-grid-title">
-      <h2 id="doc-grid-title" class="doc-grid-title">Pages and languages</h2>
-      <div class="scroll-x"><table id="doc-grid" class="doc-grid">
-        <thead><tr><th scope="col">Page</th><th scope="col" class="doc-grid-lang" data-lang="de"><span class="doc-flag" aria-hidden="true">🇩🇪</span>German</th><th scope="col" class="doc-grid-lang" data-lang="fr"><span class="doc-flag" aria-hidden="true">🇫🇷</span>French</th><th scope="col" class="doc-grid-lang" data-lang="es"><span class="doc-flag" aria-hidden="true">🇪🇸</span>Spanish</th><th scope="col" class="doc-grid-lang" data-lang="pt"><span class="doc-flag" aria-hidden="true">🇧🇷</span>Portuguese</th><th scope="col" class="doc-grid-lang" data-lang="it"><span class="doc-flag" aria-hidden="true">🇮🇹</span>Italian</th><th scope="col" class="doc-grid-lang" data-lang="ja"><span class="doc-flag" aria-hidden="true">🇯🇵</span>Japanese</th><th scope="col" class="doc-grid-lang" data-lang="ko"><span class="doc-flag" aria-hidden="true">🇰🇷</span>Korean</th><th scope="col" class="doc-grid-lang" data-lang="ar"><span class="doc-flag" aria-hidden="true">🇸🇦</span>Arabic</th></tr></thead>
-        <tbody>
-          <tr data-page="vancouver"><th scope="row" class="doc-grid-page">Vancouver</th><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vancouver" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
-          <tr data-page="vs-toronto"><th scope="row" class="doc-grid-page">Vancouver vs Toronto</th><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="vs-toronto" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
-          <tr data-page="cost-of-studying-english"><th scope="row" class="doc-grid-page">Cost of studying English</th><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="cost-of-studying-english" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
-          <tr data-page="how-long-to-learn-english"><th scope="row" class="doc-grid-page">How long to learn English</th><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="de" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="fr" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="es" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="pt" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="it" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ja" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ko" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td><td><button type="button" class="doc-cell" data-page="how-long-to-learn-english" data-lang="ar" data-status="unknown" aria-pressed="false"><span class="doc-cell-status">Checking…</span><span class="doc-cell-count"></span></button></td></tr>
-        </tbody>
-      </table></div>
-    </section>
+  <div class="doc-app">
+    <aside id="doc-tree" class="doc-tree" aria-label="Pages">
+      <label class="doc-tree-filter"><span class="doc-sr">Filter pages by path or name</span><input type="search" id="doc-tree-filter" placeholder="Filter pages by path or name" autocomplete="off" spellcheck="false" aria-controls="doc-tree-list" aria-keyshortcuts="/ Control+K Meta+K"><kbd class="doc-kbd-hint" aria-hidden="true">/</kbd></label>
+      <div id="doc-tree-list" class="doc-tree-list" role="tree" aria-label="Pages"></div>
+      <p id="doc-tree-none" class="doc-tree-none" hidden></p>
+      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title" hidden>
+        <h2 id="doc-outline-title" class="doc-sr">On this page</h2>
+        <ol id="doc-outline-list" class="doc-outline-list"></ol>
+      </nav>
+    </aside>
+    <div class="doc-main">
     <header id="doc-bar" class="doc-bar">
-      <h1 id="doc-title" class="doc-title"></h1>
+      <h1 id="doc-title" class="doc-title"><span class="doc-path"><span class="doc-path-dir"></span><span class="doc-path-leaf"></span></span><span class="doc-path-name"></span></h1>
       <div class="doc-actions">
+        <label class="doc-switch"><input type="checkbox" id="doc-weglot" role="switch"><span>Show the website&#x27;s text</span></label>
         <a id="doc-rules" class="desk-btn" href="/admin/localization/rules/">Translation rules</a>
         <button type="button" id="doc-translate" class="desk-btn">Translate page</button>
       </div>
     </header>
+      <div id="doc-tabs" class="doc-tabs" role="tablist" aria-label="Languages"><button type="button" id="doc-tab-de" class="doc-tab" role="tab" data-lang="de" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+1"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">German</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-fr" class="doc-tab" role="tab" data-lang="fr" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+2"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">French</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-es" class="doc-tab" role="tab" data-lang="es" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+3"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Spanish</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-pt" class="doc-tab" role="tab" data-lang="pt" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+4"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Portuguese</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-it" class="doc-tab" role="tab" data-lang="it" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+5"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Italian</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-ja" class="doc-tab" role="tab" data-lang="ja" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+6"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Japanese</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-ko" class="doc-tab" role="tab" data-lang="ko" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+7"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Korean</span><span class="doc-st-word doc-sr"></span></button><button type="button" id="doc-tab-ar" class="doc-tab" role="tab" data-lang="ar" aria-selected="false" tabindex="-1" aria-keyshortcuts="Alt+8"><span class="doc-st" data-s="unknown" aria-hidden="true"></span><span class="doc-tab-name">Arabic</span><span class="doc-st-word doc-sr"></span></button><span class="doc-tabs-hint" aria-hidden="true">⌥1–8 language · / pages</span></div>
     <div id="doc-banner" class="doc-banner" hidden><p id="doc-banner-text"></p>
       <button type="button" id="doc-banner-translate" class="desk-btn is-strong" hidden>Translate page</button></div>
     <div class="doc-layout">
-      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title">
-        <h2 id="doc-outline-title" class="doc-outline-title">On this page</h2>
-        <ol id="doc-outline-list" class="doc-outline-list"></ol>
-      </nav>
       <div class="doc-sheets">
         <label class="doc-sections-wrap"><span class="doc-sections-label">Sections</span>
           <select id="doc-sections" class="desk-select doc-sections"></select></label>
@@ -415,6 +464,8 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
         <ol id="doc-blocks" class="doc-blocks" data-weglot="off"></ol>
       </div>
     </div>
+    </div>
+  </div>
     <footer id="doc-status" class="doc-status">
       <p id="doc-save" class="doc-save" role="status" aria-live="polite" data-state="loading"></p>
       <div class="doc-status-mid">
@@ -431,7 +482,6 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
         <span id="doc-next-count" class="doc-next-count"></span>
       </div>
       <div class="doc-status-end">
-        <label class="doc-toggle"><input type="checkbox" id="doc-weglot"> <span>Show the website&#x27;s text</span></label>
         <a id="doc-desk-version" class="doc-desk-version" href="https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md" target="_blank" rel="noopener" data-tip="See what changed in this version">Desk 2.2.0</a>
         <span id="doc-words" class="doc-words"></span>
       </div>
@@ -569,7 +619,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 </script>
 <script>
 var SAVE_OFF = false;
-var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.where":"In {language}, {page}","autosave.conflict.go":"Go to it","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","toast.close":"Close","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then export it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then export it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then export it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then export it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo your edit.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then export it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then export it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then export it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then export it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Export both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then export both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was exported. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was exported. Review it again.","refusal.UNSIGNED":"What was exported wasn't saved through the desk. Export it again.","refusal.BAD-SIGNATURE":"What was exported doesn't match what was saved. Export it again.","refusal.UNREGISTERED":"What was exported doesn't say who made it. Export it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and what was exported doesn't say who made it. Export it again.","refusal.DUPLICATE":"The same text was exported twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was exported in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The exported texts couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not exported, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was exported. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"What was exported doesn't record which wording it was given for. Export it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The exported wording is empty. Write one, or undo your edit.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","doc.grid.label":"Pages and languages","doc.grid.corner":"Page","doc.status.none":"Not translated","doc.status.drafted":"Gemini's draft","doc.status.edited":"Edited","doc.status.exported":"In a Weglot file","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.status.failed":"Failed","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show the website's text","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — Gemini's draft and your edits","doc.head.weglot":"The website's text","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.error":"Not saved yet — trying again","doc.text.refused":"Not saved — the server refused this text. Edit it to try again.","doc.text.stopped":"Not saved — saving has stopped. See the bar below.","doc.text.offline":"Not saved yet — you are offline. It is kept on this computer.","doc.text.retranslating":"Gemini is re-translating this text…","doc.save.go":"Go to the text","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"Gemini's draft","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.next.again.one":"Show 1 looked-at text again","doc.next.again.other":"Show {n} looked-at texts again","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use the website's text","doc.tool.revert":"Back to Gemini's draft","doc.chars":"{n} of {max}","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made, in one zip","export.drafts.one":"{edited} edited, 1 unread Gemini draft also goes in.","export.drafts.other":"{edited} edited, {n} unread Gemini drafts also go in.","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.stop":"Stop after this file","export.stopping":"Stopping after this file…","export.download":"Download again","export.how.title":"How to import it in Weglot:","export.how.unzip":"Unzip the download first: it holds one file for each page and language. Do the steps below for each file in turn.","export.how.upload":"Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”","export.how.check":"Check that Weglot's “… updated translations will be imported.” shows the same number as this file.","export.how.switches":"Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”","export.how.press":"Press Import.","export.how.errors":"If Weglot lists a text under Errors, let the team know.","export.jump":"Go to text","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.stopped":"Not started — you stopped the export","export.result.done":"Files made: {done} of {total}. The download has started.","export.result.stopped":"You stopped the export. Files made: {done} of {total}; what was made is downloading.","export.result.none":"No file was made.","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or exported.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or exported.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.wait":"Gemini is re-translating another text in this language. Re-translate is on again when it has finished.","retr.timeout":"Gemini did not answer in time. Try again.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.empty":"No {language} rules yet.","rules.summary":"{n} requests from your documents","rules.summary.sub":"Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out.","rules.by.check":"Checked","rules.by.check.cap":"stopped automatically if a draft breaks it","rules.by.prompt":"In the prompt","rules.by.prompt.cap":"written into what Gemini reads for every draft","rules.by.none":"Not yet","rules.by.none.cap":"not carried out yet: the reason is on each one","rules.by.warn":"Also warns","rules.by.warn.tip":"An automatic check flags it but never stops the draft","rules.filter.all":"Showing all {n}.","rules.filter.some":"Showing {k} of {n}.","rules.filter.clear":"Show all","rules.sections":"Sections","rules.how.prompt":"In the rules Gemini reads","rules.how.check.meta":"Checked on every draft: a longer text is stopped","rules.how.check.rule":"An automatic check stops a draft that breaks it","rules.how.builtin.page":"Built in: Translate page works on one page","rules.how.builtin.structure":"Built in: one translation per English text, in the same order","rules.how.builtin.export":"Built in: Export writes the Weglot CSV","rules.how.none.slug":"The desk does not translate page addresses yet","rules.how.none.glossary":"The course and housing glossary file is not loaded yet","rules.how.none.flag":"Gemini cannot leave a note for the editor yet","rules.how.none.keywords":"No keyword list for this language yet","rules.how.none.schema":"The desk translates the visible text only","rules.tone":"Your tone examples","rules.tone.good":"Good","rules.tone.bad":"Bad — do not do this","rules.tone.why":"Why it fails:","rules.tone.drift":"Watch for:","rules.glossary":"Glossary","rules.glossary.en":"English","rules.glossary.keep":"Don't translate","rules.glossary.yes":"Yes","rules.glossary.empty":"No glossary terms yet.","rules.briefs":"Keyword briefs","rules.briefs.empty":"No keyword brief from the client yet.","rules.error.read":"The rules could not be read.","rules.error.offline":"You are offline. Reconnect, then press Try again.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again.","rules.error.cap":"Too many requests in a short time. Wait a few minutes, then press Try again.","rules.retry":"Try again"};
+var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.where":"In {language}, {page}","autosave.conflict.go":"Go to it","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","toast.close":"Close","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then export it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then export it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then export it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then export it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo your edit.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then export it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then export it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then export it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then export it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Export both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then export both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was exported. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was exported. Review it again.","refusal.UNSIGNED":"What was exported wasn't saved through the desk. Export it again.","refusal.BAD-SIGNATURE":"What was exported doesn't match what was saved. Export it again.","refusal.UNREGISTERED":"What was exported doesn't say who made it. Export it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and what was exported doesn't say who made it. Export it again.","refusal.DUPLICATE":"The same text was exported twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was exported in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The exported texts couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not exported, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was exported. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"What was exported doesn't record which wording it was given for. Export it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The exported wording is empty. Write one, or undo your edit.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","nav.tree.label":"Pages","nav.tree.filter":"Filter pages by path or name","nav.tree.none":"No page matches “{q}”.","nav.tabs.label":"Languages","nav.tabs.hint":"⌥1–8 language · / pages","doc.status.none":"Not translated","doc.status.drafted":"Gemini's draft","doc.status.edited":"Edited","doc.status.exported":"In a Weglot file","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.status.failed":"Failed","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show the website's text","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — Gemini's draft and your edits","doc.head.weglot":"The website's text","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.error":"Not saved yet — trying again","doc.text.refused":"Not saved — the server refused this text. Edit it to try again.","doc.text.stopped":"Not saved — saving has stopped. See the bar below.","doc.text.offline":"Not saved yet — you are offline. It is kept on this computer.","doc.text.retranslating":"Gemini is re-translating this text…","doc.save.go":"Go to the text","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"Gemini's draft","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.next.again.one":"Show 1 looked-at text again","doc.next.again.other":"Show {n} looked-at texts again","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use the website's text","doc.tool.revert":"Back to Gemini's draft","doc.chars":"{n} of {max}","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made, in one zip","export.drafts.one":"{edited} edited, 1 unread Gemini draft also goes in.","export.drafts.other":"{edited} edited, {n} unread Gemini drafts also go in.","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.stop":"Stop after this file","export.stopping":"Stopping after this file…","export.download":"Download again","export.how.title":"How to import it in Weglot:","export.how.unzip":"Unzip the download first: it holds one file for each page and language. Do the steps below for each file in turn.","export.how.upload":"Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”","export.how.check":"Check that Weglot's “… updated translations will be imported.” shows the same number as this file.","export.how.switches":"Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”","export.how.press":"Press Import.","export.how.errors":"If Weglot lists a text under Errors, let the team know.","export.jump":"Go to text","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.stopped":"Not started — you stopped the export","export.result.done":"Files made: {done} of {total}. The download has started.","export.result.stopped":"You stopped the export. Files made: {done} of {total}; what was made is downloading.","export.result.none":"No file was made.","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or exported.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or exported.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.wait":"Gemini is re-translating another text in this language. Re-translate is on again when it has finished.","retr.timeout":"Gemini did not answer in time. Try again.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.empty":"No {language} rules yet.","rules.summary":"{n} requests from your documents","rules.summary.sub":"Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out.","rules.by.check":"Checked","rules.by.check.cap":"stopped automatically if a draft breaks it","rules.by.prompt":"In the prompt","rules.by.prompt.cap":"written into what Gemini reads for every draft","rules.by.none":"Not yet","rules.by.none.cap":"not carried out yet: the reason is on each one","rules.by.warn":"Also warns","rules.by.warn.tip":"An automatic check flags it but never stops the draft","rules.filter.all":"Showing all {n}.","rules.filter.some":"Showing {k} of {n}.","rules.filter.clear":"Show all","rules.sections":"Sections","rules.how.prompt":"In the rules Gemini reads","rules.how.check.meta":"Checked on every draft: a longer text is stopped","rules.how.check.rule":"An automatic check stops a draft that breaks it","rules.how.builtin.page":"Built in: Translate page works on one page","rules.how.builtin.structure":"Built in: one translation per English text, in the same order","rules.how.builtin.export":"Built in: Export writes the Weglot CSV","rules.how.none.slug":"The desk does not translate page addresses yet","rules.how.none.glossary":"The course and housing glossary file is not loaded yet","rules.how.none.flag":"Gemini cannot leave a note for the editor yet","rules.how.none.keywords":"No keyword list for this language yet","rules.how.none.schema":"The desk translates the visible text only","rules.tone":"Your tone examples","rules.tone.good":"Good","rules.tone.bad":"Bad — do not do this","rules.tone.why":"Why it fails:","rules.tone.drift":"Watch for:","rules.glossary":"Glossary","rules.glossary.en":"English","rules.glossary.keep":"Don't translate","rules.glossary.yes":"Yes","rules.glossary.empty":"No glossary terms yet.","rules.briefs":"Keyword briefs","rules.briefs.empty":"No keyword brief from the client yet.","rules.error.read":"The rules could not be read.","rules.error.offline":"You are offline. Reconnect, then press Try again.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again.","rules.error.cap":"Too many requests in a short time. Wait a few minutes, then press Try again.","rules.retry":"Try again"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -933,7 +983,8 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     window.DOC_TIMING || {});
   const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
   const UNDO_CAP = 100;
-  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot', seen: 'cel-doc-seen' };
+  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot', seen: 'cel-doc-seen',
+    fold: 'cel-doc-fold' };
   const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
 
   // The block labels, spelled out so the copy check sees every key.
@@ -1784,30 +1835,191 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     const status = !nText ? 'none' : (nExp === nText ? 'exported' : (nEdit ? 'edited' : 'drafted'));
     return { status: status, n: nText, total: info.ids.length };
   }
+  // A page in a language as the tree and the tabs show it (CEL-069; the grid's cell before): the texts' status, or the
+  // language's open translate-page job on its page, a page waiting behind it, a translation that failed.
+  function navStatus(page, lang) {
+    const s = statusOf(page, lang);
+    let status = s ? s.status : 'unknown';
+    const js = jstate(lang);
+    if (js.job && js.page === page) status = 'translating';
+    else if (js.waiting.indexOf(page) >= 0) status = 'queued';
+    else if (status === 'none' && js.failed && js.failed.page === page) status = 'failed';   // not only on its own page (CEL-075 item 20)
+    return { status: status, s: s };
+  }
+  // The mark, its word (read by a screen reader) and the hover text: page, language, status and the count.
+  function paintMark(el, page, lang) {
+    const ns = navStatus(page, lang), word = t(STATUS_KEY[ns.status]);
+    el.setAttribute('data-status', ns.status);
+    el.querySelector('.doc-st').setAttribute('data-s', ns.status);
+    el.querySelector('.doc-st-word').textContent = word;
+    const count = ns.s && ns.s.status !== 'none' ? ' · ' + tn('doc.cell.count', ns.s.n, { total: ns.s.total }) : '';
+    const info = PI.get(page);
+    el.setAttribute('data-tip', (info ? info.path + ' · ' : '') + t('doc.cell.aria', { page: t('page.' + page), language: t('lang.' + lang), status: word }) + count);
+  }
   function paintGrid() {
+    document.querySelectorAll('.doc-tree-page').forEach(function (row) {
+      const page = row.getAttribute('data-page');
+      paintMark(row, page, S.lang);
+      if (page === S.page) row.setAttribute('aria-current', 'page'); else row.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.doc-tab').forEach(function (tab) {
+      const lang = tab.getAttribute('data-lang'), on = lang === S.lang;
+      paintMark(tab, S.page, lang);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+    });
+    placeOutline();
+    paintBanner();
+  }
+
+  // ── the page tree (CEL-069, shell-spec §3a): folders by path, the filter, the open page's sections ──
+  const folded = new Set(lsGet(KEYS.fold) || []);
+  let treeRows = [], kb = -1;
+  const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg>';
+  function folderOf(path) {
+    const parts = path.split('/').filter(Boolean);
+    return '/' + (parts.length > 1 ? parts.slice(0, -1).join('/') : parts[0] || '') + '/';
+  }
+  function leafOf(path) {
+    const parts = path.split('/').filter(Boolean);
+    return parts.length > 1 ? parts[parts.length - 1] : path;      // a page whose path IS the folder shows its path
+  }
+  function pageMatches(page, q) {
+    const info = PI.get(page);
+    const hay = ((info ? info.path : '') + ' ' + t('page.' + page)).toLowerCase();
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; });
+  }
+  function buildTree() {
+    const list = $('doc-tree-list'), q = $('doc-tree-filter').value.trim();
+    const outlineNav = $('doc-outline');
+    $('doc-tree').appendChild(outlineNav);                        // out of the list while it is rebuilt
+    list.textContent = '';
+    treeRows = [];
+    const groups = new Map();
     PAGES.forEach(function (page) {
-      LANGS.forEach(function (lang) {
-        const cell = document.querySelector('.doc-cell[data-page="' + page + '"][data-lang="' + lang + '"]');
-        if (!cell) return;
-        const s = statusOf(page, lang);
-        let status = s ? s.status : 'unknown';
-        // The language's open translate-page job (one per language) shows on its page's cell; a page
-        // waiting behind it shows as queued.
-        const js = jstate(lang);
-        if (js.job && js.page === page) status = 'translating';
-        else if (js.waiting.indexOf(page) >= 0) status = 'queued';
-        else if (status === 'none' && js.failed && js.failed.page === page) status = 'failed';   // not only on its own page (CEL-075 item 20)
-        cell.setAttribute('data-status', status);
-        cell.setAttribute('aria-pressed', page === S.page && lang === S.lang ? 'true' : 'false');
-        cell.querySelector('.doc-cell-status').textContent = t(STATUS_KEY[status]);
-        cell.querySelector('.doc-cell-count').textContent =
-          s && s.status !== 'none' ? tn('doc.cell.count', s.n, { total: s.total }) : '';
-        cell.setAttribute('aria-label', t('doc.cell.aria', {
-          page: t('page.' + page), language: t('lang.' + lang), status: t(STATUS_KEY[status])
-        }));
+      const info = PI.get(page);
+      if (!info) return;
+      const dir = folderOf(info.path);
+      if (!groups.has(dir)) groups.set(dir, []);
+      const g = groups.get(dir);
+      if (info.path.replace(/\/$/, '') + '/' === dir) g.unshift(page); else g.push(page);   // the folder's own page first
+    });
+    groups.forEach(function (pages, dir) {
+      const hit = pages.filter(function (pg) { return !q || pageMatches(pg, q); });
+      if (!hit.length) return;
+      const open = !!q || !folded.has(dir);
+      const fold = h('button', 'doc-tree-fold');
+      fold.type = 'button';
+      fold.setAttribute('data-dir', dir);
+      fold.setAttribute('aria-expanded', open ? 'true' : 'false');
+      fold.innerHTML = CHEVRON;
+      fold.appendChild(h('span', null, dir));
+      fold.appendChild(h('span', 'doc-tree-n', String(hit.length)));
+      fold.addEventListener('click', function () {
+        if (folded.has(dir)) folded.delete(dir); else folded.add(dir);
+        lsSet(KEYS.fold, Array.from(folded));
+        buildTree();
+      });
+      list.appendChild(fold);
+      if (!open) return;
+      hit.forEach(function (page) {
+        const row = h('button', 'doc-tree-page');
+        row.type = 'button';
+        row.setAttribute('role', 'treeitem');
+        row.setAttribute('data-page', page);
+        row.appendChild(h('span', 'doc-tree-slug', leafOf(PI.get(page).path)));
+        const mark = h('span', 'doc-st');
+        mark.setAttribute('aria-hidden', 'true');
+        row.appendChild(mark);
+        row.appendChild(h('span', 'doc-tree-name', t('page.' + page)));
+        row.appendChild(h('span', 'doc-st-word doc-sr'));
+        row.addEventListener('click', function () { pickPage(page); });
+        list.appendChild(row);
+        treeRows.push(row);
       });
     });
-    paintBanner();
+    const none = $('doc-tree-none');
+    none.hidden = treeRows.length > 0;
+    none.textContent = treeRows.length ? '' : t('nav.tree.none', { q: q });
+    if (kb >= treeRows.length) kb = treeRows.length - 1;
+    markKb();
+    paintGrid();
+  }
+  // Today's outline nav, under the open page's row; out of sight while the filter is on or the row is folded away.
+  function placeOutline() {
+    const nav = $('doc-outline'), row = document.querySelector('.doc-tree-page[aria-current="page"]');
+    if (row && !$('doc-tree-filter').value.trim()) { row.after(nav); nav.hidden = !outline.length; }
+    else { $('doc-tree').appendChild(nav); nav.hidden = true; }
+  }
+  function markKb() {
+    treeRows.forEach(function (r, i) { r.classList.toggle('is-kb', i === kb); });
+    if (treeRows[kb]) treeRows[kb].scrollIntoView({ block: 'nearest' });
+  }
+  function pickPage(page) {
+    if (page !== S.page) open(page, S.lang);                      // a page keeps the language
+  }
+  function pickLang(lang) {
+    if (lang !== S.lang) open(S.page, lang);                      // a language keeps the page
+  }
+  // A text box has the focus: a key there types (shell-spec §5).
+  function inText(el) {
+    if (!el || el === document.body) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!(el.closest && el.closest('[contenteditable]:not([contenteditable="false"])'));
+  }
+  function openFilter() {
+    const f = $('doc-tree-filter');
+    f.focus();
+    f.select();
+    kb = treeRows.length ? 0 : -1;
+    markKb();
+  }
+  function wireNav() {
+    const f = $('doc-tree-filter');
+    f.addEventListener('input', function () { kb = 0; buildTree(); });
+    f.addEventListener('keydown', function (ev) {
+      if (ev.isComposing) return;
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); kb = Math.min(treeRows.length - 1, kb + 1); markKb(); }
+      else if (ev.key === 'ArrowUp') { ev.preventDefault(); kb = Math.max(0, kb - 1); markKb(); }
+      else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        const row = treeRows[kb] || treeRows[0];
+        f.value = ''; kb = -1;
+        buildTree();
+        if (row) pickPage(row.getAttribute('data-page'));
+      }
+      else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); f.value = ''; kb = -1; buildTree(); f.blur(); }
+    });
+    document.querySelectorAll('.doc-tab').forEach(function (tab, i, all) {
+      tab.addEventListener('click', function () { pickLang(tab.getAttribute('data-lang')); });
+      tab.addEventListener('keydown', function (ev) {
+        let to = null;
+        if (ev.key === 'ArrowRight') to = all[(i + 1) % all.length];
+        else if (ev.key === 'ArrowLeft') to = all[(i - 1 + all.length) % all.length];
+        else if (ev.key === 'Home') to = all[0];
+        else if (ev.key === 'End') to = all[all.length - 1];
+        if (!to) return;
+        ev.preventDefault();
+        to.focus();
+        pickLang(to.getAttribute('data-lang'));
+      });
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.isComposing || ev.keyCode === 229) return;
+      if (!$('doc-confirm').hidden) return;
+      const typing = inText(document.activeElement);
+      // `/` outside a text box; Cmd+K on a Mac, Ctrl+K elsewhere, anywhere (Ctrl+K on a Mac is text editing).
+      if (ev.key === '/' && !typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); openFilter(); return; }
+      if ((ev.key === 'k' || ev.key === 'K') && !ev.altKey && !ev.shiftKey &&
+          (IS_MAC ? ev.metaKey && !ev.ctrlKey : ev.ctrlKey && !ev.metaKey)) { ev.preventDefault(); openFilter(); return; }
+      // Alt+1..8 never takes a typed character: Alt alone (AltGr = Ctrl+Alt types "@ { ["), the digit's code (on a
+      // Mac `key` is the character, "¡"), and focus outside a text box.
+      if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !typing) {
+        const m = /^Digit([1-8])$/.exec(ev.code || '');
+        if (m && LANGS[Number(m[1]) - 1]) { ev.preventDefault(); pickLang(LANGS[Number(m[1]) - 1]); }
+      }
+    });
   }
   let gridQueued = false;
   function gridSoon() {
@@ -2238,6 +2450,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       o.li = li; o.opt = opt;
     });
     sel.onchange = function () { jumpTo(sel.value); };
+    placeOutline();
     paintOutline();
   }
   // With a filter on, an entry counts the texts the filter leaves in it, and an entry with none is
@@ -2258,14 +2471,20 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     });
     spy();
   }
+  // Where reading starts: just under the sticky rows (top bar, path row, tabs, column heads; CEL-069), 140 px at least.
+  function readLine() {
+    const heads = $('doc-heads'), bottom = heads ? heads.getBoundingClientRect().bottom : 0;
+    return Math.max(140, bottom + 16);
+  }
   // The section being read: the last heading whose top has passed the top of the screen.
   function spy() {
     spyQueued = false;
     let now = outline.filter(function (o) { return !(o.li && o.li.hidden); })[0] || null;
+    const line = readLine();
     outline.forEach(function (o) {
       if (o.li && o.li.hidden) return;
       const b = M.get(filter === 'all' ? o.target : (shownIds(o)[0] || o.target));
-      if (b && !b.li.hidden && b.li.getBoundingClientRect().top <= 140) now = o;
+      if (b && !b.li.hidden && b.li.getBoundingClientRect().top <= line) now = o;
     });
     outline.forEach(function (o) {
       if (o === now) o.btn.setAttribute('aria-current', 'true'); else o.btn.removeAttribute('aria-current');
@@ -2299,6 +2518,8 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     if (PI.size) return Promise.resolve();
     return getJson(DATA + 'pages.json').then(function (d) {
       d.pages.forEach(function (p) { PI.set(p.key, p); });
+      buildTree();
+      headings();
     });
   }
   // A conflict is kept in storage as the entry's `conflict` flag; what the other editor saved is read
@@ -2353,7 +2574,12 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   }
   function headings() {
     const lang = S.lang;
-    $('doc-title').textContent = t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) });
+    const info = PI.get(S.page), path = info ? info.path : '';
+    const dir = path && path.split('/').filter(Boolean).length > 1 ? folderOf(path) : '';
+    document.querySelector('.doc-path-dir').textContent = dir;
+    document.querySelector('.doc-path-leaf').textContent = dir ? path.slice(dir.length) : path;
+    document.querySelector('.doc-path-name').textContent = t('page.' + S.page);
+    $('doc-title').setAttribute('aria-label', t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) }));
     document.querySelector('.doc-head-en').textContent = t('doc.head.en');
     document.querySelector('.doc-head-tgt').textContent = t('doc.head.tgt', { language: t('lang.' + lang) });
     document.querySelector('.doc-head-weglot').textContent = t('doc.head.weglot');
@@ -2457,13 +2683,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     return { page: page, lang: lang };
   }
   function wire() {
-    document.querySelectorAll('.doc-cell').forEach(function (cell) {
-      cell.addEventListener('click', function () {
-        const page = cell.getAttribute('data-page'), lang = cell.getAttribute('data-lang');
-        if (page === S.page && lang === S.lang) return;
-        open(page, lang);
-      });
-    });
+    wireNav();
     $('doc-undo').addEventListener('click', undo);
     $('doc-redo').addEventListener('click', redo);
     $('doc-weglot').addEventListener('change', function (ev) { weglot(ev.target.checked); });
@@ -2471,7 +2691,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       filter = ev.target.value;
       applyFilter(true);
       const spot = $('doc-blocks');
-      try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - 140), behavior: 'auto' }); } catch (_) {}
+      try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - readLine()), behavior: 'auto' }); } catch (_) {}
     });
     $('doc-next').addEventListener('click', goNext);
     $('doc-translate').addEventListener('click', function (ev) { translatePage(ev.currentTarget); });
@@ -2546,7 +2766,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
     curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
-    paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
+    paintBlock: paintBlock, gridSoon: gridSoon, navStatus: navStatus, toast: toast, open: open, reveal: reveal, saveNow: run,
     failureReason: failureReason, who: who,
     setRetranslating: function (lang, uid, on) {
       if (on) RT.add(lang + '|' + uid); else RT.delete(lang + '|' + uid);
@@ -2824,15 +3044,13 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   const sel = {};                                 // "page|lang" -> true
   const none = {};                                // "page|lang" -> true: nothing to export there (greyed)
   const boxes = { cell: {}, row: {}, col: {}, all: null };
-  // A page in a language with no draft and no edit has nothing to export: the grid already says so
-  // (paintGrid: data-status "none", or "failed" for a page whose translation did not finish: it has no text either,
-  // CEL-075 items 11 and 20). "translating" and "queued" replace the status the page's texts would give (paintGrid), so
-  // those cells ask statusOf: no text yet is nothing too (CEL-093), a re-translated page with texts stays pickable.
+  // A page in a language with no draft and no edit has nothing to export: the desk's tree and tabs already say so
+  // (navStatus: "none", or "failed" for a page whose translation did not finish: it has no text either,
+  // CEL-075 items 11 and 20). "translating" and "queued" replace the status the page's texts would give (navStatus), so
+  // those ask statusOf: no text yet is nothing too (CEL-093), a re-translated page with texts stays pickable.
   // "unknown" (language not read yet) is not "nothing": it stays pickable.
   function noneCell(p, l) {
-    const c = document.querySelector('.doc-cell[data-page="' + p + '"][data-lang="' + l + '"]');
-    const st = c && c.getAttribute('data-status');
-    if (!c) return false;
+    const st = D && typeof D.navStatus === 'function' ? D.navStatus(p, l).status : '';
     if (st === 'none' || st === 'failed') return true;
     if (st !== 'translating' && st !== 'queued') return false;
     const s = D.statusOf(p, l);

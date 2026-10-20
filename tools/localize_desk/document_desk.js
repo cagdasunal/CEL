@@ -37,7 +37,8 @@
     window.DOC_TIMING || {});
   const SAVE_OFF_ON = typeof SAVE_OFF !== 'undefined' && SAVE_OFF === true;
   const UNDO_CAP = 100;
-  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot', seen: 'cel-doc-seen' };
+  const KEYS = { pending: 'cel-doc-pending', undo: 'cel-doc-undo', last: 'cel-doc-last', weglot: 'cel-doc-weglot', seen: 'cel-doc-seen',
+    fold: 'cel-doc-fold' };
   const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
 
   // The block labels, spelled out so the copy check sees every key.
@@ -888,30 +889,191 @@
     const status = !nText ? 'none' : (nExp === nText ? 'exported' : (nEdit ? 'edited' : 'drafted'));
     return { status: status, n: nText, total: info.ids.length };
   }
+  // A page in a language as the tree and the tabs show it (CEL-069; the grid's cell before): the texts' status, or the
+  // language's open translate-page job on its page, a page waiting behind it, a translation that failed.
+  function navStatus(page, lang) {
+    const s = statusOf(page, lang);
+    let status = s ? s.status : 'unknown';
+    const js = jstate(lang);
+    if (js.job && js.page === page) status = 'translating';
+    else if (js.waiting.indexOf(page) >= 0) status = 'queued';
+    else if (status === 'none' && js.failed && js.failed.page === page) status = 'failed';   // not only on its own page (CEL-075 item 20)
+    return { status: status, s: s };
+  }
+  // The mark, its word (read by a screen reader) and the hover text: page, language, status and the count.
+  function paintMark(el, page, lang) {
+    const ns = navStatus(page, lang), word = t(STATUS_KEY[ns.status]);
+    el.setAttribute('data-status', ns.status);
+    el.querySelector('.doc-st').setAttribute('data-s', ns.status);
+    el.querySelector('.doc-st-word').textContent = word;
+    const count = ns.s && ns.s.status !== 'none' ? ' · ' + tn('doc.cell.count', ns.s.n, { total: ns.s.total }) : '';
+    const info = PI.get(page);
+    el.setAttribute('data-tip', (info ? info.path + ' · ' : '') + t('doc.cell.aria', { page: t('page.' + page), language: t('lang.' + lang), status: word }) + count);
+  }
   function paintGrid() {
+    document.querySelectorAll('.doc-tree-page').forEach(function (row) {
+      const page = row.getAttribute('data-page');
+      paintMark(row, page, S.lang);
+      if (page === S.page) row.setAttribute('aria-current', 'page'); else row.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.doc-tab').forEach(function (tab) {
+      const lang = tab.getAttribute('data-lang'), on = lang === S.lang;
+      paintMark(tab, S.page, lang);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+      tab.tabIndex = on ? 0 : -1;
+    });
+    placeOutline();
+    paintBanner();
+  }
+
+  // ── the page tree (CEL-069, shell-spec §3a): folders by path, the filter, the open page's sections ──
+  const folded = new Set(lsGet(KEYS.fold) || []);
+  let treeRows = [], kb = -1;
+  const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg>';
+  function folderOf(path) {
+    const parts = path.split('/').filter(Boolean);
+    return '/' + (parts.length > 1 ? parts.slice(0, -1).join('/') : parts[0] || '') + '/';
+  }
+  function leafOf(path) {
+    const parts = path.split('/').filter(Boolean);
+    return parts.length > 1 ? parts[parts.length - 1] : path;      // a page whose path IS the folder shows its path
+  }
+  function pageMatches(page, q) {
+    const info = PI.get(page);
+    const hay = ((info ? info.path : '') + ' ' + t('page.' + page)).toLowerCase();
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; });
+  }
+  function buildTree() {
+    const list = $('doc-tree-list'), q = $('doc-tree-filter').value.trim();
+    const outlineNav = $('doc-outline');
+    $('doc-tree').appendChild(outlineNav);                        // out of the list while it is rebuilt
+    list.textContent = '';
+    treeRows = [];
+    const groups = new Map();
     PAGES.forEach(function (page) {
-      LANGS.forEach(function (lang) {
-        const cell = document.querySelector('.doc-cell[data-page="' + page + '"][data-lang="' + lang + '"]');
-        if (!cell) return;
-        const s = statusOf(page, lang);
-        let status = s ? s.status : 'unknown';
-        // The language's open translate-page job (one per language) shows on its page's cell; a page
-        // waiting behind it shows as queued.
-        const js = jstate(lang);
-        if (js.job && js.page === page) status = 'translating';
-        else if (js.waiting.indexOf(page) >= 0) status = 'queued';
-        else if (status === 'none' && js.failed && js.failed.page === page) status = 'failed';   // not only on its own page (CEL-075 item 20)
-        cell.setAttribute('data-status', status);
-        cell.setAttribute('aria-pressed', page === S.page && lang === S.lang ? 'true' : 'false');
-        cell.querySelector('.doc-cell-status').textContent = t(STATUS_KEY[status]);
-        cell.querySelector('.doc-cell-count').textContent =
-          s && s.status !== 'none' ? tn('doc.cell.count', s.n, { total: s.total }) : '';
-        cell.setAttribute('aria-label', t('doc.cell.aria', {
-          page: t('page.' + page), language: t('lang.' + lang), status: t(STATUS_KEY[status])
-        }));
+      const info = PI.get(page);
+      if (!info) return;
+      const dir = folderOf(info.path);
+      if (!groups.has(dir)) groups.set(dir, []);
+      const g = groups.get(dir);
+      if (info.path.replace(/\/$/, '') + '/' === dir) g.unshift(page); else g.push(page);   // the folder's own page first
+    });
+    groups.forEach(function (pages, dir) {
+      const hit = pages.filter(function (pg) { return !q || pageMatches(pg, q); });
+      if (!hit.length) return;
+      const open = !!q || !folded.has(dir);
+      const fold = h('button', 'doc-tree-fold');
+      fold.type = 'button';
+      fold.setAttribute('data-dir', dir);
+      fold.setAttribute('aria-expanded', open ? 'true' : 'false');
+      fold.innerHTML = CHEVRON;
+      fold.appendChild(h('span', null, dir));
+      fold.appendChild(h('span', 'doc-tree-n', String(hit.length)));
+      fold.addEventListener('click', function () {
+        if (folded.has(dir)) folded.delete(dir); else folded.add(dir);
+        lsSet(KEYS.fold, Array.from(folded));
+        buildTree();
+      });
+      list.appendChild(fold);
+      if (!open) return;
+      hit.forEach(function (page) {
+        const row = h('button', 'doc-tree-page');
+        row.type = 'button';
+        row.setAttribute('role', 'treeitem');
+        row.setAttribute('data-page', page);
+        row.appendChild(h('span', 'doc-tree-slug', leafOf(PI.get(page).path)));
+        const mark = h('span', 'doc-st');
+        mark.setAttribute('aria-hidden', 'true');
+        row.appendChild(mark);
+        row.appendChild(h('span', 'doc-tree-name', t('page.' + page)));
+        row.appendChild(h('span', 'doc-st-word doc-sr'));
+        row.addEventListener('click', function () { pickPage(page); });
+        list.appendChild(row);
+        treeRows.push(row);
       });
     });
-    paintBanner();
+    const none = $('doc-tree-none');
+    none.hidden = treeRows.length > 0;
+    none.textContent = treeRows.length ? '' : t('nav.tree.none', { q: q });
+    if (kb >= treeRows.length) kb = treeRows.length - 1;
+    markKb();
+    paintGrid();
+  }
+  // Today's outline nav, under the open page's row; out of sight while the filter is on or the row is folded away.
+  function placeOutline() {
+    const nav = $('doc-outline'), row = document.querySelector('.doc-tree-page[aria-current="page"]');
+    if (row && !$('doc-tree-filter').value.trim()) { row.after(nav); nav.hidden = !outline.length; }
+    else { $('doc-tree').appendChild(nav); nav.hidden = true; }
+  }
+  function markKb() {
+    treeRows.forEach(function (r, i) { r.classList.toggle('is-kb', i === kb); });
+    if (treeRows[kb]) treeRows[kb].scrollIntoView({ block: 'nearest' });
+  }
+  function pickPage(page) {
+    if (page !== S.page) open(page, S.lang);                      // a page keeps the language
+  }
+  function pickLang(lang) {
+    if (lang !== S.lang) open(S.page, lang);                      // a language keeps the page
+  }
+  // A text box has the focus: a key there types (shell-spec §5).
+  function inText(el) {
+    if (!el || el === document.body) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!(el.closest && el.closest('[contenteditable]:not([contenteditable="false"])'));
+  }
+  function openFilter() {
+    const f = $('doc-tree-filter');
+    f.focus();
+    f.select();
+    kb = treeRows.length ? 0 : -1;
+    markKb();
+  }
+  function wireNav() {
+    const f = $('doc-tree-filter');
+    f.addEventListener('input', function () { kb = 0; buildTree(); });
+    f.addEventListener('keydown', function (ev) {
+      if (ev.isComposing) return;
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); kb = Math.min(treeRows.length - 1, kb + 1); markKb(); }
+      else if (ev.key === 'ArrowUp') { ev.preventDefault(); kb = Math.max(0, kb - 1); markKb(); }
+      else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        const row = treeRows[kb] || treeRows[0];
+        f.value = ''; kb = -1;
+        buildTree();
+        if (row) pickPage(row.getAttribute('data-page'));
+      }
+      else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); f.value = ''; kb = -1; buildTree(); f.blur(); }
+    });
+    document.querySelectorAll('.doc-tab').forEach(function (tab, i, all) {
+      tab.addEventListener('click', function () { pickLang(tab.getAttribute('data-lang')); });
+      tab.addEventListener('keydown', function (ev) {
+        let to = null;
+        if (ev.key === 'ArrowRight') to = all[(i + 1) % all.length];
+        else if (ev.key === 'ArrowLeft') to = all[(i - 1 + all.length) % all.length];
+        else if (ev.key === 'Home') to = all[0];
+        else if (ev.key === 'End') to = all[all.length - 1];
+        if (!to) return;
+        ev.preventDefault();
+        to.focus();
+        pickLang(to.getAttribute('data-lang'));
+      });
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.isComposing || ev.keyCode === 229) return;
+      if (!$('doc-confirm').hidden) return;
+      const typing = inText(document.activeElement);
+      // `/` outside a text box; Cmd+K on a Mac, Ctrl+K elsewhere, anywhere (Ctrl+K on a Mac is text editing).
+      if (ev.key === '/' && !typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); openFilter(); return; }
+      if ((ev.key === 'k' || ev.key === 'K') && !ev.altKey && !ev.shiftKey &&
+          (IS_MAC ? ev.metaKey && !ev.ctrlKey : ev.ctrlKey && !ev.metaKey)) { ev.preventDefault(); openFilter(); return; }
+      // Alt+1..8 never takes a typed character: Alt alone (AltGr = Ctrl+Alt types "@ { ["), the digit's code (on a
+      // Mac `key` is the character, "¡"), and focus outside a text box.
+      if (ev.altKey && !ev.ctrlKey && !ev.metaKey && !typing) {
+        const m = /^Digit([1-8])$/.exec(ev.code || '');
+        if (m && LANGS[Number(m[1]) - 1]) { ev.preventDefault(); pickLang(LANGS[Number(m[1]) - 1]); }
+      }
+    });
   }
   let gridQueued = false;
   function gridSoon() {
@@ -1342,6 +1504,7 @@
       o.li = li; o.opt = opt;
     });
     sel.onchange = function () { jumpTo(sel.value); };
+    placeOutline();
     paintOutline();
   }
   // With a filter on, an entry counts the texts the filter leaves in it, and an entry with none is
@@ -1362,14 +1525,20 @@
     });
     spy();
   }
+  // Where reading starts: just under the sticky rows (top bar, path row, tabs, column heads; CEL-069), 140 px at least.
+  function readLine() {
+    const heads = $('doc-heads'), bottom = heads ? heads.getBoundingClientRect().bottom : 0;
+    return Math.max(140, bottom + 16);
+  }
   // The section being read: the last heading whose top has passed the top of the screen.
   function spy() {
     spyQueued = false;
     let now = outline.filter(function (o) { return !(o.li && o.li.hidden); })[0] || null;
+    const line = readLine();
     outline.forEach(function (o) {
       if (o.li && o.li.hidden) return;
       const b = M.get(filter === 'all' ? o.target : (shownIds(o)[0] || o.target));
-      if (b && !b.li.hidden && b.li.getBoundingClientRect().top <= 140) now = o;
+      if (b && !b.li.hidden && b.li.getBoundingClientRect().top <= line) now = o;
     });
     outline.forEach(function (o) {
       if (o === now) o.btn.setAttribute('aria-current', 'true'); else o.btn.removeAttribute('aria-current');
@@ -1403,6 +1572,8 @@
     if (PI.size) return Promise.resolve();
     return getJson(DATA + 'pages.json').then(function (d) {
       d.pages.forEach(function (p) { PI.set(p.key, p); });
+      buildTree();
+      headings();
     });
   }
   // A conflict is kept in storage as the entry's `conflict` flag; what the other editor saved is read
@@ -1457,7 +1628,12 @@
   }
   function headings() {
     const lang = S.lang;
-    $('doc-title').textContent = t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) });
+    const info = PI.get(S.page), path = info ? info.path : '';
+    const dir = path && path.split('/').filter(Boolean).length > 1 ? folderOf(path) : '';
+    document.querySelector('.doc-path-dir').textContent = dir;
+    document.querySelector('.doc-path-leaf').textContent = dir ? path.slice(dir.length) : path;
+    document.querySelector('.doc-path-name').textContent = t('page.' + S.page);
+    $('doc-title').setAttribute('aria-label', t('doc.title', { page: t('page.' + S.page), language: t('lang.' + lang) }));
     document.querySelector('.doc-head-en').textContent = t('doc.head.en');
     document.querySelector('.doc-head-tgt').textContent = t('doc.head.tgt', { language: t('lang.' + lang) });
     document.querySelector('.doc-head-weglot').textContent = t('doc.head.weglot');
@@ -1561,13 +1737,7 @@
     return { page: page, lang: lang };
   }
   function wire() {
-    document.querySelectorAll('.doc-cell').forEach(function (cell) {
-      cell.addEventListener('click', function () {
-        const page = cell.getAttribute('data-page'), lang = cell.getAttribute('data-lang');
-        if (page === S.page && lang === S.lang) return;
-        open(page, lang);
-      });
-    });
+    wireNav();
     $('doc-undo').addEventListener('click', undo);
     $('doc-redo').addEventListener('click', redo);
     $('doc-weglot').addEventListener('change', function (ev) { weglot(ev.target.checked); });
@@ -1575,7 +1745,7 @@
       filter = ev.target.value;
       applyFilter(true);
       const spot = $('doc-blocks');
-      try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - 140), behavior: 'auto' }); } catch (_) {}
+      try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - readLine()), behavior: 'auto' }); } catch (_) {}
     });
     $('doc-next').addEventListener('click', goNext);
     $('doc-translate').addEventListener('click', function (ev) { translatePage(ev.currentTarget); });
@@ -1650,7 +1820,7 @@
     call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
     curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
-    paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
+    paintBlock: paintBlock, gridSoon: gridSoon, navStatus: navStatus, toast: toast, open: open, reveal: reveal, saveNow: run,
     failureReason: failureReason, who: who,
     setRetranslating: function (lang, uid, on) {
       if (on) RT.add(lang + '|' + uid); else RT.delete(lang + '|' + uid);

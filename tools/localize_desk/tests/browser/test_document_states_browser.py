@@ -271,7 +271,7 @@ def test_item_13_a_conflict_names_where_it_is_and_opens_it(browser):
         assert code == 200 and out["applied"], out
         edit(p, u, "My text")
         expect(blk(p, u).locator(".doc-conflict")).to_be_visible()
-        p.locator(f'.doc-cell[data-page="{OTHER_PAGE}"][data-lang="{LANG}"]').click()      # leave the page
+        p.locator(f'.doc-tree-page[data-page="{OTHER_PAGE}"]').click()      # leave the page (the language stays)
         p.wait_for_function("new URL(location.href).searchParams.get('page') === '%s'" % OTHER_PAGE)
         expect(p.locator(READY)).to_be_visible()
         where = C.t("autosave.conflict.where", language=C.t(f"lang.{LANG}"), page=C.t(f"page.{PAGE_KEY}"))

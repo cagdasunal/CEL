@@ -171,7 +171,7 @@ def _dom() -> str:
         '<main id="rules-app" class="rules" data-state="loading">\n'
         '  <header class="r-top">\n'
         f'    <h1 class="r-title">{e("rules.title")}</h1>\n'
-        f'    <a class="desk-btn" href="/admin/localization/document/">{e("rules.desk")}</a>\n'
+        f'    <a id="rules-desk" class="desk-btn" href="/admin/localization/document/">{e("rules.desk")}</a>\n'
         '  </header>\n'
         f'  <div class="r-tabs" role="tablist" aria-label="{e("rules.language")}">{tabs}</div>\n'
         '  <div id="rulesPanel" class="r-main" role="tabpanel" aria-live="polite"></div>\n'

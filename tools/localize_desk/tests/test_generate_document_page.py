@@ -854,18 +854,20 @@ def _shape(kids) -> list[str]:
     return out
 
 
-IDS = ["doc", "doc-grid-title", "doc-grid", "doc-bar", "doc-title", "doc-translate", "doc-banner",
+IDS = ["doc", "doc-tree", "doc-tree-filter", "doc-tree-list", "doc-tree-none", "doc-tabs", "doc-bar", "doc-title", "doc-translate", "doc-banner",
        "doc-banner-text", "doc-banner-translate", "doc-outline", "doc-outline-title", "doc-outline-list",
        "doc-sections", "doc-heads", "doc-blocks", "doc-status", "doc-save", "doc-undo", "doc-redo",
        "doc-weglot", "doc-words", "doc-history", "doc-history-title", "doc-history-close",
        "doc-history-list", "doc-confirm", "doc-confirm-title", "doc-confirm-body", "doc-confirm-cancel",
        "doc-confirm-ok", "doc-toasts"]
-CLASSES = ["doc", "doc-gridwrap", "doc-grid-title", "scroll-x", "doc-grid", "doc-grid-lang", "doc-grid-page",
-           "doc-cell", "doc-cell-status", "doc-cell-count", "doc-bar", "doc-title", "doc-actions", "desk-btn",
-           "doc-banner", "is-strong", "doc-layout", "doc-outline", "doc-outline-title", "doc-outline-list",
+CLASSES = ["doc", "doc-app", "doc-tree", "doc-tree-filter", "doc-kbd-hint", "doc-tree-list", "doc-tree-none",
+           "doc-main", "doc-tabs", "doc-tab", "doc-st", "doc-tab-name", "doc-st-word", "doc-sr", "doc-tabs-hint",
+           "doc-bar", "doc-title", "doc-path", "doc-path-dir", "doc-path-leaf", "doc-path-name", "doc-actions",
+           "doc-switch", "desk-btn",
+           "doc-banner", "is-strong", "doc-layout", "doc-outline", "doc-outline-list",
            "doc-sheets", "doc-sections-wrap", "doc-sections-label", "desk-select", "doc-sections", "doc-heads",
            "doc-head", "doc-head-en", "doc-head-tgt", "doc-head-weglot", "doc-blocks", "doc-status", "doc-save",
-           "doc-status-mid", "doc-btn-label", "doc-kbd", "doc-status-end", "doc-toggle", "doc-words",
+           "doc-status-mid", "doc-btn-label", "doc-kbd", "doc-status-end", "doc-words",
            "doc-drawer", "doc-history-note", "doc-history-list", "cpw-overlay", "cpw-modal", "cpw-title",
            "cpw-actions", "cpw-btn", "cpw-cancel", "cpw-save", "toast-stack"]
 
@@ -906,29 +908,49 @@ class TestPageShell:
         assert "doc-save" not in [a.get("id") for t, a in dom.kids_of_id("doc-bar")]
 
     def test_the_shells_children_come_in_the_contracts_order(self, page):
+        """CEL-069 (Option B): the page tree beside the main column, then the status bar and the overlays."""
         dom = _dom(page)
         assert _shape(dom.kids_of_id("doc")) == [
-            "section.doc-gridwrap", "header#doc-bar.doc-bar", "div#doc-banner.doc-banner", "div.doc-layout",
-            "footer#doc-status.doc-status", "aside#doc-history.doc-drawer", "div#doc-confirm.cpw-overlay",
-            "div#doc-toasts.toast-stack"]
+            "div.doc-app", "footer#doc-status.doc-status", "aside#doc-history.doc-drawer",
+            "div#doc-confirm.cpw-overlay", "div#doc-toasts.toast-stack"]
+        assert _shape(dom.kids_of_class("doc-app")) == ["aside#doc-tree.doc-tree", "div.doc-main"]
+        assert _shape(dom.kids_of_class("doc-main")) == [
+            "header#doc-bar.doc-bar", "div#doc-tabs.doc-tabs", "div#doc-banner.doc-banner", "div.doc-layout"]
 
-    def test_the_bar_is_the_title_and_the_translate_button(self, page):
+    def test_the_path_row_is_the_path_then_weglot_rules_and_translate(self, page):
         dom = _dom(page)
         assert _shape(dom.kids_of_id("doc-bar")) == ["h1#doc-title.doc-title", "div.doc-actions"]
-        # the rules page's entry point (CEL-046), then Translate
-        assert _shape(dom.kids_of_class("doc-actions")) == ["a#doc-rules.desk-btn", "button#doc-translate.desk-btn"]
+        assert _shape(dom.kids_of_id("doc-title")) == ["span.doc-path", "span.doc-path-name"]
+        assert _shape(dom.kids_of_class("doc-path")) == ["span.doc-path-dir", "span.doc-path-leaf"]
+        assert dom.text_of("doc-title") == ""                             # the runtime writes the path
+        # Show Weglot (same checkbox, a switch), the rules page's entry point (CEL-046), then Translate; Export is added by document_export.js
+        assert _shape(dom.kids_of_class("doc-actions")) == [
+            "label.doc-switch", "a#doc-rules.desk-btn", "button#doc-translate.desk-btn"]
+        assert _shape(dom.kids_of_class("doc-switch")) == ["input#doc-weglot", "span"]
+        assert dom.by_id("doc-weglot")["type"] == "checkbox" and dom.by_id("doc-weglot")["role"] == "switch"
+        main = _main_markup(page)
+        assert _html.escape(C.t("doc.weglot.toggle")) in main       # CEL-075 item 15: "the website's text", never "Weglot"
         assert dom.by_id("doc-rules")["href"] == "/admin/localization/rules/"
         assert dom.text_of("doc-rules") == C.t("doc.rules")
         assert dom.text_of("doc-translate") == C.t("doc.translate")
-        assert dom.text_of("doc-title") == ""
 
-    def test_the_layout_is_the_outline_then_the_sheets(self, page):
+    def test_the_tree_is_the_filter_the_list_and_the_outline_the_runtime_moves_under_the_open_page(self, page):
         dom = _dom(page)
-        assert _shape(dom.kids_of_class("doc-layout")) == ["nav#doc-outline.doc-outline", "div.doc-sheets"]
-        assert _shape(dom.kids_of_id("doc-outline")) == ["h2#doc-outline-title.doc-outline-title", "ol#doc-outline-list.doc-outline-list"]
+        assert _shape(dom.kids_of_id("doc-tree")) == [
+            "label.doc-tree-filter", "div#doc-tree-list.doc-tree-list", "p#doc-tree-none.doc-tree-none",
+            "nav#doc-outline.doc-outline"]
+        f = dom.by_id("doc-tree-filter")
+        assert f["type"] == "search" and f["placeholder"] == C.t("nav.tree.filter") and f["aria-controls"] == "doc-tree-list"
+        assert dom.by_id("doc-tree-list")["role"] == "tree" and dom.kids_of_id("doc-tree-list") == []   # the runtime fills it
+        assert dom.by_id("doc-tree")["aria-label"] == C.t("nav.tree.label")
+        assert _shape(dom.kids_of_id("doc-outline")) == ["h2#doc-outline-title.doc-sr", "ol#doc-outline-list.doc-outline-list"]
         assert dom.by_id("doc-outline")["aria-labelledby"] == "doc-outline-title"
         assert dom.text_of("doc-outline-title") == C.t("doc.outline.title")
         assert dom.kids_of_id("doc-outline-list") == []                  # the runtime fills it
+
+    def test_the_layout_is_the_sheets_alone(self, page):
+        dom = _dom(page)
+        assert _shape(dom.kids_of_class("doc-layout")) == ["div.doc-sheets"]
 
     def test_the_sheets_are_the_sections_select_the_heads_and_the_blocks(self, page):
         dom = _dom(page)
@@ -953,9 +975,7 @@ class TestPageShell:
             assert _shape(dom.kids_of_id(ident)) == ["span.doc-btn-label", "kbd.doc-kbd"]
             assert dom.text_of(ident) == C.t(key)
         assert _main_markup(page).count('<kbd class="doc-kbd"></kbd>') == 3          # the runtime fills them
-        assert _shape(dom.kids_of_class("doc-status-end")) == ["label.doc-toggle", "a#doc-desk-version.doc-desk-version", "span#doc-words.doc-words"]
-        assert _shape(dom.kids_of_class("doc-toggle")) == ["input#doc-weglot", "span"]
-        assert dom.by_id("doc-weglot")["type"] == "checkbox"
+        assert _shape(dom.kids_of_class("doc-status-end")) == ["a#doc-desk-version.doc-desk-version", "span#doc-words.doc-words"]
         assert dom.text_of("doc-words") == "" and dom.text_of("doc-save") == ""
 
     def test_the_status_bar_holds_the_filter_and_next_to_check_in_copy_md_words(self, page):
@@ -1023,7 +1043,8 @@ class TestPageShell:
         for ident in ("doc-undo", "doc-redo"):
             assert "disabled" in dom.by_id(ident), ident
         assert "disabled" not in dom.by_id("doc-translate")
-        assert "hidden" not in dom.by_id("doc-outline") and "hidden" not in dom.by_id("doc-status")
+        assert "hidden" in dom.by_id("doc-outline") and "hidden" in dom.by_id("doc-tree-none")   # shown by the runtime
+        assert "hidden" not in dom.by_id("doc-status")
 
     def test_the_banners_button_is_not_a_second_primary_button(self, page):
         """One filled button on the page at a time (ruling #53): Export, added by document_export.js, is the
@@ -1033,38 +1054,27 @@ class TestPageShell:
         assert "is-strong" in dom.by_id("doc-banner-translate")["class"]
         assert dom.with_class("is-primary") == []
 
-    def test_the_grid_is_four_pages_by_eight_languages_in_the_desks_order(self, page):
+    def test_the_tabs_are_the_eight_languages_in_the_desks_order(self, page):
+        """CEL-069: one tab per language, LOCALES order, Alt+1..8, the open page's status mark (filled by the runtime)."""
         dom = _dom(page)
-        heads = dom.with_class("doc-grid-lang")
-        assert [h["data-lang"] for h in heads] == [c for c, *_ in S.LOCALES]
-        rows = [a for t, a in dom.elems if t == "tr" and "data-page" in a]
-        assert [r["data-page"] for r in rows] == S.PAGE_KEYS
-        cells = dom.with_class("doc-cell")
-        assert len(cells) == len(S.PAGE_KEYS) * len(S.LOCALES)
-        want = [(k, c) for k in S.PAGE_KEYS for c, *_ in S.LOCALES]
-        assert [(a["data-page"], a["data-lang"]) for a in cells] == want
-        assert all(a["data-status"] == "unknown" and a["aria-pressed"] == "false" and a["type"] == "button"
-                   for a in cells)
+        tabs = dom.with_class("doc-tab")
+        assert [a["data-lang"] for a in tabs] == [c for c, *_ in S.LOCALES]
+        assert all(a["role"] == "tab" and a["type"] == "button" and a["aria-selected"] == "false" for a in tabs)
+        assert [a["aria-keyshortcuts"] for a in tabs] == [f"Alt+{i}" for i in range(1, len(S.LOCALES) + 1)]
+        assert dom.by_id("doc-tabs")["role"] == "tablist" and dom.by_id("doc-tabs")["aria-label"] == C.t("nav.tabs.label")
+        marks = [a for a in dom.with_class("doc-st") if a.get("data-s")]
+        assert len(marks) == len(S.LOCALES) and all(a["data-s"] == "unknown" and a["aria-hidden"] == "true" for a in marks)
 
-    def test_the_grid_reads_as_a_table(self, page):
-        dom = _dom(page)
-        ths = [a for t, a in dom.elems if t == "th"]
-        assert sum(1 for a in ths if a.get("scope") == "col") == 1 + len(S.LOCALES)
-        assert sum(1 for a in ths if a.get("scope") == "row") == len(S.PAGE_KEYS)
-        assert dom.with_class("doc-gridwrap")[0]["aria-labelledby"] == "doc-grid-title"
-
-    def test_the_grids_words_are_the_desks_names(self, page):
+    def test_the_tabs_words_are_the_desks_names_and_the_hint(self, page):
         main = _main_markup(page)
-        for key in S.PAGE_KEYS:
-            assert C.t(f"page.{key}") in main
         for code, *_ in S.LOCALES:
-            assert f">{S.lang_name(code)}</th>" in main
-        assert C.t("doc.grid.label") in main and C.t("doc.status.unknown") in main
+            assert f'<span class="doc-tab-name">{S.lang_name(code)}</span>' in main
+        assert C.t("nav.tabs.hint") in main
 
-    def test_the_flags_are_decoration(self, page):
+    def test_the_grid_and_its_flags_are_gone(self, page):
         main = _main_markup(page)
-        for _c, _e, _d, flag in S.LOCALES:
-            assert f'<span class="doc-flag" aria-hidden="true">{flag}</span>' in main
+        for gone in ("doc-grid", "doc-cell", "doc-flag", "<table"):
+            assert gone not in main, gone
 
     def test_no_title_attribute_and_no_inline_style_in_the_markup(self, page):
         markup = page[page.index('<div class="dashboard-shell">'):]
@@ -1225,15 +1235,15 @@ class TestNoWordOutsideTheDocument:
         assert "<title>§</title>" in html and '<meta name="description" content="§">' in html
 
     def test_the_sentinel_page_reaches_the_places_a_person_reads(self, stub_js, monkeypatch):
-        """verify the verifier: the sentinel scan sees buttons, headings, the grid, the outline and
+        """verify the verifier: the sentinel scan sees buttons, headings, the tree, the tabs, the outline and
         the status bar -- if it saw nothing it could not fail."""
         real = C.load()
         monkeypatch.setattr(C, "load", lambda: {k: "§" for k in real})
         p = _Visible()
         p.feed(_desk_part(GD.render_page()))
-        # grid: corner + 8 heads + 4 rows + 32 cells; then the outline title, Sections, Translate x3, Undo, Redo,
-        # Show Weglot, the history title, note and Close, Cancel
-        assert p.out.count("§") >= 1 + len(S.LOCALES) + len(S.PAGE_KEYS) + len(S.PAGE_KEYS) * len(S.LOCALES) + 12
+        # CEL-069: the tree filter's label, 8 tabs and the tabs' hint, the website's-text switch; then the outline title,
+        # Sections, Translate x3, Undo, Redo, the history title, note and Close, Cancel
+        assert p.out.count("§") >= 1 + len(S.LOCALES) + 1 + 1 + 11
 
     def test_the_scan_can_fail(self, page):
         p = _Visible()
@@ -1398,7 +1408,8 @@ class TestPageCss:
             "--doc-ink": "#2B2722", "--doc-ink-src": "#47423A", "--doc-muted": "#645D51", "--doc-placeholder": "#6A6255",
             "--doc-edited": "#A85F0A", "--doc-edited-ink": "#8A4D07", "--doc-flag": "#A3361F", "--doc-flag-bg": "#EDDCC6"}
         used = set(re.findall(r"var\((--doc-[a-z-]+)\)", GD.DOC_CSS))
-        assert used - {"--doc-pad", "--doc-topbar", "--doc-mt", "--doc-mb"} == set(tokens), used ^ set(tokens)
+        shell = set(re.findall(r"(--[a-z0-9-]+):", GD.SHELL_TOKENS))        # CEL-069: the shell's own (sizes, the in-progress brown)
+        assert used - {"--doc-pad", "--doc-topbar", "--doc-mt", "--doc-mb"} - shell == set(tokens), used ^ set(tokens)
         assert re.search(r"--fs-doc-h1:\s*28px", GD.DOC_TOKENS) and re.search(r"--fs-doc-h2:\s*21px", GD.DOC_TOKENS)
 
     def test_the_token_block_sits_between_the_fields_sheet_and_the_pages_own_rules(self):
@@ -1448,7 +1459,8 @@ class TestPageCss:
             for ground in ("--doc-sheet", "--doc-sheet-hover"):
                 ratio = self._ratio(hexof(m.group(1)), t[ground])
                 assert ratio >= 4.5, (sel, m.group(1), ground, round(ratio, 2))
-        assert {"--err", "--ok", "--fg", "--notice-fg", "--doc-muted"} <= seen, seen
+        # the grid's exported (--ok) text went with the grid (CEL-069); the shell's slug (--accent-strong) is held here too
+        assert {"--err", "--fg", "--notice-fg", "--doc-muted", "--doc-ink", "--accent-strong"} <= seen, seen
 
     def test_no_surface_of_the_document_view_is_white_or_near_white(self):
         t = self._tokens()
@@ -1477,23 +1489,30 @@ class TestPageCss:
         filled button is the dashboard's own `.desk-btn.is-primary`, which this sheet does not touch."""
         hits = [(s, b) for s, b in _rules(GD.DOC_CSS) if "var(--accent" in b]
         assert hits
+        # CEL-069: the shell (CEL-068 shell-spec §1) also draws indigo where its approved design says so -- the
+        # status marks, the selected tab's underline, the switch when on, the open page's slug -- and nowhere else.
+        shell = (".doc-st[", ".doc-tab[aria-selected", ".doc-switch input:checked", '.doc-tree-page[aria-current="page"] .doc-tree-slug')
         for sel, body in hits:
-            assert ":focus-visible" in sel or (sel == ".doc-toggle input" and "accent-color" in body), (sel, body)
-        assert "var(--accent-strong)" not in GD.DOC_CSS and "var(--accent-warm)" not in GD.DOC_CSS
+            assert ":focus-visible" in sel or ":focus-within" in sel or sel.startswith(shell), (sel, body)
+        assert [s for s, b in _rules(GD.DOC_CSS) if "var(--accent-strong)" in b] == ['.doc-tree-page[aria-current="page"] .doc-tree-slug']
+        assert "var(--accent-warm)" not in GD.DOC_CSS
         assert ".is-primary" not in GD.DOC_CSS
 
-    def test_the_open_text_is_outlined_in_indigo_and_the_open_cell_is_dark_and_bold(self):
+    def test_the_open_text_is_outlined_in_indigo_and_the_open_page_and_language_stand_out(self):
+        """CEL-069 (shell-spec §1/§3): the open page's row rises to the sheet cream (never --selected) and the
+        selected language tab is ink, weight 500, with a 2 px indigo underline."""
         assert "outline: 2px solid var(--accent)" in _rule(".doc-block > .doc-tgt:focus-visible")
-        pressed = _rule('.doc-cell[aria-pressed="true"]')
-        assert "var(--fg)" in pressed and "accent" not in pressed
-        bold = _rule('.doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count')
-        assert "font-weight: 700" in bold and "accent" not in bold
+        row = _rule('.doc-tree-page.is-kb, .doc-tree-page[aria-current="page"]')
+        assert row == "background: var(--doc-sheet);"
+        tab = _rule('.doc-tab[aria-selected="true"]')
+        assert "border-bottom-color: var(--accent)" in tab and "color: var(--doc-ink)" in tab and "font-weight: 500" in tab
+        assert "border-bottom: 2px solid var(--bg)" in _rule(".doc-tab")      # the bar's own colour at rest
 
-    def test_the_current_outline_entry_is_medium_with_a_two_pixel_bar_of_the_ink(self):
+    def test_the_current_section_in_the_tree_is_ink_on_the_hover_cream(self):
+        """CEL-069 (shell-spec §1: sections under the open page, current = --doc-ink on --doc-sheet-hover)."""
         body = _rule('.doc-outline-item[aria-current="true"]')
-        assert "font-weight: 500" in body and "inset 2px 0 0 var(--doc-ink)" in body and "accent" not in body
-        assert "color: var(--doc-ink)" in _rule('.doc-outline-item[aria-current="true"] .doc-outline-name')
-        assert "color: var(--doc-ink-src)" in _rule(".doc-outline-name")
+        assert body == "background: var(--doc-sheet-hover); color: var(--doc-ink);"
+        assert "color: var(--doc-muted)" in _rule(".doc-outline-item")
 
     def test_edited_is_a_3px_ochre_bar_and_the_word_edited_is_ochre(self):
         body = _rule('.doc-block[data-source="edit"] .doc-tgt::after')
@@ -1576,7 +1595,8 @@ class TestPageCss:
         assert "color: var(--doc-muted)" in description
         head = _rule(".doc-head")
         assert "font-size: var(--fs-md)" in head and "font-weight: 500" in head and "color: var(--doc-ink-src)" in head
-        assert "font-weight: 500" in _rule(".doc-title") and "font-size: var(--fs-xl)" in _rule(".doc-title")
+        # CEL-069: the heading is the path row's path (shell-spec §3b: 15 px mono at 400), no longer a 20 px title
+        assert "font-weight: 400" in _rule(".doc-title") and "font-size: var(--fs-path)" in _rule(".doc-title")
 
     def test_the_search_result_blocks_are_quiet_cards(self):
         card = _rule('.doc-block:is([data-b="meta-title"], [data-b="meta-description"]) :is(.doc-en, .doc-tgt)')
@@ -1613,10 +1633,19 @@ class TestPageCss:
         assert _rule(".doc-block[data-flash]") == "background: var(--selected);"
         assert "var(--selected)" in _rule(".doc-block[data-flash]::before, .doc-block[data-flash]::after, .doc-block[data-flash] > .doc-weglot")
 
-    def test_the_outline_rail_is_240px_and_sticky_below_the_dashboard_bar(self):
-        assert "grid-template-columns: 240px minmax(0, 1fr)" in _rule(".doc-layout")
-        rail = _rule(".doc-outline")
-        assert "position: sticky" in rail and "var(--doc-topbar)" in rail and "overflow-y: auto" in rail
+    def test_the_tree_is_a_sticky_column_and_the_path_row_tabs_and_heads_stick_in_turn(self):
+        """CEL-069 (shell-spec §3): tree | main; the tree sticks under the dashboard bar and scrolls on its own; the
+        path row (52) sticks under the bar, the tabs (38) under it, the column heads under the tabs."""
+        assert "grid-template-columns: var(--tree-w) minmax(0, 1fr)" in _rule(".doc-app")
+        tree = _rule(".doc-tree")
+        assert "position: sticky" in tree and "top: var(--doc-topbar)" in tree and "background: var(--tree-bg)" in tree
+        assert "overflow-y: auto" in _rule(".doc-tree-list")
+        assert "top: var(--doc-topbar)" in _rule(".doc-bar") and "height: var(--ctx-h)" in _rule(".doc-bar")
+        assert "top: calc(var(--doc-topbar) + var(--ctx-h))" in _rule(".doc-tabs") and "height: var(--tabs-h)" in _rule(".doc-tabs")
+        assert "top: calc(var(--doc-topbar) + var(--ctx-h) + var(--tabs-h))" in _rule(".doc-heads")
+        for tok in ("--tree-w: 288px", "--ctx-h: 52px", "--tabs-h: 38px", "--tree-bg: var(--doc-tray)", "--fs-path: 15px"):
+            assert tok in GD.SHELL_TOKENS, tok
+        assert "--doc-tray: #E7DEC7" in GD.DOC_TOKENS and "--doc-sheet: #F1EAD8" in GD.DOC_TOKENS     # CEL-070's
 
     def test_the_status_bar_sticks_to_the_bottom_at_44px(self):
         bar = _rule(".doc-status")
@@ -1650,7 +1679,6 @@ class TestPageCss:
     def test_a_tablet_loses_the_rail_and_gets_the_sections_list(self):
         tablet = GD.DOC_CSS[GD.DOC_CSS.index("@media (max-width: 1024px)"):GD.DOC_CSS.index("@media (max-width: 767px)")]
         assert ".doc-outline { display: none; }" in tablet and ".doc-sections-wrap { display: flex; }" in tablet
-        assert "grid-template-columns: minmax(0, 1fr)" in tablet
 
     def test_a_phone_gets_one_column_english_above_the_translation_and_the_toolbar_under_the_text(self):
         phone = GD.DOC_CSS[GD.DOC_CSS.index("@media (max-width: 767px)"):GD.DOC_CSS.index("@media (prefers-reduced-motion")]
@@ -1680,7 +1708,8 @@ class TestPageCss:
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
                    "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore",
                    "doc-shared", "doc-shared-mark", "doc-shared-pop", "doc-shared-pop-text", "doc-shared-pop-list",
-                   "doc-shared-warn", "doc-shared-pop-up"}
+                   "doc-shared-warn", "doc-shared-pop-up",
+                   "doc-tree-fold", "doc-tree-n", "doc-tree-page", "doc-tree-slug", "doc-tree-name"}   # CEL-069: the tree's rows
         in_shell = set()
         for _tag, attrs in _dom(page).elems:
             in_shell |= set((attrs.get("class") or "").split())

@@ -294,21 +294,51 @@ def pick(data: dict, n: int = 1, *, lang: str = LANG, need_w: bool = False) -> l
     return out
 
 
+def _now(page):
+    """CEL-069: the open page (the tree row marked current) and the open language (the selected tab)."""
+    return page.evaluate("""() => [(document.querySelector('.doc-tree-page[aria-current="page"]') || {dataset: {}}).dataset.page || null,
+        (document.querySelector('.doc-tab[aria-selected="true"]') || {dataset: {}}).dataset.lang || null]""")
+
+
 def cell(page, key, lang):
-    return page.locator(f'.doc-cell[data-page="{key}"][data-lang="{lang}"]')
+    """CEL-069 (the grid's cell before): where the shell shows (page, language) -- the tree row while `lang` is the
+    open language, the language tab while `key` is the open page; neither: the tab is clicked first (the page
+    stays). Either carries data-status, the status word (.doc-st-word) and the count in its data-tip."""
+    cur_page, cur_lang = _now(page)
+    if lang == cur_lang:
+        return page.locator(f'.doc-tree-page[data-page="{key}"]')
+    if key == cur_page:
+        return page.locator(f'#doc-tab-{lang}')
+    page.locator(f'#doc-tab-{lang}').click()
+    page.wait_for_function("""l => document.querySelector('#doc').dataset.state === 'ready'
+        && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""", arg=lang, timeout=20000)
+    return page.locator(f'.doc-tree-page[data-page="{key}"]')
+
+
+def expect_count(c, text):
+    """The count the grid's cell printed is the end of the row's / tab's hover text now (empty: no count)."""
+    if text:
+        expect(c).to_have_attribute("data-tip", re.compile(re.escape(" · " + text) + "$"))
+    else:
+        expect(c).not_to_have_attribute("data-tip", re.compile(r" · \d+ of \d+"))
 
 
 def wait_open(page, key, lang):
     page.wait_for_function(
         """([k, l]) => document.querySelector('#doc').dataset.state === 'ready'
-            && !!document.querySelector('.doc-cell[aria-pressed="true"]')
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.page === k
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.lang === l""",
+            && !!document.querySelector('.doc-tree-page[aria-current="page"]')
+            && document.querySelector('.doc-tree-page[aria-current="page"]').dataset.page === k
+            && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""",
         arg=[key, lang], timeout=20000)
 
 
 def open_cell(page, key, lang):
-    cell(page, key, lang).click()
+    """CEL-069: the language tab, then the page's row in the tree (each keeps the other)."""
+    cur_page, cur_lang = _now(page)
+    if lang != cur_lang:
+        page.locator(f'#doc-tab-{lang}').click()
+    if key != cur_page:
+        page.locator(f'.doc-tree-page[data-page="{key}"]').click()
     wait_open(page, key, lang)
 
 
@@ -772,7 +802,7 @@ def grid_settled(page):
     """Every language has been read, so no cell is still "unknown". The picker takes its greyed-out map once, when
     the window opens, and an "unknown" cell stays pickable: opened early under load, "all" ticks cells that are
     greyed a moment later (CEL-039: 3 of 5 solo runs failed before this wait)."""
-    expect(page.locator('.doc-cell[data-status="unknown"]')).to_have_count(0)
+    expect(page.locator('.doc-tree-page[data-status="unknown"], .doc-tab[data-status="unknown"]')).to_have_count(0)
 
 
 def test_a_page_in_a_language_with_nothing_to_export_is_greyed_in_the_picker(browser):
@@ -781,10 +811,14 @@ def test_a_page_in_a_language_with_nothing_to_export_is_greyed_in_the_picker(bro
     with doc(browser, seed=lambda env: seed_cells(env, HAVE)) as e:
         p = e.page
         grid_settled(p)
+        # CEL-069: the tree shows one language and the tabs one page, so every status is read (tab by tab) before
+        # the window opens over them; then back to the page and language the window opens on.
+        seen = {(key, lang): grid_status(p, key, lang) for key in PAGES for lang in LANGS}
+        open_cell(p, PAGE_KEY, LANG)
         open_export(p)
         for key in PAGES:
             for lang in LANGS:
-                status = grid_status(p, key, lang)
+                status = seen[(key, lang)]
                 if (key, lang) in HAVE:
                     assert status != "none", (key, lang, status)
                     expect(ex_box(p, key, lang)).to_be_enabled()
@@ -1040,7 +1074,7 @@ def test_the_files_turn_exported_in_the_grid_when_the_engine_stamped_them(browse
         expect(ex_file(p, PAGE_KEY, LANG)).to_have_attribute("data-state", "done")
         c = cell(p, PAGE_KEY, LANG)
         expect(c).to_have_attribute("data-status", "exported", timeout=8000)
-        expect(c.locator(".doc-cell-status")).to_have_text(C.t("doc.status.exported"))
+        expect(c.locator(".doc-st-word")).to_have_text(C.t("doc.status.exported"))
 
 
 def test_export_waits_for_an_unsent_edit_and_exports_the_saved_version(browser):
@@ -1162,8 +1196,8 @@ def test_several_files_make_one_zip_and_the_jobs_run_one_at_a_time(browser, tmp_
         it.locator("button.ex-jump").click()
         expect(p.locator("#ex-modal")).to_be_hidden()
         wait_open(p, "vancouver", "de")
-        expect(p.locator("#doc-title")).to_have_text(
-            C.t("doc.title", page=C.t("page.vancouver"), language=C.t("lang.de")))
+        expect(p.locator("#doc-title")).to_have_attribute(
+            "aria-label", C.t("doc.title", page=C.t("page.vancouver"), language=C.t("lang.de")))
         p.wait_for_function("uid => { const li = document.querySelector('li.doc-block[data-uid=\"' + uid + '\"]');"
                             " return !!li && li.hasAttribute('data-flash'); }", arg=v2["id"], timeout=4000)
         assert on_screen(blk(p, v2["id"]))
