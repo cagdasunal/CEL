@@ -23,6 +23,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from localize_desk import copy_text as C  # noqa: E402
+from localize_desk import desk_shared as S  # noqa: E402
 from localize_desk import generate_rules_page as GR  # noqa: E402
 
 TOOLS = Path(__file__).resolve().parents[2]
@@ -145,9 +146,10 @@ def test_config_carries_the_eight_locales(config):
         assert loc["code"] and loc["name"] and loc["flag"]
 
 
-def test_config_carries_the_locales_and_nothing_of_the_editor(config):
-    # CEL-080: no page list, no brief sections, no checked or suggested rules: the page only shows a language's rules
-    assert set(config) == {"locales"}
+def test_config_carries_the_locales_and_the_page_keys_and_nothing_of_the_editor(config):
+    # CEL-080: no checked or suggested rules. CEL-085: the desk's page keys, for the keyword briefs it shows read-only.
+    assert set(config) == {"locales", "pages"}
+    assert config["pages"] == list(S.PAGE_KEYS)
 
 
 def test_config_json_has_no_script_closer():

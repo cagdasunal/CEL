@@ -1,9 +1,10 @@
 /*
  * The rules page of the localization desk: /admin/localization/rules/ (CEL-080, read-only version 1).
- * The client picks a language and reads the translation rules the engine gives Gemini for it: the shared
- * rules, that language's own rules and its glossary (Worker scopes `global`, `<lang>`, `glossary:<lang>`,
- * read with desk-rules-read). Nothing on this page edits, saves or publishes, and the page-level briefs
- * (`brief:<page>:<lang>`) are not shown. Editing comes back in a later version.
+ * The client picks a language and reads the translation rules the engine gives Gemini for it: that
+ * language's own rule set (one self-contained block per language since CEL-085; the old shared `global`
+ * scope is retired and never read), its glossary and the client's keyword brief for each page that has one
+ * (Worker scopes `<lang>`, `glossary:<lang>`, `brief:<page>:<lang>`, read with desk-rules-read). Nothing on
+ * this page edits, saves or publishes. Editing comes back in a later version.
  *
  * generate_rules_page.py inlines rules_md.js, then this file. It reads the globals the page defines first:
  * COPY with t() (every word comes from COPY.md) and callProxy() (the Worker door). DOM is built with
@@ -17,6 +18,7 @@
   const CFG = JSON.parse(cfgNode.textContent);
   const M = window.RulesMd;
   const LOCALES = CFG.locales;            // [{code, name, flag}]
+  const PAGES = CFG.pages;                // the desk's page keys, in the desk's order (labels: page.<key>)
   const TIMING = Object.assign({ timeout: 20000 }, window.RULES_TIMING || {});
 
   const root = document.getElementById('rules-app');
@@ -43,7 +45,10 @@
     const l = LOCALES.find(function (x) { return x.code === code; });
     return l ? l.name : code;
   };
-  const scopesFor = function (lang) { return ['global', lang, 'glossary:' + lang]; };
+  const briefScope = function (page, lang) { return 'brief:' + page + ':' + lang; };
+  const scopesFor = function (lang) {
+    return [lang, 'glossary:' + lang].concat(PAGES.map(function (p) { return briefScope(p, lang); }));
+  };
   const sc = function (scope) {
     if (!S.scopes[scope]) S.scopes[scope] = { state: 'loading', body: null, key: null };
     return S.scopes[scope];
@@ -142,7 +147,7 @@
     });
     flushTable();
   }
-  // ja / ko / ar: the seed holds one quoted "no rules" line (rules_store.split); that is no rules yet.
+  // A language with no row yet (version 0, no body), or the pre-CEL-085 seed's one quoted line: no rules yet.
   function isSeedNone(body) {
     const b = String(body || '').trim();
     return b === '' || (/^>/.test(b) && b.split('\n').length === 1);
@@ -182,11 +187,6 @@
     fill(s.body, body);
     sec.appendChild(body);
   }
-  function renderShared() {
-    const sec = section('rules-shared', t('rules.shared.all'));
-    scopeBody('global', sec, function (body, into) { renderBlocks(M.parse(body), into); });
-    return sec;
-  }
   function renderLang() {
     const lang = S.lang;
     const sec = section('rules-lang', t('rules.lang', { language: langName(lang) }));
@@ -210,6 +210,28 @@
     });
     return sec;
   }
+  // The client's keyword brief per page (CEL-085): one collapsed section per page that has one, under the
+  // page's English name; none for this language says so. One notice if a brief could not be read.
+  function renderBriefs() {
+    const lang = S.lang;
+    const sec = section('rules-briefs', t('rules.briefs'));
+    const scopes = PAGES.map(function (p) { return briefScope(p, lang); });
+    if (scopes.some(function (x) { return sc(x).state === 'loading'; })) { sec.appendChild(skeleton()); return sec; }
+    const failed = scopes.find(function (x) { return sc(x).state === 'error'; });
+    if (failed) { sec.appendChild(notice(failed)); return sec; }
+    const given = PAGES.filter(function (p) { return String(sc(briefScope(p, lang)).body || '').trim(); });
+    if (!given.length) { sec.appendChild(h('p', 'r-empty', t('rules.briefs.empty'))); return sec; }
+    given.forEach(function (p) {
+      const box = h('details', 'r-brief');
+      box.dataset.page = p;
+      box.appendChild(h('summary', 'r-brief-h', t('page.' + p)));
+      const body = h('div', 'r-text');
+      renderBlocks(M.parse(sc(briefScope(p, lang)).body), body);
+      box.appendChild(body);
+      sec.appendChild(box);
+    });
+    return sec;
+  }
   function render() {
     tabs.forEach(function (b) {
       const on = b.dataset.lang === S.lang;
@@ -219,9 +241,9 @@
     panel.setAttribute('aria-labelledby', 'rulesTab-' + S.lang);
     panel.dataset.lang = S.lang;
     panel.textContent = '';
-    panel.appendChild(renderShared());
     panel.appendChild(renderLang());
     panel.appendChild(renderGlossary());
+    panel.appendChild(renderBriefs());
   }
 
   // ── the language tabs ────────────────────────────────────────────────────────────

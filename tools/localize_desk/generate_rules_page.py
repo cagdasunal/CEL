@@ -62,6 +62,10 @@ RULES_CSS = """
 .rules .r-table th, .rules .r-table td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
 .rules .r-table th { font-size: var(--fs-sm); font-weight: 500; color: var(--muted); }
 .rules .r-empty { margin: 0; color: var(--muted); }
+.rules .r-brief { border-bottom: 1px solid var(--border); }
+.rules .r-brief-h { padding: 10px 0; font-size: var(--fs-base); font-weight: 500; cursor: pointer; }
+.rules .r-brief-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-brief > .r-text { padding: 0 0 14px; }
 .rules .r-skel-line { height: 12px; margin: 12px 0; border-radius: var(--radius-sm); background: var(--stripe); }
 .rules .r-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 8px 12px; border: 1px solid var(--notice-border); border-radius: var(--radius-sm); background: var(--notice-bg); color: var(--notice-fg); font-size: var(--fs-base); }
 .rules .r-notice p { margin: 0; }
@@ -92,7 +96,8 @@ def _script(js: str) -> str:
 
 def _config() -> str:
     cfg = {"locales": [{"code": code, "name": S.lang_name(code), "flag": flag}
-                       for code, _endonym, _dir, flag in S.LOCALES]}
+                       for code, _endonym, _dir, flag in S.LOCALES],
+           "pages": list(S.PAGE_KEYS)}
     return json.dumps(cfg, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
 
 

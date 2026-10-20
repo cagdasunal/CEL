@@ -1,8 +1,9 @@
 """Robot click-tests for the READ-ONLY rules page of the localization desk (CEL-080): /admin/localization/rules/.
 
-Version 1 of the page only shows the rules: the client picks a language and reads that language's rules
-(the shared rules first, then the language's own rules, then its glossary as a plain table). Nothing on the
-page edits, saves or publishes, and the page-level briefs are not shown. This file replaces the editor's two
+Version 1 of the page only shows the rules: the client picks a language and reads that language's own rule
+set (one self-contained block per language since CEL-085: no shared section, and a stale `global` row is never
+read), then its glossary as a plain table, then the client's keyword brief per page, collapsed. Nothing on
+the page edits, saves or publishes. This file replaces the editor's two
 browser files (CEL-046 / CEL-076), whose edit tests went with the editor.
 
 A real Chromium drives the page in the click-test harness: a temporary copy of docs/, the storage's stand-in
@@ -39,11 +40,13 @@ READY = '#rules-app[data-state="ready"]'
 GLOBAL_V1 = "## Purpose\n\n- Shared rule A\n- Shared rule B\n"
 DE_V1 = "## German\n\n- **Form of address:** du\n- **Markets:** CH\n"
 FR_V1 = "## French\n\n- **Form of address:** vous\n"
-JA_NONE = "> no rules line\n"
+JA_V1 = "The client has not supplied Japanese-specific rules yet.\n\n## Purpose\n\n- Generic rule A\n"
 GLOSSARY_DE = "| English | German | Keep as is |\n| --- | --- | --- |\n| Language level | Sprachniveau | |\n| CEL | CEL | yes |\n"
 GLOSSARY_FR = "| English | French | Keep as is |\n| --- | --- | --- |\n| Language level | Niveau de langue | |\n"
 BRIEF = "## Page topic\n\nBRIEFTEXT-UNIQUE the page-level brief\n"
-DE, FR, JA = "German", "French", "Japanese"
+BRIEF_IT_HOW_LONG = "## Main keyword\n\nquanto dura un corso di inglese\n"
+BRIEF_IT_COST = "## Main keyword\n\ncosto corso inglese Vancouver\n"
+DE, FR, IT, JA, KO = "German", "French", "Italian", "Japanese", "Korean"
 
 
 @pytest.fixture(scope="module")
@@ -91,8 +94,11 @@ def seed_default(store) -> None:
     prime(store, "fr", FR_V1)
     prime(store, "glossary:de", GLOSSARY_DE)
     prime(store, "glossary:fr", GLOSSARY_FR)
-    prime(store, "ja", JA_NONE)
+    prime(store, "ja", JA_V1)
+    prime(store, "it", "## Italian\n\n- **Form of address:** tu\n")
     prime(store, "brief:vancouver:de", BRIEF)
+    prime(store, "brief:how-long-to-learn-english:it", BRIEF_IT_HOW_LONG)
+    prime(store, "brief:cost-of-studying-english:it", BRIEF_IT_COST)
 
 
 @contextmanager
@@ -146,16 +152,17 @@ def section_texts(page) -> list[str]:
     return page.locator("#rulesPanel section").evaluate_all("els => els.map(e => e.id)")
 
 
-# ── 1. a language shows the shared rules, its own rules, then its glossary ─────────────────────────
-def test_a_language_shows_the_shared_rules_then_its_own_rules_then_its_glossary(browser):
+# ── 1. a language shows its own rules first, then its glossary, then its keyword briefs ────────────
+def test_a_language_shows_its_own_rules_first_then_its_glossary_then_its_briefs(browser):
     with rules(browser) as env:
         p = env.page
-        assert section_texts(p) == ["rules-shared", "rules-lang", "rules-glossary"]
-        expect(p.locator("#rules-shared h2")).to_have_text(t("rules.shared.all"))
+        assert section_texts(p) == ["rules-lang", "rules-glossary", "rules-briefs"]     # no shared section
         expect(p.locator("#rules-lang h2")).to_have_text(t("rules.lang", language=DE))
         expect(p.locator("#rules-glossary h2")).to_have_text(t("rules.glossary"))
-        expect(p.locator("#rules-shared li")).to_have_text(["Shared rule A", "Shared rule B"])
+        expect(p.locator("#rules-briefs h2")).to_have_text(t("rules.briefs"))
         expect(p.locator("#rules-lang li")).to_have_text(["Form of address: du", "Markets: CH"])
+        text = p.locator("#rulesPanel").inner_text()
+        assert "Shared rule A" not in text and "Form of address: vous" not in text      # nothing of global or fr
         expect(p.locator("#rules-lang li strong").first).to_have_text("Form of address:")
         head = p.locator("#rules-glossary table tr").first.locator("th")
         expect(head).to_have_text([t("rules.glossary.en"), DE, t("rules.glossary.keep")])
@@ -175,8 +182,8 @@ def test_picking_another_language_shows_that_languages_rules(browser):
         expect(p.locator("#rules-lang h2")).to_have_text(t("rules.lang", language=FR))
         expect(p.locator("#rules-lang li")).to_have_text(["Form of address: vous"])
         expect(p.locator("#rules-glossary tr").nth(1)).to_contain_text("Niveau de langue")
-        expect(p.locator("#rules-shared li")).to_have_count(2)         # the shared rules stay
-        assert "Sprachniveau" not in p.locator("#rulesPanel").inner_text()
+        text = p.locator("#rulesPanel").inner_text()
+        assert "Sprachniveau" not in text and "Form of address: du" not in text and "Shared rule A" not in text
         assert "lang=fr" in p.url and "lang=de" not in p.url
 
 
@@ -212,7 +219,7 @@ def test_nothing_on_the_page_can_be_edited_and_nothing_is_written(browser):
         for gone in ("#rulesUse", "#rulesUndo", "#rulesRedo", "#rulesHistory", "#rulesDrawer", "#rulesSave", "#rulesDot"):
             assert p.locator(gone).count() == 0, gone
         before = p.locator("#rulesPanel").inner_text()
-        p.locator("#rules-shared li").first.click()
+        p.locator("#rules-lang li").first.click()
         p.keyboard.type("EDITED")
         p.keyboard.press("Enter")
         p.locator("#rules-glossary td").first.dblclick()
@@ -226,25 +233,53 @@ def test_nothing_on_the_page_can_be_edited_and_nothing_is_written(browser):
         assert actions == {"desk-rules-read"}, env.seen         # the page never calls a write or history route
 
 
-def test_the_page_level_briefs_are_not_shown_or_read(browser):
+def test_the_stale_shared_scope_is_never_read_and_only_this_languages_scopes_are(browser):
     with rules(browser) as env:
         p = env.page
         tab(p, "fr").click()
         expect(p.locator("#rules-lang h2")).to_have_text(t("rules.lang", language=FR))
-        assert "BRIEFTEXT-UNIQUE" not in p.content()
-        assert "BRIEFTEXT-UNIQUE" not in p.locator("#rulesPanel").inner_text()
+        assert "Shared rule A" not in p.content()
         scopes = {s for _a, s in env.seen}
-        assert scopes == {"global", "de", "glossary:de", "fr", "glossary:fr"}, scopes     # no brief:<page>:<lang>
+        pages = ["vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english"]
+        want = {x for l in ("de", "fr") for x in [l, f"glossary:{l}"] + [f"brief:{pg}:{l}" for pg in pages]}
+        assert scopes == want, scopes                                   # never 'global', never another language
+
+
+def test_the_italian_tab_shows_the_clients_keyword_briefs_collapsed_under_the_pages_english_names(browser):
+    with rules(browser, lang="it") as env:
+        p = env.page
+        boxes = p.locator("#rules-briefs details.r-brief")
+        expect(boxes).to_have_count(2)                                  # only the pages with a brief, desk order
+        expect(boxes.locator("summary")).to_have_text([t("page.cost-of-studying-english"),
+                                                       t("page.how-long-to-learn-english")])
+        assert boxes.evaluate_all("els => els.map(e => e.open)") == [False, False]     # collapsed
+        expect(boxes.nth(1).locator(".r-text")).to_be_hidden()
+        boxes.nth(1).locator("summary").click()
+        expect(boxes.nth(1).locator(".r-text")).to_contain_text("quanto dura un corso di inglese")
+        assert p.locator("#rules-app button:not([role=tab])").count() == 0          # still nothing to press
+
+
+def test_a_language_without_a_keyword_brief_says_so(browser):
+    with rules(browser, lang="fr") as env:
+        expect(env.page.locator("#rules-briefs .r-empty")).to_have_text(t("rules.briefs.empty"))
+        expect(env.page.locator("#rules-briefs details")).to_have_count(0)
+        assert "quanto dura" not in env.page.locator("#rulesPanel").inner_text()
 
 
 # ── 4. a language without rules, a read that fails ─────────────────────────────────────────────────
-def test_a_language_without_rules_says_so_and_still_shows_the_shared_rules(browser):
+def test_a_language_the_client_wrote_no_rules_for_shows_its_block_opening_with_the_not_supplied_line(browser):
     with rules(browser, lang="ja") as env:
         p = env.page
-        expect(p.locator("#rules-lang .r-empty")).to_have_text(t("rules.empty", language=JA))
+        expect(p.locator("#rules-lang .r-p").first).to_have_text("The client has not supplied Japanese-specific rules yet.")
+        expect(p.locator("#rules-lang li")).to_have_text(["Generic rule A"])
         expect(p.locator("#rules-glossary .r-empty")).to_have_text(t("rules.glossary.empty"))
-        expect(p.locator("#rules-shared li")).to_have_count(2)
-        assert "no rules line" not in p.locator("#rulesPanel").inner_text()
+        expect(p.locator("#rules-briefs .r-empty")).to_have_text(t("rules.briefs.empty"))
+
+
+def test_a_language_with_no_row_at_all_says_so(browser):
+    with rules(browser, lang="ko") as env:
+        expect(env.page.locator("#rules-lang .r-empty")).to_have_text(t("rules.empty", language=KO))
+        assert "Shared rule A" not in env.page.locator("#rulesPanel").inner_text()
 
 
 def test_a_read_that_fails_says_why_and_try_again_reads_it_again(browser):
@@ -252,11 +287,10 @@ def test_a_read_that_fails_says_why_and_try_again_reads_it_again(browser):
                faults={"desk-rules-read": {"status": 500, "error": "internal"}}) as env:
         p = env.page
         notices = p.locator("#rulesPanel .r-notice")
-        expect(notices).to_have_count(3)                       # the shared rules, the language's rules, its glossary
+        expect(notices).to_have_count(3)                       # the language's rules, its glossary, its briefs
         expect(notices.first).to_contain_text(t("rules.error.read"))
         env.worker.action_faults.clear()
         notices.first.get_by_role("button", name=t("rules.retry")).click()
-        expect(p.locator("#rules-shared li")).to_have_count(2)
         expect(p.locator("#rules-lang li")).to_have_count(2)
         expect(p.locator("#rulesPanel .r-notice")).to_have_count(0)
         expect(p.locator("#rules-app")).to_have_attribute("data-state", "ready")

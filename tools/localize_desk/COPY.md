@@ -419,14 +419,15 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.language` | Language | Label of the language tabs |
 | `rules.desk` | Back to the desk | Header link to the document desk |
 | `doc.rules` | Translation rules | Desk header link to the rules page |
-| `rules.shared.all` | Shared — all languages | Heading of the shared rules |
 | `rules.lang` | {language} rules | Heading of one language's rules |
-| `rules.empty` | No {language} rules from you yet. Gemini uses the shared rules only. | Language without rules |
+| `rules.empty` | No {language} rules yet. | Language without rules |
 | `rules.glossary` | Glossary | Heading of the glossary |
 | `rules.glossary.en` | English | Glossary column |
 | `rules.glossary.keep` | Don't translate | Glossary column |
 | `rules.glossary.yes` | Yes | Glossary cell of a term that stays as it is |
 | `rules.glossary.empty` | No glossary terms yet. | Glossary without terms |
+| `rules.briefs` | Keyword briefs | Heading of the client's per-page keyword briefs |
+| `rules.briefs.empty` | No keyword brief from the client yet. | Language without a keyword brief |
 | `rules.error.read` | The rules could not be read. | Notice on a part that could not be read |
 | `rules.error.offline` | You are offline. Reconnect, then press Try again. | Notice on a part that could not be read |
 | `rules.error.signed_out` | You have been signed out. Sign in again, then press Try again. | Notice (401) |
