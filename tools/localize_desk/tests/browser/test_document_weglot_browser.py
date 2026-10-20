@@ -40,6 +40,7 @@ PAGE_KEY = "cost-of-studying-english"
 LANG = "de"
 READY = '#doc[data-state="ready"]'
 TIMING = {"quiet": 150, "maxWait": 600, "undoPause": 120, "poll": 200, "timeout": 5000}
+THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 MARK = re.compile(r'<a wg-[0-9]+="">|</a>|<br>')
 
 
@@ -91,6 +92,9 @@ def doc(browser, *, seed=None, size: tuple[int, int] = (1440, 900)):
             seed(env)
         pg = browser.new_page(viewport={"width": size[0], "height": size[1]})
         pg.set_default_timeout(10000)
+        # The dashboard's BugHerd tag is a third party: answered here with an empty script, so a console error of
+        # BugHerd's own pages can never fail a test (CEL-067).
+        pg.route(THIRD_PARTY, lambda route: route.fulfill(status=200, content_type="text/javascript", body=""))
         env.page = pg
 
         def on_console(msg):
