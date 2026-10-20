@@ -218,6 +218,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-cell-count { color: var(--muted); font-size: var(--fs-xs); }
 .doc-cell[data-status="unknown"] .doc-cell-status, .doc-cell[data-status="none"] .doc-cell-status { color: var(--muted); font-weight: 400; }
 .doc-cell[data-status="exported"] .doc-cell-status { color: var(--ok); }
+.doc-cell[data-status="failed"] .doc-cell-status { color: var(--err); }
 .doc-cell[aria-pressed="true"] { border-color: var(--fg); }
 .doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count { font-weight: 700; }
 
@@ -319,17 +320,17 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-conflict { position: relative; grid-column: 2; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 var(--doc-pad) var(--doc-mb); font-size: var(--fs-sm); color: var(--warn); }
 .doc-conflict > span { flex: 1 0 100%; }
 
-/* The toolbar floats just above the open translation, right-aligned, only while focus is in the block */
+/* The toolbar floats just above the open translation, right-aligned, only while focus is in the block or the pointer is over it */
 .doc-tools { position: absolute; z-index: 4; top: -12px; inset-inline-end: 12px; display: flex; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 999px; background: var(--elevated); box-shadow: 0 8px 24px var(--border); visibility: hidden; opacity: 0; transition: opacity 0.12s; }
 .doc-blocks[data-weglot="on"] .doc-tools { inset-inline-end: calc((100% - 48px) / 3 + 36px); }
-.doc-block:focus-within .doc-tools { visibility: visible; opacity: 1; }
+.doc-block:focus-within .doc-tools, .doc-block:hover .doc-tools { visibility: visible; opacity: 1; }
 .doc-tools .desk-btn { padding: 5px 12px; border: 0; border-radius: 0; font-size: var(--fs-xs); }
 .doc-tools .desk-btn + .desk-btn { border-inline-start: 1px solid var(--border); }
 .doc-tool-weglot, .doc-tool-revert { display: none; }
 .doc-blocks[data-weglot="on"] .doc-tool-weglot { display: inline-block; }
 .doc-block[data-source="edit"] .doc-tool-revert { display: inline-block; }
 
-/* The status bar: where saving stands, undo / redo, Show Weglot and the page's size */
+/* The status bar: where saving stands, undo / redo, Show the website's text and the page's size */
 .doc-status { position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-height: 44px; padding: 6px 110px 6px 24px; border-top: 1px solid var(--border); background: var(--elevated); }
 .doc-save { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: var(--fs-sm); }
 .doc-save::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
@@ -359,6 +360,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .doc-words { font-size: var(--fs-sm); color: var(--muted); }
 .doc .toast-stack { bottom: 60px; }
+.doc .toast-close { width: auto; height: auto; padding: 2px 8px; border-radius: var(--radius-sm); color: var(--fg); font-size: var(--fs-sm); }
 
 /* The history of one text: a drawer over the foot of the sheets, versions side by side, newest on the right */
 .doc-drawer { position: fixed; left: 0; right: 0; bottom: 44px; z-index: 30; display: flex; flex-direction: column; max-height: 50vh; overflow: auto; border-top: 1px solid var(--border-strong); background: var(--elevated); animation: doc-slide 0.25s ease-out; }

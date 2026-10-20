@@ -653,9 +653,9 @@ def test_the_grid_reads_drafted_edited_exported_and_not_translated(browser):
             expect(c.locator(".doc-cell-status")).to_have_text(C.t(f"doc.status.{status}"))
             expect(c.locator(".doc-cell-count")).to_have_text(
                 C.tn("doc.cell.count", n, total=total[key]) if n else "")
-        # the four labels of the Ask, word for word: Not translated / Drafted / Edited / Exported
-        for key, label in (("vs-toronto", "Not translated"), ("vancouver", "Drafted"), (PAGE_KEY, "Edited"),
-                           ("how-long-to-learn-english", "Exported")):
+        # the four labels, word for word: Not translated / Gemini's draft / Edited / In a Weglot file (CEL-075 items 3, 16)
+        for key, label in (("vs-toronto", "Not translated"), ("vancouver", "Gemini's draft"), (PAGE_KEY, "Edited"),
+                           ("how-long-to-learn-english", "In a Weglot file")):
             expect(cell(e.page, key, "de").locator(".doc-cell-status")).to_have_text(label)
         for key in PAGES:                                      # a language with nothing
             c = cell(e.page, key, "fr")
@@ -694,10 +694,8 @@ def test_an_edit_autosaves_and_is_still_there_after_a_reload(browser):
                                                "approvedAgainst": block.get("w", {}).get(LANG) or block["en"]}
         assert dver(e.store, uid) == 1
         assert dec(e.store, uid)["by"] == H.REVIEWER
-        e.page.wait_for_function("""([uid, s]) => {
-            const li = document.querySelector('li.doc-block[data-uid="' + uid + '"]');
-            return li.dataset.state === 'saved' && li.querySelector('.doc-note').textContent.includes(s); }""",
-                                 arg=[uid, C.t("doc.text.saved")], timeout=3000)
+        e.page.wait_for_function("""uid => document.querySelector('li.doc-block[data-uid="' + uid + '"]').dataset.state === 'saved'""",
+                                 arg=uid, timeout=3000)
         expect(bar(e.page)).to_have_attribute("data-state", "saved")
         expect(bar(e.page)).to_have_text(C.t("autosave.saved"))
         seen = states_seen(e.page, uid)
@@ -766,7 +764,7 @@ def test_restore_and_use_weglots_text_write_the_v1_decision_and_undo_this_clears
         record = dec(e.store, a)["record"]
         assert record == {"tray": "csv", "text": wde, "approvedAgainst": wde}
         assert list(record) == ["tray", "text", "approvedAgainst"]
-        # Undo this: back to Gemini's draft. The record keeps no text, no tray, no approvedAgainst
+        # Back to Gemini's draft (was Undo this): the record keeps no text, no tray, no approvedAgainst
         tgt(e.page, a).click()
         li.locator(".doc-tool-revert").click()
         wait_ver(e.store, a, 5)
@@ -779,7 +777,7 @@ def test_what_is_written_under_a_text_is_not_painted_over(browser, what):
     """The notes and the conflict box live in the translation column's grid cell, which the block's own
     background is drawn in; whatever is drawn there must be on top of it (a click at its centre reaches it)."""
     data = _stage_data()
-    with doc(browser) as e:
+    with doc(browser, http_errors=(what == "state")) as e:
         if what in ("shared", "also"):
             # The sentence moved into the marker (CEL-072): the marker is what must be on top, and the note holds nothing.
             b = next(x for x in data["blocks"] if x.get("out" if what == "shared" else "also"))
@@ -790,11 +788,11 @@ def test_what_is_written_under_a_text_is_not_painted_over(browser, what):
             assert on_top(mark), "the shared-text marker is painted under the block's column background"
         elif what == "state":
             (u,) = pick(data, 1)
+            e.worker.desk_fault = {"status": 503, "error": "down"}    # the one line a text still has: a save that did not go through
             edit(e.page, u, "Ein Text")
             li = blk(e.page, u)
-            e.page.wait_for_function("""uid => document.querySelector('li.doc-block[data-uid="' + uid + '"]')
-                .dataset.state === 'saved'""", arg=u, timeout=4000)
-            expect(li.locator(".doc-note")).to_contain_text(C.t("doc.text.saved"))
+            expect(li).to_have_attribute("data-state", "error")
+            expect(li.locator(".doc-note")).to_contain_text(C.t("doc.text.error"))
             assert on_top(li.locator(".doc-note")), "the state note is painted under the column background"
         else:
             (u,) = pick(data, 1)
@@ -1127,7 +1125,8 @@ def test_undo_this_shows_only_on_an_edited_text_and_goes_back_to_geminis_draft(b
         wait_ver(e.store, a, 2)
         assert "text" not in dec(e.store, a)["record"]
         expect(li).to_have_attribute("data-source", "draft")
-        e.page.keyboard.press("Escape")                                   # leave the text: the toolbar goes
+        e.page.keyboard.press("Escape")                                   # leave the text ...
+        e.page.mouse.move(2, 2)                                           # ... and the pointer (it shows on hover too, CEL-075 item 14): the toolbar goes
         expect(li.locator(".doc-tools")).to_be_hidden()
 
 
@@ -1705,7 +1704,7 @@ def test_a_failed_translation_says_why(browser, code, reason_key):
         expect(e.page.locator("#doc-banner-text")).to_have_text(
             C.t("doc.job.failed", reason=C.t(reason_key)))
         expect(e.page.locator("#doc-translate")).to_be_enabled()
-        assert cell(e.page, PAGE_KEY, "fr").get_attribute("data-status") == "none"
+        assert cell(e.page, PAGE_KEY, "fr").get_attribute("data-status") == "failed"     # nothing was translated: the grid says Failed (CEL-075 item 20)
 
 
 @pytest.mark.parametrize("outcome", ["done", "failed"])
@@ -1898,7 +1897,7 @@ def test_a_failing_server_keeps_the_text_retries_and_try_again_saves_it(browser)
         wait_text(e.store, u, text)
         expect(bar(e.page)).to_have_attribute("data-state", "saved")
         expect(li).to_have_attribute("data-state", "saved")
-        expect(li.locator(".doc-note")).to_contain_text(C.t("doc.text.saved"))
+        assert li.locator(".doc-note").inner_text().strip() == ""                       # the error line is gone, nothing replaces it (read at once: 'saved' lasts 3 s)
 
 
 def test_after_the_fault_clears_the_text_saves_by_itself(browser):
@@ -2182,7 +2181,7 @@ def _c36_next(page, uid: str, left: int, *, top: bool = True):
 
 # ── the bar's own controls ─────────────────────────────────────────────────────────────────────
 def test_the_status_bar_holds_the_filter_and_the_next_to_check_button_nothing_to_check_yet(browser):
-    """No drafts, no edits, no findings: the filter has its four choices in order (All texts, New from Gemini,
+    """No drafts, no edits, no findings: the filter has its four choices in order (All texts, Gemini's draft,
     Edited, Flagged by a check), the button is there with its key and is off, and the line says why."""
     with doc(browser) as e:
         assert e.page.locator("#doc-status #doc-filter").count() == 1
@@ -2639,7 +2638,8 @@ def test_a_locked_text_with_a_reason_this_desk_does_not_know_says_no_wrong_reaso
         unknown = blk(e.page, u).locator(".doc-note-lock")
         noise = blk(e.page, v).locator(".doc-note-lock")
         expect(unknown).to_have_text(C.t("doc.locked.tag"))                              # the tag alone
-        expect(noise).to_have_text(C.t("doc.locked.tag") + " — " + C.t("doc.locked.noise"))
+        expect(noise).to_have_text(C.t("doc.locked.tag"))                                # "Locked" only ...
+        expect(noise).to_have_attribute("data-tip", C.t("doc.locked.noise"))             # ... the reason is its tip (CEL-075 item 18)
 
 
 def test_a_step_that_cannot_be_applied_says_so_instead_of_vanishing(browser):
@@ -2657,6 +2657,8 @@ def test_a_step_that_cannot_be_applied_says_so_instead_of_vanishing(browser):
         e.page.wait_for_selector(READY)
         wait_value(e.page, u, "Erste Fassung")                       # the unsent text comes back
         e.page.locator("#doc-undo").click()
+        expect(e.page.locator("#doc-toasts")).to_contain_text(C.t("doc.undo.dropped"))
+        e.page.wait_for_timeout(4600)                                # past the 4 s a plain message lasts: a skipped Undo stays (CEL-075 item 6)
         expect(e.page.locator("#doc-toasts")).to_contain_text(C.t("doc.undo.dropped"))
         wait_value(e.page, u, "Erste Fassung")                       # and nothing was written over it
 

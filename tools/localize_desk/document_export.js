@@ -220,6 +220,12 @@
   const exCount = h('p', 'ex-count');
   exCount.id = 'ex-count';
   exCount.setAttribute('aria-live', 'polite');
+  // What the picked cells send beyond the reviewer's own edits: Gemini's drafts nobody has looked at (CEL-075 item 2).
+  const exDrafts = h('p', 'ex-drafts');
+  exDrafts.id = 'ex-drafts';
+  exDrafts.setAttribute('aria-live', 'polite');
+  exDrafts.hidden = true;
+  let draftsToken = 0;
   const exProgress = h('ol', 'ex-progress');
   exProgress.id = 'ex-progress';
   exProgress.hidden = true;
@@ -243,20 +249,24 @@
   });
   const exActions = h('div', 'cpw-actions');
   [exDownload, exClose, exStop, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
-  [exTitle, exSelect, exCount, exProgress, exResult, exActions].forEach(function (e) { ex.box.appendChild(e); });
+  [exTitle, exSelect, exCount, exDrafts, exProgress, exResult, exActions].forEach(function (e) { ex.box.appendChild(e); });
   ex.root.classList.add('ex-modal');
 
   const sel = {};                                 // "page|lang" -> true
   const none = {};                                // "page|lang" -> true: nothing to export there (greyed)
   const boxes = { cell: {}, row: {}, col: {}, all: null };
   // A page in a language with no draft and no edit has nothing to export: the grid already says so
-  // (paintGrid: data-status "none"). "unknown" (language not read yet), "translating" and "queued" are
-  // not "nothing", so those stay pickable.
+  // (paintGrid: data-status "none", or "failed" for a page whose translation did not finish: it has no text either,
+  // CEL-075 items 11 and 20). "unknown" (language not read yet), "translating" and "queued" are not "nothing",
+  // so those stay pickable.
   function noneCell(p, l) {
     const c = document.querySelector('.doc-cell[data-page="' + p + '"][data-lang="' + l + '"]');
-    return !!c && c.getAttribute('data-status') === 'none';
+    const st = c && c.getAttribute('data-status');
+    return !!c && (st === 'none' || st === 'failed');
   }
   function usable(p, l) { return !none[p + '|' + l]; }
+  // A greyed box or button says why, on hover (CEL-075 item 11; a disabled control never takes focus, so not on focus).
+  function tipIf(el, off, reason) { if (off) el.setAttribute('data-tip', reason); else el.removeAttribute('data-tip'); }
   function setCell(p, l, on) { if (usable(p, l)) sel[p + '|' + l] = on; }
   function pickedCells() {
     const out = [];
@@ -272,6 +282,7 @@
       boxes.row[p].checked = free.length > 0 && on === free.length;
       boxes.row[p].indeterminate = on > 0 && on < free.length;
       boxes.row[p].disabled = !free.length;
+      tipIf(boxes.row[p], !free.length, t('export.step.nothing'));
     });
     LANGS.forEach(function (l) {
       const free = PAGES.filter(function (p) { return usable(p, l); });
@@ -279,13 +290,45 @@
       boxes.col[l].checked = free.length > 0 && on === free.length;
       boxes.col[l].indeterminate = on > 0 && on < free.length;
       boxes.col[l].disabled = !free.length;
+      tipIf(boxes.col[l], !free.length, t('export.step.nothing'));
     });
     const total = PAGES.reduce(function (a, p) { return a + LANGS.filter(function (l) { return usable(p, l); }).length; }, 0);
     boxes.all.checked = total > 0 && n === total;
     boxes.all.indeterminate = n > 0 && n < total;
     boxes.all.disabled = !total;
+    tipIf(boxes.all, !total, t('export.step.nothing'));
     exCount.textContent = n ? tn('export.count', n) : t('export.count.none');
     exGo.disabled = n === 0;
+    tipIf(exGo, n === 0, t('export.count.none'));
+    refreshDrafts();
+  }
+  // The same rule approve() exports by: a held edit is skipped, the reviewer's wording is an edit, no wording and a
+  // Gemini draft is a draft that goes in as it is. "Unread" = the desk's own seen map (the one "To check" reads).
+  async function refreshDrafts() {
+    const token = ++draftsToken, cells = pickedCells();
+    if (!cells.length) { exDrafts.hidden = true; return; }
+    const seen = D.seenMap();
+    let edited = 0, unread = 0;
+    try {
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i], data = await D.getPage(c.page);
+        await D.ensureLang(c.lang);
+        if (token !== draftsToken) return;
+        const held = D.pending()[c.lang] || {};
+        data.blocks.forEach(function (b) {
+          if (held[b.id]) return;
+          const rec = D.canon(L[c.lang].decisions[b.id]), d = L[c.lang].drafts[b.id];
+          if (rec && rec.text) edited++;
+          else if (d && d.text && !seen[c.lang + '|' + b.id]) unread++;
+        });
+      }
+    } catch (_) {                                  // the export itself reports a page it cannot read
+      if (token === draftsToken) exDrafts.hidden = true;
+      return;
+    }
+    if (token !== draftsToken) return;
+    exDrafts.textContent = unread ? tn('export.drafts', unread, { edited: edited }) : '';
+    exDrafts.hidden = !unread;
   }
   function pickBox(label, change) {
     const i = document.createElement('input');
@@ -346,6 +389,7 @@
           setCell(p, l, on);
         });
         c.disabled = !usable(p, l);
+        tipIf(c, c.disabled, t('export.step.nothing'));
         c.setAttribute('data-page', p);
         c.setAttribute('data-lang', l);
         boxes.cell[p + '|' + l] = c;
@@ -545,6 +589,19 @@
     await until(function () { return S.page === page && S.lang === lang && ready() && M.has(uid); }, 20000);
     if (M.has(uid)) D.reveal(uid);
   }
+  // How to import the file in Weglot: the v1 desk's own steps, once, above the lists, when a file was made (CEL-075 item 3).
+  // More than one file is one zip: its first step is to unzip it and do the rest for each file in turn (Reviewer, round 1).
+  function importSteps(zipped) {
+    const box = h('div', 'ex-how');
+    box.appendChild(h('p', 'ex-how-title', t('export.how.title')));
+    const list = h('ol', 'ex-how-steps');
+    (zipped ? ['export.how.unzip'] : []).concat(['export.how.upload', 'export.how.check', 'export.how.switches', 'export.how.press']).forEach(function (k) {
+      list.appendChild(h('li', 'ex-how-step', t(k)));
+    });
+    box.appendChild(list);
+    box.appendChild(h('p', 'ex-how-note', t('export.how.errors')));
+    return box;
+  }
   function renderResult(all, cells, made) {
     exResult.textContent = '';
     // One line on top that says how it ended (the download starts by itself, so the end is said, not implied)
@@ -599,6 +656,8 @@
     busy = true;
     exSelect.hidden = true;
     exCount.hidden = true;
+    draftsToken++;
+    exDrafts.hidden = true;
     exCancel.hidden = true;
     exGo.hidden = true;
     exProgress.textContent = '';
@@ -623,6 +682,7 @@
     renderResult(all, cells, files.length);
     exResult.hidden = false;
     lastDownload = prepareDownload(files);
+    if (lastDownload) exResult.insertBefore(importSteps(files.length > 1), exResult.firstChild);
     exClose.hidden = false;
     exDownload.hidden = !lastDownload;
     if (lastDownload) saveBlob(lastDownload.name, lastDownload.blob);

@@ -16,6 +16,7 @@ the real one say so.
 """
 from __future__ import annotations
 
+import html as _html
 import json
 import re
 import subprocess
@@ -966,7 +967,7 @@ class TestPageShell:
         markup = _main_markup(page)
         for value, key in (("all", "doc.filter.all"), ("new", "doc.filter.new"),
                            ("edited", "doc.filter.edited"), ("flagged", "doc.filter.flagged")):
-            assert f'<option value="{value}">{C.t(key)}</option>' in markup, key
+            assert f'<option value="{value}">{_html.escape(C.t(key))}</option>' in markup, key
         assert markup.index('value="all"') < markup.index('value="new"') < markup.index('value="edited"') < markup.index('value="flagged"')
         assert C.t("doc.filter.label") in " ".join(s for _o, s in dom.texts)
         assert dom.by_id("doc-next")["aria-keyshortcuts"] == "Alt+Enter"
@@ -1268,10 +1269,9 @@ class TestTheCopyKeysOfThisPage:
         "doc.words.one": "{n} word",
         "doc.words.other": "{n} words",
         "doc.tools.label": "Actions for this text",
-        "doc.tool.weglot": "Use Weglot's text",
-        "doc.tool.revert": "Undo this",
-        "doc.chars.one": "{n} character",
-        "doc.chars.other": "{n} characters",
+        "doc.tool.weglot": "Use the website's text",
+        "doc.tool.revert": "Back to Gemini's draft",
+        "doc.chars": "{n} of {max}",
         "doc.shared.one": "Also used on 1 other page ({example}). Your wording becomes the wording there too.",
         "doc.shared.other": "Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.",
         "doc.job.waiting": "Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.",
@@ -1523,10 +1523,10 @@ class TestPageCss:
         assert "display: flex" in strip and "flex-direction: row" in strip and "overflow-x: auto" in strip
         assert "min-width: 260px" in _rule(".doc-version")
 
-    def test_the_toolbar_floats_above_the_open_text_and_shows_with_focus_only(self):
+    def test_the_toolbar_floats_above_the_open_text_and_shows_with_focus_or_hover_only(self):
         tools = _rule(".doc-tools")
         assert "position: absolute" in tools and "visibility: hidden" in tools and "border-radius: 999px" in tools
-        assert "visibility: visible" in _rule(".doc-block:focus-within .doc-tools")
+        assert "visibility: visible" in _rule(".doc-block:focus-within .doc-tools, .doc-block:hover .doc-tools")   # CEL-075 item 14
         assert "display: none" in _rule(".doc-tool-weglot, .doc-tool-revert")
         assert "display: inline-block" in _rule('.doc-blocks[data-weglot="on"] .doc-tool-weglot')
         assert "display: inline-block" in _rule('.doc-block[data-source="edit"] .doc-tool-revert')

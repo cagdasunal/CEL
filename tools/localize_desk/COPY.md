@@ -27,6 +27,11 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | The file handed to Weglot | **the Weglot file** | the import file, the CSV, the export |
 | Keeping decisions on the server | **Save** | back up, export, sync |
 | Taking a decision back | **Undo** | remove, clear, reset |
+| What Gemini wrote for a text | **Gemini's draft** | drafted, the draft, new from Gemini |
+| A text you changed yourself | **edited** | approved with your edit, changed |
+| The other reviewer's saved wording in a conflict | **theirs** | their version, the server's |
+| The saved earlier wordings of a text | **History** | changes, versions, the log |
+| Texts that are in the Weglot file but not on the website yet | **in a Weglot file** | exported, imported, live |
 
 ## Names
 
@@ -101,6 +106,7 @@ button, and a line that says only where its job stands. No price is shown (the o
 | Key | Text | Shown where |
 |---|---|---|
 | `toast.storage.title` | This browser can't keep a copy of your work | When the browser refuses to store |
+| `toast.close` | Close | Button on a message that stays until it is closed (an error or a warning) |
 
 ## Why a text can't go in the Weglot file
 
@@ -207,12 +213,13 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.grid.label` | Pages and languages | Heading of the grid at the top |
 | `doc.grid.corner` | Page | Top-left cell of the grid |
 | `doc.status.none` | Not translated | A grid cell with no text in that language |
-| `doc.status.drafted` | Drafted | A grid cell where Gemini's drafts are waiting to be read |
+| `doc.status.drafted` | Gemini's draft | A grid cell where Gemini's drafts are waiting to be read |
 | `doc.status.edited` | Edited | A grid cell with texts you have edited |
-| `doc.status.exported` | Exported | A grid cell whose texts are in a Weglot file |
+| `doc.status.exported` | In a Weglot file | A grid cell whose texts are in a Weglot file (not yet on the website until it is imported) |
 | `doc.status.unknown` | Checking… | A grid cell until that language has been read from the server |
 | `doc.status.translating` | Translating… | A grid cell whose page Gemini is translating now |
 | `doc.status.queued` | Queued | A grid cell whose page waits for the one Gemini is translating |
+| `doc.status.failed` | Failed | A grid cell whose page has no text yet because its translation did not finish |
 | `doc.cell.count.one` | {n} of {total} text | Under the status in a grid cell |
 | `doc.cell.count.other` | {n} of {total} texts | |
 | `doc.cell.aria` | {page}, {language}: {status} | Screen-reader name of a grid cell |
@@ -227,13 +234,13 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.keys.undo.other` | Ctrl+Z | The keys, in the Undo hover, elsewhere |
 | `doc.keys.redo.mac` | ⇧⌘Z | The keys, in the Redo hover, on a Mac |
 | `doc.keys.redo.other` | Ctrl+Shift+Z | The keys, in the Redo hover, elsewhere |
-| `doc.weglot.toggle` | Show Weglot | Checkbox in the bar at the bottom |
+| `doc.weglot.toggle` | Show the website's text | Checkbox in the bar at the bottom |
 | `doc.translate` | Translate page | Button above the page, and in the window it opens |
 | `doc.head.en` | English — the website | Head of the English column |
-| `doc.head.tgt` | {language} — draft and your edits | Head of the translation column |
-| `doc.head.weglot` | Weglot (on the website) | Head of the third column, when Show Weglot is on |
-| `doc.weglot.none` | No Weglot translation yet | Inside the third column, for a text Weglot has no wording for |
-| `doc.weglot.same` | Same as Weglot | Under a text, when Show Weglot is on and the text is word for word what Weglot has |
+| `doc.head.tgt` | {language} — Gemini's draft and your edits | Head of the translation column |
+| `doc.head.weglot` | The website's text | Head of the third column, when Show the website's text is on |
+| `doc.weglot.none` | No Weglot translation yet | Inside the third column (the website's text), for a text Weglot has no wording for |
+| `doc.weglot.same` | Same as Weglot | Under a text, when Show the website's text is on and the text is word for word what Weglot has |
 | `doc.block.meta-title` | Page title | Beside a text: what kind of text it is |
 | `doc.block.og-title` | Title when shared | |
 | `doc.block.meta-description` | Page description | |
@@ -248,22 +255,19 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.block.button` | Button | |
 | `doc.block.link` | Link | |
 | `doc.block.other` | Text | |
-| `doc.locked.tag` | Locked | Beside a text that can't be edited here |
+| `doc.locked.tag` | Locked | Beside a text that can't be edited here; its reason is the tip on it |
 | `doc.locked.noise` | Numbers and symbols are left as they are. | Under a locked text of numbers or symbols |
 | `doc.also` | Also on {pages}. A change here changes it there too. | The marker's tooltip and popover of a text that is on other pages of the four; once in the note under the text while it has focus |
 | `doc.shared.one` | Also used on 1 other page ({example}). Your wording becomes the wording there too. | The marker's tooltip and popover of a text that is also on a page outside the four; once in the note under the text while it has focus |
 | `doc.shared.other` | Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too. | |
 | `doc.mark.one` | Shared with 1 other page. | The shared-text marker's accessible name, read before the sentence (its chip shows the count) |
 | `doc.mark.other` | Shared with {n} other pages. | |
-| `doc.text.saving` | Saving… | Under a text, while its change is sent |
-| `doc.text.saved` | Saved | Under a text, once its change is on the server |
 | `doc.text.error` | Not saved yet — trying again | Under a text whose change did not go through |
 | `doc.text.refused` | Not saved — the server refused this text. Edit it to try again. | Under a text the server did not take |
 | `doc.text.stopped` | Not saved — saving has stopped. See the bar below. | Under a text waiting while saving is stopped |
 | `doc.text.offline` | Not saved yet — you are offline. It is kept on this computer. | Under a text changed while offline |
 | `doc.text.retranslating` | Gemini is re-translating this text… | Under a text whose Re-translate is on its way |
 | `doc.save.go` | Go to the text | Button beside the bar, when a text on this page is not saved |
-| `doc.text.edited` | Edited | Under a text that has your edit |
 | `doc.empty.cell` | Not translated yet | Inside an empty translation box |
 | `doc.history` | History | Button under a text |
 | `doc.history.title` | History of this text | Heading of the history panel |
@@ -303,7 +307,7 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.words.other` | {n} words | |
 | `doc.filter.label` | Show | Label of the list in the bottom bar that narrows the page to some of its texts |
 | `doc.filter.all` | All texts | In that list: every text of the page |
-| `doc.filter.new` | New from Gemini | In that list: texts Gemini wrote that you have not edited |
+| `doc.filter.new` | Gemini's draft | In that list: texts Gemini wrote that you have not edited |
 | `doc.filter.edited` | Edited | In that list: texts you have edited |
 | `doc.filter.flagged` | Flagged by a check | In that list: texts our automatic checks point out |
 | `doc.filter.empty` | No text matches this filter. Choose All texts to see the whole page again. | Above the page, when the chosen filter leaves no text |
@@ -318,10 +322,9 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.version` | Desk {version} | Bottom bar: the version of the localization desk; a link to what changed in it |
 | `doc.version.tip` | See what changed in this version | Hover on that version |
 | `doc.tools.label` | Actions for this text | Screen-reader name of the buttons beside the open text |
-| `doc.tool.weglot` | Use Weglot's text | Button beside the open text, when Show Weglot is on |
-| `doc.tool.revert` | Undo this | Button beside a text you have edited |
-| `doc.chars.one` | {n} character | Under the page title and description: how long they are |
-| `doc.chars.other` | {n} characters | |
+| `doc.tool.weglot` | Use the website's text | Button beside the open text, when Show the website's text is on |
+| `doc.tool.revert` | Back to Gemini's draft | Button beside a text you have edited (it clears your edit) |
+| `doc.chars` | {n} of {max} | Under the page title and description: how long they are, of how long a search result shows |
 
 ## Export and re-translate (desk v2)
 
@@ -338,16 +341,25 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `export.aria.col` | All pages, {language} | Screen-reader name of a language's box |
 | `export.aria.row` | {page}, all languages | Screen-reader name of a page's box |
 | `export.aria.cell` | {page}, {language} | Screen-reader name of one page and language |
-| `export.count.none` | Nothing selected yet | Under the grid, when no box is ticked |
+| `export.count.none` | Nothing selected yet | Under the grid, when no box is ticked; the tip on the Export button then |
 | `export.count.one` | 1 file will be made | Under the grid |
 | `export.count.other` | {n} files will be made, in one zip | |
+| `export.drafts.one` | {edited} edited, 1 unread Gemini draft also goes in. | Under the count in the Export window, when the picked pages will send a Gemini draft nobody has looked at |
+| `export.drafts.other` | {edited} edited, {n} unread Gemini drafts also go in. | |
 | `export.cancel` | Cancel | Button in the Export window |
 | `export.go` | Export | Button in the Export window |
 | `export.close` | Close | Button, when the export has finished |
 | `export.stop` | Stop after this file | Button while the export runs: the file being made finishes, the next ones are not started |
 | `export.stopping` | Stopping after this file… | The same button once pressed |
 | `export.download` | Download again | Button, when the export has finished |
-| `export.jump` | Show | Button beside a text in the list of what was left out |
+| `export.how.title` | How to import it in Weglot: | Heading of the steps above the lists, when the export has made a file |
+| `export.how.unzip` | Unzip the download first: it holds one file for each page and language. Do the steps below for each file in turn. | First step, when the export made more than one file (one zip) |
+| `export.how.upload` | Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.” | First step |
+| `export.how.check` | Check that Weglot's “… updated translations will be imported.” shows the same number as this file. | Second step |
+| `export.how.switches` | Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.” | Third step |
+| `export.how.press` | Press Import. | Fourth step |
+| `export.how.errors` | If Weglot lists a text under Errors, let the team know. | Line after the steps |
+| `export.jump` | Go to text | Button beside a text in the list of what was left out |
 | `export.more` | Show {n} more | Button at the end of a long list |
 | `export.step.waiting` | Waiting | A file's line, before its turn |
 | `export.step.saving` | Saving your texts… | A file's line, while its texts are saved |
@@ -355,7 +367,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `export.step.running` | Making the file… | A file's line, while the engine makes it |
 | `export.step.done.one` | 1 text in the file | A file's line, when it is made |
 | `export.step.done.other` | {n} texts in the file | |
-| `export.step.nothing` | Nothing to export yet | A file's line, when the page has no translation in that language |
+| `export.step.nothing` | Nothing to export yet | A file's line, when the page has no translation in that language; the tip on a greyed box of the grid |
 | `export.step.stopped` | Not started — you stopped the export | A file's line, when the export was stopped before it |
 | `export.result.done` | Files made: {done} of {total}. The download has started. | Top of the result, when the export ran to the end |
 | `export.result.stopped` | You stopped the export. Files made: {done} of {total}; what was made is downloading. | Top of the result, when the export was stopped |

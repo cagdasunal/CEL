@@ -8,6 +8,7 @@
 .ex-page { font-weight: 500; }
 .ex-grid input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 .ex-count { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+.ex-drafts { margin: 6px 0 0; font-size: var(--fs-sm); color: var(--fg); }
 .ex-progress { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .ex-file { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .ex-file-name { font-weight: 500; }
@@ -16,6 +17,10 @@
 .ex-file[data-state="failed"] { border-color: var(--border-strong); }
 .ex-result { display: flex; flex-direction: column; gap: 14px; }
 .ex-headline { margin: 0; font-size: var(--fs-md); font-weight: 500; }
+.ex-how { font-size: var(--fs-sm); }
+.ex-how-title { margin: 0 0 6px; font-weight: 500; }
+.ex-how-steps { margin: 0 0 6px; padding-inline-start: 20px; }
+.ex-how-note { margin: 0; }
 .ex-group-title { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 500; }
 .ex-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
 .ex-item { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }

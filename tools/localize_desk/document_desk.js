@@ -47,10 +47,11 @@
     h6: 'doc.block.h6', p: 'doc.block.p', li: 'doc.block.li', button: 'doc.block.button',
     link: 'doc.block.link', other: 'doc.block.other'
   };
+  const CHARS_MAX = { 'meta-title': 60, 'meta-description': 160 };    // what a search result shows of the page title and description
   const STATUS_KEY = {
     none: 'doc.status.none', drafted: 'doc.status.drafted', edited: 'doc.status.edited',
     exported: 'doc.status.exported', unknown: 'doc.status.unknown',
-    translating: 'doc.status.translating', queued: 'doc.status.queued'
+    translating: 'doc.status.translating', queued: 'doc.status.queued', failed: 'doc.status.failed'
   };
   const FIELDS = ['tray', 'text', 'approvedAgainst', 'rejected'];   // what a decision record may carry
 
@@ -178,13 +179,22 @@
   }
 
   // ── toasts ─────────────────────────────────────────────────────────────────────────
+  // A message goes after 4 s, except an error or a warning (a failed send, a partial result): that one stays until the
+  // reviewer closes it (CEL-075 item 6).
   function toast(message, level) {
     const stack = $('doc-toasts');
     if (!stack) return;
     const node = h('div', 'toast is-' + (level || 'ok'));
     node.appendChild(h('span', 'toast-title', message));
+    if (level === 'err' || level === 'warn') {
+      const x = h('button', 'toast-close', t('toast.close'));
+      x.type = 'button';
+      x.addEventListener('click', function () { if (node.parentNode) node.parentNode.removeChild(node); });
+      node.appendChild(x);
+    } else {
+      setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 4000);
+    }
     stack.appendChild(node);
-    setTimeout(function () { if (node.parentNode) node.parentNode.removeChild(node); }, 4000);
   }
 
   // ── the Worker ─────────────────────────────────────────────────────────────────────
@@ -327,12 +337,20 @@
   function takeTheirs(uid) {
     const lang = S.lang, c = conf(lang)[uid];
     if (!c) return;
+    closeGroup();
+    const mine = curRec(lang, uid);               // the wording that is about to go: Undo gives it back (CEL-075 item 1)
     if (c.current) L[lang].decisions[uid] = c.current; else delete L[lang].decisions[uid];
     delete pend(lang)[uid];
     delete conf(lang)[uid];
+    const s = stack();
+    s.undo.push({ uid: uid, from: mine, to: curRec(lang, uid) });
+    if (s.undo.length > UNDO_CAP) s.undo.shift();
+    s.redo = [];
+    saveStacks();
     persistPending();
     changed();
     paintBlock(uid, true);
+    paintUndo();
   }
 
   // ── making a change ────────────────────────────────────────────────────────────────
@@ -412,7 +430,7 @@
     from.pop();
     // Not the state this step made, and an unsent change of this page's own that the stack does not
     // know about: the step has nothing to stand on and is dropped, never written over it.
-    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); toast(t('doc.undo.dropped')); return; }
+    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); toast(t('doc.undo.dropped'), 'warn'); return; }
     to.push(entry);
     // Replayed, the record is a fresh decision on what the page shows now: a text in it is stamped against
     // today's wording like an edit is, not the Weglot wording of the day it was made (a moved wording would
@@ -625,7 +643,8 @@
 
     if (d.lock) {
       const why = lockReason(d);
-      b.lockNote.textContent = t('doc.locked.tag') + (why ? ' — ' + why : '');
+      b.lockNote.textContent = t('doc.locked.tag');
+      if (why) b.lockNote.setAttribute('data-tip', why);       // the reason is on hover, not a line of the page (CEL-075 item 18)
       tgt.setAttribute('dir', 'auto');
       window.RichField.render(tgt, (d.w && d.w[lang]) || '');
     } else {
@@ -657,7 +676,7 @@
         const sel = window.getSelection && window.getSelection().toString();
         if (!sel) tgt.focus();
       });
-      // The actions for this text float above it while focus is inside the block (CSS :focus-within).
+      // The actions for this text float above it while focus is inside the block or the pointer is over it (CSS :focus-within, :hover).
       const tools = h('div', 'doc-tools');
       tools.setAttribute('role', 'toolbar');
       tools.setAttribute('aria-label', t('doc.tools.label'));
@@ -666,7 +685,7 @@
       const rb = h('button', 'desk-btn doc-tool-revert', t('doc.tool.revert'));
       [hb, wb, rb].forEach(function (x) { x.type = 'button'; });
       tools.appendChild(hb);
-      // Weglot has no wording for this text: no "Use Weglot's text" button (it would erase the edit).
+      // The website has no wording for this text: no "Use the website's text" button (it would erase the edit).
       if (d.w && d.w[lang]) tools.appendChild(wb);
       tools.appendChild(rb);
       hb.addEventListener('click', function () { openHistory(d.id, hb); });
@@ -719,12 +738,11 @@
     const st = stateOf(lang, uid, b);
     b.li.setAttribute('data-state', st);
     let label = '';
+    // Only a save that has not gone through shows under a text (the conflict has its own box), and it says why (CEL-077
+    // item 12). Saving, saved and edited are the status bar's and the grid's to say, not a second line on every text (CEL-075 item 18).
     if (!d.lock) {
       if (st === 'dirty' && navigator.onLine === false) label = t('doc.text.offline');
-      else if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
-      else if (st === 'saved') label = t('doc.text.saved');
       else if (st === 'error') label = errorLabel(lang, uid);
-      else if (rec && rec.text) label = t('doc.text.edited');
     }
     // A Re-translate on its way is said on the text itself, whatever else is true of it (CEL-077 item 5)
     if (RT.has(lang + '|' + uid)) { label = t('doc.text.retranslating'); b.li.setAttribute('data-retranslating', ''); }
@@ -736,7 +754,7 @@
     b.same.textContent = !d.lock && wgText && effText(lang, uid) === wgText ? t('doc.weglot.same') : '';
     if (b.chars) {
       const shown = d.lock ? ((d.w && d.w[lang]) || '') : effText(lang, uid);
-      b.chars.textContent = shown ? tn('doc.chars', plain(shown).length) : '';
+      b.chars.textContent = shown ? t('doc.chars', { n: plain(shown).length, max: CHARS_MAX[d.b] }) : '';
     }
     const c = conf(lang)[uid];
     b.box.hidden = !c;
@@ -879,6 +897,7 @@
         const js = jstate(lang);
         if (js.job && js.page === page) status = 'translating';
         else if (js.waiting.indexOf(page) >= 0) status = 'queued';
+        else if (status === 'none' && js.failed && js.failed.page === page) status = 'failed';   // not only on its own page (CEL-075 item 20)
         cell.setAttribute('data-status', status);
         cell.setAttribute('aria-pressed', page === S.page && lang === S.lang ? 'true' : 'false');
         cell.querySelector('.doc-cell-status').textContent = t(STATUS_KEY[status]);
@@ -918,8 +937,12 @@
     box.hidden = !msg;
     text.textContent = msg;
     go.hidden = !button;
-    $('doc-translate').disabled = readError || runningHere() || js.waiting.indexOf(S.page) >= 0;
-    $('doc-translate').hidden = button;       // one Translate page at a time: the banner's while the page is untranslated
+    // Off, it says why in the banner's own words, on hover and to a screen reader (CEL-075 item 11).
+    const stuck = readError || runningHere() || js.waiting.indexOf(S.page) >= 0, tr = $('doc-translate');
+    tr.disabled = stuck;
+    if (stuck) { tr.setAttribute('data-tip', msg); tr.setAttribute('aria-describedby', 'doc-banner-text'); }
+    else { tr.removeAttribute('data-tip'); tr.removeAttribute('aria-describedby'); }
+    tr.hidden = button;                       // one Translate page at a time: the banner's while the page is untranslated
   }
 
   // ── translate page ─────────────────────────────────────────────────────────────────
@@ -1109,7 +1132,7 @@
       list.scrollLeft = list.scrollWidth;
     });
   }
-  // One change that is its own undo step: a restore, "Use Weglot's text", "Undo this". All are
+  // One change that is its own undo step: a restore, "Use the website's text", "Back to Gemini's draft". All are
   // ordinary writes of the wording (a version of their own), so Undo takes any of them back.
   function commitText(uid, text) {
     closeGroup();
@@ -1173,6 +1196,8 @@
     return true;
   }
   function seenKey(uid) { return S.lang + '|' + uid; }
+  // 'lang|uid' -> 1 for every text moved on from; the Export window counts the Gemini drafts nobody looked at (CEL-075 item 2).
+  function seenMap() { return lsGet(KEYS.seen) || {}; }
   function markSeen(uid) {
     const m = lsGet(KEYS.seen) || {};
     if (m[seenKey(uid)]) return;
@@ -1617,6 +1642,7 @@
     S: S, L: L, PI: PI, M: M, U: U, PAGES: PAGES, LANGS: LANGS, CHUNK: CHUNK, TIMING: TIMING,
     saveOff: SAVE_OFF_ON, client: DESK_CLIENT,
     pending: function () { return P; }, sendable: sendable,
+    seenMap: seenMap,
     call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
     curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
