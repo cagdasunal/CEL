@@ -14,7 +14,7 @@ HANG, or CORRUPT shared state without anyone noticing — the gaps found in the
   - push_race         : `git push` with no `git pull --rebase` / retry nearby
                         (a concurrent push -> "failed to push some refs" -> red)
   - generated_rebase_unsafe : a workflow that rebases AND stages a `merge=keepLatest`
-                        build artifact (regenerated dashboard HTML / import-status.json)
+                        build artifact (regenerated dashboard HTML)
                         without registering `merge.keepLatest.driver` — the conflict an
                         overlapping run creates aborts the rebase red (2026-06-27
                         content-pipeline incident; push_race only checks a loop EXISTS)
@@ -78,8 +78,8 @@ SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 def _keeplatest_paths(workflows_dir: Path) -> list[str]:
     """Paths tagged `merge=keepLatest` in the repo's .gitattributes.
 
-    These are deterministic build artifacts (regenerated dashboard HTML, the
-    Weglot import-status JSON) that two overlapping runs rewrite with different
+    These are deterministic build artifacts (regenerated dashboard HTML) that
+    two overlapping runs rewrite with different
     timestamps. A plain `git pull --rebase` CONFLICTS on them and aborts red
     (the 2026-06-27 content-pipeline incident). The conflict is auto-resolved by
     the `keepLatest` merge driver — but only if the workflow REGISTERS that
@@ -248,7 +248,7 @@ def lint_workflow(path: Path):
 
     # 5b. A rebase loop survives a concurrent push ONLY if it can resolve the
     #     conflict. Deterministic build artifacts tagged `merge=keepLatest` in
-    #     .gitattributes (regenerated dashboard HTML, import-status.json) DO
+    #     .gitattributes (regenerated dashboard HTML) DO
     #     conflict on every overlapping run — and the keepLatest driver that
     #     auto-resolves them lives in .git/config, so each rebasing workflow that
     #     touches such a file MUST register it (`git config merge.keepLatest.driver`)

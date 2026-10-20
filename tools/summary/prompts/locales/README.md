@@ -43,6 +43,6 @@ All 9 locales cover all 16 applicable dimensions. Audit-086 M-3 (locale asymmetr
 
 1. Create `<code>.md` following the structure of an existing locale file (e.g. `de.md` for Latin/LTR or `ja.md` for non-Latin).
 2. Add the code to `config.LOCALES` in `tools/summary/config.py`.
-3. Add the code to `tools.weglot.csv_export.TARGET_LANGUAGES` if translation is intended.
+3. If translation is intended, add the code to the localization desk's languages (monorepo `tools/localize/provenance.py` `LOCALES`).
 4. Add a column to this README's coverage table.
 5. Run a dry-run to confirm the prompt builder loads the new file.
