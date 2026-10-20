@@ -947,7 +947,8 @@
   }
 
   // ── the page tree (CEL-069, shell-spec §3a): folders by path, the filter, the open page's sections ──
-  const folded = new Set(lsGet(KEYS.fold) || []);
+  // Folded folders, remembered per browser. A stored value that is not a list (an old build, a hand edit) is not read.
+  const folded = new Set((function () { const v = lsGet(KEYS.fold); return Array.isArray(v) ? v : []; })());
   let treeRows = [], kb = -1;
   const CHEVRON = '<svg viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" ' +
     'stroke-linecap="round" stroke-linejoin="round"><polyline points="3 4.5 6 7.5 9 4.5"></polyline></svg>';
@@ -982,11 +983,11 @@
     groups.forEach(function (pages, dir) {
       const hit = pages.filter(function (pg) { return !q || pageMatches(pg, q); });
       if (!hit.length) return;
-      const open = !!q || !folded.has(dir);
+      const isOpen = !!q || !folded.has(dir);
       const fold = h('button', 'doc-tree-fold');
       fold.type = 'button';
       fold.setAttribute('data-dir', dir);
-      fold.setAttribute('aria-expanded', open ? 'true' : 'false');
+      fold.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
       fold.innerHTML = CHEVRON;
       fold.appendChild(h('span', null, dir));
       fold.appendChild(h('span', 'doc-tree-n', String(hit.length)));
@@ -994,10 +995,14 @@
         if (folded.has(dir)) folded.delete(dir); else folded.add(dir);
         lsSet(KEYS.fold, Array.from(folded));
         buildTree();
+        // The list is rebuilt: the keyboard stays where the click was, on this folder's button.
+        const again = Array.prototype.find.call(list.querySelectorAll('.doc-tree-fold'), function (b) { return b.getAttribute('data-dir') === dir; });
+        if (again) again.focus();
       });
       list.appendChild(fold);
-      if (!open) return;
-      hit.forEach(function (page) {
+      // A folded folder still shows the page that is open (and its sections): folding hides the others, never where you are.
+      const shown = isOpen ? hit : hit.filter(function (pg) { return pg === S.page; });
+      shown.forEach(function (page) {
         const row = h('button', 'doc-tree-page');
         row.type = 'button';
         row.setAttribute('data-page', page);

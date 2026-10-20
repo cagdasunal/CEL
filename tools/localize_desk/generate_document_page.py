@@ -239,7 +239,7 @@ html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block'
 .doc-st[data-s="drafted"] { border-color: var(--accent); background: var(--accent); }
 .doc-st[data-s="edited"] { border-color: var(--accent); background-image: linear-gradient(var(--accent), var(--accent)); background-size: 50% 100%; background-repeat: no-repeat; }
 .doc-st[data-s="exported"] { border-color: var(--ok); background: var(--ok); }
-.doc-st[data-s="failed"] { border-color: var(--err); }
+.doc-st[data-s="failed"] { border-color: var(--err); background: var(--err); border-radius: 2px; }   /* a square with 2 px corners: the one mark that is not round (shape and colour, WCAG 1.4.1) */
 .doc-st[data-s="unknown"] { border-style: dotted; }
 
 /* The page tree (left): filter, folders, pages, the open page's sections */
@@ -258,7 +258,7 @@ html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block'
 .doc-tree-page:hover { background: var(--doc-sheet-hover); }
 .doc-tree-page.is-kb, .doc-tree-page[aria-current="page"] { background: var(--doc-sheet); }
 .doc-tree-slug { overflow: hidden; font-family: var(--mono); font-size: var(--fs-md); white-space: nowrap; text-overflow: ellipsis; }
-.doc-tree-page[aria-current="page"] .doc-tree-slug { color: var(--accent-strong); }
+.doc-tree-page[aria-current="page"] .doc-tree-slug, .doc-tree-page.is-kb .doc-tree-slug { color: var(--accent-strong); }
 .doc-tree-name { grid-column: 1; overflow: hidden; color: var(--doc-muted); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
 .doc-tree-page .doc-st { grid-row: 1 / span 2; grid-column: 2; }
 .doc-tree-page:focus-visible, .doc-tree-fold:focus-visible, .doc-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -677,6 +677,7 @@ def render_page() -> str:
 SHELL_TOKENS = """\
 .doc {
   --doc-progress: #7A4314;
+  --stage: #E8E1CF;
   --tree-w: 288px; --ctx-h: 52px; --tabs-h: 38px; --tree-bg: var(--doc-tray); --fs-path: 15px;
   --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }

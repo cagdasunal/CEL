@@ -1496,7 +1496,8 @@ class TestPageCss:
         shell = (".doc-st[", ".doc-tab[aria-selected", ".doc-switch input:checked", '.doc-tree-page[aria-current="page"] .doc-tree-slug')
         for sel, body in hits:
             assert ":focus-visible" in sel or ":focus-within" in sel or sel.startswith(shell), (sel, body)
-        assert [s for s, b in _rules(GD.DOC_CSS) if "var(--accent-strong)" in b] == ['.doc-tree-page[aria-current="page"] .doc-tree-slug']
+        # shell-spec §1: the open row's slug and the keyboard-highlighted row's slug (CEL-101) are the one rule
+        assert [s for s, b in _rules(GD.DOC_CSS) if "var(--accent-strong)" in b] == ['.doc-tree-page[aria-current="page"] .doc-tree-slug, .doc-tree-page.is-kb .doc-tree-slug']
         assert "var(--accent-warm)" not in GD.DOC_CSS
         assert ".is-primary" not in GD.DOC_CSS
 
@@ -1611,7 +1612,7 @@ class TestPageCss:
         assert "opacity: 1" in _rule(".doc-block:hover .doc-tag, .doc-block:focus-within .doc-tag")
 
     def test_radii_are_the_dashboards(self):
-        allowed = {"0", "var(--radius)", "var(--radius-sm)", "999px", "50%"}
+        allowed = {"0", "var(--radius)", "var(--radius-sm)", "999px", "50%", "2px"}   # 2px: the failed mark's square corners (CEL-101)
         for sel, prop, value in _declarations(GD.DOC_CSS):
             if prop == "border-radius":
                 assert set(value.split()) <= allowed, (sel, value)

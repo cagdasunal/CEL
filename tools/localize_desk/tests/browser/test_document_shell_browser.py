@@ -200,7 +200,7 @@ def test_a_folder_folds_and_stays_folded(browser):
         fold = p.locator(".doc-tree-fold").first
         fold.click()
         expect(fold).to_have_attribute("aria-expanded", "false")
-        assert rows(p) == []
+        assert rows(p) == [PAGE_KEY]               # CEL-101: a folded folder still shows the open page's row
         p.reload()
         p.wait_for_selector(READY, timeout=20000)
         expect(p.locator(".doc-tree-fold").first).to_have_attribute("aria-expanded", "false")
