@@ -239,8 +239,52 @@ def test_the_column_is_never_sent_the_same_edit_writes_the_same_bytes_with_it_on
     on = _write_bodies_for_one_edit(browser, uid, True)
     off = _write_bodies_for_one_edit(browser, uid, False)
     assert on and on == off
-    # the only Weglot wording in a write is the stamp the approval is given against, never the column's state
-    assert "weglot" not in on[0].lower()
+    # An approved text carries ONE Weglot wording: the stamp it is approved against (`approvedAgainst`, CEL-026:
+    # the export refuses a text whose Weglot wording moved meanwhile). The column adds nothing else to a write.
+    (change,) = json.loads(on[0])
+    assert change["record"].pop("approvedAgainst") == wording(uid)
+    assert wording(uid) not in json.dumps(change), change
+
+
+def _export_requests(browser, uids, with_column: bool) -> list:
+    """What the page sends when the client presses Export for the open page and language: every storage write
+    and the job start, in order, as the stand-in received them."""
+    log = []
+
+    def seed(e):
+        for n, uid in enumerate(uids):
+            draft(e.store, uid, f"Entwurf Nummer {n + 1}")
+        raw = e.store.handle
+
+        def spy(action, body, who):
+            if action in ("desk-write", "desk-job-start"):
+                log.append([action, body])
+            return raw(action, body, who)
+
+        e.store.handle = spy
+
+    with doc(browser, seed=seed) as e:
+        if with_column:
+            show_weglot(e.page)
+        e.page.locator("#doc-export").click()
+        expect(e.page.locator("#ex-modal")).to_be_visible()
+        e.page.locator("#ex-go").click()
+        expect(e.page.locator(f'li.ex-file[data-page="{PAGE_KEY}"][data-lang="{LANG}"]')) \
+            .to_have_attribute("data-state", "queued", timeout=10000)
+    return log
+
+
+def test_export_excludes_the_column_the_same_requests_with_it_on_and_off(browser):
+    uids = pick(2, need_w=True)
+    on = _export_requests(browser, uids, True)
+    off = _export_requests(browser, uids, False)
+    assert [a for a, _b in on].count("desk-job-start") == 1 and any(a == "desk-write" for a, _b in on)
+    assert json.dumps(on, sort_keys=True) == json.dumps(off, sort_keys=True)
+    # Weglot's wording appears in an export request only as the stamp each approval is given against
+    # (`approvedAgainst`, CEL-026: the export refuses a text whose Weglot wording moved meanwhile); nowhere else
+    stamps = [c["record"].pop("approvedAgainst") for a, b in on if a == "desk-write" for c in b["changes"]]
+    assert sorted(stamps) == sorted(wording(u) for u in uids), stamps
+    assert not any(wording(u) in json.dumps(on) for u in uids), "Weglot's wording travels beyond the stamp"
 
 
 @pytest.mark.parametrize("width", [1280, 1440, 2560])
