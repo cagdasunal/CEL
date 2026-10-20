@@ -43,6 +43,7 @@ from localize_desk.copy_text import t, tn  # noqa: E402
 OTHER = "other@example.test"
 READY = '#rules-app[data-state="ready"]'
 TIMING = {"draftDelay": 0}
+THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 GLOBAL_V1 = "## Purpose\n\n- Rule A\n- Rule B\n"
 DE_V1 = "## German\n\n- **Form of address:** du\n- **Markets:** CH\n"
 JA_NONE = "> no rules line\n"
@@ -116,6 +117,10 @@ def rules(browser, *, lang: str = "de", seed=None, http_errors: bool = False, fa
         env.worker.action_faults.update(faults or {})       # an action that fails from the first call on
         pg = browser.new_page(viewport={"width": 1440, "height": 900})
         pg.set_default_timeout(10000)
+        # The dashboard's BugHerd tag is a third party: it is answered here with an empty script, so a console
+        # error from BugHerd's own pages (CI run 39399858432: 'X-Frame-Options') can never fail a test, and the
+        # no-console-error check below stays about our own code (CEL-067, CEL-078).
+        pg.route(THIRD_PARTY, lambda route: route.fulfill(status=200, content_type="text/javascript", body=""))
         env.page = pg
 
         def on_console(msg):
