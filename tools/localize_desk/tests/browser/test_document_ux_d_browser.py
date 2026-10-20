@@ -168,13 +168,31 @@ def pick(data: dict, n: int = 1, *, lang: str = LANG, need_w: bool = False) -> l
     return out
 
 
+def _now(page):
+    """CEL-069: the open page (the tree row marked current) and the open language (the selected tab)."""
+    return page.evaluate("""() => [(document.querySelector('.doc-tree-page[aria-current="page"]') || {dataset: {}}).dataset.page || null,
+        (document.querySelector('.doc-tab[aria-selected="true"]') || {dataset: {}}).dataset.lang || null]""")
+
+
 def cell(page, key, lang):
-    return page.locator(f'.doc-cell[data-page="{key}"][data-lang="{lang}"]')
+    """CEL-069 (the grid's cell before): where the shell shows (page, language) -- the tree row while `lang` is the
+    open language, the language tab while `key` is the open page; neither: the tab is clicked first (the page
+    stays). Either carries data-status."""
+    cur_page, cur_lang = _now(page)
+    if lang == cur_lang:
+        return page.locator(f'.doc-tree-page[data-page="{key}"]')
+    if key == cur_page:
+        return page.locator(f'#doc-tab-{lang}')
+    page.locator(f'#doc-tab-{lang}').click()
+    page.wait_for_function("""l => document.querySelector('#doc').dataset.state === 'ready'
+        && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""", arg=lang, timeout=20000)
+    return page.locator(f'.doc-tree-page[data-page="{key}"]')
 
 
 def wait_cells_known(page):
-    page.wait_for_function("document.querySelectorAll('.doc-cell[data-status=\"unknown\"]').length === 0",
-                           timeout=15000)
+    """Every language has been read: no tree row (the open language) and no tab (the open page) is "unknown"."""
+    page.wait_for_function("document.querySelectorAll('.doc-tree-page[data-status=\"unknown\"], "
+                           ".doc-tab[data-status=\"unknown\"]').length === 0", timeout=15000)
 
 
 def open_export(page):
@@ -187,11 +205,17 @@ def ex_box(page, key, lang):
 
 
 def open_cell(page, key, lang):
-    cell(page, key, lang).click()
+    """CEL-069: the language tab, then the page's row in the tree (each keeps the other)."""
+    cur_page, cur_lang = _now(page)
+    if lang != cur_lang:
+        page.locator(f'#doc-tab-{lang}').click()
+    if key != cur_page:
+        page.locator(f'.doc-tree-page[data-page="{key}"]').click()
     page.wait_for_function(
         """([k, l]) => document.querySelector('#doc').dataset.state === 'ready'
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.page === k
-            && document.querySelector('.doc-cell[aria-pressed="true"]').dataset.lang === l""",
+            && !!document.querySelector('.doc-tree-page[aria-current="page"]')
+            && document.querySelector('.doc-tree-page[aria-current="page"]').dataset.page === k
+            && document.querySelector('.doc-tab[aria-selected="true"]').dataset.lang === l""",
         arg=[key, lang], timeout=20000)
 
 
