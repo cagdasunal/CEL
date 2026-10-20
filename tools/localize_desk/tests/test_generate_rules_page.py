@@ -38,8 +38,12 @@ CLIENT_PHRASES = ("Klassengrösse", "Never use *ß*", "Lehrer:innen", "Durchschn
 
 # Backgrounds the page may use: cream surfaces, the stage, stripes, the notice, and the
 # status colours of the 8px save dot. Never a white or near-white one.
+# CEL-089: a Done-by pill or tone example is a tint of a token over the cream (never white); a pill's mark is
+# filled with its own text colour.
 BACKGROUND_OK = re.compile(
-    r"^(?:var\(--(?:surface|panel|selected|stripe|notice-bg|ok|warn|muted|faint)\)|transparent|none)$")
+    r"^(?:var\(--(?:surface|panel|selected|stripe|notice-bg|ok|warn|muted|faint)\)|transparent|none|currentColor"
+    r"|color-mix\(in srgb, var\(--(?:ok|warn|accent-strong)\) \d{1,2}%, transparent\)"
+    r"|linear-gradient\(90deg, currentColor 50%, transparent 50%\))$")
 
 
 @pytest.fixture(scope="module")
@@ -148,8 +152,24 @@ def test_config_carries_the_eight_locales(config):
 
 def test_config_carries_the_locales_and_the_page_keys_and_nothing_of_the_editor(config):
     # CEL-080: no checked or suggested rules. CEL-085: the desk's page keys, for the keyword briefs it shows read-only.
-    assert set(config) == {"locales", "pages"}
+    # CEL-089: the Done-by map of option A.
+    assert set(config) == {"locales", "pages", "doneBy"}
     assert config["pages"] == list(S.PAGE_KEYS)
+
+
+def test_the_done_by_map_holds_hashes_and_codes_and_no_client_words(config):
+    # The repository is public: the map keys a client line by an 8-hex hash, its values are a Done-by kind, a
+    # reason key and an optional warn mark. Nothing else: no client words, no rule ids (test_desk_privacy).
+    done = config["doneBy"]
+    assert set(done) == {"v", "sections", "langs"}
+    assert set(done["langs"]) == {code for code, *_ in S.LOCALES}
+    code = re.compile(r"^(?:meta|rule|builtin\.(?:page|structure|export)|slug|glossary|flag|keywords|schema|warn|)$")
+    for lang, lines in done["langs"].items():
+        assert lines, lang
+        for key, val in lines.items():
+            assert re.fullmatch(r"[0-9a-f]{8}", key), (lang, key)
+            assert val[0] in ("check", "prompt", "none") and 1 <= len(val) <= 3, (lang, val)
+            assert all(code.match(v) for v in val[1:]), (lang, val)
 
 
 def test_config_json_has_no_script_closer():

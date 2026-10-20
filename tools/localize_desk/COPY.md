@@ -409,7 +409,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 
 ## Rules page (CEL-046, read-only since CEL-080)
 
-The page where the client reads the translation rules per language: /admin/localization/rules/. Version 1 only shows them: one language at a time, the shared rules first, then that language's own rules and its glossary. Nothing on it edits, saves or publishes, and the page-level briefs are not shown.
+The page where the client reads the translation rules per language: /admin/localization/rules/. One language at a time (CEL-089, option A of CEL-088): a summary of the requests in the client's documents, then their sections in the client's order, each request with how the tool carries it out, the tone examples side by side, the glossary and the keyword briefs. Nothing on it edits, saves or publishes; the three summary cards only filter.
 
 | Key | Text | Shown where |
 |---|---|---|
@@ -419,8 +419,37 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.language` | Language | Label of the language tabs |
 | `rules.desk` | Back to the desk | Header link to the document desk |
 | `doc.rules` | Translation rules | Desk header link to the rules page |
-| `rules.lang` | {language} rules | Heading of one language's rules |
 | `rules.empty` | No {language} rules yet. | Language without rules |
+| `rules.summary` | {n} requests from your documents | Summary heading of one language |
+| `rules.summary.sub` | Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out. | Line under the summary heading |
+| `rules.by.check` | Checked | Done-by pill and card: an engine check stops a draft |
+| `rules.by.check.cap` | stopped automatically if a draft breaks it | Summary card caption |
+| `rules.by.prompt` | In the prompt | Done-by pill and card: the request is in what Gemini reads |
+| `rules.by.prompt.cap` | written into what Gemini reads for every draft | Summary card caption |
+| `rules.by.none` | Not yet | Done-by pill and card: not carried out yet |
+| `rules.by.none.cap` | not carried out yet: the reason is on each one | Summary card caption |
+| `rules.by.warn` | Also warns | Mark beside a request a warn-only check flags |
+| `rules.by.warn.tip` | An automatic check flags it but never stops the draft | Tooltip of the Also warns mark |
+| `rules.filter.all` | Showing all {n}. | Line under the summary, no filter |
+| `rules.filter.some` | Showing {k} of {n}. | Line under the summary, one card pressed |
+| `rules.filter.clear` | Show all | Button that clears the filter |
+| `rules.sections` | Sections | Label of the section list |
+| `rules.how.prompt` | In the rules Gemini reads | How a request in the prompt is carried out |
+| `rules.how.check.meta` | Checked on every draft: a longer text is stopped | How the meta length requests are carried out |
+| `rules.how.check.rule` | An automatic check stops a draft that breaks it | How a request an engine check enforces is carried out |
+| `rules.how.builtin.page` | Built in: Translate page works on one page | How the one-page-per-delivery request is carried out |
+| `rules.how.builtin.structure` | Built in: one translation per English text, in the same order | How the structure request is carried out |
+| `rules.how.builtin.export` | Built in: Export writes the Weglot CSV | How the CSV request is carried out |
+| `rules.how.none.slug` | The desk does not translate page addresses yet | Why a slug request is not carried out |
+| `rules.how.none.glossary` | The course and housing glossary file is not loaded yet | Why the glossary request is not carried out |
+| `rules.how.none.flag` | Gemini cannot leave a note for the editor yet | Why a flag request is not carried out |
+| `rules.how.none.keywords` | No keyword list for this language yet | Why the keyword-placement request is not carried out |
+| `rules.how.none.schema` | The desk translates the visible text only | Why the machine-readable currency request is not carried out |
+| `rules.tone` | Your tone examples | Heading of the tone examples |
+| `rules.tone.good` | Good | Label of a good tone example |
+| `rules.tone.bad` | Bad — do not do this | Label of a bad tone example |
+| `rules.tone.why` | Why it fails: | Lead of the reason under a bad example |
+| `rules.tone.drift` | Watch for: | Lead of the drift line |
 | `rules.glossary` | Glossary | Heading of the glossary |
 | `rules.glossary.en` | English | Glossary column |
 | `rules.glossary.keep` | Don't translate | Glossary column |

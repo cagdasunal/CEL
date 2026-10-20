@@ -1,0 +1,715 @@
+{
+ "langs": {
+  "ar": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "de": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "9dfd7884": [
+    "check",
+    "rule"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "b26a08c3": [
+    "check",
+    "rule"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "es": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "728e7150": [
+    "check",
+    "rule"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "cd6d6bd8": [
+    "check",
+    "rule"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "fr": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "53ef644e": [
+    "prompt",
+    "",
+    "warn"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "b5b56641": [
+    "prompt",
+    "",
+    "warn"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d1bcfc5f": [
+    "check",
+    "rule"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "it": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "925c3a4b": [
+    "check",
+    "rule"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "ja": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "4474d579": [
+    "check",
+    "rule"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "ko": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  },
+  "pt": {
+   "01b243f0": [
+    "none",
+    "flag"
+   ],
+   "022f0452": [
+    "check",
+    "rule"
+   ],
+   "08091d7a": [
+    "check",
+    "meta"
+   ],
+   "094f043f": [
+    "none",
+    "slug"
+   ],
+   "195ed942": [
+    "none",
+    "flag"
+   ],
+   "3851a600": [
+    "check",
+    "rule"
+   ],
+   "396d941d": [
+    "check",
+    "rule"
+   ],
+   "41477099": [
+    "none",
+    "glossary"
+   ],
+   "5c3cc9b6": [
+    "none",
+    "flag"
+   ],
+   "5d70c5b4": [
+    "none",
+    "flag"
+   ],
+   "673c6d91": [
+    "none",
+    "flag"
+   ],
+   "6a26d03d": [
+    "none",
+    "flag"
+   ],
+   "72530868": [
+    "none",
+    "slug"
+   ],
+   "759716d8": [
+    "check",
+    "builtin.export"
+   ],
+   "8207ba53": [
+    "check",
+    "builtin.structure"
+   ],
+   "886d2516": [
+    "check",
+    "builtin.page"
+   ],
+   "9cdd8a11": [
+    "none",
+    "keywords"
+   ],
+   "a80610f5": [
+    "none",
+    "flag"
+   ],
+   "bf676ce6": [
+    "none",
+    "flag"
+   ],
+   "d5a0b1ae": [
+    "none",
+    "schema"
+   ],
+   "d7caada9": [
+    "none",
+    "flag"
+   ],
+   "fea0ebde": [
+    "check",
+    "meta"
+   ]
+  }
+ },
+ "sections": [
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "12"
+ ],
+ "v": 1
+}
