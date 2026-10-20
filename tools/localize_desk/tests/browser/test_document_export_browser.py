@@ -587,7 +587,7 @@ def test_every_text_has_a_retranslate_button_first_in_its_toolbar_also_on_the_ne
 
 
 def test_the_export_window_opens_with_only_the_open_page_and_language_ticked(browser):
-    with doc(browser) as e:
+    with doc(browser, seed=lambda env: seed_cells(env, ALL_CELLS)) as e:        # CEL-037: no cell is greyed
         p = e.page
         modal = p.locator("#ex-modal")
         expect(modal).to_be_hidden()
@@ -646,14 +646,14 @@ def test_the_all_box_is_input_ex_all(browser):
 
 
 def test_the_window_opened_from_another_page_ticks_that_page_and_language(browser):
-    with doc(browser, lang="fr", key="vancouver") as e:
+    with doc(browser, lang="fr", key="vancouver", seed=lambda env: seed_cells(env, ALL_CELLS)) as e:
         open_export(e.page)
         assert ticked(e.page) == {("vancouver", "fr")}
         expect(e.page.locator("#ex-count")).to_have_text(C.tn("export.count", 1))
 
 
 def test_the_row_column_and_all_boxes_tick_the_right_cells(browser):
-    with doc(browser) as e:
+    with doc(browser, seed=lambda env: seed_cells(env, ALL_CELLS)) as e:        # CEL-037: no cell is greyed
         p = e.page
         open_export(p)
         row = lambda k: f'#ex-grid input[data-row="{k}"]'   # noqa: E731
@@ -705,7 +705,7 @@ def test_the_row_column_and_all_boxes_tick_the_right_cells(browser):
 
 
 def test_export_is_off_with_nothing_ticked_and_the_count_follows_the_boxes(browser):
-    with doc(browser) as e:
+    with doc(browser, seed=lambda env: seed_cells(env, ALL_CELLS)) as e:        # CEL-037: no cell is greyed
         p = e.page
         open_export(p)
         ex_box(p, PAGE_KEY, LANG).uncheck()
@@ -725,6 +725,99 @@ def test_export_is_off_with_nothing_ticked_and_the_count_follows_the_boxes(brows
         assert ticked(p) == set()
         expect(p.locator("#ex-go")).to_be_disabled()
         expect(p.locator("#ex-count")).to_have_text(C.t("export.count.none"))
+
+
+def seed_cells(env, cells):
+    """One Gemini draft in each (page, language) of `cells`: those cells have something to export, every
+    other one has nothing (the grid says "not translated" and the picker greys it, CEL-037)."""
+    for key, lang in cells:
+        uid = next(b["id"] for b in _stage_data(key)["blocks"] if not b["lock"])
+        draft(env.store, uid, "Entwurf", lang=lang)
+
+
+HAVE = {(PAGE_KEY, LANG), ("vancouver", "fr"), ("vs-toronto", "ko")}
+ALL_CELLS = {(key, lang) for key in PAGES for lang in LANGS}
+
+
+def translating(env, key, lang):
+    """A translate-page job for this page and language is out: the grid shows the cell as "translating", which
+    is not "nothing" (the picker keeps it pickable, CEL-037), though it has no draft yet."""
+    code, body = env.store.handle("desk-job-start", {"locale": lang, "kind": "translate-page",
+                                                     "ref": {"page": key, "keepEdited": True}}, H.REVIEWER)
+    assert code == 200, body
+
+
+def grid_status(page, key, lang):
+    return cell(page, key, lang).get_attribute("data-status")
+
+
+def test_a_page_in_a_language_with_nothing_to_export_is_greyed_in_the_picker(browser):
+    """CEL-037 (ux-pass #3): the grid already knows which page x language has no draft and no edit; the picker
+    shows those boxes disabled instead of letting the client press Export and read "Nothing to export yet"."""
+    with doc(browser, seed=lambda env: seed_cells(env, HAVE)) as e:
+        p = e.page
+        open_export(p)
+        for key in PAGES:
+            for lang in LANGS:
+                status = grid_status(p, key, lang)
+                if (key, lang) in HAVE:
+                    assert status != "none", (key, lang, status)
+                    expect(ex_box(p, key, lang)).to_be_enabled()
+                else:
+                    assert status == "none", (key, lang, status)
+                    expect(ex_box(p, key, lang)).to_be_disabled()
+        # a greyed box keeps the name a screen reader says; nothing new is written on the window
+        expect(ex_box(p, "how-long-to-learn-english", "ja")).to_have_attribute(
+            "aria-label", C.t("export.aria.cell", page=C.t("page.how-long-to-learn-english"), language=C.t("lang.ja")))
+        assert ticked(p) == {(PAGE_KEY, LANG)}
+        expect(p.locator("#ex-go")).to_be_enabled()
+
+
+def test_the_row_column_and_all_boxes_tick_only_the_cells_that_are_not_greyed(browser):
+    with doc(browser, seed=lambda env: seed_cells(env, HAVE)) as e:
+        p = e.page
+        open_export(p)
+        row = lambda k: f'#ex-grid input[data-row="{k}"]'   # noqa: E731
+        col = lambda k: f'#ex-grid input[data-col="{k}"]'   # noqa: E731
+        # a page or a language with nothing to export anywhere has its own box greyed too
+        expect(p.locator(row("how-long-to-learn-english"))).to_be_disabled()
+        expect(p.locator(col("es"))).to_be_disabled()
+        expect(p.locator(row("vancouver"))).to_be_enabled()
+        expect(p.locator(col("fr"))).to_be_enabled()
+        # a row: only its cell that has a translation
+        p.locator(row("vancouver")).check()
+        assert ticked(p) == {(PAGE_KEY, LANG), ("vancouver", "fr")}
+        assert tri(p, row("vancouver")) == (True, False)          # all of what could be ticked
+        expect(p.locator("#ex-count")).to_have_text(C.tn("export.count", 2))
+        # a language
+        p.locator(col("ko")).check()
+        assert ticked(p) == {(PAGE_KEY, LANG), ("vancouver", "fr"), ("vs-toronto", "ko")}
+        assert tri(p, col("ko")) == (True, False)
+        # everything: exactly the three cells, and the all box is ticked, not in between
+        p.locator(ALL).uncheck()
+        assert ticked(p) == set()
+        p.locator(ALL).check()
+        assert ticked(p) == HAVE
+        assert tri(p, ALL) == (True, False)
+        expect(p.locator("#ex-count")).to_have_text(C.tn("export.count", len(HAVE)))
+        ex_box(p, "vancouver", "fr").uncheck()
+        assert tri(p, ALL) == (False, True)
+
+
+def test_when_the_open_page_has_no_translation_in_that_language_nothing_is_ticked_and_export_is_off(browser):
+    """The open cell is greyed like any other: the window opens with nothing ticked rather than with a box
+    nobody can untick that leads to "Nothing to export yet"."""
+    with doc(browser, seed=lambda env: seed_cells(env, [("vancouver", "fr")])) as e:
+        p = e.page
+        open_export(p)
+        assert grid_status(p, PAGE_KEY, LANG) == "none"
+        expect(ex_box(p, PAGE_KEY, LANG)).to_be_disabled()
+        assert ticked(p) == set()
+        expect(p.locator("#ex-go")).to_be_disabled()
+        expect(p.locator("#ex-count")).to_have_text(C.t("export.count.none"))
+        p.locator(ALL).check()                                    # only what can be exported
+        assert ticked(p) == {("vancouver", "fr")}
+        expect(p.locator("#ex-go")).to_be_enabled()
 
 
 @pytest.mark.parametrize("how", ["cancel", "escape"])
@@ -1105,13 +1198,17 @@ def test_a_run_with_one_file_that_failed_and_one_with_nothing_zips_only_the_two_
     c1, c2 = early(PAGE_KEY, "de", 2)
     f1, f2 = early(PAGE_KEY, "fr", 2)
     h1, h2 = early("how-long-to-learn-english", "fr", 2)
-    order = [("vancouver", "de"), (PAGE_KEY, "de"), (PAGE_KEY, "fr"), ("how-long-to-learn-english", "fr")]
+    # Vancouver in Spanish is the file with nothing in it: a greyed cell cannot be picked (CEL-037), so it is a
+    # cell whose translate job is out and has written nothing yet. Spanish has no other file, so that job
+    # (one open job per language) does not hold up the German and French exports.
+    order = [("vancouver", "es"), (PAGE_KEY, "de"), (PAGE_KEY, "fr"), ("how-long-to-learn-english", "fr")]
     spy = Spy()
 
     def seed(env):
         for lang, bs in (("de", (c1, c2)), ("fr", (f1, f2, h1, h2))):
             for i, b in enumerate(bs):
                 draft(env.store, b["id"], f"Entwurf {lang} {i}", lang=lang)
+        translating(env, "vancouver", "es")
         spy.attach(env.store)
 
     csv_c, csv_h = make_csv("de", PAGE_KEY), make_csv("fr", "how-long-to-learn-english")
@@ -1124,8 +1221,8 @@ def test_a_run_with_one_file_that_failed_and_one_with_nothing_zips_only_the_two_
             (("how-long-to-learn-english", "fr"), ("done", csv_h, 2, [], [h1["id"], h2["id"]])),
         ]
         for k, ((key, lang), step) in enumerate(steps):
-            if k == 0:                                                         # Vancouver in German has nothing at all
-                until(lambda: ex_file(p, "vancouver", "de").get_attribute("data-state") == "nothing", 10.0,
+            if k == 0:                                                         # Vancouver in Spanish has nothing yet
+                until(lambda: ex_file(p, "vancouver", "es").get_attribute("data-state") == "nothing", 10.0,
                       what="the empty file to be skipped")
             later = [x for x, _ in steps[k + 1:]]
             if k == len(steps) - 1:
@@ -1134,9 +1231,10 @@ def test_a_run_with_one_file_that_failed_and_one_with_nothing_zips_only_the_two_
             else:
                 serve_file(e, spy, key, lang, step, k=k, later=later)
         assert_one_job_at_a_time(spy)
-        assert not [j for j in e.store.jobs.values() if json.loads(j["ref"])["page"] == "vancouver"]
-        expect(ex_file(p, "vancouver", "de")).to_have_attribute("data-state", "nothing")
-        expect(ex_file(p, "vancouver", "de")).to_contain_text(C.t("export.step.nothing"))
+        assert not [j for j in e.store.jobs.values()
+                    if j["kind"] == "export" and json.loads(j["ref"])["page"] == "vancouver"]
+        expect(ex_file(p, "vancouver", "es")).to_have_attribute("data-state", "nothing")
+        expect(ex_file(p, "vancouver", "es")).to_contain_text(C.t("export.step.nothing"))
         failed = ex_file(p, PAGE_KEY, "fr")
         expect(failed).to_have_attribute("data-state", "failed")
         expect(failed).to_contain_text(C.t("export.step.failed", reason=C.t("job.failed.storage-error")))
@@ -1247,8 +1345,15 @@ def test_a_code_nobody_knows_gets_the_general_sentence(browser):
 
 
 def test_a_page_in_a_language_with_nothing_in_it_starts_no_job(browser):
+    """A cell with no draft and no edit is greyed in the picker (CEL-037), so this reaches the same answer from a
+    cell the picker still allows: a page whose translate job is out and has written nothing yet."""
     spy = Spy()
-    with doc(browser, seed=lambda env: spy.attach(env.store)) as e:
+
+    def seed(env):
+        translating(env, PAGE_KEY, LANG)
+        spy.attach(env.store)
+
+    with doc(browser, seed=seed) as e:
         p = e.page
         downloads = []
         p.on("download", lambda d: downloads.append(d))
@@ -1259,7 +1364,7 @@ def test_a_page_in_a_language_with_nothing_in_it_starts_no_job(browser):
         expect(p.locator("#ex-result")).to_be_visible()
         expect(p.locator("#ex-download")).to_be_hidden()
         time.sleep(0.5)
-        assert not e.store.jobs and spy.calls("desk-job-start", code=None) == []
+        assert not jobs_of(e.store, "export") and spy.calls("desk-job-start", code=None) == []
         assert spy.calls("desk-write") == [], "something was written for a page with nothing in it"
         assert downloads == []
         p.locator("#ex-close").click()

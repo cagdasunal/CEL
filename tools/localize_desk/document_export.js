@@ -238,28 +238,43 @@
   ex.root.classList.add('ex-modal');
 
   const sel = {};                                 // "page|lang" -> true
+  const none = {};                                // "page|lang" -> true: nothing to export there (greyed)
   const boxes = { cell: {}, row: {}, col: {}, all: null };
+  // A page in a language with no draft and no edit has nothing to export: the grid already says so
+  // (paintGrid: data-status "none"). "unknown" (language not read yet), "translating" and "queued" are
+  // not "nothing", so those stay pickable.
+  function noneCell(p, l) {
+    const c = document.querySelector('.doc-cell[data-page="' + p + '"][data-lang="' + l + '"]');
+    return !!c && c.getAttribute('data-status') === 'none';
+  }
+  function usable(p, l) { return !none[p + '|' + l]; }
+  function setCell(p, l, on) { if (usable(p, l)) sel[p + '|' + l] = on; }
   function pickedCells() {
     const out = [];
-    PAGES.forEach(function (p) { LANGS.forEach(function (l) { if (sel[p + '|' + l]) out.push({ page: p, lang: l }); }); });
+    PAGES.forEach(function (p) { LANGS.forEach(function (l) { if (sel[p + '|' + l] && usable(p, l)) out.push({ page: p, lang: l }); }); });
     return out;
   }
   function syncSelection() {
     const n = pickedCells().length;
     PAGES.forEach(function (p) {
-      const on = LANGS.filter(function (l) { return sel[p + '|' + l]; }).length;
+      const free = LANGS.filter(function (l) { return usable(p, l); });
+      const on = free.filter(function (l) { return sel[p + '|' + l]; }).length;
       LANGS.forEach(function (l) { boxes.cell[p + '|' + l].checked = !!sel[p + '|' + l]; });
-      boxes.row[p].checked = on === LANGS.length;
-      boxes.row[p].indeterminate = on > 0 && on < LANGS.length;
+      boxes.row[p].checked = free.length > 0 && on === free.length;
+      boxes.row[p].indeterminate = on > 0 && on < free.length;
+      boxes.row[p].disabled = !free.length;
     });
     LANGS.forEach(function (l) {
-      const on = PAGES.filter(function (p) { return sel[p + '|' + l]; }).length;
-      boxes.col[l].checked = on === PAGES.length;
-      boxes.col[l].indeterminate = on > 0 && on < PAGES.length;
+      const free = PAGES.filter(function (p) { return usable(p, l); });
+      const on = free.filter(function (p) { return sel[p + '|' + l]; }).length;
+      boxes.col[l].checked = free.length > 0 && on === free.length;
+      boxes.col[l].indeterminate = on > 0 && on < free.length;
+      boxes.col[l].disabled = !free.length;
     });
-    const total = PAGES.length * LANGS.length;
-    boxes.all.checked = n === total;
+    const total = PAGES.reduce(function (a, p) { return a + LANGS.filter(function (l) { return usable(p, l); }).length; }, 0);
+    boxes.all.checked = total > 0 && n === total;
     boxes.all.indeterminate = n > 0 && n < total;
+    boxes.all.disabled = !total;
     exCount.textContent = n ? tn('export.count', n) : t('export.count.none');
     exGo.disabled = n === 0;
   }
@@ -271,6 +286,8 @@
     return i;
   }
   function buildSelect() {
+    PAGES.forEach(function (p) { LANGS.forEach(function (l) { none[p + '|' + l] = noneCell(p, l); }); });
+    Object.keys(sel).forEach(function (k) { if (none[k]) delete sel[k]; });
     exSelect.textContent = '';
     const wrap = h('div', 'scroll-x');
     const table = h('table', 'ex-grid');
@@ -294,13 +311,13 @@
     const all = document.createElement('tr');
     all.appendChild(h('th', 'ex-page', t('export.all.pages'))).setAttribute('scope', 'row');
     boxes.all = pickBox(t('export.aria.all'), function (on) {
-      PAGES.forEach(function (p) { LANGS.forEach(function (l) { sel[p + '|' + l] = on; }); });
+      PAGES.forEach(function (p) { LANGS.forEach(function (l) { setCell(p, l, on); }); });
     });
     boxes.all.id = 'ex-all';
     all.appendChild(h('td', 'ex-check')).appendChild(boxes.all);
     LANGS.forEach(function (l) {
       boxes.col[l] = pickBox(t('export.aria.col', { language: t('lang.' + l) }), function (on) {
-        PAGES.forEach(function (p) { sel[p + '|' + l] = on; });
+        PAGES.forEach(function (p) { setCell(p, l, on); });
       });
       boxes.col[l].setAttribute('data-col', l);
       all.appendChild(h('td', 'ex-check')).appendChild(boxes.col[l]);
@@ -311,14 +328,15 @@
       tr.setAttribute('data-page', p);
       tr.appendChild(h('th', 'ex-page', t('page.' + p))).setAttribute('scope', 'row');
       boxes.row[p] = pickBox(t('export.aria.row', { page: t('page.' + p) }), function (on) {
-        LANGS.forEach(function (l) { sel[p + '|' + l] = on; });
+        LANGS.forEach(function (l) { setCell(p, l, on); });
       });
       boxes.row[p].setAttribute('data-row', p);
       tr.appendChild(h('td', 'ex-check')).appendChild(boxes.row[p]);
       LANGS.forEach(function (l) {
         const c = pickBox(t('export.aria.cell', { page: t('page.' + p), language: t('lang.' + l) }), function (on) {
-          sel[p + '|' + l] = on;
+          setCell(p, l, on);
         });
+        c.disabled = !usable(p, l);
         c.setAttribute('data-page', p);
         c.setAttribute('data-lang', l);
         boxes.cell[p + '|' + l] = c;

@@ -840,9 +840,14 @@
     if (focusBack && focusBack.focus) focusBack.focus();
     focusBack = null;
   }
+  // "Oct 19, 23:02": the reader's own time zone, the month spelled (a US "10/19" reads as another day to
+  // most of the team), the 24-hour clock. A date from an earlier year carries its year.
   function stamp(iso) {
     const d = new Date(iso);
-    return isNaN(d) ? '' : d.toLocaleString();
+    if (isNaN(d)) return '';
+    const o = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+    if (d.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+    return new Intl.DateTimeFormat('en-US', o).format(d);
   }
   function versionRow(uid, text, meta, onRestore, version) {
     const li = h('li', 'doc-version');
@@ -1038,7 +1043,14 @@
       // A section is what the unit's own `section` names (the page's h3 section titles; the h1 and the
       // small h2 taglines carry one too): a new entry where it changes, at the block that starts it.
       const sec = plain(d.sec || '');
-      if (sec && (!cur || cur.sec !== sec)) { cur = { target: d.id, name: sec, sec: sec, ids: [] }; outline.push(cur); }
+      if (sec && (!cur || cur.sec !== sec)) {
+        // A small h2 tagline that stands alone ("Our Campus" over a section title) is not a section of its
+        // own: it joins the section that follows, which keeps its title, and the entry jumps to the tagline.
+        const tagline = cur && cur.n === 1 && cur.kind === 'h2' ? outline.pop() : null;
+        cur = { target: tagline ? tagline.target : d.id, name: sec, sec: sec, ids: tagline ? tagline.ids : [], n: tagline ? tagline.n : 0, kind: d.b };
+        outline.push(cur);
+      }
+      if (cur) cur.n++;
       if (cur && !d.lock) cur.ids.push(d.id);
     });
     if (search.target) outline.unshift(search);

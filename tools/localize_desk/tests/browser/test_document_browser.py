@@ -335,7 +335,10 @@ def sections(data: dict) -> list[dict]:
     """The outline (CEL-031): Search result, then one entry per SECTION. A section is what a block's own `sec`
     field (plain text, in the page JSON) names: a new entry starts where `sec` changes, at the block that
     starts it, named by that `sec`; a block with an empty `sec` starts none and belongs to the entry before
-    it. n counts the editable texts from that block to the next entry's (the first block included)."""
+    it. n counts the editable texts from that block to the next entry's (the first block included).
+
+    CEL-037: a section made of ONE h2 block (a small tagline such as "Our Campus" above a section title) is
+    not an entry of its own: the section after it takes its text and its first block, and keeps its own title."""
     out = [{"name": C.t("doc.outline.search"), "target": None, "ids": []}]
     cur = None
     for b in data["blocks"]:
@@ -346,24 +349,58 @@ def sections(data: dict) -> list[dict]:
             continue
         sec = plain(b.get("sec") or "")
         if sec and (cur is None or cur["sec"] != sec):
-            cur = {"name": sec, "sec": sec, "target": b["id"], "ids": []}
+            tagline = out.pop() if cur is not None and cur["blocks"] == 1 and cur["kind"] == "h2" else None
+            cur = {"name": sec, "sec": sec, "target": tagline["target"] if tagline else b["id"],
+                   "ids": tagline["ids"] if tagline else [], "blocks": tagline["blocks"] if tagline else 0,
+                   "kind": b["b"]}
             out.append(cur)
-        if cur is not None and not b["lock"]:
-            cur["ids"].append(b["id"])
+        if cur is not None:
+            cur["blocks"] += 1
+            if not b["lock"]:
+                cur["ids"].append(b["id"])
     return out
 
 
 def section_names(data: dict) -> list[str]:
     """The distinct consecutive `sec` values of the page's blocks (meta texts left out), read straight from
-    the data and independently of `sections()`: what the rail must name, after 'Search result'."""
+    the data and independently of `sections()`: what the rail must name, after 'Search result'. A lone h2
+    tagline is not named (CEL-037): see `section_runs()`."""
+    runs = section_runs(data)
     names: list[str] = []
+    joined = False                                   # the run before this one was folded into it
+    for i, run in enumerate(runs):
+        lone = len(run) == 1 and run[0]["b"] == "h2" and not joined and i < len(runs) - 1
+        if not lone:
+            names.append(plain(run[0].get("sec") or ""))
+        joined = lone
+    return names
+
+
+def section_runs(data: dict) -> list[list[dict]]:
+    """The page's blocks cut where `sec` changes (meta texts left out; a block with no `sec` stays with the
+    run before it), read straight from the data."""
+    runs: list[list[dict]] = []
     for b in data["blocks"]:
         sec = plain(b.get("sec") or "")
-        if b["b"] in ("meta-title", "meta-description") or not sec:
+        if b["b"] in ("meta-title", "meta-description"):
             continue
-        if not names or names[-1] != sec:
-            names.append(sec)
-    return names
+        if runs and (not sec or plain(runs[-1][0].get("sec") or "") == sec):
+            runs[-1].append(b)
+        elif sec:
+            runs.append([b])
+    return runs
+
+
+def lone_taglines(data: dict) -> list[tuple[dict, str]]:
+    """(the tagline block, the title of the section after it) for each section that is one h2 and nothing
+    else, as the outline folds them (CEL-037)."""
+    runs, out, joined = section_runs(data), [], False
+    for i, run in enumerate(runs[:-1]):
+        lone = len(run) == 1 and run[0]["b"] == "h2" and not joined
+        if lone:
+            out.append((run[0], plain(runs[i + 1][0].get("sec") or "")))
+        joined = lone
+    return out
 
 
 def cell(page, key, lang):
@@ -1394,7 +1431,9 @@ def test_at_1024_the_rail_is_hidden_and_the_sections_select_takes_over(browser):
 @pytest.mark.parametrize("key", PAGES)
 def test_the_outline_of_every_page_has_one_entry_per_section(browser, key):
     """CEL-031: the rail names every section the page's blocks carry in `sec` (a new entry where it changes),
-    not only the h1/h2 headings: a page with 12 sections shows 12 entries after 'Search result' (13)."""
+    not only the h1/h2 headings: a page with 12 sections shows 12 entries after 'Search result' (13).
+    CEL-037: except a section that is one small h2 tagline and nothing else, which joins the section after
+    it (`section_names()` leaves those out)."""
     data = _stage_data(key)
     names = section_names(data)
     assert names, "the page data has no section (`sec`) at all"
@@ -1408,6 +1447,59 @@ def test_the_outline_of_every_page_has_one_entry_per_section(browser, key):
         targets = e.page.eval_on_selector_all("#doc-outline-list .doc-outline-item",
                                               "els => els.map(x => x.dataset.target)")
         assert targets == first_blocks, "an entry must lead to the FIRST block of its section"
+
+
+@pytest.mark.parametrize("key", PAGES)
+def test_a_lone_tagline_joins_the_section_after_it_and_the_entry_leads_to_the_tagline(browser, key):
+    """CEL-037 (ux-pass #5): "Our Campus" (one h2 text) is not an entry of its own above the section it
+    introduces; the entry that follows keeps its title, counts the tagline's text too and jumps to the tagline."""
+    data = _stage_data(key)
+    pairs = lone_taglines(data)
+    assert pairs, "the page has no lone h2 tagline: this test would prove nothing"
+    want = {s["target"]: s for s in sections(data)}
+    with doc(browser, key=key) as e:
+        names = [" ".join(g.split()) for g in e.page.locator("#doc-outline-list .doc-outline-name").all_text_contents()]
+        for tag, following in pairs:
+            title = " ".join(plain(tag["sec"]).split())
+            if title != " ".join(following.split()):
+                assert title not in names, f"{title!r} is still an entry of its own"
+            item = e.page.locator(f'#doc-outline-list .doc-outline-item[data-target="{tag["id"]}"]')
+            expect(item).to_have_count(1)                        # the entry leads to the tagline, the first block
+            expect(item.locator(".doc-outline-name")).to_have_text(" ".join(following.split()))
+            expect(item.locator(".doc-outline-count")).to_have_text(
+                C.tn("doc.outline.count", len(want[tag["id"]]["ids"]), edited=0))
+            assert tag["id"] in want[tag["id"]]["ids"] or tag["lock"], "the tagline's text is counted in the entry"
+        # the rail and the select list the same entries
+        assert len(names) == len(section_names(data)) + 1
+        tag = pairs[-1][0]
+        e.page.locator(f'.doc-outline-item[data-target="{tag["id"]}"]').click()
+        top = _settle_at_top(e.page, tag["id"])
+        assert -2 <= top < 200, top                              # the tagline, not the title below it, is at the top
+        current = e.page.locator('#doc-outline-list [aria-current="true"]')
+        assert current.count() == 1 and current.get_attribute("data-target") == tag["id"]
+
+
+YEAR = datetime.now(timezone.utc).year
+
+
+@pytest.mark.parametrize("zone, arrived, want", [
+    ("America/Vancouver", f"{YEAR}-01-15T20:30:00.000Z", "Jan 15, 12:30"),
+    ("Europe/Istanbul", f"{YEAR}-01-15T20:30:00.000Z", "Jan 15, 23:30"),
+    ("America/Vancouver", f"{YEAR}-07-04T14:05:00.000Z", "Jul 4, 07:05"),                 # two-digit hour, no AM/PM
+    ("America/Vancouver", f"{YEAR - 1}-03-02T09:05:00.000Z", f"Mar 2, {YEAR - 1}, 01:05"),   # an earlier year says so
+])
+def test_history_dates_read_like_oct_19_23_02_in_the_readers_own_time_zone(browser, zone, arrived, want):
+    """CEL-037 (ux-pass #9): the draft card reads "Oct 19, 23:02" (month spelled, 24-hour, the browser's own
+    time zone), not the US "10/19/2026, 11:02:18 PM"."""
+    (a,) = pick(_stage_data(), 1)
+    with doc(browser, seed=lambda env: draft(env.store, a, "Gemini Entwurf", at=arrived)) as e:
+        e.page.context.new_cdp_session(e.page).send("Emulation.setTimezoneOverride", {"timezoneId": zone})
+        tgt(e.page, a).click()
+        blk(e.page, a).locator(".doc-history-btn").click()
+        meta = e.page.locator("#doc-history-list .doc-version-meta").first
+        expect(meta).to_contain_text(C.t("doc.history.draft"))
+        got = meta.inner_text().split(" · ")[-1].strip()
+        assert got == want, got
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
