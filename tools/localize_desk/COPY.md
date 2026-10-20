@@ -120,33 +120,33 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `refusal.SUMMARY-OWNED` | The page summary writes this text, so it can't be changed from here. | |
 | `refusal.MARKUP-UNPROVEN` | It has formatting the import can't handle safely yet, so it can't be changed from here for now. | |
 | `refusal.LINK-ONLY-UNPROVEN` | It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now. | |
-| `refusal.CLIENT-RULE` | It breaks one of the client's style rules. Edit it, then approve it again; if you can't see why, let the team know. | |
-| `refusal.NUMBER-PARITY` | Its numbers don't match the English. Check the prices, dates and amounts, then approve it again. | |
-| `refusal.META-BUDGET` | Too long for a search result. Shorten it, then approve it again. | |
-| `refusal.POISON` | It is far longer than the English and may not be its translation. Check it, then approve it again. | |
-| `refusal.EMPTY-TARGET` | The translation is empty. Write one, or undo the approval. | |
-| `refusal.CSV-INJECTION` | It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then approve it again. | |
-| `refusal.PLACEHOLDER-SET` | It has a link the English doesn't, or is missing one. Edit it so it has the same links, then approve it again. | |
-| `refusal.PLACEHOLDER-ORDER` | Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then approve it again. | |
-| `refusal.PLACEHOLDER-BALANCE` | One of its links is broken. Edit it, then approve it again. | |
-| `refusal.OG-TWIN-MISSING` | A page title goes with the title shown when the page is shared. Approve both, with the same words. | |
-| `refusal.OG-TWIN-DIVERGED` | A page title and the title shown when the page is shared must have the same words. Make them match, then approve both again. | |
+| `refusal.CLIENT-RULE` | It breaks one of the client's style rules. Edit it, then export it again; if you can't see why, let the team know. | |
+| `refusal.NUMBER-PARITY` | Its numbers don't match the English. Check the prices, dates and amounts, then export it again. | |
+| `refusal.META-BUDGET` | Too long for a search result. Shorten it, then export it again. | |
+| `refusal.POISON` | It is far longer than the English and may not be its translation. Check it, then export it again. | |
+| `refusal.EMPTY-TARGET` | The translation is empty. Write one, or undo your edit. | |
+| `refusal.CSV-INJECTION` | It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then export it again. | |
+| `refusal.PLACEHOLDER-SET` | It has a link the English doesn't, or is missing one. Edit it so it has the same links, then export it again. | |
+| `refusal.PLACEHOLDER-ORDER` | Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then export it again. | |
+| `refusal.PLACEHOLDER-BALANCE` | One of its links is broken. Edit it, then export it again. | |
+| `refusal.OG-TWIN-MISSING` | A page title goes with the title shown when the page is shared. Export both, with the same words. | |
+| `refusal.OG-TWIN-DIVERGED` | A page title and the title shown when the page is shared must have the same words. Make them match, then export both again. | |
 | `refusal.EXPORT-PRESENCE` | Its English is no longer on the page, so there is nothing to translate. | |
 | `refusal.UNIT-RETIRED` | Its English is no longer on the page, so there is nothing to translate. | |
-| `refusal.UNIT-MISMATCH` | The English changed after it was approved. Review it again. | |
-| `refusal.ENGLISH-DRIFT` | The English changed after it was approved. Review it again. | |
-| `refusal.UNSIGNED` | The approval wasn't saved through the desk. Approve it again. | |
-| `refusal.BAD-SIGNATURE` | The approval doesn't match what was saved. Approve it again. | |
-| `refusal.UNREGISTERED` | The approval doesn't say who made it. Approve it again. | |
-| `refusal.OVERRIDE-UNNAMED` | It replaces a change made on the website, and the approval doesn't say who made it. Approve it again. | |
-| `refusal.DUPLICATE` | The same text was approved twice with different words. Let the team know. | |
-| `refusal.LANG-MISMATCH` | It was approved in another language's list. Let the team know. | |
+| `refusal.UNIT-MISMATCH` | The English changed after it was exported. Review it again. | |
+| `refusal.ENGLISH-DRIFT` | The English changed after it was exported. Review it again. | |
+| `refusal.UNSIGNED` | What was exported wasn't saved through the desk. Export it again. | |
+| `refusal.BAD-SIGNATURE` | What was exported doesn't match what was saved. Export it again. | |
+| `refusal.UNREGISTERED` | What was exported doesn't say who made it. Export it again. | |
+| `refusal.OVERRIDE-UNNAMED` | It replaces a change made on the website, and what was exported doesn't say who made it. Export it again. | |
+| `refusal.DUPLICATE` | The same text was exported twice with different words. Let the team know. | |
+| `refusal.LANG-MISMATCH` | It was exported in another language's list. Let the team know. | |
 | `refusal.BAD-ROLE` | This kind of text can't be imported. Let the team know. | |
 | `refusal.CLIENT-RULE-WARN` | It went in the file, but it may break one of the client's style rules. Let the team know. | Same place, per text that went in |
 | `refusal.PLACEHOLDER-COUNT-WARN` | It went in the file, but it uses a link more or fewer times than the English. Check it on the website. | |
 | `refusal.CSV-INJECTION-WARN` | It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet. | |
 | `refusal.DEDUPED` | Some texts are on more than one page; each went in the file once. | Same place, once for the file |
-| `refusal.NO-VERIFIER` | The approvals couldn't be checked, so no file was made. Let the team know. | Same place, instead of the file |
+| `refusal.NO-VERIFIER` | The exported texts couldn't be checked, so no file was made. Let the team know. | Same place, instead of the file |
 | `refusal.STALE-MANIFEST` | The texts are more than a week old, so no file was made. Let the team know. | |
 | `refusal.TOO-LARGE` | The file would be too large for Weglot, so no file was made. Let the team know. | |
 | `refusal.BOM` | The file came out in the wrong format, so no file was made. Let the team know. | |
@@ -154,11 +154,11 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `refusal.NOT-CONVERGED` | The file couldn't be put together, so no file was made. Let the team know. | |
 | `refusal.EXCEPTION-UNUSED` | An exception the team named matched no text, so no file was made. Let the team know. | |
 | `refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE` | Already on the website: nothing to import. | Same place, per text not in the file |
-| `refusal.EXPORT-SKIP-NOT-APPROVED` | Not approved, so it isn't in the file. | |
+| `refusal.EXPORT-SKIP-NOT-APPROVED` | Not exported, so it isn't in the file. | |
 | `refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE` | Its English is no longer on the page, so there is nothing to translate. | |
-| `refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL` | The translation on the website changed after it was approved. Review it again. | |
-| `refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING` | The approval doesn't record which wording it was given for. Approve it again. | |
-| `refusal.EXPORT-SKIP-NOTHING-TO-SAY` | The approved wording is empty. Write one, or undo the approval. | |
+| `refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL` | The translation on the website changed after it was exported. Review it again. | |
+| `refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING` | What was exported doesn't record which wording it was given for. Export it again. | |
+| `refusal.EXPORT-SKIP-NOTHING-TO-SAY` | The exported wording is empty. Write one, or undo your edit. | |
 | `refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE` | This text couldn't be checked. Let the team know. | |
 | `refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT` | The import didn't change it: nothing to put back. | When a file puts back an import |
 | `refusal.EXPORT-SKIP-NO-BEFORE-VALUE` | What the website showed before wasn't recorded, so it can't be put back. Let the team know. | |
@@ -395,8 +395,8 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.page.title` | Re-translate this page | Heading of the window |
 | `retr.page.body` | Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits. | The window's text |
 | `retr.page.mine` | Include my edits | Box in the window |
-| `retr.page.count.one` | Gemini's new wording replaces {n} text you edited or approved. | Line in the window, under the box, once it is ticked and the page has edited or approved texts |
-| `retr.page.count.other` | Gemini's new wording replaces {n} texts you edited or approved. | |
+| `retr.page.count.one` | Gemini's new wording replaces {n} text you edited or exported. | Line in the window, under the box, once it is ticked and the page has edited or exported texts |
+| `retr.page.count.other` | Gemini's new wording replaces {n} texts you edited or exported. | |
 | `retr.page.go` | Re-translate page | Button in the window |
 | `retr.cancel` | Cancel | Button in the windows |
 | `retr.started` | Gemini is working on it. The new text appears here when it is ready. | Message, when the job starts |

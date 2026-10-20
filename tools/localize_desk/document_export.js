@@ -257,12 +257,17 @@
   const boxes = { cell: {}, row: {}, col: {}, all: null };
   // A page in a language with no draft and no edit has nothing to export: the grid already says so
   // (paintGrid: data-status "none", or "failed" for a page whose translation did not finish: it has no text either,
-  // CEL-075 items 11 and 20). "unknown" (language not read yet), "translating" and "queued" are not "nothing",
-  // so those stay pickable.
+  // CEL-075 items 11 and 20). "translating" and "queued" replace the status the page's texts would give (paintGrid), so
+  // those cells ask statusOf: no text yet is nothing too (CEL-093), a re-translated page with texts stays pickable.
+  // "unknown" (language not read yet) is not "nothing": it stays pickable.
   function noneCell(p, l) {
     const c = document.querySelector('.doc-cell[data-page="' + p + '"][data-lang="' + l + '"]');
     const st = c && c.getAttribute('data-status');
-    return !!c && (st === 'none' || st === 'failed');
+    if (!c) return false;
+    if (st === 'none' || st === 'failed') return true;
+    if (st !== 'translating' && st !== 'queued') return false;
+    const s = D.statusOf(p, l);
+    return !!s && s.status === 'none';
   }
   function usable(p, l) { return !none[p + '|' + l]; }
   // A greyed box or button says why, on hover (CEL-075 item 11; a disabled control never takes focus, so not on focus).

@@ -1646,6 +1646,7 @@
     saveOff: SAVE_OFF_ON, client: DESK_CLIENT,
     pending: function () { return P; }, sendable: sendable,
     seenMap: seenMap,
+    statusOf: statusOf,
     call: call, getPage: getPage, getInfo: getInfo, ensureLang: ensureLang, refreshLang: refreshLang,
     curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,

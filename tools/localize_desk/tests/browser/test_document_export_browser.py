@@ -746,12 +746,22 @@ HAVE = {(PAGE_KEY, LANG), ("vancouver", "fr"), ("vs-toronto", "ko")}
 ALL_CELLS = {(key, lang) for key in PAGES for lang in LANGS}
 
 
-def translating(env, key, lang):
-    """A translate-page job for this page and language is out: the grid shows the cell as "translating", which
-    is not "nothing" (the picker keeps it pickable, CEL-037), though it has no draft yet."""
-    code, body = env.store.handle("desk-job-start", {"locale": lang, "kind": "translate-page",
-                                                     "ref": {"page": key, "keepEdited": True}}, H.REVIEWER)
-    assert code == 200, body
+def hold_reads(env, lang):
+    """The Worker's `desk-read` of `lang` waits until the returned event is set, so that language stays unread:
+    its cells read "unknown", which the picker keeps pickable (a page with nothing in it is greyed once it is
+    known, and so is a translating or queued page with no text, CEL-093). The picker takes its greyed-out map once,
+    when the window opens: release the read after Export is pressed and the empty cell is still the one that was
+    picked, so the runner's own answer to a page with nothing in it is reached through the door the picker leaves."""
+    gate = threading.Event()
+    raw = env.store.handle
+
+    def handle(action, body, email):
+        if action == "desk-read" and body.get("locale") == lang:
+            gate.wait(30)
+        return raw(action, body, email)
+
+    env.store.handle = handle
+    return gate
 
 
 def grid_status(page, key, lang):
@@ -1215,23 +1225,27 @@ def test_a_run_with_one_file_that_failed_and_one_with_nothing_zips_only_the_two_
     c1, c2 = early(PAGE_KEY, "de", 2)
     f1, f2 = early(PAGE_KEY, "fr", 2)
     h1, h2 = early("how-long-to-learn-english", "fr", 2)
-    # Vancouver in Spanish is the file with nothing in it: a greyed cell cannot be picked (CEL-037), so it is a
-    # cell whose translate job is out and has written nothing yet. Spanish has no other file, so that job
-    # (one open job per language) does not hold up the German and French exports.
+    # Vancouver in Spanish is the file with nothing in it: a greyed cell cannot be picked (CEL-037, CEL-093), so it
+    # is a cell the picker still reads as "unknown": Spanish is not read when the window opens (`hold_reads`) and is
+    # let go once Export is pressed.
     order = [("vancouver", "es"), (PAGE_KEY, "de"), (PAGE_KEY, "fr"), ("how-long-to-learn-english", "fr")]
     spy = Spy()
+    held = {}
 
     def seed(env):
         for lang, bs in (("de", (c1, c2)), ("fr", (f1, f2, h1, h2))):
             for i, b in enumerate(bs):
                 draft(env.store, b["id"], f"Entwurf {lang} {i}", lang=lang)
-        translating(env, "vancouver", "es")
+        held["es"] = hold_reads(env, "es")
         spy.attach(env.store)
 
     csv_c, csv_h = make_csv("de", PAGE_KEY), make_csv("fr", "how-long-to-learn-english")
     with doc(browser, seed=seed) as e:
         p = e.page
-        start_export(p, order)
+        try:
+            start_export(p, order)
+        finally:
+            held["es"].set()
         steps = [
             ((PAGE_KEY, "de"), ("done", csv_c, 2, [], [c1["id"], c2["id"]])),
             ((PAGE_KEY, "fr"), ("failed", "storage-error")),
@@ -1379,26 +1393,31 @@ def test_a_code_nobody_knows_gets_the_general_sentence(browser):
 
 
 def test_a_page_in_a_language_with_nothing_in_it_starts_no_job(browser):
-    """A cell with no draft and no edit is greyed in the picker (CEL-037), so this reaches the same answer from a
-    cell the picker still allows: a page whose translate job is out and has written nothing yet."""
+    """A cell with no draft and no edit is greyed in the picker (CEL-037, CEL-093), so this reaches the same answer
+    from a cell the picker still allows: a language it has not read yet (`hold_reads`), let go once Export is
+    pressed; French, because the open language is read before the page is ready."""
     spy = Spy()
+    held = {}
 
     def seed(env):
-        translating(env, PAGE_KEY, LANG)
+        held["fr"] = hold_reads(env, "fr")
         spy.attach(env.store)
 
     with doc(browser, seed=seed) as e:
         p = e.page
         downloads = []
         p.on("download", lambda d: downloads.append(d))
-        start_export(p, {(PAGE_KEY, LANG)})
-        li = ex_file(p, PAGE_KEY, LANG)
+        try:
+            start_export(p, {(PAGE_KEY, "fr")})
+        finally:
+            held["fr"].set()
+        li = ex_file(p, PAGE_KEY, "fr")
         expect(li).to_have_attribute("data-state", "nothing")
         expect(li).to_contain_text(C.t("export.step.nothing"))
         expect(p.locator("#ex-result")).to_be_visible()
         expect(p.locator("#ex-download")).to_be_hidden()
         time.sleep(0.5)
-        assert not jobs_of(e.store, "export") and spy.calls("desk-job-start", code=None) == []
+        assert not jobs_of(e.store, "export", "fr") and spy.calls("desk-job-start", code=None) == []
         assert spy.calls("desk-write") == [], "something was written for a page with nothing in it"
         assert downloads == []
         p.locator("#ex-close").click()

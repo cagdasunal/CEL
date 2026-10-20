@@ -466,7 +466,7 @@ def test_the_count_includes_an_approved_text_that_has_no_edit(browser):
         p.locator("#doc-translate").click()
         p.locator("#rp-mine").check()
         expect(p.locator("#rp-count")).to_have_text(C.tn("retr.page.count", 2))
-        assert "approved" in C.tn("retr.page.count", 2), "the line names the approved texts too"
+        assert "exported" in C.tn("retr.page.count", 2), "the line names the exported texts too"   # CEL-093: v2 has no Approve
 
 
 def test_a_translated_page_whose_language_is_busy_with_another_page_is_queued_not_refused(browser):

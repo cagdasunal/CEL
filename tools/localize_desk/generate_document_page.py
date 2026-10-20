@@ -390,7 +390,8 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
 .doc-toggle input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .doc-words { font-size: var(--fs-sm); color: var(--doc-muted); }
-.doc .toast-stack { bottom: 60px; }
+/* Messages stay above the BugHerd tab (fixed, right 0, bottom 10 px, 70 px high): 110 px, as much as the status bar keeps free at its right end */
+.doc .toast-stack { bottom: 110px; }
 .doc .toast-close { width: auto; height: auto; padding: 2px 8px; border-radius: var(--radius-sm); color: var(--fg); font-size: var(--fs-sm); }
 
 /* The history of one text: a drawer over the foot of the sheets, versions side by side, newest on the right */
