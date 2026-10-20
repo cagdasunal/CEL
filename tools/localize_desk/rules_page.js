@@ -1,19 +1,13 @@
 /*
- * The rules page of the localization desk (CEL-046): /admin/localization/rules/. The client reads and
- * edits the translation rules the engine gives Gemini: the shared rules (scope `global`), one
- * language's rules (`<lang>`), its glossary (`glossary:<lang>`) and the four page briefs
- * (`brief:<page>:<lang>`). Spec: monorepo runtime/out/loc2/rules-editor-spec.md (CEL-040), layout
- * option A ("two sheets"), rulings 2026-10-19 23:32 and 2026-10-20 00:29.
+ * The rules page of the localization desk: /admin/localization/rules/ (CEL-080, read-only version 1).
+ * The client picks a language and reads the translation rules the engine gives Gemini for it: the shared
+ * rules, that language's own rules and its glossary (Worker scopes `global`, `<lang>`, `glossary:<lang>`,
+ * read with desk-rules-read). Nothing on this page edits, saves or publishes, and the page-level briefs
+ * (`brief:<page>:<lang>`) are not shown. Editing comes back in a later version.
  *
- * generate_rules_page.py inlines rules_md.js, then this file. It reads the globals the page defines
- * first: COPY with t() / tn() (every word comes from COPY.md) and callProxy() (the Worker door).
- *
- * Saving model (ruling 23:32 (2)): every edit is a DRAFT kept in this browser only
- * (localStorage cel-rules-draft-<scope>); a draft never changes what Gemini uses. "Use these rules"
- * publishes: one desk-rules-write per changed scope, in the order global, <lang>, glossary, briefs,
- * and stops at the first conflict or error (the scopes already written stay in use). ONE undo stack
- * for the page: draft edits, a publish, a restore. A body is never sent half-parsed: unchanged
- * blocks keep their bytes (rules_md.js). DOM is built with createElement / textContent only.
+ * generate_rules_page.py inlines rules_md.js, then this file. It reads the globals the page defines first:
+ * COPY with t() (every word comes from COPY.md) and callProxy() (the Worker door). DOM is built with
+ * createElement / textContent only.
  */
 (function () {
   'use strict';
@@ -22,18 +16,14 @@
   if (!cfgNode || !window.RulesMd || typeof callProxy !== 'function') return;
   const CFG = JSON.parse(cfgNode.textContent);
   const M = window.RulesMd;
-  const LOCALES = CFG.locales;            // [{code, name, flag, none}]
-  const PAGES = CFG.pages;                // [{slug, name}]
-  const CHECKED = CFG.checked || {};      // lang -> labels a tools/localize/rules check enforces
-  const SUGGESTED = CFG.suggested || {};  // lang -> [{label, value}], CEL's paraphrase, not the client's
-  const TIMING = Object.assign({ timeout: 20000, draftDelay: 300, flash: 1000 }, window.RULES_TIMING || {});
-  const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
-  const UNDO_CAP = 100;
-  const DRAFT_KEY = function (scope) { return 'cel-rules-draft-' + scope; };
+  const LOCALES = CFG.locales;            // [{code, name, flag}]
+  const TIMING = Object.assign({ timeout: 20000 }, window.RULES_TIMING || {});
 
   const root = document.getElementById('rules-app');
   if (!root) return;
   const $ = function (s, r) { return (r || document).querySelector(s); };
+  const panel = $('#rulesPanel');
+  const tabs = Array.prototype.slice.call(root.querySelectorAll('.r-tab'));
 
   function h(tag, cls, text) {
     const n = document.createElement(tag);
@@ -41,427 +31,62 @@
     if (text != null) n.textContent = text;
     return n;
   }
-  function btn(cls, text, onClick) {
-    const b = h('button', cls, text);
-    b.type = 'button';
-    if (onClick) b.addEventListener('click', onClick);
-    return b;
-  }
-
-  // ── storage ──────────────────────────────────────────────────────────────────────
-  let storageWarned = false;
-  function lsGet(key) {
-    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
-  }
-  function lsSet(key, val) {
-    try {
-      if (val == null) localStorage.removeItem(key); else localStorage.setItem(key, JSON.stringify(val));
-      return true;
-    } catch (e) {
-      if (!storageWarned) { storageWarned = true; toast(t('toast.storage.title'), 'warn'); }
-      return false;
-    }
-  }
 
   // ── state ────────────────────────────────────────────────────────────────────────
-  const params = new URLSearchParams(location.search);
+  const known = function (code) { return LOCALES.some(function (l) { return l.code === code; }); };
+  const wanted = new URLSearchParams(location.search).get('lang');
   const S = {
-    lang: LOCALES.some(function (l) { return l.code === params.get('lang'); }) ? params.get('lang') : 'de',
-    scopes: {},        // scope -> {loaded, version, body, updatedAt, updatedBy, byName, draft, notice}
-    busy: false,       // a publish, undo of a publish or restore is in flight
-    failed: [],        // scopes a publish could not write yet (partly in use)
-    stopped: null,     // the sends a confirmed publish did not finish, with the bodies the confirm covered (Try again resends only these)
+    lang: known(wanted) ? wanted : (known('de') ? 'de' : LOCALES[0].code),
+    scopes: {},       // scope -> {state: 'loading' | 'ok' | 'error', body, key}
   };
-  const U = { undo: [], redo: [] };
-
   const langName = function (code) {
     const l = LOCALES.find(function (x) { return x.code === code; });
     return l ? l.name : code;
   };
-  const pageName = function (slug) {
-    const p = PAGES.find(function (x) { return x.slug === slug; });
-    return p ? p.name : slug;
-  };
-  const scopesFor = function (lang) {
-    return ['global', lang, 'glossary:' + lang].concat(PAGES.map(function (p) { return 'brief:' + p.slug + ':' + lang; }));
-  };
-  function scopeName(scope) {
-    const p = scope.split(':');
-    if (scope === 'global') return t('rules.scope.global');
-    if (p[0] === 'glossary') return t('rules.scope.glossary', { language: langName(p[1]) });
-    if (p[0] === 'brief') return t('rules.scope.brief', { page: pageName(p[1]), language: langName(p[2]) });
-    return t('rules.scope.lang', { language: langName(scope) });
-  }
+  const scopesFor = function (lang) { return ['global', lang, 'glossary:' + lang]; };
   const sc = function (scope) {
-    if (!S.scopes[scope]) S.scopes[scope] = { loaded: false, version: 0, body: null, draft: null, notice: null };
+    if (!S.scopes[scope]) S.scopes[scope] = { state: 'loading', body: null, key: null };
     return S.scopes[scope];
   };
-  // What the sheet shows for a scope: the draft, else the body in use ('' for none).
-  const current = function (scope) {
-    const s = sc(scope);
-    return s.draft != null ? s.draft : (s.body || '');
-  };
-  const inUse = function (scope) { return sc(scope).body || ''; };
-  // The version a scope's draft was made on (never the fresh one: that would defeat the Worker's 409).
-  const draftBase = function (scope) { const s = sc(scope); return s.base != null ? s.base : s.version; };
-  const isChanged = function (scope) { const s = sc(scope); return s.loaded && s.draft != null && s.draft !== inUse(scope); };
 
-  // ── line diff (LCS): the changed hunks of a draft against the version in use ──────────
-  function hunks(before, after) {
-    const a = before.split('\n'), b = after.split('\n');
-    if (before === after) return [];
-    let lo = 0;
-    while (lo < a.length && lo < b.length && a[lo] === b[lo]) lo++;
-    let ea = a.length, eb = b.length;
-    while (ea > lo && eb > lo && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
-    const A = a.slice(lo, ea), B = b.slice(lo, eb);
-    const n = A.length, m = B.length;
-    const L = [];
-    for (let i = 0; i <= n; i++) L.push(new Uint16Array(m + 1));
-    for (let i = n - 1; i >= 0; i--) {
-      for (let j = m - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
-    }
-    const out = [];
-    let i = 0, j = 0, cur = null;
-    const open = function () { if (!cur) cur = { a0: lo + i, a1: lo + i, b0: lo + j, b1: lo + j }; };
-    while (i < n || j < m) {
-      if (i < n && j < m && A[i] === B[j]) { if (cur) { out.push(cur); cur = null; } i++; j++; }
-      else if (j < m && (i >= n || L[i][j + 1] >= L[i + 1][j])) { open(); j++; cur.b1 = lo + j; }
-      else { open(); i++; cur.a1 = lo + i; }
-    }
-    if (cur) out.push(cur);
-    return out;
-  }
-  function changeCount() {
-    let n = 0;
-    scopesFor(S.lang).forEach(function (scope) {
-      if (!isChanged(scope)) return;
-      n += scope.indexOf('glossary:') === 0 || inUse(scope) === '' ? Math.max(1, hunks(inUse(scope), current(scope)).length)
-        : hunks(inUse(scope), current(scope)).length;
-    });
-    return n;
-  }
-
-  // ── drafts ───────────────────────────────────────────────────────────────────────
-  let draftTimer = 0;
-  function setDraft(scope, body) {
-    const s = sc(scope);
-    s.draft = body === inUse(scope) ? null : body;
-    // A draft is made on ONE version (spec §2: {body, baseVersion}): the version in use when it began. It is
-    // sent with that version, so a newer publish by someone else answers 409 instead of being overwritten.
-    if (s.draft == null) s.base = null;
-    else if (s.base == null) s.base = s.version;
-    showSave('saving');
-    clearTimeout(draftTimer);
-    draftTimer = setTimeout(function () {
-      scopesFor(S.lang).forEach(persistDraft);
-      showSave('saved');
-    }, TIMING.draftDelay);
-  }
-  function persistDraft(scope) {
-    const s = sc(scope);
-    if (!s.loaded) return;
-    lsSet(DRAFT_KEY(scope), s.draft == null ? null : { body: s.draft, baseVersion: draftBase(scope), at: new Date().toISOString() });
-  }
-  // A change the reviewer makes: one undo step, then the sheet redraws.
-  function change(label, scope, body, focus) {
-    const before = current(scope);
-    if (body === before) return;
-    pushUndo({ kind: 'draft', label: label, scope: scope, before: before, after: body, focus: focus || null });
-    setDraft(scope, body);
-    render(focus);
-  }
-
-  // ── undo / redo (one stack for the page) ─────────────────────────────────────────
-  function pushUndo(entry) {
-    U.undo.push(entry);
-    if (U.undo.length > UNDO_CAP) U.undo.shift();
-    U.redo.length = 0;
-    updateBar();
-  }
-  const STEP_CONFIRM = {
-    undo: { title: 'rules.undo.confirm.title', body: 'rules.undo.confirm.body', go: 'rules.undo.confirm.go' },
-    redo: { title: 'rules.redo.confirm.title', body: 'rules.redo.confirm.body', go: 'rules.redo.confirm.go' },
-  };
-  function keysFor(kind) { return t('doc.keys.' + kind + '.' + (IS_MAC ? 'mac' : 'other')); }
-  function step(dir) {
-    if (S.busy) return;
-    flushEdit();
-    const from = dir === 'undo' ? U.undo : U.redo, to = dir === 'undo' ? U.redo : U.undo;
-    const e = from[from.length - 1];
-    if (!e) { toast(t(dir === 'undo' ? 'doc.undo.none' : 'doc.redo.none')); return; }
-    if (e.kind === 'draft') {
-      from.pop(); to.push(e);
-      if (e.scope.indexOf(':' + S.lang) < 0 && e.scope !== S.lang && e.scope !== 'global') switchLang(scopeLang(e.scope), true);
-      // A published scope has no empty state (the Worker stores no empty body): a step back to "nothing"
-      // goes back to the version in use, never to an empty draft that no publish could write.
-      let body = dir === 'undo' ? e.before : e.after;
-      if (body === '' && inUse(e.scope) !== '') body = inUse(e.scope);
-      setDraft(e.scope, body);
-      render(e.focus, true);
-      return;
-    }
-    // A publish or a restore changes what Gemini uses, for everyone: it asks first, naming the rules it writes
-    // (they can be another language's). Undo and Redo, the buttons and the keys, all come through here.
-    const asked = e.writes.map(function (w) { return scopeName(w.scope); }).join(', ');
-    const K = STEP_CONFIRM[dir];
-    modal(t(K.title), [t(K.body, { list: asked })], [
-      { text: t('doc.confirm.cancel') },
-      { text: t(K.go), primary: true, run: function () { stepWrites(dir, from, to, e); } },
-    ]);
-  }
-  // A publish or a restore: undo writes each scope's previous body back (reverse order); redo
-  // writes the published bodies again. Each write is against the version this page last saw.
-  function stepWrites(dir, from, to, e) {
-    if (S.busy || from[from.length - 1] !== e) return;
-    from.pop();
-    const writes = dir === 'undo' ? e.writes.slice().reverse() : e.writes.slice();
-    const sends = writes.map(function (w) { return { scope: w.scope, body: dir === 'undo' ? w.before : w.after }; });
-    runWrites(sends).then(function (res) {
-      if (res.done.length === sends.length) {
-        to.push(e);
-        toast(dir === 'undo' && e.kind === 'restore' ? t('rules.toast.restored.undone')
-          : t('rules.toast.used', { list: res.done.map(scopeName).join(', ') }));
-      } else {
-        if (res.done.length) {
-          toast(t('rules.toast.undo.partial', { done: res.done.map(scopeName).join(', '), scope: scopeName(res.stoppedAt) }), 'warn');
-        }
-        // the part not done stays one step to try again
-        const left = writes.slice(res.done.length);
-        from.push(Object.assign({}, e, { writes: dir === 'undo' ? left.slice().reverse() : left }));
-      }
-      render();
-    });
-  }
-  const scopeLang = function (scope) { const p = scope.split(':'); return p[p.length - 1]; };
-
-  // ── the Worker ───────────────────────────────────────────────────────────────────
+  // ── the Worker (reads only) ──────────────────────────────────────────────────────
   function call(payload) {
     return callProxy(payload, TIMING.timeout).catch(function () { return null; });
   }
-  // Why a write stopped, as a COPY.md key (the desk's save.reason.* words where they fit).
+  // Why a read failed, as a COPY.md key.
   function failureKey(r) {
-    if (!r) return navigator.onLine === false ? 'rules.offline' : 'rules.error';
+    if (!r) return navigator.onLine === false ? 'rules.error.offline' : 'rules.error.read';
     if (r.status === 401) return 'rules.error.signed_out';
-    if (r.status === 429) return /daily/.test((r.body && r.body.error) || '') ? 'rules.error.daily' : 'rules.error.cap';
-    if (r.status === 400) return 'rules.error.refused';
-    return 'rules.error';
-  }
-  function adopt(scope, row) {
-    const s = sc(scope);
-    s.loaded = true;
-    s.version = Number(row.version) || 0;
-    s.body = row.body == null ? null : row.body;
-    s.updatedAt = row.updatedAt || row.at || null;
-    s.updatedBy = row.updatedBy || null;
-    s.byName = row.byName || null;
+    if (r.status === 429) return 'rules.error.cap';
+    return 'rules.error.read';
   }
   function readScope(scope) {
     const s = sc(scope);
-    if (s.loaded) return Promise.resolve(true);
+    if (s.state === 'ok') return Promise.resolve();
+    s.state = 'loading';
     return call({ action: 'desk-rules-read', scope: scope }).then(function (r) {
-      if (!r || !r.ok) {
-        // A read that failed is not "could not be put in use": offline, signed out and the caps keep their own
-        // words, anything else is the read's own sentence.
-        const k = failureKey(r);
-        s.readError = k === 'rules.error' || k === 'rules.error.refused' ? 'rules.error.read' : k;
-        return false;
-      }
-      adopt(scope, r.body);
-      s.readError = null;
-      const d = lsGet(DRAFT_KEY(scope));
-      if (d && typeof d.body === 'string' && d.body !== inUse(scope)) {
-        s.draft = d.body;
-        // the draft keeps the version it was made on, whatever has been published since
-        s.base = Number.isFinite(Number(d.baseVersion)) && d.baseVersion != null ? Number(d.baseVersion) : s.version;
-      }
-      return true;
+      if (!r || !r.ok || !r.body) { s.state = 'error'; s.key = failureKey(r); return; }
+      s.state = 'ok';
+      s.key = null;
+      s.body = r.body.body == null ? '' : String(r.body.body);
     });
   }
-  // One publish: the scopes in order, one at a time, stopping at the first that is not written.
-  function runWrites(sends) {
-    S.busy = true;
-    updateBar();
-    const done = [];
-    let i = 0;
-    function next() {
-      if (i >= sends.length) return Promise.resolve();
-      const w = sends[i], s = sc(w.scope);
-      const before = inUse(w.scope), beforeVersion = s.version;
-      return call({ action: 'desk-rules-write', scope: w.scope, body: w.body,
-                    baseVersion: w.base != null ? w.base : s.version }).then(function (r) {
-        if (r && r.ok) {
-          adopt(w.scope, { version: r.body.version, body: w.body, at: r.body.at || s.updatedAt,
-            updatedBy: r.body.updatedBy || s.updatedBy, byName: r.body.unchanged ? s.byName : null });
-          if (s.draft === w.body) { s.draft = null; s.base = null; }
-          // A later edit of this same scope was made on top of what we just wrote: it now stands on this
-          // version, so the next Use these rules does not meet our own write as someone else's (409).
-          else if (s.draft != null) s.base = s.version;
-          persistDraft(w.scope);
-          s.notice = null;
-          done.push({ scope: w.scope, before: before, after: w.body, beforeVersion: beforeVersion });
-          i++;
-          return next();
-        }
-        if (r && r.status === 409) {
-          s.notice = { kind: 'conflict', current: (r.body && r.body.current) || null };
-        } else {
-          s.notice = { kind: 'error', key: failureKey(r) };
-        }
-        return null;
-      });
-    }
-    return next().then(function () {
-      S.busy = false;
-      const stoppedAt = done.length < sends.length ? sends[done.length].scope : null;
-      return { done: done.map(function (d) { return d.scope; }), writes: done, stoppedAt: stoppedAt };
-    });
-  }
-  // `only`: the scopes to send (Keep mine sends that one scope's draft, spec §3); else every changed scope.
-  function publish(only) {
-    flushEdit();
-    const order = (only || scopesFor(S.lang)).filter(isChanged);
-    if (!order.length || S.busy) return;
-    const sends = order.map(function (scope) { return { scope: scope, body: current(scope), base: draftBase(scope) }; });
-    sendConfirmed(sends);
-  }
-  // The sends a confirm covered, one publish: the scopes in order. What stops is remembered with the bodies the
-  // confirm showed, so Try again resends exactly that and never collects the drafts anew (an edit made after the
-  // confirm stays a draft until the next Use these rules).
-  function sendConfirmed(sends) {
-    S.stopped = null;
-    runWrites(sends).then(function (res) {
-      if (res.stoppedAt) S.stopped = sends.slice(res.done.length);
-      // A scope's FIRST publish has no earlier version to go back to: the Worker never stores an empty
-      // body (400), so Undo leaves it in use and goes back only where a version existed before.
-      const undoable = res.writes.filter(function (w) { return w.before !== ''; });
-      if (undoable.length) {
-        pushUndo({ kind: 'publish', label: t('rules.use'), writes: undoable.map(function (w) {
-          return { scope: w.scope, before: w.before, after: w.after };
-        }) });
-      }
-      const names = function (list) { return list.map(scopeName).join(', '); };
-      if (!res.stoppedAt) {
-        // Undo only for the scopes that had an earlier version: say so truthfully
-        const back = undoable.map(function (w) { return w.scope; });
-        const tail = back.length === res.done.length ? ' ' + t('rules.toast.used.undo')
-          : back.length ? ' ' + t('rules.toast.used.undo.some', { list: names(back) }) : '';
-        toast(t('rules.toast.used', { list: names(res.done) }) + tail, 'ok');
-      } else if (res.done.length) {
-        const rest = sends.slice(res.done.length).map(function (w) { return w.scope; });
-        toast(t('rules.toast.partial', { done: names(res.done), rest: names(rest) }), 'warn');
-      }
+  function load() {
+    const lang = S.lang;
+    const scopes = scopesFor(lang);
+    scopes.forEach(function (x) { if (sc(x).state !== 'ok') sc(x).state = 'loading'; });
+    root.dataset.state = 'loading';
+    render();
+    return Promise.all(scopes.map(readScope)).then(function () {
+      if (lang !== S.lang) return;                 // the reader moved on to another language meanwhile
+      root.dataset.state = scopes.every(function (x) { return sc(x).state === 'ok'; }) ? 'ready' : 'error';
       render();
     });
   }
-  function confirmPublish() {
-    if (!changeCount() || S.busy) return;
-    const paras = [t('rules.use.body', { language: langName(S.lang) })];
-    if (isChanged('global')) paras.push(t('rules.use.body.shared'));        // the shared rules reach all 8 languages
-    modal(t('rules.use.title'), paras, [
-      { text: t('doc.confirm.cancel') },
-      { text: t('rules.use'), primary: true, run: publish },
-    ]);
-  }
 
-  // ── conflict and error notices ───────────────────────────────────────────────────
-  function noticeFor(scope) {
-    const s = sc(scope), n = s.notice;
-    if (!n) return null;
-    const box = h('div', 'r-notice');
-    box.setAttribute('role', 'alert');
-    if (n.kind === 'conflict') {
-      const cur = n.current || { version: 0 };
-      const who = cur.byName || cur.updatedBy || t('rules.conflict.someone');
-      box.appendChild(h('p', null, t('rules.conflict', { name: who, scope: scopeName(scope), n: cur.version,
-        time: fmtTime(cur.updatedAt) })));
-      const row = h('div', 'r-btns');
-      row.appendChild(btn('desk-btn', t('rules.conflict.theirs'), function () {
-        const mine = current(scope);
-        adopt(scope, cur);
-        s.notice = null;
-        // your draft stays one Undo away
-        pushUndo({ kind: 'draft', label: t('rules.conflict.theirs'), scope: scope, before: mine, after: inUse(scope) });
-        setDraft(scope, inUse(scope));
-        render();
-      }));
-      row.appendChild(btn('desk-btn is-strong', t('rules.conflict.mine'), function () {
-        const mine = current(scope);
-        adopt(scope, cur);
-        s.notice = null;
-        s.draft = mine === inUse(scope) ? null : mine;
-        s.base = s.draft == null ? null : s.version;      // your draft, now made on their version
-        persistDraft(scope);
-        render();
-        publish([scope]);                                  // that scope's draft only, nothing else in the language
-      }));
-      box.appendChild(row);
-    } else {
-      box.appendChild(h('p', null, t(n.key)));
-      const row = h('div', 'r-btns');
-      // Try again resends what the confirm covered and stopped on, directly: no second confirm, and an edit made
-      // since is not in it
-      row.appendChild(btn('desk-btn', t('rules.retry'), function () {
-        s.notice = null;
-        if (S.stopped && S.stopped.length && !S.busy) sendConfirmed(S.stopped.slice());
-        else render();
-      }));
-      box.appendChild(row);
-    }
-    return box;
-  }
-
-  // ── editing in place ─────────────────────────────────────────────────────────────
-  let ed = null;   // {node, commit(text), multi, enterAdds}
-  function readText(n) { return n.textContent.replace(/\u200b/g, ''); }
-  function startEdit(node, opts) {
-    if (ed && ed.node === node) return;
-    flushEdit();
-    ed = Object.assign({ node: node, start: opts.raw }, opts);
-    node.textContent = opts.raw;
-    node.setAttribute('contenteditable', 'plaintext-only');
-    if (node.contentEditable !== 'plaintext-only') node.setAttribute('contenteditable', 'true');
-    node.classList.add('is-editing');
-    node.classList.remove('is-empty');
-    node.focus({ preventScroll: true });
-    const sel = window.getSelection(), rg = document.createRange();
-    rg.selectNodeContents(node); rg.collapse(false); sel.removeAllRanges(); sel.addRange(rg);
-  }
-  function finishEdit(addAfter) {
-    if (!ed) return;
-    const e = ed; ed = null;
-    const text = readText(e.node);
-    e.node.removeAttribute('contenteditable');
-    e.node.classList.remove('is-editing');
-    if (text === e.start && !addAfter) { inline(e.node, e.start, e.ph); return; }
-    e.commit(text, !!addAfter);
-  }
-  function flushEdit() { if (ed) finishEdit(); }
-  function atEnd(node) {
-    const s = window.getSelection();
-    if (!s.rangeCount) return false;
-    const r = s.getRangeAt(0);
-    if (!r.collapsed) return false;
-    const tail = document.createRange();
-    tail.selectNodeContents(node); tail.setStart(r.endContainer, r.endOffset);
-    return tail.toString().replace(/\u200b/g, '') === '';
-  }
-  function insertNewline() {
-    const s = window.getSelection();
-    if (!s.rangeCount) return;
-    const rg = s.getRangeAt(0);
-    rg.deleteContents();
-    const tn_ = document.createTextNode('\n');
-    rg.insertNode(tn_);
-    if (!tn_.nextSibling || !tn_.nextSibling.textContent) tn_.after(document.createTextNode('\u200b'));
-    rg.setStartAfter(tn_); rg.collapse(true); s.removeAllRanges(); s.addRange(rg);
-  }
-  // Inline Markdown shown as type (bold, italic, code); the raw text comes back when editing.
-  function inline(node, raw0, ph) {
-    node.textContent = '';
-    node.classList.toggle('is-empty', !raw0);
-    if (ph) node.dataset.ph = ph;
-    // a Markdown escape (\* \| \_) is the character itself, never a marker
+  // ── reading a body ───────────────────────────────────────────────────────────────
+  // **bold**, *italic* and `code`; a Markdown escape (\* \| \_) is the character itself.
+  function inline(node, raw0) {
     const raw = String(raw0).replace(/\\([*|_`])/g, function (_m, c) { return { '*': '\u0001', '|': '|', '_': '_', '`': '\u0002' }[c]; });
     const lit = function (s) { return document.createTextNode(s.replace(/\u0001/g, '*').replace(/\u0002/g, '`')); };
     // bold may hold italics (**bold *ital* bold**): the bold run ends at the first `**`
@@ -478,694 +103,153 @@
     }
     if (last < raw.length) node.appendChild(lit(raw.slice(last)));
   }
-  // One editable text. opts: raw, aria, multi, enterAdds, commit(text, addAfter), ph, id.
-  function editable(opts) {
-    const n = h('div', 'ed');
-    inline(n, opts.raw, opts.ph || t('rules.ph'));
-    n.tabIndex = 0;
-    n.setAttribute('role', 'textbox');
-    n.setAttribute('aria-label', opts.aria);
-    if (opts.multi) n.setAttribute('aria-multiline', 'true');
-    if (opts.id) n.dataset.rid = opts.id;
-    n.addEventListener('click', function () { if (!S.busy && (!ed || ed.node !== n)) startEdit(n, opts); });
-    n.addEventListener('blur', function () { if (ed && ed.node === n) finishEdit(); });
-    n.addEventListener('keydown', function (e) {
-      if (!ed || ed.node !== n) {
-        if (e.key === 'Enter' && !S.busy) { e.preventDefault(); startEdit(n, opts); }
-        return;
-      }
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); flushEdit(); return; }
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      if (e.shiftKey) { if (opts.multi) insertNewline(); return; }
-      if (opts.enterAdds && atEnd(n) && readText(n).trim()) finishEdit(true);
-      else flushEdit();
-    });
+  function textNode(tag, cls, raw) {
+    const n = h(tag, cls);
+    inline(n, raw);
     return n;
   }
-
-  // ── a Markdown body as a document ────────────────────────────────────────────────
-  // Each block gets the first line it starts on, so a block maps to the hunk it sits in.
-  function withLines(blocks) {
-    let line = 0;
-    blocks.forEach(function (b) { b.line = line; b.nl = M.rawOf(b).split('\n').length; line += b.nl; });
-    return blocks;
+  function tableOf(rows, header) {
+    const table = h('table', 'r-table');
+    rows.forEach(function (cells, i) {
+      const tr = h('tr');
+      cells.forEach(function (c) { tr.appendChild(textNode(header && i === 0 ? 'th' : 'td', null, c)); });
+      table.appendChild(tr);
+    });
+    return table;
   }
-  function editedLines(scope) {
-    const set = new Set();
-    if (!isChanged(scope) || inUse(scope) === '') return set;
-    hunks(inUse(scope), current(scope)).forEach(function (hk) { for (let i = hk.b0; i < hk.b1; i++) set.add(i); });
-    return set;
-  }
-  function blockEdited(b, set) {
-    for (let i = b.line; i < b.line + b.nl; i++) if (set.has(i)) return true;
-    return false;
-  }
-  // "Undo this": the hunk this block sits in goes back to the text in use.
-  function revertBlock(scope, b) {
-    const before = inUse(scope).split('\n'), now = current(scope).split('\n');
-    const hk = hunks(inUse(scope), current(scope)).find(function (x) { return b.line < Math.max(x.b1, x.b0 + 1) && b.line + b.nl > x.b0; });
-    if (!hk) return;
-    const out = now.slice(0, hk.b0).concat(before.slice(hk.a0, hk.a1), now.slice(hk.b1));
-    change(t('rules.undothis'), scope, out.join('\n'), scope + '#' + hk.b0);
-  }
-  function checkedLabel(scope, text) {
-    const labels = CHECKED[scope] || [];
-    return labels.some(function (l) { return text.indexOf('**' + l) === 0; });
-  }
-
-  function renderBody(scope, blocks, into, opts) {
-    const set = editedLines(scope);
-    const lang = scope === 'global' ? null : scope;
-    let list = null, table = null;
-    const commitBlock = function (b) {
-      return function (text, addAfter) {
-        const blocks2 = withLines(M.parse(current(scope)));
-        const k = blocks2.findIndex(function (x) { return x.line === b.line && x.kind === b.kind; });
-        if (k < 0) return;
-        const bb = blocks2[k];
-        let focus = scope + '#' + bb.line;
-        if (bb.kind === 'item' && text.trim() === '' && !addAfter) {
-          blocks2.splice(k, 1);
-        } else {
-          bb.edited = true;
-          bb.text = bb.kind === 'para' ? text : text.replace(/\n/g, ' ');
-          if (addAfter) {
-            blocks2.splice(k + 1, 0, { kind: 'item', edited: true, prefix: bb.prefix, text: '' });
-            focus = scope + '#' + (bb.line + 1) + '!edit';
-          }
-        }
-        change(t('rules.undo.edit'), scope, M.serialize(blocks2), focus);
-      };
+  // The blocks of a rules body, in order: headings, lists, paragraphs, quotes, tables.
+  function renderBlocks(blocks, into) {
+    let list = null, rows = null, header = false;
+    const flushTable = function () {
+      if (rows) into.appendChild(tableOf(rows, header));
+      rows = null; header = false;
     };
-    blocks.forEach(function (b) {
+    blocks.forEach(function (b, i) {
       if (b.kind !== 'item') list = null;
-      if (b.kind !== 'row' && b.kind !== 'sep') table = null;
-      if (b.kind === 'blank' || b.kind === 'sep') return;
+      if (b.kind !== 'row' && b.kind !== 'sep') flushTable();
+      if (b.kind === 'blank') return;
+      if (b.kind === 'sep') { header = rows != null && rows.length === 1; return; }
+      if (b.kind === 'row') { if (!rows) rows = []; rows.push(b.cells); return; }
       if (b.kind === 'hr') { into.appendChild(h('hr', 'r-hr')); return; }
-      const wrap = h(b.kind === 'item' ? 'li' : 'div', 'r-b r-' + b.kind + (b.kind === 'head' ? ' r-h' + b.level : ''));
-      wrap.dataset.line = scope + '#' + b.line;
-      const edited = blockEdited(b, set);
-      wrap.classList.toggle('is-edited', edited);
-      if (b.kind === 'row') {
-        if (!table) { table = h('div', 'r-table'); into.appendChild(table); }
-        b.cells.forEach(function (c, ci) {
-          const cell = h('div', 'r-cell');
-          cell.appendChild(editable({ raw: c, aria: scopeName(scope), id: scope + '#' + b.line + '.' + ci,
-            commit: function (text) {
-              const blocks2 = withLines(M.parse(current(scope)));
-              const bb = blocks2.find(function (x) { return x.line === b.line && x.kind === 'row'; });
-              if (!bb) return;
-              bb.edited = true; bb.cells[ci] = text.replace(/\n/g, ' ');
-              change(t('rules.undo.edit'), scope, M.serialize(blocks2), scope + '#' + b.line);
-            } }));
-          wrap.appendChild(cell);
-        });
-        wrap.style.setProperty('--cols', String(b.cells.length));
-        table.appendChild(wrap);
-      } else {
-        wrap.appendChild(editable({ raw: b.text, aria: scopeName(scope), multi: b.kind === 'para',
-          enterAdds: b.kind === 'item', id: scope + '#' + b.line, commit: commitBlock(b) }));
-        if (b.kind === 'item') {
-          if (!list) { list = h('ul', 'r-items'); into.appendChild(list); }
-          list.appendChild(wrap);
-        } else {
-          into.appendChild(wrap);
-        }
+      if (b.kind === 'head') { into.appendChild(textNode('h' + Math.min(6, Math.max(3, b.level + 1)), 'r-h', b.text)); return; }
+      if (b.kind === 'item') {
+        if (!list) { list = h('ul', 'r-items'); into.appendChild(list); }
+        list.appendChild(textNode('li', 'r-item', b.text));
+        return;
       }
-      if (edited) {
-        const under = h('div', 'under');
-        under.appendChild(h('span', null, t('rules.edited')));
-        under.appendChild(btn('link', t('rules.undothis'), function () { revertBlock(scope, b); }));
-        if (scope === 'global') under.appendChild(h('span', null, t('rules.shared.warn')));
-        wrap.appendChild(under);
-        if (lang && b.kind === 'item' && checkedLabel(lang, inUseTextAt(scope, b))) {
-          wrap.appendChild(h('div', 'notice', t('rules.checked.warn')));
-        }
-      }
-      if (lang && b.kind === 'item' && checkedLabel(lang, b.text)) wrap.appendChild(h('span', 'tag', t('rules.checked')));
-      if (opts && opts.onBlock) opts.onBlock(b, wrap);
+      if (b.kind === 'quote') { into.appendChild(textNode('blockquote', 'r-quote', b.text)); return; }
+      into.appendChild(textNode('p', 'r-p', b.text));
     });
+    flushTable();
   }
-  function inUseTextAt(scope, b) {
-    const hk = hunks(inUse(scope), current(scope)).find(function (x) { return b.line >= x.b0 && b.line < Math.max(x.b1, x.b0 + 1); });
-    if (!hk) return b.text;
-    return inUse(scope).split('\n').slice(hk.a0, hk.a1).join('\n').replace(/^\s*[-*+]\s/, '');
-  }
-
-  // ── the sheets ───────────────────────────────────────────────────────────────────
-  const railItems = [];
-  function railAdd(label, target, sub, count) {
-    railItems.push({ label: label, target: target, sub: !!sub, count: count || '' });
-  }
-  function renderShared(sheet) {
-    const body = h('div', 'sheet-body');
-    const blk = h('div', 'shared-block');
-    blk.appendChild(h('div', 'blk-label', t('rules.shared.label')));
-    const n = noticeFor('global'); if (n) blk.appendChild(n);
-    const s = sc('global');
-    if (!s.loaded) { blk.appendChild(skeleton()); body.appendChild(blk); sheet.appendChild(body); return; }
-    const blocks = withLines(M.parse(current('global')));
-    railAdd(t('rules.shared'), 'sheet-shared');
-    M.sections(blocks).forEach(function (sec, i) {
-      const card = h('section', 'card');
-      card.id = 'shared-' + i;
-      if (sec.head) railAdd(sec.head.text.replace(/\*\*/g, ''), card.id, true);
-      const all = sec.head ? [sec.head].concat(sec.blocks) : sec.blocks;
-      renderBody('global', all, card);
-      if (card.childNodes.length) blk.appendChild(card);
-    });
-    body.appendChild(blk);
-    sheet.appendChild(body);
-  }
-  function renderLang(sheet) {
-    const lang = S.lang, name = langName(lang), s = sc(lang);
-    const body = h('div', 'sheet-body');
-    const rulesH = h('h3', 'sec-h', t('rules.lang', { language: name }));
-    rulesH.id = 'sec-rules';
-    body.appendChild(rulesH);
-    const n = noticeFor(lang); if (n) body.appendChild(n);
-    if (!s.loaded) { body.appendChild(skeleton()); sheet.appendChild(body); return; }
-    const blocks = withLines(M.parse(current(lang)));
-    const editableBlocks = blocks.filter(function (b) { return b.kind !== 'blank' && b.kind !== 'quote' || b.kind === 'quote' && !isSeedNone(lang); });
-    if (isEmptyLang(lang)) body.appendChild(emptyLang(lang));
-    else renderBody(lang, blocks, body);
-    railAdd(t('rules.lang', { language: name }), 'sec-rules', false, tn('rules.count.rules', countItems(blocks), { n: countItems(blocks) }));
-    void editableBlocks;
-    renderGlossary(body);
-    renderBriefs(body);
-    sheet.appendChild(body);
-  }
-  function countItems(blocks) { return blocks.filter(function (b) { return b.kind === 'item'; }).length; }
   // ja / ko / ar: the seed holds one quoted "no rules" line (rules_store.split); that is no rules yet.
-  function isSeedNone(lang) {
-    const b = current(lang).trim();
+  function isSeedNone(body) {
+    const b = String(body || '').trim();
     return b === '' || (/^>/.test(b) && b.split('\n').length === 1);
   }
-  function isEmptyLang(lang) { return isSeedNone(lang); }
-  function emptyLang(lang) {
-    const box = h('div', 'empty');
-    box.appendChild(h('p', 'empty-t', t('rules.empty', { language: langName(lang) })));
-    const sug = SUGGESTED[lang] || [];
-    if (sug.length) {
-      box.appendChild(h('h4', null, t('rules.suggested')));
-      const dl = h('dl', 'sugg');
-      sug.forEach(function (r) {
-        const row = h('div');
-        row.appendChild(h('dt', null, r.label));
-        row.appendChild(h('dd', null, r.value));
-        dl.appendChild(row);
-      });
-      box.appendChild(dl);
-    }
-    const row = h('div', 'r-btns');
-    if (sug.length) {
-      row.appendChild(btn('desk-btn is-strong', t('rules.suggested.use'), function () {
-        const body = '## ' + t('rules.lang', { language: langName(lang) }) + '\n\n' +
-          sug.map(function (r) { return '- **' + r.label + ':** ' + r.value; }).join('\n') + '\n';
-        change(t('rules.suggested.use'), lang, body);
-        toast(t('rules.toast.suggested'), 'ok');
-      }));
-    }
-    row.appendChild(btn('desk-btn', t('rules.suggested.empty'), function () {
-      const label = sug.length ? sug[0].label : t('rules.suggested.first');
-      change(t('rules.suggested.empty'), lang, '## ' + t('rules.lang', { language: langName(lang) }) + '\n\n- **' + label + ':** \n',
-        lang + '#2!edit');
-    }));
-    box.appendChild(row);
-    return box;
-  }
 
-  function renderGlossary(body) {
-    const lang = S.lang, scope = 'glossary:' + lang, s = sc(scope);
-    const hd = h('h3', 'sec-h', t('rules.glossary'));
-    hd.id = 'sec-glossary';
-    body.appendChild(hd);
-    const n = noticeFor(scope); if (n) body.appendChild(n);
-    if (!s.loaded) { body.appendChild(skeleton()); return; }
-    const g = M.parseGlossary(current(scope));
-    const terms = g.terms;
-    railAdd(t('rules.glossary'), 'sec-glossary', false, tn('rules.count.terms', terms.length, { n: terms.length }));
-    const used = M.parseGlossary(inUse(scope)).terms;
-    const save = function (list, label, focus) { change(label, scope, M.serializeGlossary(langName(lang), list), focus); };
-    const tbl = h('div', 'gl');
-    const head = h('div', 'gl-head');
-    head.appendChild(h('div', null, t('rules.glossary.en')));
-    head.appendChild(h('div', null, langName(lang)));
-    head.appendChild(h('div', null, t('rules.glossary.keep')));
-    head.appendChild(h('div'));
-    tbl.appendChild(head);
-    terms.forEach(function (term, i) {
-      const row = h('div', 'gl-row');
-      row.dataset.line = scope + '#' + (i + 2);
-      const u = used[i];
-      const edited = !u || u.en !== term.en || u.to !== term.to || u.keep !== term.keep;
-      row.classList.toggle('is-edited', edited && s.loaded && inUse(scope) !== current(scope));
-      ['en', 'to'].forEach(function (k) {
-        const cell = h('div', 'gl-cell');
-        cell.appendChild(editable({ raw: term[k], aria: t(k === 'en' ? 'rules.glossary.en' : 'rules.scope.glossary', { language: langName(lang) }),
-          id: scope + '#' + (i + 2) + '.' + k,
-          commit: function (text) {
-            const list = M.parseGlossary(current(scope)).terms;
-            if (!list[i]) return;
-            list[i][k] = text.replace(/\n/g, ' ');
-            save(list, t('rules.undo.edit'), scope + '#' + (i + 2));
-          } }));
-        row.appendChild(cell);
-      });
-      const lab = h('label', 'chk');
-      const cb = h('input');
-      cb.type = 'checkbox';
-      cb.checked = term.keep;
-      cb.setAttribute('aria-label', t('rules.glossary.keep') + ': ' + term.en);
-      cb.addEventListener('change', function () {
-        const list = M.parseGlossary(current(scope)).terms;
-        if (!list[i]) return;
-        list[i].keep = cb.checked;
-        if (cb.checked && !list[i].to) list[i].to = list[i].en;
-        save(list, t('rules.glossary.keep'), scope + '#' + (i + 2));
-      });
-      lab.appendChild(cb);
-      row.appendChild(lab);
-      row.appendChild(btn('link rm', t('rules.remove'), function () {
-        const list = M.parseGlossary(current(scope)).terms;
-        list.splice(i, 1);
-        save(list, t('rules.remove'));
-      }));
-      tbl.appendChild(row);
-    });
-    body.appendChild(tbl);
-    const add = btn('desk-btn gl-add', t('rules.glossary.add'), function () {
-      const list = M.parseGlossary(current(scope)).terms;
-      list.push({ en: '', to: '', keep: false });
-      save(list, t('rules.glossary.add'), scope + '#' + (list.length + 1) + '.en!edit');
-    });
-    body.appendChild(add);
-  }
-
-  function renderBriefs(body) {
-    const lang = S.lang;
-    const hd = h('h3', 'sec-h', t('rules.briefs'));
-    hd.id = 'sec-briefs';
-    body.appendChild(hd);
-    let count = 0;
-    PAGES.forEach(function (p) {
-      const scope = 'brief:' + p.slug + ':' + lang, s = sc(scope);
-      const card = h('section', 'bcard');
-      card.appendChild(h('h4', null, p.name));
-      const n = noticeFor(scope); if (n) card.appendChild(n);
-      if (!s.loaded) { card.appendChild(skeleton()); body.appendChild(card); return; }
-      const text = current(scope);
-      if (!text.trim()) {
-        const none = h('div', 'bnone');
-        none.appendChild(h('p', 'muted', t('rules.brief.none')));
-        none.appendChild(btn('desk-btn', t('rules.brief.add'), function () {
-          change(t('rules.brief.add'), scope, CFG.briefSections.map(function (x) { return '## ' + x + '\n'; }).join('\n'),
-            scope + '#0');
-        }));
-        card.appendChild(none);
-      } else {
-        count++;
-        if (s.version) card.appendChild(h('div', 'tag', t('rules.brief.inuse', { n: s.version })));
-        const blocks = withLines(M.parse(text));
-        renderBody(scope, blocks, card, { onBlock: function (b, wrap) {
-          // a section with no text yet: an empty line to type into, inserted after its heading
-          if (b.kind !== 'head') return;
-          const i = blocks.indexOf(b);
-          const nx = blocks.slice(i + 1).find(function (x) { return x.kind !== 'blank'; });
-          if (nx && nx.kind !== 'head') return;
-          wrap.after(editable({ raw: '', aria: b.text, multi: true, id: scope + '#' + b.line + '+',
-            commit: function (typed) {
-              if (!typed.trim()) { render(); return; }
-              const blocks2 = withLines(M.parse(current(scope)));
-              const k = blocks2.findIndex(function (x) { return x.line === b.line; });
-              blocks2.splice(k + 1, 0, { kind: 'blank', raw: '' }, { kind: 'para', edited: true, prefix: '', text: typed });
-              change(t('rules.undo.edit'), scope, M.serialize(blocks2), scope + '#' + (b.line + 2));
-            } }));
-        } });
-      }
-      body.appendChild(card);
-    });
-    railAdd(t('rules.briefs'), 'sec-briefs', false, tn('rules.count.briefs', count, { n: count }));
-  }
-
+  // ── the sections ─────────────────────────────────────────────────────────────────
   function skeleton() {
     const sk = h('div', 'r-skel');
     sk.setAttribute('aria-hidden', 'true');
     for (let i = 0; i < 4; i++) sk.appendChild(h('div', 'r-skel-line'));
     return sk;
   }
-
-  // ── the whole page ───────────────────────────────────────────────────────────────
-  const els = {
-    lgBtn: $('#rulesLang'), menu: null, ol: $('#rulesOutline'), shared: $('#sheet-shared'), lang: $('#sheet-lang'),
-    langHead: $('#sheet-lang .sheet-head'), save: $('#rulesSave'), dot: $('#rulesDot'), undo: $('#rulesUndo'),
-    redo: $('#rulesRedo'), use: $('#rulesUse'), hist: $('#rulesHistory'), note: $('#rulesNote'), drawer: $('#rulesDrawer'),
-    tl: $('#rulesTimeline'), toasts: $('#rulesToasts'), offline: $('#rulesOffline'),
-  };
-  function render(focus, flash) {
-    const y = window.scrollY;
-    railItems.length = 0;
-    [els.shared, els.lang].forEach(function (sheet) {
-      Array.prototype.slice.call(sheet.children).forEach(function (c) { if (!c.classList.contains('sheet-head')) c.remove(); });
-    });
-    els.langHead.textContent = t('rules.lang', { language: langName(S.lang) });
-    els.lgBtn.textContent = flagOf(S.lang) + ' ' + langName(S.lang);
-    els.lgBtn.title = otherPending() ? t('rules.lang.pending.btn') : '';
-    if (otherPending()) els.lgBtn.appendChild(h('span', 'pend', ' •'));
-    renderShared(els.shared);
-    renderLang(els.lang);
-    renderRail();
-    updateBar();
-    if (drawerOpen()) renderHistory();
-    window.scrollTo(0, y);
-    if (focus) placeFocus(focus, flash);
-    root.dataset.state = scopesFor(S.lang).every(function (x) { return sc(x).loaded; }) ? 'ready' : 'loading';
-  }
-  function placeFocus(focus, flash) {
-    const editNow = /!edit$/.test(focus);
-    const id = focus.replace(/!edit$/, '');
-    const node = document.querySelector('[data-rid="' + cssEsc(id) + '"]') || document.querySelector('[data-line="' + cssEsc(id) + '"]');
-    if (!node) return;
-    node.scrollIntoView({ block: 'nearest' });
-    if (editNow && node.classList.contains('ed')) node.click();
-    if (flash) {
-      const w = node.closest('[data-line]') || node;
-      w.classList.add('flash');
-      setTimeout(function () { w.classList.remove('flash'); }, TIMING.flash);
-    }
-  }
-  function cssEsc(s) { return window.CSS && CSS.escape ? CSS.escape(s) : s.replace(/["\\]/g, '\\$&'); }
-  function flagOf(code) { const l = LOCALES.find(function (x) { return x.code === code; }); return l ? l.flag : ''; }
-
-  let spyOn = false, spyQueued = false;
-  function renderRail() {
-    els.ol.textContent = '';
-    railItems.forEach(function (it) {
-      const b = btn('ol-item' + (it.sub ? ' ol-sub' : ''));
-      b.appendChild(h('div', 'ol-l', it.label));
-      if (it.count) b.appendChild(h('div', 'ol-c', it.count));
-      b.addEventListener('click', function () {
-        const n = document.getElementById(it.target);
-        if (n) n.scrollIntoView({ block: 'start' });
-      });
-      b.setAttribute('data-target', it.target);
-      it.btn = b;
-      els.ol.appendChild(b);
-    });
-    spy();
-    if (!spyOn) {
-      spyOn = true;
-      window.addEventListener('scroll', function () {
-        if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
-      }, { passive: true });
-    }
-  }
-  // The section being read (Ruling 07:30, as the desk's outline does): the last heading whose top has passed
-  // the top of the screen is marked current in the rail.
-  function spy() {
-    spyQueued = false;
-    let now = railItems[0] || null;
-    // At the end of a short page the last headings can never pass the line: there, the last one on screen is current.
-    const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-    railItems.forEach(function (it) {
-      const n = document.getElementById(it.target);
-      if (!n) return;
-      const top = n.getBoundingClientRect().top;
-      if (top <= 140 || (atEnd && window.scrollY > 0 && top < window.innerHeight)) now = it;
-    });
-    railItems.forEach(function (it) {
-      if (!it.btn) return;
-      it.btn.classList.toggle('is-cur', it === now);
-      if (it === now) it.btn.setAttribute('aria-current', 'true'); else it.btn.removeAttribute('aria-current');
-    });
-  }
-
-  let saveState = 'idle', saveTimer = 0;
-  function showSave(state) {
-    saveState = state;
-    clearTimeout(saveTimer);
-    updateBar();
-  }
-  function updateBar() {
-    const n = changeCount();
-    const offline = navigator.onLine === false;
-    let text, dot = 'dot';
-    if (S.busy) { text = t('rules.using'); dot = 'dot muted'; }
-    else if (offline) { text = t('rules.offline'); dot = 'dot warn'; }
-    else if (saveState === 'saving') { text = t('rules.draft.saving'); dot = 'dot muted'; }
-    else if (n) { text = t('rules.draft.saved'); }
-    else { text = t('rules.inuse'); }
-    els.save.textContent = text;
-    els.save.parentNode.title = n ? t('rules.draft.hint') : '';
-    els.dot.className = dot;
-    els.note.textContent = t('rules.next', { language: langName(S.lang) }) +
-      (n ? ' ' + tn('rules.pending', n, { n: n }) : '');
-    els.use.disabled = !n || S.busy;
-    // A disabled control says why (this page has no data-tip script: the reason is the title)
-    els.use.title = els.use.disabled && !S.busy ? t('rules.use.disabled') : '';
-    const u = U.undo[U.undo.length - 1], r = U.redo[U.redo.length - 1];
-    els.undo.disabled = !u || S.busy;
-    els.redo.disabled = !r || S.busy;
-    els.undo.title = !u && !S.busy ? t('doc.undo.none') : t('doc.undo.tip', { keys: keysFor('undo') });
-    els.redo.title = !r && !S.busy ? t('doc.redo.none') : t('doc.redo.tip', { keys: keysFor('redo') });
-    els.undo.querySelector('kbd').textContent = keysFor('undo');
-    els.redo.querySelector('kbd').textContent = keysFor('redo');
-  }
-
-  // ── History drawer ───────────────────────────────────────────────────────────────
-  const drawerOpen = function () { return els.drawer.classList.contains('open'); };
-  let histRows = null;
-  function openHistory() {
-    els.drawer.classList.add('open');
-    els.hist.setAttribute('aria-expanded', 'true');
-    histRows = null;
-    renderHistory();
-    const scopes = scopesFor(S.lang).filter(function (x) { return sc(x).version > 0; });
-    Promise.all(scopes.map(function (scope) {
-      return call({ action: 'desk-rules-history', scope: scope }).then(function (r) {
-        return r && r.ok ? (r.body.history || []) : null;
-      });
-    })).then(function (lists) {
-      if (lists.some(function (x) { return x === null; })) { histRows = 'error'; renderHistory(); return; }
-      const rows = [];
-      lists.forEach(function (list) {
-        list.forEach(function (row, i) {
-          const prev = list[i + 1];
-          rows.push(Object.assign({ prev: prev ? prev.body : null }, row));
-        });
-      });
-      rows.sort(function (a, b) { return String(b.updatedAt).localeCompare(String(a.updatedAt)); });
-      histRows = rows;
-      renderHistory();
-    });
-    const hd = els.drawer.querySelector('h2'); if (hd) hd.focus();
-  }
-  function closeHistory() {
-    els.drawer.classList.remove('open');
-    els.hist.setAttribute('aria-expanded', 'false');
-    els.hist.focus();
-  }
-  function renderHistory() {
-    els.tl.textContent = '';
-    if (histRows === null) { els.tl.appendChild(h('p', 'muted', t('rules.history.loading'))); return; }
-    if (histRows === 'error') { els.tl.appendChild(h('p', 'muted', t('rules.error.history'))); return; }
-    if (!histRows.length) { els.tl.appendChild(h('p', 'muted', t('rules.history.none'))); return; }
-    histRows.forEach(function (row) {
-      const card = h('div', 'vcard');
-      const isCur = sc(row.scope).version === row.version;
-      card.classList.toggle('is-cur', isCur);
-      const top = h('div', 'vc-top');
-      top.appendChild(h('strong', null, 'v' + row.version));
-      top.appendChild(h('span', null, fmtTime(row.updatedAt)));
-      top.appendChild(h('span', null, row.byName || row.updatedBy || ''));
-      card.appendChild(top);
-      card.appendChild(h('div', 'vc-s', scopeName(row.scope)));
-      if (isCur) card.appendChild(h('div', 'vc-t', t('rules.inuse')));
-      const ch = M.firstChange(row.prev, row.body);
-      const detail = h('div', 'detail');
-      detail.hidden = true;
-      if (ch) {
-        if (ch.before) detail.appendChild(h('span', 'was', ch.before));
-        if (ch.after) detail.appendChild(h('span', 'now', ch.after));
-      }
-      const acts = h('div', 'vc-a');
-      if (ch && row.prev != null) {
-        const show = btn('desk-btn', t('rules.history.change'));
-        show.setAttribute('aria-expanded', 'false');
-        show.addEventListener('click', function () {
-          detail.hidden = !detail.hidden;
-          show.setAttribute('aria-expanded', String(!detail.hidden));
-        });
-        acts.appendChild(show);
-      }
-      if (!isCur) acts.appendChild(btn('desk-btn', t('rules.restore'), function () { confirmRestore(row); }));
-      card.appendChild(acts);
-      card.appendChild(detail);
-      els.tl.appendChild(card);
-    });
-  }
-  function confirmRestore(row) {
-    const m = sc(row.scope).version;
-    modal(t('rules.restore'), [t('rules.restore.body', { n: row.version, date: fmtTime(row.updatedAt), m: m })], [
-      { text: t('doc.confirm.cancel') },
-      { text: t('rules.restore'), primary: true, run: function () {
-        const before = inUse(row.scope);
-        runWrites([{ scope: row.scope, body: row.body }]).then(function (res) {
-          if (res.writes.length) {
-            pushUndo({ kind: 'restore', label: t('rules.restore'), writes: [{ scope: row.scope, before: before, after: row.body }] });
-            toast(t('rules.toast.restored', { n: row.version, m: m }), 'ok');
-          }
-          render();
-          if (drawerOpen()) openHistory();
-        });
-      } },
-    ]);
-  }
-
-  // ── modal, toasts, language menu ─────────────────────────────────────────────────
-  function modal(title, paras, buttons) {
-    const back = h('div', 'cpw-overlay r-modal');
-    const box = h('div', 'cpw-modal');
-    box.setAttribute('role', 'dialog');
-    box.setAttribute('aria-modal', 'true');
-    const hd = h('h2', 'r-dlg-t', title);
-    hd.id = 'rules-dlg-t';
-    box.setAttribute('aria-labelledby', hd.id);
-    box.appendChild(hd);
-    paras.forEach(function (p) { box.appendChild(h('p', null, p)); });
-    const foot = h('div', 'r-dlg-foot');
-    const prev = document.activeElement;
-    const close = function () { back.remove(); document.removeEventListener('keydown', onKey, true); if (prev && prev.focus) prev.focus(); };
-    buttons.forEach(function (b) {
-      foot.appendChild(btn('desk-btn' + (b.primary ? ' is-primary' : ''), b.text, function () { close(); if (b.run) b.run(); }));
-    });
-    box.appendChild(foot);
-    back.appendChild(box);
-    document.body.appendChild(back);
-    const focusables = function () { return Array.prototype.slice.call(box.querySelectorAll('button')); };
-    function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-      if (e.key !== 'Tab') return;
-      const f = focusables(), first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-    }
-    document.addEventListener('keydown', onKey, true);
-    const f = focusables(); f[f.length - 1].focus();
-  }
-  function toast(message, level) {
-    const n = h('div', 'toast is-' + (level || 'ok'));
-    n.appendChild(h('span', 'toast-title', message));
-    els.toasts.appendChild(n);
-    while (els.toasts.children.length > 4) els.toasts.firstChild.remove();
-    setTimeout(function () { if (n.parentNode) n.remove(); }, 4000);
-  }
-  function fmtTime(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (isNaN(d)) return String(iso);
-    return d.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  }
-
-  function closeMenu(refocus) {
-    if (!els.menu) return;
-    els.menu.remove(); els.menu = null;
-    els.lgBtn.setAttribute('aria-expanded', 'false');
-    if (refocus) els.lgBtn.focus();
-  }
-  // A language other than the open one has changes not in use: a draft in memory (typed this visit) or in this
-  // browser (an earlier visit). `global` is shared by all eight and marks none.
-  function pendingIn(lang) {
-    return scopesFor(lang).some(function (scope) {
-      if (scope === 'global') return false;
-      const s = S.scopes[scope];
-      if (s && s.loaded && s.draft != null) return true;
-      const d = lsGet(DRAFT_KEY(scope));
-      return !!(d && typeof d.body === 'string');
-    });
-  }
-  function otherPending() {
-    return LOCALES.some(function (l) { return l.code !== S.lang && pendingIn(l.code); });
-  }
-  function openMenu() {
-    if (els.menu) { closeMenu(true); return; }
-    const m = h('div', 'menu');
-    m.setAttribute('role', 'menu');
-    LOCALES.forEach(function (l) {
-      const it = btn('menu-item' + (l.code === S.lang ? ' is-on' : ''), l.flag + ' ' + l.name, function () {
-        closeMenu(true); switchLang(l.code);
-      });
-      it.setAttribute('role', 'menuitem');
-      if (l.none) it.appendChild(h('span', 'none', ' ' + t('rules.none')));
-      if (l.code !== S.lang && pendingIn(l.code)) it.appendChild(h('span', 'pend', ' · ' + t('rules.lang.pending')));
-      m.appendChild(it);
-    });
-    els.lgBtn.parentNode.appendChild(m);
-    els.menu = m;                                   // closeMenu, the toggle and the outside click all work on this
-    els.lgBtn.setAttribute('aria-expanded', 'true');
-    m.querySelector('.is-on').focus();
-  }
-  function switchLang(code, quiet) {
-    if (code === S.lang) return;
-    flushEdit();
-    scopesFor(S.lang).forEach(persistDraft);       // the draft typed a moment ago must be in this browser before we leave it
-    S.lang = code;
-    const u = new URL(location.href);
-    u.searchParams.set('lang', code);
-    history.replaceState(null, '', u);
-    render();
-    if (!quiet) loadAll();
-    else loadAll();
-  }
-  function loadAll() {
-    const scopes = scopesFor(S.lang);
-    render();
-    return Promise.all(scopes.map(readScope)).then(function (oks) {
-      const bad = scopes.filter(function (x, i) { return !oks[i]; });
-      bad.forEach(function (scope) { sc(scope).notice = { kind: 'read', key: sc(scope).readError }; });
-      render();
-    });
-  }
-
-  // ── wiring ───────────────────────────────────────────────────────────────────────
-  els.lgBtn.addEventListener('click', openMenu);
-  els.use.addEventListener('click', confirmPublish);
-  els.undo.addEventListener('click', function () { step('undo'); });
-  els.redo.addEventListener('click', function () { step('redo'); });
-  els.hist.addEventListener('click', function () { if (drawerOpen()) closeHistory(); else openHistory(); });
-  $('#rulesHistoryClose').addEventListener('click', closeHistory);
-  document.addEventListener('click', function (e) {
-    if (els.menu && !els.menu.contains(e.target) && e.target !== els.lgBtn) closeMenu(false);
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      if (els.menu) { closeMenu(true); return; }
-      if (drawerOpen() && !document.querySelector('.r-modal')) { closeHistory(); return; }
-    }
-    const mod = IS_MAC ? e.metaKey : e.ctrlKey;
-    if (!mod || document.querySelector('.r-modal')) return;
-    const k = e.key.toLowerCase();
-    // inside a text being typed, the browser's own undo runs first
-    if (ed && (k === 'z' || k === 'y')) return;
-    if (k === 'z' && !e.shiftKey) { e.preventDefault(); step('undo'); }
-    else if ((k === 'z' && e.shiftKey) || (k === 'y' && !IS_MAC)) { e.preventDefault(); step('redo'); }
-  });
-  window.addEventListener('online', updateBar);
-  window.addEventListener('offline', updateBar);
-
-  // the read notice: a scope that could not be read shows why, with Try again
-  const baseNotice = noticeFor;
-  noticeFor = function (scope) {   // eslint-disable-line no-func-assign
-    const n = sc(scope).notice;
-    if (!n || n.kind !== 'read') return baseNotice(scope);
+  // A scope that could not be read says why, with Try again.
+  function notice(scope) {
+    const s = sc(scope);
     const box = h('div', 'r-notice');
     box.setAttribute('role', 'alert');
-    box.appendChild(h('p', null, t(n.key || 'rules.error.read')));
-    box.appendChild(btn('desk-btn', t('rules.retry'), function () { sc(scope).notice = null; loadAll(); }));
+    box.appendChild(h('p', null, t(s.key || 'rules.error.read')));
+    const b = h('button', 'desk-btn', t('rules.retry'));
+    b.type = 'button';
+    b.addEventListener('click', function () { s.state = 'loading'; load(); });
+    box.appendChild(b);
     return box;
-  };
+  }
+  function section(id, heading) {
+    const sec = h('section', 'r-sec');
+    sec.id = id;
+    sec.appendChild(h('h2', 'r-sec-h', heading));
+    return sec;
+  }
+  // The text of a scope, or its skeleton / notice. `fill(body, into)` draws a body that was read.
+  function scopeBody(scope, sec, fill) {
+    const s = sc(scope);
+    if (s.state === 'loading') { sec.appendChild(skeleton()); return; }
+    if (s.state === 'error') { sec.appendChild(notice(scope)); return; }
+    const body = h('div', 'r-text');
+    fill(s.body, body);
+    sec.appendChild(body);
+  }
+  function renderShared() {
+    const sec = section('rules-shared', t('rules.shared.all'));
+    scopeBody('global', sec, function (body, into) { renderBlocks(M.parse(body), into); });
+    return sec;
+  }
+  function renderLang() {
+    const lang = S.lang;
+    const sec = section('rules-lang', t('rules.lang', { language: langName(lang) }));
+    scopeBody(lang, sec, function (body, into) {
+      if (isSeedNone(body)) into.appendChild(h('p', 'r-empty', t('rules.empty', { language: langName(lang) })));
+      else renderBlocks(M.parse(body), into);
+    });
+    return sec;
+  }
+  function renderGlossary() {
+    const lang = S.lang;
+    const sec = section('rules-glossary', t('rules.glossary'));
+    scopeBody('glossary:' + lang, sec, function (body, into) {
+      const terms = M.parseGlossary(body).terms;
+      if (!terms.length) { into.appendChild(h('p', 'r-empty', t('rules.glossary.empty'))); return; }
+      const rows = [[t('rules.glossary.en'), langName(lang), t('rules.glossary.keep')]];
+      terms.forEach(function (term) { rows.push([term.en, term.to, term.keep ? t('rules.glossary.yes') : '']); });
+      const table = tableOf(rows, true);
+      table.classList.add('r-glossary');
+      into.appendChild(table);
+    });
+    return sec;
+  }
+  function render() {
+    tabs.forEach(function (b) {
+      const on = b.dataset.lang === S.lang;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    panel.setAttribute('aria-labelledby', 'rulesTab-' + S.lang);
+    panel.dataset.lang = S.lang;
+    panel.textContent = '';
+    panel.appendChild(renderShared());
+    panel.appendChild(renderLang());
+    panel.appendChild(renderGlossary());
+  }
 
-  window.RulesPage = { state: S, undo: U, hunks: hunks, changeCount: changeCount };
-  loadAll();
+  // ── the language tabs ────────────────────────────────────────────────────────────
+  function choose(code, focus) {
+    if (!known(code)) return;
+    const b = tabs.find(function (x) { return x.dataset.lang === code; });
+    if (code !== S.lang) {
+      S.lang = code;
+      const u = new URL(location.href);
+      u.searchParams.set('lang', code);
+      history.replaceState(null, '', u);
+      load();
+    }
+    if (focus && b) b.focus();
+  }
+  tabs.forEach(function (b, i) {
+    b.addEventListener('click', function () { choose(b.dataset.lang, false); });
+    b.addEventListener('keydown', function (e) {
+      let to = null;
+      if (e.key === 'ArrowRight') to = tabs[(i + 1) % tabs.length];
+      else if (e.key === 'ArrowLeft') to = tabs[(i - 1 + tabs.length) % tabs.length];
+      else if (e.key === 'Home') to = tabs[0];
+      else if (e.key === 'End') to = tabs[tabs.length - 1];
+      if (!to) return;
+      e.preventDefault();
+      choose(to.dataset.lang, true);
+    });
+  });
+
+  load();
 })();

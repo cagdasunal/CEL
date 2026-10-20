@@ -138,26 +138,16 @@ def test_every_text_colour_reaches_wcag_aa_on_the_cream_and_on_the_selected_stag
     assert _contrast(fg, surface) >= 4.5 and _contrast(fg, stage) >= 4.5
 
 
-def test_config_carries_eight_locales_and_none_only_for_ja_ko_ar(config):
+def test_config_carries_the_eight_locales(config):
     locales = config["locales"]
     assert len(locales) == 8
     for loc in locales:
         assert loc["code"] and loc["name"] and loc["flag"]
-    assert {l["code"] for l in locales if l["none"]} == {"ja", "ko", "ar"}
-    assert [l["code"] for l in locales if l["none"] is not True] == [
-        l["code"] for l in locales if l["code"] not in ("ja", "ko", "ar")]
 
 
-def test_config_carries_the_four_pages_with_names_from_copy(config):
-    slugs = ["vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english"]
-    assert [p["slug"] for p in config["pages"]] == slugs
-    for p in config["pages"]:
-        assert p["name"] == C.t("page." + p["slug"])
-
-
-def test_config_brief_sections_are_the_ten_in_order(config):
-    assert config["briefSections"] == list(GR.BRIEF_SECTIONS)
-    assert len(config["briefSections"]) == 10
+def test_config_carries_the_locales_and_nothing_of_the_editor(config):
+    # CEL-080: no page list, no brief sections, no checked or suggested rules: the page only shows a language's rules
+    assert set(config) == {"locales"}
 
 
 def test_config_json_has_no_script_closer():
@@ -252,7 +242,7 @@ def _keys_used() -> tuple[set[str], set[str]]:
 
 def test_page_finds_the_copy_keys_it_uses():
     plain, plural = _keys_used()
-    assert len(plain) > 20 and plural, "the key scan found almost nothing: the regex is wrong"
+    assert len(plain) >= 8 and not plural, "the key scan found almost nothing: the regex is wrong"
 
 
 def test_every_copy_key_the_page_asks_for_exists():

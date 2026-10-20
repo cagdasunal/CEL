@@ -74,8 +74,6 @@ def test_no_browser_title_tooltips():
     assert not markup, f"markup carries title= {len(markup)} times"
 
 
-@pytest.mark.xfail(strict=True, raises=AssertionError,
-                   reason="rules_page.js sets .title in 3 places (CEL-046; Found in CEL-050): remove this mark when it is fixed")
 def test_the_rules_page_sets_no_native_title_tooltips():
     typed, markup = _title_offenders(RULES_JS)
     assert not typed, f"rules_page.js sets .title {len(typed)} times"

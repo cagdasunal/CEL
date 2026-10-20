@@ -1423,6 +1423,9 @@
       url.searchParams.set('lang', S.lang);
       window.history.replaceState(null, '', url.pathname + url.search);
     } catch (_) {}
+    // "Translation rules" opens the rules page on the language the desk is showing (CEL-080)
+    const rules = document.getElementById('doc-rules');
+    if (rules) rules.setAttribute('href', '/admin/localization/rules/?lang=' + encodeURIComponent(S.lang));
   }
   function headings() {
     const lang = S.lang;
