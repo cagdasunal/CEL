@@ -290,6 +290,27 @@ def _file_modal() -> str:
     )
 
 
+INDEX_REDIRECT_TO = "/admin/localization/document/"
+
+
+def render_index_redirect() -> str:
+    """The index page since CEL-045 (2026-10-20): the desk is the document page, so the old
+    language list is only a redirect to it, in the shape /admin/ already uses. `render_index`
+    stays until the v1 desk is removed (cleanup C4); `main` no longer writes it."""
+    return (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        '  <meta charset="utf-8">\n'
+        '  <meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        '  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">\n'
+        '  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">\n'
+        f'  <meta http-equiv="refresh" content="0; url={INDEX_REDIRECT_TO}">\n'
+        f'  <title>{escape(t("meta.index.title"))}</title>\n'
+        '  <link rel="icon" type="image/png" href="/assets/img/favicon.png">\n'
+        f"  <script>location.replace('{INDEX_REDIRECT_TO}');</script>\n"
+        '</head>\n<body></body>\n</html>\n'
+    )
+
+
 def render_index(units: list[dict]) -> str:
     total = len(units)
     parts = _head(t("meta.index.title"), t("meta.index.description"))
@@ -3699,7 +3720,7 @@ def main() -> int:
     written = []
 
     index = OUT_ROOT / "index.html"
-    index.write_text(render_index(units), encoding="utf-8")
+    index.write_text(render_index_redirect(), encoding="utf-8")
     written.append(index)
 
     for code, _endonym, _direction, _flag in LOCALES:

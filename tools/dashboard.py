@@ -1743,7 +1743,7 @@ def render_topbar(active: str = "offers") -> str:
         <a class="{tab('offers')}" href="/admin/offers/">OFFERS</a>
         <a class="{tab('images')}" href="/admin/images/">IMAGES</a>
         <a class="{tab('docs')}" href="/admin/docs/">DOCS</a>
-        <a class="{tab('localization')}" href="/admin/localization/">LOCALIZATION</a>
+        <a class="{tab('localization')}" href="/admin/localization/document/">LOCALIZATION</a>
         <details class="shell-tab-dropdown">
           <summary class="{grp('weglot')}">WEGLOT {chevron}</summary>
           <ul class="shell-tab-submenu">

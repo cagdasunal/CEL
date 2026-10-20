@@ -599,6 +599,13 @@ def test_another_page_rewriting_a_language_is_not_undone_by_an_open_desk_tab(bro
         ctx.close()
 
 
+# CEL-045 (2026-10-20): /admin/localization/ is a redirect to the document desk now, so the tests
+# that read the old language list have nothing to read. They go with the v1 desk in cleanup C4.
+INDEX_IS_A_REDIRECT = pytest.mark.skip(
+    reason="the index is a redirect to the document desk since CEL-045; the v1 desk goes in C4")
+
+
+@INDEX_IS_A_REDIRECT
 def test_the_index_counts_only_what_is_really_unsaved(browser):
     """L1 P2-3: key order and empty records made the index offer to discard saved work."""
     with desk("new") as (base, _root, _worker):
@@ -866,6 +873,7 @@ def test_undo_from_the_requested_list_puts_the_turned_down_draft_back(browser):
         page.close()
 
 
+@INDEX_IS_A_REDIRECT
 def test_the_index_offers_no_discard_while_saving_is_off(browser):
     """P2-3: with nothing on a server, "Discard N unsaved" was a one-click wipe of a whole
     language, beside a desk saying "kept in this browser"."""
@@ -955,7 +963,8 @@ def _first_visible(page, act):
 
 
 _STATES = {
-    "the index": ("/admin/localization/", None, "body"),
+    # "the index" is gone (CEL-045): /admin/localization/ is a redirect to the document desk,
+    # whose own controls are walked by test_document_browser.py.
     "a language page": ("/admin/localization/de/", _rows_ready, "body"),
     "with texts ticked": ("/admin/localization/de/?show=all", lambda pg: (
         _rows_ready(pg), pg.locator(f"{ROWS}:visible [data-pick]").first.evaluate("e => e.click()")), "#savebar"),
@@ -1428,6 +1437,7 @@ def test_the_client_never_sends_more_than_the_storage_takes_in_ten_minutes(brows
 
 # ── WO-18: the index's counts come from the storage (desk-summary) ──────────────────────
 
+@INDEX_IS_A_REDIRECT
 def test_the_index_on_another_computer_shows_what_was_saved(browser):
     with desk(save_on=True) as (base, _root, worker):
         a = _as_open(browser.new_context(), base + "/admin/localization/de/?show=all")
@@ -1450,6 +1460,7 @@ def test_the_index_on_another_computer_shows_what_was_saved(browser):
         assert "desk-summary" in worker.calls
 
 
+@INDEX_IS_A_REDIRECT
 def test_the_index_says_so_when_it_cannot_read_the_storage(browser):
     with desk(save_on=True) as (base, _root, worker):
         worker.action_faults["desk-summary"] = {"status": 503, "error": "storage not configured"}
@@ -1458,6 +1469,7 @@ def test_the_index_says_so_when_it_cannot_read_the_storage(browser):
         idx.get_by_text(C.t("index.summary.failed")).wait_for(timeout=15000)
 
 
+@INDEX_IS_A_REDIRECT
 def test_the_live_index_asks_the_storage_nothing_while_saving_is_off(browser):
     with desk("new", save_off=True) as (base, _root, worker):
         idx = browser.new_page()

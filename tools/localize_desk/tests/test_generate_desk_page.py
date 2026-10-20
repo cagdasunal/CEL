@@ -109,6 +109,25 @@ class TestMainRefusesEmptyOutput:
             assert (out / code / "index.html").is_file(), code
 
 
+def test_the_index_is_a_redirect_to_the_document_desk(units_dir, tmp_path, monkeypatch):
+    """CEL-045 (operator 2026-10-19: the new desk is THE desk): /admin/localization/ only sends
+    a reader on to /admin/localization/document/, in the shape /admin/ already uses, and the
+    generator writes that page (a rerun must not bring the old language list back)."""
+    _write(units_dir, "vancouver", [_unit("a", current={code: {"word_to": "x"} for code, *_ in G.LOCALES})])
+    out = tmp_path / "out"
+    monkeypatch.setattr(G, "OUT_ROOT", out)
+    assert G.main() == 0
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert page == G.render_index_redirect()
+    to = "/admin/localization/document/"
+    assert f'<meta http-equiv="refresh" content="0; url={to}">' in page
+    assert f"location.replace('{to}')" in page
+    assert 'name="robots" content="noindex' in page
+    assert "<body></body>" in page                     # no list, no desk script, no sign-in gate
+    assert "desk-locale-card" not in page and "dashboard-config.js" not in page
+    assert len(page.encode("utf-8")) < 1000
+
+
 class TestRenderedPage:
     @pytest.fixture()
     def page(self, units_dir):
@@ -549,7 +568,8 @@ def test_the_committed_desk_saves():
     as the one switch back (the harness's save_off serves it that way)."""
     from localize_desk import harness as H
     assert G.SAVE_OFF is False
-    pages = sorted(G.OUT_ROOT.rglob("index.html"))
+    # Not the index: since CEL-045 it is a redirect to the document desk, with no desk script.
+    pages = sorted(p for p in G.OUT_ROOT.rglob("index.html") if p != G.OUT_ROOT / "index.html")
     if not pages:
         pytest.skip("no committed desk in this checkout")
     assert all(H.SAVE_ON_LINE in p.read_text(encoding="utf-8") for p in pages)
@@ -568,7 +588,8 @@ def test_the_harness_serves_the_desk_as_committed_or_switched_off_or_on():
         root = H.stage_copy(**kw)
         try:
             pages = list((root / "admin" / "localization").rglob("index.html"))
-            texts = [q.read_text(encoding="utf-8") for q in pages]
+            index = root / "admin" / "localization" / "index.html"        # a redirect since CEL-045
+            texts = [q.read_text(encoding="utf-8") for q in pages if q != index]
             # 8 languages + the index + the document page (desk v2, CEL-026)
             assert len(pages) == 10 and all(want in t and gone not in t for t in texts), kw
         finally:
