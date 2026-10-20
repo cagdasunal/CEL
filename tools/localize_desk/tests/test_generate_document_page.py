@@ -48,7 +48,7 @@ PATHS = {
 
 def _unit(uid: str, word_from: str = "Hello", *, pages: list[str] | None = None, role: str = "body",
           markup: str = "plain", noise: bool = False, summary: bool = False, section: str = "Sec",
-          tag: str = "p", ord_: int | None = None, current: dict | None = None) -> dict:
+          tag: str = "p", ord_: int | None = None, current: dict | None = None, chrome: bool = False) -> dict:
     unit = {
         "unit_id": uid, "word_from": word_from, "type": "Text", "role": role, "section": section,
         "markup_class": markup, "noise": noise, "summary_owned": summary,
@@ -59,6 +59,8 @@ def _unit(uid: str, word_from: str = "Hello", *, pages: list[str] | None = None,
         unit["pages"] = pages
     if ord_ is not None:
         unit["ord"] = ord_
+    if chrome:                                  # the engine writes the flag on a menu / footer text only, never `false`
+        unit["chrome"] = True
     return unit
 
 
@@ -68,11 +70,18 @@ def _on(n: int, own: str = "/vancouver") -> list[str]:
 
 
 def _menu(uid: str, **kw) -> dict:
-    """A unit that meets all three conditions of the menu / footer rule (contract section 10):
-    on 30 paths of the site, outside every heading. Any keyword overrides, to flip one condition."""
-    base = dict(section="", pages=_on(30))
+    """A menu / footer text as the engine's manifest writes it: `chrome: true` (its rule, contract
+    section 10 and monorepo gates.is_chrome: on 30 paths of the site, outside every heading, not the title
+    or description). The flag is what the generator reads. Any keyword overrides."""
+    base = dict(section="", pages=_on(30), chrome=True)
     base.update(kw)
     return _unit(uid, **base)
+
+
+def _looks_like_menu(uid: str, **kw) -> dict:
+    """The same text WITHOUT the flag: what the old generator rule would have dropped. The engine did not
+    flag it, so it is a body text."""
+    return _menu(uid, **{**dict(chrome=False), **kw})
 
 
 def _write(d: Path, key: str, units: list[dict], *, order: list | None | str = "file",
@@ -93,7 +102,10 @@ def _write(d: Path, key: str, units: list[dict], *, order: list | None | str = "
 def _corpus(d: Path) -> Path:
     """All four pages, one text each (what main() needs to write anything)."""
     for i, key in enumerate(G.PAGE_KEYS):
-        _write(d, key, [_unit(f"u{i}", f"Text of {key}")], built=f"2026-10-19T1{i}:00:00Z")
+        units = [_unit(f"u{i}", f"Text of {key}")]
+        if i == 0:                                      # a real corpus always has menu texts the engine flagged
+            units.append(_menu("m0"))
+        _write(d, key, units, built=f"2026-10-19T1{i}:00:00Z")
     return d
 
 
@@ -285,10 +297,14 @@ class TestEveryTextIsEditable:
 # ── The site's menu and footer are left out ─────────────────────────────────────────────
 
 class TestTheMenuAndFooterAreLeftOut:
-    def test_the_threshold_is_thirty_pages(self):
-        assert GD.CHROME_MIN_PAGES == 30
+    """CEL-039: the engine decides (a unit's `chrome: true`, monorepo gates.is_chrome); the generator drops
+    exactly the flagged units and holds no copy of the rule. The rule itself is pinned in the monorepo."""
 
-    def test_a_text_that_meets_all_three_conditions_is_dropped_whole(self, units_dir):
+    def test_the_generator_no_longer_holds_a_copy_of_the_rule(self):
+        for gone in ("is_chrome", "CHROME_MIN_PAGES", "META_BLOCKS"):
+            assert not hasattr(GD, gone), f"{gone}: the engine's flag replaced the generator's own rule"
+
+    def test_a_flagged_text_is_dropped_whole(self, units_dir):
         _write(units_dir, "vancouver", [_unit("keep-1"), _menu("menu"), _unit("keep-2")])
         docs = GD.load_documents(units_dir)
         assert [b["id"] for b in _blocks(docs)] == ["keep-1", "keep-2"]
@@ -296,30 +312,28 @@ class TestTheMenuAndFooterAreLeftOut:
         entry = GD.pages_payload(docs)["pages"][0]
         assert (entry["count"], entry["chrome"], entry["ids"]) == (2, 1, ["keep-1", "keep-2"])
 
-    @pytest.mark.parametrize("flip, why", [
-        (dict(section="Frequently Asked Questions"), "it stands under a heading: a body text, whatever its page count"),
-        (dict(pages=_on(29)), "29 pages is one short of the menu"),
-        (dict(pages=list(PATHS.values())), "the four pages alone are not the rest of the site"),
-        (dict(block="meta-title"), "the page's title is not the menu"),
-        (dict(block="meta-description"), "nor is its description"),
-    ], ids=["section", "29 pages", "in scope only", "meta-title", "meta-description"])
-    def test_each_condition_flipped_alone_keeps_the_text(self, units_dir, monkeypatch, flip, why):
-        """The page-count rule alone dropped FAQ answers on 35 pages and course names on 78 (§10)."""
-        flip = dict(flip)
-        if "pages" in flip and len(flip["pages"]) == 4:
-            monkeypatch.setattr(GD, "CHROME_MIN_PAGES", 4)        # so the count is met and only "outside" is flipped
-            for key in G.PAGE_KEYS[1:]:                           # the four pages are in scope when all four are loaded
-                _write(units_dir, key, [_unit("other")])
-        block = flip.pop("block", "p")
-        _write(units_dir, "vancouver", [_menu("a", **flip), _unit("z")], order=[("a", block), ("z", "p")])
+    @pytest.mark.parametrize("looks_like", [
+        dict(),                                                   # on 30 paths, outside every heading: the old rule's three conditions
+        dict(pages=_on(31)),
+        dict(pages=_on(29)),
+        dict(pages=list(PATHS.values())),                         # the four pages alone
+        dict(section="Frequently Asked Questions"),
+    ], ids=["all three old conditions", "31 pages", "29 pages", "in scope only", "under a heading"])
+    def test_a_text_the_engine_did_not_flag_is_kept_whatever_it_looks_like(self, units_dir, looks_like):
+        """CEL-039: the old generator rule would have dropped the first three; the engine's answer, not a copy of
+        its rule, decides, so an unflagged text is a body text, editable and in the payload."""
+        _write(units_dir, "vancouver", [_looks_like_menu("a", **looks_like), _unit("z")])
         docs = GD.load_documents(units_dir)
-        assert [b["id"] for b in _blocks(docs)] == ["a", "z"], why
-        assert docs["vancouver"]["chrome"] == 0, why
-        assert _blocks(docs)[0]["lock"] == "" and "a" in GD.pages_payload(docs)["pages"][0]["ids"], why
+        assert [b["id"] for b in _blocks(docs)] == ["a", "z"]
+        assert docs["vancouver"]["chrome"] == 0
+        assert _blocks(docs)[0]["lock"] == "" and "a" in GD.pages_payload(docs)["pages"][0]["ids"]
 
-    def test_a_menu_text_flipped_back_is_dropped_again(self, units_dir):
-        """The control for the flips above: the same unit with all three conditions met goes."""
-        _write(units_dir, "vancouver", [_menu("a"), _unit("z")], order=[("a", "link"), ("z", "p")])
+    @pytest.mark.parametrize("flagged", [
+        dict(), dict(pages=_on(2)), dict(section="Some heading"), dict(pages=["/vancouver"]),
+    ], ids=["menu", "2 pages", "under a heading", "own page only"])
+    def test_a_flagged_text_is_dropped_whatever_else_is_true_of_it(self, units_dir, flagged):
+        """The flag is the whole decision: the generator does not second-guess the engine."""
+        _write(units_dir, "vancouver", [_menu("a", **flagged), _unit("z")])
         docs = GD.load_documents(units_dir)
         assert [b["id"] for b in _blocks(docs)] == ["z"] and docs["vancouver"]["chrome"] == 1
 
@@ -329,7 +343,7 @@ class TestTheMenuAndFooterAreLeftOut:
         assert (b["lock"], b["out"], b["outEg"], b["sec"]) == ("", 34, "/site/p00", "FAQ")
 
     def test_a_text_on_twenty_nine_pages_is_kept_editable_with_its_note(self, units_dir):
-        _write(units_dir, "vancouver", [_menu("shared", pages=_on(29))])
+        _write(units_dir, "vancouver", [_looks_like_menu("shared", pages=_on(29))])
         docs = GD.load_documents(units_dir)
         b = _blocks(docs)[0]
         assert (b["id"], b["lock"], b["out"]) == ("shared", "", 28)
@@ -344,11 +358,6 @@ class TestTheMenuAndFooterAreLeftOut:
         docs = GD.load_documents(units_dir)
         assert [b["id"] for b in _blocks(docs)] == ["ok"] and docs["vancouver"]["chrome"] == 3
 
-    def test_the_four_pages_alone_never_make_a_text_the_menu(self, units_dir):
-        every = list(PATHS.values())
-        _write(units_dir, "vancouver", [_menu("a", pages=every)])
-        assert GD.load_documents(units_dir)["vancouver"]["chrome"] == 0
-
     def test_the_count_of_dropped_texts_is_reported_for_each_page(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a"), _menu("m1"), _menu("m2", pages=_on(35))])
         _write(units_dir, "vs-toronto", [_menu("b", pages=_on(30, "/vancouver/vs-toronto"))])
@@ -360,16 +369,19 @@ class TestTheMenuAndFooterAreLeftOut:
         assert list(docs["vancouver"]) == ["page", "path", "built", "chrome", "blocks"]
 
     def test_a_dropped_text_does_not_disturb_the_order_or_the_others(self, units_dir):
-        units = [_unit("a"), _menu("menu"), _menu("b", pages=_on(5)), _unit("c")]
+        units = [_unit("a"), _menu("menu"), _looks_like_menu("b", pages=_on(5)), _unit("c")]
         _write(units_dir, "vancouver", units, order=[("c", "h2"), ("menu", "link"), ("a", "p"), ("b", "li")])
         assert [(b["id"], b["b"]) for b in _blocks(GD.load_documents(units_dir))] == [
             ("c", "h2"), ("a", "p"), ("b", "li")]
 
-    def test_the_threshold_is_the_constant(self, units_dir, monkeypatch):
-        _write(units_dir, "vancouver", [_menu("two", pages=_on(2)), _menu("three", pages=_on(3))])
-        monkeypatch.setattr(GD, "CHROME_MIN_PAGES", 3)
-        docs = GD.load_documents(units_dir)
-        assert [b["id"] for b in _blocks(docs)] == ["two"] and docs["vancouver"]["chrome"] == 1
+    def test_main_refuses_when_no_unit_anywhere_carries_the_engines_flag(self, units_dir, stub_js, out_dir, capsys):
+        """CEL-039: units files from before the engine wrote `chrome` would put the site's menu and footer into
+        the desk; writing nothing and saying why is the only safe answer."""
+        for i, key in enumerate(G.PAGE_KEYS):
+            _write(units_dir, key, [_unit(f"u{i}"), _looks_like_menu(f"menu{i}")])
+        assert GD.main() == 2 and not out_dir.exists()
+        err = capsys.readouterr().err
+        assert "chrome" in err and "refresh the manifest" in err
 
     def test_the_files_main_writes_carry_the_count(self, units_dir, stub_js, out_dir):
         _corpus(units_dir)
@@ -518,7 +530,7 @@ class TestTheExplicitMenuAndFooterList:
         _write(units_dir, "vancouver", [
             _unit("body", "Body text"),
             _menu("m-high", word_from="About us"),
-            _menu("m-low", word_from="Contact us", pages=_on(5)),
+            _looks_like_menu("m-low", word_from="Contact us", pages=_on(5)),       # below the threshold: not flagged
         ])
         raw = json.loads((units_dir / "vancouver.json").read_text(encoding="utf-8"))
         doc = GD.load_documents(units_dir)["vancouver"]
@@ -656,7 +668,8 @@ class TestMain:
 
     def test_the_json_is_compact_and_keeps_every_script_as_written(self, units_dir, stub_js, out_dir):
         _write(units_dir, "vancouver", [_unit("a", "Café — “quoted”", current={
-            "de": {"word_to": "Café — „zitiert“", "translated": True}, "ar": {"word_to": "مرحبا", "translated": True}})])
+            "de": {"word_to": "Café — „zitiert“", "translated": True}, "ar": {"word_to": "مرحبا", "translated": True}}),
+            _menu("m")])
         for key in G.PAGE_KEYS[1:]:
             _write(units_dir, key, [_unit("x")])
         GD.main()
@@ -686,7 +699,7 @@ class TestMain:
 
     def test_the_scan_can_fail_on_what_this_generator_writes(self, units_dir, stub_js, out_dir):
         """verify the verifier: a rule id or a citation in a unit's text must reach the scan."""
-        _write(units_dir, "vancouver", [_unit("a", "TG §4.2 says so"), _unit("b", "see XX-SAMPLE-01")])
+        _write(units_dir, "vancouver", [_unit("a", "TG §4.2 says so"), _unit("b", "see XX-SAMPLE-01"), _menu("m")])
         for key in G.PAGE_KEYS[1:]:
             _write(units_dir, key, [_unit("x")])
         GD.main()

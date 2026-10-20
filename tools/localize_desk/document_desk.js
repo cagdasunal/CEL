@@ -104,6 +104,18 @@
     return d ? ((d.w && d.w[S.lang]) || d.en || '') : '';
   }
   function decide(uid, text) { return withText(curRec(S.lang, uid), text, liveWording(uid)); }
+  function unstamped(rec) {
+    if (!rec) return rec;
+    const next = Object.assign({}, rec);
+    delete next.approvedAgainst;
+    return next;
+  }
+  // A record with a text, stamped against the wording the page shows now (a record with none, or a text this
+  // page does not hold, is left as it is).
+  function restamp(uid, rec) {
+    if (!rec || !rec.text || typeof rec.approvedAgainst !== 'string' || !M.get(uid)) return rec;
+    return withText(rec, rec.text, liveWording(uid));
+  }
 
   // ── state ──────────────────────────────────────────────────────────────────────────
   const S = { page: null, lang: null, doc: null, loading: true, token: 0 };
@@ -203,7 +215,9 @@
   function run() {
     clearTimeout(net.timer); clearTimeout(net.maxTimer);
     net.timer = null; net.maxTimer = null;
-    if (SAVE_OFF_ON) return;
+    // A cap or a daily stop sends nothing more, whoever asks: the `online` event and a write that was
+    // queued behind the one that stopped used to send once again. Try again clears the stop first.
+    if (SAVE_OFF_ON || net.stopped) return;
     if (net.running) { net.again = true; return; }
     net.running = true;
     const task = function () {
@@ -265,7 +279,13 @@
   function written(lang, ids, sent, body) {
     const applied = {}, conflicts = {}, refused = {};
     (body.applied || []).forEach(function (a) { applied[a.unit] = a.version; });
-    (body.conflicts || []).forEach(function (c) { conflicts[c.unit] = c.current || null; });
+    (body.conflicts || []).forEach(function (c) {
+      // A "conflict" whose current record IS what this write sent is not someone else's change: the Worker
+      // applied the write, its answer was lost (the 20 s timeout) and the text was sent again against the old
+      // version. It is applied; the box with keep mine / take theirs is for a real conflict only.
+      if (c.current && sent[c.unit] !== undefined && same(c.current, JSON.parse(sent[c.unit]))) applied[c.unit] = c.current.version;
+      else conflicts[c.unit] = c.current || null;
+    });
     (body.refused || []).forEach(function (x) { refused[x.unit] = true; });
     const now = new Date().toISOString();
     ids.forEach(function (uid) {
@@ -383,13 +403,18 @@
     const entry = from[from.length - 1];
     if (!entry) return;
     const lang = S.lang, uid = entry.uid, e = pend(lang)[uid];
-    const standing = same(curRec(lang, uid), dir < 0 ? entry.to : entry.from);
+    // "The state this step made": its wording, not the stamp it carries (a replayed step re-stamps the
+    // record, so a neighbouring step's stored stamp may be older than what the text now holds).
+    const standing = same(unstamped(curRec(lang, uid)), unstamped(dir < 0 ? entry.to : entry.from));
     from.pop();
     // Not the state this step made, and an unsent change of this page's own that the stack does not
     // know about: the step has nothing to stand on and is dropped, never written over it.
-    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); return; }
+    if (!standing && e && !e.conflict) { saveStacks(); paintUndo(); toast(t('doc.undo.dropped')); return; }
     to.push(entry);
-    const wanted = dir < 0 ? entry.from : entry.to;
+    // Replayed, the record is a fresh decision on what the page shows now: a text in it is stamped against
+    // today's wording like an edit is, not the Weglot wording of the day it was made (a moved wording would
+    // make the export refuse it as TRANSLATION-MOVED and show it as Edited, never Exported).
+    const wanted = restamp(uid, dir < 0 ? entry.from : entry.to);
     if (standing) changeRecord(uid, wanted); else holdAsConflict(uid, wanted);
     saveStacks();
     paintBlock(uid, true);
@@ -433,7 +458,9 @@
   function lockReason(d) {
     if (d.lock === 'summary') return t('refusal.SUMMARY-OWNED');
     if (d.lock === 'link') return t('refusal.LINK-ONLY-UNPROVEN');
-    return t('doc.locked.noise');
+    // Only a text of numbers and symbols is "left as it is"; a lock this desk does not know says nothing
+    // rather than the wrong reason.
+    return d.lock === 'noise' ? t('doc.locked.noise') : '';
   }
   function caretEnd(el) {
     const r = document.createRange();
@@ -501,7 +528,8 @@
     theirs.addEventListener('click', function () { takeTheirs(d.id); });
 
     if (d.lock) {
-      b.lockNote.textContent = t('doc.locked.tag') + ' — ' + lockReason(d);
+      const why = lockReason(d);
+      b.lockNote.textContent = t('doc.locked.tag') + (why ? ' — ' + why : '');
       tgt.setAttribute('dir', 'auto');
       window.RichField.render(tgt, (d.w && d.w[lang]) || '');
     } else {
@@ -608,7 +636,7 @@
     if (c) {
       const cur = c.current;
       b.conflictText.textContent = cur && cur.text
-        ? t('doc.conflict.text', { who: cur.by || '', text: cur.text })
+        ? t('doc.conflict.text', { who: cur.by || t('doc.conflict.someone'), text: cur.text })
         : t('doc.conflict.gone');
     }
   }
@@ -1337,6 +1365,11 @@
       if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
       const k = ev.key.toLowerCase();
       if (k !== 'z' && k !== 'y') return;
+      // Not while an IME is composing, and not in a form field that is not one of the desk's own texts (the
+      // account menu's fields, the Re-translate note): those keep the browser's own undo.
+      if (ev.isComposing || ev.keyCode === 229) return;
+      const field = ev.target && ev.target.closest ? ev.target.closest('input, textarea, select, [contenteditable]') : null;
+      if (field && !field.closest('.doc-tgt')) return;
       // ONE undo stack (Manager Ruling): inside a text being typed too, the page's undo runs and the
       // browser's own is stopped, so Undo means the same thing wherever the caret is.
       ev.preventDefault();

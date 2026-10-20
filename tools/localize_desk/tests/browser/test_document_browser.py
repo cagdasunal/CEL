@@ -2513,3 +2513,180 @@ def test_a_finding_flags_only_the_wording_the_page_shows(browser):
         shown = _c36_shown(e.page)
         for u in shown:
             assert blk(e.page, u).get_attribute("data-source") == "none", u   # no draft, no edit: the live wording
+
+
+# ══════════════════════════════════════════════════════════════
+# 12. CEL-039: the reviewer's later items from CEL-026
+# ══════════════════════════════════════════════════════════════
+def _edit_served_block(env, uid, **fields):
+    """Change a block in the page data the harness serves, before the page (re)loads: another build of the page."""
+    f = env.root / "admin" / "localization" / "document" / "data" / f"{env.key}.json"
+    data = json.loads(f.read_text(encoding="utf-8"))
+    block = next(b for b in data["blocks"] if b["id"] == uid)
+    for k, v in fields.items():
+        if isinstance(v, dict):
+            block.setdefault(k, {}).update(v)
+        else:
+            block[k] = v
+    f.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def test_after_a_stop_the_browser_coming_back_online_sends_nothing(browser):
+    """A cap or a daily stop sends nothing more, whoever asks: the `online` event used to send once again."""
+    (u,) = pick(_stage_data(), 1)
+    with doc(browser, http_errors=True) as e:
+        e.worker.desk_fault = {"status": 429, "error": "over the cap"}
+        edit(e.page, u, "Text vor dem Halt")
+        expect(bar(e.page)).to_have_attribute("data-state", "stopped")
+        e.worker.desk_fault = None                         # the Worker is fine again; only Try again may send
+        sent = e.worker.calls.count("desk-write")
+        e.page.evaluate("() => window.dispatchEvent(new Event('online'))")
+        time.sleep(0.6)
+        assert e.worker.calls.count("desk-write") == sent, "the page wrote after a stop"
+        assert dec(e.store, u) is None
+        expect(bar(e.page)).to_have_attribute("data-state", "stopped")
+        e.page.locator("#doc-save-retry").click()          # and Try again still does
+        wait_text(e.store, u, "Text vor dem Halt")
+
+
+def test_a_conflict_whose_current_record_is_what_this_page_sent_is_applied_not_a_conflict(browser):
+    """The Worker applied the write, its answer was lost (the 20 s timeout) and the text came again against the
+    old version: the answer is a 'conflict' whose current IS what was sent. That is not someone else's change."""
+    data = _stage_data()
+    (u,) = pick(data, 1)
+    b = block_of(data, u)
+    record = {"tray": "csv", "text": "Gleicher Text", "approvedAgainst": b["w"].get(LANG) or b["en"]}
+    with doc(browser) as e:
+        code, body = e.store.handle("desk-write", {"locale": LANG, "client": 1, "changes": [
+            {"unit": u, "page": PAGE_KEY, "base": 0, "record": record}]}, OTHER)
+        assert code == 200 and body["applied"], body
+        edit(e.page, u, "Gleicher Text")                   # the page sends it against version 0
+        li = blk(e.page, u)
+        until(lambda: e.worker.calls.count("desk-write") >= 1, what="the page's write")
+        expect(li).not_to_have_attribute("data-state", "conflict")
+        expect(li.locator(".doc-conflict")).to_be_hidden()
+        expect(bar(e.page)).to_have_attribute("data-state", "saved")
+        assert dver(e.store, u) == 1 and dtext(e.store, u) == "Gleicher Text"
+
+
+def test_a_real_conflict_with_a_different_text_still_asks(browser):
+    """The control for the one above: the same shape with another wording is a conflict."""
+    data = _stage_data()
+    (u,) = pick(data, 1)
+    b = block_of(data, u)
+    record = {"tray": "csv", "text": "Fremder Text", "approvedAgainst": b["w"].get(LANG) or b["en"]}
+    with doc(browser) as e:
+        code, _ = e.store.handle("desk-write", {"locale": LANG, "client": 1, "changes": [
+            {"unit": u, "page": PAGE_KEY, "base": 0, "record": record}]}, OTHER)
+        assert code == 200
+        edit(e.page, u, "Eigener Text")
+        expect(blk(e.page, u)).to_have_attribute("data-state", "conflict")
+
+
+def test_a_conflict_from_a_writer_with_no_name_says_someone(browser):
+    (u,) = pick(_stage_data(), 1)
+    with doc(browser) as e:
+        other_write(e.store, u, "Their text", 0)
+        e.store.decisions[(LANG, u)]["by"] = ""            # the saved text has no name on it
+        edit(e.page, u, "My text")
+        box_ = blk(e.page, u).locator(".doc-conflict")
+        expect(box_).to_be_visible()
+        expect(box_).to_contain_text(conflict_text(C.t("doc.conflict.someone"), "Their text"))
+        assert not box_.inner_text().strip().startswith("saved this text"), "a blank name"
+
+
+def test_a_locked_text_with_a_reason_this_desk_does_not_know_says_no_wrong_reason(browser):
+    """`lockReason` fell through to 'Numbers and symbols are left as they are.' for ANY lock it did not know."""
+    data = _stage_data()
+    (u, v) = pick(data, 2)
+
+    def seed(env):
+        _edit_served_block(env, u, lock="zz-unknown")
+        _edit_served_block(env, v, lock="noise")
+
+    with doc(browser, seed=seed) as e:
+        unknown = blk(e.page, u).locator(".doc-note-lock")
+        noise = blk(e.page, v).locator(".doc-note-lock")
+        expect(unknown).to_have_text(C.t("doc.locked.tag"))                              # the tag alone
+        expect(noise).to_have_text(C.t("doc.locked.tag") + " — " + C.t("doc.locked.noise"))
+
+
+def test_a_step_that_cannot_be_applied_says_so_instead_of_vanishing(browser):
+    """An undo whose text was changed again since, with an unsent change of this page's own the stack does not
+    know about, is dropped (never written over it). It used to give no sign at all."""
+    (u,) = pick(_stage_data(), 1)
+    with doc(browser, http_errors=True) as e:
+        e.worker.desk_fault = {"status": 503, "error": "down"}      # the change stays unsent
+        edit(e.page, u, "Erste Fassung")
+        expect(blk(e.page, u)).to_have_attribute("data-state", "error", timeout=6000)
+        e.page.evaluate("""() => { const k = 'cel-doc-undo', s = JSON.parse(localStorage.getItem(k));
+            Object.keys(s).forEach(key => s[key].undo.forEach(en => { en.to = { text: 'Ein anderer Stand' }; }));
+            localStorage.setItem(k, JSON.stringify(s)); }""")
+        e.page.reload()
+        e.page.wait_for_selector(READY)
+        wait_value(e.page, u, "Erste Fassung")                       # the unsent text comes back
+        e.page.locator("#doc-undo").click()
+        expect(e.page.locator("#doc-toasts")).to_contain_text(C.t("doc.undo.dropped"))
+        wait_value(e.page, u, "Erste Fassung")                       # and nothing was written over it
+
+
+def test_undo_keeps_the_browsers_own_undo_in_a_field_that_is_not_one_of_the_desks_texts(browser):
+    (u,) = pick(_stage_data(), 1)
+    with doc(browser) as e:
+        e.page.evaluate("""() => { const i = document.createElement('input'); i.id = 'cel039-field';
+            document.body.appendChild(i); i.focus(); window.__prevented = [];
+            window.addEventListener('keydown', ev => window.__prevented.push(ev.defaultPrevented), false); }""")
+        e.page.keyboard.press("ControlOrMeta+z")
+        # the key press is two keydowns (the modifier, then z): it is the z one that counts
+        assert e.page.evaluate("() => window.__prevented").pop() is False, "the page took the key from a plain field"
+        edit(e.page, u, "Erste Fassung")                            # in the desk's own text the page undo still runs
+        e.page.evaluate("() => { window.__prevented = []; }")
+        e.page.keyboard.press("ControlOrMeta+z")
+        assert e.page.evaluate("() => window.__prevented").pop() is True
+
+
+def test_undo_does_nothing_while_an_ime_is_composing(browser):
+    (u,) = pick(_stage_data(), 1)
+    with doc(browser) as e:
+        edit(e.page, u, "Erste Fassung")
+        wait_value(e.page, u, "Erste Fassung")
+        e.page.evaluate("""uid => { const t = document.querySelector('li.doc-block[data-uid="' + uid + '"] .doc-tgt');
+            t.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, metaKey: true, isComposing: true,
+                keyCode: 229, bubbles: true, cancelable: true })); }""", u)
+        time.sleep(0.3)
+        assert field_value(e.page, u) == "Erste Fassung", "an IME's key undid the page's last change"
+
+
+def test_replaying_a_step_stamps_the_record_against_the_wording_the_page_shows_now(browser):
+    """CEL-026 r2: an undo replays the record as stored; if Weglot's wording moved since, the stored
+    `approvedAgainst` is stale and the export refuses the text as TRANSLATION-MOVED. Replayed, it is a fresh
+    decision on what the page shows now."""
+    data = _stage_data()
+    (u,) = pick(data, 1)
+    b = block_of(data, u)
+    old = b["w"].get(LANG) or b["en"]
+    new = "Neue Weglot Fassung nach dem Umbau"
+    with doc(browser) as e:
+        edit(e.page, u, "Erste Fassung")
+        wait_text(e.store, u, "Erste Fassung")
+        edit(e.page, u, "Zweite Fassung")
+        wait_text(e.store, u, "Zweite Fassung")
+        assert dec(e.store, u)["record"]["approvedAgainst"] == old
+        _edit_served_block(e, u, w={LANG: new})                     # Weglot's wording moved, the page is rebuilt
+        e.page.reload()
+        e.page.wait_for_selector(READY)
+        wait_value(e.page, u, "Zweite Fassung")
+        e.page.locator("#doc-undo").click()                         # back to the first text, from the stack
+        wait_text(e.store, u, "Erste Fassung")
+        assert dec(e.store, u)["record"]["approvedAgainst"] == new, dec(e.store, u)
+        e.page.locator("#doc-redo").click()
+        wait_text(e.store, u, "Zweite Fassung")
+        assert dec(e.store, u)["record"]["approvedAgainst"] == new
+        # a step after a re-stamped one still stands on it: no false conflict in a chain of undos
+        e.page.locator("#doc-undo").click()
+        wait_text(e.store, u, "Erste Fassung")
+        e.page.locator("#doc-undo").click()                         # back to before the first edit
+        time.sleep(0.6)
+        expect(blk(e.page, u)).not_to_have_attribute("data-state", "conflict")
+        expect(blk(e.page, u).locator(".doc-conflict")).to_be_hidden()
+        assert dtext(e.store, u) in (None, ""), dec(e.store, u)

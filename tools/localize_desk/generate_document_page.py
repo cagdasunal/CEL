@@ -17,9 +17,9 @@ What it writes (all under `OUT_DIR`):
     data/pages.json      per page: key, path, how many blocks, how many left out, which can be edited
     data/<page>.json     one document: its blocks in page order, English, lock, translations
 
-The site's menu and footer texts (`is_chrome`: also on `CHROME_MIN_PAGES` pages or more, and
-outside every heading) are not part of the page a reviewer reads and are left out; each file
-says how many (`chrome`). Every other text is shown and editable.
+The site's menu and footer texts (the units files' per-unit `chrome` flag, written by the engine's
+manifest: also on 30 pages or more, and outside every heading) are not part of the page a reviewer
+reads and are left out; each file says how many (`chrome`). Every other text is shown and editable.
 
 The page reads those files once it is open, so a reviewer opens a page in the language they
 work in without downloading the other seven. The runtime (`document_desk.js`) is readable
@@ -61,15 +61,17 @@ DATA_URL = "/admin/localization/document/data/"
 VERSION = "desk-v2"
 
 # The site's menu and footer are not part of the page a reviewer reads, so they are left out of
-# the data altogether (contract section 10). A unit is chrome when ALL of these hold:
+# the data altogether (contract section 10). The engine decides which texts those are and writes the
+# answer into each unit of the units files as `chrome: true` (monorepo tools/localize/gates.py
+# `is_chrome`, CEL-039 / Manager ruling 2026-10-19 21:18); this generator reads that flag and holds no
+# copy of the rule. A unit is chrome when ALL of these hold:
 #   1. it is also on a page outside the four (gate 12);
-#   2. it is used on CHROME_MIN_PAGES paths or more;
+#   2. it is used on 30 paths or more (gates.CHROME_MIN_PAGES);
 #   3. it stands outside every heading (its `section` is empty: the menu before the first heading,
 #      the footer after the last) and its block is not the page's title or description.
 # Page count alone is not enough: body texts sit on 30 pages too (FAQ answers on 35, course and
 # housing names on 78). Every other text is shown and editable; one that is also on other pages
 # says so under itself (`out`, `outEg`).
-CHROME_MIN_PAGES = 30
 
 # The localization desk's version (semver), the ONE source of the number the document page shows in its
 # status bar. A release step bumps it with its CHANGELOG entry and the tag `desk-v<version>` (decisions
@@ -77,14 +79,6 @@ CHROME_MIN_PAGES = 30
 # (the monorepo is private: the client could not open its CHANGELOG; ruling 2026-10-19 23:58).
 DESK_VERSION = "2.1.0"
 DESK_CHANGELOG_URL = "https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md"
-META_BLOCKS = ("meta-title", "meta-description")
-
-
-def is_chrome(unit: dict, block: str, in_scope: set[str]) -> bool:
-    """True for a menu or footer text (see `CHROME_MIN_PAGES`)."""
-    pages = unit.get("pages") or []
-    return (any(p not in in_scope for p in pages) and len(pages) >= CHROME_MIN_PAGES
-            and not (unit.get("section") or "") and block not in META_BLOCKS)
 
 
 # ── The data ────────────────────────────────────────────────────────────────
@@ -128,8 +122,9 @@ def load_documents(units_dir: Path | str | None = None) -> dict[str, dict]:
     """page key -> its document, for the pages of `PAGE_KEYS` found in `units_dir`.
 
     A document is `{"page", "path", "built", "chrome", "blocks": [...]}` and is what
-    `data/<page>.json` holds; `chrome` is how many menu / footer texts (`CHROME_MIN_PAGES`) were
-    left out of `blocks`. Keys come out in `PAGE_KEYS` order, whatever order the files are read in.
+    `data/<page>.json` holds; `chrome` is how many menu / footer texts (the unit's own `chrome` flag,
+    written by the engine) were left out of `blocks`. Keys come out in `PAGE_KEYS` order, whatever
+    order the files are read in.
     """
     units_dir = Path(units_dir) if units_dir is not None else UNITS_DIR
     raw: dict[str, dict] = {}
@@ -149,7 +144,7 @@ def load_documents(units_dir: Path | str | None = None) -> dict[str, dict]:
         for unit, block in _in_order(doc):
             outside = _outside(unit, in_scope)
             pages = unit.get("pages") or []
-            if is_chrome(unit, block, in_scope):
+            if unit.get("chrome"):                       # the engine's answer (gates.is_chrome), not ours
                 chrome += 1
                 continue
             also = [k for k in keys if k != key and path_of[k] in pages]
@@ -579,6 +574,14 @@ def main() -> int:
     if short:
         print(f"ERROR: no texts found for {', '.join(short)} in {UNITS_DIR} — refusing to write "
               "an incomplete document page", file=sys.stderr)
+        return 2
+    # The menu and footer are left out by the engine's per-unit `chrome` flag. Every real page has some
+    # (75 or 76 of them today); not one flagged anywhere means the units files predate the flag, and writing
+    # the page would put the site's menu and footer into the desk without a word.
+    if not any(d["chrome"] for d in docs.values()):
+        print(f"ERROR: no unit on any of the four pages is flagged `chrome` in {UNITS_DIR} -- these units files "
+              "were written before the engine's chrome flag; refresh the manifest first. Refusing to write "
+              "a document page that would show the site's menu and footer.", file=sys.stderr)
         return 2
     try:
         page = render_page()           # before anything is written: a missing file writes nothing

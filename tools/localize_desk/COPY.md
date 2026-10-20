@@ -550,17 +550,18 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.cell.count.one` | {n} of {total} text | Under the status in a grid cell |
 | `doc.cell.count.other` | {n} of {total} texts | |
 | `doc.cell.aria` | {page}, {language}: {status} | Screen-reader name of a grid cell |
-| `doc.undo` | Undo | Button above the page |
-| `doc.redo` | Redo | Button above the page |
+| `doc.undo` | Undo | Button in the bar at the bottom |
+| `doc.redo` | Redo | Button in the bar at the bottom |
 | `doc.undo.tip` | Undo your last change ({keys}) | Hover on Undo |
 | `doc.redo.tip` | Redo ({keys}) | Hover on Redo |
 | `doc.undo.none` | Nothing to undo | Hover on Undo when it is off |
 | `doc.redo.none` | Nothing to redo | Hover on Redo when it is off |
+| `doc.undo.dropped` | That step was skipped: the text has changed since. | Message after Undo or Redo when the text was changed again and the step could not be applied |
 | `doc.keys.undo.mac` | ⌘Z | The keys, in the Undo hover, on a Mac |
 | `doc.keys.undo.other` | Ctrl+Z | The keys, in the Undo hover, elsewhere |
 | `doc.keys.redo.mac` | ⇧⌘Z | The keys, in the Redo hover, on a Mac |
 | `doc.keys.redo.other` | Ctrl+Shift+Z | The keys, in the Redo hover, elsewhere |
-| `doc.weglot.toggle` | Show Weglot | Checkbox above the page |
+| `doc.weglot.toggle` | Show Weglot | Checkbox in the bar at the bottom |
 | `doc.translate` | Translate page | Button above the page, and in the window it opens |
 | `doc.head.en` | English — the website | Head of the English column |
 | `doc.head.tgt` | {language} — draft and your edits | Head of the translation column |
@@ -603,6 +604,7 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.conflict.gone` | Someone else undid this text before you saved it. | Under a text someone else undid |
 | `doc.conflict.mine` | Keep mine | Button under that line |
 | `doc.conflict.theirs` | Take theirs | Button under that line |
+| `doc.conflict.someone` | Someone | Stands for the name in that line when the saved text has no name on it |
 | `doc.loading` | Loading the page… | Where the texts will be, while they load |
 | `doc.load.failed` | Couldn't load this page. Reload to try again. | Where the texts will be, when they can't load |
 | `doc.read.failed` | Couldn't read what's saved on the server. Reload to try again. | Above the page, when the saved texts can't be read |
