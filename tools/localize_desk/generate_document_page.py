@@ -40,7 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from localize_desk import generate_desk_page as G  # noqa: E402
+from localize_desk import desk_shared as S  # noqa: E402
 from localize_desk.copy_text import JS_HELPERS, js_table, t  # noqa: E402
 
 from dashboard import render_admin_close, render_admin_open  # noqa: E402
@@ -48,8 +48,8 @@ from dashboard import render_admin_close, render_admin_open  # noqa: E402
 HERE = Path(__file__).resolve().parent
 
 # Where the page reads from and writes to. Module-level so a test can point them elsewhere.
-UNITS_DIR = G.UNITS_DIR
-OUT_DIR = G.OUT_ROOT / "document"
+UNITS_DIR = S.UNITS_DIR
+OUT_DIR = S.OUT_ROOT / "document"
 DOC_JS = HERE / "document_desk.js"
 EXPORT_JS = HERE / "document_export.js"       # Export + Re-translate (CEL-027), inlined after DOC_JS
 EXPORT_CSS = HERE / "document_export.css"
@@ -135,9 +135,9 @@ def load_documents(units_dir: Path | str | None = None) -> dict[str, dict]:
     raw: dict[str, dict] = {}
     for path in sorted(units_dir.glob("*.json")):
         doc = json.loads(path.read_text(encoding="utf-8"))
-        if doc.get("page") in G.PAGE_KEYS:
+        if doc.get("page") in S.PAGE_KEYS:
             raw[doc["page"]] = doc
-    keys = [k for k in G.PAGE_KEYS if k in raw]
+    keys = [k for k in S.PAGE_KEYS if k in raw]
     path_of = {k: raw[k]["path"] for k in keys}
     in_scope = set(path_of.values())
 
@@ -154,7 +154,7 @@ def load_documents(units_dir: Path | str | None = None) -> dict[str, dict]:
                 continue
             also = [k for k in keys if k != key and path_of[k] in pages]
             words = {}
-            for code, *_ in G.LOCALES:
+            for code, *_ in S.LOCALES:
                 cur = (unit.get("current") or {}).get(code) or {}
                 if cur.get("translated") and cur.get("word_to"):
                     words[code] = cur["word_to"]
@@ -423,8 +423,8 @@ def _config() -> str:
     """What the runtime must know that is not copy: the languages, the pages, where the data is."""
     cfg = {
         "locales": [{"code": code, "endonym": endonym, "dir": direction, "flag": flag}
-                    for code, endonym, direction, flag in G.LOCALES],
-        "pages": list(G.PAGE_KEYS),
+                    for code, endonym, direction, flag in S.LOCALES],
+        "pages": list(S.PAGE_KEYS),
         "data": DATA_URL,
         "version": VERSION,
     }
@@ -436,17 +436,17 @@ def _grid() -> str:
     language; their count and status are the runtime's."""
     heads = "".join(
         f'<th scope="col" class="doc-grid-lang" data-lang="{code}">'
-        f'<span class="doc-flag" aria-hidden="true">{flag}</span>{escape(G.lang_name(code))}</th>'
-        for code, _endonym, _dir, flag in G.LOCALES)
+        f'<span class="doc-flag" aria-hidden="true">{flag}</span>{escape(S.lang_name(code))}</th>'
+        for code, _endonym, _dir, flag in S.LOCALES)
     unknown = escape(t("doc.status.unknown"))
     rows = []
-    for key in G.PAGE_KEYS:
+    for key in S.PAGE_KEYS:
         cells = "".join(
             f'<td><button type="button" class="doc-cell" data-page="{key}" data-lang="{code}" '
             f'data-status="unknown" aria-pressed="false">'
             f'<span class="doc-cell-status">{unknown}</span><span class="doc-cell-count"></span>'
             f'</button></td>'
-            for code, *_ in G.LOCALES)
+            for code, *_ in S.LOCALES)
         rows.append(f'<tr data-page="{key}"><th scope="row" class="doc-grid-page">'
                     f'{escape(t("page." + key))}</th>{cells}</tr>')
     return (
@@ -540,16 +540,16 @@ def render_page() -> str:
     export_js = _read(EXPORT_JS, "document_export.js")
     export_css = _read(EXPORT_CSS, "document_export.css")
 
-    head = G._head(t("doc.meta.title"), t("doc.meta.description"))
+    head = S._head(t("doc.meta.title"), t("doc.meta.description"))
     assert head[-2:] == ["</head>", "<body>"], "generate_desk_page._head changed its ending"
     style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", rich_css + "\n" + DOC_CSS + "\n" + export_css) + "</style>"
 
     # Globals first: the switch back to "saving off", the copy, and the helpers v1 shares
     # (t / tn, the sign-in Worker call, the tooltip). The runtime and the field come after.
     globals_js = (
-        "var SAVE_OFF = " + ("true" if G.SAVE_OFF else "false") + ";\n"
+        "var SAVE_OFF = " + ("true" if S.SAVE_OFF else "false") + ";\n"
         "var COPY = " + js_table() + ";\n"
-        + JS_HELPERS + G._PROXY_JS + G._TIP_JS
+        + JS_HELPERS + S._PROXY_JS + S._TIP_JS
     )
     parts = head[:-2] + [style] + head[-2:]
     parts.append(render_admin_open("localization"))
@@ -575,7 +575,7 @@ def main() -> int:
     docs = load_documents(UNITS_DIR)
     # A document page with a page missing or empty is not a document page: the grid names
     # four, and a reader who opens the fifth cell of an empty one finds nothing and no reason.
-    short = [k for k in G.PAGE_KEYS if k not in docs or not docs[k]["blocks"]]
+    short = [k for k in S.PAGE_KEYS if k not in docs or not docs[k]["blocks"]]
     if short:
         print(f"ERROR: no texts found for {', '.join(short)} in {UNITS_DIR} — refusing to write "
               "an incomplete document page", file=sys.stderr)

@@ -28,6 +28,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from localize_desk import copy_text as C  # noqa: E402
+from localize_desk import desk_shared as S  # noqa: E402
 from localize_desk import generate_desk_page as G  # noqa: E402
 from localize_desk import generate_document_page as GD  # noqa: E402
 from localize_desk.tests import test_desk_privacy as P  # noqa: E402
@@ -837,7 +838,7 @@ class TestPageShell:
         assert "var SAVE_OFF = false;" in page.splitlines()
 
     def test_the_switch_is_the_desks_one_switch(self, stub_js, monkeypatch):
-        monkeypatch.setattr(G, "SAVE_OFF", True)
+        monkeypatch.setattr(S, "SAVE_OFF", True)
         on = GD.render_page()
         assert "var SAVE_OFF = true;" in on.splitlines() and "var SAVE_OFF = false;" not in on
 
@@ -1117,7 +1118,7 @@ class TestPageScripts:
         assert "</script><b>" not in html
 
     def test_a_script_ender_in_the_config_cannot_end_the_script(self, stub_js, monkeypatch):
-        monkeypatch.setattr(G, "LOCALES", [("de", "</script>", "ltr", "x")] + list(G.LOCALES[1:]))
+        monkeypatch.setattr(S, "LOCALES", [("de", "</script>", "ltr", "x")] + list(S.LOCALES[1:]))
         html = GD.render_page()
         m = re.search(r'<script type="application/json" id="doc-config">(.*?)</script>', html, re.S)
         assert json.loads(m.group(1))["locales"][0]["endonym"] == "</script>"

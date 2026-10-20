@@ -22,14 +22,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from localize_desk import generate_desk_page as G  # noqa: E402
+from localize_desk import desk_shared as S  # noqa: E402
 from localize_desk.copy_text import JS_HELPERS, js_table, t  # noqa: E402
 from localize_desk.generate_document_page import DESK_CHANGELOG_URL, DESK_VERSION  # noqa: E402
 
 from dashboard import render_admin_close, render_admin_open  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-OUT_DIR = G.OUT_ROOT / "rules"
+OUT_DIR = S.OUT_ROOT / "rules"
 PAGE_JS = HERE / "rules_page.js"
 MD_JS = HERE / "rules_md.js"
 
@@ -200,9 +200,9 @@ def _script(js: str) -> str:
 
 def _config() -> str:
     cfg = {
-        "locales": [{"code": code, "name": G.lang_name(code), "flag": flag, "none": code in NO_RULES}
-                    for code, _endonym, _dir, flag in G.LOCALES],
-        "pages": [{"slug": key, "name": t("page." + key)} for key in G.PAGE_KEYS],
+        "locales": [{"code": code, "name": S.lang_name(code), "flag": flag, "none": code in NO_RULES}
+                    for code, _endonym, _dir, flag in S.LOCALES],
+        "pages": [{"slug": key, "name": t("page." + key)} for key in S.PAGE_KEYS],
         "checked": CHECKED,
         "suggested": {k: [{"label": a, "value": b} for a, b in rows] for k, rows in SUGGESTED.items()},
         "briefSections": list(BRIEF_SECTIONS),
@@ -261,13 +261,13 @@ def _dom() -> str:
 def render_page() -> str:
     page_js = _read(PAGE_JS, "rules_page.js")
     md_js = _read(MD_JS, "rules_md.js")
-    head = G._head(t("rules.meta.title"), t("rules.meta.description"))
+    head = S._head(t("rules.meta.title"), t("rules.meta.description"))
     assert head[-2:] == ["</head>", "<body>"], "generate_desk_page._head changed its ending"
     style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", RULES_CSS) + "</style>"
     globals_js = (
-        "var SAVE_OFF = " + ("true" if G.SAVE_OFF else "false") + ";\n"
+        "var SAVE_OFF = " + ("true" if S.SAVE_OFF else "false") + ";\n"
         "var COPY = " + js_table() + ";\n"
-        + JS_HELPERS + G._PROXY_JS + G._TIP_JS
+        + JS_HELPERS + S._PROXY_JS + S._TIP_JS
     )
     parts = head[:-2] + [style] + head[-2:]
     parts.append(render_admin_open("localization"))

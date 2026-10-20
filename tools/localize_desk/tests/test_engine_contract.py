@@ -23,6 +23,12 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CONTRACT = REPO / "data" / "localize" / "engine-reads.json"
 DESK = REPO / "tools" / "localize_desk" / "generate_desk_page.py"
+SHARED = REPO / "tools" / "localize_desk" / "desk_shared.py"      # the scripts the desk shares (cleanup C2)
+
+
+def _desk_text() -> str:
+    """The desk's source: its generator and the module whose scripts it inlines."""
+    return "\n".join(p.read_text(encoding="utf-8") for p in (DESK, SHARED))
 
 
 def _contract() -> dict:
@@ -31,7 +37,7 @@ def _contract() -> dict:
 
 def _save_fields() -> set[str]:
     """What the desk sends (WO-17): its STORED_FIELDS."""
-    m = re.search(r"var STORED_FIELDS = \[([^\]]*)\]", DESK.read_text(encoding="utf-8"))
+    m = re.search(r"var STORED_FIELDS = \[([^\]]*)\]", _desk_text())
     assert m, "the desk's STORED_FIELDS list was not found"
     return set(re.findall(r"'([A-Za-z]+)'", m.group(1)))
 
@@ -72,7 +78,7 @@ def test_whatever_the_desk_sends_the_server_keeps():
 def test_every_field_the_desk_owns_has_a_writer_in_the_desk():
     """A desk-owned field must be assigned somewhere in the desk's script (`s.<field> =`)."""
     c = _contract()
-    src = DESK.read_text(encoding="utf-8")
+    src = _desk_text()
     owned = {f for f, who in c["written_by"].items() if who == "desk"}
     missing = {f for f in owned if not re.search(rf"\bs\.{f}\s*=[^=]", src)}
     listed = {f for f in c["no_writer_yet"] if c["written_by"].get(f) == "desk"}

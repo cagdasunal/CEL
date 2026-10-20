@@ -16,7 +16,8 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[2]
 DASH = (TOOLS / "dashboard.py").read_text(encoding="utf-8")
-GEN = (TOOLS / "localize_desk" / "generate_desk_page.py").read_text(encoding="utf-8")
+GEN = "\n".join((TOOLS / "localize_desk" / f).read_text(encoding="utf-8")
+                for f in ("generate_desk_page.py", "desk_shared.py"))
 
 INDIGO = re.compile(r"var\(--accent\)|93,\s*96,\s*238|#5d60ee", re.I)
 # The only places indigo may appear: focus (keyboard and focus rings), the checkbox tick,
