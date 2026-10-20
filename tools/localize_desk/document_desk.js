@@ -1141,6 +1141,15 @@
     if (confirmReturn && confirmReturn.focus) confirmReturn.focus();
     confirmReturn = null;
   }
+  // Why a finished job brought nothing (CEL-103): the engine's own record of the failure rides in the job's result as
+  // `reason`, an English sentence meant for the team's log. The desk never shows it as it is: each kind it can tell is
+  // worded here from COPY.md, and a reason it does not know adds nothing.
+  const JOB_WHY = [[/not valid JSON/, 'doc.job.why.json'], [/not an object/, 'doc.job.why.shape'], [/returned nothing/, 'doc.job.why.empty']];
+  function jobWhy(result) {
+    const reason = result && typeof result.reason === 'string' ? result.reason : '';
+    for (let i = 0; i < JOB_WHY.length; i++) if (JOB_WHY[i][0].test(reason)) return t('doc.job.why', { why: t(JOB_WHY[i][1]) });
+    return '';
+  }
   function jobWatch(lang, j) {
     const js = jstate(lang);
     js.job = j;
@@ -1165,7 +1174,8 @@
         } else {
           const code = cur.error || '';
           const reason = COPY['job.failed.' + code] ? t('job.failed.' + code) : t('doc.job.failed.unknown');
-          js.failed = { page: page, message: t('doc.job.failed', { reason: reason }) };
+          const why = jobWhy(cur.result);
+          js.failed = { page: page, message: t('doc.job.failed', { reason: reason }) + (why ? ' ' + why : '') };
         }
         drain(lang);
       });

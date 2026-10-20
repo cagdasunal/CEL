@@ -296,6 +296,10 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.job.done` | New drafts from Gemini are ready. | Message when a translation finishes |
 | `doc.job.failed` | The translation did not finish: {reason} | Banner, when a translation failed |
 | `doc.job.failed.unknown` | something went wrong. Try again. | The reason, when none of the lines above fits |
+| `doc.job.why` | Why: {why} | Added to the banner line, when the finished job says what went wrong with Gemini's reply |
+| `doc.job.why.json` | Gemini's reply was cut off or was not valid JSON, so none of it could be used. | The why, when the reply could not be read |
+| `doc.job.why.shape` | Gemini's reply was not in the shape that was asked for, so none of it could be used. | The why, when the reply was not a list of texts |
+| `doc.job.why.empty` | Gemini's reply left some of the texts out. | The why, when texts came back empty |
 | `doc.job.error` | Couldn't start the translation. Try again in a moment. | Message, when Translate page can't reach the server |
 | `doc.confirm.title` | Translate this page with Gemini? | Heading of the window Translate page opens |
 | `doc.confirm.body.one` | Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept. | In that window |
