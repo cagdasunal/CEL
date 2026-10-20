@@ -65,6 +65,7 @@ OTHER = "other@example.test"
 READY = '#doc[data-state="ready"]'
 # Autosave in ~0.2 s instead of 2 s / 10 s; the poll for a running job every 0.2 s.
 TIMING = {"quiet": 150, "maxWait": 600, "undoPause": 120, "poll": 200, "timeout": 5000}
+THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 MARK = re.compile(r'<a wg-[0-9]+="">|</a>|<br>')
 # The box that ticks everything. The contract names it `input#ex-all`; it is found by its place (first row,
 # not a column box) so the rest of the toggle checks still run -- `test_the_all_box_is_input_ex_all` holds the id.
@@ -155,6 +156,10 @@ def doc(browser, *, lang: str = LANG, key: str = PAGE_KEY, seed=None, timing: di
             seed(env)
         pg = browser.new_page(viewport={"width": size[0], "height": size[1]})
         pg.set_default_timeout(10000)
+        # The dashboard's BugHerd tag is a third party: it is answered here with an empty script, so a console
+        # error from BugHerd's own pages (CI run 39383869039: 'X-Frame-Options') can never fail a test, and the
+        # no-console-error check below stays about our own code (CEL-067).
+        pg.route(THIRD_PARTY, lambda route: route.fulfill(status=200, content_type="text/javascript", body=""))
         env.page = pg
 
         def on_console(msg):
@@ -751,11 +756,19 @@ def grid_status(page, key, lang):
     return cell(page, key, lang).get_attribute("data-status")
 
 
+def grid_settled(page):
+    """Every language has been read, so no cell is still "unknown". The picker takes its greyed-out map once, when
+    the window opens, and an "unknown" cell stays pickable: opened early under load, "all" ticks cells that are
+    greyed a moment later (CEL-039: 3 of 5 solo runs failed before this wait)."""
+    expect(page.locator('.doc-cell[data-status="unknown"]')).to_have_count(0)
+
+
 def test_a_page_in_a_language_with_nothing_to_export_is_greyed_in_the_picker(browser):
     """CEL-037 (ux-pass #3): the grid already knows which page x language has no draft and no edit; the picker
     shows those boxes disabled instead of letting the client press Export and read "Nothing to export yet"."""
     with doc(browser, seed=lambda env: seed_cells(env, HAVE)) as e:
         p = e.page
+        grid_settled(p)
         open_export(p)
         for key in PAGES:
             for lang in LANGS:
@@ -776,6 +789,7 @@ def test_a_page_in_a_language_with_nothing_to_export_is_greyed_in_the_picker(bro
 def test_the_row_column_and_all_boxes_tick_only_the_cells_that_are_not_greyed(browser):
     with doc(browser, seed=lambda env: seed_cells(env, HAVE)) as e:
         p = e.page
+        grid_settled(p)
         open_export(p)
         row = lambda k: f'#ex-grid input[data-row="{k}"]'   # noqa: E731
         col = lambda k: f'#ex-grid input[data-col="{k}"]'   # noqa: E731
@@ -809,6 +823,7 @@ def test_when_the_open_page_has_no_translation_in_that_language_nothing_is_ticke
     nobody can untick that leads to "Nothing to export yet"."""
     with doc(browser, seed=lambda env: seed_cells(env, [("vancouver", "fr")])) as e:
         p = e.page
+        grid_settled(p)
         open_export(p)
         assert grid_status(p, PAGE_KEY, LANG) == "none"
         expect(ex_box(p, PAGE_KEY, LANG)).to_be_disabled()
@@ -1331,6 +1346,23 @@ def test_a_failed_job_that_names_the_texts_it_refused_still_lists_them(browser):
         expect(p.locator("#ex-download")).to_be_hidden()
         time.sleep(0.4)
         assert downloads == [], "a file was downloaded although the job failed"
+
+
+def test_a_refused_text_that_is_on_thirty_pages_or_more_is_listed_like_any_other(browser):
+    """CEL-039 (CEL-027 note, operator 21:00): a shared body text on 30+ pages (an FAQ answer, a course name)
+    goes in the file like any other, and when a gate refuses it the result lists it with its sentence:
+    nothing about its page count hides it."""
+    shared = next(b for b in _stage_data()["blocks"] if b.get("out", 0) >= 29 and not b["lock"])
+    with doc(browser, seed=lambda env: draft(env.store, shared["id"], "Entwurf geteilt")) as e:
+        p = e.page
+        start_export(p, {(PAGE_KEY, LANG)})
+        until(lambda: open_job(e.store, LANG, PAGE_KEY), 10.0, what="the export job")
+        e.store.finish_job(LANG, "export", "failed", {"refused": [{"unit": shared["id"], "rule": "NUMBER-PARITY"}],
+                                                      "warned": [], "notes": [], "skipped": {}},
+                           error="export-refused")
+        it = item(p, "refused", shared["id"], PAGE_KEY, LANG)
+        expect(it).to_have_count(1)
+        expect(it).to_contain_text(C.t("refusal.NUMBER-PARITY"))
 
 
 def test_a_code_nobody_knows_gets_the_general_sentence(browser):

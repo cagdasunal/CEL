@@ -51,6 +51,7 @@ OTHER = "other@example.test"
 READY = '#doc[data-state="ready"]'
 # Autosave in ~0.2 s instead of 2 s / 10 s; the poll for a running job every 0.2 s.
 TIMING = {"quiet": 150, "maxWait": 600, "undoPause": 120, "poll": 200, "timeout": 5000}
+THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 MARK = re.compile(r'<a wg-[0-9]+="">|</a>|<br>')
 LINK_ONLY = re.compile(r'<a wg-\d+="">.*?</a>', re.S)
 CHROME_LIST = Path(__file__).resolve().parents[1] / "fixtures" / "document_chrome_en.json"
@@ -131,6 +132,10 @@ def doc(browser, *, lang: str = LANG, key: str = PAGE_KEY, seed=None, timing: di
             seed(env)
         pg = browser.new_page(viewport={"width": size[0], "height": size[1]})
         pg.set_default_timeout(10000)
+        # The dashboard's BugHerd tag is a third party: it is answered here with an empty script, so a console
+        # error from BugHerd's own pages (CI run 39383869039: 'X-Frame-Options') can never fail a test, and the
+        # no-console-error check below stays about our own code (CEL-067).
+        pg.route(THIRD_PARTY, lambda route: route.fulfill(status=200, content_type="text/javascript", body=""))
         env.page = pg
 
         def on_console(msg):
