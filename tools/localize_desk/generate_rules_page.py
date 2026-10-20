@@ -79,6 +79,7 @@ RULES_CSS = """
 .rules .menu-item:hover { background: var(--stripe); }
 .rules .menu-item.is-on { border-color: var(--fg); font-weight: 700; }
 .rules .menu-item .none { font-weight: 400; color: var(--muted); }
+.rules .menu-item .pend, .rules .crumb-b .pend { font-weight: 400; color: var(--warn); }
 .rules .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); align-items: start; }
 .rules .rail { position: sticky; top: 0; max-height: calc(100vh - 44px); overflow: auto; padding: 20px 12px 20px 24px; }
 .rules .ol-h { margin: 0 0 10px 12px; font-size: var(--fs-xs); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -122,6 +123,8 @@ RULES_CSS = """
 .rules .link { background: none; border: 0; padding: 0; font-size: var(--fs-xs); color: var(--muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .rules .link:hover { color: var(--fg); }
 .rules .tag { display: inline-block; white-space: nowrap; margin-top: 4px; font-size: var(--fs-xs); border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 8px; color: var(--muted); }
+.rules .r-b .tag { display: none; }
+.rules .r-b:hover .tag, .rules .r-b:focus-within .tag { display: inline-block; }
 .rules .notice, .rules .r-notice { margin: 6px 0; background: var(--notice-bg); border: 1px solid var(--notice-border); color: var(--notice-fg); border-radius: var(--radius-sm); padding: 6px 10px; font-size: var(--fs-md); }
 .rules .r-notice p { margin: 0 0 6px; }
 .rules .r-btns { display: flex; flex-wrap: wrap; gap: 8px; }

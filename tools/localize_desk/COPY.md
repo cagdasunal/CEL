@@ -392,6 +392,8 @@ The page where the client reads and edits the translation rules: /admin/localiza
 | `rules.shared.all` | Shared — all languages | Left sheet heading |
 | `rules.shared.label` | Shared — applies to all 8 languages | Label above the shared rules |
 | `rules.lang` | {language} rules | Right sheet heading, rail |
+| `rules.lang.pending` | changes not in use | In the language menu, beside a language that has changes waiting |
+| `rules.lang.pending.btn` | Other languages have changes not in use | Hover on the language button |
 | `rules.outline` | On this page | Rail heading |
 | `rules.none` | No rules yet | Language menu, after a language without rules |
 | `rules.count.rules.one` | {n} rule | Rail count |
@@ -400,19 +402,28 @@ The page where the client reads and edits the translation rules: /admin/localiza
 | `rules.count.terms.other` | {n} terms | Rail count |
 | `rules.count.briefs.one` | {n} brief | Rail count |
 | `rules.count.briefs.other` | {n} briefs | Rail count |
-| `rules.next` | The next translation uses Shared v{g}, {language} v{l} and the {language} glossary v{x} | Status bar |
+| `rules.next` | The next translation of every page in {language} uses these rules | Status bar |
 | `rules.pending.one` | · {n} change not in use | Status bar, after the version note |
 | `rules.pending.other` | · {n} changes not in use | Status bar, after the version note |
 | `rules.draft.saving` | Saving draft… | Status bar |
-| `rules.draft.saved` | Draft saved in this browser | Status bar |
+| `rules.draft.saved` | Not in use yet — only in this browser | Status bar, while changes are waiting |
 | `rules.draft.hint` | Your draft is kept in this browser until you press Use these rules. Gemini keeps using the rules in use. | Status bar, on hover |
 | `rules.inuse` | In use | Status bar with no draft; History, the version in use |
 | `rules.use` | Use these rules | The one primary button |
 | `rules.use.title` | Make these rules the ones in use? | Confirm dialog title |
 | `rules.use.body` | The next translation of every page in {language} will use them. Earlier translations keep the version they were made with. | Confirm dialog text |
+| `rules.use.body.shared` | You changed the shared rules, so this changes all 8 languages. | Confirm dialog, second line, when the shared rules are among the changes |
+| `rules.use.disabled` | There are no changes to put in use yet | Hover on Use these rules while it is greyed out |
+| `rules.undo.confirm.title` | Put the earlier rules back? | Confirm window when Undo would change rules in use |
+| `rules.undo.confirm.body` | This puts these rules back to how they were before, for everyone and right away: {list}. | Same window |
+| `rules.undo.confirm.go` | Put them back | Same window, button |
+| `rules.redo.confirm.title` | Use these rules again? | Confirm window when Redo would change rules in use |
+| `rules.redo.confirm.body` | This puts these rules in use again, for everyone and right away: {list}. | Same window |
+| `rules.redo.confirm.go` | Use them again | Same window, button |
 | `rules.using` | Putting the rules in use… | Status bar while publishing |
 | `rules.toast.used` | In use: {list}. | Message after a publish |
-| `rules.toast.used.undo` | Undo brings back the previous versions. | Message after a publish |
+| `rules.toast.used.undo` | Undo brings back the previous versions. | Message after a publish, when every rule written had an earlier version |
+| `rules.toast.used.undo.some` | Undo brings back the earlier versions of: {list}. | Message after a publish, when only some of the rules had an earlier version |
 | `rules.toast.partial` | In use: {done}. Not in use yet: {rest}. | Message after a publish that stopped |
 | `rules.toast.undo.partial` | Undo done for {done}; {scope} changed since. | Message after an undo that stopped |
 | `rules.scope.global` | Shared rules | Scope name in messages and History |
@@ -420,7 +431,7 @@ The page where the client reads and edits the translation rules: /admin/localiza
 | `rules.scope.glossary` | {language} glossary | Scope name in messages and History |
 | `rules.scope.brief` | {page} brief ({language}) | Scope name in messages and History |
 | `rules.history` | History | Header button |
-| `rules.history.title` | Changes | History drawer title |
+| `rules.history.title` | History | History drawer title |
 | `rules.history.change` | Show change | History card button |
 | `rules.history.loading` | Reading the versions… | History drawer while it reads |
 | `rules.history.none` | No versions yet. | History drawer with nothing published |
@@ -430,8 +441,8 @@ The page where the client reads and edits the translation rules: /admin/localiza
 | `rules.toast.restored` | Restored v{n}. Undo brings v{m} back. | Message after a restore |
 | `rules.toast.restored.undone` | The version before the restore is back in use. | Message after undoing a restore |
 | `rules.brief.inuse` | v{n} in use | Page brief card |
-| `rules.checked` | Checked automatically | Tag on a rule an automatic check enforces |
-| `rules.checked.warn` | An automatic check still expects the old rule. Tell your CEL contact so the check changes too. | Under an edited checked rule |
+| `rules.checked` | Checked automatically | Tag on a rule an automatic check enforces, shown when you point at it, tab to it or edit it |
+| `rules.checked.warn` | This rule is checked automatically. The check refuses a text only while the rules still say it; edited away, it only warns. | Under an edited checked rule |
 | `rules.shared.warn` | This changes every language. | Under an edited shared rule |
 | `rules.edited` | Edited | Under an edited rule |
 | `rules.undothis` | Undo this | Under an edited rule |
@@ -445,11 +456,11 @@ The page where the client reads and edits the translation rules: /admin/localiza
 | `rules.toast.suggested` | Suggested rules added. Edit them as you like. | Message |
 | `rules.conflict` | {name} published {scope} first (v{n}, {time}). | Notice on a scope someone else published |
 | `rules.conflict.someone` | Someone | The conflict notice when the name and email are unknown |
-| `rules.conflict.theirs` | See theirs | Conflict notice button |
-| `rules.conflict.mine` | Keep mine | Conflict notice button |
+| `rules.conflict.theirs` | Use theirs | Conflict notice button |
+| `rules.conflict.mine` | Keep mine and use it | Conflict notice button |
 | `rules.glossary` | Glossary | Section heading, rail |
 | `rules.glossary.en` | English | Glossary column |
-| `rules.glossary.keep` | Keep as is | Glossary column |
+| `rules.glossary.keep` | Don't translate | Glossary column |
 | `rules.glossary.add` | Add a term | Glossary button |
 | `rules.remove` | Remove | Glossary row button |
 | `rules.briefs` | Page briefs | Section heading, rail |

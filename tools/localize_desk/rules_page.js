@@ -70,6 +70,7 @@
     scopes: {},        // scope -> {loaded, version, body, updatedAt, updatedBy, byName, draft, notice}
     busy: false,       // a publish, undo of a publish or restore is in flight
     failed: [],        // scopes a publish could not write yet (partly in use)
+    stopped: null,     // the sends a confirmed publish did not finish, with the bodies the confirm covered (Try again resends only these)
   };
   const U = { undo: [], redo: [] };
 
@@ -178,6 +179,10 @@
     U.redo.length = 0;
     updateBar();
   }
+  const STEP_CONFIRM = {
+    undo: { title: 'rules.undo.confirm.title', body: 'rules.undo.confirm.body', go: 'rules.undo.confirm.go' },
+    redo: { title: 'rules.redo.confirm.title', body: 'rules.redo.confirm.body', go: 'rules.redo.confirm.go' },
+  };
   function keysFor(kind) { return t('doc.keys.' + kind + '.' + (IS_MAC ? 'mac' : 'other')); }
   function step(dir) {
     if (S.busy) return;
@@ -196,8 +201,19 @@
       render(e.focus, true);
       return;
     }
-    // A publish or a restore: undo writes each scope's previous body back (reverse order); redo
-    // writes the published bodies again. Each write is against the version this page last saw.
+    // A publish or a restore changes what Gemini uses, for everyone: it asks first, naming the rules it writes
+    // (they can be another language's). Undo and Redo, the buttons and the keys, all come through here.
+    const asked = e.writes.map(function (w) { return scopeName(w.scope); }).join(', ');
+    const K = STEP_CONFIRM[dir];
+    modal(t(K.title), [t(K.body, { list: asked })], [
+      { text: t('doc.confirm.cancel') },
+      { text: t(K.go), primary: true, run: function () { stepWrites(dir, from, to, e); } },
+    ]);
+  }
+  // A publish or a restore: undo writes each scope's previous body back (reverse order); redo
+  // writes the published bodies again. Each write is against the version this page last saw.
+  function stepWrites(dir, from, to, e) {
+    if (S.busy || from[from.length - 1] !== e) return;
     from.pop();
     const writes = dir === 'undo' ? e.writes.slice().reverse() : e.writes.slice();
     const sends = writes.map(function (w) { return { scope: w.scope, body: dir === 'undo' ? w.before : w.after }; });
@@ -278,6 +294,9 @@
           adopt(w.scope, { version: r.body.version, body: w.body, at: r.body.at || s.updatedAt,
             updatedBy: r.body.updatedBy || s.updatedBy, byName: r.body.unchanged ? s.byName : null });
           if (s.draft === w.body) { s.draft = null; s.base = null; }
+          // A later edit of this same scope was made on top of what we just wrote: it now stands on this
+          // version, so the next Use these rules does not meet our own write as someone else's (409).
+          else if (s.draft != null) s.base = s.version;
           persistDraft(w.scope);
           s.notice = null;
           done.push({ scope: w.scope, before: before, after: w.body, beforeVersion: beforeVersion });
@@ -304,7 +323,15 @@
     const order = (only || scopesFor(S.lang)).filter(isChanged);
     if (!order.length || S.busy) return;
     const sends = order.map(function (scope) { return { scope: scope, body: current(scope), base: draftBase(scope) }; });
+    sendConfirmed(sends);
+  }
+  // The sends a confirm covered, one publish: the scopes in order. What stops is remembered with the bodies the
+  // confirm showed, so Try again resends exactly that and never collects the drafts anew (an edit made after the
+  // confirm stays a draft until the next Use these rules).
+  function sendConfirmed(sends) {
+    S.stopped = null;
     runWrites(sends).then(function (res) {
+      if (res.stoppedAt) S.stopped = sends.slice(res.done.length);
       // A scope's FIRST publish has no earlier version to go back to: the Worker never stores an empty
       // body (400), so Undo leaves it in use and goes back only where a version existed before.
       const undoable = res.writes.filter(function (w) { return w.before !== ''; });
@@ -315,9 +342,13 @@
       }
       const names = function (list) { return list.map(scopeName).join(', '); };
       if (!res.stoppedAt) {
-        toast(t('rules.toast.used', { list: names(res.done) }) + ' ' + t('rules.toast.used.undo'), 'ok');
+        // Undo only for the scopes that had an earlier version: say so truthfully
+        const back = undoable.map(function (w) { return w.scope; });
+        const tail = back.length === res.done.length ? ' ' + t('rules.toast.used.undo')
+          : back.length ? ' ' + t('rules.toast.used.undo.some', { list: names(back) }) : '';
+        toast(t('rules.toast.used', { list: names(res.done) }) + tail, 'ok');
       } else if (res.done.length) {
-        const rest = order.slice(res.done.length);
+        const rest = sends.slice(res.done.length).map(function (w) { return w.scope; });
         toast(t('rules.toast.partial', { done: names(res.done), rest: names(rest) }), 'warn');
       }
       render();
@@ -325,7 +356,9 @@
   }
   function confirmPublish() {
     if (!changeCount() || S.busy) return;
-    modal(t('rules.use.title'), [t('rules.use.body', { language: langName(S.lang) })], [
+    const paras = [t('rules.use.body', { language: langName(S.lang) })];
+    if (isChanged('global')) paras.push(t('rules.use.body.shared'));        // the shared rules reach all 8 languages
+    modal(t('rules.use.title'), paras, [
       { text: t('doc.confirm.cancel') },
       { text: t('rules.use'), primary: true, run: publish },
     ]);
@@ -366,8 +399,13 @@
     } else {
       box.appendChild(h('p', null, t(n.key)));
       const row = h('div', 'r-btns');
-      // Try again goes through the confirm, like Use these rules: edits made since are in what it sends
-      row.appendChild(btn('desk-btn', t('rules.retry'), function () { s.notice = null; confirmPublish(); }));
+      // Try again resends what the confirm covered and stopped on, directly: no second confirm, and an edit made
+      // since is not in it
+      row.appendChild(btn('desk-btn', t('rules.retry'), function () {
+        s.notice = null;
+        if (S.stopped && S.stopped.length && !S.busy) sendConfirmed(S.stopped.slice());
+        else render();
+      }));
       box.appendChild(row);
     }
     return box;
@@ -793,6 +831,8 @@
     });
     els.langHead.textContent = t('rules.lang', { language: langName(S.lang) });
     els.lgBtn.textContent = flagOf(S.lang) + ' ' + langName(S.lang);
+    els.lgBtn.title = otherPending() ? t('rules.lang.pending.btn') : '';
+    if (otherPending()) els.lgBtn.appendChild(h('span', 'pend', ' •'));
     renderShared(els.shared);
     renderLang(els.lang);
     renderRail();
@@ -879,15 +919,16 @@
     els.save.textContent = text;
     els.save.parentNode.title = n ? t('rules.draft.hint') : '';
     els.dot.className = dot;
-    const g = sc('global'), l = sc(S.lang), x = sc('glossary:' + S.lang);
-    els.note.textContent = t('rules.next', { g: g.version, language: langName(S.lang), l: l.version, x: x.version }) +
+    els.note.textContent = t('rules.next', { language: langName(S.lang) }) +
       (n ? ' ' + tn('rules.pending', n, { n: n }) : '');
     els.use.disabled = !n || S.busy;
+    // A disabled control says why (this page has no data-tip script: the reason is the title)
+    els.use.title = els.use.disabled && !S.busy ? t('rules.use.disabled') : '';
     const u = U.undo[U.undo.length - 1], r = U.redo[U.redo.length - 1];
     els.undo.disabled = !u || S.busy;
     els.redo.disabled = !r || S.busy;
-    els.undo.title = t('doc.undo.tip', { keys: keysFor('undo') });
-    els.redo.title = t('doc.redo.tip', { keys: keysFor('redo') });
+    els.undo.title = !u && !S.busy ? t('doc.undo.none') : t('doc.undo.tip', { keys: keysFor('undo') });
+    els.redo.title = !r && !S.busy ? t('doc.redo.none') : t('doc.redo.tip', { keys: keysFor('redo') });
     els.undo.querySelector('kbd').textContent = keysFor('undo');
     els.redo.querySelector('kbd').textContent = keysFor('redo');
   }
@@ -1033,6 +1074,20 @@
     els.lgBtn.setAttribute('aria-expanded', 'false');
     if (refocus) els.lgBtn.focus();
   }
+  // A language other than the open one has changes not in use: a draft in memory (typed this visit) or in this
+  // browser (an earlier visit). `global` is shared by all eight and marks none.
+  function pendingIn(lang) {
+    return scopesFor(lang).some(function (scope) {
+      if (scope === 'global') return false;
+      const s = S.scopes[scope];
+      if (s && s.loaded && s.draft != null) return true;
+      const d = lsGet(DRAFT_KEY(scope));
+      return !!(d && typeof d.body === 'string');
+    });
+  }
+  function otherPending() {
+    return LOCALES.some(function (l) { return l.code !== S.lang && pendingIn(l.code); });
+  }
   function openMenu() {
     if (els.menu) { closeMenu(true); return; }
     const m = h('div', 'menu');
@@ -1043,15 +1098,18 @@
       });
       it.setAttribute('role', 'menuitem');
       if (l.none) it.appendChild(h('span', 'none', ' ' + t('rules.none')));
+      if (l.code !== S.lang && pendingIn(l.code)) it.appendChild(h('span', 'pend', ' · ' + t('rules.lang.pending')));
       m.appendChild(it);
     });
     els.lgBtn.parentNode.appendChild(m);
+    els.menu = m;                                   // closeMenu, the toggle and the outside click all work on this
     els.lgBtn.setAttribute('aria-expanded', 'true');
     m.querySelector('.is-on').focus();
   }
   function switchLang(code, quiet) {
     if (code === S.lang) return;
     flushEdit();
+    scopesFor(S.lang).forEach(persistDraft);       // the draft typed a moment ago must be in this browser before we leave it
     S.lang = code;
     const u = new URL(location.href);
     u.searchParams.set('lang', code);

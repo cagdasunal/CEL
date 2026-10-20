@@ -41,9 +41,9 @@ from localize_desk import harness as H  # noqa: E402
 from localize_desk.copy_text import t, tn  # noqa: E402
 
 OTHER = "other@example.test"
+THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 READY = '#rules-app[data-state="ready"]'
 TIMING = {"draftDelay": 0}
-THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 GLOBAL_V1 = "## Purpose\n\n- Rule A\n- Rule B\n"
 DE_V1 = "## German\n\n- **Form of address:** du\n- **Markets:** CH\n"
 JA_NONE = "> no rules line\n"
@@ -320,6 +320,7 @@ def test_undo_of_a_publish(browser):
         until(lambda: stored(env.store, "de")[0] == 2, what="de version 2")
         expect(pg.locator("#rulesUndo")).to_be_enabled()
         pg.click("#rulesUndo")
+        pg.click(".r-modal .is-primary")           # putting earlier rules back asks first (CEL-076 item 4)
         until(lambda: stored(env.store, "de")[0] == 3, what="de version 3")
         assert stored(env.store, "de") == (3, DE_V1)
         expect(lang_item(pg, 0)).to_have_text("Form of address: du")
@@ -411,14 +412,12 @@ def test_errors_cap_then_signed_out(browser):
         # the fault answers every call: a second try fails the new way
         env.worker.action_faults["desk-rules-write"] = {"status": 401, "error": "signed out"}
         notice.get_by_role("button", name=t("rules.retry")).click()
-        expect(pg.locator(".r-modal")).to_be_visible()          # Try again goes through the confirm (fix 9)
-        pg.click(".r-modal .is-primary")
+        expect(pg.locator(".r-modal")).to_have_count(0)         # Try again resends what the confirm covered: no second confirm (CEL-076 item 23)
         expect(pg.locator("#sheet-lang .r-notice")).to_contain_text(t("rules.error.signed_out"))
         assert stored(env.store, "de") == (1, DE_V1)
         # and when the storage works again the same draft goes in
         env.worker.action_faults.pop("desk-rules-write")
         pg.locator("#sheet-lang .r-notice").get_by_role("button", name=t("rules.retry")).click()
-        pg.click(".r-modal .is-primary")
         until(lambda: stored(env.store, "de")[0] == 2, what="de version 2 after the fault cleared")
 
 
