@@ -22,13 +22,17 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 CONTRACT = REPO / "data" / "localize" / "engine-reads.json"
-DESK = REPO / "tools" / "localize_desk" / "generate_desk_page.py"
-SHARED = REPO / "tools" / "localize_desk" / "desk_shared.py"      # the scripts the desk shares (cleanup C2)
+DESK = REPO / "tools" / "localize_desk" / "document_desk.js"      # the desk's script (the first desk's generator is gone, CEL-050)
+EXPORT = REPO / "tools" / "localize_desk" / "document_export.js"
+# A desk-owned field no script of the desk writes any more. The first desk's "reject" action wrote `rejected`; the
+# document desk has none, while the engine still reads it (batch.py). Listed here, not in engine-reads.json (that file is
+# the same in the monorepo): Found in CEL-050. The test below keeps it exact both ways.
+NO_DESK_WRITER_NOW = {"rejected"}
 
 
 def _desk_text() -> str:
-    """The desk's source: its generator and the module whose scripts it inlines."""
-    return "\n".join(p.read_text(encoding="utf-8") for p in (DESK, SHARED))
+    """The desk's source: its script and the Export module that works with it."""
+    return "\n".join(p.read_text(encoding="utf-8") for p in (DESK, EXPORT))
 
 
 def _contract() -> dict:
@@ -36,9 +40,9 @@ def _contract() -> dict:
 
 
 def _save_fields() -> set[str]:
-    """What the desk sends (WO-17): its STORED_FIELDS."""
-    m = re.search(r"var STORED_FIELDS = \[([^\]]*)\]", _desk_text())
-    assert m, "the desk's STORED_FIELDS list was not found"
+    """What the desk sends (WO-17): its FIELDS, the ones a decision record may carry."""
+    m = re.search(r"const FIELDS = \[([^\]]*)\]", _desk_text())
+    assert m, "the desk's FIELDS list was not found"
     return set(re.findall(r"'([A-Za-z]+)'", m.group(1)))
 
 
@@ -76,12 +80,13 @@ def test_whatever_the_desk_sends_the_server_keeps():
 
 
 def test_every_field_the_desk_owns_has_a_writer_in_the_desk():
-    """A desk-owned field must be assigned somewhere in the desk's script (`s.<field> =`)."""
+    """A desk-owned field must be written somewhere in the desk's script: `next.<field> =` on the record being built, or
+    the one stamp the desk puts in a record literal, `by: who()`."""
     c = _contract()
     src = _desk_text()
     owned = {f for f, who in c["written_by"].items() if who == "desk"}
-    missing = {f for f in owned if not re.search(rf"\bs\.{f}\s*=[^=]", src)}
-    listed = {f for f in c["no_writer_yet"] if c["written_by"].get(f) == "desk"}
+    missing = {f for f in owned if not re.search(rf"\bnext\.{f}\s*=[^=]|\b{f}:\s*(?:D\.)?who\(\)", src)}
+    listed = {f for f in c["no_writer_yet"] if c["written_by"].get(f) == "desk"} | NO_DESK_WRITER_NOW
     assert not missing - listed, f"desk-owned fields nothing in the desk writes: {sorted(missing - listed)}"
     assert not listed - missing, f"{sorted(listed - missing)} have a writer now: remove them from no_writer_yet"
 

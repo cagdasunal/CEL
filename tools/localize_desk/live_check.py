@@ -9,7 +9,7 @@ while every test is green. This reads each served file twice and compares its by
 the checked-out file:
 - past the edge, with the commit id as a cache-busting query, so a failed or partial
   deploy shows even while the CDN still holds a copy;
-- at every URL a reviewer's browser asks for (`/de/`, and each `/de/?show=...` the desk
+- at every URL a reviewer's browser asks for (`/document/`, and each `/document/?...` the desk
   links to), asking for gzip as a browser does -- each is its own cache key, and a stale
   copy there is what reviewers get (#5 review, 2026-09-28).
 The files are the pages, their data, and every same-origin script and stylesheet the pages
@@ -37,9 +37,9 @@ from pathlib import Path
 
 DOCS = Path(__file__).resolve().parents[2] / "docs"
 BASE = "https://cel.englishcollege.com"
-LOCALES = ("de", "fr", "es", "pt", "it", "ja", "ko", "ar")
-_PAGES = (["admin/localization/index.html"] + [f"admin/localization/{c}/index.html" for c in LOCALES]
-          + ["admin/localization/document/index.html", "admin/localization/rules/index.html"])
+# /admin/localization/ is a redirect to the document page (CEL-045); the first desk's eight language pages are gone (CEL-050).
+_PAGES = ["admin/localization/index.html", "admin/localization/document/index.html",
+          "admin/localization/rules/index.html"]
 # The document page (desk v2) reads one data file per page, and pages.json before them.
 DOC_PAGES = ("vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english")
 _DOC_DATA = ["admin/localization/document/data/pages.json"] + [
@@ -51,20 +51,20 @@ _LINK = re.compile(r'href="/([^"#]+)"')
 
 def served_files(docs: Path = DOCS) -> list[str]:
     """The desk's pages and data, and every same-origin script and stylesheet they load."""
-    paths = _PAGES + [f"admin/localization/{c}/units.json" for c in LOCALES] + _DOC_DATA
+    paths = _PAGES + _DOC_DATA
     for page in (docs / p for p in _PAGES if (docs / p).is_file()):
         paths += _ASSET.findall(page.read_text(encoding="utf-8"))
     return sorted({p for p in paths if (docs / p).is_file()})
 
 
 def _plain(p: str) -> str:
-    """The URL path a browser asks for: `/de/`, not `/de/index.html`."""
+    """The URL path a browser asks for: `/document/`, not `/document/index.html`."""
     return p[: -len("index.html")] if p.endswith("index.html") else p
 
 
 def reviewer_urls(docs: Path = DOCS) -> dict[str, list[str]]:
     """Each served file -> the URL paths a reviewer's browser reads it through: its plain path,
-    and every link in the desk's pages to that path with a query (`de/?show=check`)."""
+    and every link in the desk's pages to that path with a query (`document/?page=...`)."""
     links: set[str] = set()
     for page in (docs / p for p in _PAGES if (docs / p).is_file()):
         links.update(_LINK.findall(page.read_text(encoding="utf-8")))

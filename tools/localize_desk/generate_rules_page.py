@@ -262,7 +262,7 @@ def render_page() -> str:
     page_js = _read(PAGE_JS, "rules_page.js")
     md_js = _read(MD_JS, "rules_md.js")
     head = S._head(t("rules.meta.title"), t("rules.meta.description"))
-    assert head[-2:] == ["</head>", "<body>"], "generate_desk_page._head changed its ending"
+    assert head[-2:] == ["</head>", "<body>"], "desk_shared._head changed its ending"
     style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", RULES_CSS) + "</style>"
     globals_js = (
         "var SAVE_OFF = " + ("true" if S.SAVE_OFF else "false") + ";\n"

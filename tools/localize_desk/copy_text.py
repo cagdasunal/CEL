@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import re
 from functools import lru_cache
-from html import escape
 from pathlib import Path
 
 COPY_PATH = Path(__file__).resolve().parent / "COPY.md"
@@ -76,48 +75,6 @@ def t(key: str, **values) -> str:
 def tn(key: str, n: int, **values) -> str:
     """Singular or plural: `key.one` when n == 1, else `key.other`."""
     return t(f"{key}.one" if n == 1 else f"{key}.other", n=n, **values)
-
-
-def _inline(s: str) -> str:
-    s = escape(s, quote=False)
-    s = re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
-    s = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", s)
-    s = re.sub(r"\*([^*]+)\*", r"<em>\1</em>", s)
-    return s
-
-
-def block_html(key: str) -> str:
-    """A block rendered from its Markdown subset to HTML (escaped first, then marked up)."""
-    md = t(key)
-    html: list[str] = []
-    para: list[str] = []
-    items: list[str] = []
-
-    def flush() -> None:
-        if para:
-            html.append("<p>" + _inline(" ".join(para)) + "</p>")
-            para.clear()
-        if items:
-            html.append("<ul>" + "".join(f"<li>{_inline(i)}</li>" for i in items) + "</ul>")
-            items.clear()
-
-    for raw in md.splitlines():
-        line = raw.strip()
-        if not line:
-            flush()
-        elif line.startswith("### "):
-            flush()
-            html.append(f"<h3>{_inline(line[4:])}</h3>")
-        elif line.startswith("- "):
-            if para:
-                flush()
-            items.append(line[2:])
-        elif items:
-            items[-1] += " " + line          # a wrapped list item
-        else:
-            para.append(line)
-    flush()
-    return "\n".join(html)
 
 
 def js_table(keys: list[str] | None = None) -> str:

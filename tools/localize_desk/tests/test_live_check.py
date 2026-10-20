@@ -14,8 +14,7 @@ from localize_desk import live_check as L
 
 
 def _tree(root: Path, body: str = "desk") -> Path:
-    for p in ("admin/localization/index.html", "admin/localization/de/index.html",
-              "admin/localization/de/units.json", "assets/css/dashboard.css"):
+    for p in ("admin/localization/index.html", "admin/localization/rules/index.html", "assets/css/dashboard.css"):
         f = root / p
         f.parent.mkdir(parents=True, exist_ok=True)
         f.write_text(f"{body}:{p}", encoding="utf-8")
@@ -52,49 +51,43 @@ def test_a_served_desk_that_matches_the_push_passes(pages, tmp_path):
     # Every file is read past the edge (cache-busted by the commit) ...
     assert {s for s in seen if "?v=" in s} == {f"/{p}?v=abc123" for p in L.served_files(docs)}
     # ... and at the URL a reviewer's browser asks for.
-    assert "/admin/localization/de/" in seen and "/admin/localization/de/units.json" in seen
+    assert "/admin/localization/rules/" in seen and "/admin/localization/rules/index.html?v=abc123" in seen
 
 
 def test_a_stale_file_is_named(pages, tmp_path):
     served, base, _seen = pages
     docs = _tree(tmp_path / "docs")
-    (served / "admin/localization/de/units.json").write_text("yesterday", encoding="utf-8")
-    assert L.check("abc123", base=base, docs=docs, tries=2, pause=0) == ["admin/localization/de/units.json"]
+    (served / "admin/localization/rules/index.html").write_text("yesterday", encoding="utf-8")
+    assert L.check("abc123", base=base, docs=docs, tries=2, pause=0) == ["admin/localization/rules/index.html"]
 
 
 def test_a_file_missing_from_the_site_is_named(pages, tmp_path):
     served, base, _seen = pages
     docs = _tree(tmp_path / "docs")
-    (served / "admin/localization/de/units.json").unlink()
-    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/de/units.json"]
+    (served / "admin/localization/rules/index.html").unlink()
+    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/rules/index.html"]
 
 
 def test_a_deploy_that_catches_up_passes_on_a_retry(pages, tmp_path, monkeypatch):
     served, base, _seen = pages
     docs = _tree(tmp_path / "docs")
-    target = served / "admin/localization/de/index.html"
+    target = served / "admin/localization/rules/index.html"
     target.write_text("old", encoding="utf-8")
     monkeypatch.setattr(L.time, "sleep",
-                        lambda s: target.write_text("desk:admin/localization/de/index.html", encoding="utf-8"))
+                        lambda s: target.write_text("desk:admin/localization/rules/index.html", encoding="utf-8"))
     assert L.check("abc123", base=base, docs=docs, tries=3, pause=1) == []
 
 
-def test_the_real_checkout_lists_every_language():
+def test_the_real_checkout_lists_the_redirect_and_the_rules_page():
     files = L.served_files()
-    for code in L.LOCALES:
-        assert f"admin/localization/{code}/index.html" in files
-        assert f"admin/localization/{code}/units.json" in files
+    for page in ("admin/localization/index.html", "admin/localization/rules/index.html"):
+        assert page in files
+    assert not [p for p in files if p.endswith("units.json")], "the first desk's data is not served any more"
     # Every same-origin script and stylesheet the pages load -- the save path needs auth.js
     # (the signed-in user) and dashboard-config.js (the Worker's URL) -- and nothing they don't.
     for asset in ("assets/css/dashboard.css", "assets/js/auth.js", "assets/js/dashboard-config.js"):
         assert asset in files
     assert "scripts/cel-arabic.css" not in files
-
-
-def test_the_languages_are_the_desks():
-    """The check's list is the generator's, so a new language cannot go unchecked."""
-    from localize_desk import generate_desk_page as G
-    assert L.LOCALES == tuple(code for code, *_ in G.LOCALES)
 
 
 def test_the_edge_copy_reviewers_get_is_checked(pages, tmp_path, monkeypatch):
@@ -103,22 +96,22 @@ def test_the_edge_copy_reviewers_get_is_checked(pages, tmp_path, monkeypatch):
     _served, base, _seen = pages
     docs = _tree(tmp_path / "docs")
     real = L._fetch
-    monkeypatch.setattr(L, "_fetch", lambda url, **k: b"yesterday" if url.endswith("/de/") else real(url, **k))
-    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/de/index.html"]
+    monkeypatch.setattr(L, "_fetch", lambda url, **k: b"yesterday" if url.endswith("/rules/") else real(url, **k))
+    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/rules/index.html"]
 
 
 def test_a_link_with_a_query_is_read_at_that_url(pages, tmp_path, monkeypatch):
-    """The index sends reviewers to /de/?show=check -- its own cache key at the edge."""
+    """The index sends reviewers to /rules/?show=check -- its own cache key at the edge."""
     served, base, seen = pages
     docs = _tree(tmp_path / "docs")
     for root in (docs, served):
         (root / "admin/localization/index.html").write_text(
-            '<a href="/admin/localization/de/?show=check">de</a>', encoding="utf-8")
+            '<a href="/admin/localization/rules/?show=check">de</a>', encoding="utf-8")
     assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == []
-    assert "/admin/localization/de/?show=check" in seen
+    assert "/admin/localization/rules/?show=check" in seen
     real = L._fetch
     monkeypatch.setattr(L, "_fetch", lambda url, **k: b"yesterday" if url.endswith("?show=check") else real(url, **k))
-    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/de/index.html"]
+    assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["admin/localization/rules/index.html"]
 
 
 def test_a_script_the_page_loads_is_checked(pages, tmp_path):
@@ -127,7 +120,7 @@ def test_a_script_the_page_loads_is_checked(pages, tmp_path):
     for root in (docs, served):
         (root / "assets/js").mkdir(parents=True, exist_ok=True)
         (root / "assets/js/auth.js").write_text("new", encoding="utf-8")
-        (root / "admin/localization/de/index.html").write_text(
+        (root / "admin/localization/rules/index.html").write_text(
             '<script src="/assets/js/auth.js"></script>', encoding="utf-8")
     (served / "assets/js/auth.js").write_text("old", encoding="utf-8")      # the same length
     assert L.check("abc123", base=base, docs=docs, tries=1, pause=0) == ["assets/js/auth.js"]
@@ -164,9 +157,9 @@ def test_main_exits_1_on_a_stale_desk_and_0_on_a_match(pages, tmp_path, monkeypa
     docs = _tree(tmp_path / "docs")
     monkeypatch.setattr(L, "DOCS", docs)
     assert L.main(["--sha", "abc123", "--base", base, "--tries", "1", "--pause", "0"]) == 0
-    (served / "admin/localization/de/units.json").write_text("yesterday", encoding="utf-8")
+    (served / "admin/localization/rules/index.html").write_text("yesterday", encoding="utf-8")
     assert L.main(["--sha", "abc123", "--base", base, "--tries", "1", "--pause", "0"]) == 1
-    assert "admin/localization/de/units.json" in capsys.readouterr().err
+    assert "admin/localization/rules/index.html" in capsys.readouterr().err
 
 
 def test_main_fails_on_an_empty_checkout(tmp_path, monkeypatch):
@@ -181,7 +174,7 @@ def test_a_check_overtaken_by_a_newer_push_hands_over(pages, tmp_path, monkeypat
     served, base, _seen = pages
     docs = _tree(tmp_path / "docs")
     monkeypatch.setattr(L, "DOCS", docs)
-    (served / "admin/localization/de/units.json").write_text("newer", encoding="utf-8")
+    (served / "admin/localization/rules/index.html").write_text("newer", encoding="utf-8")
     argv = ["--sha", "abc123", "--base", base, "--tries", "1", "--pause", "0",
             "--repo", "https://example.invalid/r"]
     monkeypatch.setattr(L, "_main_head", lambda repo: "def456")
@@ -213,8 +206,8 @@ def test_the_document_page_and_all_its_data_are_listed(tmp_path):
     assert [p for p in DOC_FILES if p not in files] == []
     # pages.json and one file per page: nothing else under data/ is invented
     assert sorted(p for p in files if p.startswith(f"{DOC}/data/")) == sorted(DOC_FILES[1:])
-    # and the v1 desk's files are still all there
-    assert "admin/localization/de/units.json" in files
+    # and the other pages the check serves are still all there
+    assert "admin/localization/rules/index.html" in files
 
 
 def test_a_document_file_that_is_not_there_is_skipped_not_invented(tmp_path):
@@ -227,8 +220,8 @@ def test_a_document_file_that_is_not_there_is_skipped_not_invented(tmp_path):
 
 def test_the_document_pages_are_the_desks():
     """The check's list is the generator's, so a fifth page cannot go unchecked."""
-    from localize_desk import generate_desk_page as G
-    assert L.DOC_PAGES == tuple(G.PAGE_KEYS)
+    from localize_desk import desk_shared as S
+    assert L.DOC_PAGES == tuple(S.PAGE_KEYS)
 
 
 def test_the_document_page_is_read_at_the_url_a_reviewer_asks_for(tmp_path):

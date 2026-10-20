@@ -1,17 +1,17 @@
 # Localization Desk — every word on screen
 
-This document is the **only** place the desk's wording lives. The page generator
-(`generate_desk_page.py`) and the checks (`recommend.py`) read it every time the desk is
-built, and a test fails if the pages show a word that is not in here, or if this document
-holds a line nothing uses. To change what the desk says: edit this file, rebuild the desk
-(`cd tools && python3 -m localize_desk.generate_desk_page`), commit both.
+This document is the **only** place the desk's wording lives. The page generators
+(`generate_document_page.py`, `generate_rules_page.py`) read it every time the desk is built,
+and a test fails if the pages show a word that is not in here, or if this document holds a line
+nothing uses. To change what the desk says: edit this file, rebuild the desk (`cd tools &&
+python3 -m localize_desk.generate_document_page && python3 -m localize_desk.generate_rules_page`),
+commit both.
 
 **How to edit**
 
 - Change the **Text** column only. The **Key** is how the code finds the line.
 - Words in `{braces}` are filled in by the page (a number, a language). Keep them.
 - Keys ending in `.one` / `.other` are the singular and plural of the same line.
-- In the long help text: `**bold**`, `*italic*`, `` `code` `` and `- ` lists work.
 - A `|` inside a Text cell must be written `\|`.
 
 ## Words we use — one name for each thing
@@ -50,71 +50,6 @@ Using two names for one thing makes a reviewer wonder whether they are two thing
 | Key | Text | Shown where |
 |---|---|---|
 | `meta.index.title` | Localization Desk — College of English Language | Browser tab, language list |
-| `meta.index.description` | Check how the four Vancouver pages read in every language. | Page description |
-| `meta.locale.title` | {language} — Localization Desk — College of English Language | Browser tab, one language |
-| `meta.locale.description` | Check the {language} translation of the four Vancouver pages. | Page description |
-
-## Language list (the first page)
-
-| Key | Text | Shown where |
-|---|---|---|
-| `index.eyebrow` | LOCALIZATION DESK | Small heading, top left |
-| `index.subtitle` | Check how the four Vancouver pages read in each language, and fix what reads wrong. | Under the heading |
-| `index.intro.title` | Pick a language to start | Box above the language cards |
-| `index.intro.text` | Each language has {total} texts across {pages} pages. Our automatic checks flag the texts most likely to be wrong, so start with those. | Box above the language cards |
-| `index.card.open` | Review {language} | Hidden label of the whole card, for screen readers |
-| `index.card.texts` | {total} texts | Card, under the language name |
-| `index.card.flagged.one` | 1 flagged | Card, before anything is decided |
-| `index.card.flagged.other` | {n} flagged | Card, before anything is decided |
-| `index.card.flagged.none` | Nothing flagged | Card, when the checks found nothing |
-| `index.card.progress` | {done} of {total} reviewed | Card, once decisions exist |
-| `index.card.start` | Start reviewing → | Card button, nothing decided yet |
-| `index.card.continue` | Continue → | Card button, once decisions exist |
-| `index.chip.arrived.one` | 1 new translation to read | Card link |
-| `index.chip.arrived.other` | {n} new translations to read | Card link |
-| `index.chip.failed.one` | 1 translation failed | Card link |
-| `index.chip.failed.other` | {n} translations failed | Card link |
-| `index.chip.sending` | {n} with Gemini | Card link |
-| `index.chip.approved` | {n} approved | Card link |
-| `index.chip.requested.one` | 1 new translation requested | Card link |
-| `index.chip.requested.other` | {n} new translations requested | Card link |
-| `index.summary.failed` | Couldn't read what's saved on the server — these numbers are this browser's only. Reload to try again. | Under the languages, when the server's numbers can't be read |
-| `index.discard.button` | Discard {n} unsaved | Card button, when this browser has unsaved work |
-| `index.discard.hint` | Throw away what this browser hasn't saved. Anything already saved stays. | Hover text of that button |
-| `index.discard.confirm.one` | Throw away 1 unsaved change in {language}? Anything already saved stays. | Confirmation |
-| `index.discard.confirm.other` | Throw away {n} unsaved changes in {language}? Anything already saved stays. | Confirmation |
-| `index.footnote` | Nothing here changes the website directly. Approved texts reach the website only when a Weglot file is made and imported. | Under the cards |
-
-## One language — header and filters
-
-| Key | Text | Shown where |
-|---|---|---|
-| `locale.title` | {language} · {total} texts | Heading of a language page |
-| `locale.help` | How this works | The round ? beside the heading: its hover text and screen-reader name |
-| `locale.langs.label` | Choose a language | Screen-reader name of the language tabs |
-| `locale.langs.hover` | {language} | Hover text of a language tab, nothing flagged left |
-| `locale.langs.hover_flagged.one` | {language} — 1 flagged text not reviewed yet | Hover text of a language tab |
-| `locale.langs.hover_flagged.other` | {language} — {n} flagged texts not reviewed yet | Hover text of a language tab |
-| `filter.page` | Page | Filter label |
-| `filter.page.all` | All pages | Page filter option |
-| `filter.show` | Show | Filter label |
-| `filter.search` | Search | Filter label |
-| `filter.search.placeholder` | English or {language} | Search box, empty (keep it short: the box is narrow) |
-| `show.check` | To check first ({n}) | Show filter. Opens by default |
-| `show.arrived` | New translations to read ({n}) | Show filter |
-| `show.todo` | Not reviewed yet ({n}) | Show filter |
-| `show.all` | All texts ({n}) | Show filter |
-| `show.csv` | Approved ({n}) | Show filter (includes your edits) |
-| `show.edited` | Approved with your edit ({n}) | Show filter |
-| `show.draft` | New translation requested ({n}) | Show filter |
-| `show.sending` | With Gemini ({n}) | Show filter |
-| `show.failed` | Translation failed ({n}) | Show filter |
-| `show.exported` | In a Weglot file ({n}) | Show filter |
-| `show.live` | On the website ({n}) | Show filter |
-| `count.line` | {shown} of {total} | End of the filter row |
-| `count.failed` | Couldn't load the texts ({error}). | Under the filters, when loading fails |
-| `table.empty` | No texts match these filters. | Instead of the table |
-| `table.empty.reset` | Show all texts | Button under that line: clears Page, Show and Search |
 
 ## One language — the three boxes at the top
 
@@ -124,150 +59,32 @@ button, and a line that says only where its job stands. No price is shown (the o
 
 | Key | Text | Shown where |
 |---|---|---|
-| `flow.label` | Ask Gemini, review and get the Weglot file, for every language | Screen-reader name of the three boxes |
-| `flow.ask.label` | Ask Gemini | First box |
-| `flow.ask.unit` | requested | Beside its number |
-| `flow.ask.button` | Send to Gemini | Its button |
-| `flow.ask.none` | Ask Gemini for a new translation with ✦ first | Hover text of that button, with nothing requested |
-| `flow.ask.confirm.one` | Send 1 text to Gemini? | Confirmation, after Send to Gemini |
-| `flow.ask.confirm.other` | Send {n} texts to Gemini? | |
-| `flow.ask.changed.one` | The requests changed since you confirmed. Send 1 text to Gemini? | Asked again, when the price check finds other requests than were confirmed |
-| `flow.ask.changed.other` | The requests changed since you confirmed. Send {n} texts to Gemini? | |
-| `flow.ask.confirm.lang` | {language} {n} | After it, one per language, joined with · ("German 10 · Italian 14") |
-| `flow.review.label` | Review | Second box |
-| `flow.review.unit` | to check | Beside its number |
-| `flow.review.button` | Show them | Its button: this language's in the table, or the next language with some |
-| `flow.review.none` | Nothing to check in any language | Hover text of that button, with nothing left to check anywhere |
-| `flow.file.label` | Weglot file | Third box |
-| `flow.file.unit` | approved | Beside its number |
-| `flow.file.button` | Get the file | Its button: one file for each language with approved texts |
-| `flow.file.again` | Get the file again | The same button, when texts of an out-of-date file count again |
-| `flow.file.none` | Approve texts with ✓ first | Hover text of that button, with nothing approved |
-| `flow.file.download` | Download {language} | One button per language with a file |
-| `flow.file.live` | {live} of {n} on the website | Beside it, once I imported it has checked the website |
 | `flow.file.stale` | This file is out of date: get the file again. | Its line, when a file was made before a later decision, or over an hour ago |
-| `flow.file.popup` | {language}: the Weglot file | Heading of the window Download opens |
-| `flow.file.rows.one` | 1 text in this file. | Under that heading |
-| `flow.file.rows.other` | {n} texts in this file. | |
-| `flow.failed` | {language}: {reason} | A box's line, when a language's job failed |
-| `jobs.working` | Working on it — about a minute. | A box's line, while its job runs |
-| `jobs.unsaved` | Wait until the bar says “All changes saved”: the file and the requests are made from what's saved. | Hover text of the panel's buttons, while this language has unsaved changes |
-| `jobs.start.failed` | It couldn't start: {reason}. Try again. | A box's line, when the server didn't take the job ({reason} is one of the `save.reason.*` lines) |
-| `jobs.start.unavailable` | This can't run right now. Let the team know. | A box's line, when the server has no engine set up (503) |
-| `jobs.start.daily` | Today's limit is reached: this works again tomorrow. | A box's line, when the server refused the start for the daily cap |
-| `jobs.read.failed` | Couldn't check how it's going. Trying again… | A box's line, when reading a job's progress fails |
-| `jobs.file.out.one` | 1 text isn't in the file: | Heading of the list of texts left out (each line a `refusal.*`) |
-| `jobs.file.out.other` | {n} texts aren't in the file: | |
-| `jobs.file.notes.one` | 1 text went in with something to check: | Heading of the list of texts that went in with a `-WARN` or suffix line |
-| `jobs.file.notes.other` | {n} texts went in with something to check: | |
-| `jobs.file.imported` | I imported it | Button, once a file is ready (runbook F2) |
-| `jobs.file.again` | Check again | The same button, then |
-| `jobs.file.download.failed` | The Weglot file couldn't be downloaded: {reason}. Try again. | Its line, when the download failed ({reason} is one of the `save.reason.*` lines) |
-| `jobs.gemini.nothing` | Nothing to send: every request is already with Gemini, or was undone. | Its line, when Send finds no text to send |
-| `jobs.gemini.arrived.one` | 1 new translation to read. | Its line, when they're back |
-| `jobs.gemini.arrived.other` | {n} new translations to read. | |
-| `jobs.gemini.slow` | Gemini hasn't finished yet. Check again in a few minutes. | Its line, when Gemini is slower than 20 minutes |
-| `jobs.gemini.collect` | Check for new translations | The button then |
 
-<!-- block jobs.file.how -->
-How to import it in Weglot:
-
-- Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”
-- Check that Weglot's “… updated translations will be imported.” shows the same number as this file.
-- Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”
-- Press **Import**.
-
-If Weglot lists a text under **Errors**, let the team know: the check after the import will show it
-too. Then come back here and press **I imported it**.
-<!-- /block -->
 
 ## One language — the table
 
 | Key | Text | Shown where |
 |---|---|---|
-| `table.pick_all` | Select every text shown | Screen-reader name of the header checkbox |
-| `table.col.source` | English | Column heading |
-| `table.col.target` | {language} on the website now | Column heading |
-| `table.col.status` | Status | Column heading |
-| `table.col.actions` | Your decision | Column heading |
-| `row.pick` | Select this text | Screen-reader name of a row checkbox |
-| `row.shared.one` | Also used on 1 other page ({example}). Weglot keeps one translation for both, so this text can't be changed from here yet. | Under the translation |
-| `row.shared.other` | Also used on {n} other pages ({example}, …). Weglot keeps one translation for all of them, so this text can't be changed from here yet. | Under the translation |
 | `row.shared.home` | the home page | Stands in for "/" in the line above |
-| `row.website_now` | On the website now: | Under a new translation from Gemini, before the website's words |
-| `status.todo` | Not reviewed yet | Status badge |
-| `status.arrived` | New translation to read | Status badge |
-| `status.approved` | Approved | Status badge |
-| `status.edited` | Approved with your edit | Status badge |
-| `status.queued` | New translation requested | Status badge |
-| `status.sending` | With Gemini… | Status badge |
-| `status.failed` | Translation failed | Status badge (the reason shows on hover) |
-| `status.exported` | In a Weglot file | Status badge |
-| `status.live` | On the website | Status badge |
-| `status.conflict` | Changed elsewhere | Status, when someone else saved this text first |
-| `status.conflict.tip` | {who} saved this first: “{text}”. Choose again, or edit, to keep yours, or use theirs. | Hover text of that status |
-| `status.conflict.gone` | Someone else undid this text before you saved it. Choose again, or edit, to keep yours, or use theirs. | Same, when they undid it |
-| `conflict.take_theirs` | Use theirs | Button beside that status |
-| `conflict.take_theirs.hint` | Replace your decision with the one saved first | Hover text of that button |
-| `action.approve` | Approve — this translation is right | Tick button |
-| `action.approve.on` | Approved — click to undo | Tick button, when approved |
-| `action.edit` | Write your own translation | Pencil button |
-| `action.queue` | Ask Gemini for a new translation | Star button |
-| `action.queue.on` | New translation requested — click to undo | Star button, when requested |
-| `editor.label` | Your translation | Screen-reader name of the edit box |
-| `editor.cancel` | Cancel | Edit box button |
-| `editor.save.hint` | Change the wording first | Hover text of Save changes, before anything is typed |
-| `editor.save` | Save changes | Edit box button |
-| `editor.unsaved` | Not saved yet | Next to the edit box buttons, after typing |
-| `editor.links` | Keep the link markers <a wg-1=""> and </a> around the words that are a link. | Under the edit box, only when the text has a link |
-| `editor.discard` | Throw away what you typed in this box? | Confirmation, when closing a changed box |
 
 ## One language — the bar at the bottom
 
 | Key | Text | Shown where |
 |---|---|---|
-| `bar.selected` | {n} selected | Bar, when texts are ticked |
-| `bar.clear` | Clear selection | Bar button |
-| `bar.queue` | Ask Gemini for new translations | Bar button |
-| `bar.approve` | Approve selected | Bar button |
-| `bar.summary.approved` | {n} approved | Bar summary |
-| `bar.summary.requested.one` | 1 new translation requested | Bar summary |
-| `bar.summary.requested.other` | {n} new translations requested | Bar summary |
-| `bar.view.approved` | View approved | Bar button, opens the approved list |
-| `bar.view.approved_n` | View approved ({n}) | Same, with a count |
-| `bar.view.requested` | View requests | Bar button, opens the requested list |
-| `bar.view.requested_n` | View requests ({n}) | Same, with a count |
-| `bar.view.approved.hint` | Nothing approved yet: approve a text, and it's listed here | Hover text of View approved, while the list is empty |
-| `bar.view.requested.hint` | No new translations requested yet: ask Gemini for one, and it's listed here | Hover text of View requests, while the list is empty |
-| `save.off.button` | Kept in this browser | The Save button, while saving is switched off |
-| `save.off.title` | Saving is switched off for now | Message, when that button is clicked |
-| `save.off.elsewhere` | + {n} in other languages | Next to that button, while saving is off |
-| `save.off.hint` | Saving to the server comes back once it can keep your decisions private. Until then they stay in this browser: keep using this browser, and don't clear its history or site data. | Hover text of that button, and the message's detail |
 | `autosave.saved` | All changes saved | Bar status, when everything is on the server |
-| `autosave.checking` | Checking for changes… | Bar status, while the page shows this computer's copy and the server has not answered yet |
-| `autosave.checking.hint` | This is what this computer saved last. Anything saved on another computer since shows up in a moment. | Hover text of that status |
-| `autosave.saved.hint` | Your decisions are on the server: you can close this page, or carry on from another computer. | Hover text of that status |
 | `autosave.saving.one` | Saving 1 change… | Bar status, while a change is on its way |
 | `autosave.saving.other` | Saving {n} changes… | |
-| `autosave.saving.hint` | Changes are saved by themselves a moment after you stop clicking. | Hover text of that status |
 | `autosave.retrying.one` | 1 change not saved yet — {reason}. Trying again… | Bar status, when a save failed and will be tried again |
 | `autosave.retrying.other` | {n} changes not saved yet — {reason}. Trying again… | |
-| `autosave.retrying.hint` | Nothing is lost: your changes are kept on this computer and saved as soon as the server answers. | Hover text of that status |
 | `autosave.offline.one` | Offline — 1 change kept on this computer | Bar status, with no connection |
 | `autosave.offline.other` | Offline — {n} changes kept on this computer | |
-| `autosave.offline.hint` | They're saved as soon as the connection is back. If you close this page first, they're saved the next time you open it on this computer. | Hover text of that status |
 | `autosave.conflict.one` | 1 text changed elsewhere | Bar status, when someone else saved first |
 | `autosave.conflict.other` | {n} texts changed elsewhere | |
-| `autosave.conflict.hint` | Someone else saved these texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs. | Hover text of that status |
 | `autosave.refused.one` | 1 text not saved | Bar status, when the server turned texts down |
 | `autosave.refused.other` | {n} texts not saved | |
-| `autosave.refused.hint` | These texts aren't on the page they were saved from any more. They stay here, and are tried again the next time you open this page. | Hover text of that status |
 | `autosave.stopped` | Saving stopped: {reason} | Bar status, when saving can't go on by itself |
-| `autosave.stopped.hint` | Nothing is lost: your changes are kept on this computer. | Hover text of that status |
-| `autosave.stopped.title` | Saving stopped | Message, when saving stops |
-| `autosave.stopped.detail` | Nothing is lost — your changes are kept on this computer. ({reason}) | |
 | `autosave.retry` | Try again | Bar button, when saving stopped or is waiting to try again |
-| `autosave.retry.hint` | Save your changes now | Hover text of that button |
 | `save.reason.offline` | there is no connection | Reason inside the status and the message |
 | `save.reason.reload` | this page is out of date — reload it | |
 | `save.reason.signed_out` | you have been signed out — sign in again, then press Try again | |
@@ -276,82 +93,12 @@ too. Then come back here and press **I imported it**.
 | `save.reason.unavailable` | saving isn't available right now | |
 | `save.reason.refused` | the server refused it | |
 | `save.reason.trouble` | the server is having trouble | |
-| `save.conflicts.title` | Someone else saved first | Message, after a save |
-| `save.conflicts.detail.one` | 1 text was changed by someone else before you saved it. It's marked in the list: choose again, or edit, to keep yours, or use theirs. | |
-| `save.conflicts.detail.other` | {n} texts were changed by someone else before you saved them. They're marked in the list: choose again, or edit, to keep yours, or use theirs. | |
-| `save.refused.title` | Some texts weren't saved | Message, after a save |
-| `save.refused.detail.one` | 1 text isn't on the page it was saved from any more. It stays here until the texts are refreshed. | |
-| `save.refused.detail.other` | {n} texts aren't on the page they were saved from any more. They stay here until the texts are refreshed. | |
 
 ## Messages (bottom right)
 
 | Key | Text | Shown where |
 |---|---|---|
-| `toast.close` | Close message | Screen-reader name of the × on a message |
-| `toast.approved.one` | 1 text approved | After Approve on a selection |
-| `toast.approved.other` | {n} texts approved | |
-| `toast.approved.detail` | They go to the website once a Weglot file is made and imported. | |
-| `toast.requested.one` | 1 new translation requested | After asking Gemini for a selection |
-| `toast.requested.other` | {n} new translations requested | |
-| `toast.requested.detail` | Send them to Gemini from the top of the page when you're ready. | |
-| `toast.already.one` | 1 was already set. | Added to the two messages above |
-| `toast.already.other` | {n} were already set. | |
-| `toast.inflight.title` | Nothing changed | When every selected text is with Gemini |
-| `toast.inflight.one` | 1 text is with Gemini right now. You can decide once it comes back. | |
-| `toast.inflight.other` | {n} texts are with Gemini right now. You can decide once they come back. | |
-| `toast.edited.title` | Approved with your edit | After Save changes in the edit box |
-| `toast.edited.detail` | It's saved with your other decisions — the bar at the bottom says when. | |
-| `toast.undone.title` | Undone | After Undo in a list |
-| `toast.undone.one` | 1 text is back to what it was before. | |
-| `toast.undone.other` | {n} texts are back to what they were before. | |
-| `toast.arrived.one` | 1 new translation to read | When the page opens on new translations from Gemini |
-| `toast.arrived.other` | {n} new translations to read | |
-| `toast.arrived.detail` | Gemini's words are shown in place of the website's, with the website's words under them. Approve, change or ask again. | |
 | `toast.storage.title` | This browser can't keep a copy of your work | When the browser refuses to store |
-| `toast.storage.detail` | Your changes still save to the server as usual. Only a change not saved yet would be lost on a reload: wait for "All changes saved" before you close this tab, and let us know. | |
-| `toast.saved_load.title` | Couldn't load decisions saved earlier | When saved decisions can't be read |
-| `toast.saved_load.detail` | You may not see decisions made on another computer. Reload before reviewing. | |
-| `toast.load.title` | This language couldn't be loaded | When the texts can't be read |
-| `toast.load.detail` | {error}. Please reload the page, and let us know if it keeps happening. | |
-
-## The two lists (approved, requested)
-
-| Key | Text | Shown where |
-|---|---|---|
-| `list.close` | Close | Button and the × |
-| `list.select_all` | Select all | Checkbox label |
-| `list.select_all.label` | Select every text shown | Screen-reader name of that checkbox (the same gesture, and words, as the table's header checkbox) |
-| `list.selected` | {n} selected | Checkbox label, with a selection |
-| `list.undo` | Undo | Button, nothing selected |
-| `list.undo.hint` | Tick the texts you want to undo | Hover text of Undo, while nothing is ticked |
-| `list.undo_n` | Undo {n} | Button, with a selection |
-| `list.undo_all` | Undo all | Button |
-| `list.undo_all.confirm` | Undo all {n}? Each goes back to what it was before. | Confirmation |
-| `list.row.undo` | Undo — back to what it was before | Hover text of a row's undo |
-| `list.row.undo.label` | Undo this text | Screen-reader name of a row's undo |
-| `list.draft.title` | New translations requested | List heading |
-| `list.draft.summary.one` | 1 text is waiting for a new translation from Gemini. | Under the heading |
-| `list.draft.summary.other` | {n} texts are waiting for a new translation from Gemini. | Under the heading |
-| `list.draft.notice` | This list is saved with your decisions. Send the requests to Gemini from the top of the page. | Bottom of the list |
-| `list.csv.title` | Approved | List heading |
-| `list.csv.summary.one` | 1 text is approved and waiting to go to the website. | Under the heading |
-| `list.csv.summary.other` | {n} texts are approved and waiting to go to the website. | Under the heading |
-| `list.csv.notice` | Nothing reaches the website by itself. Your approvals are saved and wait for the next Weglot file. | Bottom of the list |
-
-## Why a text is flagged (under the translation)
-
-| Key | Text | Shown where |
-|---|---|---|
-| `why.empty` | There is no translation. | Reason line |
-| `why.english` | Still in English. | Reason line |
-| `why.link` | A link is missing or has moved. | Reason line |
-| `why.number` | A number differs from the English ({numbers}). | Reason line |
-| `why.numbers` | The numbers don't match the English. | Reason line |
-| `why.register.de` | Uses the formal “Sie” — the client wants the informal “du”. | Reason line |
-| `why.register.es` | Uses the formal “usted” — the client wants “tú” (the plural “ustedes” is fine). | Reason line |
-| `why.register.it` | Uses the formal “Lei” — the client wants “tu”. | Reason line |
-| `why.register.fr` | Uses the informal “tu” — the client wants “vous”. | Reason line |
-| `why.register.pt` | Uses “o senhor / a senhora” — the client wants “você”. | Reason line |
 
 ## Why a text can't go in the Weglot file
 
@@ -445,89 +192,6 @@ went in the file with something to check. A line naming no text ("no file was ma
 | `job.failed.nothing-arrived` | Gemini finished, but no new translations came back. Let the team know. | |
 | `job.failed.page-not-found` | This page can't be found, so nothing was translated. Let the team know. | A box's line, when a page job failed |
 | `job.failed.unit-not-on-page` | That paragraph is no longer on this page, so nothing was translated. Reload the page and try again. | A box's line, when a paragraph job failed |
-
-## How this works (the help window)
-
-| Key | Text | Shown where |
-|---|---|---|
-| `how.title` | How this works | Window heading |
-| `how.close` | Close | Window button |
-
-<!-- block how.body -->
-### What you're looking at
-
-Each row is one text from the website — a heading, a sentence, a button. On the left is the
-English. On the right is what visitors in this language see today. Weglot translated all of
-it by machine, and nobody has checked it yet.
-
-### Your three choices
-
-- **Approve** (the tick) — the translation is right as it is.
-- **Edit** (the pencil) — write what it should say. Saving your wording approves the text with your words.
-- **Ask Gemini for a new translation** (the star) — the translation is wrong and you'd like Gemini to try again.
-
-Each text has one decision at a time. Choosing another replaces it, and clicking your current choice again undoes it.
-
-### New translations from Gemini
-
-When Gemini sends a new translation, it is shown in place of the website's, marked *New
-translation to read*, with the website's words under it. Approve it as it is, change it, or ask
-for another. *Show* → *New translations to read* lists only them.
-
-### Start with the flagged texts
-
-Our automatic checks look for mistakes that are almost always real: English left
-untranslated, a price or date that changed, a missing link, or the wrong form of address
-for the client's rules. Flagged texts say why under the translation, and *Flagged — check
-these first* shows only them. That is usually a handful per language, not hundreds.
-
-Some texts also appear on other pages of the website. Weglot keeps one translation for all
-of them, so they say so and can't be changed from here yet.
-
-### Working faster
-
-Tick any texts — or the box in the heading to take everything on screen — and the bar at the
-bottom applies one decision to all of them. On the keyboard, `J` and `K` move between texts,
-`A` approves, `E` edits, `R` asks Gemini for a new translation, and `X` ticks.
-
-### Nothing reaches the website by itself
-
-The three boxes at the top work on every language at once.
-
-- **Ask Gemini** counts the new translations you requested with ✦. **Send to Gemini** asks you to confirm the number, then sends them all to Gemini together. Their new translations come back to read, usually within 20 minutes; if Gemini is slower, **Check for new translations** fetches them.
-- **Review** counts the flagged texts nobody has checked yet. **Show them** lists this language's in the table.
-- **Weglot file** counts the approved texts that aren't in a file yet. **Get the file** makes one Weglot file for each language that has some. **Download** a language's file: the window that opens says how to import it in Weglot. Then press **I imported it**, and each file says how many of its texts the website shows; **Check again** looks again while some are missing.
-
-Both lists open from the bar at the bottom, and anything in them can be undone, except a request while it's with Gemini.
-
-<!-- /block -->
-
-The help window ends with one of the two blocks below: the first while saving is switched off,
-the second once it is on.
-
-<!-- block how.saving.off -->
-### Saving
-
-Your decisions are kept in this browser as you make them. Saving them to the server is
-switched off for now, until it can keep them private — so keep using this browser, and don't
-clear its history or site data. Once saving is back, you'll be able to close the tab and carry
-on from another computer.
-<!-- /block -->
-
-<!-- block how.saving.on -->
-### Saving
-
-Your decisions are saved by themselves a moment after you stop clicking. The bar at the bottom
-says where saving stands; hover over it to see what that means.
-
-- **All changes saved** — everything is on the server. You can close this page, or carry on from another computer.
-- **Checking for changes…** — the page opens on what this computer saved last. Anything saved on another computer since shows up a moment later.
-- **Changed elsewhere** — someone else saved the same texts first. They're marked in the list: choose again, or edit, to keep yours, or use theirs.
-- **Offline**, **not saved yet** or **Saving stopped** — nothing is lost. Your changes are kept on this computer and saved as soon as the server answers. **Try again** saves them now.
-
-A text you're editing keeps what you typed, even if someone else saves it meanwhile. When you
-save yours, it is marked as changed elsewhere, so you choose which wording stays.
-<!-- /block -->
 
 ## Document view (desk v2)
 

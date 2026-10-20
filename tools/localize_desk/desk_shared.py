@@ -3,15 +3,14 @@
 live, the save switch, the page head, and the three scripts (the stage rules, the sign-in proxy, the
 tooltip) that more than one page inlines.
 
-Basecamp #451, cleanup C2 (monorepo CEL-051). These were defined in `generate_desk_page.py`, the first
-desk's generator, and the document page and the rules page read them from there. They are defined once,
-here; `generate_desk_page` imports them back so `G.PAGE_KEYS`, `G._STAGE_JS` and the rest keep working
-until that generator is deleted (cleanup C4).
+Basecamp #451, cleanup C2 and C4 (monorepo CEL-051, CEL-050). These were defined in `generate_desk_page.py`,
+the first desk's generator, which the document page and the rules page read them from; it is deleted. They
+are defined once, here.
 
 THE THREE SCRIPTS ARE NON-RAW PYTHON STRINGS. A backslash escape inside them is a SyntaxWarning or is
 quietly turned into another character; the runbook's section 1.7 has the trap. Text changed inside them
 changes every page that inlines it: regenerate `docs/admin/localization/**` with
-`python3 -m localize_desk.generate_desk_page`, `generate_document_page` and `generate_rules_page`.
+`python3 -m localize_desk.generate_document_page` and `generate_rules_page`.
 """
 from __future__ import annotations
 
@@ -76,6 +75,30 @@ def _head(title: str, description: str) -> list[str]:
         "</head>",
         "<body>",
     ]
+
+INDEX_REDIRECT_TO = "/admin/localization/document/"
+
+
+def render_index_redirect() -> str:
+    """The index page since CEL-045 (2026-10-20): the desk is the document page, so /admin/localization/ is
+    only a redirect to it, in the shape /admin/ already uses. The dashboard's Localization tabs point here.
+    `generate_document_page.main` writes it, beside its own folder (cleanup C4, CEL-050)."""
+    return (
+        '<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+        '  <meta charset="utf-8">\n'
+        '  <meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        '  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">\n'
+        '  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">\n'
+        f'  <meta http-equiv="refresh" content="0; url={INDEX_REDIRECT_TO}">\n'
+        f'  <title>{escape(t("meta.index.title"))}</title>\n'
+        '  <link rel="icon" type="image/png" href="/assets/img/favicon.png">\n'
+        f"  <script>location.replace('{INDEX_REDIRECT_TO}');</script>\n"
+        '</head>\n<body></body>\n</html>\n'
+    )
+
+# Why a save can stop -- each a COPY.md `save.reason.<name>` line. The page's failureReason()
+# returns exactly these (tests/test_copy.py holds the two together).
+SAVE_REASONS = ("offline", "reload", "signed_out", "cap", "daily", "unavailable", "refused", "trouble")
 
 # Runbook WO-34 (decision A15): saving was switched off until WO-17 stored decisions
 # privately; M1 switches it on. It stays as the one switch back (the harness's --save-off

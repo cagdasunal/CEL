@@ -7,17 +7,23 @@ primary button, the active tab, selection, requests, arrivals, the progress bar,
 lints the desk's stylesheet against it, so a later edit cannot quietly bring it back.
 
 It reads the vendored `tools/dashboard.py` (the monorepo is its source; the CEL hook runs
-this whenever that file is mirrored) and the desk's own `STAGE_BADGE`.
+this whenever that file is mirrored) and the desk's own sources (`desk_shared.py`, the two page
+generators and the v2 scripts).
 """
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
+import pytest
+
 TOOLS = Path(__file__).resolve().parents[2]
 DASH = (TOOLS / "dashboard.py").read_text(encoding="utf-8")
+# The desk's own sources: what the pages inline and the generators that write them (the first desk's is gone).
 GEN = "\n".join((TOOLS / "localize_desk" / f).read_text(encoding="utf-8")
-                for f in ("generate_desk_page.py", "desk_shared.py"))
+                for f in ("desk_shared.py", "generate_document_page.py", "generate_rules_page.py",
+                          "document_desk.js", "document_export.js", "rules_md.js"))
+RULES_JS = (TOOLS / "localize_desk" / "rules_page.js").read_text(encoding="utf-8")
 
 INDIGO = re.compile(r"var\(--accent\)|93,\s*96,\s*238|#5d60ee", re.I)
 # The only places indigo may appear: focus (keyboard and focus rings), the checkbox tick,
@@ -53,36 +59,24 @@ def test_no_hard_coded_colours():
     assert not hits, f"hard-coded colours in DESK_CSS (use tokens): {hits}"
 
 
-def test_every_status_label_has_a_style():
-    classes = set(re.findall(r"\[t\('status\.[a-z]+'\), '([a-z-]+)'\]", GEN))
-    classes |= set(re.findall(r"badge\.className = 'desk-state ([a-z-]+)'", GEN))
-    assert classes, "STAGE_BADGE not found"
-    missing = [c for c in classes if not re.search(r"\." + re.escape(c) + r"\b[^{]*\{", DASH)]
-    assert not missing, f"status labels with no style: {missing}"
-
-
-def test_the_active_language_tab_is_not_a_filled_button():
-    body = _rule(_desk_css(), ".desk-loc.is-active")
-    assert "background" not in body, f"the active tab is filled: {body}"
-
-
-def test_waiting_rows_carry_no_tint_and_only_selection_is_neutral():
-    css = _desk_css()
-    for sel in (".desk-row.is-queued > td", ".desk-row.is-sending > td"):
-        tinted = [b for s, b in _rules(css) if sel in [x.strip() for x in s.split(",")] and "background" in b]
-        assert not tinted, f"{sel} is tinted: {tinted}"
-
-
-def test_progress_is_green():
-    assert "var(--ok)" in _rule(_desk_css(), ".desk-meter-fill")
+def _title_offenders(text: str) -> tuple[list[str], list[str]]:
+    # `document.title` is the page's <title> (the browser tab), renamed on a language switch.
+    return (re.findall(r"(?<!document)\.title\s*=", text),
+            re.findall(r"""\btitle=['"{]""", text))
 
 
 def test_no_browser_title_tooltips():
     """Ruling #51 (runbook WO-08): the browser's own `title` tooltip waits about a second,
     never shows on keyboard focus or touch, and doubles up with ours. Desk controls carry
     `data-tip` (from COPY.md) and keep `aria-label`; `title` is left to the page's <title>."""
-    # `document.title` is the page's <title> (the browser tab), renamed on a language switch.
-    typed = re.findall(r"(?<!document)\.title\s*=", GEN)
-    markup = [m for m in re.findall(r"""\btitle=['"{]""", GEN)]
+    typed, markup = _title_offenders(GEN)
     assert not typed, f"script sets .title {len(typed)} times"
     assert not markup, f"markup carries title= {len(markup)} times"
+
+
+@pytest.mark.xfail(strict=True, raises=AssertionError,
+                   reason="rules_page.js sets .title in 3 places (CEL-046; Found in CEL-050): remove this mark when it is fixed")
+def test_the_rules_page_sets_no_native_title_tooltips():
+    typed, markup = _title_offenders(RULES_JS)
+    assert not typed, f"rules_page.js sets .title {len(typed)} times"
+    assert not markup, f"rules_page.js carries title= {len(markup)} times"

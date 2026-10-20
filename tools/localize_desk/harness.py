@@ -1,6 +1,6 @@
 """Click-test the Localization Desk locally, with sign-in and the storage simulated.
 
-    cd tools && python3 -m localize_desk.harness                 # http://127.0.0.1:8765/admin/localization/
+    cd tools && python3 -m localize_desk.harness                 # http://127.0.0.1:8765/admin/localization/document/
     cd tools && python3 -m localize_desk.harness --save-off      # the desk with saving switched off
 
 Why this exists: the desk's first three audits never loaded the page (the admin area is
@@ -199,9 +199,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--save-off", action="store_true",
                     help="serve the desk with saving switched off, whatever the committed desk says")
     args = ap.parse_args(argv)
-    if not (REPO_DOCS / "admin" / "localization" / "index.html").is_file():
-        print("ERROR: no generated desk in docs/admin/localization -- run "
-              "`python3 -m localize_desk.generate_desk_page` first", file=sys.stderr)
+    if not (REPO_DOCS / "admin" / "localization" / "document" / "index.html").is_file():
+        print("ERROR: no generated desk in docs/admin/localization/document -- run "
+              "`python3 -m localize_desk.generate_document_page` first", file=sys.stderr)
         return 2
     if args.save_on and args.save_off:
         ap.error("--save-on and --save-off are opposites")
@@ -209,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     server = make_server(root, MockWorker(root), args.port)
     served = "saving on" if args.save_on else "saving off" if args.save_off else "as committed"
     print(f"Desk harness ({served}) on "
-          f"http://127.0.0.1:{args.port}/admin/localization/  -- copy in {root}", flush=True)
+          f"http://127.0.0.1:{args.port}/admin/localization/document/  -- copy in {root}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

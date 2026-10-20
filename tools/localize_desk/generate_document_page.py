@@ -3,19 +3,18 @@
 
     cd tools && python3 -m localize_desk.generate_document_page
 
-The v1 desk is a list of texts. This page is one page of the website read as a document:
-every text in the order the page shows it, English on one sheet and the translation on the
-next, edited in place and saved by itself; an outline of the page beside the sheets, a status
-bar below them (design B, chosen by the operator 2026-10-19). It is a second page beside the
-v1 desk, not a change to it: nothing here touches `generate_desk_page.py` or the v1 pages, and
-it reuses their pieces (`LOCALES`, `PAGE_KEYS`, `_head`, the proxy and tooltip scripts,
-COPY.md) by import.
+This page is one page of the website read as a document: every text in the order the page
+shows it, English on one sheet and the translation on the next, edited in place and saved by
+itself; an outline of the page beside the sheets, a status bar below them (design B, chosen by
+the operator 2026-10-19). The desk's shared pieces (`LOCALES`, `PAGE_KEYS`, `_head`, the proxy
+and tooltip scripts, the root redirect) come from `desk_shared.py`, its words from COPY.md.
 
-What it writes (all under `OUT_DIR`):
+What it writes (under `OUT_DIR`, and one file beside it):
 
     index.html           the page: server-rendered shell + the runtime, inlined
     data/pages.json      per page: key, path, how many blocks, how many left out, which can be edited
     data/<page>.json     one document: its blocks in page order, English, lock, translations
+    ../index.html        /admin/localization/: the redirect every dashboard Localization tab opens
 
 The site's menu and footer texts (the units files' per-unit `chrome` flag, written by the engine's
 manifest: also on 30 pages or more, and outside every heading) are not part of the page a reviewer
@@ -27,7 +26,7 @@ source beside this module and is inlined into the page; it is never served as it
 
 The contract between this generator, the runtime and the tests is
 `runtime/out/loc2/CEL-026/contract.md` in the working repository (section 7 is design B).
-Every word on the page is a COPY.md line (`doc.*`, then the v1 `lang.*` and `page.*`); this
+Every word on the page is a COPY.md line (`doc.*`, then the shared `lang.*` and `page.*`); this
 module types no sentence.
 """
 from __future__ import annotations
@@ -538,7 +537,7 @@ def render_page() -> str:
     export_css = _read(EXPORT_CSS, "document_export.css")
 
     head = S._head(t("doc.meta.title"), t("doc.meta.description"))
-    assert head[-2:] == ["</head>", "<body>"], "generate_desk_page._head changed its ending"
+    assert head[-2:] == ["</head>", "<body>"], "desk_shared._head changed its ending"
     style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", rich_css + "\n" + DOC_CSS + "\n" + export_css) + "</style>"
 
     # Globals first: the switch back to "saving off", the copy, and the helpers v1 shares
@@ -596,6 +595,10 @@ def main() -> int:
     index = OUT_DIR / "index.html"
     index.write_text(page, encoding="utf-8")
     written.append(index)
+    # /admin/localization/ itself is only a redirect to this page (CEL-045); the dashboard's Localization tabs point at it
+    root_index = OUT_DIR.parent / "index.html"
+    root_index.write_text(S.render_index_redirect(), encoding="utf-8")
+    written.append(root_index)
     for name, payload in [("pages", pages_payload(docs))] + list(docs.items()):
         target = OUT_DIR / "data" / f"{name}.json"
         target.write_text(_dump(payload), encoding="utf-8")

@@ -29,7 +29,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from localize_desk import copy_text as C  # noqa: E402
 from localize_desk import desk_shared as S  # noqa: E402
-from localize_desk import generate_desk_page as G  # noqa: E402
 from localize_desk import generate_document_page as GD  # noqa: E402
 from localize_desk.tests import test_desk_privacy as P  # noqa: E402
 
@@ -101,7 +100,7 @@ def _write(d: Path, key: str, units: list[dict], *, order: list | None | str = "
 
 def _corpus(d: Path) -> Path:
     """All four pages, one text each (what main() needs to write anything)."""
-    for i, key in enumerate(G.PAGE_KEYS):
+    for i, key in enumerate(S.PAGE_KEYS):
         units = [_unit(f"u{i}", f"Text of {key}")]
         if i == 0:                                      # a real corpus always has menu texts the engine flagged
             units.append(_menu("m0"))
@@ -142,14 +141,16 @@ def _blocks(docs: dict, key: str = "vancouver") -> list[dict]:
 
 
 def _real_corpus():
-    """(raw page files by key, documents) for the real unit files, or a skip when they are not
-    there or do not carry the `order` list yet."""
-    files = sorted(G.UNITS_DIR.glob("*.json")) if G.UNITS_DIR.is_dir() else []
+    """(raw page files by key, documents) for the real unit files. The four files are committed
+    with their `order` lists, so a missing file or list fails: a skip here would turn the
+    independent all-pages checks green with nothing checked."""
+    files = sorted(S.UNITS_DIR.glob("*.json")) if S.UNITS_DIR.is_dir() else []
     raw = {d["page"]: d for d in (json.loads(p.read_text(encoding="utf-8")) for p in files)
-           if d.get("page") in G.PAGE_KEYS}
-    if len(raw) != len(G.PAGE_KEYS) or not all(d.get("order") for d in raw.values()):
-        pytest.skip("the unit files in this checkout carry no `order` list yet")
-    return raw, GD.load_documents(G.UNITS_DIR)
+           if d.get("page") in S.PAGE_KEYS}
+    if len(raw) != len(S.PAGE_KEYS) or not all(d.get("order") for d in raw.values()):
+        pytest.fail(f"the unit files carry {len(raw)} of the {len(S.PAGE_KEYS)} pages, or a page "
+                    "with no `order` list")
+    return raw, GD.load_documents(S.UNITS_DIR)
 
 
 def _is_chrome(unit: dict, block: str, scope: set[str]) -> bool:
@@ -204,10 +205,10 @@ class TestDocumentOrder:
         assert [b["b"] for b in blocks] == ["h1", "p", "p", "p", "h2"]       # tag; default p
 
     def test_pages_come_out_in_the_desks_order_whatever_the_files_are_called(self, units_dir):
-        for key in reversed(G.PAGE_KEYS):
+        for key in reversed(S.PAGE_KEYS):
             _write(units_dir, key, [_unit("x")])
         (units_dir / "stray.json").write_text(json.dumps({"page": "not-a-page", "path": "/x", "units": []}))
-        assert list(GD.load_documents(units_dir)) == G.PAGE_KEYS
+        assert list(GD.load_documents(units_dir)) == S.PAGE_KEYS
 
     def test_the_real_corpus_follows_its_order_list_minus_the_menu_and_footer(self):
         raw, docs = _real_corpus()
@@ -377,7 +378,7 @@ class TestTheMenuAndFooterAreLeftOut:
     def test_main_refuses_when_no_unit_anywhere_carries_the_engines_flag(self, units_dir, stub_js, out_dir, capsys):
         """CEL-039: units files from before the engine wrote `chrome` would put the site's menu and footer into
         the desk; writing nothing and saying why is the only safe answer."""
-        for i, key in enumerate(G.PAGE_KEYS):
+        for i, key in enumerate(S.PAGE_KEYS):
             _write(units_dir, key, [_unit(f"u{i}"), _looks_like_menu(f"menu{i}")])
         assert GD.main() == 2 and not out_dir.exists()
         err = capsys.readouterr().err
@@ -489,11 +490,11 @@ def _chrome_differences(listed: dict, raw_doc: dict, doc: dict) -> dict[str, lis
 def _real_pages():
     """The four real unit files and their documents. A checkout without them FAILS here: this is the
     check that the menu and footer are out of all four pages, not one to skip."""
-    files = sorted(G.UNITS_DIR.glob("*.json")) if G.UNITS_DIR.is_dir() else []
+    files = sorted(S.UNITS_DIR.glob("*.json")) if S.UNITS_DIR.is_dir() else []
     raw = {d["page"]: d for d in (json.loads(p.read_text(encoding="utf-8")) for p in files)
-           if d.get("page") in G.PAGE_KEYS}
-    assert set(raw) == set(G.PAGE_KEYS), f"the unit files of {sorted(set(G.PAGE_KEYS) - set(raw))} are not in {G.UNITS_DIR}"
-    return raw, GD.load_documents(G.UNITS_DIR)
+           if d.get("page") in S.PAGE_KEYS}
+    assert set(raw) == set(S.PAGE_KEYS), f"the unit files of {sorted(set(S.PAGE_KEYS) - set(raw))} are not in {S.UNITS_DIR}"
+    return raw, GD.load_documents(S.UNITS_DIR)
 
 
 class TestTheExplicitMenuAndFooterList:
@@ -502,7 +503,7 @@ class TestTheExplicitMenuAndFooterList:
         return json.loads(CHROME_LIST.read_text(encoding="utf-8"))["pages"]
 
     def test_the_list_has_the_four_pages_and_every_exception_has_a_reason(self, listed):
-        assert set(listed) == set(G.PAGE_KEYS)
+        assert set(listed) == set(S.PAGE_KEYS)
         for key, entry in listed.items():
             assert entry["landmark_texts"], key
             assert len(set(entry["landmark_texts"])) == len(entry["landmark_texts"]), f"{key}: a text is listed twice"
@@ -512,13 +513,13 @@ class TestTheExplicitMenuAndFooterList:
 
     def test_on_all_four_pages_every_listed_menu_and_footer_text_is_left_out_and_nothing_else_is(self, listed):
         raw, docs = _real_pages()
-        for key in G.PAGE_KEYS:
+        for key in S.PAGE_KEYS:
             assert _chrome_differences(listed[key], raw[key], docs[key]) == {
                 "listed_but_shown": [], "dropped_but_not_listed": [], "kept_but_not_shown": []}, key
 
     def test_the_distinct_texts_dropped_are_exactly_the_list_less_what_is_kept_plus_the_mobile_call_to_action_bar(self, listed):
         raw, docs = _real_pages()
-        for key in G.PAGE_KEYS:
+        for key in S.PAGE_KEYS:
             entry = listed[key]
             expected = (set(entry["landmark_texts"]) - set(entry["kept_on_purpose"])) | set(entry["outside_landmarks"])
             assert _dropped_texts(raw[key], docs[key]) == expected, key
@@ -591,9 +592,9 @@ class TestTranslations:
         assert _blocks(GD.load_documents(units_dir))[0]["w"] == {"de": "Hallo", "ja": "こんにちは"}
 
     def test_w_follows_the_desks_language_order(self, units_dir):
-        current = {c: {"word_to": c, "translated": True} for c, *_ in reversed(G.LOCALES)}
+        current = {c: {"word_to": c, "translated": True} for c, *_ in reversed(S.LOCALES)}
         _write(units_dir, "vancouver", [_unit("a", current=current)])
-        assert list(_blocks(GD.load_documents(units_dir))[0]["w"]) == [c for c, *_ in G.LOCALES]
+        assert list(_blocks(GD.load_documents(units_dir))[0]["w"]) == [c for c, *_ in S.LOCALES]
 
     def test_w_is_always_there_as_an_object(self, units_dir):
         _write(units_dir, "vancouver", [_unit("a", current={})])
@@ -653,14 +654,25 @@ class TestMain:
     def test_it_writes_the_page_pages_json_and_one_file_per_page(self, units_dir, stub_js, out_dir):
         _corpus(units_dir)
         assert GD.main() == 0
-        want = {"index.html", "data/pages.json"} | {f"data/{k}.json" for k in G.PAGE_KEYS}
+        want = {"index.html", "data/pages.json"} | {f"data/{k}.json" for k in S.PAGE_KEYS}
         assert set(_files(out_dir)) == want
+
+    def test_it_writes_the_root_redirect_beside_its_own_folder(self, units_dir, stub_js, out_dir):
+        """/admin/localization/ is only a redirect to the document page (CEL-045); the dashboard's Localization tabs
+        point at it, and since CEL-050 this generator is the one that writes it. It goes NEXT TO the document folder,
+        so a test that points OUT_DIR elsewhere never touches the real one."""
+        _corpus(units_dir)
+        assert GD.main() == 0
+        redirect = (out_dir.parent / "index.html").read_text(encoding="utf-8")
+        assert redirect == S.render_index_redirect()
+        assert S.INDEX_REDIRECT_TO in redirect and "location.replace(" in redirect
+        assert not (S.OUT_ROOT / "index.html").samefile(out_dir.parent / "index.html"), "wrote into the real repo"
 
     def test_the_page_files_hold_the_documents(self, units_dir, stub_js, out_dir):
         _corpus(units_dir)
         GD.main()
         pages = json.loads((out_dir / "data" / "pages.json").read_text(encoding="utf-8"))
-        assert [p["key"] for p in pages["pages"]] == G.PAGE_KEYS
+        assert [p["key"] for p in pages["pages"]] == S.PAGE_KEYS
         one = json.loads((out_dir / "data" / "vs-toronto.json").read_text(encoding="utf-8"))
         assert list(one) == ["page", "path", "built", "chrome", "blocks"]
         assert one["page"] == "vs-toronto" and one["path"] == PATHS["vs-toronto"] and one["chrome"] == 0
@@ -670,7 +682,7 @@ class TestMain:
         _write(units_dir, "vancouver", [_unit("a", "Café — “quoted”", current={
             "de": {"word_to": "Café — „zitiert“", "translated": True}, "ar": {"word_to": "مرحبا", "translated": True}}),
             _menu("m")])
-        for key in G.PAGE_KEYS[1:]:
+        for key in S.PAGE_KEYS[1:]:
             _write(units_dir, key, [_unit("x")])
         GD.main()
         text = (out_dir / "data" / "vancouver.json").read_text(encoding="utf-8")
@@ -700,7 +712,7 @@ class TestMain:
     def test_the_scan_can_fail_on_what_this_generator_writes(self, units_dir, stub_js, out_dir):
         """verify the verifier: a rule id or a citation in a unit's text must reach the scan."""
         _write(units_dir, "vancouver", [_unit("a", "TG §4.2 says so"), _unit("b", "see XX-SAMPLE-01"), _menu("m")])
-        for key in G.PAGE_KEYS[1:]:
+        for key in S.PAGE_KEYS[1:]:
             _write(units_dir, key, [_unit("x")])
         GD.main()
         found = P.leaks([out_dir / "data" / "vancouver.json"])
@@ -1012,12 +1024,12 @@ class TestPageShell:
     def test_the_grid_is_four_pages_by_eight_languages_in_the_desks_order(self, page):
         dom = _dom(page)
         heads = dom.with_class("doc-grid-lang")
-        assert [h["data-lang"] for h in heads] == [c for c, *_ in G.LOCALES]
+        assert [h["data-lang"] for h in heads] == [c for c, *_ in S.LOCALES]
         rows = [a for t, a in dom.elems if t == "tr" and "data-page" in a]
-        assert [r["data-page"] for r in rows] == G.PAGE_KEYS
+        assert [r["data-page"] for r in rows] == S.PAGE_KEYS
         cells = dom.with_class("doc-cell")
-        assert len(cells) == len(G.PAGE_KEYS) * len(G.LOCALES)
-        want = [(k, c) for k in G.PAGE_KEYS for c, *_ in G.LOCALES]
+        assert len(cells) == len(S.PAGE_KEYS) * len(S.LOCALES)
+        want = [(k, c) for k in S.PAGE_KEYS for c, *_ in S.LOCALES]
         assert [(a["data-page"], a["data-lang"]) for a in cells] == want
         assert all(a["data-status"] == "unknown" and a["aria-pressed"] == "false" and a["type"] == "button"
                    for a in cells)
@@ -1025,21 +1037,21 @@ class TestPageShell:
     def test_the_grid_reads_as_a_table(self, page):
         dom = _dom(page)
         ths = [a for t, a in dom.elems if t == "th"]
-        assert sum(1 for a in ths if a.get("scope") == "col") == 1 + len(G.LOCALES)
-        assert sum(1 for a in ths if a.get("scope") == "row") == len(G.PAGE_KEYS)
+        assert sum(1 for a in ths if a.get("scope") == "col") == 1 + len(S.LOCALES)
+        assert sum(1 for a in ths if a.get("scope") == "row") == len(S.PAGE_KEYS)
         assert dom.with_class("doc-gridwrap")[0]["aria-labelledby"] == "doc-grid-title"
 
     def test_the_grids_words_are_the_desks_names(self, page):
         main = _main_markup(page)
-        for key in G.PAGE_KEYS:
+        for key in S.PAGE_KEYS:
             assert C.t(f"page.{key}") in main
-        for code, *_ in G.LOCALES:
-            assert f">{G.lang_name(code)}</th>" in main
+        for code, *_ in S.LOCALES:
+            assert f">{S.lang_name(code)}</th>" in main
         assert C.t("doc.grid.label") in main and C.t("doc.status.unknown") in main
 
     def test_the_flags_are_decoration(self, page):
         main = _main_markup(page)
-        for _c, _e, _d, flag in G.LOCALES:
+        for _c, _e, _d, flag in S.LOCALES:
             assert f'<span class="doc-flag" aria-hidden="true">{flag}</span>' in main
 
     def test_no_title_attribute_and_no_inline_style_in_the_markup(self, page):
@@ -1058,12 +1070,12 @@ class TestPageHead:
         assert f"<title>{C.t('doc.meta.title')}</title>" in page
         assert f'<meta name="description" content="{C.t("doc.meta.description")}">' in page
         assert 'name="robots" content="noindex' in page and 'name="googlebot" content="noindex' in page
-        assert G.DASHBOARD_CSS_LINK in page
+        assert S.DASHBOARD_CSS_LINK in page
 
     def test_exactly_one_inline_style_in_the_head_after_the_dashboard_sheet(self, page):
         head = page[:page.index("</head>")]
         assert head.count("<style>") == 1
-        assert head.index(G.DASHBOARD_CSS_LINK) < head.index("<style>")
+        assert head.index(S.DASHBOARD_CSS_LINK) < head.index("<style>")
         assert page.count("<style>") == 1
 
     def test_the_style_is_the_fields_sheet_then_the_pages_own(self, page):
@@ -1116,8 +1128,8 @@ class TestPageScripts:
     def test_the_config_names_the_languages_the_pages_and_the_data(self, page):
         m = re.search(r'<script type="application/json" id="doc-config">(.*?)</script>', page, re.S)
         cfg = json.loads(m.group(1))
-        assert cfg["locales"] == [{"code": c, "endonym": e, "dir": d, "flag": f} for c, e, d, f in G.LOCALES]
-        assert cfg["pages"] == G.PAGE_KEYS
+        assert cfg["locales"] == [{"code": c, "endonym": e, "dir": d, "flag": f} for c, e, d, f in S.LOCALES]
+        assert cfg["pages"] == S.PAGE_KEYS
         assert cfg["data"] == "/admin/localization/document/data/" and cfg["version"] == "desk-v2"
         assert list(cfg) == ["locales", "pages", "data", "version"]
 
@@ -1209,7 +1221,7 @@ class TestNoWordOutsideTheDocument:
         p.feed(_desk_part(GD.render_page()))
         # grid: corner + 8 heads + 4 rows + 32 cells; then the outline title, Sections, Translate x3, Undo, Redo,
         # Show Weglot, the history title, note and Close, Cancel
-        assert p.out.count("§") >= 1 + len(G.LOCALES) + len(G.PAGE_KEYS) + len(G.PAGE_KEYS) * len(G.LOCALES) + 12
+        assert p.out.count("§") >= 1 + len(S.LOCALES) + len(S.PAGE_KEYS) + len(S.PAGE_KEYS) * len(S.LOCALES) + 12
 
     def test_the_scan_can_fail(self, page):
         p = _Visible()
@@ -1266,7 +1278,8 @@ class TestTheCopyKeysOfThisPage:
         copy = C.load()
         assert "doc.job.busy" not in copy                       # replaced by doc.job.waiting
         assert "doc.locked.tag" in copy and "doc.locked.noise" in copy      # the runtime still spells them
-        assert "row.shared.one" in copy and "row.shared.home" in copy        # v1's, untouched
+        assert "row.shared.home" in copy                         # the document desk spells it
+        assert "row.shared.one" not in copy and "row.shared.other" not in copy   # the first desk's, gone with it (CEL-050)
 
     def test_every_doc_key_is_in_the_page_copy_table(self, page):
         m = re.search(r"var COPY = (\{.*?\});\n", page)
@@ -1534,10 +1547,10 @@ class TestPageCss:
 def test_the_committed_document_page_is_what_the_generator_writes_today(tmp_path, monkeypatch):
     """The browser tests serve the COMMITTED page, and the live check compares it with the site:
     a generator, copy or data change that was never regenerated leaves both on yesterday's page."""
-    committed = G.OUT_ROOT / "document"
-    if not G.UNITS_DIR.is_dir() or not committed.is_dir():
+    committed = S.OUT_ROOT / "document"
+    if not S.UNITS_DIR.is_dir() or not committed.is_dir():
         pytest.skip("no unit data or no committed document page in this checkout")
-    monkeypatch.setattr(GD, "UNITS_DIR", G.UNITS_DIR)
+    monkeypatch.setattr(GD, "UNITS_DIR", S.UNITS_DIR)
     monkeypatch.setattr(GD, "OUT_DIR", tmp_path / "document")
     assert GD.main() == 0
     fresh = _files(tmp_path / "document")
@@ -1548,6 +1561,17 @@ def test_the_committed_document_page_is_what_the_generator_writes_today(tmp_path
         "committed document page differs from the generator -- run "
         "`cd tools && python3 -m localize_desk.generate_document_page`: "
         + ", ".join(stale + [f"{n} (no longer written)" for n in left_over]))
+
+
+def test_the_committed_root_index_is_the_redirect_the_generator_writes_today():
+    """docs/admin/localization/index.html: the page every Localization tab of the dashboard opens (CEL-045)."""
+    committed = S.OUT_ROOT / "index.html"
+    assert committed.is_file(), (
+        f"{committed} is missing: it is a committed deliverable (every Localization tab opens it) -- run "
+        "`cd tools && python3 -m localize_desk.generate_document_page`")
+    assert committed.read_text(encoding="utf-8") == S.render_index_redirect(), (
+        "the committed /admin/localization/ redirect differs from the generator -- run "
+        "`cd tools && python3 -m localize_desk.generate_document_page`")
 
 
 def test_the_real_runtime_is_inlined_when_it_exists(tmp_path, monkeypatch):
