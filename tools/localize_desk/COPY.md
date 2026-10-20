@@ -81,6 +81,8 @@ button, and a line that says only where its job stands. No price is shown (the o
 | `autosave.offline.other` | Offline — {n} changes kept on this computer | |
 | `autosave.conflict.one` | 1 text changed elsewhere | Bar status, when someone else saved first |
 | `autosave.conflict.other` | {n} texts changed elsewhere | |
+| `autosave.conflict.where` | In {language}, {page} | Beside the bar, when texts changed elsewhere: where the first one is |
+| `autosave.conflict.go` | Go to it | Button beside the bar, when texts changed elsewhere: opens that page and language and goes to the text |
 | `autosave.refused.one` | 1 text not saved | Bar status, when the server turned texts down |
 | `autosave.refused.other` | {n} texts not saved | |
 | `autosave.stopped` | Saving stopped: {reason} | Bar status, when saving can't go on by itself |
@@ -254,6 +256,11 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.text.saving` | Saving… | Under a text, while its change is sent |
 | `doc.text.saved` | Saved | Under a text, once its change is on the server |
 | `doc.text.error` | Not saved yet — trying again | Under a text whose change did not go through |
+| `doc.text.refused` | Not saved — the server refused this text. Edit it to try again. | Under a text the server did not take |
+| `doc.text.stopped` | Not saved — saving has stopped. See the bar below. | Under a text waiting while saving is stopped |
+| `doc.text.offline` | Not saved yet — you are offline. It is kept on this computer. | Under a text changed while offline |
+| `doc.text.retranslating` | Gemini is re-translating this text… | Under a text whose Re-translate is on its way |
+| `doc.save.go` | Go to the text | Button beside the bar, when a text on this page is not saved |
 | `doc.text.edited` | Edited | Under a text that has your edit |
 | `doc.empty.cell` | Not translated yet | Inside an empty translation box |
 | `doc.history` | History | Button under a text |
@@ -302,6 +309,8 @@ One page of the website read as a document: every text in the order the page sho
 | `doc.next.left.one` | {n} left | Beside that button: how many texts are still to look at |
 | `doc.next.left.other` | {n} left | |
 | `doc.next.none` | Nothing left to check | Beside that button, when every such text has been looked at |
+| `doc.next.again.one` | Show 1 looked-at text again | Button beside the count, when Next has marked a text of this page as looked at |
+| `doc.next.again.other` | Show {n} looked-at texts again | |
 | `doc.keys.next.mac` | ⌥↵ | The keys that do the same as Next to check, on a Mac |
 | `doc.keys.next.other` | Alt+Enter | The same, on any other computer |
 | `doc.version` | Desk {version} | Bottom bar: the version of the localization desk; a link to what changed in it |
@@ -329,10 +338,12 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `export.aria.cell` | {page}, {language} | Screen-reader name of one page and language |
 | `export.count.none` | Nothing selected yet | Under the grid, when no box is ticked |
 | `export.count.one` | 1 file will be made | Under the grid |
-| `export.count.other` | {n} files will be made | |
+| `export.count.other` | {n} files will be made, in one zip | |
 | `export.cancel` | Cancel | Button in the Export window |
 | `export.go` | Export | Button in the Export window |
 | `export.close` | Close | Button, when the export has finished |
+| `export.stop` | Stop after this file | Button while the export runs: the file being made finishes, the next ones are not started |
+| `export.stopping` | Stopping after this file… | The same button once pressed |
 | `export.download` | Download again | Button, when the export has finished |
 | `export.jump` | Show | Button beside a text in the list of what was left out |
 | `export.more` | Show {n} more | Button at the end of a long list |
@@ -343,6 +354,10 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `export.step.done.one` | 1 text in the file | A file's line, when it is made |
 | `export.step.done.other` | {n} texts in the file | |
 | `export.step.nothing` | Nothing to export yet | A file's line, when the page has no translation in that language |
+| `export.step.stopped` | Not started — you stopped the export | A file's line, when the export was stopped before it |
+| `export.result.done` | Files made: {done} of {total}. The download has started. | Top of the result, when the export ran to the end |
+| `export.result.stopped` | You stopped the export. Files made: {done} of {total}; what was made is downloading. | Top of the result, when the export was stopped |
+| `export.result.none` | No file was made. | Top of the result, when no file came out |
 | `export.step.failed` | Not made: {reason} | A file's line, when it could not be made |
 | `export.group.refused.one` | 1 text is not in the file because a check refused it | List after an export |
 | `export.group.refused.other` | {n} texts are not in the file because a check refused them | |
@@ -374,6 +389,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.done` | The new translation is ready. | Message, when the job has finished |
 | `retr.failed` | The new translation did not arrive: {reason} | Message, when the job failed |
 | `retr.busy` | Gemini is already re-translating in this language. Try again when it has finished. | Message, when a re-translation is already running |
+| `retr.timeout` | Gemini did not answer in time. Try again. | The reason in the message, when a re-translation never finished |
 | `retr.none-arrived` | No new text arrived. | Message, when the job finished without a new text |
 
 ## Rules page (CEL-046)

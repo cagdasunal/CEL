@@ -135,6 +135,7 @@
 
   function pend(lang) { return P[lang] || (P[lang] = {}); }
   function conf(lang) { return C[lang] || (C[lang] = {}); }
+  const RT = new Set();     // 'lang|uid' of a text whose Re-translate is on its way (document_export.js reports it; CEL-077)
   function serverRec(lang, uid) { return canon(L[lang].decisions[uid]); }
   function serverVer(lang, uid) { const d = L[lang].decisions[uid]; return d ? d.version || 0 : 0; }
   function curRec(lang, uid) {
@@ -302,7 +303,7 @@
         if (b && lang === S.lang) { b.savedUntil = Date.now() + 3000; setTimeout(function () { paintBlock(uid); }, 3100); }
       } else if (Object.prototype.hasOwnProperty.call(conflicts, uid)) {
         e.conflict = true;
-        conf(lang)[uid] = { current: conflicts[uid] };
+        conf(lang)[uid] = { current: conflicts[uid], page: e.page };
       } else {
         net.refused.add(lang + '|' + uid);      // refused, or not mentioned: never resent in a loop
       }
@@ -392,7 +393,7 @@
     if (e) e.record = canon(wanted);
     else pend(lang)[uid] = { record: canon(wanted), base: serverVer(lang, uid), page: S.page };
     pend(lang)[uid].conflict = true;
-    conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+    conf(lang)[uid] = { current: L[lang].decisions[uid] || null, page: pend(lang)[uid].page };
     net.refused.delete(lang + '|' + uid);
     changed();
   }
@@ -595,6 +596,14 @@
     return b;
   }
 
+  // Why a text is not saved, in the words of its cause (CEL-077 item 12): refused by the server, saving stopped,
+  // offline, or just trying again.
+  function errorLabel(lang, uid) {
+    if (net.refused.has(lang + '|' + uid)) return t('doc.text.refused');
+    if (net.stopped) return t('doc.text.stopped');
+    if (navigator.onLine === false) return t('doc.text.offline');
+    return t('doc.text.error');
+  }
   function stateOf(lang, uid, b) {
     if (conf(lang)[uid]) return 'conflict';
     const key = lang + '|' + uid;
@@ -624,11 +633,15 @@
     b.li.setAttribute('data-state', st);
     let label = '';
     if (!d.lock) {
-      if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
+      if (st === 'dirty' && navigator.onLine === false) label = t('doc.text.offline');
+      else if (st === 'saving' || st === 'dirty') label = t('doc.text.saving');
       else if (st === 'saved') label = t('doc.text.saved');
-      else if (st === 'error') label = t('doc.text.error');
+      else if (st === 'error') label = errorLabel(lang, uid);
       else if (rec && rec.text) label = t('doc.text.edited');
     }
+    // A Re-translate on its way is said on the text itself, whatever else is true of it (CEL-077 item 5)
+    if (RT.has(lang + '|' + uid)) { label = t('doc.text.retranslating'); b.li.setAttribute('data-retranslating', ''); }
+    else b.li.removeAttribute('data-retranslating');
     b.state.textContent = label;
     // One small mark when the text is word for word what Weglot has (the reviewer can skip it). Shown only
     // while the Weglot column is on (CSS); nothing is highlighted otherwise.
@@ -679,6 +692,61 @@
       retry.id = 'doc-save-retry';
       retry.addEventListener('click', function () { net.stopped = null; net.retry = 0; run(); updateBar(); });
       bar.appendChild(retry);
+    }
+    barMore(state);
+  }
+  // Where the trouble is, beside the bar (its own element: the bar's own text stays the count). A conflict names
+  // the language and the page and goes there; an unsaved or refused text on the open page can be gone to.
+  function conflictList() {
+    const out = [];
+    Object.keys(C).forEach(function (lang) {
+      Object.keys(C[lang]).forEach(function (uid) {
+        const e = P[lang] && P[lang][uid];
+        out.push({ lang: lang, uid: uid, page: (C[lang][uid] && C[lang][uid].page) || (e && e.page) || S.page });
+      });
+    });
+    const here = function (c) { return c.lang === S.lang && c.page === S.page ? 1 : 0; };
+    out.sort(function (a, b) { return here(b) - here(a); });       // the open page and language first
+    return out;
+  }
+  let conflictAt = 0;
+  function goConflict() {
+    const list = conflictList();
+    if (!list.length) return;
+    const c = list[conflictAt++ % list.length];
+    if (c.lang === S.lang && c.page === S.page) jumpTo(c.uid);
+    else open(c.page, c.lang).then(function () { jumpTo(c.uid); });
+  }
+  function unsavedTarget() {
+    if (!S.doc) return null;
+    const mine = P[S.lang] || {};
+    const hit = S.doc.blocks.filter(function (d) { return mine[d.id] || net.refused.has(S.lang + '|' + d.id); })[0];
+    return hit ? hit.id : null;
+  }
+  function barMore(state) {
+    const bar = $('doc-save');
+    let more = $('doc-save-more');
+    if (!more) { more = h('span', 'doc-save-more'); more.id = 'doc-save-more'; bar.parentNode.insertBefore(more, bar.nextSibling); }
+    more.textContent = '';
+    if (state === 'conflict') {
+      const first = conflictList()[0];
+      if (first) {
+        more.appendChild(document.createTextNode(t('autosave.conflict.where', { language: t('lang.' + first.lang), page: t('page.' + first.page) })));
+        const go = h('button', 'desk-btn', t('autosave.conflict.go'));
+        go.type = 'button';
+        go.id = 'doc-conflict-go';
+        go.addEventListener('click', goConflict);
+        more.appendChild(go);
+      }
+    } else if (state === 'stopped' || state === 'retrying' || state === 'offline' || state === 'refused') {
+      const uid = unsavedTarget();
+      if (uid) {
+        const go = h('button', 'desk-btn', t('doc.save.go'));
+        go.type = 'button';
+        go.id = 'doc-save-go';
+        go.addEventListener('click', function () { jumpTo(uid); });
+        more.appendChild(go);
+      }
     }
   }
 
@@ -1037,12 +1105,35 @@
       return b && !b.d.lock && !b.li.hidden && toCheck(uid, seen);
     });
   }
+  // The texts of this page the reviewer has looked at (Next marks them): they are not counted again until asked.
+  function seenHere() {
+    if (!S.doc) return [];
+    const seen = lsGet(KEYS.seen) || {};
+    return S.doc.blocks.map(function (d) { return d.id; }).filter(function (uid) { return seen[seenKey(uid)]; });
+  }
+  function showSeenAgain() {
+    const m = lsGet(KEYS.seen) || {};
+    seenHere().forEach(function (uid) { delete m[seenKey(uid)]; });
+    lsSet(KEYS.seen, m);
+    updateNext();
+  }
   function updateNext() {
     const btn = $('doc-next'), count = $('doc-next-count');
     if (!btn) return;
     const n = S.loading ? 0 : candidates().length;
     btn.disabled = !n;
     count.textContent = S.loading ? '' : (n ? tn('doc.next.left', n) : t('doc.next.none'));
+    let again = $('doc-seen-reset');
+    if (!again) {
+      again = h('button', 'desk-btn doc-seen-reset', '');
+      again.type = 'button';
+      again.id = 'doc-seen-reset';
+      again.addEventListener('click', showSeenAgain);
+      count.parentNode.insertBefore(again, count.nextSibling);
+    }
+    const m = S.loading ? 0 : seenHere().length;
+    again.hidden = !m;
+    again.textContent = m ? tn('doc.next.again', m) : '';
   }
   // Show the texts the filter keeps. When the page re-reads (new drafts arrive) a text with the caret
   // in it stays, whatever it matches now: the text being typed in must never vanish. A filter the
@@ -1205,7 +1296,7 @@
   function restoreConflicts(lang) {
     const mine = P[lang] || {};
     Object.keys(mine).forEach(function (uid) {
-      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null };
+      if (mine[uid].conflict) conf(lang)[uid] = { current: L[lang].decisions[uid] || null, page: mine[uid].page };
     });
   }
   function ensureLang(lang) {
@@ -1441,6 +1532,11 @@
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
     paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
     failureReason: failureReason, who: who,
+    setRetranslating: function (lang, uid, on) {
+      if (on) RT.add(lang + '|' + uid); else RT.delete(lang + '|' + uid);
+      if (lang === S.lang && M.has(uid)) paintBlock(uid);
+    },
+    isRetranslating: function (lang, uid) { return RT.has(lang + '|' + uid); },
     retranslatePage: null,           // document_export.js fills this: the whole-page window the one Translate page opens (CEL-073)
     startPageJob: function (lang, page, opts) { startJob(lang, page, false, opts); }   // that window starts its job through the desk's
   };

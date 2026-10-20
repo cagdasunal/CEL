@@ -96,7 +96,7 @@
   // Spelled out so the copy check sees every key.
   const STEP_KEY = {
     waiting: 'export.step.waiting', saving: 'export.step.saving', queued: 'export.step.queued',
-    running: 'export.step.running', nothing: 'export.step.nothing'
+    running: 'export.step.running', nothing: 'export.step.nothing', stopped: 'export.step.stopped'
   };
   const GROUP_KEY = {
     refused: 'export.group.refused', orphan: 'export.group.orphan', conflict: 'export.group.conflict',
@@ -195,10 +195,13 @@
 
   // ── the job, watched ────────────────────────────────────────────────────────────────
   // The engine's answer to desk-job-get, polled; null when the desk could not reach it for good.
-  async function watch(lang, id, onState) {
+  // `maxMs`: give up on a job that never ends and call it failed (CEL-077 item 5); 0 = poll as long as it takes.
+  async function watch(lang, id, onState, maxMs) {
     let misses = 0;
+    const began = Date.now();
     for (;;) {
       await sleep(TIMING.poll);
+      if (maxMs && Date.now() - began > maxMs) return { status: 'failed', timedOut: true };
       const r = await D.call({ action: 'desk-job-get', locale: lang, id: id });
       const job = r && r.ok && r.body && r.body.job;
       if (!job) { if (++misses >= 8) return null; continue; }
@@ -227,10 +230,19 @@
   const exGo = button('ex-go', 'cpw-btn cpw-save', t('export.go'));
   const exDownload = button('ex-download', 'desk-btn', t('export.download'));
   const exClose = button('ex-close', 'cpw-btn cpw-cancel', t('export.close'));
+  const exStop = button('ex-stop', 'cpw-btn cpw-cancel', t('export.stop'));
   exDownload.hidden = true;
   exClose.hidden = true;
+  exStop.hidden = true;
+  let stopRequested = false;
+  exStop.addEventListener('click', function () {
+    // The file being made cannot be taken back (its job is already running); the next ones are not started.
+    stopRequested = true;
+    exStop.disabled = true;
+    exStop.textContent = t('export.stopping');
+  });
   const exActions = h('div', 'cpw-actions');
-  [exDownload, exClose, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
+  [exDownload, exClose, exStop, exCancel, exGo].forEach(function (b) { exActions.appendChild(b); });
   [exTitle, exSelect, exCount, exProgress, exResult, exActions].forEach(function (e) { ex.box.appendChild(e); });
   ex.root.classList.add('ex-modal');
 
@@ -533,8 +545,13 @@
     await until(function () { return S.page === page && S.lang === lang && ready() && M.has(uid); }, 20000);
     if (M.has(uid)) D.reveal(uid);
   }
-  function renderResult(all, cells) {
+  function renderResult(all, cells, made) {
     exResult.textContent = '';
+    // One line on top that says how it ended (the download starts by itself, so the end is said, not implied)
+    const head = !made ? t('export.result.none')
+      : stopRequested ? t('export.result.stopped', { done: made, total: cells.length })
+      : t('export.result.done', { done: made, total: cells.length });
+    exResult.appendChild(h('p', 'ex-headline', head));
     const many = cells.length > 1;
     GROUP_ORDER.forEach(function (kind) {
       const items = [];
@@ -587,17 +604,23 @@
     exProgress.textContent = '';
     exProgress.hidden = false;
     exResult.hidden = true;
+    stopRequested = false;
+    exStop.disabled = false;
+    exStop.textContent = t('export.stop');
+    exStop.hidden = false;
     const rows = cells.map(function (c) { const li = fileRow(c); setState(li, 'waiting'); return li; });
     const files = [], all = [];
     for (let i = 0; i < cells.length; i++) {
+      if (stopRequested) { setState(rows[i], 'stopped'); continue; }
       all.push(await exportOne(cells[i], rows[i], files));
     }
+    exStop.hidden = true;
     const langs = {};
     cells.forEach(function (c) { langs[c.lang] = true; });
     await Promise.all(Object.keys(langs).map(function (l) { return D.refreshLang(l); }));
     D.gridSoon();
     busy = false;
-    renderResult(all, cells);
+    renderResult(all, cells, files.length);
     exResult.hidden = false;
     lastDownload = prepareDownload(files);
     exClose.hidden = false;
@@ -687,9 +710,14 @@
       return;
     }
     D.toast(t('retr.started'));
-    const job = await watch(lang, r.body.job.id);
+    // The text says it is being re-translated (and its button is off) until the job ends, however it ends.
+    if (ref.unit) { D.setRetranslating(lang, ref.unit, true); markRetranslating(ref.unit, true); }
+    let job;
+    try { job = await watch(lang, r.body.job.id, null, TIMING.jobMax || 900000); }
+    finally { if (ref.unit) { D.setRetranslating(lang, ref.unit, false); markRetranslating(ref.unit, false); } }
     if (!job || job.status !== 'done') {
-      D.toast(t('retr.failed', { reason: job ? jobReason(job) : t('save.reason.offline') }), 'err');
+      const reason = job ? (job.timedOut ? t('retr.timeout') : jobReason(job)) : t('save.reason.offline');
+      D.toast(t('retr.failed', { reason: reason }), 'err');
       return;
     }
     await D.refreshLang(lang);
@@ -768,12 +796,18 @@
     });
   });
 
+  // The Re-translate button of a text whose job is on its way is off.
+  function markRetranslating(uid, on) {
+    const b = document.querySelector('li.doc-block[data-uid="' + uid + '"] .doc-tool-retranslate');
+    if (b) b.disabled = on;
+  }
   // A "Re-translate" in each text's floating toolbar.
   function addToTool(li) {
     const tools = li.querySelector('.doc-tools');
     if (!tools || tools.querySelector('.doc-tool-retranslate')) return;
     const b = button(null, 'desk-btn doc-tool-retranslate', t('retr.button'));
     b.addEventListener('click', function () { openText(li.getAttribute('data-uid'), b); });
+    b.disabled = D.isRetranslating(S.lang, li.getAttribute('data-uid'));
     tools.insertBefore(b, tools.firstChild);
   }
   const list = $('doc-blocks');

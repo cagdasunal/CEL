@@ -1531,6 +1531,7 @@ class TestPageCss:
         """A rule for `.doc-typo` would style nothing: each `.doc-*` class in the sheet is in the
         shell or in the contract's runtime-built markup."""
         runtime = {"doc-block", "doc-tag", "doc-en", "doc-tgt", "doc-weglot", "doc-note", "doc-note-chars",
+                   "doc-save-more", "doc-seen-reset",
                    "doc-note-same", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
                    "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore"}
