@@ -747,6 +747,9 @@
     // A Re-translate on its way is said on the text itself, whatever else is true of it (CEL-077 item 5)
     if (RT.has(lang + '|' + uid)) { label = t('doc.text.retranslating'); b.li.setAttribute('data-retranslating', ''); }
     else b.li.removeAttribute('data-retranslating');
+    // A text a check flagged carries a mark (a tint and a brick bar, CSS): `data-flagged` (CEL-070)
+    if (isFlagged(uid)) b.li.setAttribute('data-flagged', '');
+    else b.li.removeAttribute('data-flagged');
     b.state.textContent = label;
     // One small mark when the text is word for word what Weglot has (the reviewer can skip it). Shown only
     // while the Weglot column is on (CSS); nothing is highlighted otherwise.

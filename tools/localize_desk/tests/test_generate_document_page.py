@@ -1376,6 +1376,69 @@ class TestPageCss:
         la, lb = lum(hexrgb("--fg")), lum(hexrgb("--surface"))
         assert (max(la, lb) + 0.05) / (min(la, lb) + 0.05) >= 4.5
 
+    # ── the document view's own colours (CEL-070, the designer's spec CEL-068 doc-spec.md) ──────────────
+    def _tokens(self):
+        css = re.sub(r"/\*.*?\*/", "", GD.DOC_TOKENS, flags=re.S)
+        return {m.group(1): m.group(2).upper() for m in re.finditer(r"(--doc-[a-z-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;", css)}
+
+    @staticmethod
+    def _lum(hexcolour):
+        v = [int(hexcolour[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        v = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in v]
+        return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]
+
+    def _ratio(self, a, b):
+        la, lb = self._lum(a), self._lum(b)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+    def test_the_tokens_are_the_designers_and_every_one_is_used_and_every_one_used_is_defined(self):
+        tokens = self._tokens()
+        assert tokens == {
+            "--doc-tray": "#E7DEC7", "--doc-sheet": "#F1EAD8", "--doc-sheet-hover": "#ECE4CF", "--doc-weglot-bg": "#EAE2CC",
+            "--doc-ink": "#2B2722", "--doc-ink-src": "#47423A", "--doc-muted": "#645D51", "--doc-placeholder": "#6A6255",
+            "--doc-edited": "#A85F0A", "--doc-edited-ink": "#8A4D07", "--doc-flag": "#A3361F", "--doc-flag-bg": "#EDDCC6"}
+        used = set(re.findall(r"var\((--doc-[a-z-]+)\)", GD.DOC_CSS))
+        assert used - {"--doc-pad", "--doc-topbar", "--doc-mt", "--doc-mb"} == set(tokens), used ^ set(tokens)
+        assert re.search(r"--fs-doc-h1:\s*28px", GD.DOC_TOKENS) and re.search(r"--fs-doc-h2:\s*21px", GD.DOC_TOKENS)
+
+    def test_the_token_block_sits_between_the_fields_sheet_and_the_pages_own_rules(self):
+        page = GD.render_page()
+        style = page[page.index("<style>"):page.index("</style>")]
+        rich = GD.RICH_CSS.read_text(encoding="utf-8")
+        assert style.index(rich) < style.index(GD.DOC_TOKENS) < style.index(GD.DOC_CSS)
+        assert "!important" not in GD.DOC_TOKENS and "rgba(" not in GD.DOC_TOKENS
+
+    def test_every_text_pair_is_4_5_to_1_or_more_and_every_mark_3_to_1(self):
+        """The pairs the page really draws (spec §4): each ink on the grounds it sits on."""
+        t = self._tokens()
+        text_on = {
+            "--doc-ink": ("--doc-sheet", "--doc-sheet-hover", "--doc-tray", "--doc-flag-bg"),
+            "--doc-ink-src": ("--doc-sheet", "--doc-sheet-hover"),
+            "--doc-muted": ("--doc-sheet", "--doc-sheet-hover", "--doc-tray", "--doc-weglot-bg", "--doc-flag-bg"),
+            "--doc-placeholder": ("--doc-sheet", "--doc-sheet-hover"),
+            "--doc-edited-ink": ("--doc-sheet", "--doc-sheet-hover"),
+        }
+        for ink, grounds in text_on.items():
+            for ground in grounds:
+                assert self._ratio(t[ink], t[ground]) >= 4.5, (ink, ground, self._ratio(t[ink], t[ground]))
+        for mark, ground in (("--doc-edited", "--doc-sheet"), ("--doc-edited", "--doc-sheet-hover"),
+                             ("--doc-flag", "--doc-sheet"), ("--doc-flag", "--doc-flag-bg")):
+            assert self._ratio(t[mark], t[ground]) >= 3, (mark, ground, self._ratio(t[mark], t[ground]))
+
+    def test_no_surface_of_the_document_view_is_white_or_near_white(self):
+        t = self._tokens()
+        for surface in ("--doc-tray", "--doc-sheet", "--doc-sheet-hover", "--doc-weglot-bg", "--doc-flag-bg"):
+            assert self._lum(t[surface]) < 0.86, surface            # the banned --elevated #FBF7EC is 0.93
+        assert "--elevated" not in GD.DOC_CSS and "var(--panel)" not in GD.DOC_CSS
+
+    def test_the_document_views_text_weights_are_400_and_500(self):
+        for sel, prop, value in _declarations(GD.DOC_CSS):
+            if prop != "font-weight":
+                continue
+            if sel.startswith((".doc-grid", ".doc-cell", ".doc-sections-wrap", ".doc-shared")):
+                continue                                              # the pages x languages grid and its siblings are outside the spec
+            assert value in ("400", "500"), (sel, value)
+
     def test_no_important_and_no_title(self):
         assert "!important" not in GD.DOC_CSS
         assert not re.search(r"\btitle\b\s*=", GD.DOC_CSS)
@@ -1401,18 +1464,27 @@ class TestPageCss:
         bold = _rule('.doc-cell[aria-pressed="true"] .doc-cell-status, .doc-cell[aria-pressed="true"] .doc-cell-count')
         assert "font-weight: 700" in bold and "accent" not in bold
 
-    def test_the_current_outline_entry_is_bold_with_a_two_pixel_bar_of_the_text_colour(self):
+    def test_the_current_outline_entry_is_medium_with_a_two_pixel_bar_of_the_ink(self):
         body = _rule('.doc-outline-item[aria-current="true"]')
-        assert "font-weight: 700" in body and "inset 2px 0 0 var(--fg)" in body and "accent" not in body
+        assert "font-weight: 500" in body and "inset 2px 0 0 var(--doc-ink)" in body and "accent" not in body
+        assert "color: var(--doc-ink)" in _rule('.doc-outline-item[aria-current="true"] .doc-outline-name')
+        assert "color: var(--doc-ink-src)" in _rule(".doc-outline-name")
 
-    def test_edited_is_a_3px_bar_of_the_text_colour_at_reduced_opacity(self):
+    def test_edited_is_a_3px_ochre_bar_and_the_word_edited_is_ochre(self):
         body = _rule('.doc-block[data-source="edit"] .doc-tgt::after')
-        assert "width: 3px" in body and "background: var(--fg)" in body
-        assert re.search(r"opacity: 0\.\d+", body)
+        assert "width: 3px" in body and "background: var(--doc-edited)" in body and "opacity" not in body
+        word = _rule('.doc-block[data-source="edit"] .doc-note-state')
+        assert "color: var(--doc-edited-ink)" in word and "font-weight: 500" in word
 
-    def test_a_flagged_row_would_be_muted_and_not_a_text_cursor(self):
+    def test_a_flagged_text_has_a_brick_bar_and_a_tint_drawn_without_moving_the_layout(self):
+        body = _rule(".doc-block[data-flagged] > .doc-tgt")
+        assert "background: var(--doc-flag-bg)" in body
+        assert "0 0 0 6px var(--doc-flag-bg)" in body and "-6px 0 0 3px var(--doc-flag)" in body
+        assert not re.search(r"\b(?:margin|padding|width|height|border)\b", body)      # colour only
+
+    def test_a_locked_row_would_be_muted_and_not_a_text_cursor(self):
         body = _rule('.doc-block:not([data-lock=""]) :is(.doc-en, .doc-tgt)')
-        assert "color: var(--muted)" in body and "cursor: default" in body
+        assert "color: var(--doc-muted)" in body and "cursor: default" in body
 
     def test_the_empty_cell_shows_its_placeholder_attribute(self):
         assert "content: attr(data-placeholder)" in _rule(".doc-tgt:empty::before, .doc-weglot:empty::before")
@@ -1423,19 +1495,19 @@ class TestPageCss:
         assert ".doc-tgt:empty::before, .doc-weglot:empty::before" in selectors
         assert "doc.weglot.none" in Path(GD.DOC_JS).read_text(encoding="utf-8")
 
-    def test_the_same_as_weglot_mark_is_a_quiet_xs_line_shown_only_with_the_column_on(self):
+    def test_the_same_as_weglot_mark_is_a_quiet_sm_line_shown_only_with_the_column_on(self):
         body = _rule(".doc-note-same")
-        assert "font-size: var(--fs-xs)" in body and "color: var(--muted)" in body
+        assert "font-size: var(--fs-sm)" in body and "color: var(--doc-muted)" in body
         assert "display: none" in _rule('.doc-blocks:not([data-weglot="on"]) .doc-note-same')
 
     def test_a_blocks_state_is_the_notes_colour_only(self):
-        assert _rule('.doc-block[data-state="saving"] .doc-note') == "color: var(--muted);"
+        assert _rule('.doc-block[data-state="saving"] .doc-note') == "color: var(--doc-muted);"
         assert _rule('.doc-block[data-state="error"] .doc-note') == "color: var(--err);"
         assert _rule('.doc-block[data-state="conflict"] .doc-note') == "color: var(--warn);"
 
-    def test_the_character_count_is_a_quiet_muted_xs_line(self):
+    def test_the_character_count_is_a_quiet_muted_sm_line(self):
         body = _rule(".doc-note-chars")
-        assert "font-size: var(--fs-xs)" in body and "color: var(--muted)" in body
+        assert "font-size: var(--fs-sm)" in body and "color: var(--doc-muted)" in body
 
     def test_the_saving_lines_dot_follows_the_state(self):
         for state, token in (("saving", "--faint"), ("retrying", "--warn"), ("offline", "--warn"),
@@ -1454,23 +1526,36 @@ class TestPageCss:
             assert token in used, token
 
     def test_block_types_have_the_contracts_type_scale(self):
+        """CEL-070 (spec CEL-068 §2): weights 400 and 500 only, the hierarchy from size and tracking; h1 and h2 keep their
+        dashboard tokens, narrowed to this page in DOC_TOKENS (28 / 21 px)."""
         every = ".doc-block[data-b=\"{}\"] :is(.doc-en, .doc-tgt, .doc-weglot)"
         h1 = _rule(every.format("h1"))
-        assert "var(--fs-doc-h1)" in h1 and "font-weight: 700" in h1
+        assert "var(--fs-doc-h1)" in h1 and "font-weight: 500" in h1 and "line-height: 1.25" in h1
+        assert "letter-spacing: -0.012em" in h1
         # The page's section titles are h3 (the h2 is the small tagline above them): an h3 is sized like the
         # contract's h2, a card title (h4-h6) stays at body + 1px (QA of design B, CEL-031).
         h2 = _rule('.doc-block:is([data-b="h2"], [data-b="h3"]) :is(.doc-en, .doc-tgt, .doc-weglot)')
-        assert "var(--fs-doc-h2)" in h2 and "font-weight: 650" in h2
+        assert "var(--fs-doc-h2)" in h2 and "font-weight: 500" in h2 and "line-height: 1.32" in h2
         base = _rule(".doc-block .doc-en, .doc-block .doc-tgt, .doc-block .doc-weglot")
-        assert "var(--fs-doc-body)" in base and "line-height: 1.6" in base
+        assert "var(--fs-doc-body)" in base and "line-height: 1.65" in base
+        assert "color: var(--doc-ink-src)" in _rule(".doc-block .doc-en")
+        assert "color: var(--doc-ink)" in _rule(".doc-block .doc-tgt")
         small = _rule('.doc-block:is([data-b="h4"], [data-b="h5"], [data-b="h6"]) :is(.doc-en, .doc-tgt, .doc-weglot)')
-        assert "calc(var(--fs-doc-body) + 1px)" in small and "font-weight: 650" in small
+        assert "calc(var(--fs-doc-body) + 1px)" in small and "font-weight: 500" in small and "line-height: 1.4" in small
         button = _rule('.doc-block[data-b="button"] :is(.doc-en, .doc-tgt)')
-        assert "border-radius: 999px" in button and "var(--border-strong)" in button
+        assert "border-radius: 999px" in button and "var(--border-strong)" in button and "font-weight: 500" in button
+        title = _rule('.doc-block[data-b="meta-title"] :is(.doc-en, .doc-tgt, .doc-weglot)')
+        assert "calc(var(--fs-doc-body) + 1px)" in title and "font-weight: 500" in title
+        description = _rule('.doc-block[data-b="meta-description"] :is(.doc-en, .doc-tgt, .doc-weglot)')
+        assert "font-size: var(--fs-base)" in description and "line-height: 1.55" in description
+        assert "color: var(--doc-muted)" in description
+        head = _rule(".doc-head")
+        assert "font-size: var(--fs-md)" in head and "font-weight: 500" in head and "color: var(--doc-ink-src)" in head
+        assert "font-weight: 500" in _rule(".doc-title") and "font-size: var(--fs-xl)" in _rule(".doc-title")
 
     def test_the_search_result_blocks_are_quiet_cards(self):
         card = _rule('.doc-block:is([data-b="meta-title"], [data-b="meta-description"]) :is(.doc-en, .doc-tgt)')
-        assert "background: var(--panel)" in card and "border-radius: var(--radius)" in card
+        assert "background: var(--doc-sheet-hover)" in card and "border-radius: var(--radius)" in card
         assert "var(--border)" in card
 
     def test_there_is_no_type_gutter_and_the_tag_shows_on_hover_or_focus_only(self):
@@ -1485,14 +1570,14 @@ class TestPageCss:
                 assert set(value.split()) <= allowed, (sel, value)
 
     def test_the_sheets_are_papers_on_a_recessed_area(self):
-        assert "background: var(--panel)" in _rule(".doc-sheets")
+        assert "background: var(--doc-tray)" in _rule(".doc-sheets")
         assert "--doc-pad: 48px" in _rule(".doc-sheets")
         assert "--doc-pad: 28px" in _rule(".doc-blocks[data-weglot=\"on\"]")
         block = _rule(".doc-block")
         assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in block and "column-gap: 24px" in block
         assert "repeat(3, minmax(0, 1fr))" in _rule('.doc-blocks[data-weglot="on"] .doc-block')
         paper = _rule(".doc-block::before, .doc-block::after")
-        assert "background: var(--elevated)" in paper and "border-inline: 1px solid var(--border)" in paper
+        assert "background: var(--doc-sheet)" in paper and "border-inline: 1px solid var(--border)" in paper
         assert "grid-row: 1 / -1" in paper
         corners = _rule(".doc-block:last-child::before, .doc-block:last-child::after, .doc-block:last-child > .doc-weglot")
         assert "border-radius: 0 0 var(--radius) var(--radius)" in corners
@@ -1511,12 +1596,12 @@ class TestPageCss:
     def test_the_status_bar_sticks_to_the_bottom_at_44px(self):
         bar = _rule(".doc-status")
         assert "position: sticky" in bar and "bottom: 0" in bar and "min-height: 44px" in bar
-        assert "background: var(--elevated)" in bar and "border-top: 1px solid var(--border)" in bar
+        assert "background: var(--doc-sheet)" in bar and "border-top: 1px solid var(--border)" in bar
 
     def test_the_history_drawer_slides_up_over_the_sheets_with_its_versions_side_by_side(self):
         d = _rule(".doc-drawer")
         for part in ("position: fixed", "left: 0", "right: 0", "bottom: 44px", "max-height: 50vh", "overflow: auto",
-                     "background: var(--elevated)", "animation: doc-slide"):
+                     "background: var(--doc-sheet)", "animation: doc-slide"):
             assert part in d, part
         assert "@keyframes doc-slide" in GD.DOC_CSS
         strip = _rule(".doc-history-list")
@@ -1548,7 +1633,7 @@ class TestPageCss:
         assert "display: block" in phone and ".doc-block::before, .doc-block::after { display: none; }" in phone
         assert "position: static" in phone and "visibility: visible" in phone
         assert "flex-basis: 100%" in phone
-        assert "font-size: var(--fs-base); color: var(--muted)" in phone       # English, muted
+        assert "font-size: var(--fs-base); color: var(--doc-muted)" in phone       # English, muted
 
     def test_every_element_a_class_gives_a_display_to_has_a_hidden_rule(self):
         for sel in (".doc-weglot[hidden]", ".doc-head-weglot[hidden]", ".doc-conflict[hidden]", ".doc-banner[hidden]",
@@ -1566,7 +1651,7 @@ class TestPageCss:
         shell or in the contract's runtime-built markup."""
         runtime = {"doc-block", "doc-tag", "doc-en", "doc-tgt", "doc-weglot", "doc-note", "doc-note-chars",
                    "doc-save-more", "doc-seen-reset",
-                   "doc-note-same", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
+                   "doc-note-same", "doc-note-state", "doc-conflict", "doc-tools", "doc-tool-weglot", "doc-tool-revert", "doc-history-btn",
                    "doc-keep-mine", "doc-take-theirs", "doc-outline-item", "doc-outline-name", "doc-outline-count",
                    "doc-version", "doc-version-meta", "doc-version-text", "doc-version-empty", "doc-restore",
                    "doc-shared", "doc-shared-mark", "doc-shared-pop", "doc-shared-pop-text", "doc-shared-pop-list",
