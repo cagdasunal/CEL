@@ -877,7 +877,10 @@ class TestPageShell:
     def test_the_bar_is_the_title_and_the_translate_button(self, page):
         dom = _dom(page)
         assert _shape(dom.kids_of_id("doc-bar")) == ["h1#doc-title.doc-title", "div.doc-actions"]
-        assert _shape(dom.kids_of_class("doc-actions")) == ["button#doc-translate.desk-btn"]
+        # the rules page's entry point (CEL-046), then Translate
+        assert _shape(dom.kids_of_class("doc-actions")) == ["a#doc-rules.desk-btn", "button#doc-translate.desk-btn"]
+        assert dom.by_id("doc-rules")["href"] == "/admin/localization/rules/"
+        assert dom.text_of("doc-rules") == C.t("doc.rules")
         assert dom.text_of("doc-translate") == C.t("doc.translate")
         assert dom.text_of("doc-title") == ""
 

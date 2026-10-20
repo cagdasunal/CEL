@@ -706,3 +706,92 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.failed` | The new translation did not arrive: {reason} | Message, when the job failed |
 | `retr.busy` | Gemini is already re-translating in this language. Try again when it has finished. | Message, when a re-translation is already running |
 | `retr.none-arrived` | No new text arrived. | Message, when the job finished without a new text |
+
+## Rules page (CEL-046)
+
+The page where the client reads and edits the translation rules: /admin/localization/rules/. Every edit is a draft kept in this browser until "Use these rules" puts it in use (rulings 2026-10-19 23:32). Spec: monorepo runtime/out/loc2/rules-editor-spec.md §5.
+
+| Key | Text | Shown where |
+|---|---|---|
+| `rules.meta.title` | Translation rules · CEL Dashboard | Browser tab |
+| `rules.meta.description` | The rules Gemini follows when it translates the pages. | Page description |
+| `rules.title` | Translation rules | Page title |
+| `rules.language` | Language | Label of the language button in the title |
+| `rules.desk` | Back to the desk | Header link to the document desk |
+| `doc.rules` | Translation rules | Desk header link to the rules page |
+| `rules.shared` | Shared rules | Rail, sheet label |
+| `rules.shared.all` | Shared — all languages | Left sheet heading |
+| `rules.shared.label` | Shared — applies to all 8 languages | Label above the shared rules |
+| `rules.lang` | {language} rules | Right sheet heading, rail |
+| `rules.outline` | On this page | Rail heading |
+| `rules.none` | No rules yet | Language menu, after a language without rules |
+| `rules.count.rules.one` | {n} rule | Rail count |
+| `rules.count.rules.other` | {n} rules | Rail count |
+| `rules.count.terms.one` | {n} term | Rail count |
+| `rules.count.terms.other` | {n} terms | Rail count |
+| `rules.count.briefs.one` | {n} brief | Rail count |
+| `rules.count.briefs.other` | {n} briefs | Rail count |
+| `rules.next` | The next translation uses Shared v{g}, {language} v{l} and the {language} glossary v{x} | Status bar |
+| `rules.pending.one` | · {n} change not in use | Status bar, after the version note |
+| `rules.pending.other` | · {n} changes not in use | Status bar, after the version note |
+| `rules.draft.saving` | Saving draft… | Status bar |
+| `rules.draft.saved` | Draft saved in this browser | Status bar |
+| `rules.draft.hint` | Your draft is kept in this browser until you press Use these rules. Gemini keeps using the rules in use. | Status bar, on hover |
+| `rules.inuse` | In use | Status bar with no draft; History, the version in use |
+| `rules.use` | Use these rules | The one primary button |
+| `rules.use.title` | Make these rules the ones in use? | Confirm dialog title |
+| `rules.use.body` | The next translation of every page in {language} will use them. Earlier translations keep the version they were made with. | Confirm dialog text |
+| `rules.using` | Putting the rules in use… | Status bar while publishing |
+| `rules.toast.used` | In use: {list}. | Message after a publish |
+| `rules.toast.used.undo` | Undo brings back the previous versions. | Message after a publish |
+| `rules.toast.partial` | In use: {done}. Not in use yet: {rest}. | Message after a publish that stopped |
+| `rules.toast.undo.partial` | Undo done for {done}; {scope} changed since. | Message after an undo that stopped |
+| `rules.scope.global` | Shared rules | Scope name in messages and History |
+| `rules.scope.lang` | {language} rules | Scope name in messages and History |
+| `rules.scope.glossary` | {language} glossary | Scope name in messages and History |
+| `rules.scope.brief` | {page} brief ({language}) | Scope name in messages and History |
+| `rules.history` | History | Header button |
+| `rules.history.title` | Changes | History drawer title |
+| `rules.history.change` | Show change | History card button |
+| `rules.history.loading` | Reading the versions… | History drawer while it reads |
+| `rules.history.none` | No versions yet. | History drawer with nothing published |
+| `rules.close` | Close | History drawer button |
+| `rules.restore` | Restore this version | History card button, confirm title |
+| `rules.restore.body` | Restore v{n}? The rules go back to how they were on {date}. v{m} stays in History. | Restore confirm text |
+| `rules.toast.restored` | Restored v{n}. Undo brings v{m} back. | Message after a restore |
+| `rules.toast.restored.undone` | The version before the restore is back in use. | Message after undoing a restore |
+| `rules.brief.inuse` | v{n} in use | Page brief card |
+| `rules.checked` | Checked automatically | Tag on a rule an automatic check enforces |
+| `rules.checked.warn` | An automatic check still expects the old rule. Tell your CEL contact so the check changes too. | Under an edited checked rule |
+| `rules.shared.warn` | This changes every language. | Under an edited shared rule |
+| `rules.edited` | Edited | Under an edited rule |
+| `rules.undothis` | Undo this | Under an edited rule |
+| `rules.undo.edit` | edit | Undo step name |
+| `rules.ph` | Type here | Empty text |
+| `rules.empty` | No {language} rules from you yet. Gemini uses the shared rules only. | Language without rules |
+| `rules.suggested` | Suggested by CEL (not confirmed) | Language without rules |
+| `rules.suggested.use` | Start from the suggested ones | Language without rules |
+| `rules.suggested.empty` | Start empty | Language without rules |
+| `rules.suggested.first` | Register | The first rule's label when starting empty |
+| `rules.toast.suggested` | Suggested rules added. Edit them as you like. | Message |
+| `rules.conflict` | {name} published {scope} first (v{n}, {time}). | Notice on a scope someone else published |
+| `rules.conflict.someone` | Someone | The conflict notice when the name and email are unknown |
+| `rules.conflict.theirs` | See theirs | Conflict notice button |
+| `rules.conflict.mine` | Keep mine | Conflict notice button |
+| `rules.glossary` | Glossary | Section heading, rail |
+| `rules.glossary.en` | English | Glossary column |
+| `rules.glossary.keep` | Keep as is | Glossary column |
+| `rules.glossary.add` | Add a term | Glossary button |
+| `rules.remove` | Remove | Glossary row button |
+| `rules.briefs` | Page briefs | Section heading, rail |
+| `rules.brief.none` | No brief for this page yet | Page brief card |
+| `rules.brief.add` | Add a brief | Page brief card |
+| `rules.error` | The rules could not be put in use. Your draft is kept in this browser. | Notice on a scope |
+| `rules.error.signed_out` | You have been signed out. Sign in again, then press Try again. Your draft is kept in this browser. | Notice on a scope (401) |
+| `rules.error.cap` | Too many changes in a short time. Wait a few minutes, then press Try again. | Notice on a scope (over the cap) |
+| `rules.error.daily` | Today's limit of changes is reached. Try again tomorrow; your draft is kept in this browser. | Notice on a scope (over the daily budget) |
+| `rules.error.refused` | These rules were not accepted (an empty or too long text). Your draft is kept in this browser. | Notice on a scope (400) |
+| `rules.error.read` | The rules could not be read. | Notice on a scope that could not be read |
+| `rules.error.history` | The versions could not be read. | History drawer |
+| `rules.retry` | Try again | Notice button |
+| `rules.offline` | Offline — your draft is kept in this browser | Status bar, notice |

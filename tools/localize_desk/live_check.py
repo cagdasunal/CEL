@@ -39,7 +39,7 @@ DOCS = Path(__file__).resolve().parents[2] / "docs"
 BASE = "https://cel.englishcollege.com"
 LOCALES = ("de", "fr", "es", "pt", "it", "ja", "ko", "ar")
 _PAGES = (["admin/localization/index.html"] + [f"admin/localization/{c}/index.html" for c in LOCALES]
-          + ["admin/localization/document/index.html"])
+          + ["admin/localization/document/index.html", "admin/localization/rules/index.html"])
 # The document page (desk v2) reads one data file per page, and pages.json before them.
 DOC_PAGES = ("vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english")
 _DOC_DATA = ["admin/localization/document/data/pages.json"] + [

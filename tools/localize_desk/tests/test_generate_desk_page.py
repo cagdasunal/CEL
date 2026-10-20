@@ -590,8 +590,8 @@ def test_the_harness_serves_the_desk_as_committed_or_switched_off_or_on():
             pages = list((root / "admin" / "localization").rglob("index.html"))
             index = root / "admin" / "localization" / "index.html"        # a redirect since CEL-045
             texts = [q.read_text(encoding="utf-8") for q in pages if q != index]
-            # 8 languages + the index + the document page (desk v2, CEL-026)
-            assert len(pages) == 10 and all(want in t and gone not in t for t in texts), kw
+            # 8 languages + the index + the document page (desk v2, CEL-026) + the rules page (CEL-046)
+            assert len(pages) == 11 and all(want in t and gone not in t for t in texts), kw
         finally:
             shutil.rmtree(root, ignore_errors=True)
 

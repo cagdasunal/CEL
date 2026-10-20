@@ -469,6 +469,7 @@ def _dom() -> str:
         '    <header id="doc-bar" class="doc-bar">\n'
         '      <h1 id="doc-title" class="doc-title"></h1>\n'
         '      <div class="doc-actions">\n'
+        f'        <a id="doc-rules" class="desk-btn" href="/admin/localization/rules/">{escape(t("doc.rules"))}</a>\n'
         f'        <button type="button" id="doc-translate" class="desk-btn">{translate}</button>\n'
         '      </div>\n'
         '    </header>\n'
