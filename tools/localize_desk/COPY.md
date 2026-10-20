@@ -439,21 +439,21 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.empty` | No {language} rules yet. | Language without rules |
 | `rules.summary` | {n} requests from your documents | Summary heading of one language |
 | `rules.summary.sub` | Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out. | Line under the summary heading |
-| `rules.by.check` | Checked | Done-by pill and card: an engine check stops a draft, or the engine itself carries it out |
+| `rules.by.check` | Checked | Done-by pill and card: an automatic check stops the text when a Weglot file is built, or the engine itself carries it out |
 | `rules.by.check.cap` | checked automatically or built into the engine | Summary card caption (true of its "Built in" requests too, CEL-099) |
 | `rules.by.prompt` | In the prompt | Done-by pill and card: the request is in what Gemini reads |
 | `rules.by.prompt.cap` | written into what Gemini reads for every draft | Summary card caption |
 | `rules.by.none` | Not yet | Done-by pill and card: not carried out yet |
 | `rules.by.none.cap` | not carried out yet: the reason is on each one | Summary card caption |
 | `rules.by.warn` | Also warns | Mark beside a request a warn-only check flags |
-| `rules.by.warn.tip` | An automatic check flags it but never stops the draft | Tooltip of the Also warns mark |
+| `rules.by.warn.tip` | An automatic check flags it but never stops the text | Tooltip of the Also warns mark |
 | `rules.filter.all` | Showing all {n}. | Line under the summary, no filter |
 | `rules.filter.some` | Showing {k} of {n}. | Line under the summary, one card pressed |
 | `rules.filter.clear` | Show all | Button that clears the filter |
 | `rules.sections` | Sections | Label of the section list |
 | `rules.how.prompt` | In the rules Gemini reads | How a request in the prompt is carried out |
-| `rules.how.check.meta` | Checked on every draft: a longer text is stopped | How the meta length requests are carried out |
-| `rules.how.check.rule` | An automatic check stops a draft that breaks it | How a request an engine check enforces is carried out |
+| `rules.how.check.meta` | Checked when a Weglot file is built: a longer text is stopped | How the meta length requests are carried out |
+| `rules.how.check.rule` | An automatic check stops a text that breaks it when a Weglot file is built | How a request an engine check enforces is carried out |
 | `rules.how.builtin.page` | Built in: Translate page works on one page | How the one-page-per-delivery request is carried out |
 | `rules.how.builtin.structure` | Built in: one translation per English text, in the same order | How the structure request is carried out |
 | `rules.how.builtin.export` | Built in: Export writes the Weglot CSV | How the CSV request is carried out |
@@ -466,7 +466,7 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.qc.auto` | Checked automatically | Pill of a check the engine runs when a Weglot file is built |
 | `rules.qc.idiom` | Idiomatic {language} for a native reader; facts, numbers, names and links unchanged | Our quality checks: prompt rule |
 | `rules.qc.order` | Gemini reads the whole English page in document order, as one document | Our quality checks: prompt rule |
-| `rules.qc.length` | Page titles within {title} half-width units, descriptions within {description}; a Chinese, Japanese or Korean character counts as 2 | Our quality checks: prompt rule |
+| `rules.qc.length` | Page titles within {title} characters, descriptions within {description}; a Chinese, Japanese or Korean character counts as 2 | Our quality checks: prompt rule |
 | `rules.qc.digits` | Every digit of the English kept, none added, no number written out as a word | Our quality checks: prompt rule |
 | `rules.qc.figures` | No figure the English does not give | Our quality checks: prompt rule |
 | `rules.qc.dash` | No em dash or spaced en dash; the en dash in a number range stays | Our quality checks: prompt rule |
@@ -490,9 +490,9 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.qc.g3_placeholders` | Every link of the English, in the same order, and no other markup | Our quality checks: export check |
 | `rules.qc.g3_placeholder_count_warn` | A link used more or fewer times than in the English is named in the export summary | Our quality checks: export check, warns only |
 | `rules.qc.g4_numbers` | Every number of the English is there, and no number is added | Our quality checks: export check |
-| `rules.qc.g5_formatter` | Page titles within {title} half-width units, descriptions within {description}: a longer one is stopped | Our quality checks: export check |
+| `rules.qc.g5_formatter` | Page titles within {title} characters, descriptions within {description} (a Chinese, Japanese or Korean character counts as 2): a longer one is stopped | Our quality checks: export check |
 | `rules.qc.g6_poison` | No very short English text paired with a long translation (a mismatched row) | Our quality checks: export check |
-| `rules.qc.g7_duplicates` | Each English text once per language | Our quality checks: export check |
+| `rules.qc.g7_duplicates` | No English text twice in the same kind of row | Our quality checks: export check |
 | `rules.qc.g8_og_twin` | The title shared on social media is the same as the page title | Our quality checks: export check |
 | `rules.qc.g9_override_named` | A text a person forced through must name that person, or it is stopped | Our quality checks: export check |
 | `rules.qc.g10_signatures` | Every approval carries a valid signature that names its reviewer | Our quality checks: export check |

@@ -234,6 +234,8 @@ html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block'
 
 /* A status mark: Option B's shapes, shell-spec §1 colours (3:1 on every shell background) */
 .doc-st { display: inline-block; flex: none; width: 8px; height: 8px; border: 1.5px solid var(--doc-muted); border-radius: 50%; }
+.doc-tab-flag { position: relative; display: inline-flex; flex: none; font-size: var(--fs-base); line-height: 1; }
+.doc-tab .doc-st { position: absolute; inset-inline-end: -4px; inset-block-end: -3px; background-color: var(--bg); box-shadow: 0 0 0 2px var(--bg); }
 .doc-st[data-s="queued"] { border-color: var(--doc-progress); border-style: dashed; }
 .doc-st[data-s="translating"] { border-color: var(--doc-progress); background: var(--doc-progress); }
 .doc-st[data-s="drafted"] { border-color: var(--accent); background: var(--accent); }
@@ -292,7 +294,7 @@ html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block'
 
 /* The language tabs over the sheets */
 .doc-tabs { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h)); z-index: 11; display: flex; align-items: flex-end; gap: 2px; height: var(--tabs-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
-.doc-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--tabs-h); padding: 0 10px; border: 0; border-bottom: 2px solid var(--bg); background: none; color: var(--doc-muted); font: inherit; font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
+.doc-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--tabs-h); padding: 0 8px; border: 0; border-bottom: 2px solid var(--bg); background: none; color: var(--doc-muted); font: inherit; font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
 .doc-tab:hover { color: var(--doc-ink); }
 .doc-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--doc-ink); font-weight: 500; }
 .doc-tabs-hint { align-self: center; margin-inline-start: auto; color: var(--doc-muted); font-size: var(--fs-xs); white-space: nowrap; }
@@ -552,12 +554,14 @@ def _tree() -> str:
 
 
 def _tabs() -> str:
-    """The language tabs (CEL-069): one per language in the LOCALES order, each with the open page's status mark."""
+    """The language tabs (CEL-069): one per language in the LOCALES order, each with its flag (CEL-106; the one the
+    Export grid prints) and, as a small badge on the flag's corner, the open page's status mark."""
     tabs = "".join(
         f'<button type="button" id="doc-tab-{code}" class="doc-tab" role="tab" data-lang="{code}" aria-selected="false" '
-        f'tabindex="-1" aria-keyshortcuts="Alt+{i}"><span class="doc-st" data-s="unknown" aria-hidden="true"></span>'
+        f'tabindex="-1" aria-keyshortcuts="Alt+{i}"><span class="doc-tab-flag" aria-hidden="true">{escape(flag)}'
+        f'<span class="doc-st" data-s="unknown" aria-hidden="true"></span></span>'
         f'<span class="doc-tab-name">{escape(S.lang_name(code))}</span><span class="doc-st-word doc-sr"></span></button>'
-        for i, (code, *_rest) in enumerate(S.LOCALES, 1))
+        for i, (code, _endonym, _dir, flag) in enumerate(S.LOCALES, 1))
     return (
         f'      <div id="doc-tabs" class="doc-tabs" role="tablist" aria-label="{escape(t("nav.tabs.label"))}">{tabs}'
         f'<span class="doc-tabs-hint" aria-hidden="true">{escape(t("nav.tabs.hint"))}</span></div>\n'

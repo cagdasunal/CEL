@@ -53,6 +53,7 @@ RULES_CSS = """
 .rules .r-tab:hover { background: var(--stripe); color: var(--fg); }
 .rules .r-tab[aria-selected="true"] { color: var(--fg); font-weight: 500; border-bottom-color: var(--fg); }
 .rules .r-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rules .r-flag { margin-inline-end: 6px; }
 .rules .r-main { max-width: 1360px; padding: 20px 24px 48px; }
 .rules .r-sum { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 12px; margin: 0 0 8px; }
 .rules .r-lead { display: flex; flex-direction: column; justify-content: center; }
@@ -168,8 +169,9 @@ def _dom() -> str:
     e = lambda key, **kw: escape(t(key, **kw))  # noqa: E731
     tabs = "".join(
         f'<button id="rulesTab-{code}" class="r-tab" type="button" role="tab" data-lang="{code}" '
-        f'aria-selected="false" aria-controls="rulesPanel" tabindex="-1">{escape(S.lang_name(code))}</button>'
-        for code, _endonym, _dir, _flag in S.LOCALES
+        f'aria-selected="false" aria-controls="rulesPanel" tabindex="-1">'
+        f'<span class="r-flag" aria-hidden="true">{escape(flag)}</span>{escape(S.lang_name(code))}</button>'
+        for code, _endonym, _dir, flag in S.LOCALES
     )
     return (
         '<main id="rules-app" class="rules" data-state="loading">\n'
