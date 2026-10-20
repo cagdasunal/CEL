@@ -1,6 +1,7 @@
 """Robot click-tests for the document desk's running / saving states (CEL-077): items 5, 12, 13, 17 and 19 of the
 UX sweep (.team/CEL/runtime/out/loc2/ux-sweep/findings.md in the monorepo). The client always sees what is
-running, what is not saved and where it is. One test per item (item 12 and 19 have two).
+running, what is not saved and where it is. One test per item (item 12 and 19 have two), plus one for the bottom
+bar's right end, kept free for the BugHerd tab at 1024, 1280 and 1440 (Ruling 2026-10-20 16:20).
 
 A real Chromium drives `/admin/localization/document/` in the click-test harness (a temporary copy of docs/, the
 storage's stand-in behind a mock Worker). Expected wording comes from COPY.md through `copy_text`, never typed
@@ -371,3 +372,48 @@ def test_item_19_a_finished_export_says_how_many_files_were_made(browser):
             return { top: cs.marginTop, bottom: cs.marginBottom, weight: cs.fontWeight, size: cs.fontSize, md: md }; }""")
         assert look["top"] == "0px" and look["bottom"] == "0px", look
         assert look["weight"] == "500" and look["size"] == look["md"], look
+
+
+# ── the bottom bar keeps its right end free for the BugHerd tab (Ruling 2026-10-20 16:20) ─────────
+# The tab is `<bugherd-sidebar>`'s #TOGGLE, measured on the live desk page 2026-10-20: fixed, right 0, bottom 10 px,
+# 103 x 70 px. The harness answers bugherd.com with an empty script, so a box of that size stands in for it.
+TAB_JS = """() => {
+    const tab = document.createElement('div');
+    tab.id = 'bugherd-tab-stand-in';
+    tab.style.cssText = 'position:fixed;right:0;bottom:10px;width:103px;height:70px;z-index:2147483647';
+    document.body.appendChild(tab);
+    const box = el => { const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
+    return { tab: box(tab), go: box(document.getElementById('doc-conflict-go')),
+             again: box(document.getElementById('doc-seen-reset')) };
+}"""
+
+
+@pytest.mark.parametrize("width,height", [(1024, 768), (1280, 800), (1440, 900)])
+def test_the_bottom_bar_buttons_stay_clear_of_the_bugherd_tab(browser, width, height):
+    ids = plain_ids(4)
+
+    def seed(e):
+        for n, uid in enumerate(ids[:3]):
+            draft(e.store, uid, f"Entwurf {n + 1}")
+
+    with doc(browser, seed=seed) as e:
+        p = e.page
+        p.set_viewport_size({"width": width, "height": height})
+        u = ids[3]
+        code, out = e.store.handle("desk-write", {"locale": LANG, "client": 1, "changes": [
+            {"unit": u, "page": PAGE_KEY, "base": 0, "record": {"text": "Their text"}}]}, OTHER)
+        assert code == 200 and out["applied"], out
+        edit(p, u, "My text")
+        expect(blk(p, u).locator(".doc-conflict")).to_be_visible()
+        for _ in range(3):
+            p.locator("#doc-next").click()
+        expect(p.locator("#doc-conflict-go")).to_be_visible()       # both at once: the widest the bar gets
+        expect(p.locator("#doc-seen-reset")).to_be_visible()
+        boxes = p.evaluate(TAB_JS)
+        tab = boxes["tab"]
+        assert tab["right"] == width and tab["bottom"] == height - 10, boxes
+        for name in ("go", "again"):
+            b = boxes[name]
+            hit = b["left"] < tab["right"] and b["right"] > tab["left"] and b["top"] < tab["bottom"] and b["bottom"] > tab["top"]
+            assert not hit, f"{name} sits under the BugHerd tab at {width}x{height}: {boxes}"

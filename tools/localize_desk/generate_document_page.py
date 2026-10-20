@@ -330,7 +330,7 @@ html { scroll-padding-top: 72px; scroll-padding-bottom: 64px; }
 .doc-block[data-source="edit"] .doc-tool-revert { display: inline-block; }
 
 /* The status bar: where saving stands, undo / redo, Show Weglot and the page's size */
-.doc-status { position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-height: 44px; padding: 6px 24px; border-top: 1px solid var(--border); background: var(--elevated); }
+.doc-status { position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; min-height: 44px; padding: 6px 110px 6px 24px; border-top: 1px solid var(--border); background: var(--elevated); }
 .doc-save { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; font-size: var(--fs-sm); }
 .doc-save::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
 .doc-save:empty::before { display: none; }
