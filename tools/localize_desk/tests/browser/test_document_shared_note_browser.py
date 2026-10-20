@@ -309,6 +309,9 @@ def test_tab_reaches_the_marker_and_keyboard_focus_shows_the_same_tooltip(browse
     with doc(browser) as e:
         li = blk(e.page, b["id"])
         tgt(e.page, b["id"]).focus()
+        # focus() scrolls the text into view and the page hears that scroll on its next frame; the desk's tooltip hides on
+        # any scroll. On a slow runner the Tab came first and the late scroll event hid its tooltip (CEL-097): let it pass.
+        e.page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
         for _ in range(12):
             e.page.keyboard.press("Tab")
             if e.page.evaluate("() => document.activeElement.classList.contains('doc-shared-mark')"):
