@@ -62,7 +62,7 @@ def test_the_modules_style_follows_the_desks_rules():
 def test_the_module_builds_its_dom_by_script_not_by_the_generator():
     """Nothing of the window is in the generator's markup (CEL-026's `_dom()` is not touched)."""
     dom = GD._dom()
-    for needle in ("doc-export", "ex-modal", "rt-modal", "rp-modal", "doc-retranslate-page"):
+    for needle in ("doc-export", "ex-modal", "rt-modal", "rp-modal"):
         assert needle not in dom, needle
 
 

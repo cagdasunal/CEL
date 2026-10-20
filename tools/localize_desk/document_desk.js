@@ -771,9 +771,18 @@
   // The Worker allows one open translate-page job per language. Asking for more pages while one runs
   // QUEUES them here, every one, in the order asked: each starts by itself when the one before it ends
   // (plan v2 fix 8). The queue lives in this window only, and the banner says so.
-  const J = {};                       // per language: {job, page, waiting: [pages], failed, timer}
-  function jstate(lang) { return J[lang] || (J[lang] = { job: null, page: null, waiting: [], failed: null, timer: null }); }
+  const J = {};                       // per language: {job, page, waiting: [pages], failed, timer, opts: {page: {keepEdited, done, jobId}}}
+  function jstate(lang) { return J[lang] || (J[lang] = { job: null, page: null, waiting: [], failed: null, timer: null, opts: {} }); }
   function runningHere() { const js = jstate(S.lang); return !!(js.job && js.page === S.page); }
+  // ONE Translate page button (CEL-073): a page with no translation asks the confirm below and starts the job; a page that
+  // already has one opens the whole-page window document_export.js owns (edited texts kept unless the reviewer ticks
+  // "Include my edits"). Without that module, or while the language is unread, it asks the confirm: the page still translates.
+  function hasTranslation() { const s = statusOf(S.page, S.lang); return !!s && s.status !== 'none'; }
+  function translatePage(opener) {
+    if (readError || runningHere() || jstate(S.lang).waiting.indexOf(S.page) >= 0) return;
+    if (hasTranslation() && window.DocDesk && typeof window.DocDesk.retranslatePage === 'function') window.DocDesk.retranslatePage(opener);
+    else openConfirm(opener);
+  }
   let confirmReturn = null;
   function openConfirm(opener) {
     if (readError || runningHere() || jstate(S.lang).waiting.indexOf(S.page) >= 0) return;
@@ -803,9 +812,13 @@
         if (!cur || cur.status === 'queued' || cur.status === 'running') { js.timer = setTimeout(poll, TIMING.poll); return; }
         const page = js.page;
         js.job = null;
+        // The whole-page window's choices go with the job that window started (its id), never with another job that
+        // happens to run for the same page: those wait for their own job.
+        const own = js.opts[page] && js.opts[page].jobId === j.id ? js.opts[page] : null;
+        if (own) delete js.opts[page];
         if (cur.status === 'done') {
-          toast(t('doc.job.done'));
-          refreshLang(lang);
+          if (own && own.done) Promise.resolve(refreshLang(lang)).then(own.done);
+          else { toast(t('doc.job.done')); refreshLang(lang); }
         } else {
           const code = cur.error || '';
           const reason = COPY['job.failed.' + code] ? t('job.failed.' + code) : t('doc.job.failed.unknown');
@@ -827,14 +840,18 @@
     const next = jstate(lang).waiting.shift();
     if (next) startJob(lang, next, true); else { paintBanner(); gridSoon(); }
   }
-  function startJob(lang, page, fromQueue) {
+  // `opts` ({keepEdited, done}) comes from the whole-page window (CEL-073) and waits with its page while it is queued.
+  function startJob(lang, page, fromQueue, opts) {
     closeConfirm();
     const js = jstate(lang);
     js.failed = null;
-    call({ action: 'desk-job-start', locale: lang, kind: 'translate-page', ref: { page: page, keepEdited: true } })
+    if (opts) js.opts[page] = opts;
+    const keep = (js.opts[page] || {}).keepEdited !== false;
+    call({ action: 'desk-job-start', locale: lang, kind: 'translate-page', ref: { page: page, keepEdited: keep } })
       .then(function (r) {
         if (r && r.ok && r.body && r.body.job) {
           dequeue(js, page);
+          if (js.opts[page]) js.opts[page].jobId = r.body.job.id;     // the window's choices belong to this job
           jobWatch(lang, Object.assign({}, r.body.job, { ref: { page: page } }));
           return;
         }
@@ -844,12 +861,23 @@
           if (running && running.id) {
             // Another page runs first: ours follows it, behind the pages already waiting (a page that
             // was first in line goes back to the front).
-            if (on === page) dequeue(js, page); else enqueue(js, page, fromQueue);
+            const mine = js.opts[page];
+            if (on !== page) enqueue(js, page, fromQueue);
+            else if (mine && mine.keepEdited === false && !(running.ref && running.ref.keepEdited === false)) {
+              // This page is being translated already, keeping the edits, and the window asked to include them: the
+              // window's own job follows the running one, with its own choices (CEL-073 round 3).
+              enqueue(js, page, true);
+            } else {
+              // The running job already does what was asked: it is watched, and the window's choices go with nothing.
+              dequeue(js, page);
+              delete js.opts[page];
+            }
             jobWatch(lang, running);
             return;
           }
         }
         dequeue(js, page);
+        delete js.opts[page];
         toast(t('doc.job.error'), 'err');
         // A page that could not start does not hold the ones behind it.
         if (js.waiting.length && !js.job) drain(lang); else { paintBanner(); gridSoon(); }
@@ -1341,7 +1369,7 @@
       try { window.scrollTo({ top: Math.max(0, spot.getBoundingClientRect().top + window.scrollY - 140), behavior: 'auto' }); } catch (_) {}
     });
     $('doc-next').addEventListener('click', goNext);
-    $('doc-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
+    $('doc-translate').addEventListener('click', function (ev) { translatePage(ev.currentTarget); });
     $('doc-banner-translate').addEventListener('click', function (ev) { openConfirm(ev.currentTarget); });
     $('doc-confirm-cancel').addEventListener('click', closeConfirm);
     $('doc-confirm-ok').addEventListener('click', function () { startJob(S.lang, S.page); });
@@ -1412,7 +1440,9 @@
     curRec: curRec, serverVer: serverVer, effText: effText, jstate: jstate, canon: canon, same: same,
     withText: withText, changeRecord: changeRecord, saveStacks: saveStacks, paintUndo: paintUndo,
     paintBlock: paintBlock, gridSoon: gridSoon, toast: toast, open: open, reveal: reveal, saveNow: run,
-    failureReason: failureReason, who: who
+    failureReason: failureReason, who: who,
+    retranslatePage: null,           // document_export.js fills this: the whole-page window the one Translate page opens (CEL-073)
+    startPageJob: function (lang, page, opts) { startJob(lang, page, false, opts); }   // that window starts its job through the desk's
   };
   boot();
 })();

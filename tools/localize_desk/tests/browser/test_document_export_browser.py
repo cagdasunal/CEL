@@ -552,13 +552,15 @@ def toasts(page):
 # 1. the buttons and the Export window's grid
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 def test_the_two_page_buttons_sit_in_the_action_bar_in_their_places(browser):
+    """CEL-073: the page has ONE Translate page (the old second page button, "Re-translate page", is gone), then Export."""
     with doc(browser) as e:
         ids = e.page.eval_on_selector("#doc-bar .doc-actions", "el => [...el.children].map(c => c.id)")
-        assert "doc-retranslate-page" in ids and "doc-translate" in ids and "doc-export" in ids, ids
-        assert ids.index("doc-retranslate-page") + 1 == ids.index("doc-translate"), ids   # right BEFORE Translate page
+        assert "doc-retranslate-page" not in ids, ids
+        assert "doc-translate" in ids and "doc-export" in ids, ids
+        assert ids.index("doc-translate") < ids.index("doc-export"), ids
         assert ids[-1] == "doc-export", ids                                               # and Export is last
-        rp, ex = e.page.locator("#doc-retranslate-page"), e.page.locator("#doc-export")
-        expect(rp).to_have_text(C.t("retr.page.button"))
+        rp, ex = e.page.locator("#doc-translate"), e.page.locator("#doc-export")
+        expect(rp).to_have_text(C.t("doc.translate"))
         expect(ex).to_have_text(C.t("export.button"))
         expect(rp).to_have_class(re.compile(r"\bdesk-btn\b"))
         expect(ex).to_have_class(re.compile(r"\bdesk-btn\b"))
@@ -1823,7 +1825,7 @@ def test_retranslating_the_page_keeps_my_edits_unless_include_my_edits_is_ticked
     ids = [b["id"] for b in blocks_of()][:3]
     with doc(browser, seed=lambda env: [draft(env.store, u, f"Alt {i}") for i, u in enumerate(ids)]) as e:
         p = e.page
-        btn = p.locator("#doc-retranslate-page")
+        btn = p.locator("#doc-translate")                                            # the one Translate page (CEL-073)
         modal = p.locator("#rp-modal")
         btn.click()
         expect(modal).to_be_visible()
@@ -1853,7 +1855,7 @@ def test_retranslating_the_page_keeps_my_edits_unless_include_my_edits_is_ticked
         assert json.loads(job["ref"]) == {"page": PAGE_KEY, "keepEdited": not mine}
         assert job["requested_by"] == H.REVIEWER and job["status"] in ("queued", "running")
         assert jobs_of(e.store, "retranslate") == [], "the page was re-translated as a `retranslate` job"
-        expect(toasts(p)).to_contain_text(C.t("retr.started"))
+        expect(p.locator("#doc-banner-text")).to_have_text(C.t("doc.job.queued"))     # the desk's own job (CEL-073)
         # the engine brings new drafts; the page reads them
         for i, uid in enumerate(ids):
             draft(e.store, uid, f"Neu {i}", at="2026-10-19T20:00:00.000Z")

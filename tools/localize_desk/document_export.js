@@ -12,7 +12,9 @@
  *                 export job for that page -> its Weglot file. One file is downloaded as it is, several
  *                 as one zip made here. What was left out is listed, and a click shows the paragraph.
  *   Re-translate  one text (with an optional note) or the whole page, as the engine's retranslate job;
- *                 the old wording of a text stays on the undo stack.
+ *                 the old wording of a text stays on the undo stack. The page has ONE Translate page button
+ *                 (the desk's): on a page that already has a translation it opens the whole-page window here
+ *                 (`DocDesk.retranslatePage`); on one that has none it asks the desk's own confirm (CEL-073).
  */
 (function () {
   'use strict';
@@ -185,16 +187,11 @@
 
   // ── the buttons ─────────────────────────────────────────────────────────────────────
   const exportButton = button('doc-export', 'desk-btn is-primary', t('export.button'));
-  const pageButton = button('doc-retranslate-page', 'desk-btn', t('retr.page.button'));
   (function mountButtons() {
     const bar = document.querySelector('#doc-bar .doc-actions');
     if (!bar) return;
-    bar.insertBefore(pageButton, $('doc-translate'));
     bar.appendChild(exportButton);
   })();
-  function paintButtons() { pageButton.disabled = !ready(); }
-  new MutationObserver(paintButtons).observe($('doc'), { attributes: true, attributeFilter: ['data-state'] });
-  paintButtons();
 
   // ── the job, watched ────────────────────────────────────────────────────────────────
   // The engine's answer to desk-job-get, polled; null when the desk could not reach it for good.
@@ -646,12 +643,40 @@
   rpMine.id = 'rp-mine';
   rpLabel.appendChild(rpMine);
   rpLabel.appendChild(document.createTextNode(' ' + t('retr.page.mine')));
+  const rpCount = h('p', null, '');
+  rpCount.id = 'rp-count';
+  rpCount.hidden = true;
   const rpCancel = button('rp-cancel', 'cpw-btn cpw-cancel', t('retr.cancel'));
   const rpGo = button('rp-go', 'cpw-btn cpw-save', t('retr.page.go'));
   const rpActions = h('div', 'cpw-actions');
   rpActions.appendChild(rpCancel);
   rpActions.appendChild(rpGo);
-  [rpTitle, rpBody, rpLabel, rpActions].forEach(function (e) { rp.box.appendChild(e); });
+  [rpTitle, rpBody, rpLabel, rpCount, rpActions].forEach(function (e) { rp.box.appendChild(e); });
+  // The page's texts the reviewer has edited, and what they say now: what "Include my edits" would hand to Gemini.
+  function editedHere() {
+    const out = {};
+    Object.keys(L[S.lang].decisions).forEach(function (uid) {
+      const r = D.curRec(S.lang, uid);
+      if (r && r.text && M.has(uid)) out[uid] = r.text;
+    });
+    return out;
+  }
+  // What the engine re-asks when "Include my edits" is ticked (`keepEdited: false`): every SETTLED text of the page, an edit
+  // (`text`) or an approval with no text (`tray: 'csv'`), as tools/localize/job.py `settled()` reads it.
+  function settledHere() {
+    let n = 0;
+    Object.keys(L[S.lang].decisions).forEach(function (uid) {
+      const r = D.curRec(S.lang, uid);
+      if (r && (r.text || r.tray === 'csv') && M.has(uid)) n++;
+    });
+    return n;
+  }
+  function paintCount() {
+    const n = settledHere();
+    rpCount.hidden = !(rpMine.checked && n);
+    rpCount.textContent = n ? tn('retr.page.count', n) : '';
+  }
+  rpMine.addEventListener('change', paintCount);
 
   // The job, started; its end handled by `done(job)` once the language is read again.
   async function startRetranslate(lang, kind, ref, done) {
@@ -711,33 +736,35 @@
       D.gridSoon();
     });
   });
-  function openPage() {
+  function openPage(opener) {
     if (!ready()) return;
     rpMine.checked = false;
-    openOverlay(rp, pageButton, rpGo);
+    paintCount();
+    openOverlay(rp, opener, rpGo);
   }
-  pageButton.addEventListener('click', openPage);
+  D.retranslatePage = openPage;               // the desk's Translate page opens this when the page already has a translation
   rpCancel.addEventListener('click', rp.close);
   rpGo.addEventListener('click', function () {
     const lang = S.lang, page = S.page, mine = rpMine.checked;
     // The texts the reviewer has edited, and what they say now: with "include my edits" they get
     // Gemini's new wording, each one undoable.
-    const before = {};
-    Object.keys(L[lang].decisions).forEach(function (uid) {
-      const r = D.curRec(lang, uid);
-      if (r && r.text && M.has(uid)) before[uid] = r.text;
-    });
+    const before = editedHere();
     closeOverlay(rp);
-    // The whole page is the engine's translate-page job (a retranslate with no text always keeps edits).
-    startRetranslate(lang, 'translate-page', { page: page, keepEdited: !mine }, function () {
-      if (mine && S.lang === lang && S.page === page) {
-        Object.keys(before).forEach(function (uid) {
-          const d = L[lang].drafts[uid];
-          if (d && d.text && d.text !== before[uid]) adopt(lang, page, uid, before[uid]);
-        });
+    // The whole page is the engine's translate-page job (a retranslate with no text always keeps edits), started through
+    // the desk's own start: it waits behind a page already being translated in this language, the banner says so, and the
+    // Translate page button is off meanwhile (CEL-073). The desk calls `done` once the new drafts are read.
+    D.startPageJob(lang, page, {
+      keepEdited: !mine,
+      done: function () {
+        if (mine && S.lang === lang && S.page === page) {
+          Object.keys(before).forEach(function (uid) {
+            const d = L[lang].drafts[uid];
+            if (d && d.text && d.text !== before[uid]) adopt(lang, page, uid, before[uid]);
+          });
+        }
+        D.toast(t('retr.done'));
+        D.gridSoon();
       }
-      D.toast(t('retr.done'));
-      D.gridSoon();
     });
   });
 

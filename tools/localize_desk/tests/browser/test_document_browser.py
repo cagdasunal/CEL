@@ -1560,12 +1560,15 @@ def test_translate_page_asks_first_and_starts_one_job_for_the_page(browser):
 
 
 def test_the_header_button_translates_a_page_that_already_has_drafts(browser):
+    """CEL-073: on a page that already has a translation the one Translate page opens the whole-page window (edited
+    texts kept unless "Include my edits" is ticked), not the first-translation confirm."""
     (a,) = pick(_stage_data(), 1)
     with doc(browser, seed=lambda env: draft(env.store, a, DA)) as e:
         expect(e.page.locator("#doc-banner")).to_be_hidden()
         e.page.locator("#doc-translate").click()
-        expect(e.page.locator("#doc-confirm")).to_be_visible()
-        e.page.locator("#doc-confirm-ok").click()
+        expect(e.page.locator("#rp-modal")).to_be_visible()
+        expect(e.page.locator("#doc-confirm")).to_be_hidden()
+        e.page.locator("#rp-go").click()
         until(lambda: len(_jobs(e, LANG)) == 1, what="the translate-page job")
         assert json.loads(_jobs(e, LANG)[0]["ref"]) == {"page": PAGE_KEY, "keepEdited": True}
 
@@ -2489,17 +2492,18 @@ def test_option_n_is_left_to_the_text_so_n_with_a_tilde_can_still_be_typed(brows
 
 
 def test_alt_enter_does_nothing_while_a_window_is_open_over_the_page(browser):
-    """The translate confirm holds the focus (Tab goes round its buttons): the shortcut must not move the
-    caret to a text behind it."""
+    """The translate window holds the focus (Tab goes round its buttons): the shortcut must not move the
+    caret to a text behind it. (CEL-073: on a page with a translation the one Translate page opens the whole-page
+    window, which is the one that is open here.)"""
     plan = _c36_plan(_stage_data())
     with doc(browser, seed=_c36_seed(plan)) as e:
         _c36_count(e.page, 5)
         e.page.locator("#doc-translate").click()
-        expect(e.page.locator("#doc-confirm")).to_be_visible()
+        expect(e.page.locator("#rp-modal")).to_be_visible()
         e.page.keyboard.press("Alt+Enter")
         assert _c36_active_uid(e.page) is None, "the shortcut moved the focus to a text behind the open window"
         _c36_count(e.page, 5)
-        e.page.locator("#doc-confirm-cancel").click()
+        e.page.locator("#rp-cancel").click()
         e.page.keyboard.press("Alt+Enter")                        # closed again: it works
         _c36_focus_in(e.page, plan["to_check"][0])
 

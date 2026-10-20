@@ -695,7 +695,6 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `export.error.start` | The export could not start: {reason} | Inside a file's failed line |
 | `export.error.download` | The file is ready but could not be downloaded: {reason} | Inside a file's failed line |
 | `retr.button` | Re-translate | Button beside the open text |
-| `retr.page.button` | Re-translate page | Button above the document |
 | `retr.text.title` | Re-translate this text | Heading of the window |
 | `retr.text.body` | Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo. | The window's text |
 | `retr.note.label` | Note for Gemini (optional) | Above the box where you can tell Gemini what to change |
@@ -703,6 +702,8 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.page.title` | Re-translate this page | Heading of the window |
 | `retr.page.body` | Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits. | The window's text |
 | `retr.page.mine` | Include my edits | Box in the window |
+| `retr.page.count.one` | Gemini's new wording replaces {n} text you edited or approved. | Line in the window, under the box, once it is ticked and the page has edited or approved texts |
+| `retr.page.count.other` | Gemini's new wording replaces {n} texts you edited or approved. | |
 | `retr.page.go` | Re-translate page | Button in the window |
 | `retr.cancel` | Cancel | Button in the windows |
 | `retr.started` | Gemini is working on it. The new text appears here when it is ready. | Message, when the job starts |
