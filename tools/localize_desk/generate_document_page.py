@@ -225,9 +225,9 @@ DOC_TOKENS = """\
 DOC_CSS = """\
 /* The document page (desk v2, design B) in the Option B shell (CEL-069, CEL-068 shell-spec.md): a page tree on
    the left, a path row and language tabs over the sheets, a status bar below them. */
-html { scroll-padding-top: 128px; scroll-padding-bottom: 64px; }   /* + a block's 64 px margin: it lands just under the sticky rows (bar 53, path 52, tabs 38, heads) */
+html { scroll-padding-top: 115px; scroll-padding-bottom: 64px; }   /* + a block's 64 px margin: it lands just under the sticky rows (bar 40, path 52, tabs 38, heads) */
 .dashboard-shell:has(> .doc) { padding: 0; }
-.doc { --doc-topbar: 53px; padding: 0; }
+.doc { --doc-topbar: 40px; padding: 0; }
 .doc-app { display: grid; grid-template-columns: var(--tree-w) minmax(0, 1fr); align-items: start; }
 .doc-main { min-width: 0; }
 .doc-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -274,8 +274,9 @@ html { scroll-padding-top: 128px; scroll-padding-bottom: 64px; }   /* + a block'
 .doc-outline-name { display: block; font-size: var(--fs-sm); line-height: 1.35; }
 .doc-outline-count { display: block; margin-top: 1px; font-size: var(--fs-xs); color: var(--doc-muted); }
 
-/* The path row: the page's path and name, then its actions */
-.doc-bar { position: sticky; top: var(--doc-topbar); z-index: 21; display: flex; align-items: center; gap: 12px; height: var(--ctx-h); padding: 0 24px; background: var(--bg); }
+/* The path row: the page's path and name, then its actions. It and the tabs stay under the top bar (z-index 30):
+   the bar's menus drop over them (CEL-069 #2). */
+.doc-bar { position: sticky; top: var(--doc-topbar); z-index: 12; display: flex; align-items: center; gap: 12px; height: var(--ctx-h); padding: 0 24px; background: var(--bg); }
 .doc-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; margin: 0; font-size: var(--fs-path); font-weight: 400; }
 .doc-path { overflow: hidden; font-family: var(--mono); white-space: nowrap; text-overflow: ellipsis; }
 .doc-path-dir { color: var(--doc-muted); }
@@ -290,7 +291,7 @@ html { scroll-padding-top: 128px; scroll-padding-bottom: 64px; }   /* + a block'
 .doc-switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* The language tabs over the sheets */
-.doc-tabs { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h)); z-index: 20; display: flex; align-items: flex-end; gap: 2px; height: var(--tabs-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
+.doc-tabs { position: sticky; top: calc(var(--doc-topbar) + var(--ctx-h)); z-index: 11; display: flex; align-items: flex-end; gap: 2px; height: var(--tabs-h); padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
 .doc-tab { position: relative; display: inline-flex; align-items: center; gap: 6px; height: var(--tabs-h); padding: 0 10px; border: 0; border-bottom: 2px solid var(--bg); background: none; color: var(--doc-muted); font: inherit; font-size: var(--fs-md); white-space: nowrap; cursor: pointer; }
 .doc-tab:hover { color: var(--doc-ink); }
 .doc-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--doc-ink); font-weight: 500; }
@@ -533,19 +534,19 @@ def _tree() -> str:
     """The page tree's frame (CEL-069): the filter and an empty list the runtime fills from pages.json (each page's
     path, grouped by folder), plus the open page's sections (today's outline, moved under its row by the runtime)."""
     return (
-        f'    <aside id="doc-tree" class="doc-tree" aria-label="{escape(t("nav.tree.label"))}">\n'
+        f'    <nav id="doc-tree" class="doc-tree" aria-label="{escape(t("nav.tree.label"))}">\n'
         '      <label class="doc-tree-filter">'
         f'<span class="doc-sr">{escape(t("nav.tree.filter"))}</span>'
         f'<input type="search" id="doc-tree-filter" placeholder="{escape(t("nav.tree.filter"))}" autocomplete="off" '
         'spellcheck="false" aria-controls="doc-tree-list" aria-keyshortcuts="/ Control+K Meta+K">'
         '<kbd class="doc-kbd-hint" aria-hidden="true">/</kbd></label>\n'
-        f'      <div id="doc-tree-list" class="doc-tree-list" role="tree" aria-label="{escape(t("nav.tree.label"))}"></div>\n'
+        '      <div id="doc-tree-list" class="doc-tree-list"></div>\n'
         '      <p id="doc-tree-none" class="doc-tree-none" hidden></p>\n'
         '      <nav id="doc-outline" class="doc-outline" aria-labelledby="doc-outline-title" hidden>\n'
         f'        <h2 id="doc-outline-title" class="doc-sr">{escape(t("doc.outline.title"))}</h2>\n'
         '        <ol id="doc-outline-list" class="doc-outline-list"></ol>\n'
         '      </nav>\n'
-        '    </aside>\n'
+        '    </nav>\n'
     )
 
 

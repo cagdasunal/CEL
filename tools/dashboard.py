@@ -78,6 +78,9 @@ SHARED_CSS = """
     --selected: rgba(55,51,44,0.09);
     --accent-warm: #e78b10;
     --surface: #F1EAD8;
+    --doc-ink: #2B2722;            /* CEL-069 shell text (CEL-068 shell-spec §1) */
+    --doc-muted: #645D51;
+    --pop: #EBE5D3;                /* menus: solid cream, never white */
     /* Elevated surface: anything that floats over the page with NO scrim behind
        it. --bg/--surface are the page itself, so a toast painted with them is
        invisible except for its shadow -- which is exactly what happened. */
@@ -460,13 +463,14 @@ SHELL_CSS = """
   .shell-header {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 10px 20px;
+    gap: 4px;
+    height: 40px;
+    padding: 0 16px;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
-    z-index: 20;
+    z-index: 30;
   }
   .shell-header .shell-brand {
     display: inline-flex;
@@ -474,7 +478,8 @@ SHELL_CSS = """
     flex: 0 0 auto;
     text-decoration: none;
   }
-  .shell-header .shell-brand .brand-logo-img { height: 32px; }
+  .shell-header .shell-brand { margin-right: 8px; }
+  .shell-header .shell-brand .brand-logo-img { height: 20px; }
   .shell-logout {
     flex: 0 0 auto;
     margin-left: auto;
@@ -498,22 +503,23 @@ SHELL_CSS = """
   .shell-tab {
     display: inline-flex;
     align-items: center;
-    padding: 8px 14px;
+    height: 28px;
+    padding: 0 10px;
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: var(--fs-base);
-    font-weight: 500;
-    color: var(--muted);
+    font-size: var(--fs-md);
+    font-weight: 400;
+    color: var(--doc-muted);
     white-space: nowrap;
     transition: background 120ms ease, color 120ms ease;
     cursor: pointer;
   }
-  .shell-tab:hover { color: var(--fg); background: var(--stripe); }
+  .shell-tab:hover { color: var(--doc-ink); background: var(--stripe); }
   .shell-tab.is-active,
   [data-topbar].is-active > .shell-tab {
-    color: var(--accent);
-    background: var(--stripe);
-    font-weight: 600;
+    color: var(--doc-ink);
+    background: var(--selected);
+    font-weight: 500;
   }
 
   .shell-tab-dropdown {
@@ -539,7 +545,7 @@ SHELL_CSS = """
     margin: 0;
     padding: 4px;
     list-style: none;
-    background: var(--bg);
+    background: var(--pop);
     border: 1px solid var(--border-strong);
     border-radius: var(--radius);
     box-shadow: 0 8px 24px rgba(55,51,44,0.12);
@@ -552,12 +558,12 @@ SHELL_CSS = """
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     text-decoration: none;
-    font-size: var(--fs-base);
-    color: var(--fg);
+    font-size: var(--fs-md);
+    color: var(--doc-ink);
     white-space: nowrap;
   }
-  .shell-tab-subitem:hover { background: var(--stripe); color: var(--accent); }
-  .shell-tab-subitem.is-active { background: var(--stripe); color: var(--accent); font-weight: 600; }
+  .shell-tab-subitem:hover { background: var(--selected); color: var(--doc-ink); }
+  .shell-tab-subitem.is-active { background: var(--selected); color: var(--doc-ink); font-weight: 500; }
 
   .shell-footer { margin-top: auto; padding: 12px 20px 16px; text-align: right; }
   .shell-version { margin: 0; font-size: var(--fs-xs); color: var(--faint); }
@@ -1363,12 +1369,12 @@ def render_topbar(active: str = "offers") -> str:
         <img class="brand-logo-img" src="/assets/img/cel-logo-multicolor.svg" alt="College of English Language">
       </a>
       <nav class="shell-tabs" aria-label="Dashboard sections">
-        <a class="{tab('offers')}" href="/admin/offers/">OFFERS</a>
-        <a class="{tab('images')}" href="/admin/images/">IMAGES</a>
-        <a class="{tab('docs')}" href="/admin/docs/">DOCS</a>
-        <a class="{tab('localization')}" href="/admin/localization/document/">LOCALIZATION</a>
+        <a class="{tab('offers')}" href="/admin/offers/">Offers</a>
+        <a class="{tab('images')}" href="/admin/images/">Images</a>
+        <a class="{tab('docs')}" href="/admin/docs/">Docs</a>
+        <a class="{tab('localization')}" href="/admin/localization/document/">Localization</a>
         <details class="shell-tab-dropdown">
-          <summary class="{grp('weglot')}">WEGLOT {chevron}</summary>
+          <summary class="{grp('weglot')}">Weglot {chevron}</summary>
           <ul class="shell-tab-submenu">
             <li><a class="{sub('log')}" href="/admin/log/">Synced Posts</a></li>
           </ul>
@@ -1381,7 +1387,7 @@ def render_topbar(active: str = "offers") -> str:
           </ul>
         </details>
         <details class="shell-tab-dropdown">
-          <summary class="{grp('fidelo')}">FIDELO {chevron}</summary>
+          <summary class="{grp('fidelo')}">Fidelo {chevron}</summary>
           <ul class="shell-tab-submenu">
             <li><a class="{sub('housing')}" href="/admin/housing/">Housing</a></li>
             <li><a class="{sub('courses')}" href="/admin/courses/">Courses</a></li>

@@ -913,7 +913,7 @@ class TestPageShell:
         assert _shape(dom.kids_of_id("doc")) == [
             "div.doc-app", "footer#doc-status.doc-status", "aside#doc-history.doc-drawer",
             "div#doc-confirm.cpw-overlay", "div#doc-toasts.toast-stack"]
-        assert _shape(dom.kids_of_class("doc-app")) == ["aside#doc-tree.doc-tree", "div.doc-main"]
+        assert _shape(dom.kids_of_class("doc-app")) == ["nav#doc-tree.doc-tree", "div.doc-main"]
         assert _shape(dom.kids_of_class("doc-main")) == [
             "header#doc-bar.doc-bar", "div#doc-tabs.doc-tabs", "div#doc-banner.doc-banner", "div.doc-layout"]
 
@@ -941,7 +941,9 @@ class TestPageShell:
             "nav#doc-outline.doc-outline"]
         f = dom.by_id("doc-tree-filter")
         assert f["type"] == "search" and f["placeholder"] == C.t("nav.tree.filter") and f["aria-controls"] == "doc-tree-list"
-        assert dom.by_id("doc-tree-list")["role"] == "tree" and dom.kids_of_id("doc-tree-list") == []   # the runtime fills it
+        # a plain nav list: no tree roles (CEL-069 #9); the open page is aria-current, set by the runtime
+        assert "role" not in dom.by_id("doc-tree-list") and "role" not in dom.by_id("doc-tree")
+        assert dom.kids_of_id("doc-tree-list") == []   # the runtime fills it
         assert dom.by_id("doc-tree")["aria-label"] == C.t("nav.tree.label")
         assert _shape(dom.kids_of_id("doc-outline")) == ["h2#doc-outline-title.doc-sr", "ol#doc-outline-list.doc-outline-list"]
         assert dom.by_id("doc-outline")["aria-labelledby"] == "doc-outline-title"

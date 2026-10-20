@@ -312,3 +312,84 @@ def test_the_rules_page_takes_alt_digit_and_its_desk_link_carries_the_language(b
         p.keyboard.press("Control+Alt+Digit4")                       # AltGr: not a switch
         assert last_prevented(p, "Digit4") is False
         expect(p.locator("#rulesTab-es")).to_have_attribute("aria-selected", "true")
+
+
+# ── the top bar over the shell, keys under a window, a page that fails (CEL-069 round 2: #2 #3 #4 #6 #9) ──────
+# Every top-bar menu item is opened and hit at its centre: the item itself (or a child) must be the top element.
+MENU_HITS_JS = """() => {
+  const out = [];
+  document.querySelectorAll('.shell-header details').forEach(function (d) {
+    d.open = true;
+    d.querySelectorAll('.shell-tab-subitem, .shell-user-action').forEach(function (it) {
+      const r = it.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      out.push([it.textContent.trim(), !!hit && it.contains(hit), hit ? hit.className || hit.tagName : null]);
+    });
+    d.open = false;
+  });
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("scroll", [0, 600])
+def test_the_top_bar_is_40px_and_every_menu_item_opens_over_the_path_row_and_tabs(browser, scroll):
+    with doc(browser, width=1440) as e:
+        p = e.page
+        p.evaluate(f"window.scrollTo(0, {scroll})")
+        p.wait_for_function(f"() => Math.abs(window.scrollY - {scroll}) < 2")
+        assert p.evaluate("Math.round(document.querySelector('.shell-header').getBoundingClientRect().height)") == 40
+        assert p.evaluate("Math.round(document.querySelector('.doc-bar').getBoundingClientRect().top)") == 40
+        hits = p.evaluate(MENU_HITS_JS)
+        assert len(hits) == 7, hits                                   # Weglot 1, SEO 2, Fidelo 2, account 2
+        assert [h for h in hits if not h[1]] == [], hits
+
+
+@pytest.mark.parametrize("window", ["history", "export"])
+def test_slash_and_alt_digit_do_nothing_while_a_window_is_open(browser, window):
+    with doc(browser) as e:
+        p = e.page
+        if window == "history":
+            li = p.locator("li.doc-block").filter(has=p.locator(".doc-history-btn")).first
+            li.hover()                                                # the text's actions show on hover
+            li.locator(".doc-history-btn").click()
+            expect(p.locator("#doc-history")).to_be_visible()
+        else:
+            p.locator("#doc-export").click()
+            expect(p.locator("#ex-modal")).to_be_visible()
+        p.evaluate("document.activeElement && document.activeElement.blur()")   # focus outside any text box
+        p.keyboard.press("/")
+        assert p.evaluate("document.activeElement.id") != "doc-tree-filter"
+        assert last_prevented(p, "Slash") is False
+        p.keyboard.press("Alt+Digit2")
+        assert last_prevented(p, "Digit2") is False
+        assert now(p)[1] == "de"
+
+
+def test_the_tree_lists_every_page_when_the_open_pages_file_fails(browser):
+    """The open page's own JSON fails: the tree still comes from pages.json, and a row opens another page."""
+    with desk() as (base, _root, _worker):
+        pg = browser.new_page(viewport={"width": 1440, "height": 900})
+        pg.set_default_timeout(10000)
+        pg.route(THIRD_PARTY, lambda route: route.fulfill(status=200, content_type="text/javascript", body=""))
+        pg.route(f"**/document/data/{PAGE_KEY}.json*", lambda route: route.fulfill(status=500, body=""))
+        pg.add_init_script("window.DOC_TIMING=" + json.dumps(TIMING))
+        try:
+            pg.goto(f"{base}/admin/localization/document/?page={PAGE_KEY}&lang={LANG}")
+            pg.wait_for_selector('#doc[data-state="error"]', timeout=20000)
+            pg.wait_for_function("() => document.querySelectorAll('.doc-tree-page').length >= 4", timeout=20000)
+            pages = rows(pg)
+            assert PAGE_KEY in pages and len(pages) == len(set(pages)) >= 4
+            other = next(k for k in pages if k != PAGE_KEY)
+            pg.locator(f'.doc-tree-page[data-page="{other}"]').click()
+            wait_open(pg, other, LANG)
+        finally:
+            pg.close()
+
+
+def test_the_tree_is_a_plain_nav_list_with_the_open_page_current(browser):
+    with doc(browser) as e:
+        p = e.page
+        assert p.evaluate("document.querySelector('#doc-tree').tagName") == "NAV"
+        assert p.evaluate("document.querySelectorAll('[role=tree], [role=treeitem], [role=group]').length") == 0
+        assert p.evaluate("""() => [...document.querySelectorAll('.doc-tree-page[aria-current]')]
+            .map(r => [r.dataset.page, r.getAttribute('aria-current')])""") == [[PAGE_KEY, "page"]]

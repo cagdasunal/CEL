@@ -980,7 +980,6 @@
       hit.forEach(function (page) {
         const row = h('button', 'doc-tree-page');
         row.type = 'button';
-        row.setAttribute('role', 'treeitem');
         row.setAttribute('data-page', page);
         row.appendChild(h('span', 'doc-tree-slug', leafOf(PI.get(page).path)));
         const mark = h('span', 'doc-st');
@@ -1061,7 +1060,8 @@
     });
     document.addEventListener('keydown', function (ev) {
       if (ev.isComposing || ev.keyCode === 229) return;
-      if (!$('doc-confirm').hidden) return;
+      // Not while a window is over the page (translate, history, export, re-translate) or a shared-text note is open.
+      if (windowOpen() || sharedOpen) return;
       const typing = inText(document.activeElement);
       // `/` outside a text box; Cmd+K on a Mac, Ctrl+K elsewhere, anywhere (Ctrl+K on a Mac is text editing).
       if (ev.key === '/' && !typing && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); openFilter(); return; }
@@ -1683,10 +1683,13 @@
     paintUndo();
     updateBar();
     paintGrid();
+    // The tree comes from pages.json alone: a page whose own file fails still lists the others to open.
+    const info = getInfo();
+    info.catch(function () {});
     let data;
     try {
       data = await getPage(page);
-      await getInfo();
+      await info;
     } catch (_) {
       if (token !== S.token) return;
       S.loading = false;
