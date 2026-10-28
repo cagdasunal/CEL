@@ -148,14 +148,14 @@ def test_the_page_inlines_the_quality_list_it_was_built_with(browser):
 def test_each_language_lists_our_rules_and_checks_one_line_each_under_the_clients_sections(browser, lang):
     with rules(browser, lang=lang) as env:
         p = env.page
-        assert section_ids(p) == ["rules-s7", "rules-quality", "rules-glossary", "rules-briefs"]
+        assert section_ids(p) == ["rules-s7", "rules-quality"]
         sec = p.locator("#rules-quality")
         expect(sec.locator("h2")).to_have_text(t("rules.quality"))
         expect(sec.locator(".r-qc .r-words")).to_have_text(expected(lang))
         tags = [t("rules.by.prompt") if kind == "prompt" else t("rules.qc.auto") for kind, *_ in QUALITY["langs"][lang]]
         expect(sec.locator(".r-qc .r-by")).to_have_text(tags)
         expect(p.locator(".r-rail a").nth(1)).to_contain_text(t("rules.quality"))
-        assert sec.locator("[contenteditable], input, textarea, select, button").count() == 0      # read-only
+        assert sec.locator("[contenteditable], input, textarea, select, button").count() == 0      # ours: not editable
 
 
 def test_a_language_shows_its_own_checks_and_not_another_languages(browser):
@@ -180,29 +180,17 @@ def test_a_language_without_the_clients_rules_still_lists_ours(browser):
         expect(env.page.locator("#rules-quality .r-qc .r-words")).to_have_text(expected("ko"))
 
 
-# ── 2. a pressed card hides the sections with nothing to show, and their rail entries ──────────────────────
-def test_a_pressed_card_hides_every_section_without_a_matching_request_and_its_rail_entry(browser):
+# ── 2. a search hides the sections with nothing to show, and their rail entries ───────────────────────────
+def test_a_search_hides_every_section_without_a_match_and_its_rail_entry(browser):
     with rules(browser, seed=lambda s: seed_default(s, de=DE_A), done_by=DONE_A) as env:
         p = env.page
-        assert section_ids(p) == ["rules-s2", "rules-s6", "rules-s12", "rules-quality", "rules-glossary",
-                                  "rules-briefs"]
-        p.locator('.r-stat[data-by="check"]').click()
-        assert section_ids(p) == ["rules-s2"]
-        expect(p.locator(".r-rail a")).to_have_count(1)
-        expect(p.locator(".r-rail a .r-rail-n")).to_have_text(["1"])
-        p.locator('.r-stat[data-by="none"]').click()
-        assert section_ids(p) == ["rules-s12"]
-        p.locator('.r-stat[data-by="prompt"]').click()
-        assert section_ids(p) == ["rules-s2", "rules-s6"]
-        p.get_by_role("button", name=t("rules.filter.clear")).click()
-        assert section_ids(p) == ["rules-s2", "rules-s6", "rules-s12", "rules-quality", "rules-glossary",
-                                  "rules-briefs"]
-        expect(p.locator(".r-rail a")).to_have_count(6)
-
-
-# ── 3. the Checked card says what is true of every request it counts ─────────────────────────────────────
-def test_the_checked_card_says_checked_or_built_in(browser):
-    with rules(browser) as env:
-        expect(env.page.locator('.r-stat[data-by="check"] .r-cap')).to_have_text(t("rules.by.check.cap"))
-    cap = t("rules.by.check.cap").lower()
-    assert "checked" in cap and "built" in cap, cap
+        visible = lambda: [x for x in section_ids(p) if p.locator(f"#{x}").is_visible()]    # noqa: E731
+        assert section_ids(p) == ["rules-s2", "rules-s6", "rules-s12", "rules-quality"]
+        p.locator("input[data-search]").fill("synth-checked")
+        assert visible() == ["rules-s2"]
+        expect(p.locator(".r-rail a:visible")).to_have_count(1)
+        p.locator("input[data-search]").fill("synth-notyet")
+        assert visible() == ["rules-s12"]
+        p.locator("input[data-search]").fill("")
+        assert visible() == ["rules-s2", "rules-s6", "rules-s12", "rules-quality"]
+        expect(p.locator(".r-rail a:visible")).to_have_count(4)

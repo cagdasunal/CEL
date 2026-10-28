@@ -1,12 +1,11 @@
-"""Robot click-tests for the READ-ONLY rules page of the localization desk (CEL-080): /admin/localization/rules/.
+"""Robot click-tests for the READING side of the rules page of the localization desk: /admin/localization/rules/.
 
-The page only shows the rules: the client picks a language and reads that language's own rule set (one
-self-contained block per language since CEL-085: no shared section, and a stale `global` row is never read).
-Since CEL-089 (option A of CEL-088) it opens with a summary (N requests, three Done-by cards that filter), then
-the client's numbered sections with one row per request and how the tool carries it out, the glossary as a plain
-table and the client's keyword brief per page as a collapsed card. Nothing on the page edits, saves or
-publishes; the three cards only filter. This file replaces the editor's two
-browser files (CEL-046 / CEL-076), whose edit tests went with the editor.
+The client picks a language and reads that language's own rule set (one self-contained block per language since
+CEL-085: no shared section, and a stale `global` row is never read). Since CEL-089 (option A of CEL-088) the Rules
+tab opens with a summary, then the client's numbered sections with one row per request and how the tool carries it
+out; since CEL-113 each rule also has an ID tag, Edit and Remove (editing is tested in test_rules_editor_browser.py),
+the word list lives on its own tab, and the Done-by cards and the glossary / keyword-brief panels are gone.
+Looking at the page, searching it and switching language write nothing.
 
 A real Chromium drives the page in the click-test harness: a temporary copy of docs/, the storage's stand-in
 behind a mock Worker (`harness.MockWorker`). The rules are primed with SHORT synthetic bodies (no client
@@ -35,7 +34,7 @@ from playwright.sync_api import expect, sync_playwright  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from localize_desk import harness as H  # noqa: E402
-from localize_desk.copy_text import t  # noqa: E402
+from localize_desk.copy_text import t, tn  # noqa: E402
 
 THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 READY = '#rules-app[data-state="ready"]'
@@ -173,27 +172,22 @@ def section_texts(page) -> list[str]:
 
 
 def words(page):
-    return page.locator("#rules-lang .r-req:visible .r-words")
+    return page.locator("#rules-lang .r-rule:visible .r-words")
 
 
-# ── 1. a language shows its own rules first, then its glossary, then its keyword briefs ────────────
-def test_a_language_shows_its_own_rules_first_then_its_glossary_then_its_briefs(browser):
+# ── 1. a language shows its own rules first, then our quality checks ──────────────────────────────
+def test_a_language_shows_its_own_rules_first_then_our_quality_checks(browser):
     with rules(browser) as env:
         p = env.page
-        # no shared section; our quality checks under the client's sections (CEL-099)
-        assert section_texts(p) == ["rules-s7", "rules-quality", "rules-glossary", "rules-briefs"]
+        # no shared section; our quality checks under the client's sections (CEL-099); the glossary and the
+        # keyword briefs are not on this tab since CEL-113 (the Word list tab replaces them)
+        assert section_texts(p) == ["rules-s7", "rules-quality"]
         expect(p.locator("#rules-s7 h2")).to_have_text("Language rules")
-        expect(p.locator("#rules-glossary h2")).to_have_text(t("rules.glossary"))
-        expect(p.locator("#rules-briefs h2")).to_have_text(t("rules.briefs"))
         expect(words(p)).to_have_text(["Form of address: du", "Markets: CH"])
         text = p.locator("#rulesPanel").inner_text()
         assert "Shared rule A" not in text and "Form of address: vous" not in text      # nothing of global or fr
+        assert "Sprachniveau" not in text and "BRIEFTEXT-UNIQUE" not in text
         expect(p.locator("#rules-lang .r-words strong").first).to_have_text("Form of address:")
-        head = p.locator("#rules-glossary table tr").first.locator("th")
-        expect(head).to_have_text([t("rules.glossary.en"), DE, t("rules.glossary.keep")])
-        rows = p.locator("#rules-glossary table tr").evaluate_all(
-            "els => els.slice(1).map(e => Array.from(e.children).map(c => c.textContent))")
-        assert rows == [["Language level", "Sprachniveau", ""], ["CEL", "CEL", t("rules.glossary.yes")]]
 
 
 # ── 2. the language tabs ───────────────────────────────────────────────────────────────────────────
@@ -205,7 +199,6 @@ def test_picking_another_language_shows_that_languages_rules(browser):
         expect(tab(p, "fr")).to_have_attribute("aria-selected", "true")
         expect(tab(p, "de")).to_have_attribute("aria-selected", "false")
         expect(words(p)).to_have_text(["Form of address: vous"])
-        expect(p.locator("#rules-glossary tr").nth(1)).to_contain_text("Niveau de langue")
         text = p.locator("#rulesPanel").inner_text()
         assert "Sprachniveau" not in text and "Form of address: du" not in text and "Shared rule A" not in text
         assert "lang=fr" in p.url and "lang=de" not in p.url
@@ -232,31 +225,26 @@ def test_the_tabs_work_from_the_keyboard(browser):
         assert p.evaluate("document.activeElement.id") == "rulesTab-de"
 
 
-# ── 3. nothing on the page can be edited ───────────────────────────────────────────────────────────
-def test_nothing_on_the_page_can_be_edited_and_nothing_is_written(browser):
+# ── 3. looking, searching and switching language write nothing ───────────────────────────────────
+def test_looking_at_the_page_and_searching_it_writes_nothing(browser):
     with rules(browser) as env:
         p = env.page
-        assert p.locator("#rules-app [contenteditable], #rules-app textarea, #rules-app input, "
-                         "#rules-app select, #rules-app [role=textbox]").count() == 0
-        # the only buttons are the language tabs and the three Done-by cards, which filter (a notice's Try again
-        # exists only after a failed read)
-        assert p.locator("#rules-app button:not([role=tab])").count() == 3
-        assert p.locator("#rules-app button.r-stat[aria-pressed]").count() == 3
         for gone in ("#rulesUse", "#rulesUndo", "#rulesRedo", "#rulesHistory", "#rulesDrawer", "#rulesSave", "#rulesDot"):
-            assert p.locator(gone).count() == 0, gone
+            assert p.locator(gone).count() == 0, gone                  # the old CEL-046 editor's ids are not back
+        assert p.locator("#rules-app button.r-stat").count() == 0      # the Done-by cards went with CEL-113
         before = p.locator("#rulesPanel").inner_text()
         p.locator("#rules-lang .r-words").first.click()
-        p.keyboard.type("EDITED")
-        p.keyboard.press("Enter")
-        p.locator("#rules-glossary td").first.dblclick()
-        p.keyboard.type("EDITED")
+        p.keyboard.type("EDITED")                                      # a click on the words opens nothing to type in
+        assert p.locator("#rules-lang textarea").count() == 0
         assert p.locator("#rulesPanel").inner_text() == before
+        p.locator("input[data-search]").fill("markets")
+        expect(words(p)).to_have_text(["Markets: CH"])
         tab(p, "fr").click()
         expect(words(p)).to_have_text(["Form of address: vous"])
         drafts = p.evaluate("Object.keys(localStorage).filter(k => k.indexOf('cel-rules-draft') === 0)")
-        assert drafts == []
+        assert drafts == []                                            # no browser draft: a Save applies at once
         actions = {a for a, _scope in env.seen}
-        assert actions == {"desk-rules-read"}, env.seen         # the page never calls a write or history route
+        assert actions == {"desk-rules-read"}, env.seen                # the page never calls a write or history route
 
 
 def test_the_stale_shared_scope_is_never_read_and_only_this_languages_scopes_are(browser):
@@ -266,31 +254,7 @@ def test_the_stale_shared_scope_is_never_read_and_only_this_languages_scopes_are
         expect(words(p)).to_have_text(["Form of address: vous"])
         assert "Shared rule A" not in p.content()
         scopes = {s for _a, s in env.seen}
-        pages = ["vancouver", "vs-toronto", "cost-of-studying-english", "how-long-to-learn-english"]
-        want = {x for l in ("de", "fr") for x in [l, f"glossary:{l}"] + [f"brief:{pg}:{l}" for pg in pages]}
-        assert scopes == want, scopes                                   # never 'global', never another language
-
-
-def test_the_italian_tab_shows_the_clients_keyword_briefs_collapsed_under_the_pages_english_names(browser):
-    with rules(browser, lang="it") as env:
-        p = env.page
-        boxes = p.locator("#rules-briefs details.r-brief")
-        expect(boxes).to_have_count(2)                                  # only the pages with a brief, desk order
-        expect(boxes.locator("summary .r-brief-name")).to_have_text([t("page.cost-of-studying-english"),
-                                                                     t("page.how-long-to-learn-english")])
-        expect(boxes.locator("summary .r-by.prompt")).to_have_count(2)            # each brief is in the prompt
-        assert boxes.evaluate_all("els => els.map(e => e.open)") == [False, False]     # collapsed
-        expect(boxes.nth(1).locator(".r-text")).to_be_hidden()
-        boxes.nth(1).locator("summary").click()
-        expect(boxes.nth(1).locator(".r-text")).to_contain_text("quanto dura un corso di inglese")
-        assert p.locator("#rules-app button:not([role=tab])").count() == 3          # still only the three filters
-
-
-def test_a_language_without_a_keyword_brief_says_so(browser):
-    with rules(browser, lang="fr") as env:
-        expect(env.page.locator("#rules-briefs .r-empty")).to_have_text(t("rules.briefs.empty"))
-        expect(env.page.locator("#rules-briefs details")).to_have_count(0)
-        assert "quanto dura" not in env.page.locator("#rulesPanel").inner_text()
+        assert scopes == {"de", "fr"}, scopes                           # never 'global', never another language
 
 
 # ── 4. a language without rules, a read that fails ─────────────────────────────────────────────────
@@ -299,9 +263,7 @@ def test_a_language_the_client_wrote_no_rules_for_shows_its_block_opening_with_t
         p = env.page
         expect(p.locator("#rules-lang .r-intro").first).to_have_text("The client has not supplied Japanese-specific rules yet.")
         expect(words(p)).to_have_text(["Generic rule A"])
-        expect(p.locator("#rules-lang .r-big")).to_have_text(t("rules.summary", n=1))
-        expect(p.locator("#rules-glossary .r-empty")).to_have_text(t("rules.glossary.empty"))
-        expect(p.locator("#rules-briefs .r-empty")).to_have_text(t("rules.briefs.empty"))
+        expect(p.locator("#rules-lang .r-big")).to_have_text(tn("rules.count", 1))         # "1 rule", not "1 rules"
 
 
 def test_a_language_with_no_row_at_all_says_so(browser):
@@ -324,19 +286,17 @@ def test_a_read_that_fails_says_why_and_try_again_reads_it_again(browser):
         expect(p.locator("#rules-app")).to_have_attribute("data-state", "ready")
 
 
-# ── 5. option A at every desktop width: summary on top, the section list beside the requests ───────────────
+# ── 5. option A at every desktop width: summary on top, the section list beside the rules ──────────────────
 @pytest.mark.parametrize("width", [1280, 1440, 2560])
-def test_the_summary_sits_on_top_and_the_section_list_beside_the_requests_at_every_desktop_width(browser, width):
+def test_the_summary_sits_on_top_and_the_section_list_beside_the_rules_at_every_desktop_width(browser, width):
     with rules(browser, width=width) as env:
         p = env.page
         box = lambda sel: p.locator(sel).first.evaluate(  # noqa: E731
             "e => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.width, r.bottom]; }")
-        stats = p.locator(".r-stat").evaluate_all("els => els.map(e => Math.round(e.getBoundingClientRect().top))")
-        assert len(stats) == 3 and len(set(stats)) == 1, stats                      # the three cards in one row
-        rail, doc, lead = box(".r-rail"), box(".r-doc"), box(".r-lead")
+        rail, doc, lead = box(".r-rail"), box(".r-doc"), box(".r-sum-a")
         assert lead[3] <= rail[1] and lead[3] <= doc[1], (lead, rail, doc)          # the summary is above both
-        assert rail[0] + rail[2] <= doc[0], (rail, doc)                            # the list left of the requests
-        assert p.locator(".r-rail a").count() == 4                     # §7, our quality checks, glossary, briefs
+        assert rail[0] + rail[2] <= doc[0], (rail, doc)                            # the list left of the rules
+        assert p.locator(".r-rail a").count() == 2                     # §7, our quality checks
         assert p.evaluate("document.documentElement.scrollWidth <= window.innerWidth")   # no sideways scroll
 
 
@@ -356,36 +316,34 @@ def test_each_request_shows_how_it_is_carried_out_and_the_summary_counts_them(br
         expect(words(p)).to_have_text(["SYNTH-CHECKED line", "SYNTH-PLAIN line", "ElementSYNTH-CELLDEx",
                                        "SYNTH-NOTYET line"])
         expect(p.locator("#rules-s6 .r-ctx")).to_have_text(["In practice:"])          # a lead-in is not a request
-        by = p.locator("#rules-lang .r-req").evaluate_all("els => els.map(e => e.dataset.by)")
+        by = p.locator("#rules-lang .r-rule").evaluate_all("els => els.map(e => e.dataset.by)")
         assert by == ["check", "prompt", "prompt", "none"]
-        expect(p.locator("#rules-lang .r-req .r-how")).to_have_text([
+        expect(p.locator("#rules-lang .r-rule .r-how")).to_have_text([
             t("rules.how.check.meta"), t("rules.how.prompt"), t("rules.how.prompt"),
             t("rules.how.none.slug")])
-        expect(p.locator(".r-big")).to_have_text(t("rules.summary", n=4))
-        expect(p.locator(".r-stat .r-num")).to_have_text(["1", "2", "1"])
-        expect(p.locator(".r-filterline")).to_have_text(t("rules.filter.all", n=4))
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 4))
 
 
-def test_a_card_filters_the_requests_and_pressing_it_again_or_show_all_clears_it(browser):
+def test_the_search_hides_what_does_not_match_and_a_section_with_nothing_left_and_clearing_it_brings_them_back(browser):
     with rules(browser, seed=seed_a, done_by=DONE_A) as env:
         p = env.page
-        p.locator('.r-stat[data-by="prompt"]').click()
-        expect(p.locator('.r-stat[data-by="prompt"]')).to_have_attribute("aria-pressed", "true")
-        expect(words(p)).to_have_text(["SYNTH-PLAIN line", "ElementSYNTH-CELLDEx"])
-        expect(p.locator(".r-filterline")).to_contain_text(t("rules.filter.some", k=2, n=4))
-        # §2 and §6 only: §12 holds no such request, and the quality checks, glossary and briefs hold none (CEL-099)
-        expect(p.locator(".r-rail a .r-rail-n")).to_have_text(["1", "1"])
-        assert section_texts(p) == ["rules-s2", "rules-s6"]
-        p.locator('.r-stat[data-by="prompt"]').click()
+        search = p.locator("input[data-search]")
+        search.fill("synth-plain")
+        expect(words(p)).to_have_text(["SYNTH-PLAIN line"])
+        # §2 only: §6 and §12 hold no match, so they and their rail entries are gone; the count heading is the whole language's
+        assert [x for x in section_texts(p) if p.locator(f"#{x}").is_visible()] == ["rules-s2"]
+        expect(p.locator(".r-rail a:visible")).to_have_count(1)
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 4))
+        search.fill("no such words")
+        expect(words(p)).to_have_count(0)
+        expect(p.locator("[data-noresult]")).to_have_text(t("rules.noresult"))
+        search.fill("")
         expect(words(p)).to_have_count(4)
-        p.locator('.r-stat[data-by="none"]').click()
-        expect(words(p)).to_have_text(["SYNTH-NOTYET line"])
-        p.get_by_role("button", name=t("rules.filter.clear")).click()
-        expect(words(p)).to_have_count(4)
-        tab(p, "fr").click()                                                     # another language starts unfiltered
-        expect(p.locator(".r-stat[aria-pressed=true]")).to_have_count(0)
+        expect(p.locator("[data-noresult]")).to_be_hidden()
+        tab(p, "fr").click()                                                     # another language starts unsearched
+        expect(p.locator("input[data-search]")).to_have_value("")
         actions = {a for a, _scope in env.seen}
-        assert actions == {"desk-rules-read"}, env.seen                        # filtering reads nothing new, writes nothing
+        assert actions == {"desk-rules-read"}, env.seen                        # searching reads nothing new, writes nothing
 
 
 # ── 6. the desk's link ─────────────────────────────────────────────────────────────────────────────

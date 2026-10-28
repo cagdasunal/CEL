@@ -19,7 +19,7 @@ It serves a TEMPORARY COPY of docs/ -- the real files are never written -- with:
     stand-in: nothing is dispatched, and a test plays the engine (`store.finish_job`,
     `store.seed_export`);
   * the client's translation rules (desk-rules-read / desk-rules-write / desk-rules-history, monorepo
-    CEL-038), from the same stand-in: no rules are published until a test or a click publishes one.
+    CEL-038), from the same stand-in: no rules are applied until a test or a click applies one.
 
 The copy is served as committed: saving on since M1. --save-off serves it with saving
 switched off, the desk's one switch back; --save-on (saving on whatever the pages say) was how

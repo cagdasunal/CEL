@@ -111,6 +111,69 @@
     return lines.join('\n') + '\n';
   }
 
+  /* Word list (CEL-113): scope `words:<lang>`, one table | Term | Translation | Type |. The Type words below are the
+     stored form (the page words them from COPY.md). A Keep as is word has no Translation, a Search keyword's Term IS
+     the phrase in the language, only Always translate as carries a Translation. */
+  const WORD_TYPES = { keep: 'Keep as is', always: 'Always translate as', kw: 'Search keyword' };
+  const unpipe = function (s) { return String(s || '').replace(/\\\|/g, '|'); };
+
+  /* The Type of a cell the way the engine reads it (case and spacing ignored); null = not a Type the engine knows, and
+     the engine skips such a row (rules_store.parse_words), so the page does not show it either. */
+  function wordType(label) {
+    const s = String(label || '').toLowerCase().split(/\s+/).filter(Boolean).join(' ');
+    return Object.keys(WORD_TYPES).find(function (x) { return WORD_TYPES[x].toLowerCase() === s; }) || null;
+  }
+  function wordCells(w) {
+    return [w.term, w.type === 'always' ? w.tr : '', WORD_TYPES[w.type]];
+  }
+  /* The words of a parsed body, in order: {idx (index in blocks), term, tr, type}. What is not a row of exactly three
+     cells with a term and a known Type (the header, a line of prose, a typo in the Type) is not a word: the engine skips it too. */
+  function wordRows(blocks) {
+    const out = [];
+    blocks.forEach(function (b, idx) {
+      if (b.kind !== 'row' || b.cells.length !== 3) return;
+      const term = unpipe(b.cells[0]), type = wordType(b.cells[2]);
+      if (!term || !type) return;
+      out.push({ idx: idx, term: term, tr: type === 'always' ? unpipe(b.cells[1]) : '', type: type });
+    });
+    return out;
+  }
+  /* A whole body from word objects {term, tr, type}. */
+  function wordsBody(rows) {
+    const lines = ['| Term | Translation | Type |', '|---|---|---|'];
+    rows.forEach(function (w) { lines.push(joinRow(wordCells(w))); });
+    return lines.join('\n') + '\n';
+  }
+  /* The starting table when `words:<lang>` has not been written yet: the client's glossary the way the engine reads it
+     (rules_store.words_from_glossary): `yes` is Keep as is, a row with a rendering is Always translate as, the header
+     and a row with neither are skipped. */
+  function wordsFromGlossary(body) {
+    const out = [];
+    parse(body).forEach(function (b) {
+      if (b.kind !== 'row' || b.cells.length !== 3) return;
+      const eng = unpipe(b.cells[0]), tgt = unpipe(b.cells[1]), keep = b.cells[2];
+      if (!eng || keep.toLowerCase() === 'keep as is') return;
+      if (/^\s*yes\s*$/i.test(keep)) out.push({ term: eng, tr: '', type: 'keep' });
+      else if (tgt) out.push({ term: eng, tr: tgt, type: 'always' });
+    });
+    return out;
+  }
+  /* Change the word at block `idx` in place (the block keeps its place; every other line stays byte-equal). */
+  function setWord(blocks, idx, w) {
+    blocks[idx].cells = wordCells(w);
+    blocks[idx].edited = true;
+  }
+  /* Add a word after the last table line of the body (or start the table when there is none). */
+  function addWord(blocks, w) {
+    let at = -1;
+    blocks.forEach(function (b, i) { if (b.kind === 'row' || b.kind === 'sep') at = i; });
+    const row = { kind: 'row', raw: '', cells: wordCells(w), edited: true };
+    if (at >= 0) { blocks.splice(at + 1, 0, row); return; }
+    if (blocks.length && blocks[blocks.length - 1].kind !== 'blank') blocks.push({ kind: 'blank', raw: '' });
+    blocks.push({ kind: 'row', raw: '| Term | Translation | Type |', cells: ['Term', 'Translation', 'Type'] },
+      { kind: 'sep', raw: '|---|---|---|' }, row, { kind: 'blank', raw: '' });
+  }
+
   /* Line diff of two bodies: the first changed line, before -> after. */
   function firstChange(before, after) {
     const a = String(before || '').split('\n');
@@ -135,6 +198,12 @@
     joinRow: joinRow,
     parseGlossary: parseGlossary,
     serializeGlossary: serializeGlossary,
+    WORD_TYPES: WORD_TYPES,
+    wordRows: wordRows,
+    wordsBody: wordsBody,
+    wordsFromGlossary: wordsFromGlossary,
+    setWord: setWord,
+    addWord: addWord,
     firstChange: firstChange,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;

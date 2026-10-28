@@ -424,9 +424,9 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 | `retr.timeout` | Gemini did not answer in time. Try again. | The reason in the message, when a re-translation never finished |
 | `retr.none-arrived` | No new text arrived. | Message, when the job finished without a new text |
 
-## Rules page (CEL-046, read-only since CEL-080)
+## Rules page (CEL-046; the editor since CEL-113)
 
-The page where the client reads the translation rules per language: /admin/localization/rules/. One language at a time (CEL-089, option A of CEL-088): a summary of the requests in the client's documents, then their sections in the client's order, each request with how the tool carries it out, the tone examples side by side, the glossary and the keyword briefs. Nothing on it edits, saves or publishes; the three summary cards only filter.
+The page where the client reads and edits the translation rules per language: /admin/localization/rules/. Three page tabs (Rules, Word list, Import) over the language tabs. The Rules tab (CEL-113, option A of CEL-110 with the top menu of option B): the count of rules, a search, then the sections in the client's order, each rule with its ID tag, how the tool carries it out and Edit / Remove, an Add a rule button ending each section, the tone examples side by side and our quality checks. Every Save, Remove and Add applies at once and shows the desk's note with Undo; there is no draft and no publish step. The Word list tab (CEL-113): the count of words with an Add a word button beside it that opens the add row, then Type chips with how many words each holds and a search on one row, then the language's words in one table (Term, Translation, Type); each word has Edit / Remove, and a Save, Remove or Add applies the same way.
 
 | Key | Text | Shown where |
 |---|---|---|
@@ -436,20 +436,59 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.language` | Language | Label of the language tabs |
 | `rules.desk` | Back to the desk | Header link to the document desk |
 | `doc.rules` | Translation rules | Desk header link to the rules page |
+| `rules.tabs` | Rules page | Label of the three page tabs |
+| `rules.tab.rules` | Rules | Page tab |
+| `rules.tab.words` | Word list | Page tab |
+| `rules.tab.import` | Import | Page tab |
+| `rules.count.one` | 1 rule | Summary heading of one language |
+| `rules.count.other` | {n} rules | |
+| `rules.count.sub` | Your {language} rules, in the order of your Translation Guidelines. | Line under the summary heading |
+| `rules.search` | Search the rules | Search field placeholder and label |
+| `rules.noresult` | No rules match your search. | Under the sections when the search finds nothing |
+| `rules.add` | Add a rule | Button at the end of each section |
+| `rules.edit` | Edit | Row action |
+| `rules.remove` | Remove | Row action |
+| `rules.undo` | Undo | Button in the note after a Save, Remove or Add |
+| `rules.save` | Save | Button under an open rule |
+| `rules.cancel` | Cancel | Button under an open rule |
+| `rules.new.placeholder` | Write the rule | Placeholder of a new rule |
+| `rules.new.id` | {lang}-? | ID tag of a rule not yet saved |
+| `rules.rule.label` | Rule {id} | Label of the rule text field (read by a screen reader) |
+| `rules.state.new` | New | Mark under the ID of a rule being added |
+| `rules.applied` | {id} applied. | Note after a Save or an Add, with Undo |
+| `rules.removed` | {id} removed. | Note after a Remove, with Undo |
+| `rules.apply.failed` | Not applied: {reason}. | Notice after a refused Save, Remove or Add; the open rule stays open with its text |
+| `rules.apply.stale` | Someone changed {language} since you opened it. Reload to see it. | Notice when the language was changed by someone else first; the typed text stays |
+| `rules.empty.rule` | A rule can't be empty. | Notice when Save is pressed on an empty rule |
 | `rules.empty` | No {language} rules yet. | Language without rules |
-| `rules.summary` | {n} requests from your documents | Summary heading of one language |
-| `rules.summary.sub` | Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out. | Line under the summary heading |
-| `rules.by.check` | Checked | Done-by pill and card: an automatic check stops the text when a Weglot file is built, or the engine itself carries it out |
-| `rules.by.check.cap` | checked automatically or built into the engine | Summary card caption (true of its "Built in" requests too, CEL-099) |
-| `rules.by.prompt` | In the prompt | Done-by pill and card: the request is in what Gemini reads |
-| `rules.by.prompt.cap` | written into what Gemini reads for every draft | Summary card caption |
-| `rules.by.none` | Not yet | Done-by pill and card: not carried out yet |
-| `rules.by.none.cap` | not carried out yet: the reason is on each one | Summary card caption |
+| `words.type` | Type | Label of the Type chips, column head, label of the Type field of an open word row |
+| `words.all` | All | Type chip: every word, with the count |
+| `words.keep` | Keep as is | Type chip, Type pill and Type choice: the word stays as it is in every language |
+| `words.always` | Always translate as | Type chip, Type pill and Type choice: the word is always translated as the Translation |
+| `words.keyword` | Search keyword | Type chip, Type pill and Type choice: the word is a search phrase in the language |
+| `words.search` | Search the word list | Search field placeholder and label |
+| `words.count.one` | 1 word | Heading of the Word list, with Add a word beside it |
+| `words.count.other` | {n} words | |
+| `words.add` | Add a word | Button beside the count of words that opens the add row; hidden while the row is open |
+| `words.term` | Term | Column head |
+| `words.new.term` | Word or phrase | Placeholder and label of the first field of an open word row |
+| `words.translation` | Translation | Column head, placeholder and label of the Translation field when the Type is Always translate as |
+| `words.new.none` | Not needed | Placeholder of the Translation field when the Type is Keep as is or Search keyword (the field is off) |
+| `words.same` | Same as the term | Translation cell of a Keep as is word |
+| `words.none.sr` | No translation | Screen-reader text of the dash in a Search keyword's Translation cell |
+| `words.actions` | Actions | Screen-reader head of the actions column |
+| `words.noresult` | No words match your search. | Under the table when the chips and the search leave no word |
+| `words.empty` | No {language} words yet. | Under the table of a language without words |
+| `words.applied` | {term} applied. | Note after a Save or an Add of a word, with Undo |
+| `words.duplicate` | {term} is already in the list. | Notice when Save is pressed on a word that is already there; the row stays open |
+| `words.empty.term` | A word can't be empty. | Notice when Save is pressed on an empty word |
+| `words.empty.translation` | Write the translation. | Notice when Save is pressed on an Always translate as word without a Translation |
+| `words.pipe` | A word or translation can't contain a vertical bar. | Notice when Save is pressed on a word or translation with a vertical bar (it would split the table row) |
+| `rules.by.check` | Checked | Done-by pill: an automatic check stops the text when a Weglot file is built, or the engine itself carries it out |
+| `rules.by.prompt` | In the prompt | Done-by pill: the request is in what Gemini reads |
+| `rules.by.none` | Not yet | Done-by pill: not carried out yet |
 | `rules.by.warn` | Also warns | Mark beside a request a warn-only check flags |
 | `rules.by.warn.tip` | An automatic check flags it but never stops the text | Tooltip of the Also warns mark |
-| `rules.filter.all` | Showing all {n}. | Line under the summary, no filter |
-| `rules.filter.some` | Showing {k} of {n}. | Line under the summary, one card pressed |
-| `rules.filter.clear` | Show all | Button that clears the filter |
 | `rules.sections` | Sections | Label of the section list |
 | `rules.how.prompt` | In the rules Gemini reads | How a request in the prompt is carried out |
 | `rules.how.check.meta` | Checked when a Weglot file is built: a longer text is stopped | How the meta length requests are carried out |
@@ -508,13 +547,6 @@ The page where the client reads the translation rules per language: /admin/local
 | `rules.tone.bad` | Bad — do not do this | Label of a bad tone example |
 | `rules.tone.why` | Why it fails: | Lead of the reason under a bad example |
 | `rules.tone.drift` | Watch for: | Lead of the drift line |
-| `rules.glossary` | Glossary | Heading of the glossary |
-| `rules.glossary.en` | English | Glossary column |
-| `rules.glossary.keep` | Don't translate | Glossary column |
-| `rules.glossary.yes` | Yes | Glossary cell of a term that stays as it is |
-| `rules.glossary.empty` | No glossary terms yet. | Glossary without terms |
-| `rules.briefs` | Keyword briefs | Heading of the client's per-page keyword briefs |
-| `rules.briefs.empty` | No keyword brief from the client yet. | Language without a keyword brief |
 | `rules.error.read` | The rules could not be read. | Notice on a part that could not be read |
 | `rules.error.offline` | You are offline. Reconnect, then press Try again. | Notice on a part that could not be read |
 | `rules.error.signed_out` | You have been signed out. Sign in again, then press Try again. | Notice (401) |

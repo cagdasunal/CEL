@@ -19,25 +19,16 @@
    --faint (45%) 2.40:1. Here they are --fg at 76% (5.30) and 74% (5.01). */
 .rules .r-top { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding: 12px 24px; }
 .rules .r-title { margin: 0; font-size: var(--fs-xl); font-weight: 500; }
-.rules .r-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--border); }
+.rules .r-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--stripe); }
 .rules .r-tab { margin: 0 0 -1px; padding: 10px 14px; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; font-size: var(--fs-base); color: var(--muted); cursor: pointer; }
 .rules .r-tab:hover { background: var(--stripe); color: var(--fg); }
 .rules .r-tab[aria-selected="true"] { color: var(--fg); font-weight: 500; border-bottom-color: var(--fg); }
 .rules .r-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .rules .r-flag { margin-inline-end: 6px; }
 .rules .r-main { max-width: 1360px; padding: 20px 24px 48px; }
-.rules .r-sum { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 12px; margin: 0 0 8px; }
 .rules .r-lead { display: flex; flex-direction: column; justify-content: center; }
 .rules .r-big { font-size: 28px; font-weight: 500; letter-spacing: -0.012em; line-height: 1.2; }
 .rules .r-sub, .rules .r-intro { margin: 4px 0 0; font-size: var(--fs-md); color: var(--muted); }
-.rules .r-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel); font: inherit; color: var(--fg); text-align: start; cursor: pointer; }
-.rules .r-stat:hover { background: var(--stripe); }
-.rules .r-stat[aria-pressed="true"] { border-color: var(--fg); background: var(--selected); }
-.rules .r-stat:focus-visible, .rules .r-clear:focus-visible, .rules .r-rail-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.rules .r-num { font-size: 24px; font-weight: 500; line-height: 1.2; }
-.rules .r-cap { font-size: var(--fs-sm); color: var(--muted); }
-.rules .r-filterline { margin: 0 0 16px; font-size: var(--fs-sm); color: var(--muted); }
-.rules .r-clear { padding: 0; border: 0; background: none; font: inherit; color: var(--accent-strong); cursor: pointer; }
 .rules .r-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; }
 /* the dashboard's sticky shell header is 59 px tall: the list and the jump targets sit below it */
 .rules .r-rail { position: sticky; top: 76px; align-self: start; display: flex; flex-direction: column; gap: 1px; padding-top: 8px; }
@@ -51,7 +42,7 @@
 .rules .r-sec { scroll-margin-top: 76px; }
 .rules .r-sub { margin: 16px 0 4px; font-size: var(--fs-base); font-weight: 500; }
 .rules .r-ctx { margin: 12px 0 0; font-size: var(--fs-md); color: var(--muted); }
-.rules .r-req, .rules .r-qc { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rules .r-qc { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 4px 24px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .rules .r-words { font-size: 15px; line-height: 1.55; overflow-wrap: anywhere; }
 .rules .r-cell { display: inline-block; margin: 0 18px 2px 0; }
 .rules .r-cell-h { display: block; font-size: var(--fs-xs); color: var(--muted); }
@@ -77,7 +68,6 @@
 .rules .r-bad .r-lbl { color: var(--notice-fg); }
 .rules .r-why { grid-column: 2; font-size: var(--fs-sm); color: var(--muted); }
 .rules .r-drift { padding: 10px 14px; border-left: 3px solid var(--notice-fg); border-radius: 0 8px 8px 0; background: var(--stripe); font-size: var(--fs-md); }
-.rules .r-briefs { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-top: 12px; }
 .rules .r-sec { margin: 0 0 32px; }
 .rules .r-sec-h { margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: var(--fs-lg); font-weight: 500; }
 .rules .r-text { font-size: var(--fs-doc-body, 16px); line-height: 1.65; overflow-wrap: anywhere; }
@@ -93,10 +83,6 @@
 .rules .r-table th, .rules .r-table td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--border); text-align: start; vertical-align: top; overflow-wrap: anywhere; }
 .rules .r-table th { font-size: var(--fs-sm); font-weight: 500; color: var(--muted); }
 .rules .r-empty { margin: 0; color: var(--muted); }
-.rules .r-brief { padding: 0 16px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel); }
-.rules .r-brief-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 0; font-size: var(--fs-base); font-weight: 500; cursor: pointer; }
-.rules .r-brief-h:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.rules .r-brief > .r-text { padding: 0 0 14px; }
 .rules .r-skel-line { height: 12px; margin: 12px 0; border-radius: var(--radius-sm); background: var(--stripe); }
 .rules .r-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 8px 12px; border: 1px solid var(--notice-border); border-radius: var(--radius-sm); background: var(--notice-bg); color: var(--notice-fg); font-size: var(--fs-base); }
 .rules .r-notice p { margin: 0; }
@@ -109,6 +95,67 @@
   .rules .r-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; }
   .rules .r-tabs, .rules .r-top { padding-inline: 16px; }
 }
+
+/* CEL-113 (the editor, from CEL-110 option A with B's top menu): tokens only, weights 400/500, cream surfaces only */
+.rules .r-rail-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rules .r-nav { display: flex; gap: 24px; padding: 0 24px; }
+.rules .r-nav-b { margin: 0 0 -1px; padding: 6px 0 10px; border: 0; border-bottom: 2px solid transparent; background: none; font: inherit; font-size: var(--fs-lg); color: var(--muted); cursor: pointer; }
+.rules .r-nav-b:hover { color: var(--fg); }
+.rules .r-nav-b[aria-selected="true"] { color: var(--fg); font-weight: 500; border-bottom-color: var(--accent); }
+.rules .r-nav-b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-sum-a { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 0 0 20px; }
+.rules .r-id { justify-self: start; display: inline-block; padding: 1px 6px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-xs); line-height: 16px; color: var(--muted); white-space: nowrap; }
+.rules .r-id.is-new { border-style: dashed; }
+.rules .r-state { display: block; margin-top: 4px; font-size: var(--fs-xs); font-weight: 500; }
+.rules .r-state.is-new { color: var(--accent-strong); }
+.rules .r-rule { display: grid; grid-template-columns: 64px minmax(0, 1fr) 150px 132px; gap: 4px 20px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rules .r-rule.is-editing, .rules .r-rule.is-new { margin-inline-start: -12px; padding-inline-start: 9px; border-inline-start: 3px solid var(--accent); }
+.rules .r-acts { display: flex; justify-content: flex-end; gap: 2px; }
+.rules .r-act { padding: 2px 6px; border: 0; border-radius: var(--radius-sm); background: none; font: inherit; font-size: var(--fs-sm); color: var(--accent-strong); cursor: pointer; }
+.rules .r-act:hover { background: var(--stripe); }
+.rules .r-act:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rules .r-add { margin: 8px 0 0; padding: 6px 0; border: 0; background: none; font: inherit; font-size: var(--fs-md); color: var(--accent-strong); cursor: pointer; }
+.rules .r-add:hover { text-decoration: underline; }
+.rules .r-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-search { display: flex; align-items: center; width: 280px; height: 32px; padding: 0 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--panel); }
+.rules .r-search:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: var(--fs-md); color: var(--fg); outline: none; }
+.rules .r-search input::placeholder { color: var(--muted); opacity: 1; }
+.rules .r-input { width: 100%; min-height: 96px; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--panel); font: inherit; font-size: 15px; line-height: 1.55; color: var(--fg); resize: vertical; }
+.rules .r-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rules .r-input::placeholder { color: var(--muted); opacity: 1; }
+.rules .r-editbox .r-notice { margin-top: 8px; }
+.rules .r-edit-acts { display: flex; gap: 8px; margin-top: 8px; }
+.rules .toast-close { width: auto; height: auto; padding: 2px 8px; border-radius: var(--radius-sm); color: var(--fg); font-size: var(--fs-sm); }
+.rules .r-toast-t { flex: 1; }
+/* CEL-113 Word list tab (CEL-110 option A): type chips, search and Add a word on one row, one table; Save applies */
+.rules .r-field { width: 100%; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--panel); font: inherit; font-size: var(--fs-base); color: var(--fg); }
+.rules .r-field:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rules .r-field::placeholder { color: var(--muted); opacity: 1; }
+.rules .r-field:disabled { color: var(--muted); }
+.rules .r-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.rules .r-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 999px; background: none; font: inherit; font-size: var(--fs-md); color: var(--fg); cursor: pointer; }
+.rules .r-chip:hover { background: var(--stripe); }
+.rules .r-chip[aria-pressed="true"] { border-color: var(--fg); background: var(--selected); font-weight: 500; }
+.rules .r-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rules .r-chip-n { font-size: var(--fs-sm); font-weight: 400; color: var(--muted); }
+.rules .r-same { color: var(--muted); }
+.rules .r-type { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
+.rules .r-type.is-keep { background: var(--selected); color: var(--fg); }
+.rules .r-type.is-always { background: color-mix(in srgb, var(--accent-strong) 10%, transparent); color: var(--accent-strong); }
+.rules .r-type.is-kw { border: 1px solid var(--border-strong); color: var(--fg); }
+.rules .r-wtools { display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin: 0 0 16px; }
+.rules .r-wtable th:nth-child(1) { width: 34%; }
+.rules .r-wtable th:nth-child(3) { width: 180px; }
+.rules .r-wtable th:nth-child(4) { width: 190px; }
+.rules .r-wtable td { vertical-align: middle; }
+.rules .r-w-term { font-weight: 500; }
+.rules .r-w-acts { text-align: end; white-space: nowrap; }
+.rules .r-w-acts .desk-btn + .desk-btn { margin-inline-start: 6px; }
+.rules .r-wtable tr.is-adding td { background: var(--stripe); }
+/* an element given a display above keeps [hidden] working (.rules [hidden] is one class weaker) */
+.rules .r-rule[hidden], .rules .r-qc[hidden], .rules .r-sec[hidden], .rules .r-rail-a[hidden], .rules .r-add[hidden], .rules .desk-btn[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -161,8 +208,10 @@
     <h1 class="r-title">Translation rules</h1>
     <a id="rules-desk" class="desk-btn" href="/admin/localization/document/">Back to the desk</a>
   </header>
+  <div class="r-nav" role="tablist" aria-label="Rules page"><button class="r-nav-b" type="button" role="tab" data-ptab="rules" aria-selected="false" tabindex="-1">Rules</button><button class="r-nav-b" type="button" role="tab" data-ptab="words" aria-selected="false" tabindex="-1">Word list</button><button class="r-nav-b" type="button" role="tab" data-ptab="import" aria-selected="false" tabindex="-1">Import</button></div>
   <div class="r-tabs" role="tablist" aria-label="Language"><button id="rulesTab-de" class="r-tab" type="button" role="tab" data-lang="de" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇩🇪</span>German</button><button id="rulesTab-fr" class="r-tab" type="button" role="tab" data-lang="fr" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇫🇷</span>French</button><button id="rulesTab-es" class="r-tab" type="button" role="tab" data-lang="es" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇪🇸</span>Spanish</button><button id="rulesTab-pt" class="r-tab" type="button" role="tab" data-lang="pt" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇧🇷</span>Portuguese</button><button id="rulesTab-it" class="r-tab" type="button" role="tab" data-lang="it" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇮🇹</span>Italian</button><button id="rulesTab-ja" class="r-tab" type="button" role="tab" data-lang="ja" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇯🇵</span>Japanese</button><button id="rulesTab-ko" class="r-tab" type="button" role="tab" data-lang="ko" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇰🇷</span>Korean</button><button id="rulesTab-ar" class="r-tab" type="button" role="tab" data-lang="ar" aria-selected="false" aria-controls="rulesPanel" tabindex="-1"><span class="r-flag" aria-hidden="true">🇸🇦</span>Arabic</button></div>
   <div id="rulesPanel" class="r-main" role="tabpanel" aria-live="polite"></div>
+  <div id="rules-toasts" class="toast-stack" aria-live="polite"></div>
   <footer class="r-foot"><a href="https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Desk 2.4.0</a></footer>
 </main>
   </div>
@@ -286,7 +335,7 @@
 </script>
 <script>
 var SAVE_OFF = false;
-var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.where":"In {language}, {page}","autosave.conflict.go":"Go to it","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","toast.close":"Close","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then export it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then export it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then export it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then export it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo your edit.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then export it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then export it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then export it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then export it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Export both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then export both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was exported. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was exported. Review it again.","refusal.UNSIGNED":"What was exported wasn't saved through the desk. Export it again.","refusal.BAD-SIGNATURE":"What was exported doesn't match what was saved. Export it again.","refusal.UNREGISTERED":"What was exported doesn't say who made it. Export it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and what was exported doesn't say who made it. Export it again.","refusal.DUPLICATE":"The same text was exported twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was exported in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The exported texts couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not exported, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was exported. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"What was exported doesn't record which wording it was given for. Export it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The exported wording is empty. Write one, or undo your edit.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","nav.tree.label":"Pages","nav.tree.filter":"Filter pages by path or name","nav.tree.none":"No page matches “{q}”.","nav.tabs.label":"Languages","nav.tabs.hint":"⌥1–8 language · / pages","doc.status.none":"Not translated","doc.status.drafted":"Gemini's draft","doc.status.edited":"Edited","doc.status.exported":"In a Weglot file","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.status.failed":"Failed","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show the website's text","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — Gemini's draft and your edits","doc.head.weglot":"The website's text","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.link":"Link {n}","doc.link.start":"Link {n} starts here","doc.link.end":"Link {n} ends here","doc.link.warn.missing":"Link {n} from the English is missing in this text. Re-translate it.","doc.link.warn.extra":"This text has a link {n} that the English doesn't. Re-translate it.","doc.link.warn.order":"The links are in a different order than in the English, so they would open the wrong pages. Re-translate it.","doc.link.warn.broken":"A link in this text has no start or no end. Re-translate it.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.error":"Not saved yet — trying again","doc.text.refused":"Not saved — the server refused this text. Edit it to try again.","doc.text.stopped":"Not saved — saving has stopped. See the bar below.","doc.text.offline":"Not saved yet — you are offline. It is kept on this computer.","doc.text.retranslating":"Gemini is re-translating this text…","doc.save.go":"Go to the text","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.why":"Why: {why}","doc.job.why.json":"Gemini's reply was cut off or was not valid JSON, so none of it could be used.","doc.job.why.shape":"Gemini's reply was not in the shape that was asked for, so none of it could be used.","doc.job.why.empty":"Gemini's reply left some of the texts out.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"Gemini's draft","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.links":"Links","doc.filter.buttons":"Buttons","doc.filter.counted":"{filter} ({n})","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.next.again.one":"Show 1 looked-at text again","doc.next.again.other":"Show {n} looked-at texts again","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use the website's text","doc.tool.revert":"Back to Gemini's draft","doc.chars":"{n} of {max}","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made, in one zip","export.drafts.one":"{edited} edited, 1 unread Gemini draft also goes in.","export.drafts.other":"{edited} edited, {n} unread Gemini drafts also go in.","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.stop":"Stop after this file","export.stopping":"Stopping after this file…","export.download":"Download again","export.how.title":"How to import it in Weglot:","export.how.unzip":"Unzip the download first: it holds one file for each page and language. Do the steps below for each file in turn.","export.how.upload":"Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”","export.how.check":"Check that Weglot's “… updated translations will be imported.” shows the same number as this file.","export.how.switches":"Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”","export.how.press":"Press Import.","export.how.errors":"If Weglot lists a text under Errors, let the team know.","export.jump":"Go to text","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.stopped":"Not started — you stopped the export","export.result.done":"Files made: {done} of {total}. The download has started.","export.result.stopped":"You stopped the export. Files made: {done} of {total}; what was made is downloading.","export.result.none":"No file was made.","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or exported.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or exported.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.wait":"Gemini is re-translating another text in this language. Re-translate is on again when it has finished.","retr.timeout":"Gemini did not answer in time. Try again.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.empty":"No {language} rules yet.","rules.summary":"{n} requests from your documents","rules.summary.sub":"Your {language} rules, in the order of your Translation Guidelines, with how each one is carried out.","rules.by.check":"Checked","rules.by.check.cap":"checked automatically or built into the engine","rules.by.prompt":"In the prompt","rules.by.prompt.cap":"written into what Gemini reads for every draft","rules.by.none":"Not yet","rules.by.none.cap":"not carried out yet: the reason is on each one","rules.by.warn":"Also warns","rules.by.warn.tip":"An automatic check flags it but never stops the text","rules.filter.all":"Showing all {n}.","rules.filter.some":"Showing {k} of {n}.","rules.filter.clear":"Show all","rules.sections":"Sections","rules.how.prompt":"In the rules Gemini reads","rules.how.check.meta":"Checked when a Weglot file is built: a longer text is stopped","rules.how.check.rule":"An automatic check stops a text that breaks it when a Weglot file is built","rules.how.builtin.page":"Built in: Translate page works on one page","rules.how.builtin.structure":"Built in: one translation per English text, in the same order","rules.how.builtin.export":"Built in: Export writes the Weglot CSV","rules.how.none.slug":"The desk does not translate page addresses yet","rules.how.none.glossary":"The course and housing glossary file is not loaded yet","rules.how.none.flag":"Gemini cannot leave a note for the editor yet","rules.how.none.keywords":"No keyword list for this language yet","rules.how.none.schema":"The desk translates the visible text only","rules.quality":"Our quality checks","rules.qc.auto":"Checked automatically","rules.qc.idiom":"Idiomatic {language} for a native reader; facts, numbers, names and links unchanged","rules.qc.order":"Gemini reads the whole English page in document order, as one document","rules.qc.length":"Page titles within {title} characters, descriptions within {description}; a Chinese, Japanese or Korean character counts as 2","rules.qc.digits":"Every digit of the English kept, none added, no number written out as a word","rules.qc.figures":"No figure the English does not give","rules.qc.dash":"No em dash or spaced en dash; the en dash in a number range stays","rules.qc.links":"Every link kept, in the same place and order","rules.qc.never_eszett":"No ß: ss instead","rules.qc.informal_du":"du, not the formal Sie in the middle of a sentence","rules.qc.tu_not_usted":"tú, never usted","rules.qc.latam_vocabulary":"Spain's coste, coche, piso compartido, móvil and ordenador are stopped","rules.qc.vous_not_tu":"vous, never tu","rules.qc.nbsp_before_punctuation":"A non-breaking space before ; : ? ! and » (flagged, never stopped)","rules.qc.nbsp_after_guillemet":"A non-breaking space after « (flagged, never stopped)","rules.qc.tu_not_lei":"tu, not the courtesy Lei (La preghiamo, Le ricordiamo) after the start of a sentence","rules.qc.tuition_terminology":"Tuition as costo, prezzo or tariffe, not tasse universitarie, tasse scolastiche or retta (flagged, never stopped)","rules.qc.never_propina":"Never propina (it means a bribe in Brazil): mensalidade or valor do curso","rules.qc.no_european_portuguese":"European Portuguese words are stopped: autocarro, casa de banho, pequeno-almoço, comboio, telemóvel, ecrã and others","rules.qc.no_fullwidth_currency":"No full-width currency sign: the half-width $ only","rules.qc.brand_must_not_translate":"Known wrong translations of the school's brand names are stopped","rules.qc.g0_row_sanity":"No empty translation, and no row made for another language's file","rules.qc.g1_export_presence":"Every English text is one the website has today","rules.qc.g2_unit_resolves":"Every translation still belongs to the English text it was made for","rules.qc.g3_placeholders":"Every link of the English, in the same order, and no other markup","rules.qc.g3_placeholder_count_warn":"A link used more or fewer times than in the English is named in the export summary","rules.qc.g4_numbers":"Every number of the English is there, and no number is added","rules.qc.g5_formatter":"Page titles within {title} characters, descriptions within {description} (a Chinese, Japanese or Korean character counts as 2): a longer one is stopped","rules.qc.g6_poison":"No very short English text paired with a long translation (a mismatched row)","rules.qc.g7_duplicates":"No English text twice in the same kind of row","rules.qc.g8_og_twin":"The title shared on social media is the same as the page title","rules.qc.g9_override_named":"A text a person forced through must name that person, or it is stopped","rules.qc.g10_signatures":"Every approval carries a valid signature that names its reviewer","rules.qc.g11_size":"One file per language, under {mb} MB, plain UTF-8","rules.qc.g12_containment":"The menu and footer are never exported with a page","rules.qc.g13_freshness":"The English page list is recent, and the English has not changed since it was read","rules.qc.g16_csv_injection":"No text starts with = or @, which a spreadsheet would run as a formula","rules.qc.g16_csv_injection_warn":"A text that starts with +, - or a tab is named in the export summary","rules.qc.g18_client_rules":"The language checks above run again on the words that ship","rules.qc.g18_client_rules_warn":"A text a flag-only check catches still ships and is named in the export summary","rules.tone":"Your tone examples","rules.tone.good":"Good","rules.tone.bad":"Bad — do not do this","rules.tone.why":"Why it fails:","rules.tone.drift":"Watch for:","rules.glossary":"Glossary","rules.glossary.en":"English","rules.glossary.keep":"Don't translate","rules.glossary.yes":"Yes","rules.glossary.empty":"No glossary terms yet.","rules.briefs":"Keyword briefs","rules.briefs.empty":"No keyword brief from the client yet.","rules.error.read":"The rules could not be read.","rules.error.offline":"You are offline. Reconnect, then press Try again.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again.","rules.error.cap":"Too many requests in a short time. Wait a few minutes, then press Try again.","rules.retry":"Try again"};
+var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":"Portuguese","lang.it":"Italian","lang.ja":"Japanese","lang.ko":"Korean","lang.ar":"Arabic","page.vancouver":"Vancouver","page.vs-toronto":"Vancouver vs Toronto","page.cost-of-studying-english":"Cost of studying English","page.how-long-to-learn-english":"How long to learn English","meta.index.title":"Localization Desk — College of English Language","flow.file.stale":"This file is out of date: get the file again.","row.shared.home":"the home page","autosave.saved":"All changes saved","autosave.saving.one":"Saving 1 change…","autosave.saving.other":"Saving {n} changes…","autosave.retrying.one":"1 change not saved yet — {reason}. Trying again…","autosave.retrying.other":"{n} changes not saved yet — {reason}. Trying again…","autosave.offline.one":"Offline — 1 change kept on this computer","autosave.offline.other":"Offline — {n} changes kept on this computer","autosave.conflict.one":"1 text changed elsewhere","autosave.conflict.other":"{n} texts changed elsewhere","autosave.conflict.where":"In {language}, {page}","autosave.conflict.go":"Go to it","autosave.refused.one":"1 text not saved","autosave.refused.other":"{n} texts not saved","autosave.stopped":"Saving stopped: {reason}","autosave.retry":"Try again","save.reason.offline":"there is no connection","save.reason.reload":"this page is out of date — reload it","save.reason.signed_out":"you have been signed out — sign in again, then press Try again","save.reason.cap":"a lot was saved at once — it starts again by itself in a few minutes","save.reason.daily":"today's saving limit is reached — it starts again tomorrow","save.reason.unavailable":"saving isn't available right now","save.reason.refused":"the server refused it","save.reason.trouble":"the server is having trouble","toast.storage.title":"This browser can't keep a copy of your work","toast.close":"Close","refusal.CONTAINMENT":"Used on other pages too: it can't be changed from here.","refusal.LEGACY-COLLISION":"Another import already sets this text (housing and course details), so it can't be changed from here.","refusal.SUMMARY-OWNED":"The page summary writes this text, so it can't be changed from here.","refusal.MARKUP-UNPROVEN":"It has formatting the import can't handle safely yet, so it can't be changed from here for now.","refusal.LINK-ONLY-UNPROVEN":"It is only a link, and the import can't handle that safely yet, so it can't be changed from here for now.","refusal.CLIENT-RULE":"It breaks one of the client's style rules. Edit it, then export it again; if you can't see why, let the team know.","refusal.NUMBER-PARITY":"Its numbers don't match the English. Check the prices, dates and amounts, then export it again.","refusal.META-BUDGET":"Too long for a search result. Shorten it, then export it again.","refusal.POISON":"It is far longer than the English and may not be its translation. Check it, then export it again.","refusal.EMPTY-TARGET":"The translation is empty. Write one, or undo your edit.","refusal.CSV-INJECTION":"It starts with = or @, which a spreadsheet reads as a formula. Change how it starts, then export it again.","refusal.PLACEHOLDER-SET":"It has a link the English doesn't, or is missing one. Edit it so it has the same links, then export it again.","refusal.PLACEHOLDER-ORDER":"Its links are in a different order than in the English, so they would open the wrong pages. Edit it, then export it again.","refusal.PLACEHOLDER-BALANCE":"One of its links is broken. Edit it, then export it again.","refusal.OG-TWIN-MISSING":"A page title goes with the title shown when the page is shared. Export both, with the same words.","refusal.OG-TWIN-DIVERGED":"A page title and the title shown when the page is shared must have the same words. Make them match, then export both again.","refusal.EXPORT-PRESENCE":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-RETIRED":"Its English is no longer on the page, so there is nothing to translate.","refusal.UNIT-MISMATCH":"The English changed after it was exported. Review it again.","refusal.ENGLISH-DRIFT":"The English changed after it was exported. Review it again.","refusal.UNSIGNED":"What was exported wasn't saved through the desk. Export it again.","refusal.BAD-SIGNATURE":"What was exported doesn't match what was saved. Export it again.","refusal.UNREGISTERED":"What was exported doesn't say who made it. Export it again.","refusal.OVERRIDE-UNNAMED":"It replaces a change made on the website, and what was exported doesn't say who made it. Export it again.","refusal.DUPLICATE":"The same text was exported twice with different words. Let the team know.","refusal.LANG-MISMATCH":"It was exported in another language's list. Let the team know.","refusal.BAD-ROLE":"This kind of text can't be imported. Let the team know.","refusal.CLIENT-RULE-WARN":"It went in the file, but it may break one of the client's style rules. Let the team know.","refusal.PLACEHOLDER-COUNT-WARN":"It went in the file, but it uses a link more or fewer times than the English. Check it on the website.","refusal.CSV-INJECTION-WARN":"It went in the file. It starts with + or -: fine for Weglot, but don't open the file in a spreadsheet.","refusal.DEDUPED":"Some texts are on more than one page; each went in the file once.","refusal.NO-VERIFIER":"The exported texts couldn't be checked, so no file was made. Let the team know.","refusal.STALE-MANIFEST":"The texts are more than a week old, so no file was made. Let the team know.","refusal.TOO-LARGE":"The file would be too large for Weglot, so no file was made. Let the team know.","refusal.BOM":"The file came out in the wrong format, so no file was made. Let the team know.","refusal.ALL-LANGUAGES":"A file is made one language at a time, so no file was made. Let the team know.","refusal.NOT-CONVERGED":"The file couldn't be put together, so no file was made. Let the team know.","refusal.EXCEPTION-UNUSED":"An exception the team named matched no text, so no file was made. Let the team know.","refusal.EXPORT-SKIP-ALREADY-ON-THE-WEBSITE":"Already on the website: nothing to import.","refusal.EXPORT-SKIP-NOT-APPROVED":"Not exported, so it isn't in the file.","refusal.EXPORT-SKIP-NO-LONGER-ON-THE-PAGE":"Its English is no longer on the page, so there is nothing to translate.","refusal.EXPORT-SKIP-TRANSLATION-MOVED-SINCE-APPROVAL":"The translation on the website changed after it was exported. Review it again.","refusal.EXPORT-SKIP-APPROVED-AGAINST-AN-UNKNOWN-WORDING":"What was exported doesn't record which wording it was given for. Export it again.","refusal.EXPORT-SKIP-NOTHING-TO-SAY":"The exported wording is empty. Write one, or undo your edit.","refusal.EXPORT-SKIP-UNIT-RECORD-INCOMPLETE":"This text couldn't be checked. Let the team know.","refusal.EXPORT-SKIP-UNCHANGED-BY-THE-IMPORT":"The import didn't change it: nothing to put back.","refusal.EXPORT-SKIP-NO-BEFORE-VALUE":"What the website showed before wasn't recorded, so it can't be put back. Let the team know.","refusal.EXPORT-SKIP-THE-PAGE-SHOWED-THE-ENGLISH":"Before the import the website showed the English, so an import can't put it back. Let the team know.","refusal.suffix.EXCEPTED":"It went in the file anyway: the team allowed it for this text.","refusal.suffix.RESTORE-WARN":"It went in the file anyway, to put back what the website showed before.","job.failed.engine-did-not-start":"The job didn't start. Try again in a few minutes.","job.failed.engine-stopped":"The job stopped before it finished. Try again; if it stops again, let the team know.","job.failed.engine-never-answered":"The job didn't answer for 35 minutes. Try again; if it happens again, let the team know.","job.failed.bad-job":"This couldn't be read, so it didn't run. Let the team know.","job.failed.bad-amount":"The send couldn't be priced, so nothing was sent. Send again.","job.failed.engine-error":"Something went wrong while it ran. Try again; if it happens again, let the team know.","job.failed.engine-not-configured":"This can't run until the team finishes setting it up. Let the team know.","job.failed.storage-error":"The desk's storage didn't answer. Try again in a few minutes.","job.failed.refresh-stopped":"The texts couldn't be brought up to date, so no file was made. Try again; if it happens again, let the team know.","job.failed.manifest-stale":"The texts were out of date, so no file was made. Try again.","job.failed.export-refused":"No file was made:","job.failed.export-empty":"Nothing could go in the file:","job.failed.stamps-not-landed":"It ran, but the desk couldn't record the result. Try again; if it happens again, let the team know.","job.failed.batch-not-found":"The Weglot file this check was for can't be found. Let the team know.","job.failed.no-batch":"There's no Weglot file to check yet. Get the file first.","job.failed.nothing-queued":"No requests are waiting, so nothing was sent.","job.failed.over-amount":"It would have cost more than expected, so nothing was sent. Send again.","job.failed.credit-probe-failed":"Gemini couldn't confirm there's credit to pay for it, so nothing was sent. Let the team know.","job.failed.gemini-error":"Gemini answered with an error. Try again later; if it happens again, let the team know.","job.failed.run-still-out":"An earlier send is still with Gemini. Check for new translations first, then send.","job.failed.run-stuck-submitting":"An earlier send stopped halfway. Nothing more can be sent until the team clears it: let the team know.","job.failed.quota-spent-today":"Gemini's limit for today is used up. Send again tomorrow.","job.failed.over-run-cap":"That's more than one send may cost. Undo some requests, then send the rest.","job.failed.over-day-cap":"That would go over what this language may spend with Gemini today. Send the rest tomorrow, or undo some requests.","job.failed.no-run":"Nothing is waiting with Gemini.","job.failed.run-unreadable":"The record of an earlier send can't be read, so nothing more can be sent. Let the team know.","job.failed.run-not-collectable":"Those requests can't be collected: they were cancelled or already collected. Let the team know.","job.failed.nothing-arrived":"Gemini finished, but no new translations came back. Let the team know.","job.failed.page-not-found":"This page can't be found, so nothing was translated. Let the team know.","job.failed.unit-not-on-page":"That paragraph is no longer on this page, so nothing was translated. Reload the page and try again.","doc.meta.title":"Document view — Localization Desk — College of English Language","doc.meta.description":"Read a page as a document, English beside its translation, and edit the translation in place.","doc.title":"{page} — {language}","nav.tree.label":"Pages","nav.tree.filter":"Filter pages by path or name","nav.tree.none":"No page matches “{q}”.","nav.tabs.label":"Languages","nav.tabs.hint":"⌥1–8 language · / pages","doc.status.none":"Not translated","doc.status.drafted":"Gemini's draft","doc.status.edited":"Edited","doc.status.exported":"In a Weglot file","doc.status.unknown":"Checking…","doc.status.translating":"Translating…","doc.status.queued":"Queued","doc.status.failed":"Failed","doc.cell.count.one":"{n} of {total} text","doc.cell.count.other":"{n} of {total} texts","doc.cell.aria":"{page}, {language}: {status}","doc.undo":"Undo","doc.redo":"Redo","doc.undo.tip":"Undo your last change ({keys})","doc.redo.tip":"Redo ({keys})","doc.undo.none":"Nothing to undo","doc.redo.none":"Nothing to redo","doc.undo.dropped":"That step was skipped: the text has changed since.","doc.keys.undo.mac":"⌘Z","doc.keys.undo.other":"Ctrl+Z","doc.keys.redo.mac":"⇧⌘Z","doc.keys.redo.other":"Ctrl+Shift+Z","doc.weglot.toggle":"Show the website's text","doc.translate":"Translate page","doc.head.en":"English — the website","doc.head.tgt":"{language} — Gemini's draft and your edits","doc.head.weglot":"The website's text","doc.weglot.none":"No Weglot translation yet","doc.weglot.same":"Same as Weglot","doc.block.meta-title":"Page title","doc.block.og-title":"Title when shared","doc.block.meta-description":"Page description","doc.block.h1":"Heading 1","doc.block.h2":"Heading 2","doc.block.h3":"Heading 3","doc.block.h4":"Heading 4","doc.block.h5":"Heading 5","doc.block.h6":"Heading 6","doc.block.p":"Paragraph","doc.block.li":"List item","doc.block.button":"Button","doc.block.link":"Link","doc.block.other":"Text","doc.locked.tag":"Locked","doc.locked.noise":"Numbers and symbols are left as they are.","doc.link":"Link {n}","doc.link.start":"Link {n} starts here","doc.link.end":"Link {n} ends here","doc.link.warn.missing":"Link {n} from the English is missing in this text. Re-translate it.","doc.link.warn.extra":"This text has a link {n} that the English doesn't. Re-translate it.","doc.link.warn.order":"The links are in a different order than in the English, so they would open the wrong pages. Re-translate it.","doc.link.warn.broken":"A link in this text has no start or no end. Re-translate it.","doc.also":"Also on {pages}. A change here changes it there too.","doc.shared.one":"Also used on 1 other page ({example}). Your wording becomes the wording there too.","doc.shared.other":"Also used on {n} other pages ({example}, …). Your wording becomes the wording on all of them too.","doc.mark.one":"Shared with 1 other page.","doc.mark.other":"Shared with {n} other pages.","doc.text.error":"Not saved yet — trying again","doc.text.refused":"Not saved — the server refused this text. Edit it to try again.","doc.text.stopped":"Not saved — saving has stopped. See the bar below.","doc.text.offline":"Not saved yet — you are offline. It is kept on this computer.","doc.text.retranslating":"Gemini is re-translating this text…","doc.save.go":"Go to the text","doc.empty.cell":"Not translated yet","doc.history":"History","doc.history.title":"History of this text","doc.history.note":"Every change is saved on the server. Nothing is lost when you close the tab.","doc.history.empty":"No saved changes yet. This text still reads as it first arrived.","doc.history.draft":"Gemini's draft","doc.history.you":"You","doc.history.restore":"Restore this version","doc.history.close":"Close","doc.history.restored":"Restored. Undo brings it back.","doc.history.failed":"Couldn't read the history. Try again in a moment.","doc.conflict.text":"{who} saved this text first: “{text}”","doc.conflict.gone":"Someone else undid this text before you saved it.","doc.conflict.mine":"Keep mine","doc.conflict.theirs":"Take theirs","doc.conflict.someone":"Someone","doc.loading":"Loading the page…","doc.load.failed":"Couldn't load this page. Reload to try again.","doc.read.failed":"Couldn't read what's saved on the server. Reload to try again.","doc.banner.none":"This page hasn't been translated into {language} yet. Gemini can write a first translation of every text on it; you then read it here and edit it.","doc.job.queued":"Gemini is translating this page. It can take a while: you can close this page, and the drafts will be here when it is done.","doc.job.waiting":"Gemini is still translating {page} into {language}. This page starts as soon as that one is done, as long as this page stays open.","doc.job.done":"New drafts from Gemini are ready.","doc.job.failed":"The translation did not finish: {reason}","doc.job.failed.unknown":"something went wrong. Try again.","doc.job.why":"Why: {why}","doc.job.why.json":"Gemini's reply was cut off or was not valid JSON, so none of it could be used.","doc.job.why.shape":"Gemini's reply was not in the shape that was asked for, so none of it could be used.","doc.job.why.empty":"Gemini's reply left some of the texts out.","doc.job.error":"Couldn't start the translation. Try again in a moment.","doc.confirm.title":"Translate this page with Gemini?","doc.confirm.body.one":"Gemini will write a first {language} translation of {n} text on this page. Texts you have edited are kept.","doc.confirm.body.other":"Gemini will write a first {language} translation of {n} texts on this page. Texts you have edited are kept.","doc.confirm.cancel":"Cancel","doc.outline.title":"On this page","doc.outline.search":"Search result","doc.outline.count.one":"{n} text · {edited} edited","doc.outline.count.other":"{n} texts · {edited} edited","doc.sections":"Sections","doc.words.one":"{n} word","doc.words.other":"{n} words","doc.filter.label":"Show","doc.filter.all":"All texts","doc.filter.new":"Gemini's draft","doc.filter.edited":"Edited","doc.filter.flagged":"Flagged by a check","doc.filter.links":"Links","doc.filter.buttons":"Buttons","doc.filter.counted":"{filter} ({n})","doc.filter.empty":"No text matches this filter. Choose All texts to see the whole page again.","doc.next":"Next to check","doc.next.left.one":"{n} left","doc.next.left.other":"{n} left","doc.next.none":"Nothing left to check","doc.next.again.one":"Show 1 looked-at text again","doc.next.again.other":"Show {n} looked-at texts again","doc.keys.next.mac":"⌥↵","doc.keys.next.other":"Alt+Enter","doc.version":"Desk {version}","doc.version.tip":"See what changed in this version","doc.tools.label":"Actions for this text","doc.tool.weglot":"Use the website's text","doc.tool.revert":"Back to Gemini's draft","doc.chars":"{n} of {max}","export.button":"Export","export.title":"Export the Weglot file","export.grid.page":"Page","export.all.pages":"All pages","export.all.languages":"All languages","export.aria.all":"All pages, all languages","export.aria.col":"All pages, {language}","export.aria.row":"{page}, all languages","export.aria.cell":"{page}, {language}","export.count.none":"Nothing selected yet","export.count.one":"1 file will be made","export.count.other":"{n} files will be made, in one zip","export.drafts.one":"{edited} edited, 1 unread Gemini draft also goes in.","export.drafts.other":"{edited} edited, {n} unread Gemini drafts also go in.","export.cancel":"Cancel","export.go":"Export","export.close":"Close","export.stop":"Stop after this file","export.stopping":"Stopping after this file…","export.download":"Download again","export.how.title":"How to import it in Weglot:","export.how.unzip":"Unzip the download first: it holds one file for each page and language. Do the steps below for each file in turn.","export.how.upload":"Upload the file where Weglot says “Upload a XLIFF or CSV file with translations to update your content.”","export.how.check":"Check that Weglot's “… updated translations will be imported.” shows the same number as this file.","export.how.switches":"Leave both switches off: “Create translations for new sentences.” and “Mark unchanged translations as reviewed.”","export.how.press":"Press Import.","export.how.errors":"If Weglot lists a text under Errors, let the team know.","export.jump":"Go to text","export.more":"Show {n} more","export.step.waiting":"Waiting","export.step.saving":"Saving your texts…","export.step.queued":"Waiting for the engine…","export.step.running":"Making the file…","export.step.done.one":"1 text in the file","export.step.done.other":"{n} texts in the file","export.step.nothing":"Nothing to export yet","export.step.stopped":"Not started — you stopped the export","export.result.done":"Files made: {done} of {total}. The download has started.","export.result.stopped":"You stopped the export. Files made: {done} of {total}; what was made is downloading.","export.result.none":"No file was made.","export.step.failed":"Not made: {reason}","export.group.refused.one":"1 text is not in the file because a check refused it","export.group.refused.other":"{n} texts are not in the file because a check refused them","export.group.empty.one":"1 text has no translation yet, so it is not in the file","export.group.empty.other":"{n} texts have no translation yet, so they are not in the file","export.group.orphan.one":"1 edit belongs to English text that has changed, so it is not in the file","export.group.orphan.other":"{n} edits belong to English text that has changed, so they are not in the file","export.group.conflict.one":"1 text was changed by someone else while you exported, so it is not in the file","export.group.conflict.other":"{n} texts were changed by someone else while you exported, so they are not in the file","export.group.unsaved.one":"1 text could not be saved, so it is not in the file","export.group.unsaved.other":"{n} texts could not be saved, so they are not in the file","export.reason.refused-by-server":"The desk could not save this text, so it was not exported.","export.error.write":"Your texts could not be saved: {reason}","export.error.start":"The export could not start: {reason}","export.error.download":"The file is ready but could not be downloaded: {reason}","retr.button":"Re-translate","retr.text.title":"Re-translate this text","retr.text.body":"Gemini writes a new translation of this text. It takes about 1–3 minutes. The wording you have now stays in Undo.","retr.note.label":"Note for Gemini (optional)","retr.text.go":"Re-translate","retr.page.title":"Re-translate this page","retr.page.body":"Gemini writes a new translation of this page. It takes about 1–3 minutes. Texts you have edited or exported are kept unless you tick Include my edits.","retr.page.mine":"Include my edits","retr.page.count.one":"Gemini's new wording replaces {n} text you edited or exported.","retr.page.count.other":"Gemini's new wording replaces {n} texts you edited or exported.","retr.page.go":"Re-translate page","retr.cancel":"Cancel","retr.started":"Gemini is working on it. The new text appears here when it is ready.","retr.done":"The new translation is ready.","retr.failed":"The new translation did not arrive: {reason}","retr.busy":"Gemini is already re-translating in this language. Try again when it has finished.","retr.wait":"Gemini is re-translating another text in this language. Re-translate is on again when it has finished.","retr.timeout":"Gemini did not answer in time. Try again.","retr.none-arrived":"No new text arrived.","rules.meta.title":"Translation rules · CEL Dashboard","rules.meta.description":"The rules Gemini follows when it translates the pages.","rules.title":"Translation rules","rules.language":"Language","rules.desk":"Back to the desk","doc.rules":"Translation rules","rules.tabs":"Rules page","rules.tab.rules":"Rules","rules.tab.words":"Word list","rules.tab.import":"Import","rules.count.one":"1 rule","rules.count.other":"{n} rules","rules.count.sub":"Your {language} rules, in the order of your Translation Guidelines.","rules.search":"Search the rules","rules.noresult":"No rules match your search.","rules.add":"Add a rule","rules.edit":"Edit","rules.remove":"Remove","rules.undo":"Undo","rules.save":"Save","rules.cancel":"Cancel","rules.new.placeholder":"Write the rule","rules.new.id":"{lang}-?","rules.rule.label":"Rule {id}","rules.state.new":"New","rules.applied":"{id} applied.","rules.removed":"{id} removed.","rules.apply.failed":"Not applied: {reason}.","rules.apply.stale":"Someone changed {language} since you opened it. Reload to see it.","rules.empty.rule":"A rule can't be empty.","rules.empty":"No {language} rules yet.","words.type":"Type","words.all":"All","words.keep":"Keep as is","words.always":"Always translate as","words.keyword":"Search keyword","words.search":"Search the word list","words.count.one":"1 word","words.count.other":"{n} words","words.add":"Add a word","words.term":"Term","words.new.term":"Word or phrase","words.translation":"Translation","words.new.none":"Not needed","words.same":"Same as the term","words.none.sr":"No translation","words.actions":"Actions","words.noresult":"No words match your search.","words.empty":"No {language} words yet.","words.applied":"{term} applied.","words.duplicate":"{term} is already in the list.","words.empty.term":"A word can't be empty.","words.empty.translation":"Write the translation.","words.pipe":"A word or translation can't contain a vertical bar.","rules.by.check":"Checked","rules.by.prompt":"In the prompt","rules.by.none":"Not yet","rules.by.warn":"Also warns","rules.by.warn.tip":"An automatic check flags it but never stops the text","rules.sections":"Sections","rules.how.prompt":"In the rules Gemini reads","rules.how.check.meta":"Checked when a Weglot file is built: a longer text is stopped","rules.how.check.rule":"An automatic check stops a text that breaks it when a Weglot file is built","rules.how.builtin.page":"Built in: Translate page works on one page","rules.how.builtin.structure":"Built in: one translation per English text, in the same order","rules.how.builtin.export":"Built in: Export writes the Weglot CSV","rules.how.none.slug":"The desk does not translate page addresses yet","rules.how.none.glossary":"The course and housing glossary file is not loaded yet","rules.how.none.flag":"Gemini cannot leave a note for the editor yet","rules.how.none.keywords":"No keyword list for this language yet","rules.how.none.schema":"The desk translates the visible text only","rules.quality":"Our quality checks","rules.qc.auto":"Checked automatically","rules.qc.idiom":"Idiomatic {language} for a native reader; facts, numbers, names and links unchanged","rules.qc.order":"Gemini reads the whole English page in document order, as one document","rules.qc.length":"Page titles within {title} characters, descriptions within {description}; a Chinese, Japanese or Korean character counts as 2","rules.qc.digits":"Every digit of the English kept, none added, no number written out as a word","rules.qc.figures":"No figure the English does not give","rules.qc.dash":"No em dash or spaced en dash; the en dash in a number range stays","rules.qc.links":"Every link kept, in the same place and order","rules.qc.never_eszett":"No ß: ss instead","rules.qc.informal_du":"du, not the formal Sie in the middle of a sentence","rules.qc.tu_not_usted":"tú, never usted","rules.qc.latam_vocabulary":"Spain's coste, coche, piso compartido, móvil and ordenador are stopped","rules.qc.vous_not_tu":"vous, never tu","rules.qc.nbsp_before_punctuation":"A non-breaking space before ; : ? ! and » (flagged, never stopped)","rules.qc.nbsp_after_guillemet":"A non-breaking space after « (flagged, never stopped)","rules.qc.tu_not_lei":"tu, not the courtesy Lei (La preghiamo, Le ricordiamo) after the start of a sentence","rules.qc.tuition_terminology":"Tuition as costo, prezzo or tariffe, not tasse universitarie, tasse scolastiche or retta (flagged, never stopped)","rules.qc.never_propina":"Never propina (it means a bribe in Brazil): mensalidade or valor do curso","rules.qc.no_european_portuguese":"European Portuguese words are stopped: autocarro, casa de banho, pequeno-almoço, comboio, telemóvel, ecrã and others","rules.qc.no_fullwidth_currency":"No full-width currency sign: the half-width $ only","rules.qc.brand_must_not_translate":"Known wrong translations of the school's brand names are stopped","rules.qc.g0_row_sanity":"No empty translation, and no row made for another language's file","rules.qc.g1_export_presence":"Every English text is one the website has today","rules.qc.g2_unit_resolves":"Every translation still belongs to the English text it was made for","rules.qc.g3_placeholders":"Every link of the English, in the same order, and no other markup","rules.qc.g3_placeholder_count_warn":"A link used more or fewer times than in the English is named in the export summary","rules.qc.g4_numbers":"Every number of the English is there, and no number is added","rules.qc.g5_formatter":"Page titles within {title} characters, descriptions within {description} (a Chinese, Japanese or Korean character counts as 2): a longer one is stopped","rules.qc.g6_poison":"No very short English text paired with a long translation (a mismatched row)","rules.qc.g7_duplicates":"No English text twice in the same kind of row","rules.qc.g8_og_twin":"The title shared on social media is the same as the page title","rules.qc.g9_override_named":"A text a person forced through must name that person, or it is stopped","rules.qc.g10_signatures":"Every approval carries a valid signature that names its reviewer","rules.qc.g11_size":"One file per language, under {mb} MB, plain UTF-8","rules.qc.g12_containment":"The menu and footer are never exported with a page","rules.qc.g13_freshness":"The English page list is recent, and the English has not changed since it was read","rules.qc.g16_csv_injection":"No text starts with = or @, which a spreadsheet would run as a formula","rules.qc.g16_csv_injection_warn":"A text that starts with +, - or a tab is named in the export summary","rules.qc.g18_client_rules":"The language checks above run again on the words that ship","rules.qc.g18_client_rules_warn":"A text a flag-only check catches still ships and is named in the export summary","rules.tone":"Your tone examples","rules.tone.good":"Good","rules.tone.bad":"Bad — do not do this","rules.tone.why":"Why it fails:","rules.tone.drift":"Watch for:","rules.error.read":"The rules could not be read.","rules.error.offline":"You are offline. Reconnect, then press Try again.","rules.error.signed_out":"You have been signed out. Sign in again, then press Try again.","rules.error.cap":"Too many requests in a short time. Wait a few minutes, then press Try again.","rules.retry":"Try again"};
     function t(key, vals) {
       var s = COPY[key];
       if (s === undefined) { console.error('COPY.md has no ' + key); return '\u27e6' + key + '\u27e7'; }
@@ -488,6 +537,69 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     return lines.join('\n') + '\n';
   }
 
+  /* Word list (CEL-113): scope `words:<lang>`, one table | Term | Translation | Type |. The Type words below are the
+     stored form (the page words them from COPY.md). A Keep as is word has no Translation, a Search keyword's Term IS
+     the phrase in the language, only Always translate as carries a Translation. */
+  const WORD_TYPES = { keep: 'Keep as is', always: 'Always translate as', kw: 'Search keyword' };
+  const unpipe = function (s) { return String(s || '').replace(/\\\|/g, '|'); };
+
+  /* The Type of a cell the way the engine reads it (case and spacing ignored); null = not a Type the engine knows, and
+     the engine skips such a row (rules_store.parse_words), so the page does not show it either. */
+  function wordType(label) {
+    const s = String(label || '').toLowerCase().split(/\s+/).filter(Boolean).join(' ');
+    return Object.keys(WORD_TYPES).find(function (x) { return WORD_TYPES[x].toLowerCase() === s; }) || null;
+  }
+  function wordCells(w) {
+    return [w.term, w.type === 'always' ? w.tr : '', WORD_TYPES[w.type]];
+  }
+  /* The words of a parsed body, in order: {idx (index in blocks), term, tr, type}. What is not a row of exactly three
+     cells with a term and a known Type (the header, a line of prose, a typo in the Type) is not a word: the engine skips it too. */
+  function wordRows(blocks) {
+    const out = [];
+    blocks.forEach(function (b, idx) {
+      if (b.kind !== 'row' || b.cells.length !== 3) return;
+      const term = unpipe(b.cells[0]), type = wordType(b.cells[2]);
+      if (!term || !type) return;
+      out.push({ idx: idx, term: term, tr: type === 'always' ? unpipe(b.cells[1]) : '', type: type });
+    });
+    return out;
+  }
+  /* A whole body from word objects {term, tr, type}. */
+  function wordsBody(rows) {
+    const lines = ['| Term | Translation | Type |', '|---|---|---|'];
+    rows.forEach(function (w) { lines.push(joinRow(wordCells(w))); });
+    return lines.join('\n') + '\n';
+  }
+  /* The starting table when `words:<lang>` has not been written yet: the client's glossary the way the engine reads it
+     (rules_store.words_from_glossary): `yes` is Keep as is, a row with a rendering is Always translate as, the header
+     and a row with neither are skipped. */
+  function wordsFromGlossary(body) {
+    const out = [];
+    parse(body).forEach(function (b) {
+      if (b.kind !== 'row' || b.cells.length !== 3) return;
+      const eng = unpipe(b.cells[0]), tgt = unpipe(b.cells[1]), keep = b.cells[2];
+      if (!eng || keep.toLowerCase() === 'keep as is') return;
+      if (/^\s*yes\s*$/i.test(keep)) out.push({ term: eng, tr: '', type: 'keep' });
+      else if (tgt) out.push({ term: eng, tr: tgt, type: 'always' });
+    });
+    return out;
+  }
+  /* Change the word at block `idx` in place (the block keeps its place; every other line stays byte-equal). */
+  function setWord(blocks, idx, w) {
+    blocks[idx].cells = wordCells(w);
+    blocks[idx].edited = true;
+  }
+  /* Add a word after the last table line of the body (or start the table when there is none). */
+  function addWord(blocks, w) {
+    let at = -1;
+    blocks.forEach(function (b, i) { if (b.kind === 'row' || b.kind === 'sep') at = i; });
+    const row = { kind: 'row', raw: '', cells: wordCells(w), edited: true };
+    if (at >= 0) { blocks.splice(at + 1, 0, row); return; }
+    if (blocks.length && blocks[blocks.length - 1].kind !== 'blank') blocks.push({ kind: 'blank', raw: '' });
+    blocks.push({ kind: 'row', raw: '| Term | Translation | Type |', cells: ['Term', 'Translation', 'Type'] },
+      { kind: 'sep', raw: '|---|---|---|' }, row, { kind: 'blank', raw: '' });
+  }
+
   /* Line diff of two bodies: the first changed line, before -> after. */
   function firstChange(before, after) {
     const a = String(before || '').split('\n');
@@ -512,6 +624,12 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     joinRow: joinRow,
     parseGlossary: parseGlossary,
     serializeGlossary: serializeGlossary,
+    WORD_TYPES: WORD_TYPES,
+    wordRows: wordRows,
+    wordsBody: wordsBody,
+    wordsFromGlossary: wordsFromGlossary,
+    setWord: setWord,
+    addWord: addWord,
     firstChange: firstChange,
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -520,12 +638,16 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
 </script>
 <script>
 /*
- * The rules page of the localization desk: /admin/localization/rules/ (CEL-080 read-only; CEL-089 option A).
- * The client picks a language and reads the translation rules the engine gives Gemini for it: that
- * language's own rule set (one self-contained block per language since CEL-085; the old shared `global`
- * scope is retired and never read), its glossary and the client's keyword brief for each page that has one
- * (Worker scopes `<lang>`, `glossary:<lang>`, `brief:<page>:<lang>`, read with desk-rules-read). Nothing on
- * this page edits, saves or publishes. Editing comes back in a later version.
+ * The rules page of the localization desk: /admin/localization/rules/ (CEL-089 option A; CEL-113 the editor).
+ * The client picks a page tab (Rules / Word list / Import) and a language, reads the translation rules the
+ * engine gives Gemini for it (that language's own rule set, Worker scope `<lang>`, read with desk-rules-read)
+ * and edits them in place: every rule line carries its ID as a tag ([DE-12] at the end of the line, shown apart),
+ * Edit opens the row with Save / Cancel, Remove drops it, "Add a rule" ends each section. Each Save, Remove and
+ * Add is ONE desk-rules-write that applies at once (no draft, no publish step), sent with the version the page
+ * read as baseVersion; a 409 says someone changed the language first and keeps the typed text; the desk toast
+ * "<ID> applied." carries Undo (one more write). The Word list tab is one table of the language's words (scope
+ * `words:<lang>`: Term, Translation, Type), chips by Type, a search, "Add a word", Edit / Remove per row; each Save,
+ * Remove and Add is one write of that scope the same way. Import is drawn by CEL-114.
  *
  * generate_rules_page.py inlines rules_md.js, then this file. It reads the globals the page defines first:
  * COPY with t() (every word comes from COPY.md) and callProxy() (the Worker door). DOM is built with
@@ -539,14 +661,14 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   const CFG = JSON.parse(cfgNode.textContent);
   const M = window.RulesMd;
   const LOCALES = CFG.locales;            // [{code, name, flag}]
-  const PAGES = CFG.pages;                // the desk's page keys, in the desk's order (labels: page.<key>)
-  const TIMING = Object.assign({ timeout: 20000 }, window.RULES_TIMING || {});
+  const TIMING = Object.assign({ timeout: 20000, toast: 6000 }, window.RULES_TIMING || {});
 
   const root = document.getElementById('rules-app');
   if (!root) return;
   const $ = function (s, r) { return (r || document).querySelector(s); };
   const panel = $('#rulesPanel');
   const tabs = Array.prototype.slice.call(root.querySelectorAll('.r-tab'));
+  const navs = Array.prototype.slice.call(root.querySelectorAll('.r-nav-b'));      // Rules / Word list / Import
 
   function h(tag, cls, text) {
     const n = document.createElement(tag);
@@ -557,26 +679,41 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
 
   // ── state ────────────────────────────────────────────────────────────────────────
   const known = function (code) { return LOCALES.some(function (l) { return l.code === code; }); };
+  const PTABS = ['rules', 'words', 'import'];
   const wanted = new URLSearchParams(location.search).get('lang');
+  const wantedTab = new URLSearchParams(location.search).get('tab');
   const S = {
     lang: known(wanted) ? wanted : (known('de') ? 'de' : LOCALES[0].code),
-    scopes: {},       // scope -> {state: 'loading' | 'ok' | 'error', body, key}
-    by: 'all',        // the Done-by filter of the summary's three cards
+    tab: PTABS.indexOf(wantedTab) >= 0 ? wantedTab : 'rules',
+    scopes: {},       // scope -> {state: 'loading' | 'ok' | 'error', body, version, key}
+    q: '',            // the Rules tab's search
+    open: null,       // the one rule being edited or added: {kind: 'edit', idx, id, text, err} | {kind: 'new', sec, text, err}
+    wq: '',           // the Word list's search
+    wtype: 'all',     // the Word list's Type chip: all | keep | always | kw
+    wopen: null,      // the one word being edited or added: {kind: 'edit' | 'add', idx, term, tr, type, err}
+    wlast: null,      // the word just added: scrolled into view once
+    busy: false,      // a write is on its way
   };
   const langName = function (code) {
     const l = LOCALES.find(function (x) { return x.code === code; });
     return l ? l.name : code;
   };
-  const briefScope = function (page, lang) { return 'brief:' + page + ':' + lang; };
-  const scopesFor = function (lang) {
-    return [lang, 'glossary:' + lang].concat(PAGES.map(function (p) { return briefScope(p, lang); }));
-  };
   const sc = function (scope) {
-    if (!S.scopes[scope]) S.scopes[scope] = { state: 'loading', body: null, key: null };
+    if (!S.scopes[scope]) S.scopes[scope] = { state: 'loading', body: null, version: 0, key: null };
     return S.scopes[scope];
   };
+  const wordsScope = function (lang) { return 'words:' + lang; };
+  const blank = function (body) { return String(body == null ? '' : body).trim() === ''; };
+  // The scopes the open tab reads for a language: Rules reads the language, Word list reads `words:<lang>` and, while
+  // nothing has been written there, the client's `glossary:<lang>` as its starting table; Import reads nothing yet.
+  const scopesFor = function (lang) {
+    if (S.tab === 'rules') return [lang];
+    if (S.tab !== 'words') return [];
+    const w = sc(wordsScope(lang));
+    return w.state === 'ok' && blank(w.body) ? [wordsScope(lang), 'glossary:' + lang] : [wordsScope(lang)];
+  };
 
-  // ── the Worker (reads only) ──────────────────────────────────────────────────────
+  // ── the Worker ───────────────────────────────────────────────────────────────────
   function call(payload) {
     return callProxy(payload, TIMING.timeout).catch(function () { return null; });
   }
@@ -596,19 +733,24 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       s.state = 'ok';
       s.key = null;
       s.body = r.body.body == null ? '' : String(r.body.body);
+      s.version = Number.isInteger(r.body.version) ? r.body.version : 0;     // the baseVersion of the next write
     });
   }
   function load() {
-    const lang = S.lang;
-    const scopes = scopesFor(lang);
-    scopes.forEach(function (x) { if (sc(x).state !== 'ok') sc(x).state = 'loading'; });
+    const lang = S.lang, tab = S.tab;
+    scopesFor(lang).forEach(function (x) { if (sc(x).state !== 'ok') sc(x).state = 'loading'; });
     root.dataset.state = 'loading';
     render();
-    return Promise.all(scopes.map(readScope)).then(function () {
-      if (lang !== S.lang) return;                 // the reader moved on to another language meanwhile
-      root.dataset.state = scopes.every(function (x) { return sc(x).state === 'ok'; }) ? 'ready' : 'error';
-      render();
-    });
+    // a first answer can name one more scope to read (the glossary behind an empty word list): read again until none is missing
+    const pass = function () {
+      return Promise.all(scopesFor(lang).map(readScope)).then(function () {
+        if (lang !== S.lang || tab !== S.tab) return;      // the reader moved on to another language or tab meanwhile
+        if (scopesFor(lang).some(function (x) { return sc(x).state === 'loading'; })) return pass();
+        root.dataset.state = scopesFor(lang).every(function (x) { return sc(x).state === 'ok'; }) ? 'ready' : 'error';
+        render();
+      });
+    };
+    return pass();
   }
 
   // ── reading a body ───────────────────────────────────────────────────────────────
@@ -635,40 +777,6 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     inline(n, raw);
     return n;
   }
-  function tableOf(rows, header) {
-    const table = h('table', 'r-table');
-    rows.forEach(function (cells, i) {
-      const tr = h('tr');
-      cells.forEach(function (c) { tr.appendChild(textNode(header && i === 0 ? 'th' : 'td', null, c)); });
-      table.appendChild(tr);
-    });
-    return table;
-  }
-  // The blocks of a rules body, in order: headings, lists, paragraphs, quotes, tables.
-  function renderBlocks(blocks, into) {
-    let list = null, rows = null, header = false;
-    const flushTable = function () {
-      if (rows) into.appendChild(tableOf(rows, header));
-      rows = null; header = false;
-    };
-    blocks.forEach(function (b, i) {
-      if (b.kind !== 'item') list = null;
-      if (b.kind !== 'row' && b.kind !== 'sep') flushTable();
-      if (b.kind === 'blank') return;
-      if (b.kind === 'sep') { header = rows != null && rows.length === 1; return; }
-      if (b.kind === 'row') { if (!rows) rows = []; rows.push(b.cells); return; }
-      if (b.kind === 'hr') { into.appendChild(h('hr', 'r-hr')); return; }
-      if (b.kind === 'head') { into.appendChild(textNode('h' + Math.min(6, Math.max(3, b.level + 1)), 'r-h', b.text)); return; }
-      if (b.kind === 'item') {
-        if (!list) { list = h('ul', 'r-items'); into.appendChild(list); }
-        list.appendChild(textNode('li', 'r-item', b.text));
-        return;
-      }
-      if (b.kind === 'quote') { into.appendChild(textNode('blockquote', 'r-quote', b.text)); return; }
-      into.appendChild(textNode('p', 'r-p', b.text));
-    });
-    flushTable();
-  }
   // A language with no row yet (version 0, no body), or the pre-CEL-085 seed's one quoted line: no rules yet.
   function isSeedNone(body) {
     const b = String(body || '').trim();
@@ -678,13 +786,13 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
   // ── option A (CEL-089, the operator's pick of CEL-088): the client's document, section by section ──
   // Every request line of the client's numbered sections, in their order, with how the tool carries it out.
   // "Done by" comes from CFG.doneBy (built from the engine and CEL-083's checklists by the monorepo's
-  // runtime/out/loc2/CEL-089/build_done_by.py): a line is keyed by the FNV-1a 32 of its trimmed text, the values
-  // are reason keys, so the public page carries no client words and no rule ids. A line the map does not name is in the prompt: the whole language
-  // block is what Gemini reads.
+  // runtime/out/loc2/CEL-089/build_done_by.py): a line is keyed by the FNV-1a 32 of its trimmed text WITHOUT its
+  // trailing ` [XX-N]` rule ID (CEL-113: the ID is a tag, not part of the line the map was built from), the values
+  // are reason keys, so the public page carries no client words and no rule ids. A line the map does not name
+  // (a rule whose text was edited here, or added here) is in the prompt: the whole language block is what Gemini reads.
   const DONE = CFG.doneBy || { sections: [], langs: {} };
   const SHOWN = DONE.sections || [];
   const BY_KEY = { check: 'rules.by.check', prompt: 'rules.by.prompt', none: 'rules.by.none' };
-  const CAP_KEY = { check: 'rules.by.check.cap', prompt: 'rules.by.prompt.cap', none: 'rules.by.none.cap' };
   const HOW_KEY = {
     meta: 'rules.how.check.meta', rule: 'rules.how.check.rule', 'builtin.page': 'rules.how.builtin.page', 'builtin.structure': 'rules.how.builtin.structure',
     'builtin.export': 'rules.how.builtin.export', slug: 'rules.how.none.slug', glossary: 'rules.how.none.glossary',
@@ -696,8 +804,12 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     for (let i = 0; i < bytes.length; i++) { x ^= bytes[i]; x = Math.imul(x, 0x01000193) >>> 0; }
     return ('0000000' + x.toString(16)).slice(-8);
   }
+  // A rule's ID is the last thing on its line: ` [DE-12]` (two capitals, a dash, digits; CEL-113 rule-id scheme).
+  const ID_TAIL = /\s\[([A-Z]{2}-\d+)\]\s*$/;
+  const unid = function (raw) { return String(raw).replace(ID_TAIL, ''); };
+  const idOf = function (raw) { const m = ID_TAIL.exec(String(raw)); return m ? m[1] : ''; };
   function doneBy(lang, raw) {
-    const got = (DONE.langs[lang] || {})[fnv(raw)];
+    const got = (DONE.langs[lang] || {})[fnv(unid(raw))];
     return { by: got ? got[0] : 'prompt', code: got ? got[1] || '' : '', warn: got ? got[2] || '' : '' };
   }
   // Our own quality rules (CEL-099): per language [kind, key, params], built from the engine's draft.py, gates.py and
@@ -713,12 +825,15 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     return p;
   }
   // A lead-in ("In practice:") or an indented sub-line belongs to the request around it: shown, not counted.
-  const leadIn = function (b) { return /:\**\s*$/.test(b.text || b.raw); };
+  const leadIn = function (b) { return /:\**\s*$/.test(unid(b.text || b.raw)); };
   const indented = function (b) { return /^\s+/.test(b.raw); };
 
   // The language block as option A reads it: the numbered sections the canvas shows, their rows, the tone pairs.
+  // Every row of a section keeps its block (`block`) so a Save can change that one line of the body; a section keeps
+  // where its last request ends (`end`, a block index) so "Add a rule" can put a new line there.
   function readBlock(lang, body) {
     const blocks = M.parse(body);
+    blocks.forEach(function (b, i) { b.idx = i; });
     const parts = M.sections(blocks);
     const intro = parts[0].blocks.filter(function (b) { return b.kind === 'para' || b.kind === 'quote'; });
     const secs = [], pairs = [], drift = [];
@@ -726,23 +841,24 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       const m = /^(\d+)\.\s+(.*)$/.exec(p.head.text.trim());
       if (m && SHOWN.indexOf(m[1]) >= 0) {
         const rows = [];
-        let header = null, prevRow = false;
+        let header = null, prevRow = false, end = p.head.idx;
         p.blocks.forEach(function (b, i) {
           if (b.kind === 'sep' || b.kind === 'blank' || b.kind === 'hr') return;
+          end = b.idx;
           if (b.kind === 'row') {
             const next = p.blocks[i + 1];
             if (!prevRow && next && next.kind === 'sep') { header = b.cells; prevRow = true; return; }
             prevRow = true;
-            rows.push({ kind: 'req', cells: b.cells, header: header, raw: b.raw, d: doneBy(lang, b.raw) });
+            rows.push({ kind: 'req', cells: b.cells, header: header, raw: b.raw, d: doneBy(lang, b.raw), block: b });
             return;
           }
           prevRow = false;
           if (b.kind === 'head') { rows.push({ kind: 'sub', text: b.text }); return; }
           if (b.kind === 'item' && indented(b)) { rows.push({ kind: 'ctx', text: b.text }); return; }
           if (leadIn(b)) { rows.push({ kind: 'ctx', text: b.text }); return; }
-          rows.push({ kind: 'req', text: b.text, raw: b.raw, d: doneBy(lang, b.raw) });
+          rows.push({ kind: 'req', text: unid(b.text), id: idOf(b.text), raw: b.raw, d: doneBy(lang, b.raw), block: b });
         });
-        secs.push({ no: m[1], title: m[2], rows: rows });
+        secs.push({ no: m[1], title: m[2], rows: rows, end: end });
         return;
       }
       if (/^Snippet\s/.test(p.head.text)) {
@@ -763,7 +879,7 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
         p.blocks.forEach(function (b) { if (b.kind === 'item') drift.push(b.text); });
       }
     });
-    return { intro: intro, secs: secs, pairs: pairs, drift: drift };
+    return { blocks: blocks, intro: intro, secs: secs, pairs: pairs, drift: drift };
   }
 
   // ── the sections ─────────────────────────────────────────────────────────────────
@@ -794,29 +910,52 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     sec.appendChild(head);
     return sec;
   }
-  // The text of a scope, or its skeleton / notice. `fill(body, into)` draws a body that was read.
-  function scopeBody(scope, sec, fill) {
-    const s = sc(scope);
-    if (s.state === 'loading') { sec.appendChild(skeleton()); return; }
-    if (s.state === 'error') { sec.appendChild(notice(scope)); return; }
-    const body = h('div', 'r-text');
-    fill(s.body, body);
-    sec.appendChild(body);
+  // ── a rule: its ID tag, its words (or its editor), how it is carried out, Edit / Remove ──────────────
+  const labelOf = function (r) { return r.id || String(r.text || '').slice(0, 28); };
+  const clean = function (x, block) {
+    const v = String(x == null ? '' : x).replace(/\r/g, '');
+    return (block.kind === 'item' ? v.replace(/\s*\n\s*/g, ' ') : v).trim();
+  };
+  function actBtn(key, label, fn) {
+    const b = h('button', 'r-act', t(key));
+    b.type = 'button';
+    b.setAttribute('aria-label', t(key) + ' ' + label);
+    b.addEventListener('click', fn);
+    return b;
   }
-  function reqRow(r) {
-    const row = h('div', 'r-req');
-    row.dataset.by = r.d.by;
-    if (S.by !== 'all' && r.d.by !== S.by) row.hidden = true;
-    const words = h('div', 'r-words');
-    if (r.cells) {
-      r.cells.forEach(function (c, i) {
-        const cell = h('span', 'r-cell');
-        if (r.header && r.header[i]) cell.appendChild(textNode('span', 'r-cell-h', r.header[i]));
-        inline(cell, c);
-        words.appendChild(cell);
-      });
-    } else inline(words, r.text);
-    row.appendChild(words);
+  function deskBtn(cls, key, fn) {
+    const b = h('button', 'desk-btn' + (cls ? ' ' + cls : ''), t(key));
+    b.type = 'button';
+    b.addEventListener('click', fn);
+    return b;
+  }
+  // The open editor of a rule being edited or added: one textarea, Save and Cancel; a refusal says why under it.
+  function editBox(o, label) {
+    const box = h('div', 'r-editbox');
+    const lab = h('label', 'r-vh', t('rules.rule.label', { id: label }));
+    const ta = h('textarea', 'r-input');
+    ta.id = 'rules-ed';
+    lab.htmlFor = ta.id;
+    ta.rows = o.kind === 'new' ? 3 : 4;
+    ta.value = o.text;
+    if (o.kind === 'new') ta.placeholder = t('rules.new.placeholder');
+    ta.addEventListener('input', function () { o.text = ta.value; });
+    ta.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); closeEditor(); } });
+    box.appendChild(lab);
+    box.appendChild(ta);
+    if (o.err) {
+      const n = h('div', 'r-notice');
+      n.setAttribute('role', 'alert');
+      n.appendChild(h('p', null, o.err));
+      box.appendChild(n);
+    }
+    const acts = h('div', 'r-edit-acts');
+    acts.appendChild(deskBtn('is-strong', 'rules.save', function () { saveEditor(); }));
+    acts.appendChild(deskBtn('', 'rules.cancel', closeEditor));
+    box.appendChild(acts);
+    return box;
+  }
+  function sideOf(r) {
     const side = h('div', 'r-side');
     side.appendChild(pill(r.d.by));
     if (r.d.warn) {
@@ -827,16 +966,67 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       side.appendChild(w);
     }
     side.appendChild(h('span', 'r-how', howText(r.d)));
-    row.appendChild(side);
+    return side;
+  }
+  function reqRow(r) {
+    const row = h('div', 'r-rule');
+    row.dataset.by = r.d.by;
+    if (r.id) row.dataset.id = r.id;
+    const editing = S.open && S.open.kind === 'edit' && S.open.idx === r.block.idx;
+    if (editing) row.classList.add('is-editing');
+    const rid = h('div', 'r-rid');
+    if (r.id) rid.appendChild(h('span', 'r-id', r.id));
+    row.appendChild(rid);
+    if (editing) row.appendChild(editBox(S.open, r.id || labelOf(r)));
+    else {
+      const words = h('div', 'r-words');
+      if (r.cells) {
+        r.cells.forEach(function (c, i) {
+          const cell = h('span', 'r-cell');
+          if (r.header && r.header[i]) cell.appendChild(textNode('span', 'r-cell-h', r.header[i]));
+          inline(cell, c);
+          words.appendChild(cell);
+        });
+      } else inline(words, r.text);
+      row.appendChild(words);
+    }
+    row.appendChild(sideOf(r));
+    const acts = h('div', 'r-acts');
+    if (!editing && !r.cells) {                    // a table row has no ID and no Edit: the table is the client's layout
+      acts.appendChild(actBtn('rules.edit', labelOf(r), function () { openEditor({ kind: 'edit', idx: r.block.idx, text: r.text, initial: r.text, id: r.id }); }));
+      acts.appendChild(actBtn('rules.remove', labelOf(r), function () { removeRule(r.block.idx, labelOf(r)); }));
+    }
+    row.appendChild(acts);
+    row.dataset.q = (r.id + ' ' + (r.cells ? r.cells.join(' ') : r.text)).toLowerCase();
+    return row;
+  }
+  function newRow(sec) {
+    const lang = S.lang.toUpperCase();
+    const row = h('div', 'r-rule is-new');
+    const rid = h('div', 'r-rid');
+    rid.appendChild(h('span', 'r-id is-new', t('rules.new.id', { lang: lang })));
+    rid.appendChild(h('span', 'r-state is-new', t('rules.state.new')));
+    row.appendChild(rid);
+    row.appendChild(editBox(S.open, lang + '-?'));
+    row.appendChild(h('div'));
+    row.appendChild(h('div'));
     return row;
   }
   function renderSec(s) {
     const sec = section('rules-s' + s.no, s.title, s.no);
+    sec.dataset.sec = s.no;
     s.rows.forEach(function (r) {
       if (r.kind === 'sub') sec.appendChild(textNode('h3', 'r-sub', r.text));
       else if (r.kind === 'ctx') sec.appendChild(textNode('p', 'r-ctx', r.text));
       else sec.appendChild(reqRow(r));
     });
+    const adding = S.open && S.open.kind === 'new' && S.open.sec === s.no;
+    if (adding) sec.appendChild(newRow(s));
+    const add = h('button', 'r-add', t('rules.add'));
+    add.type = 'button';
+    add.hidden = !!adding;
+    add.addEventListener('click', function () { openEditor({ kind: 'new', sec: s.no, text: '' }); });
+    sec.appendChild(add);
     return sec;
   }
   function renderQuality(lang) {
@@ -844,7 +1034,9 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     QUALITY[lang].forEach(function (e) {
       const row = h('div', 'r-qc');
       row.dataset.kind = e[0];
-      row.appendChild(h('div', 'r-words', t('rules.qc.' + e[1], Object.assign({ language: langName(lang) }, e[2]))));
+      const words = t('rules.qc.' + e[1], Object.assign({ language: langName(lang) }, e[2]));
+      row.appendChild(h('div', 'r-words', words));
+      row.dataset.q = words.toLowerCase();
       const side = h('div', 'r-side');
       if (e[0] === 'prompt') side.appendChild(pill('prompt'));
       else {
@@ -889,84 +1081,50 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     sec.appendChild(box);
     return sec;
   }
-  function renderGlossary() {
-    const lang = S.lang;
-    const sec = section('rules-glossary', t('rules.glossary'));
-    scopeBody('glossary:' + lang, sec, function (body, into) {
-      const terms = M.parseGlossary(body).terms;
-      if (!terms.length) { into.appendChild(h('p', 'r-empty', t('rules.glossary.empty'))); return; }
-      const rows = [[t('rules.glossary.en'), langName(lang), t('rules.glossary.keep')]];
-      terms.forEach(function (term) { rows.push([term.en, term.to, term.keep ? t('rules.glossary.yes') : '']); });
-      const table = tableOf(rows, true);
-      table.classList.add('r-glossary');
-      into.appendChild(table);
-    });
-    return sec;
-  }
-  // The client's keyword brief per page (CEL-085): one card per page that has one, under the page's English
-  // name, its text collapsed; none for this language says so. One notice if a brief could not be read.
-  function renderBriefs() {
-    const lang = S.lang;
-    const sec = section('rules-briefs', t('rules.briefs'));
-    const scopes = PAGES.map(function (p) { return briefScope(p, lang); });
-    if (scopes.some(function (x) { return sc(x).state === 'loading'; })) { sec.appendChild(skeleton()); return sec; }
-    const failed = scopes.find(function (x) { return sc(x).state === 'error'; });
-    if (failed) { sec.appendChild(notice(failed)); return sec; }
-    const given = PAGES.filter(function (p) { return String(sc(briefScope(p, lang)).body || '').trim(); });
-    if (!given.length) { sec.appendChild(h('p', 'r-empty', t('rules.briefs.empty'))); return sec; }
-    const grid = h('div', 'r-briefs');
-    given.forEach(function (p) {
-      const box = h('details', 'r-brief');
-      box.dataset.page = p;
-      const sum = h('summary', 'r-brief-h');
-      sum.appendChild(h('span', 'r-brief-name', t('page.' + p)));
-      sum.appendChild(pill('prompt'));
-      box.appendChild(sum);
-      const body = h('div', 'r-text');
-      renderBlocks(M.parse(sc(briefScope(p, lang)).body), body);
-      box.appendChild(body);
-      grid.appendChild(box);
-    });
-    sec.appendChild(grid);
-    return sec;
-  }
   function count(doc) {
-    const c = { all: 0, check: 0, prompt: 0, none: 0 };
-    doc.secs.forEach(function (s) {
-      s.rows.forEach(function (r) { if (r.kind === 'req') { c.all++; c[r.d.by]++; } });
-    });
-    return c;
+    let n = 0;
+    doc.secs.forEach(function (s) { s.rows.forEach(function (r) { if (r.kind === 'req') n++; }); });
+    return n;
   }
   function renderSummary(doc, into) {
-    const c = count(doc);
-    const sum = h('div', 'r-sum');
+    const sum = h('div', 'r-sum-a');
     const lead = h('div', 'r-lead');
-    lead.appendChild(h('div', 'r-big', t('rules.summary', { n: c.all })));
-    lead.appendChild(h('div', 'r-sub', t('rules.summary.sub', { language: langName(S.lang) })));
+    lead.appendChild(h('div', 'r-big', tn('rules.count', count(doc))));
+    lead.appendChild(h('p', 'r-sub', t('rules.count.sub', { language: langName(S.lang) })));
     doc.intro.forEach(function (b) { lead.appendChild(textNode('p', 'r-intro', b.text)); });
     sum.appendChild(lead);
-    ['check', 'prompt', 'none'].forEach(function (by) {
-      const b = h('button', 'r-stat');
-      b.type = 'button';
-      b.dataset.by = by;
-      b.setAttribute('aria-pressed', S.by === by ? 'true' : 'false');
-      b.appendChild(pill(by));
-      b.appendChild(h('span', 'r-num', String(c[by])));
-      b.appendChild(h('span', 'r-cap', t(CAP_KEY[by])));
-      b.addEventListener('click', function () { S.by = S.by === by ? 'all' : by; render(); });
-      sum.appendChild(b);
-    });
+    const box = h('label', 'r-search');
+    box.appendChild(h('span', 'r-vh', t('rules.search')));
+    const inp = h('input');
+    inp.type = 'search';
+    inp.placeholder = t('rules.search');
+    inp.value = S.q;
+    inp.dataset.search = '';
+    inp.addEventListener('input', function () { S.q = inp.value; applyFilter(); });
+    box.appendChild(inp);
+    sum.appendChild(box);
     into.appendChild(sum);
-    const line = h('p', 'r-filterline');
-    if (S.by === 'all') line.textContent = t('rules.filter.all', { n: c.all });
-    else {
-      line.appendChild(document.createTextNode(t('rules.filter.some', { k: c[S.by], n: c.all }) + ' '));
-      const clear = h('button', 'r-clear', t('rules.filter.clear'));
-      clear.type = 'button';
-      clear.addEventListener('click', function () { S.by = 'all'; render(); });
-      line.appendChild(clear);
-    }
-    into.appendChild(line);
+  }
+  // The search hides the rules and checks that do not hold the words typed, then a section or rail entry with none left.
+  // An open editor is never hidden. Nothing is read or written.
+  function applyFilter() {
+    const q = S.q.trim().toLowerCase();
+    let shown = 0;
+    panel.querySelectorAll('.r-doc > section').forEach(function (sec) {
+      let n = 0;
+      sec.querySelectorAll('[data-q], .r-rule.is-new').forEach(function (x) {
+        const hit = !q || x.classList.contains('is-editing') || x.classList.contains('is-new') || x.dataset.q.indexOf(q) >= 0;
+        x.hidden = !hit;
+        if (hit) n++;
+      });
+      const has = sec.querySelector('[data-q], .r-rule.is-new');
+      sec.hidden = !!q && has != null && n === 0;
+      if (!sec.hidden && has) shown += n;
+      const link = panel.querySelector('.r-rail-a[href="#' + sec.id + '"]');
+      if (link) link.hidden = sec.hidden;
+    });
+    const none = panel.querySelector('[data-noresult]');
+    if (none) none.hidden = !q || shown > 0;
   }
   function railLink(id, label, n, no) {
     const a = h('a', 'r-rail-a');
@@ -994,32 +1152,423 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     const rail = h('nav', 'r-rail');
     rail.setAttribute('aria-label', t('rules.sections'));
     const main = h('div', 'r-doc');
-    // With a card pressed, a section holding no matching request is not drawn, nor its rail entry: the tone examples,
-    // our quality checks, the glossary and the briefs hold no request at all (CEL-089 Found 3).
-    const all = S.by === 'all';
     doc.secs.forEach(function (x) {
-      const n = x.rows.filter(function (r) { return r.kind === 'req' && (all || r.d.by === S.by); }).length;
-      if (!all && !n) return;
+      const n = x.rows.filter(function (r) { return r.kind === 'req'; }).length;
       rail.appendChild(railLink('rules-s' + x.no, x.title, n, x.no));
       main.appendChild(renderSec(x));
     });
-    if (all && (QUALITY[lang] || []).length) {
+    if ((QUALITY[lang] || []).length) {
       rail.appendChild(railLink('rules-quality', t('rules.quality')));
       main.appendChild(renderQuality(lang));
     }
-    if (all && (doc.pairs.length || doc.drift.length)) {
+    if (doc.pairs.length || doc.drift.length) {
       rail.appendChild(railLink('rules-tone', t('rules.tone')));
       main.appendChild(renderTone(doc));
     }
-    if (all) {
-      rail.appendChild(railLink('rules-glossary', t('rules.glossary')));
-      main.appendChild(renderGlossary());
-      rail.appendChild(railLink('rules-briefs', t('rules.briefs')));
-      main.appendChild(renderBriefs());
-    }
+    const none = h('p', 'r-empty', t('rules.noresult'));
+    none.dataset.noresult = '';
+    none.hidden = true;
+    main.appendChild(none);
     layout.appendChild(rail);
     layout.appendChild(main);
     wrap.appendChild(layout);
+    return wrap;
+  }
+
+  // ── writing: each Save, Remove and Add is ONE rules write that applies at once ───────────────────────
+  // The write carries the version this page read (`baseVersion`). A 409 means someone changed the language first:
+  // the message says so, the typed text stays in its open row. Undo is one more write, of the body as it was.
+  function problem(o, r, lang) {
+    let msg;
+    if (r && r.status === 409) msg = t('rules.apply.stale', { language: langName(lang) });
+    else if (!r || r.status === 401 || r.status === 429) msg = t(failureKey(r));
+    else msg = t('rules.apply.failed', { reason: (r.body && r.body.error) || String(r.status) });
+    if (o && (S.open === o || S.wopen === o) && lang === S.lang) { o.err = msg; o.focus = true; render(); }
+    else toast(msg, 'err');
+  }
+  // `scope` is the language (its rules) or `words:<lang>`; the write carries that scope's own version.
+  function put(scope, body) {
+    return call({ action: 'desk-rules-write', scope: scope, body: body, baseVersion: sc(scope).version });
+  }
+  // `prevBody` (words only) is what Undo writes back when the scope had no body to write back. The language is the
+  // scope's own, never the tab shown now: a write that waited on a read still goes to, and reports on, its language.
+  function commit(o, newBody, label, doneKey, scope0, prevBody) {
+    const scope = scope0 || S.lang, lang = scope.indexOf('words:') === 0 ? scope.slice(6) : scope;
+    const s = sc(scope), prev = prevBody != null ? prevBody : s.body;
+    S.busy = true;
+    root.dataset.busy = 'true';
+    return put(scope, newBody).then(function (r) {
+      S.busy = false;
+      delete root.dataset.busy;
+      if (r && r.ok) {
+        s.body = newBody;
+        if (r.body && Number.isInteger(r.body.version)) s.version = r.body.version;
+        if (S.open === o) S.open = null;
+        if (S.wopen === o) S.wopen = null;
+        if (lang === S.lang) render();
+        toast(t(doneKey, { id: label, term: label }), 'ok', function () { undo(scope, prev, lang); });
+        return;
+      }
+      problem(o, r, lang);
+    });
+  }
+  function undo(scope, prevBody, lang) {
+    if (S.busy) return;
+    S.busy = true;
+    return put(scope, prevBody).then(function (r) {
+      S.busy = false;
+      if (r && r.ok) {
+        const s = sc(scope);
+        s.body = prevBody;
+        if (r.body && Number.isInteger(r.body.version)) s.version = r.body.version;
+        if (lang === S.lang) render();
+        return;
+      }
+      problem(null, r, lang);
+    });
+  }
+  // The number after the highest this language ever used: the body now and every body in its history (a removed
+  // rule's number is not given again). A history that cannot be read leaves the body now.
+  function nextNumber(lang, body) {
+    const re = new RegExp('\\[' + lang.toUpperCase() + '-(\\d+)\\]', 'g');
+    const seen = function (text) { let m, hi = 0; re.lastIndex = 0; while ((m = re.exec(String(text || '')))) hi = Math.max(hi, Number(m[1])); return hi; };
+    return call({ action: 'desk-rules-history', scope: lang }).then(function (r) {
+      let hi = seen(body);
+      if (r && r.ok && r.body && Array.isArray(r.body.history)) r.body.history.forEach(function (x) { hi = Math.max(hi, seen(x.body)); });
+      return hi + 1;
+    });
+  }
+  function openEditor(o) {
+    if (S.busy) return;
+    o.focus = true;
+    S.open = o;
+    render();
+  }
+  function closeEditor() {
+    S.open = null;
+    render();
+  }
+  function saveEditor() {
+    const o = S.open;
+    if (!o || S.busy) return;
+    const s = sc(S.lang);
+    const doc = readBlock(S.lang, s.body);
+    if (o.kind === 'edit') {
+      const b = doc.blocks[o.idx];
+      if (!b || (b.kind !== 'item' && b.kind !== 'para')) { o.err = t('rules.apply.stale', { language: langName(S.lang) }); o.focus = true; render(); return; }
+      const text = clean(o.text, b);
+      if (!text) { o.err = t('rules.empty.rule'); o.focus = true; render(); return; }
+      if (text === o.initial) { closeEditor(); return; }                 // nothing changed: nothing to write
+      b.text = text + (o.id ? ' [' + o.id + ']' : '');
+      b.edited = true;
+      commit(o, M.serialize(doc.blocks), o.id || text.slice(0, 28), 'rules.applied');
+      return;
+    }
+    const sec = doc.secs.find(function (x) { return x.no === o.sec; });
+    const text = clean(o.text, { kind: 'item' });
+    if (!sec) { o.err = t('rules.apply.stale', { language: langName(S.lang) }); o.focus = true; render(); return; }
+    if (!text) { o.err = t('rules.empty.rule'); o.focus = true; render(); return; }
+    const lang = S.lang;                   // taken before the read: a tab switched during it must not change the scope
+    S.busy = true;
+    nextNumber(lang, s.body).then(function (n) {
+      S.busy = false;
+      const id = lang.toUpperCase() + '-' + n;
+      const after = doc.blocks[sec.end];
+      const ins = [];
+      if (after && after.kind !== 'item') ins.push({ kind: 'blank', raw: '' });
+      ins.push({ kind: 'item', raw: '', prefix: after && after.kind === 'item' && !/\d/.test(after.prefix) ? after.prefix : '- ', text: text + ' [' + id + ']', edited: true });
+      Array.prototype.splice.apply(doc.blocks, [sec.end + 1, 0].concat(ins));
+      return commit(o, M.serialize(doc.blocks), id, 'rules.applied', lang);
+    });
+  }
+  function removeRule(idx, label) {
+    if (S.busy) return;
+    const s = sc(S.lang);
+    const doc = readBlock(S.lang, s.body);
+    const b = doc.blocks[idx];
+    if (!b || (b.kind !== 'item' && b.kind !== 'para')) { problem(null, { status: 409 }, S.lang); return; }
+    doc.blocks.splice(idx, 1);
+    S.open = null;
+    commit(null, M.serialize(doc.blocks), label, 'rules.removed');
+  }
+
+  // ── the Word list tab: one table of the language's words (scope `words:<lang>`), chips by Type, a search, ────────
+  // "Add a word" (opens the add row), Edit / Remove per row. Each Save, Remove and Add is ONE write of the scope,
+  // with the version the page read; the body is changed block by block, so a line this page does not know stays as it was.
+  const TYPES = ['keep', 'always', 'kw'];
+  const TYPE_KEY = { keep: 'words.keep', always: 'words.always', kw: 'words.keyword' };
+  const TYPE_CLS = { keep: 'is-keep', always: 'is-always', kw: 'is-kw' };
+  const one = function (x) { return String(x == null ? '' : x).replace(/\s+/g, ' ').trim(); };
+
+  // The table now shown, as a body: `words:<lang>`, or, while nothing is written there, the client's glossary as
+  // the starting table ('' = no table at all). The first write of a language writes this whole table.
+  function wordsNow(lang) {
+    const w = sc(wordsScope(lang));
+    if (!blank(w.body)) return String(w.body);
+    const g = sc('glossary:' + lang);
+    const rows = g.state === 'ok' && !blank(g.body) ? M.wordsFromGlossary(g.body) : [];
+    return rows.length ? M.wordsBody(rows) : '';
+  }
+  function translationCell(w) {
+    const td = h('td');
+    if (w.type === 'keep') td.appendChild(h('span', 'r-same', t('words.same')));
+    else if (w.type === 'kw') {
+      const dash = h('span', null, '–');
+      dash.setAttribute('aria-hidden', 'true');
+      td.appendChild(dash);
+      td.appendChild(h('span', 'r-vh', t('words.none.sr')));
+    } else td.textContent = w.tr;
+    return td;
+  }
+  function wordRow(w) {
+    const row = h('tr');
+    row.dataset.type = w.type;
+    row.dataset.q = (w.term + ' ' + (w.type === 'always' ? w.tr : '')).toLowerCase();
+    row.appendChild(h('td', 'r-w-term', w.term));
+    row.appendChild(translationCell(w));
+    const ty = h('td');
+    ty.appendChild(h('span', 'r-type ' + TYPE_CLS[w.type], t(TYPE_KEY[w.type])));
+    row.appendChild(ty);
+    const acts = h('td', 'r-w-acts');
+    acts.appendChild(actBtn('rules.edit', w.term, function () { openWord({ kind: 'edit', idx: w.idx, term: w.term, tr: w.tr, type: w.type }); }));
+    acts.appendChild(actBtn('rules.remove', w.term, function () { removeWord(w); }));
+    row.appendChild(acts);
+    return row;
+  }
+  // The open row of a word being added or edited: Word or phrase, Translation (off unless the Type is Always
+  // translate as), Type, Save, Cancel; a refusal says why in a row under it. Enter saves, Escape cancels.
+  function wordEditRows(o) {
+    const lab = function (text, id) { const l = h('label', 'r-vh', text); l.htmlFor = id; return l; };
+    const row = h('tr', 'is-adding');
+    const term = h('input', 'r-field');
+    term.id = 'words-ed-term';
+    term.value = o.term;
+    term.placeholder = t('words.new.term');
+    term.addEventListener('input', function () { o.term = term.value; });
+    const tr = h('input', 'r-field');
+    tr.id = 'words-ed-tr';
+    tr.addEventListener('input', function () { o.tr = tr.value; });
+    const type = h('select', 'desk-select');
+    type.id = 'words-ed-type';
+    TYPES.forEach(function (k) {
+      const op = h('option', null, t(TYPE_KEY[k]));
+      op.value = k;
+      op.selected = k === o.type;
+      type.appendChild(op);
+    });
+    const sync = function () {
+      const on = o.type === 'always';
+      tr.disabled = !on;
+      tr.value = on ? o.tr : '';
+      tr.placeholder = t(on ? 'words.translation' : 'words.new.none');
+    };
+    type.addEventListener('change', function () { o.type = type.value; sync(); });
+    sync();
+    [term, tr, type].forEach(function (x) {
+      x.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); closeWord(); }
+        else if (e.key === 'Enter' && x !== type) { e.preventDefault(); saveWord(); }
+      });
+    });
+    [[lab(t('words.new.term'), term.id), term], [lab(t('words.translation'), tr.id), tr], [lab(t('words.type'), type.id), type]].forEach(function (p) {
+      const td = h('td');
+      td.appendChild(p[0]);
+      td.appendChild(p[1]);
+      row.appendChild(td);
+    });
+    const acts = h('td', 'r-w-acts');
+    acts.appendChild(deskBtn('is-strong', 'rules.save', function () { saveWord(); }));
+    acts.appendChild(deskBtn('', 'rules.cancel', closeWord));
+    row.appendChild(acts);
+    const out = [row];
+    if (o.err) {
+      const er = h('tr', 'is-adding');
+      const td = h('td');
+      td.colSpan = 4;
+      const n = h('div', 'r-notice');
+      n.setAttribute('role', 'alert');
+      n.appendChild(h('p', null, o.err));
+      td.appendChild(n);
+      er.appendChild(td);
+      out.push(er);
+    }
+    return out;
+  }
+  function renderWords() {
+    const lang = S.lang;
+    const wrap = h('div', 'r-page');
+    wrap.id = 'rules-words';
+    const need = scopesFor(lang);
+    const bad = need.find(function (x) { return sc(x).state === 'error'; });
+    if (bad) { wrap.appendChild(notice(bad)); return wrap; }
+    if (need.some(function (x) { return sc(x).state === 'loading'; })) { wrap.appendChild(skeleton()); return wrap; }
+    const rows = M.wordRows(M.parse(wordsNow(lang)));
+    const adding = !!(S.wopen && S.wopen.kind === 'add');
+
+    // The count with Add a word beside it (the Rules tab's summary); the filters (chips + search) have the row below,
+    // so the button is not read as part of the search (operator OL-335, CEL-110's revised option A).
+    const sum = h('div', 'r-sum-a');
+    sum.appendChild(h('div', 'r-big', tn('words.count', rows.length)));
+    const add = deskBtn('is-strong', 'words.add', function () { openWord({ kind: 'add', term: '', tr: '', type: 'always' }); });
+    add.dataset.addOpen = '';
+    add.hidden = adding;
+    sum.appendChild(add);
+    wrap.appendChild(sum);
+    const tools = h('div', 'r-wtools');
+    const chips = h('div', 'r-chips');
+    chips.setAttribute('role', 'group');
+    chips.setAttribute('aria-label', t('words.type'));
+    [['all', 'words.all']].concat(TYPES.map(function (k) { return [k, TYPE_KEY[k]]; })).forEach(function (c) {
+      const b = h('button', 'r-chip');
+      b.type = 'button';
+      b.dataset.chip = c[0];
+      b.appendChild(document.createTextNode(t(c[1]) + ' '));
+      b.appendChild(h('span', 'r-chip-n', String(c[0] === 'all' ? rows.length : rows.filter(function (w) { return w.type === c[0]; }).length)));
+      b.addEventListener('click', function () { S.wtype = c[0]; applyWordFilter(); });
+      chips.appendChild(b);
+    });
+    tools.appendChild(chips);
+    const box = h('label', 'r-search');
+    box.appendChild(h('span', 'r-vh', t('words.search')));
+    const inp = h('input');
+    inp.type = 'search';
+    inp.placeholder = t('words.search');
+    inp.value = S.wq;
+    inp.dataset.search = '';
+    inp.addEventListener('input', function () { S.wq = inp.value; applyWordFilter(); });
+    box.appendChild(inp);
+    tools.appendChild(box);
+    wrap.appendChild(tools);
+
+    const table = h('table', 'r-table r-wtable');
+    const head = h('tr');
+    [['words.term'], ['words.translation'], ['words.type'], ['words.actions', true]].forEach(function (c) {
+      const th = h('th');
+      if (c[1]) th.appendChild(h('span', 'r-vh', t(c[0])));
+      else th.textContent = t(c[0]);
+      head.appendChild(th);
+    });
+    const thead = h('thead');
+    thead.appendChild(head);
+    table.appendChild(thead);
+    const body = h('tbody');
+    if (adding) wordEditRows(S.wopen).forEach(function (r) { body.appendChild(r); });
+    rows.forEach(function (w) {
+      const editing = S.wopen && S.wopen.kind === 'edit' && S.wopen.idx === w.idx;
+      if (editing) wordEditRows(S.wopen).forEach(function (r) { body.appendChild(r); });
+      else body.appendChild(wordRow(w));
+    });
+    table.appendChild(body);
+    wrap.appendChild(table);
+    const empty = h('p', 'r-empty', t('words.empty', { language: langName(lang) }));
+    empty.hidden = rows.length > 0 || adding;
+    wrap.appendChild(empty);
+    const none = h('p', 'r-empty', t('words.noresult'));
+    none.dataset.noresult = '';
+    none.hidden = true;
+    wrap.appendChild(none);
+    return wrap;
+  }
+  // The chips and the search hide the words that do not match; an open row is never hidden. Nothing is read or written.
+  function applyWordFilter() {
+    const q = S.wq.trim().toLowerCase();
+    let shown = 0, all = 0;
+    panel.querySelectorAll('.r-wtable tbody tr[data-type]').forEach(function (row) {
+      all++;
+      const hit = (S.wtype === 'all' || row.dataset.type === S.wtype) && (!q || row.dataset.q.indexOf(q) >= 0);
+      row.hidden = !hit;
+      if (hit) shown++;
+    });
+    panel.querySelectorAll('.r-chip').forEach(function (c) { c.setAttribute('aria-pressed', c.dataset.chip === S.wtype ? 'true' : 'false'); });
+    const none = panel.querySelector('[data-noresult]');
+    if (none) none.hidden = all === 0 || shown > 0;
+  }
+  function openWord(o) {
+    if (S.busy) return;
+    o.focus = true;
+    S.wopen = o;
+    render();
+  }
+  function closeWord() {
+    S.wopen = null;
+    render();
+  }
+  function wordFail(o, msg) {
+    o.err = msg;
+    o.focus = true;
+    render();
+  }
+  function saveWord() {
+    const o = S.wopen;
+    if (!o || S.busy) return;
+    const lang = S.lang, scope = wordsScope(lang), s = sc(scope);
+    const base = wordsNow(lang);
+    const blocks = M.parse(base || M.wordsBody([]));
+    const rows = M.wordRows(blocks);
+    const term = one(o.term), tr = o.type === 'always' ? one(o.tr) : '';
+    if (!term) { wordFail(o, t('words.empty.term')); return; }
+    if (o.type === 'always' && !tr) { wordFail(o, t('words.empty.translation')); return; }
+    if (term.indexOf('|') >= 0 || tr.indexOf('|') >= 0) { wordFail(o, t('words.pipe')); return; }      // the engine splits a row at every pipe
+    const same = function (x) { return x.toLowerCase(); };                  // one() already collapsed the spacing of the typed word
+    if (rows.some(function (w) { return same(one(w.term)) === same(term) && !(o.kind === 'edit' && w.idx === o.idx); })) {
+      wordFail(o, t('words.duplicate', { term: term }));
+      return;
+    }
+    const w = { term: term, tr: tr, type: o.type };
+    if (o.kind === 'edit') {
+      const cur = rows.find(function (x) { return x.idx === o.idx; });
+      if (!cur) { wordFail(o, t('rules.apply.stale', { language: langName(lang) })); return; }
+      if (cur.term === term && cur.tr === tr && cur.type === o.type) { closeWord(); return; }     // nothing changed: nothing to write
+      M.setWord(blocks, o.idx, w);
+    } else {
+      M.addWord(blocks, w);
+      S.wtype = 'all';                 // the new word must not be hidden by a chip or a search
+      S.wq = '';
+      S.wlast = term;
+    }
+    commit(o, M.serialize(blocks), term, 'words.applied', scope, blank(s.body) ? (base || M.wordsBody([])) : null);
+  }
+  function removeWord(w) {
+    if (S.busy) return;
+    const lang = S.lang, scope = wordsScope(lang), s = sc(scope);
+    const base = wordsNow(lang);
+    const blocks = M.parse(base);
+    const cur = M.wordRows(blocks).find(function (x) { return x.idx === w.idx && x.term === w.term; });
+    if (!cur) { problem(null, { status: 409 }, lang); return; }
+    blocks.splice(w.idx, 1);
+    S.wopen = null;
+    commit(null, M.serialize(blocks), w.term, 'rules.removed', scope, blank(s.body) ? base : null);
+  }
+
+  // ── the desk's toast (document_desk.js toast(), with an Undo): a message goes after a few seconds, an error stays ──
+  function toast(message, level, undoFn) {
+    const stack = $('#rules-toasts');
+    if (!stack) return;
+    const node = h('div', 'toast is-' + (level || 'ok'));
+    node.appendChild(h('span', 'toast-title r-toast-t', message));
+    const drop = function () { if (node.parentNode) node.parentNode.removeChild(node); };
+    if (undoFn) {
+      const u = h('button', 'toast-close toast-undo', t('rules.undo'));
+      u.type = 'button';
+      u.addEventListener('click', function () { drop(); undoFn(); });
+      node.appendChild(u);
+    }
+    if (level === 'err' || level === 'warn') {
+      const x = h('button', 'toast-close', t('toast.close'));
+      x.type = 'button';
+      x.addEventListener('click', drop);
+      node.appendChild(x);
+    } else setTimeout(drop, TIMING.toast);
+    stack.appendChild(node);
+  }
+
+  // ── the page ─────────────────────────────────────────────────────────────────────
+  // Rules and Word list are drawn here; Import (CEL-114) draws into the same panel.
+  function renderTab() {
+    if (S.tab === 'rules') return renderLang();
+    if (S.tab === 'words') return renderWords();
+    const wrap = h('div', 'r-page');
+    wrap.id = 'rules-' + S.tab;
     return wrap;
   }
   function render() {
@@ -1028,10 +1577,36 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       b.setAttribute('aria-selected', on ? 'true' : 'false');
       b.tabIndex = on ? 0 : -1;
     });
+    navs.forEach(function (b) {
+      const on = b.dataset.ptab === S.tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
     panel.setAttribute('aria-labelledby', 'rulesTab-' + S.lang);
     panel.dataset.lang = S.lang;
+    panel.dataset.ptab = S.tab;
     panel.textContent = '';
-    panel.appendChild(renderLang());
+    panel.appendChild(renderTab());
+    if (S.tab === 'rules') applyFilter();
+    if (S.tab === 'words') {
+      applyWordFilter();
+      const last = S.wlast;
+      S.wlast = null;
+      if (last) {                                      // the word just added is at the end of the table: show it
+        const row = Array.prototype.find.call(panel.querySelectorAll('.r-wtable .r-w-term'), function (x) { return x.textContent === last; });
+        if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
+      }
+    }
+    if (S.open && S.open.focus) {
+      const ta = $('#rules-ed', panel);
+      S.open.focus = false;
+      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    }
+    if (S.wopen && S.wopen.focus) {
+      const f = $('#words-ed-term', panel);
+      S.wopen.focus = false;
+      if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+    }
   }
 
   // ── the language tabs ────────────────────────────────────────────────────────────
@@ -1045,7 +1620,11 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     const b = tabs.find(function (x) { return x.dataset.lang === code; });
     if (code !== S.lang) {
       S.lang = code;
-      S.by = 'all';
+      S.open = null;                       // an open editor belongs to the language it was opened in
+      S.wopen = null;
+      S.q = '';                            // and a search starts empty on each language
+      S.wq = '';
+      S.wtype = 'all';
       const u = new URL(location.href);
       u.searchParams.set('lang', code);
       history.replaceState(null, '', u);
@@ -1064,6 +1643,31 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
     if (!m || !LOCALES[Number(m[1]) - 1]) return;
     e.preventDefault();
     choose(LOCALES[Number(m[1]) - 1].code, false);
+  });
+  // The page tabs (B's top menu): Rules / Word list / Import, the language stays.
+  function pick(ptab, focus) {
+    if (PTABS.indexOf(ptab) < 0) return;
+    if (ptab !== S.tab) {
+      S.tab = ptab;
+      S.open = null;
+      S.wopen = null;
+      const u = new URL(location.href);
+      u.searchParams.set('tab', ptab);
+      history.replaceState(null, '', u);
+      load();                              // the tab reads its own scopes; one already read is not asked again
+    }
+    if (focus) { const b = navs.find(function (x) { return x.dataset.ptab === ptab; }); if (b) b.focus(); }
+  }
+  navs.forEach(function (b, i) {
+    b.addEventListener('click', function () { pick(b.dataset.ptab, false); });
+    b.addEventListener('keydown', function (e) {
+      let to = null;
+      if (e.key === 'ArrowRight') to = navs[(i + 1) % navs.length];
+      else if (e.key === 'ArrowLeft') to = navs[(i - 1 + navs.length) % navs.length];
+      if (!to) return;
+      e.preventDefault();
+      pick(to.dataset.ptab, true);
+    });
   });
   tabs.forEach(function (b, i) {
     b.addEventListener('click', function () { choose(b.dataset.lang, false); });
