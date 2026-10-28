@@ -7,6 +7,7 @@ harness wiring.
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from localize_desk import harness as H
@@ -255,10 +256,11 @@ def test_a_stale_base_is_a_409_with_the_winner_and_the_text_in_use_is_never_a_co
 
 def test_the_scope_rule_is_the_workers_and_there_is_no_draft_route():
     s = _store()
-    for ok in ("global", "de", "glossary:ja", "brief:vancouver:ar", "brief:vs-toronto:de"):
+    for ok in ("global", "de", "glossary:ja", "words:ko", "words:ar", "brief:vancouver:ar", "brief:vs-toronto:de"):
         assert _rules(s, "read", scope=ok)[0] == 200, ok
     for bad in ("", "zz", "DE", "glossary:zz", "glossary:de:de", "brief:de", "brief:home:de", "foo:de",
-                "x:vancouver:de", "glossary:vancouver:de", None, 7, ["de"]):
+                "x:vancouver:de", "glossary:vancouver:de", "words:zz", "words:xx", "words:", "words", "words:de:x",
+                "WORDS:de", "words:vancouver:de", None, 7, ["de"]):
         for action, extra in (("read", {}), ("write", {"body": "x", "baseVersion": 0}), ("history", {})):
             code, r = _rules(s, action, scope=bad, **extra)
             assert (code, r["error"]) == (400, "invalid: unknown rules scope"), (action, bad)
@@ -336,3 +338,241 @@ def test_the_harness_answers_the_rules_actions_and_a_fault_can_be_set_on_them():
     finally:
         import shutil
         shutil.rmtree(root, ignore_errors=True)
+
+
+# ── CEL-112: the changes-file reader (desk-rules-import-read / desk-rules-import-apply) ──────────────────────────────
+DE_RULES = '# German\n- Use formal "Sie", never "du". [DE-3]\n- Write prices with a space before the euro sign. [DE-7]\n- Avoid exclamation marks in headings. [DE-9]\n'
+DE_WORDS = "| Term | Translation | Type |\n|---|---|---|\n| exam prep | Prüfungsvorbereitung | Always translate as |\n| Pacific Beach |  | Keep as is |\n"
+ALL8 = ["de", "fr", "es", "pt", "it", "ja", "ko", "ar"]
+
+
+def _chg(kind, language="de", target_id=None, term=None, before=None, after=None, type_=None, src="line"):
+    return {"language": language, "kind": kind, "target_id": target_id, "term": term, "before": before, "after": after,
+            "type": type_, "matched_by": "id" if target_id else None, "source_text": src}
+
+
+def _read_file(s, answer, text="## German\n- ADD: x\n", langs=("de",)):
+    s.import_answer = answer
+    return s.handle("desk-rules-import-read", {"text": text, "languages": list(langs)}, PAT)
+
+
+def _apply(s, changes, bases, who=PAT):
+    return s.handle("desk-rules-import-apply", {"changes": changes, "bases": bases}, who)
+
+
+def _seeded():
+    s = _store()
+    _publish(s, "de", DE_RULES, 0)
+    _publish(s, "words:de", DE_WORDS, 0)
+    _publish(s, "fr", "- Use vous. [FR-5]\n", 0)
+    return s
+
+
+def _snapshot(s):
+    return json.dumps([s.rules, s.rules_history], sort_keys=True)
+
+
+def test_words_scope_has_the_same_eight_languages_as_the_worker_and_stores_like_any_scope():
+    s = _store()
+    for i, lang in enumerate(ALL8):
+        assert _publish(s, f"words:{lang}", DE_WORDS, 0)[1]["version"] == 1, lang
+        assert _rules(s, "read", scope=f"words:{lang}")[1]["body"] == DE_WORDS
+    assert _publish(s, "words:zz", DE_WORDS, 0)[0] == 400
+    assert _rules(s, "history", scope="words:de")[1]["history"][0]["version"] == 1
+
+
+def test_import_read_proposes_checks_in_code_and_writes_nothing():
+    s = _seeded()
+    before = _snapshot(s)
+    good = [_chg("edit_rule", target_id="DE-7", before="x", after="Write prices as 1.234,50 EUR."),
+            _chg("add_rule", after="Write dates as 31.12.2026."),
+            _chg("remove_rule", target_id="DE-9"),
+            _chg("add_word", term="homestay", after="Gastfamilie", type_="Always translate as")]
+    bad = [_chg("edit_rule", target_id="DE-99", after="x", src="no such id"),
+           _chg("edit_rule", target_id="FR-5", after="x", src="other language's id"),
+           _chg("add_rule", after="   ", src="empty"),
+           _chg("add_word", term="exam prep", after="y", type_="Always translate as", src="exists"),
+           _chg("edit_word", term="nope", after="y", type_="Always translate as", src="missing term"),
+           _chg("add_word", term="spa", after="y", type_="Whatever", src="bad type"),
+           _chg("add_word", term="spa", after="y", src="no type"),
+           _chg("add_word", term="spa", after="", type_="Always translate as", src="no translation"),
+           _chg("add_rule", language="xx", after="x", src="unknown language"),
+           _chg("add_rule", language="fr", after="x", src="language not ticked"),
+           _chg("bogus", src="no such kind")]
+    code, r = _read_file(s, {"changes": good + bad, "unplaced": [{"source_text": "?", "language": "tlh", "reason": "made up"}]})
+    assert code == 200 and r["api"] == 1 and r["model"] == "gemini-3.1-pro-preview" and r["usage"] == {"promptTokens": 0, "outputTokens": 0}
+    assert [(c["kind"], c["target_id"], c["before"], c["after"]) for c in r["changes"]] == [
+        ("edit_rule", "DE-7", "Write prices with a space before the euro sign.", "Write prices as 1.234,50 EUR."),
+        ("add_rule", None, None, "Write dates as 31.12.2026."), ("remove_rule", "DE-9", "Avoid exclamation marks in headings.", None),
+        ("add_word", None, None, "Gastfamilie")]
+    assert r["changes"][1]["assigned_id"] == "DE-10"
+    assert r["unplaced"] == [{"source_text": "?", "language": None, "reason": "unreadable"}]     # an invented reason/language is clamped
+    assert [(c["source_text"], c["reason"]) for c in r["problems"]] == [
+        ("no such id", "rule_not_found"), ("other language's id", "rule_not_found"), ("empty", "empty_rule"),
+        ("exists", "already_exists"), ("missing term", "term_not_found"), ("bad type", "type_unclear"), ("no type", "type_unclear"),
+        ("no translation", "empty_rule"), ("unknown language", "unknown_language"), ("language not ticked", "language_not_requested"),
+        ("no such kind", "bad_shape")]
+    assert r["bases"] == {"de": 1, "words:de": 1}
+    assert _snapshot(s) == before                                  # reading writes nothing
+
+
+def test_import_read_flags_a_duplicate_and_a_conflicting_term_and_a_rule_changed_twice():
+    s = _seeded()
+    a = _chg("add_word", term="spa", after="Spa", type_="Always translate as", src="first")
+    answer = {"changes": [a, _chg("add_word", term="SPA", after="Spa", type_="Always translate as", src="dup"),
+                          _chg("add_word", term="spa", after="Spa2", type_="Always translate as", src="conflict"),
+                          _chg("edit_rule", target_id="DE-3", after="One.", src="r1"),
+                          _chg("remove_rule", target_id="DE-3", src="r2")], "unplaced": []}
+    code, r = _read_file(s, answer)
+    assert [c["source_text"] for c in r["changes"]] == ["r1", "first"] or [c["source_text"] for c in r["changes"]] == []
+    assert sorted((c["source_text"], c["reason"]) for c in r["problems"]) == sorted(
+        [("first", "conflict"), ("dup", "conflict"), ("conflict", "conflict"), ("r1", "conflict"), ("r2", "conflict")])
+
+
+def test_a_word_is_stored_as_the_ruling_says_keep_as_is_term_only_always_translate_as_both_search_keyword_the_phrase():
+    s = _seeded()
+    code, r = _read_file(s, {"changes": [
+        _chg("add_word", term="beach club", after="Beach Club", type_="Keep as is", src="keep"),
+        _chg("add_word", term="homestay", after="Gastfamilie", type_="Always translate as", src="always"),
+        _chg("add_word", term="Sprachreise", type_="Search keyword", src="keyword"),
+        _chg("add_word", term="English", after="Englisch lernen", type_="Search keyword", src="keyword, English term first"),
+        _chg("edit_word", term="exam prep", after="Examen", src="type kept"),
+    ], "unplaced": []})
+    assert [(c["source_text"], c["term"], c["after"], c["type"]) for c in r["changes"]] == [
+        ("keep", "beach club", None, "Keep as is"), ("always", "homestay", "Gastfamilie", "Always translate as"),
+        ("keyword", "Sprachreise", None, "Search keyword"), ("keyword, English term first", "Englisch lernen", None, "Search keyword"),
+        ("type kept", "exam prep", "Examen", "Always translate as")]
+    assert r["changes"][4]["before"] == "Prüfungsvorbereitung" and r["changes"][0]["before"] is None
+    code, r = _apply(s, [c for c in r["changes"]], {"words:de": 1})
+    assert code == 200 and s.rules["words:de"]["body"] == (
+        "| Term | Translation | Type |\n|---|---|---|\n| exam prep | Examen | Always translate as |\n| Pacific Beach |  | Keep as is |\n"
+        "| beach club |  | Keep as is |\n| homestay | Gastfamilie | Always translate as |\n| Sprachreise |  | Search keyword |\n"
+        "| Englisch lernen |  | Search keyword |\n")
+    code, r = _apply(s, [_chg("edit_word", term="Sprachreise", after="Sprachreise", type_="Always translate as")], {"words:de": 2})
+    assert code == 200 and "| Sprachreise | Sprachreise | Always translate as |\n" in s.rules["words:de"]["body"]      # a phrase becomes a glossary row by Type
+    assert _apply(s, [_chg("edit_word", term="Englisch lernen", after="x", type_="Search keyword")], {"words:de": 3})[1]["problems"][0]["reason"] == "term_not_found"   # the phrase IS the key
+
+
+def test_import_read_refuses_over_64_kb_of_utf8_and_a_bad_request_and_a_bad_reader_answer():
+    s = _seeded()
+    s.import_answer = {"changes": [], "unplaced": []}
+    ok = lambda text, langs=("de",): s.handle("desk-rules-import-read", {"text": text, "languages": list(langs)}, PAT)
+    assert ok("a" * 65536)[0] == 200 and ok("a" * 65537)[0] == 413
+    assert ok("語" * 21845)[0] == 200 and ok("語" * 21846)[0] == 413           # 3 bytes each: bytes, not characters
+    assert ok("a" * 65537) == (413, {"ok": False, "error": "invalid: the upload is over 65536 bytes"})
+    for bad in (None, 7, "", " \n", "a\ud800"):
+        assert ok(bad)[0] == 400, repr(bad)
+    assert ok("") == (400, {"ok": False, "error": "invalid: the upload is empty"})
+    assert ok("a\ud800") == (400, {"ok": False, "error": "invalid: the upload is not valid text"})
+    for langs in ((), ("xx",), ("zz",)):
+        assert ok("x", langs) == (400, {"ok": False, "error": "invalid: name 1 to 8 desk languages"}), langs
+    assert ok("x", ("de", "de"))[0] == 200                                         # the same language twice is read once
+    assert s.handle("desk-rules-import-read", {"text": "x", "languages": "de"}, PAT)[0] == 400
+    s.reader_configured = False
+    assert ok("x") == (503, {"ok": False, "error": "reader not configured"})
+    s.reader_configured = True
+    for answer, status, error in (({"changes": "nope", "unplaced": []}, 502, "the reader answer had the wrong shape"),
+                                  ("Sure! here you go", 502, "the reader answer was not readable"),
+                                  ("```json\n{\"changes\":[],\"unplaced\":[]}\n```", 200, None)):
+        s.import_answer = answer
+        assert ok("x")[0] == status and (error is None or ok("x")[1]["error"] == error), answer
+    s.import_answer = lambda text, langs: {"changes": [], "unplaced": [{"source_text": text, "language": None, "reason": "unreadable"}]}
+    assert ok("hello")[1]["unplaced"][0]["source_text"] == "hello"
+    s.import_answer = None
+    s.import_status = 500
+    assert ok("x") == (502, {"ok": False, "error": "the reader answered 500"})
+    s.import_status, s.import_fault = 200, "timeout"
+    assert ok("x") == (504, {"ok": False, "error": "the reader timed out"})
+    s.import_fault = "unreachable"
+    assert ok("x") == (502, {"ok": False, "error": "the reader could not be reached"})
+    s.import_fault, s.import_usage = None, {"promptTokenCount": 1000, "candidatesTokenCount": 200, "thoughtsTokenCount": 300}
+    assert ok("x")[1]["usage"] == {"promptTokens": 1000, "outputTokens": 500}
+    assert s.import_calls[-1] == ("x", ("de",)) and ("a" * 65537, ("de",)) not in s.import_calls   # refused uploads never reached the reader
+
+
+def test_import_apply_writes_every_language_at_once_one_version_each():
+    s = _seeded()
+    changes = [_chg("edit_rule", target_id="DE-7", after="Write prices as 1.234,50 EUR."),
+               _chg("add_rule", after="Write dates as 31.12.2026."), _chg("remove_rule", target_id="DE-9"),
+               _chg("add_word", term="homestay", after="Gastfamilie", type_="Always translate as"),
+               _chg("remove_word", term="exam prep"),
+               _chg("edit_rule", language="fr", target_id="FR-5", after="Use vous, never tu."),
+               _chg("add_word", language="it", term="Pacific Beach", type_="Keep as is")]
+    code, r = _apply(s, changes, {"de": 1, "words:de": 1, "fr": 1, "words:it": 0}, KIM)
+    assert code == 200 and r["updatedBy"] == KIM and r["applied"] == 7
+    assert r["versions"] == {"de": 2, "words:de": 2, "fr": 2, "words:it": 1}
+    assert r["assigned"] == [{"language": "de", "id": "DE-10"}]
+    assert s.rules["de"]["body"] == ('# German\n- Use formal "Sie", never "du". [DE-3]\n'
+                                     '- Write prices as 1.234,50 EUR. [DE-7]\n- Write dates as 31.12.2026. [DE-10]\n')
+    assert s.rules["words:de"]["body"] == ("| Term | Translation | Type |\n|---|---|---|\n| Pacific Beach |  | Keep as is |\n"
+                                           "| homestay | Gastfamilie | Always translate as |\n")
+    assert s.rules["fr"]["body"] == "- Use vous, never tu. [FR-5]\n"
+    assert s.rules["words:it"]["body"] == "| Term | Translation | Type |\n|---|---|---|\n| Pacific Beach |  | Keep as is |\n"
+    assert s.rules["de"]["updated_by"] == KIM
+    assert [h["version"] for h in _rules(s, "history", scope="de")[1]["history"]] == [2, 1]    # one history row each
+    assert _apply(s, [_chg("edit_rule", target_id="DE-3", after='Use formal "Sie", never "du". ')], {"de": 2}) == (
+        400, {"ok": False, "error": "invalid: some changes do not fit the current rules", "problems": [
+            {"reason": "unchanged", "source_text": "line", "change": _chg("edit_rule", target_id="DE-3", after='Use formal "Sie", never "du". ')}]})
+
+
+def test_import_apply_never_reuses_a_removed_rules_number():
+    s = _seeded()
+    assert _apply(s, [_chg("remove_rule", target_id="DE-9")], {"de": 1})[0] == 200
+    assert _apply(s, [_chg("add_rule", after="New.")], {"de": 2})[0] == 200
+    assert s.rules["de"]["body"].splitlines()[-1] == "- New. [DE-10]"                  # DE-9 is gone for good, 10 is next
+    assert _apply(s, [_chg("remove_rule", target_id="DE-10")], {"de": 3})[0] == 200
+    assert _apply(s, [_chg("add_rule", after="Newer.")], {"de": 4})[0] == 200
+    assert s.rules["de"]["body"].splitlines()[-1] == "- Newer. [DE-11]"                # nor the number of a rule just removed
+
+
+def test_import_apply_is_all_or_nothing_a_stale_base_on_one_scope_is_a_409_and_nothing_moves():
+    s = _seeded()
+    _publish(s, "fr", "- Use vous, never tu. [FR-5]\n", 1, KIM)                       # Kim moves fr to v2 first
+    before = _snapshot(s)
+    changes = [_chg("add_rule", after="A new German rule."), _chg("add_rule", language="fr", after="New fr rule.")]
+    code, r = _apply(s, changes, {"de": 1, "fr": 1})
+    assert (code, r) == (409, {"ok": False, "error": "someone published these rules first", "api": 1, "stale": ["fr"],
+                               "current": {"de": 1, "fr": 2}})
+    assert _snapshot(s) == before                                                     # de, the fresh one, was not written either
+    assert _apply(s, changes, {"de": 1, "fr": 2})[0] == 200
+    assert _apply(s, [_chg("add_word", language="es", term="a", after="b", type_="Always translate as")], {"words:es": 1})[0] == 409   # base 1 on a scope that is not there
+    assert "words:es" not in s.rules
+
+
+def test_import_apply_rechecks_in_code_refuses_bad_requests_and_writes_nothing_on_any_refusal():
+    s = _seeded()
+    before = _snapshot(s)
+    ok_chg = _chg("add_rule", after="Fine.")
+    for changes, bases, why in (
+            ([ok_chg, _chg("edit_rule", target_id="DE-99", after="x")], {"de": 1}, ["rule_not_found"]),
+            ([ok_chg, _chg("add_rule", after=" ")], {"de": 1}, ["empty_rule"]),
+            ([ok_chg, _chg("add_word", term="exam prep", after="y", type_="Always translate as")], {"de": 1, "words:de": 1}, ["already_exists"]),
+            ([ok_chg, _chg("edit_word", term="exam prep", after="y"), _chg("remove_word", term="exam prep")],
+             {"de": 1, "words:de": 1}, ["conflict", "conflict"]),
+            ([_chg("remove_rule", target_id="DE-3"), _chg("remove_rule", target_id="DE-7"), _chg("remove_rule", target_id="DE-9"),
+              _chg("remove_rule", target_id="DE-9")], {"de": 1}, ["duplicate"])):
+        code, r = _apply(s, changes, bases)
+        assert code == 400 and r["error"] == "invalid: some changes do not fit the current rules", (why, r)
+        assert [p["reason"] for p in r["problems"]] == why, (why, r)
+        assert _snapshot(s) == before, why
+    code, r = _apply(s, [_chg("remove_rule", language="fr", target_id="FR-5")], {"fr": 1})      # the last rule: nothing left
+    assert code == 400 and [p["reason"] for p in r["problems"]] == ["empty_result"]
+    assert _snapshot(s) == before
+    assert _apply(s, [ok_chg], {})[1]["error"] == "invalid: no base version for de"
+    assert _apply(s, [], {"de": 1})[1]["error"] == "invalid: send 1 to 500 changes"
+    assert _apply(s, [ok_chg], None)[1]["error"] == "invalid: bases must name each language's version"
+    assert _apply(s, [_chg("add_rule", language="zz", after="x")], {"zz": 0})[1]["error"] == "invalid: no change names a desk language"
+    for changes, bases in (("x", {}), ([ok_chg], {"de": -1}), ([ok_chg], {"de": "1"}), ([ok_chg], {"de": 10 ** 400}),
+                           ([_chg("bogus")], {"de": 1}), ([ok_chg, 7], {"de": 1})):
+        assert _apply(s, changes, bases)[0] == 400, (changes, bases)
+    assert _snapshot(s) == before
+    assert _apply(s, [ok_chg, dict(ok_chg, body="EVIL")], {"de": 1, "body": "EVIL"})[0] == 400      # the same rule twice: refused
+    code, r = _apply(s, [ok_chg], {"de": 1.0})
+    assert code == 200 and "EVIL" not in s.rules["de"]["body"]                                       # JSON 1.0 is 1
+
+
+def test_the_import_answers_and_the_rules_actions_are_apart_from_each_other():
+    s = _seeded()
+    assert s.handle("desk-rules-import-draft", {}, PAT) == (400, {"error": "invalid action"})
+    assert _apply(s, [_chg("add_rule", after="Fine.")], {"de": 1})[0] == 200
+    assert _rules(s, "read", scope="de")[1]["version"] == 2 and _rules(s, "read", scope="glossary:de")[1]["version"] == 0
