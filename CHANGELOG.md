@@ -1,5 +1,16 @@
 # Changelog
 
+## desk-v2.5.0 - 2026-10-28
+
+- Desk: the Translation rules page has a Rules tab and a Word list tab. Each language's rules are sections; each rule has a short ID (for example DE-12) shown as a tag; you edit, add or remove a rule by hand, and a saved change applies at once with Undo. [CEL-113]
+- Desk: the Word list tab holds one table per language with a Type column: Keep as is, Always translate as, Search keyword. Filter chips, search, add, edit and remove. [CEL-113]
+- Desk: an Import tab. Copy the ready prompt, download the current rules and a template, upload one changes file, see each change before and after (removals in red, a "We couldn't place this" list), then Apply. [CEL-114]
+- Desk: an uploaded changes file is read by Gemini 3.1 Pro into a checked list of proposed changes, and Apply writes every changed language in one batch. [CEL-112]
+- Engine: each language's word list is what the translator reads in place of the glossary and keyword files. [CEL-111]
+- Rule IDs: every rule has an ID; an ID is never reused after a rule is removed. [CEL-111]
+- Backup: a daily Markdown copy of every language's rules is kept outside the database. [CEL-111]
+- Worker: a cap of 200 rules writes per 10 minutes per signed-in user, and 20 import reads per 10 minutes. The D1 schema number stays 6; no dashboard version change.
+
 ## desk-v2.4.0 / dashboard-v1.3.0 - 2026-10-28
 
 - Desk: a link in the text now reads as a link. In the English, website's-text and history columns the words between a pair of link markers are underlined with a dotted line and show "Link 1" on hover; the numbers are gone from the text. While editing, the markers are a small bare chip, the two chips of a pair light up together on hover, and a note under the text warns when a marker is missing, extra, out of order or has no partner. What is saved and exported is unchanged. [CEL-096]

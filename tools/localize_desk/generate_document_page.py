@@ -76,7 +76,7 @@ VERSION = "desk-v2"
 # status bar. A release step bumps it with its CHANGELOG entry and the tag `desk-v<version>` (decisions
 # 2026-10-19 23:44, CEL-042). DESK_CHANGELOG_URL is where the link goes: the desk's section of the CHANGELOG in the PUBLIC CEL repo
 # (the monorepo is private: the client could not open its CHANGELOG; ruling 2026-10-19 23:58).
-DESK_VERSION = "2.4.0"
+DESK_VERSION = "2.5.0"
 DESK_CHANGELOG_URL = "https://github.com/cagdasunal/CEL/blob/main/CHANGELOG.md"
 
 
