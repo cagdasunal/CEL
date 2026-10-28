@@ -38,7 +38,7 @@ from playwright.sync_api import expect, sync_playwright  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from localize_desk import harness as H  # noqa: E402
-from localize_desk.copy_text import t  # noqa: E402
+from localize_desk.copy_text import t, tn  # noqa: E402
 
 THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 READY = '#rules-app[data-state="ready"]'
@@ -161,7 +161,7 @@ def test_every_rule_shows_its_id_as_a_tag_and_the_words_do_not_repeat_it(browser
         expect(p.locator("#rules-lang .r-rule .r-id")).to_have_text(["DE-1", "DE-2", "DE-3"])
         expect(words(p)).to_have_text(["Alpha rule one", "Beta rule two", "Gamma rule three"])
         assert "[DE-" not in p.locator("#rulesPanel").inner_text()
-        expect(p.locator(".r-big")).to_have_text(t("rules.count", n=3))
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 3))
         expect(rule(p, "DE-2").get_by_role("button", name=t("rules.edit"))).to_have_count(1)
         expect(rule(p, "DE-2").get_by_role("button", name=t("rules.remove"))).to_have_count(1)
 
@@ -255,7 +255,7 @@ def test_remove_drops_the_rule_at_once_with_one_write_and_undo_brings_it_back(br
         rule(p, "DE-2").get_by_role("button", name=t("rules.remove")).click()
         expect(toast(p)).to_contain_text(t("rules.removed", id="DE-2"))
         expect(words(p)).to_have_text(["Alpha rule one", "Gamma rule three"])
-        expect(p.locator(".r-big")).to_have_text(t("rules.count", n=2))
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 2))
         assert len(env.writes()) == 1 and env.body() == DE_ED.replace("- Beta rule two [DE-2]\n", "")
         toast(p).get_by_role("button", name=t("rules.undo")).click()
         expect(words(p)).to_have_count(3)
@@ -302,6 +302,47 @@ def test_known_limit_a_removed_rule_number_comes_back_once_its_version_left_the_
         sec.locator("#rules-ed").fill("Delta")
         sec.get_by_role("button", name=t("rules.save"), exact=True).click()
         expect(toast(p).last).to_contain_text(t("rules.applied", id="DE-3"))               # DE-3 again: the floor is the window
+
+
+def test_add_a_rule_writes_to_the_language_it_was_written_in_when_the_tab_is_switched_during_the_history_read(browser):
+    """Review round 1, fix 1: Save on an Add first reads the history for the next number. A switch to another,
+    already-read language while that read is out must not send this body, or its ID, to the other language."""
+    FR_ED = "## 2. Workflow\n\n- Un [FR-1]\n"
+
+    def seed(store):
+        seed_ed(store)
+        seed_scope(store, "fr", FR_ED)
+
+    with rules(browser, seed=seed) as env:
+        p = env.page
+        p.locator("#rulesTab-fr").click()                                                # French read once, so the switch below reads nothing
+        expect(p.locator("#rules-lang .r-rule .r-id")).to_have_text(["FR-1"])
+        p.locator("#rulesTab-de").click()
+        expect(p.locator("#rules-lang .r-rule .r-id")).to_have_text(["DE-1", "DE-2", "DE-3"])
+        arrived, gate = threading.Event(), threading.Event()
+        inner = env.store.handle
+
+        def hold(action, body, who):
+            if action == "desk-rules-history":
+                arrived.set()
+                gate.wait(30)
+            return inner(action, body, who)
+
+        env.store.handle = hold
+        sec = p.locator("#rules-s2")
+        sec.get_by_role("button", name=t("rules.add")).click()
+        sec.locator("#rules-ed").fill("Delta rule four")
+        sec.get_by_role("button", name=t("rules.save"), exact=True).click()
+        assert arrived.wait(10), "the Add did not read the history"
+        p.locator("#rulesTab-fr").click()                                                # while the read is out
+        expect(p.locator("#rules-lang .r-rule .r-id")).to_have_text(["FR-1"])
+        gate.set()
+        expect(toast(p).last).to_contain_text(t("rules.applied", id="DE-4"))
+        assert [b["scope"] for b in env.writes()] == ["de"]                              # the one write, to German
+        assert "- Delta rule four [DE-4]\n" in env.body("de") and "[FR-" not in env.body("de")
+        assert env.body("fr") == FR_ED and env.store.rules["fr"]["version"] == 1          # French untouched
+        expect(p.locator("#rules-lang .r-rule .r-id")).to_have_text(["FR-1"])            # the French tab shown stays French
+        assert [b["scope"] for a, b in env.calls if a == "desk-rules-history"] == ["de"]
 
 
 # ── 4. a stale base keeps the typed text ──────────────────────────────────────────────────────────
@@ -404,6 +445,29 @@ def test_the_word_list_is_one_table_with_type_pills_and_chips_that_count(browser
         expect(chips.nth(0)).to_have_attribute("aria-pressed", "true")
         assert read_scopes(env) == ["words:de"]                       # its own scope; no glossary behind a written list
         assert [a for a, _ in env.calls if a != "desk-rules-read"] == []
+
+
+def test_add_a_word_sits_with_the_count_and_the_chips_and_the_search_have_their_own_row_below(browser):
+    """Operator OL-335: Add a word and the search must not sit side by side as if one control (CEL-110's revised A)."""
+    def both(store):
+        seed_words(store)
+        seed_scope(store, "words:fr", HEAD + "| Acme | | Keep as is |\n")
+
+    with rules(browser, seed=both, tab="words") as env:
+        p = env.page
+        head, tools = p.locator("#rules-words .r-sum-a"), p.locator("#rules-words .r-wtools")
+        expect(head.locator(".r-big")).to_have_text(tn("words.count", 4))
+        expect(head.get_by_role("button", name=t("words.add"))).to_have_count(1)
+        expect(tools.get_by_role("button", name=t("words.add"))).to_have_count(0)
+        expect(tools.locator(".r-chip")).to_have_count(4)
+        expect(tools.get_by_placeholder(t("words.search"))).to_have_count(1)
+        add = head.get_by_role("button", name=t("words.add")).bounding_box()
+        chips, search = tools.locator(".r-chips").bounding_box(), tools.locator(".r-search").bounding_box()
+        assert add["y"] + add["height"] <= search["y"], (add, search)                    # the button is a row above the search
+        assert search["x"] >= chips["x"] + chips["width"], (chips, search)                # the search is right of the chips,
+        assert abs((search["y"] + search["height"] / 2) - (chips["y"] + chips["height"] / 2)) < 4     # on their row
+        p.locator("#rulesTab-fr").click()
+        expect(p.locator("#rules-words .r-sum-a .r-big")).to_have_text(tn("words.count", 1))   # "1 word"
 
 
 def test_a_language_without_words_starts_from_its_glossary_and_the_first_save_writes_the_whole_table(browser):

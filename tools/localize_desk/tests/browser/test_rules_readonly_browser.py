@@ -34,7 +34,7 @@ from playwright.sync_api import expect, sync_playwright  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from localize_desk import harness as H  # noqa: E402
-from localize_desk.copy_text import t  # noqa: E402
+from localize_desk.copy_text import t, tn  # noqa: E402
 
 THIRD_PARTY = re.compile(r"^https?://([^/]*\.)?bugherd\.com/")
 READY = '#rules-app[data-state="ready"]'
@@ -263,7 +263,7 @@ def test_a_language_the_client_wrote_no_rules_for_shows_its_block_opening_with_t
         p = env.page
         expect(p.locator("#rules-lang .r-intro").first).to_have_text("The client has not supplied Japanese-specific rules yet.")
         expect(words(p)).to_have_text(["Generic rule A"])
-        expect(p.locator("#rules-lang .r-big")).to_have_text(t("rules.count", n=1))
+        expect(p.locator("#rules-lang .r-big")).to_have_text(tn("rules.count", 1))         # "1 rule", not "1 rules"
 
 
 def test_a_language_with_no_row_at_all_says_so(browser):
@@ -321,7 +321,7 @@ def test_each_request_shows_how_it_is_carried_out_and_the_summary_counts_them(br
         expect(p.locator("#rules-lang .r-rule .r-how")).to_have_text([
             t("rules.how.check.meta"), t("rules.how.prompt"), t("rules.how.prompt"),
             t("rules.how.none.slug")])
-        expect(p.locator(".r-big")).to_have_text(t("rules.count", n=4))
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 4))
 
 
 def test_the_search_hides_what_does_not_match_and_a_section_with_nothing_left_and_clearing_it_brings_them_back(browser):
@@ -333,7 +333,7 @@ def test_the_search_hides_what_does_not_match_and_a_section_with_nothing_left_an
         # §2 only: §6 and §12 hold no match, so they and their rail entries are gone; the count heading is the whole language's
         assert [x for x in section_texts(p) if p.locator(f"#{x}").is_visible()] == ["rules-s2"]
         expect(p.locator(".r-rail a:visible")).to_have_count(1)
-        expect(p.locator(".r-big")).to_have_text(t("rules.count", n=4))
+        expect(p.locator(".r-big")).to_have_text(tn("rules.count", 4))
         search.fill("no such words")
         expect(words(p)).to_have_count(0)
         expect(p.locator("[data-noresult]")).to_have_text(t("rules.noresult"))

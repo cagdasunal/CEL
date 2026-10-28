@@ -426,7 +426,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 
 ## Rules page (CEL-046; the editor since CEL-113)
 
-The page where the client reads and edits the translation rules per language: /admin/localization/rules/. Three page tabs (Rules, Word list, Import) over the language tabs. The Rules tab (CEL-113, option A of CEL-110 with the top menu of option B): the count of rules, a search, then the sections in the client's order, each rule with its ID tag, how the tool carries it out and Edit / Remove, an Add a rule button ending each section, the tone examples side by side and our quality checks. Every Save, Remove and Add applies at once and shows the desk's note with Undo; there is no draft and no publish step. The Word list tab (CEL-113): the language's words in one table (Term, Translation, Type), Type chips with how many words each holds, a search and an Add a word button that opens the add row; each word has Edit / Remove, and a Save, Remove or Add applies the same way.
+The page where the client reads and edits the translation rules per language: /admin/localization/rules/. Three page tabs (Rules, Word list, Import) over the language tabs. The Rules tab (CEL-113, option A of CEL-110 with the top menu of option B): the count of rules, a search, then the sections in the client's order, each rule with its ID tag, how the tool carries it out and Edit / Remove, an Add a rule button ending each section, the tone examples side by side and our quality checks. Every Save, Remove and Add applies at once and shows the desk's note with Undo; there is no draft and no publish step. The Word list tab (CEL-113): the count of words with an Add a word button beside it that opens the add row, then Type chips with how many words each holds and a search on one row, then the language's words in one table (Term, Translation, Type); each word has Edit / Remove, and a Save, Remove or Add applies the same way.
 
 | Key | Text | Shown where |
 |---|---|---|
@@ -440,7 +440,8 @@ The page where the client reads and edits the translation rules per language: /a
 | `rules.tab.rules` | Rules | Page tab |
 | `rules.tab.words` | Word list | Page tab |
 | `rules.tab.import` | Import | Page tab |
-| `rules.count` | {n} rules | Summary heading of one language |
+| `rules.count.one` | 1 rule | Summary heading of one language |
+| `rules.count.other` | {n} rules | |
 | `rules.count.sub` | Your {language} rules, in the order of your Translation Guidelines. | Line under the summary heading |
 | `rules.search` | Search the rules | Search field placeholder and label |
 | `rules.noresult` | No rules match your search. | Under the sections when the search finds nothing |
@@ -466,7 +467,9 @@ The page where the client reads and edits the translation rules per language: /a
 | `words.always` | Always translate as | Type chip, Type pill and Type choice: the word is always translated as the Translation |
 | `words.keyword` | Search keyword | Type chip, Type pill and Type choice: the word is a search phrase in the language |
 | `words.search` | Search the word list | Search field placeholder and label |
-| `words.add` | Add a word | Button that opens the add row; hidden while the row is open |
+| `words.count.one` | 1 word | Heading of the Word list, with Add a word beside it |
+| `words.count.other` | {n} words | |
+| `words.add` | Add a word | Button beside the count of words that opens the add row; hidden while the row is open |
 | `words.term` | Term | Column head |
 | `words.new.term` | Word or phrase | Placeholder and label of the first field of an open word row |
 | `words.translation` | Translation | Column head, placeholder and label of the Translation field when the Type is Always translate as |

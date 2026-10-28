@@ -450,7 +450,7 @@
   function renderSummary(doc, into) {
     const sum = h('div', 'r-sum-a');
     const lead = h('div', 'r-lead');
-    lead.appendChild(h('div', 'r-big', t('rules.count', { n: count(doc) })));
+    lead.appendChild(h('div', 'r-big', tn('rules.count', count(doc))));
     lead.appendChild(h('p', 'r-sub', t('rules.count.sub', { language: langName(S.lang) })));
     doc.intro.forEach(function (b) { lead.appendChild(textNode('p', 'r-intro', b.text)); });
     sum.appendChild(lead);
@@ -551,9 +551,11 @@
   function put(scope, body) {
     return call({ action: 'desk-rules-write', scope: scope, body: body, baseVersion: sc(scope).version });
   }
-  // `prevBody` (words only) is what Undo writes back when the scope had no body to write back.
+  // `prevBody` (words only) is what Undo writes back when the scope had no body to write back. The language is the
+  // scope's own, never the tab shown now: a write that waited on a read still goes to, and reports on, its language.
   function commit(o, newBody, label, doneKey, scope0, prevBody) {
-    const lang = S.lang, scope = scope0 || lang, s = sc(scope), prev = prevBody != null ? prevBody : s.body;
+    const scope = scope0 || S.lang, lang = scope.indexOf('words:') === 0 ? scope.slice(6) : scope;
+    const s = sc(scope), prev = prevBody != null ? prevBody : s.body;
     S.busy = true;
     root.dataset.busy = 'true';
     return put(scope, newBody).then(function (r) {
@@ -627,16 +629,17 @@
     const text = clean(o.text, { kind: 'item' });
     if (!sec) { o.err = t('rules.apply.stale', { language: langName(S.lang) }); o.focus = true; render(); return; }
     if (!text) { o.err = t('rules.empty.rule'); o.focus = true; render(); return; }
+    const lang = S.lang;                   // taken before the read: a tab switched during it must not change the scope
     S.busy = true;
-    nextNumber(S.lang, s.body).then(function (n) {
+    nextNumber(lang, s.body).then(function (n) {
       S.busy = false;
-      const id = S.lang.toUpperCase() + '-' + n;
+      const id = lang.toUpperCase() + '-' + n;
       const after = doc.blocks[sec.end];
       const ins = [];
       if (after && after.kind !== 'item') ins.push({ kind: 'blank', raw: '' });
       ins.push({ kind: 'item', raw: '', prefix: after && after.kind === 'item' && !/\d/.test(after.prefix) ? after.prefix : '- ', text: text + ' [' + id + ']', edited: true });
       Array.prototype.splice.apply(doc.blocks, [sec.end + 1, 0].concat(ins));
-      return commit(o, M.serialize(doc.blocks), id, 'rules.applied');
+      return commit(o, M.serialize(doc.blocks), id, 'rules.applied', lang);
     });
   }
   function removeRule(idx, label) {
@@ -763,6 +766,15 @@
     const rows = M.wordRows(M.parse(wordsNow(lang)));
     const adding = !!(S.wopen && S.wopen.kind === 'add');
 
+    // The count with Add a word beside it (the Rules tab's summary); the filters (chips + search) have the row below,
+    // so the button is not read as part of the search (operator OL-335, CEL-110's revised option A).
+    const sum = h('div', 'r-sum-a');
+    sum.appendChild(h('div', 'r-big', tn('words.count', rows.length)));
+    const add = deskBtn('is-strong', 'words.add', function () { openWord({ kind: 'add', term: '', tr: '', type: 'always' }); });
+    add.dataset.addOpen = '';
+    add.hidden = adding;
+    sum.appendChild(add);
+    wrap.appendChild(sum);
     const tools = h('div', 'r-wtools');
     const chips = h('div', 'r-chips');
     chips.setAttribute('role', 'group');
@@ -777,7 +789,6 @@
       chips.appendChild(b);
     });
     tools.appendChild(chips);
-    const right = h('div', 'r-wtools-r');
     const box = h('label', 'r-search');
     box.appendChild(h('span', 'r-vh', t('words.search')));
     const inp = h('input');
@@ -787,12 +798,7 @@
     inp.dataset.search = '';
     inp.addEventListener('input', function () { S.wq = inp.value; applyWordFilter(); });
     box.appendChild(inp);
-    right.appendChild(box);
-    const add = deskBtn('is-strong', 'words.add', function () { openWord({ kind: 'add', term: '', tr: '', type: 'always' }); });
-    add.dataset.addOpen = '';
-    add.hidden = adding;
-    right.appendChild(add);
-    tools.appendChild(right);
+    tools.appendChild(box);
     wrap.appendChild(tools);
 
     const table = h('table', 'r-table r-wtable');

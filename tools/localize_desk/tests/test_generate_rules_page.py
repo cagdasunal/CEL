@@ -329,7 +329,8 @@ def _keys_used() -> tuple[set[str], set[str]]:
 
 def test_page_finds_the_copy_keys_it_uses():
     plain, plural = _keys_used()
-    assert len(plain) >= 8 and not plural, "the key scan found almost nothing: the regex is wrong"
+    assert len(plain) >= 8, "the key scan found almost nothing: the regex is wrong"
+    assert plural == {"rules.count", "words.count"}, plural      # the two counts use .one / .other (Ruling 19:4x)
 
 
 def test_every_copy_key_the_page_asks_for_exists():

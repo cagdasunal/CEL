@@ -174,7 +174,6 @@ RULES_CSS = """
 .rules .r-type.is-always { background: color-mix(in srgb, var(--accent-strong) 10%, transparent); color: var(--accent-strong); }
 .rules .r-type.is-kw { border: 1px solid var(--border-strong); color: var(--fg); }
 .rules .r-wtools { display: flex; align-items: center; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin: 0 0 16px; }
-.rules .r-wtools-r { display: flex; align-items: center; gap: 12px; }
 .rules .r-wtable th:nth-child(1) { width: 34%; }
 .rules .r-wtable th:nth-child(3) { width: 180px; }
 .rules .r-wtable th:nth-child(4) { width: 190px; }
