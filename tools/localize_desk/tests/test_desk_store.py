@@ -429,6 +429,27 @@ def test_import_read_flags_a_duplicate_and_a_conflicting_term_and_a_rule_changed
         [("first", "conflict"), ("dup", "conflict"), ("conflict", "conflict"), ("r1", "conflict"), ("r2", "conflict")])
 
 
+def test_a_question_line_from_the_clients_ai_goes_to_unplaced_found_in_code_once_each():
+    s = _seeded()
+    before = _snapshot(s)
+    q1, q2, q3, q4 = ('QUESTION: Should "Pacific Beach" stay in English?', '- **QUESTION:** Is DE-3 still wanted?',
+                      "1. QUESTION : which date format?", "**QUESTION**: and the formal Sie?")
+    upload = "\r\n".join(["## German", "- EDIT DE-3: Use du.", q1, f"  {q2}", q3, q4, q1, "A line that has QUESTION: in the middle is not one.",
+                          "Question: lower case is chat, not the template."])
+    # The reader returns ONE of the question lines itself (without its list mark and bold) and skips the rest.
+    code, r = _read_file(s, {"changes": [_chg("edit_rule", target_id="DE-3", after="Use du.")],
+                             "unplaced": [{"source_text": "some chatty line", "language": "de", "reason": "unreadable"},
+                                          {"source_text": "QUESTION: Is DE-3 still wanted?", "language": "de", "reason": "ambiguous"}]}, text=upload)
+    assert code == 200
+    assert r["unplaced"] == [{"source_text": "some chatty line", "language": "de", "reason": "unreadable"}] + [
+        {"source_text": q, "language": None, "reason": "unreadable"} for q in (q1, q2, q3, q4)]     # the reader's others first, then each question once, in file order
+    assert [c["target_id"] for c in r["changes"]] == ["DE-3"] and _snapshot(s) == before
+    code, r = _read_file(s, {"changes": [], "unplaced": []}, text="- EDIT DE-3: Use du.\nNo question here.")
+    assert code == 200 and r["unplaced"] == []
+    code, r = _read_file(s, {"changes": [], "unplaced": []}, text="EDIT DE-3: Use du.\rQUESTION: and DE-9?\rmore text")      # a bare CR ends a line too
+    assert code == 200 and [u["source_text"] for u in r["unplaced"]] == ["QUESTION: and DE-9?"]
+
+
 def test_a_word_is_stored_as_the_ruling_says_keep_as_is_term_only_always_translate_as_both_search_keyword_the_phrase():
     s = _seeded()
     code, r = _read_file(s, {"changes": [

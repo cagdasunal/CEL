@@ -687,10 +687,16 @@ class DeskStore:
                 raise _ImportFail(503, "reader not configured")
             cur, versions = self._import_state(langs)
             data, usage = self._ask_reader(text, langs)
+            # The reader's own list, minus any line it returned that is a QUESTION: line, plus those lines once each from the code.
+            asked = _question_lines(text)
+            asked_keys = {_question_key(q) for q in asked}
             unplaced = [{"source_text": _js_slice(_js_string(u.get("source_text") if isinstance(u, dict) else None), 2000),
                          "language": u.get("language") if isinstance(u, dict) and u.get("language") in REAL_LOCALES else None,
                          "reason": u.get("reason") if isinstance(u, dict) and u.get("reason") in IMPORT_REASONS else "unreadable"}
                         for u in data["unplaced"][:IMPORT_MAX_CHANGES] if isinstance(u, (dict, list))]
+            unplaced = [u for u in unplaced if _question_key(u["source_text"]) not in asked_keys]
+            unplaced += [{"source_text": _js_slice(q, 2000), "language": None, "reason": "unreadable"}
+                         for q in asked[:IMPORT_MAX_CHANGES]]
             res = _check_import(data["changes"][:IMPORT_MAX_CHANGES], cur, langs, self._import_max_nums(langs, cur))
             return 200, {"ok": True, "api": API, "model": GEMINI_MODEL, "changes": res["accepted"], "unplaced": unplaced,
                          "problems": res["problems"], "bases": versions, "usage": usage}
@@ -798,6 +804,9 @@ class _ImportFail(Exception):
 _WS = "[" + re.escape(_JS_SPACE) + "]"                           # JavaScript's \s, which Python's is not
 _RULE_TOKEN = re.compile(_WS + r"\[([A-Z]{2}-[0-9]+)\]" + _WS + r"*\Z")
 _RULE_MARK = re.compile(r"\A" + _WS + r"*(?:[-*+]|[0-9]+[.)])" + _WS + "+")
+# A line of the upload that starts QUESTION: (after an optional list mark or bold) is the client's AI asking the client
+# something (Ruling CEL-112 18:2x): the Worker's QUESTION_LINE / questionKey / questionLines, answer for answer.
+_QUESTION_LINE = re.compile(r"\A" + _WS + r"*(?:(?:[-*+]|[0-9]+[.)])" + _WS + r"+)?(?:\*\*|__)?" + _WS + r"*QUESTION" + _WS + r"*(?:\*\*|__)?" + _WS + r"*:")
 _ROW_END = re.compile(r"\|" + _WS + r"*\Z")
 _ROW_RULE = re.compile(r":?-+:?\Z")
 _RULE_ID = re.compile(r"[A-Z]{2}-[0-9]+\Z")
@@ -844,6 +853,22 @@ def _js_slice(s: str, n: int) -> str:
 
 def _rule_text_of(line: str) -> str:
     return _js_trim(_RULE_MARK.sub("", _RULE_TOKEN.sub("", line, count=1), count=1))
+
+
+def _question_key(s) -> str:
+    """The Worker's questionKey(): a line with its list mark and bold markers off, blanks collapsed (to match the reader's copy)."""
+    s = _RULE_MARK.sub("", "" if s is None else s, count=1).replace("**", "").replace("__", "")
+    return _js_trim(re.sub(_WS + "+", " ", s))
+
+
+def _question_lines(text: str) -> list[str]:
+    """The Worker's questionLines(): every upload line that starts QUESTION:, trimmed, each distinct line once."""
+    out = []
+    for raw in re.split(r"\r\n|\r|\n", text):
+        line = _js_trim(raw)
+        if _QUESTION_LINE.match(raw) and line not in out:
+            out.append(line)
+    return out
 
 
 def _body_lines(body) -> list[str]:
