@@ -247,13 +247,14 @@ def _script(js: str) -> str:
 
 
 _MAINTAINER = re.compile(r"\n*<!--\s*MAINTAINER NOTE.*?-->\s*", re.S)
+_EXAMPLE = re.compile(r"\n*<!--\s*EXAMPLE \(stripped.*?-->\s*", re.S)
 
 
 def _template() -> tuple[str, str]:
     """(the changes template as the client downloads it, the prompt Copy prompt puts on the clipboard) from
-    rules_import_template.md: the maintainer note is dropped, the prompt is the text between the two `==========` lines."""
+    rules_import_template.md: the maintainer note and the EXAMPLE comment are dropped, the prompt is the text between the two `==========` lines."""
     raw = _read(IMPORT_TEMPLATE, "rules_import_template.md")
-    template = _MAINTAINER.sub("\n", raw).rstrip() + "\n"
+    template = _EXAMPLE.sub("\n", _MAINTAINER.sub("\n", raw)).rstrip() + "\n"
     m = re.search(r"^={10}\n(.*?)\n={10}$", template, re.S | re.M)
     if not m:
         raise FileNotFoundError(f"{IMPORT_TEMPLATE} has no prompt between two lines of ==========")

@@ -149,8 +149,7 @@
     };
     function take(file) {
       if (!file || I.phase === 'reading' || I.applying) return;
-      const mine = { name: file.name, size: file.size, at: clock() };
-      I.file = mine;
+      I.file = { name: file.name, size: file.size, at: clock() };
       I.res = null;
       I.err = null;
       I.applyErr = null;
@@ -160,7 +159,6 @@
       file.text().then(function (text) {
         return api.call({ action: 'desk-rules-import-read', text: text, languages: api.locales.map(function (l) { return l.code; }) });
       }).then(function (r) {
-        if (I.file !== mine) return;
         if (r && r.ok && r.body && Array.isArray(r.body.changes) && Array.isArray(r.body.unplaced)) {
           I.res = r.body;
           I.phase = 'ok';
@@ -171,7 +169,6 @@
         }
         api.rerender();
       }).catch(function (e) {
-        if (I.file !== mine) return;
         I.phase = 'error';
         I.err = t('import.read.failed', { reason: (e && e.message) || String(e) });
         api.rerender();

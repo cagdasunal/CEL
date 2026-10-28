@@ -529,41 +529,7 @@ MY CHANGES:
 Type is one of: Keep as is, Always translate as, Search keyword.
 A small slip, such as a wrong bullet or a broken table, is fine. I read the file with an AI model and show you what I understood. A line I cannot place is listed under "Couldn't place these lines", and nothing changes until you Apply.
 
-## 3. A filled example (to read, not to upload)
-
-~~~
-## German (DE)
-### Rules
-- ADD: Write dates as 31.12.2026.
-- EDIT DE-12: Use "Studiengebühren" for "tuition fees".
-- REMOVE DE-9
-### Words
-| Action | Term | Translation | Type |
-|---|---|---|---|
-| ADD | Pacific Beach | | Keep as is |
-| ADD | homestay | Gastfamilie | Always translate as |
-| REMOVE | exam prep | | |
-
-## French (FR)
-### Rules
-- EDIT FR-9: Keep sentences under 20 words.
-### Words
-| Action | Term | Translation | Type |
-|---|---|---|---|
-| ADD | English school San Diego | école d'anglais San Diego | Search keyword |
-| EDIT | homestay | famille d'accueil | Always translate as |
-
-## Italian (IT)
-### Rules
-- REMOVE IT-4: no longer needed.
-### Words
-| Action | Term | Translation | Type |
-|---|---|---|---|
-| ADD | English course in San Diego | corso di inglese a San Diego | Search keyword |
-| REMOVE | La Jolla | | |
-~~~
-
-## 4. Your changes
+## 3. Your changes
 
 Save the AI's answer as its own .md file and upload that file.
 If you write your changes in this file instead, put them below this line and delete everything above the line before you upload it.
@@ -1069,8 +1035,7 @@ MY CHANGES:
     };
     function take(file) {
       if (!file || I.phase === 'reading' || I.applying) return;
-      const mine = { name: file.name, size: file.size, at: clock() };
-      I.file = mine;
+      I.file = { name: file.name, size: file.size, at: clock() };
       I.res = null;
       I.err = null;
       I.applyErr = null;
@@ -1080,7 +1045,6 @@ MY CHANGES:
       file.text().then(function (text) {
         return api.call({ action: 'desk-rules-import-read', text: text, languages: api.locales.map(function (l) { return l.code; }) });
       }).then(function (r) {
-        if (I.file !== mine) return;
         if (r && r.ok && r.body && Array.isArray(r.body.changes) && Array.isArray(r.body.unplaced)) {
           I.res = r.body;
           I.phase = 'ok';
@@ -1091,7 +1055,6 @@ MY CHANGES:
         }
         api.rerender();
       }).catch(function (e) {
-        if (I.file !== mine) return;
         I.phase = 'error';
         I.err = t('import.read.failed', { reason: (e && e.message) || String(e) });
         api.rerender();

@@ -80,8 +80,11 @@ def template_text() -> str:
     return TEMPLATE.read_text(encoding="utf-8")
 
 
+EXAMPLE_MARK = "EXAMPLE (stripped"                 # the comment in the source template that holds the filled example
+
+
 def example_of(template: str) -> str:
-    part = template.split("## 3. A filled example", 1)[1]
+    part = template.split(EXAMPLE_MARK, 1)[1]
     return re.search(r"~~~\n(.*?)\n~~~", part, re.S).group(1)
 
 
@@ -90,7 +93,11 @@ def prompt_of(template: str) -> str:
 
 
 def answer_from_template(template: str | None = None) -> dict:
+    """The answer the reader gives for `template` (or the source template). A file with no example in it, like the one
+    the client downloads, holds no change lines: the answer is empty."""
     changes, lang, section = [], None, None
+    if EXAMPLE_MARK not in (template or template_text()):
+        return {"changes": [], "unplaced": []}
 
     def add(kind, target=None, term=None, after=None, typ=None, by=None, src=""):
         changes.append({"language": lang, "kind": kind, "target_id": target, "term": term, "before": None,
@@ -259,7 +266,7 @@ def test_download_template_is_a_new_md_file_without_the_maintainer_note(browser)
         assert "MAINTAINER NOTE" not in text and "<!--" not in text
         assert "nothing changes until you Apply" in text and "Publish" not in text
         assert prompt_of(text) == prompt_of(template_text())
-        assert example_of(text) == example_of(template_text())
+        assert EXAMPLE_MARK not in text and "31.12.2026" not in text and "REMOVE IT-4" not in text    # the example stays in the source
         assert text.rstrip().endswith("---")
 
 
@@ -713,6 +720,11 @@ def test_download_current_rules_fails_when_only_the_word_list_cannot_be_read(bro
         download_refused(env, "words:de", lambda code, out: (503, {"ok": False, "error": "storage busy"}))
 
 
+def test_download_current_rules_fails_when_only_the_rules_read_fails(browser):
+    with imp(browser) as env:
+        download_refused(env, "de", lambda code, out: (503, {"ok": False, "error": "storage busy"}))
+
+
 def test_download_current_rules_fails_when_the_rules_text_is_blank(browser):
     with imp(browser) as env:
         download_refused(env, "de", lambda code, out: (code, dict(out, body="  \n")))
@@ -778,19 +790,52 @@ def test_a_stale_apply_names_each_stale_language_once(browser):
         expect(p.locator("#imp-preview .r-pchg")).to_have_count(TOTAL)
 
 
-def test_the_downloaded_template_cannot_be_uploaded_with_its_example(browser):
-    with imp(browser) as env:
+def test_the_downloaded_template_proposes_none_of_the_examples_changes_when_uploaded_unchanged(browser):
+    # the reader here reads what was uploaded (answer_from_template(text)), not the source template
+    with imp(browser, answer=lambda text, langs: answer_from_template(text)) as env:
         p = env.page
         name, text = H.download_text(p, lambda: p.locator("#imp-tpl").click())
-        assert text == TEMPLATE.read_text(encoding="utf-8").split("<!--\nMAINTAINER NOTE", 1)[0].rstrip() + "\n"
-        assert "## 3. A filled example (to read, not to upload)" in text                      # the example is for reading
-        part4 = text.split("## 4. Your changes", 1)[1]
-        assert "Save the AI's answer as its own .md file and upload that file." in part4
-        assert "delete everything above the line before you upload it" in part4
+        assert text == TEMPLATE.read_text(encoding="utf-8").split("<!--\nEXAMPLE", 1)[0].rstrip() + "\n"
+        for line in example_of(template_text()).splitlines():                               # not one line of the example is in the file
+            if line.startswith(("- ADD", "- EDIT", "- REMOVE", "| ADD", "| EDIT", "| REMOVE")):
+                assert line not in text, line
+        H.upload(p, "#imp-file", "template-as-downloaded.md", text)
+        expect(p.locator("#imp-preview .r-sub-a")).to_have_text(tn("import.found", 0))
+        expect(p.locator("#imp-apply")).to_have_count(0)
+        assert env.worker.calls.count("desk-rules-import-read") == 1 and env.of("desk-rules-import-apply") == []
+        # part 3 sends the client to the AI's answer as its own file, or to delete everything above the line first
+        part3 = text.split("## 3. Your changes", 1)[1]
+        assert "Save the AI's answer as its own .md file and upload that file." in part3
+        assert "delete everything above the line before you upload it" in part3
         assert "Delete nothing above it" not in text
-        above, below = text.rsplit("\n---\n", 1)
-        assert below.strip() == ""                                                            # the Your changes area is empty
-        assert "EDIT DE-12" in above                                                          # ... and the example is above the line
-        mine = "## German (DE)\n### Rules\n- REMOVE DE-9\n"
-        followed = below + mine                                                               # what part 4 asks the client to upload
-        assert "EDIT DE-12" not in followed and "ADD: Write dates" not in followed and "REMOVE DE-9" in followed
+        assert part3.rsplit("\n---\n", 1)[1].strip() == ""                                  # the Your changes area is empty
+        # and the source template still holds the example the stand-in reads: 12 changes
+        assert len(answer_from_template()["changes"]) == TOTAL
+
+
+
+# ── 7. Rework round 1, Ruling 21:4x: the extra refusal tests the Manager's audit asked for ──────────────────────────────
+def test_a_file_chosen_while_apply_is_sending_is_ignored(browser):
+    with imp(browser) as env:
+        p = env.page
+        upload_template(env)
+        env.worker.action_faults["desk-rules-import-apply"] = {"delay": 1.5}
+        p.get_by_role("button", name=tn("import.apply", TOTAL)).click()
+        expect(p.locator("#imp-apply")).to_be_disabled()
+        H.upload(p, "#imp-file", "late.md", "- ADD: y\n")
+        expect(p.locator("#rules-toasts .toast")).to_contain_text(tn("import.applied", TOTAL))
+        expect(p.locator("#imp-preview")).to_have_text(t("import.empty"))
+        assert env.worker.calls.count("desk-rules-import-read") == 1                    # only the template was ever read
+
+
+def test_a_409_without_a_stale_list_still_says_so_and_keeps_the_preview(browser):
+    with imp(browser) as env:
+        p = env.page
+        upload_template(env)
+        before = {s: env.body(s) for s in SEEDS}
+        env.worker.respond("desk-rules-import-apply", {"ok": False, "error": "someone published these rules first"}, status=409)
+        p.get_by_role("button", name=tn("import.apply", TOTAL)).click()
+        expect(notice(env)).to_have_text(t("rules.apply.stale", language=""))
+        expect(p.locator("#imp-preview .r-pchg")).to_have_count(TOTAL)
+        expect(p.locator("#imp-apply")).to_be_enabled()
+        assert {s: env.body(s) for s in SEEDS} == before

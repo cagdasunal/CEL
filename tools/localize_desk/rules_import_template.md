@@ -62,8 +62,15 @@ MY CHANGES:
 Type is one of: Keep as is, Always translate as, Search keyword.
 A small slip, such as a wrong bullet or a broken table, is fine. I read the file with an AI model and show you what I understood. A line I cannot place is listed under "Couldn't place these lines", and nothing changes until you Apply.
 
-## 3. A filled example (to read, not to upload)
+## 3. Your changes
 
+Save the AI's answer as its own .md file and upload that file.
+If you write your changes in this file instead, put them below this line and delete everything above the line before you upload it.
+
+---
+
+<!--
+EXAMPLE (stripped when the file is downloaded; the tests read it): what the reader must find in a filled changes file.
 ~~~
 ## German (DE)
 ### Rules
@@ -95,20 +102,14 @@ A small slip, such as a wrong bullet or a broken table, is fine. I read the file
 | ADD | English course in San Diego | corso di inglese a San Diego | Search keyword |
 | REMOVE | La Jolla | | |
 ~~~
-
-## 4. Your changes
-
-Save the AI's answer as its own .md file and upload that file.
-If you write your changes in this file instead, put them below this line and delete everything above the line before you upload it.
-
----
+-->
 
 <!--
 MAINTAINER NOTE (stripped when the file is downloaded): keep in sync with the final format file (rules-import-format.md).
 1. Part 1 prompt: RULES, WORDS and LANGUAGES blocks must match its "Rule lines", "Word list lines" and "Languages".
 2. The three Type names and the 8 codes (part 1 and part 2) must match its Type list and language list.
-3. Part 2 table and part 3 example must still parse: ADD:, EDIT <ID>:, REMOVE <ID>, and the 4-column word table.
+3. Part 2 table and the EXAMPLE comment must still parse: ADD:, EDIT <ID>:, REMOVE <ID>, and the 4-column word table.
 4. The "Your current rules" title, the "Couldn't place these lines" heading, "Apply" and "I show you every change" wording must match the Import tab copy in COPY.md (import.current, import.unplaced, import.apply).
 5. The ID shape (DE-12, prefix plus digits) must match rule-id-scheme.md.
-6. Part 3 says "to read, not to upload" and part 4 says to upload the AI's answer as its own file, or to delete everything above the line first: this file holds 12 example changes, and Apply is all or nothing (test_the_downloaded_template_cannot_be_uploaded_with_its_example).
+6. The filled example is NOT in the downloaded file (it is the EXAMPLE comment above, stripped like this note): the client may upload the file they downloaded, and Apply is all or nothing, so it must hold no change lines of its own. Part 3 says to upload the AI's answer as its own file, or to delete everything above the line first (test_the_downloaded_template_proposes_none_of_the_examples_changes_when_uploaded_unchanged).
 -->
