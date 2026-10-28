@@ -37,6 +37,9 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = S.OUT_ROOT / "rules"
 PAGE_JS = HERE / "rules_page.js"
 MD_JS = HERE / "rules_md.js"
+DOWNLOAD_JS = HERE / "download_rules_md.js"
+IMPORT_JS = HERE / "rules_import.js"
+IMPORT_TEMPLATE = HERE / "rules_import_template.md"
 DONE_BY = HERE / "rules_done_by.json"
 QUALITY = HERE / "rules_quality.json"
 
@@ -184,6 +187,48 @@ RULES_CSS = """
 .rules .r-wtable tr.is-adding td { background: var(--stripe); }
 /* an element given a display above keeps [hidden] working (.rules [hidden] is one class weaker) */
 .rules .r-rule[hidden], .rules .r-qc[hidden], .rules .r-sec[hidden], .rules .r-rail-a[hidden], .rules .r-add[hidden], .rules .desk-btn[hidden] { display: none; }
+
+/* CEL-114 (the Import tab, from CEL-110 option A): tokens only, weights 400/500, cream surfaces only. The column is the
+   Rules tab's: .r-main caps the content, so at 2560 px the three steps are as wide as the rules, not a narrower strip */
+.rules .r-steps { margin: 0; padding: 0; list-style: none; }
+.rules .r-step { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 16px; padding: 16px 0 20px; border-bottom: 1px solid var(--border); }
+.rules .r-step-n { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--fg); border-radius: 50%; font-size: var(--fs-md); font-weight: 500; }
+.rules .r-step-h { margin: 3px 0 14px; font-size: var(--fs-lg); font-weight: 500; }
+.rules .r-files { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.rules .r-file { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; padding: 14px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel); }
+.rules .r-file-h { margin: 0; font-size: var(--fs-base); font-weight: 500; }
+.rules .r-file-acts { display: flex; align-items: center; gap: 8px; }
+.rules .r-drop { padding: 28px; border: 1.5px dashed var(--border-strong); border-radius: var(--radius); background: var(--panel); text-align: center; }
+.rules .r-drop-p { margin: 0; font-size: var(--fs-base); }
+.rules .r-drop-cap { margin: 6px 0 0; font-size: var(--fs-sm); color: var(--muted); }
+.rules .r-upl { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--panel); }
+.rules .r-upl-name { font-weight: 500; overflow-wrap: anywhere; }
+.rules .r-upl-meta { flex: 1; font-size: var(--fs-sm); color: var(--muted); }
+.rules .r-sub-a { margin: 0 0 4px; font-size: var(--fs-base); font-weight: 500; }
+.rules .r-plang { display: flex; align-items: baseline; gap: 4px; margin: 16px 0 0; padding-bottom: 6px; border-bottom: 1px solid var(--border-strong); font-size: var(--fs-base); font-weight: 500; }
+.rules .r-plang-n { margin-inline-start: 6px; font-size: var(--fs-sm); font-weight: 400; color: var(--muted); }
+.rules .r-pchg { display: grid; grid-template-columns: 72px 84px minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.rules .r-pcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rules .r-pcap { font-size: var(--fs-xs); color: var(--muted); }
+.rules .r-was, .rules .r-now, .rules .r-gone { padding: 8px 12px; border-radius: 8px; font-size: var(--fs-base); line-height: 1.55; overflow-wrap: anywhere; }
+.rules .r-was { background: var(--stripe); }
+.rules .r-was.is-none { background: none; padding-inline: 0; color: var(--muted); }
+.rules .r-now { background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.rules .r-gone { background: color-mix(in srgb, var(--err) 8%, transparent); color: var(--err); text-decoration: line-through; }
+.rules .r-wmeta { font-size: var(--fs-sm); color: var(--muted); }
+.rules .r-gone .r-wmeta { color: var(--err); }
+.rules .r-kind { font-size: var(--fs-sm); font-weight: 500; }
+.rules .r-kind.is-chg { color: var(--fg); }
+.rules .r-kind.is-add { color: var(--ok); }
+.rules .r-kind.is-del { color: var(--err); }
+.rules .r-unplaced { margin: 20px 0 0; padding: 12px 16px; border: 1px solid var(--notice-border); border-radius: var(--radius); background: var(--notice-bg); }
+.rules .r-un-h { margin: 0 0 6px; font-size: var(--fs-base); font-weight: 500; color: var(--notice-fg); }
+.rules .r-un-list { margin: 0; padding: 0; list-style: none; }
+.rules .r-un-i { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 8px 0; border-top: 1px solid var(--notice-border); font-size: var(--fs-base); }
+.rules .r-un-why { color: var(--notice-fg); }
+.rules .r-pub-a { display: flex; gap: 8px; margin: 20px 0 0; }
+.rules .r-preview .r-notice { margin-top: 16px; }
+.rules .r-act:disabled { color: var(--muted); cursor: default; }
 """
 
 _SCRIPT_END = re.compile(r"</(script)", re.I)
@@ -199,6 +244,25 @@ def _read(path: Path, what: str) -> str:
 def _script(js: str) -> str:
     body = _SCRIPT_END.sub(r"<\\/\1", js)
     return "<script>\n" + body + ("" if body.endswith("\n") else "\n") + "</script>"
+
+
+_MAINTAINER = re.compile(r"\n*<!--\s*MAINTAINER NOTE.*?-->\s*", re.S)
+_EXAMPLE = re.compile(r"\n*<!--\s*EXAMPLE \(stripped.*?-->\s*", re.S)
+
+
+def _template() -> tuple[str, str]:
+    """(the changes template as the client downloads it, the prompt Copy prompt puts on the clipboard) from
+    rules_import_template.md: the maintainer note and the EXAMPLE comment are dropped, the prompt is the text between the two `==========` lines."""
+    raw = _read(IMPORT_TEMPLATE, "rules_import_template.md")
+    template = _EXAMPLE.sub("\n", _MAINTAINER.sub("\n", raw)).rstrip() + "\n"
+    m = re.search(r"^={10}\n(.*?)\n={10}$", template, re.S | re.M)
+    if not m:
+        raise FileNotFoundError(f"{IMPORT_TEMPLATE} has no prompt between two lines of ==========")
+    return template, m.group(1).strip() + "\n"
+
+
+def _text_script(node_id: str, text: str) -> str:
+    return f'<script type="text/plain" id="{node_id}">' + _SCRIPT_END.sub(r"<\\/\1", text) + "</script>"
 
 
 def _config() -> str:
@@ -243,6 +307,9 @@ def _dom() -> str:
 def render_page() -> str:
     page_js = _read(PAGE_JS, "rules_page.js")
     md_js = _read(MD_JS, "rules_md.js")
+    download_js = _read(DOWNLOAD_JS, "download_rules_md.js")
+    import_js = _read(IMPORT_JS, "rules_import.js")
+    template, prompt = _template()
     head = S._head(t("rules.meta.title"), t("rules.meta.description"))
     assert head[-2:] == ["</head>", "<body>"], "desk_shared._head changed its ending"
     style = "<style>\n" + _STYLE_END.sub(r"<\\/\1", RULES_CSS) + "</style>"
@@ -258,7 +325,11 @@ def render_page() -> str:
     parts.append(render_admin_close())
     parts.append(_script(globals_js))
     parts.append('<script type="application/json" id="rules-config">' + _config() + "</script>")
+    parts.append(_text_script("rules-import-template", template))
+    parts.append(_text_script("rules-import-prompt", prompt))
     parts.append(_script(md_js))
+    parts.append(_script(download_js))
+    parts.append(_script(import_js))
     parts.append(_script(page_js))
     parts.append("</body>")
     parts.append("</html>")

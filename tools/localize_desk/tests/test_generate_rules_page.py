@@ -42,7 +42,7 @@ CLIENT_PHRASES = ("Klassengrösse", "Never use *ß*", "Lehrer:innen", "Durchschn
 # filled with its own text colour.
 BACKGROUND_OK = re.compile(
     r"^(?:var\(--(?:surface|panel|selected|stripe|notice-bg|ok|warn|muted|faint)\)|transparent|none|currentColor"
-    r"|color-mix\(in srgb, var\(--(?:ok|warn|accent-strong)\) \d{1,2}%, transparent\)"
+    r"|color-mix\(in srgb, var\(--(?:ok|warn|err|accent-strong)\) \d{1,2}%, transparent\)"
     r"|linear-gradient\(90deg, currentColor 50%, transparent 50%\))$")
 
 

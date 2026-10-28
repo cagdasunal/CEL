@@ -426,7 +426,7 @@ The Export window (pages x languages, one Weglot file for each) and the Re-trans
 
 ## Rules page (CEL-046; the editor since CEL-113)
 
-The page where the client reads and edits the translation rules per language: /admin/localization/rules/. Three page tabs (Rules, Word list, Import) over the language tabs. The Rules tab (CEL-113, option A of CEL-110 with the top menu of option B): the count of rules, a search, then the sections in the client's order, each rule with its ID tag, how the tool carries it out and Edit / Remove, an Add a rule button ending each section, the tone examples side by side and our quality checks. Every Save, Remove and Add applies at once and shows the desk's note with Undo; there is no draft and no publish step. The Word list tab (CEL-113): the count of words with an Add a word button beside it that opens the add row, then Type chips with how many words each holds and a search on one row, then the language's words in one table (Term, Translation, Type); each word has Edit / Remove, and a Save, Remove or Add applies the same way.
+The page where the client reads and edits the translation rules per language: /admin/localization/rules/. Three page tabs (Rules, Word list, Import) over the language tabs. The Rules tab (CEL-113, option A of CEL-110 with the top menu of option B): the count of rules, a search, then the sections in the client's order, each rule with its ID tag, how the tool carries it out and Edit / Remove, an Add a rule button ending each section, the tone examples side by side and our quality checks. Every Save, Remove and Add applies at once and shows the desk's note with Undo; there is no draft and no publish step. The Word list tab (CEL-113): the count of words with an Add a word button beside it that opens the add row, then Type chips with how many words each holds and a search on one row, then the language's words in one table (Term, Translation, Type); each word has Edit / Remove, and a Save, Remove or Add applies the same way. The Import tab (CEL-114, the revised option A of CEL-110 with the top menu of option B): three numbered steps. 1 Get the files: Copy prompt, the current rules of one language as one .md with the rule IDs and the word list, and the changes template. 2 Upload your changes: one .md or .txt file, up to 64 KB. 3 Check the changes: what the reader understood, language by language, Before and After, removals in red, the lines it could not place listed with a reason, then Apply (one call, every language or none) or Cancel; nothing is written before Apply.
 
 | Key | Text | Shown where |
 |---|---|---|
@@ -552,3 +552,45 @@ The page where the client reads and edits the translation rules per language: /a
 | `rules.error.signed_out` | You have been signed out. Sign in again, then press Try again. | Notice (401) |
 | `rules.error.cap` | Too many requests in a short time. Wait a few minutes, then press Try again. | Notice (over the cap) |
 | `rules.retry` | Try again | Notice button |
+| `import.step1` | Get the files | Import tab, step 1 heading |
+| `import.step2` | Upload your changes | Import tab, step 2 heading |
+| `import.step3` | Check the changes | Import tab, step 3 heading |
+| `import.prompt` | Prompt for your AI tool | Title of the prompt card |
+| `import.prompt.copy` | Copy prompt | Button: puts the prompt on the clipboard |
+| `import.prompt.copied` | Copied | The Copy prompt button for 2 seconds after a click |
+| `import.current` | Your current rules | Title of the current-rules card (with a language select) |
+| `import.current.download` | Download .md | Button: the chosen language's rules and word list, with the rule IDs, as one Markdown file |
+| `import.template` | Template for your changes | Title of the template card |
+| `import.template.download` | Download template | Button: the changes template as a Markdown file |
+| `import.drop` | Drop a file here, or | Drop zone line, before the button |
+| `import.choose` | Choose file | Drop zone button |
+| `import.limits` | .md or .txt, up to 64 KB | Drop zone caption |
+| `import.file.meta` | {size} · read at {time} | After the file name |
+| `import.another` | Another file | Text button beside the file |
+| `import.reading` | Reading your file… | Step 3 while the file is being read |
+| `import.too.big` | The file is over 64 KB. | Upload refused |
+| `import.read.failed` | The file could not be read: {reason}. | Notice when the file could not be read |
+| `import.found.one` | 1 change found | Preview heading, one change |
+| `import.found.other` | {n} changes found | Preview heading |
+| `import.lang.count.one` | 1 change | After a language name in the preview, one change |
+| `import.lang.count.other` | {n} changes | After a language name in the preview |
+| `import.before` | Before | Column caption in the preview |
+| `import.after` | After | Column caption in the preview |
+| `import.unplaced` | Couldn't place these lines | Box heading in the preview |
+| `import.why.page` | Rules are per language, not per page. | Reason for a line about a page or a language the desk does not have |
+| `import.why.noid` | There is no rule {id} in {language}. | Reason for a line naming a rule that does not exist |
+| `import.why.unreadable` | This line could not be read as a change. | Reason for a line that is not a change |
+| `import.why.ambiguous` | More than one rule fits this line. | Reason for a line that fits two or more rules |
+| `import.why.type` | The word needs one of the three types. | Reason for a word line with no usable Type |
+| `import.why.exists` | This is already in the list. | Reason for an addition that is already there |
+| `import.why.other` | This does not fit the current rules. | Reason for any other refusal |
+| `import.empty` | No file yet. | Step 3 before a file is read |
+| `import.cancel` | Cancel | Step 3 button: drops the file |
+| `import.apply.one` | Apply 1 change | Step 3 button, one change |
+| `import.apply.other` | Apply {n} changes | Step 3 button |
+| `import.applied.one` | 1 change applied. | Note after Apply, one change |
+| `import.applied.other` | {n} changes applied. | Note after Apply |
+| `rules.change.chg` | Changed | Kind label in the preview |
+| `rules.change.add` | Added | Kind label in the preview |
+| `rules.change.del` | Removed | Kind label in the preview (red) |
+| `rules.change.words` | Word list | ID tag of a word list change in the preview |

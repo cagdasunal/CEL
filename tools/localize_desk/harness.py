@@ -28,6 +28,7 @@ the save path (runbook WO-17) was clicked through before the storage was deploye
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 import shutil
 import sys
@@ -53,6 +54,36 @@ SAVE_OFF_LINE = "var SAVE_OFF = true;"
 SAVE_ON_LINE = "var SAVE_OFF = false;"
 
 
+# The changes-file reader's two actions (CEL-112): the stand-in answers them (DeskStore, with its fake reader); a test that
+# needs a chosen answer -- a 413, a 502, a slow one, a fixed proposal -- supplies it with MockWorker.respond().
+RESPONDABLE = ("desk-rules-import-read", "desk-rules-import-apply")
+
+
+@contextmanager
+def page_with_clipboard(browser, width: int = 1440, height: int = 900):
+    """A page in a context that may read and write the clipboard (browser.new_page() has no permissions).
+    Needs a secure origin: 127.0.0.1 is one, a data: URL is not."""
+    ctx = browser.new_context(viewport={"width": width, "height": height},
+                              permissions=["clipboard-read", "clipboard-write"])
+    try:
+        yield ctx.new_page()
+    finally:
+        ctx.close()
+
+
+def upload(page, selector: str, name: str, text: str, mime: str = "text/markdown") -> None:
+    """Choose a file for `selector` (an <input type=file>) without a file on disk."""
+    page.set_input_files(selector, files=[{"name": name, "mimeType": mime, "buffer": text.encode("utf-8")}])
+
+
+def download_text(page, click) -> tuple[str, str]:
+    """Run `click()` (a callable that triggers a download) and return (suggested filename, file text)."""
+    with page.expect_download() as dl:
+        click()
+    path = dl.value.path()
+    return dl.value.suggested_filename, Path(path).read_text(encoding="utf-8")
+
+
 class MockWorker:
     """The sign-in Worker's answers the desk needs, in memory."""
 
@@ -71,6 +102,8 @@ class MockWorker:
         self.desk_fault: dict | None = None
         # The same for any other storage action, by name: {"desk-history": {"status": 503}}.
         self.action_faults: dict[str, dict] = {}
+        # A chosen answer for a named action (see respond()): {action: (status, body-or-callable)}.
+        self.responses: dict[str, tuple[int, object]] = {}
         # Every action the desk asked for, in order -- what a test checks was never sent.
         self.calls: list[str] = []
         # desk-write requests being answered right now, and the most there ever were at once:
@@ -81,6 +114,13 @@ class MockWorker:
         # The signed-in test reviewer is named in the user store, as a live reviewer is: the rules answers carry byName.
         self.store = DeskStore.from_units_dir(
             UNITS_DIR, users=[{"email": REVIEWER, "firstName": "Test", "lastName": "Reviewer"}])
+
+    def respond(self, action: str, body, status: int = 200) -> None:
+        """Make `action` answer `body` (a dict, or a callable taking the request body) with `status`.
+        Only the actions in RESPONDABLE; `action_faults` (delay/status/drop) still apply on top."""
+        if action not in RESPONDABLE:
+            raise ValueError(f"respond(): {action!r} is not one of {sorted(RESPONDABLE)}")
+        self.responses[action] = (status, body)
 
     def handle(self, body: dict) -> tuple[int, dict]:
         action = body.get("action")
@@ -102,7 +142,7 @@ class MockWorker:
                     self.inflight -= 1
         if action in ("desk-read", "desk-history",
                       "desk-job-start", "desk-job-get", "desk-export-get",
-                      "desk-rules-read", "desk-rules-write", "desk-rules-history"):
+                      "desk-rules-read", "desk-rules-write", "desk-rules-history") + RESPONDABLE:
             return self._desk(action, body)
         return 400, {"error": "invalid action"}
 
@@ -119,6 +159,9 @@ class MockWorker:
             return int(fault.get("status", 200)), None
         if fault and "status" in fault:
             return int(fault["status"]), {"ok": False, "error": fault.get("error", "server error")}
+        if action in self.responses:
+            status, out = self.responses[action]
+            return status, (out(body) if callable(out) else out)
         # The harness signs everyone in as the test reviewer.
         return self.store.handle(action, body, REVIEWER)
 
