@@ -244,6 +244,47 @@ console.log('ok');
 """
 
 
+WORDS_JS = r"""
+const assert = require('assert');
+const md = require(process.argv[1]);
+
+// the stored Type names, the words a body holds in order; the engine skips the header, a typo in the Type, four cells and no term
+assert.deepStrictEqual(md.WORD_TYPES, { keep: 'Keep as is', always: 'Always translate as', kw: 'Search keyword' });
+const body = '# W\n\n| Term | Translation | Type |\n|---|---|---|\n| A | | Keep as is |\n| B | b\\|x | always   TRANSLATE as |\n' +
+  '| C | | Search keyword |\n| D | d | Odd |\n| E | e | Keep as is | f |\n|  | e | Keep as is |\n| F | stale | Keep as is |\n\nafter\n';
+const blocks = md.parse(body);
+const rows = md.wordRows(blocks);
+assert.deepStrictEqual(rows.map(r => [r.term, r.tr, r.type]),
+  [['A', '', 'keep'], ['B', 'b|x', 'always'], ['C', '', 'kw'], ['F', '', 'keep']]);
+
+// setWord changes one line, every other line is byte-equal; a Keep as is word has no translation
+md.setWord(blocks, rows[1].idx, { term: 'B2', tr: 'two', type: 'always' });
+assert.strictEqual(md.serialize(blocks), body.replace('| B | b\\|x | always   TRANSLATE as |', '| B2 | two | Always translate as |'));
+md.setWord(blocks, rows[1].idx, { term: 'B2', tr: 'two', type: 'keep' });
+assert.ok(md.serialize(blocks).includes('| B2 |  | Keep as is |'));
+
+// addWord lands after the last table line (the lines the engine skips included), before the text that follows
+const b2 = md.parse(body);
+md.addWord(b2, { term: 'G', tr: 'g|h', type: 'always' });
+assert.strictEqual(md.serialize(b2), body.replace('| F | stale | Keep as is |\n', '| F | stale | Keep as is |\n| G | g\\|h | Always translate as |\n'));
+
+// a body with no table gets one, ending in a newline like every body
+const b3 = md.parse('Intro\n');
+md.addWord(b3, { term: 'H', tr: '', type: 'kw' });
+assert.strictEqual(md.serialize(b3), 'Intro\n\n| Term | Translation | Type |\n|---|---|---|\n| H |  | Search keyword |\n');
+
+// wordsBody is the table the engine writes (WORDS_HEAD is spaced, this one is not: both read the same)
+assert.strictEqual(md.wordsBody([{ term: 'A', tr: '', type: 'keep' }, { term: 'a|b', tr: 'x', type: 'always' }]),
+  '| Term | Translation | Type |\n|---|---|---|\n| A |  | Keep as is |\n| a\\|b | x | Always translate as |\n');
+assert.deepStrictEqual(md.wordRows(md.parse(md.wordsBody([{ term: 'a|b', tr: 'x', type: 'always' }]))).map(r => [r.term, r.tr, r.type]), [['a|b', 'x', 'always']]);
+
+// the glossary as the starting table (rules_store.words_from_glossary): yes = Keep as is, a rendering = Always translate as, the rest skipped
+const g = '| English | German | Keep as is |\n| --- | --- | --- |\n| CEL | CEL | yes |\n| Hall | Halle | |\n| Neither | | |\n| Two | cells |\n';
+assert.deepStrictEqual(md.wordsFromGlossary(g), [{ term: 'CEL', tr: '', type: 'keep' }, { term: 'Hall', tr: 'Halle', type: 'always' }]);
+console.log('ok');
+"""
+
+
 def _node(script: str, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run([NODE, "-e", script, *args], capture_output=True, text=True, timeout=60)
 
@@ -263,6 +304,12 @@ def test_seeded_bodies_round_trip_byte_equal():
 @pytest.mark.skipif(NODE is None, reason="node is not installed")
 def test_glossary_pipes_and_single_edit_change_only_their_own_text():
     res = _node(EDIT_JS, str(MD_JS))
+    assert res.returncode == 0, res.stderr or res.stdout
+
+
+@pytest.mark.skipif(NODE is None, reason="node is not installed")
+def test_word_list_helpers_read_a_body_the_way_the_engine_does_and_change_one_line_at_a_time():
+    res = _node(WORDS_JS, str(MD_JS))
     assert res.returncode == 0, res.stderr or res.stdout
 
 

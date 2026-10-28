@@ -6,8 +6,8 @@
   * the Done-by rows an engine check carries out say the check acts when a Weglot file is built, not on a "draft"
     (CEL-099 Verify: no check looks at a draft yet), and "Our quality checks" says "characters", not "half-width
     units";
-  * a Done-by card pressed on one language does not carry over: the next language starts unfiltered and, with no
-    client rules yet, still lists our own checks (CEL-099 review).
+  * a search typed on one language does not carry over: the next language starts unsearched and, with no
+    client rules yet, still lists our own checks (CEL-099 review; the Done-by cards went with CEL-113).
 
 The harness helpers are COPIED from test_rules_quality_browser.py (the convention of this folder: no imports between
 test files). Expected wording comes from COPY.md through `copy_text.t`, never typed here. Desktop only (ruling
@@ -137,7 +137,7 @@ def tab(page, code: str):
 def test_each_language_tab_starts_with_its_flag_and_then_its_name(browser):
     with rules(browser) as env:
         p = env.page
-        expect(p.locator('[role="tab"]')).to_have_count(len(S.LOCALES))
+        expect(p.locator('.r-tab[role="tab"]')).to_have_count(len(S.LOCALES))
         for code, _endonym, _dir, flag in S.LOCALES:
             t_ = tab(p, code)
             expect(t_.locator(".r-flag")).to_have_text(flag)
@@ -210,23 +210,23 @@ def test_the_duplicates_line_says_what_the_check_does():
 
 def test_the_requests_an_engine_check_carries_out_show_the_file_build_wording_on_the_page(browser):
     with rules(browser, done_by=DONE_A) as env:
-        how = env.page.locator("#rules-lang .r-req .r-how")
+        how = env.page.locator("#rules-lang .r-rule .r-how")
         expect(how).to_have_text([t("rules.how.check.meta"), t("rules.how.prompt"), t("rules.how.check.rule"),
                                   t("rules.how.none.slug")])
         for text in how.all_inner_texts()[:1] + how.all_inner_texts()[2:3]:
             assert "draft" not in text.lower() and "Weglot file" in text, text
 
 
-# ── 3. a pressed card does not follow the reviewer to another language ───────────────────────────────────
-def test_a_pressed_card_is_gone_on_a_language_without_the_clients_rules_and_ours_still_shows(browser):
+# ── 3. a search does not follow the reviewer to another language ────────────────────────────────────────
+def test_a_search_is_gone_on_a_language_without_the_clients_rules_and_ours_still_shows(browser):
     with rules(browser, done_by=DONE_A) as env:
         p = env.page
-        p.locator('.r-stat[data-by="check"]').click()
-        expect(p.locator('.r-stat[data-by="check"]')).to_have_attribute("aria-pressed", "true")
+        p.locator("input[data-search]").fill("zzz")
+        expect(p.locator("input[data-search]")).to_have_value("zzz")
         tab(p, "ko").click()
         expect(p.locator("#rules-lang .r-empty")).to_have_text(t("rules.empty", language="Korean"))
-        expect(p.locator(".r-stat")).to_have_count(0)
+        expect(p.locator("input[data-search]")).to_have_count(0)
         expect(p.locator("#rules-quality")).to_have_count(1)
         assert p.locator("#rules-quality .r-qc").count() > 20
         tab(p, "de").click()
-        expect(p.locator(".r-stat[aria-pressed=true]")).to_have_count(0)        # coming back starts unfiltered
+        expect(p.locator("input[data-search]")).to_have_value("")                 # coming back starts unsearched
