@@ -1,5 +1,20 @@
 # Changelog
 
+## desk-v2.4.0 / dashboard-v1.3.0 - 2026-10-28
+
+- Desk: a link in the text now reads as a link. In the English, website's-text and history columns the words between a pair of link markers are underlined with a dotted line and show "Link 1" on hover; the numbers are gone from the text. While editing, the markers are a small bare chip, the two chips of a pair light up together on hover, and a note under the text warns when a marker is missing, extra, out of order or has no partner. What is saved and exported is unchanged. [CEL-096]
+- Desk: the page tree folds cleanly. A folded folder still shows the open page and its sections, a reload keeps that, and the fold button keeps the keyboard focus. [CEL-101]
+- Desk: a page that failed to translate is marked with a solid square instead of a round dot, so it can be told apart without colour; the "/" hint now has its own background; the open row's address uses the accent colour. [CEL-101]
+- Desk: when a Translate page job fails, the desk says why, for example "Why: the translator's reply was not valid JSON", instead of only "The translation did not finish". An unknown reason adds nothing. [CEL-103]
+- Desk: the language tabs show each language's flag (the same one the Export grid uses) instead of a coloured dot; the status (drafted, edited, none, failed) moves to a small badge on the flag corner, same colours, same hover. The tab strip is a little tighter so all eight fit at 1024 px. [CEL-106]
+- Translation rules page: each language tab shows its flag; the "Our quality checks" lines now say a check acts when a Weglot file is built (not on a draft), and lengths are counted in characters (a Chinese, Japanese or Korean character counts as 2). [CEL-106]
+- Desk: the bottom bar has two new choices in its filter, "Links" and "Buttons", each with a count for the open page (for example "Links (34)"). Links shows the texts that contain a link; Buttons shows the texts the engine marks as a button; a text that is both appears in both. [CEL-107]
+- Tests: the shared-note keyboard-focus browser test no longer fails now and then in CI (it waited for the scroll before pressing Tab). No page change. [CEL-097]
+- Cleanup: the update log and the workflow lint comments no longer name the retired Weglot tools. These two files shipped with Desk 2.3.0; nothing further in this repo. [CEL-104]
+- Desk: the status bar shows "Desk 2.4.0".
+- Dashboard: the document and rules pages show "Dashboard 1.3.0" when this release lands; the other dashboard pages after their next pipeline run.
+- Rollback: revert the release commit, then the release's own commits newest first: `82dca7990` CEL-106, `ccd5ef540` CEL-107, `1f0d16985` CEL-101, `116e5c37d` then `531490692` CEL-096, `93719bf96` CEL-097 (test only), and `017a38ea6` CEL-103 (already on origin/main before this release). No Worker or database change in the CEL repo. Do not revert bot or pipeline commits in the range.
+
 ## desk-v2.3.0 / dashboard-v1.2.0 - 2026-10-20
 
 - Desk: a new layout. Pages are listed as a tree by their web address on the left, the open page's address shows in a row above the text, and the languages are tabs (Alt+1 to Alt+8 switch language, / or Cmd/Ctrl+K finds a page). The old grid of pages and languages is gone.
