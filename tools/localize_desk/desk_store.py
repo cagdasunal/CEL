@@ -805,8 +805,7 @@ _WS = "[" + re.escape(_JS_SPACE) + "]"                           # JavaScript's 
 _RULE_TOKEN = re.compile(_WS + r"\[([A-Z]{2}-[0-9]+)\]" + _WS + r"*\Z")
 _RULE_MARK = re.compile(r"\A" + _WS + r"*(?:[-*+]|[0-9]+[.)])" + _WS + "+")
 # A line of the upload that starts QUESTION: (after an optional list mark or bold) is the client's AI asking the client
-# something (Ruling CEL-112 18:2x): the Worker's QUESTION_LINE / questionKey / questionLines, answer for answer.
-_QUESTION_LINE = re.compile(r"\A" + _WS + r"*(?:(?:[-*+]|[0-9]+[.)])" + _WS + r"+)?(?:\*\*|__)?" + _WS + r"*QUESTION" + _WS + r"*(?:\*\*|__)?" + _WS + r"*:")
+# something (Ruling CEL-112 18:2x): the Worker's isQuestionLine / questionKey / questionLines, answer for answer.
 _ROW_END = re.compile(r"\|" + _WS + r"*\Z")
 _ROW_RULE = re.compile(r":?-+:?\Z")
 _RULE_ID = re.compile(r"[A-Z]{2}-[0-9]+\Z")
@@ -861,12 +860,32 @@ def _question_key(s) -> str:
     return _js_trim(re.sub(_WS + "+", " ", s))
 
 
+def _drop_bold(s: str) -> str:
+    return s[2:] if s.startswith(("**", "__")) else s
+
+
+def _is_question_line(raw: str) -> bool:
+    """The Worker's isQuestionLine(): plain string tests, no regular expression (Ruling 20:5x), so a 64 KB line of blanks is one pass.
+    The forms read: one list mark (- * + or digits then . or ) and a blank), one ** or __, then QUESTION, blanks, one ** or __, blanks, the colon."""
+    s, n = raw.lstrip(_JS_SPACE), 0
+    if s[:1] in ("-", "*", "+"):
+        n = 1
+    else:
+        while n < len(s) and "0" <= s[n] <= "9":
+            n += 1
+        n = n + 1 if n and s[n:n + 1] in (".", ")") else 0
+    if n and s[n:n + 1] and s[n] in _JS_SPACE:
+        s = s[n:].lstrip(_JS_SPACE)
+    s = _drop_bold(s).lstrip(_JS_SPACE)
+    return s.startswith("QUESTION") and _drop_bold(s[8:].lstrip(_JS_SPACE)).lstrip(_JS_SPACE).startswith(":")
+
+
 def _question_lines(text: str) -> list[str]:
     """The Worker's questionLines(): every upload line that starts QUESTION:, trimmed, each distinct line once."""
     out = []
     for raw in re.split(r"\r\n|\r|\n", text):
         line = _js_trim(raw)
-        if _QUESTION_LINE.match(raw) and line not in out:
+        if _is_question_line(raw) and line not in out:
             out.append(line)
     return out
 

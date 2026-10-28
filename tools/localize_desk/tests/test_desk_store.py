@@ -8,6 +8,7 @@ harness wiring.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 
 from localize_desk import harness as H
@@ -448,6 +449,16 @@ def test_a_question_line_from_the_clients_ai_goes_to_unplaced_found_in_code_once
     assert code == 200 and r["unplaced"] == []
     code, r = _read_file(s, {"changes": [], "unplaced": []}, text="EDIT DE-3: Use du.\rQUESTION: and DE-9?\rmore text")      # a bare CR ends a line too
     assert code == 200 and [u["source_text"] for u in r["unplaced"]] == ["QUESTION: and DE-9?"]
+
+
+def test_a_64_kb_line_is_read_in_one_pass_the_question_check_never_backtracks():
+    # Review round 2, Ruling 2026-10-28 20:5x. Each line is 65,536 bytes, the upload cap; the old regex took seconds on both.
+    s = _seeded()
+    for line in (" " * 65535 + "x", "QUESTION" + " " * 65527 + "x"):
+        t0 = time.perf_counter()
+        code, r = _read_file(s, {"changes": [], "unplaced": []}, text=line)
+        ms = (time.perf_counter() - t0) * 1000
+        assert code == 200 and r["unplaced"] == [] and ms < 50, (line[:12], ms)
 
 
 def test_a_word_is_stored_as_the_ruling_says_keep_as_is_term_only_always_translate_as_both_search_keyword_the_phrase():
