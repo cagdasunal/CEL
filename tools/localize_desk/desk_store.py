@@ -734,11 +734,10 @@ class DeskStore:
         return cur, versions
 
     def _import_max_nums(self, langs: list[str], cur: dict) -> dict[str, int]:
-        """The Worker's importMaxNums(): the highest rule number ever used per language, over the current body and the
-        last 300 history rows (newest first, rules scopes only) -- a removed rule's number is never given again."""
-        recent = [h for h in reversed(self.rules_history) if h["scope"] in langs][:300]
+        """The Worker's importMaxNums(): the highest rule number ever used per language, over the current body and EVERY
+        history row of that language (rules scopes only, no row limit) -- a removed rule's number is never given again."""
         return {lg: max(_max_rule_number(lg, [cur[lg]["rules"]]),
-                        _max_rule_number(lg, [h["body"] for h in recent if h["scope"] == lg])) for lg in langs}
+                        _max_rule_number(lg, [h["body"] for h in self.rules_history if h["scope"] == lg])) for lg in langs}
 
     def _rules_import_apply(self, body: dict, email: str) -> tuple[int, dict]:
         """Apply accepted changes: the code re-checks them against the CURRENT bodies and builds the new bodies itself

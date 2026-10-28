@@ -525,6 +525,20 @@ def test_import_apply_never_reuses_a_removed_rules_number():
     assert s.rules["de"]["body"].splitlines()[-1] == "- Newer. [DE-11]"                # nor the number of a rule just removed
 
 
+def test_import_hands_out_a_number_past_the_whole_history_not_just_the_newest_300_rows():
+    s = _seeded()                                                                       # de v1 holds DE-3, DE-7, DE-9
+    assert _apply(s, [_chg("remove_rule", target_id="DE-9"), _chg("remove_rule", target_id="DE-7")], {"de": 1})[0] == 200
+    base = DE_RULES.replace('- Avoid exclamation marks in headings. [DE-9]\n', "").replace('- Write prices with a space before the euro sign. [DE-7]\n', "")
+    version = 2
+    for i in range(320):                                                                # 320 later versions, none of which holds DE-9 or DE-7
+        version = _publish(s, "de", base + "#" * (i % 2 + 1) + "\n", version)[1]["version"]
+    assert sum(1 for h in s.rules_history if h["scope"] == "de") > 300
+    code, r = _read_file(s, {"changes": [_chg("add_rule", after="Past the window.")], "unplaced": []})
+    assert code == 200 and r["changes"][0]["assigned_id"] == "DE-10"                    # DE-9 only lives in the oldest row; DE-4 would be a reuse
+    assert _apply(s, [_chg("add_rule", after="Past the window.")], {"de": version})[0] == 200
+    assert s.rules["de"]["body"].splitlines()[-1] == "- Past the window. [DE-10]"
+
+
 def test_import_apply_is_all_or_nothing_a_stale_base_on_one_scope_is_a_409_and_nothing_moves():
     s = _seeded()
     _publish(s, "fr", "- Use vous, never tu. [FR-5]\n", 1, KIM)                       # Kim moves fr to v2 first
