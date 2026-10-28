@@ -29,7 +29,7 @@ PANEL          = "rgba(55,51,44,0.04)"
 # The dashboard's own version (semver): the ONE source of the number every admin page shows in its footer.
 # A release step bumps it together with its CHANGELOG entry and the tag `dashboard-v<version>`; nothing
 # else types the number (decisions 2026-10-19 23:44, CEL-042).
-DASHBOARD_VERSION = "1.2.0"
+DASHBOARD_VERSION = "1.3.0"
 
 _XML_PROLOG_RE = re.compile(r"^\s*<\?xml[^?]*\?>\s*", re.DOTALL)
 _DOCTYPE_RE    = re.compile(r"^\s*<!DOCTYPE[^>]*>\s*", re.DOTALL | re.IGNORECASE)
