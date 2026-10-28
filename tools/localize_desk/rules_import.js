@@ -70,6 +70,8 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
       else fallback();
     }
+    // A read that gives nothing to download: no answer, a refusal, or a stored text that is missing or blank.
+    const nothing = function (r) { return !r || !r.ok || !r.body || r.body.body == null || String(r.body.body).trim() === ''; };
     function downloadCurrent(code) {
       if (I.downloading) return;
       I.downloading = true;
@@ -79,8 +81,8 @@
       ]).then(function (out) {
         I.downloading = false;
         const rules = out[0], words = out[1];
-        if (!rules || !rules.ok || !rules.body || !words || !words.ok || !words.body) {
-          api.toast(t(api.failure(!rules || !rules.ok ? rules : words)), 'err');
+        if (nothing(rules) || nothing(words)) {
+          api.toast(t(api.failure(nothing(rules) ? rules : words)), 'err');
           return;
         }
         const md = root.RulesDownload.rulesDownloadMarkdown({

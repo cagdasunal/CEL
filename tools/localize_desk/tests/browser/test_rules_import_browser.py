@@ -487,6 +487,7 @@ def test_a_second_file_while_the_first_is_being_read_is_ignored(browser):
         env.worker.action_faults["desk-rules-import-read"] = {"delay": 1.5}
         H.upload(p, "#imp-file", "first.md", template_text())
         expect(p.locator("#imp-preview")).to_have_text(t("import.reading"))
+        expect(p.locator("#imp-another")).to_be_disabled()                           # busy: no other file can be chosen
         H.upload(p, "#imp-file", "second.md", "- ADD: x\n")
         expect(p.locator("#imp-preview .r-sub-a")).to_have_text(tn("import.found", TOTAL))
         expect(p.locator(".r-upl-name")).to_have_text("first.md")
@@ -559,8 +560,12 @@ def test_a_second_click_on_apply_while_it_is_sending_sends_nothing_more(browser)
     with imp(browser) as env:
         p = env.page
         upload_template(env)
-        env.worker.action_faults["desk-rules-import-apply"] = {"delay": 1.0}
+        env.worker.action_faults["desk-rules-import-apply"] = {"delay": 1.5}
         p.evaluate("(() => { const b = document.getElementById('imp-apply'); b.click(); b.click(); })()")
+        for busy in ("#imp-apply", "#imp-cancel", "#imp-another"):                  # sending: nothing else can be pressed
+            expect(p.locator(busy)).to_be_disabled()
+        p.evaluate("document.getElementById('imp-cancel').click()")                  # a press on the disabled Cancel does nothing
+        expect(p.locator("#imp-preview .r-pchg")).to_have_count(TOTAL)
         expect(p.locator("#rules-toasts .toast")).to_contain_text(tn("import.applied", TOTAL))
         assert env.worker.calls.count("desk-rules-import-apply") == 1
 
@@ -667,3 +672,125 @@ def test_every_reason_the_code_gives_for_a_change_it_turned_down_has_its_own_wor
             "EDIT no such word": t("import.why.other"),
             "EDIT DE-12 same": t("import.why.other"),
         }, got
+
+
+# ── 6. Rework round 1: the paths the first review found untested ─────────────────────────────────────────────────────
+def wrap_reads(env, scope, change):
+    """On top of the spy: a desk-rules-read of exactly `scope` answers change(code, out); every other read is the store's."""
+    inner = env.store.handle
+
+    def handle(action, body, who):
+        code, out = inner(action, body, who)
+        if action == "desk-rules-read" and (body or {}).get("scope") == scope:
+            return change(code, out)
+        return code, out
+    env.store.handle = handle
+    return inner
+
+
+def watch_downloads(page):
+    got = []
+    page.on("download", lambda d: got.append(d))
+    return got
+
+
+def download_refused(env, scope, change):
+    """Download current rules with only `scope` read badly: an error toast, no file, and the button works again."""
+    p = env.page
+    got = watch_downloads(p)
+    healthy = wrap_reads(env, scope, change)
+    p.locator("#imp-dl").click()
+    expect(p.locator("#rules-toasts .toast")).to_contain_text(t("rules.error.read"))
+    p.wait_for_timeout(300)
+    assert got == []
+    env.store.handle = healthy
+    name, text = H.download_text(p, lambda: p.locator("#imp-dl").click())
+    assert name == "cel-rules-de.md" and "DE-12" in text and "exam prep" in text
+
+
+def test_download_current_rules_fails_when_only_the_word_list_cannot_be_read(browser):
+    with imp(browser) as env:
+        download_refused(env, "words:de", lambda code, out: (503, {"ok": False, "error": "storage busy"}))
+
+
+def test_download_current_rules_fails_when_the_rules_text_is_blank(browser):
+    with imp(browser) as env:
+        download_refused(env, "de", lambda code, out: (code, dict(out, body="  \n")))
+
+
+def test_download_current_rules_fails_when_the_word_list_text_is_blank(browser):
+    with imp(browser) as env:
+        download_refused(env, "words:de", lambda code, out: (code, dict(out, body="")))
+
+
+def test_two_clicks_on_download_current_rules_read_once_and_give_one_file(browser):
+    with imp(browser) as env:
+        p = env.page
+        got = watch_downloads(p)
+        before = env.worker.calls.count("desk-rules-read")
+        env.worker.action_faults["desk-rules-read"] = {"delay": 0.8}
+        p.evaluate("(() => { const b = document.getElementById('imp-dl'); b.click(); b.click(); })()")
+        p.wait_for_timeout(2500)
+        assert env.worker.calls.count("desk-rules-read") - before == 2                 # one pair: the rules and the word list
+        assert len(got) == 1
+
+
+def test_a_file_of_exactly_64_kb_is_read_and_one_byte_more_is_refused(browser):
+    with imp(browser) as env:
+        p = env.page
+        edge = "- ADD: x\n" * 7281 + "\n" * 7
+        assert len(edge.encode("utf-8")) == 65536
+        H.upload(p, "#imp-file", "edge.md", edge)
+        expect(p.locator("#imp-preview .r-sub-a")).to_have_text(tn("import.found", TOTAL))
+        assert env.worker.calls.count("desk-rules-import-read") == 1
+        H.upload(p, "#imp-file", "over.md", edge + "\n")
+        expect(p.locator("#imp-preview")).to_contain_text(t("import.too.big"))
+        expect(p.locator("#imp-apply")).to_have_count(0)
+        assert env.worker.calls.count("desk-rules-import-read") == 1                  # the 65,537-byte file never left the page
+
+
+def test_an_answer_with_no_change_in_it_shows_zero_changes_and_no_apply_button(browser):
+    answer = {"changes": [], "unplaced": [{"source_text": "Perhaps numbers?", "language": "de", "reason": "unreadable"}]}
+    with imp(browser, answer=answer) as env:
+        p = env.page
+        H.upload(p, "#imp-file", "changes.md", "Perhaps numbers?\n")
+        expect(p.locator("#imp-preview .r-sub-a")).to_have_text(tn("import.found", 0))
+        expect(p.locator("#imp-unplaced .r-un-i")).to_have_count(1)
+        expect(p.locator("#imp-apply")).to_have_count(0)
+        expect(p.get_by_role("button", name=t("import.cancel"))).to_have_count(1)
+        assert env.of("desk-rules-import-apply") == []
+
+
+def test_a_stale_apply_names_each_stale_language_once(browser):
+    with imp(browser) as env:
+        p = env.page
+        upload_template(env)
+        for scope, extra in (("de", "- Peer rule [DE-20]\n"), ("fr", "- Peer rule [FR-20]\n"),
+                             ("words:fr", "| peer word | x | Always translate as |\n")):
+            cur = env.store.rules[scope]
+            code, out = env.store.handle("desk-rules-write", {"scope": scope, "body": cur["body"] + extra,
+                                                              "baseVersion": cur["version"]}, "peer@example.org")
+            assert code == 200, out
+        before = {s: env.body(s) for s in SEEDS}
+        p.get_by_role("button", name=tn("import.apply", TOTAL)).click()
+        expect(notice(env)).to_have_text(t("rules.apply.stale", language="German, French"))   # de, fr, words:fr -> two names
+        assert {s: env.body(s) for s in SEEDS} == before
+        expect(p.locator("#imp-preview .r-pchg")).to_have_count(TOTAL)
+
+
+def test_the_downloaded_template_cannot_be_uploaded_with_its_example(browser):
+    with imp(browser) as env:
+        p = env.page
+        name, text = H.download_text(p, lambda: p.locator("#imp-tpl").click())
+        assert text == TEMPLATE.read_text(encoding="utf-8").split("<!--\nMAINTAINER NOTE", 1)[0].rstrip() + "\n"
+        assert "## 3. A filled example (to read, not to upload)" in text                      # the example is for reading
+        part4 = text.split("## 4. Your changes", 1)[1]
+        assert "Save the AI's answer as its own .md file and upload that file." in part4
+        assert "delete everything above the line before you upload it" in part4
+        assert "Delete nothing above it" not in text
+        above, below = text.rsplit("\n---\n", 1)
+        assert below.strip() == ""                                                            # the Your changes area is empty
+        assert "EDIT DE-12" in above                                                          # ... and the example is above the line
+        mine = "## German (DE)\n### Rules\n- REMOVE DE-9\n"
+        followed = below + mine                                                               # what part 4 asks the client to upload
+        assert "EDIT DE-12" not in followed and "ADD: Write dates" not in followed and "REMOVE DE-9" in followed
