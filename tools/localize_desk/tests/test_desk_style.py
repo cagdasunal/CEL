@@ -22,7 +22,7 @@ DASH = (TOOLS / "dashboard.py").read_text(encoding="utf-8")
 # The desk's own sources: what the pages inline and the generators that write them (the first desk's is gone).
 GEN = "\n".join((TOOLS / "localize_desk" / f).read_text(encoding="utf-8")
                 for f in ("desk_shared.py", "generate_document_page.py", "generate_rules_page.py",
-                          "document_desk.js", "document_export.js", "rules_md.js"))
+                          "document_desk.js", "document_export.js", "rules_md.js", "rules_import.js", "download_rules_md.js"))
 RULES_JS = (TOOLS / "localize_desk" / "rules_page.js").read_text(encoding="utf-8")
 
 INDIGO = re.compile(r"var\(--accent\)|93,\s*96,\s*238|#5d60ee", re.I)

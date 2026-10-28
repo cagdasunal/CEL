@@ -23,7 +23,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parents[1]
 SOURCES = [TOOLS / "desk_shared.py",
            TOOLS / "generate_document_page.py", TOOLS / "document_desk.js", TOOLS / "document_export.js",
-           TOOLS / "generate_rules_page.py", TOOLS / "rules_page.js"]
+           TOOLS / "generate_rules_page.py", TOOLS / "rules_page.js",
+           TOOLS / "rules_import.js", TOOLS / "download_rules_md.js"]
 KEY = re.compile(r"""['"]([a-z][a-z0-9_]*(?:\.[a-z0-9_\-]+)+)['"]""")
 
 
@@ -140,7 +141,8 @@ class TestNoSentenceTypedIntoAScript:
         """The desk's own scripts carry COPY; a sentence typed into one would never be translated or reviewed.
         (The first desk's version of this ran over its rendered pages; the v2 scripts are checked as written.)"""
         scripts = "\n".join([(TOOLS / f).read_text(encoding="utf-8")
-                             for f in ("document_desk.js", "document_export.js", "rules_page.js", "rules_md.js")]
+                             for f in ("document_desk.js", "document_export.js", "rules_page.js", "rules_md.js",
+                                       "rules_import.js", "download_rules_md.js")]
                             + [S._STAGE_JS, S._PROXY_JS, S._TIP_JS])
         assert "function" in scripts
         for pattern in (r"textContent\s*=\s*'[A-Za-z]", r"\.title\s*=\s*'[A-Za-z]",

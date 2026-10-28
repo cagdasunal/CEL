@@ -8,7 +8,7 @@
  * read as baseVersion; a 409 says someone changed the language first and keeps the typed text; the desk toast
  * "<ID> applied." carries Undo (one more write). The Word list tab is one table of the language's words (scope
  * `words:<lang>`: Term, Translation, Type), chips by Type, a search, "Add a word", Edit / Remove per row; each Save,
- * Remove and Add is one write of that scope the same way. Import is drawn by CEL-114.
+ * Remove and Add is one write of that scope the same way. Import is drawn by rules_import.js (CEL-114).
  *
  * generate_rules_page.py inlines rules_md.js, then this file. It reads the globals the page defines first:
  * COPY with t() (every word comes from COPY.md) and callProxy() (the Worker door). DOM is built with
@@ -924,10 +924,17 @@
   }
 
   // ── the page ─────────────────────────────────────────────────────────────────────
-  // Rules and Word list are drawn here; Import (CEL-114) draws into the same panel.
+  // Rules and Word list are drawn here; Import (rules_import.js, CEL-114) draws into the same panel.
+  // The Import tab keeps its own state; it gets the page's helpers and the Worker door.
+  const IMP = window.RulesImport && window.RulesDownload ? window.RulesImport.create({
+    h: h, textNode: textNode, call: call, toast: toast, langName: langName, locales: LOCALES,
+    lang: function () { return S.lang; }, rerender: render, failure: failureKey,
+    invalidate: function () { S.scopes = {}; load(); },          // the rules changed: the next view reads them again
+  }) : null;
   function renderTab() {
     if (S.tab === 'rules') return renderLang();
     if (S.tab === 'words') return renderWords();
+    if (S.tab === 'import' && IMP) return IMP.render();
     const wrap = h('div', 'r-page');
     wrap.id = 'rules-' + S.tab;
     return wrap;
