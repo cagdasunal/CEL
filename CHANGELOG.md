@@ -1,5 +1,15 @@
 # Changelog
 
+## desk-v2.5.1 / dashboard-v1.4.0 - 2026-10-31
+
+- Desk: pressing Tab to a control that scrolls into view keeps its tooltip; scrolling with the mouse still hides it. [CEL-116]
+- Desk: a Weglot file is no longer built with a link whose closing marker comes before its opening one, and a Japanese text that adds the digit 1 only before あたり (for example 1クラスあたり) passes the number check; any other added or lost digit is still refused. [CEL-115]
+- Desk: a translate job whose drafts all arrived is no longer shown as failed when the final status write drops for under 2 minutes; the write is retried. [CEL-117]
+- Dashboard: the footer of every admin page reads "Dashboard 1.4.0". No other dashboard change.
+- The desk's status bar and the Translation rules page footer show "Desk 2.5.1".
+
+Verified: CEL pre-commit hook on the release commit (`cd tools && python3 -m pytest localize_desk/tests --ignore=localize_desk/tests/browser`, then `CEL_REPO=<repo> .venv314/bin/python -m pytest scripts/tests/test_desk_standin_parity.py`, then `.venv314/bin/python -m pytest localize_desk/tests/browser`), exit 0; both desk generators re-run on the release tree reproduce the committed pages byte for byte.
+
 ## desk-v2.5.0 - 2026-10-28
 
 - Desk: the Translation rules page has a Rules tab and a Word list tab. Each language's rules are sections; each rule has a short ID (for example DE-12) shown as a tag; you edit, add or remove a rule by hand, and a saved change applies at once with Undo. [CEL-113]
