@@ -325,6 +325,69 @@ def test_tab_reaches_the_marker_and_keyboard_focus_shows_the_same_tooltip(browse
         expect(tip).to_have_text(shared_sentence(b))
 
 
+def test_tab_scroll_keeps_tooltip(browser):
+    """A Tab that scrolls an off-screen marker into view keeps the tooltip it just showed (CEL-097 Found): the scroll
+    event used to hide it. The test waits for the late scroll event by frames, not by a fixed time."""
+    last = [b for b in _stage_data()["blocks"]
+            if b["lock"] == "" and b["b"] == "p" and b.get("also") and b.get("out")][-1]
+    with doc(browser) as e:
+        li = blk(e.page, last["id"])
+        # Focus the paragraph without scrolling, then go to the top: the marker is far below the fold.
+        tgt(e.page, last["id"]).evaluate("el => el.focus({preventScroll: true})")
+        e.page.evaluate("() => { const s = document.scrollingElement; s.scrollTop = 0; window.scrollTo(0, 0); }")
+        # The scroll to 0 has its own late scroll event (CEL-097): let it pass before the Tab, so a red run proves the Tab's scroll.
+        e.page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+        assert e.page.evaluate("() => window.scrollY") == 0
+        mark = li.locator(".doc-shared-mark")
+        assert box(mark)["y"] > 900, "the marker is not below the fold"
+        for _ in range(12):
+            e.page.keyboard.press("Tab")
+            if e.page.evaluate("() => document.activeElement.classList.contains('doc-shared-mark')"):
+                break
+        else:
+            raise AssertionError("Tab never reached the marker")
+        assert e.page.evaluate("() => window.scrollY") > 0, "Tab did not scroll the page"
+        # A scroll event is delivered at the start of the frame that scrolled: after two frames it has run, then the scroll is still.
+        e.page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+        e.page.wait_for_function(
+            "() => new Promise(r => { const y = window.scrollY; requestAnimationFrame(() => r(window.scrollY === y)); })")
+        tip = e.page.locator(".desk-tip")
+        expect(tip).to_be_visible()
+        expect(tip).to_have_text(shared_sentence(last))
+        t, m = box(tip), box(mark)
+        vh = e.page.evaluate("() => window.innerHeight")
+        assert 0 <= t["y"] and t["y"] + t["height"] <= vh, ("the tooltip is outside the viewport", t)
+        assert abs(t["y"] + t["height"] - m["y"]) < 60 or abs(t["y"] - (m["y"] + m["height"])) < 60, (t, m)
+
+
+def test_mouse_scroll_still_hides_the_tooltip(browser):
+    """Only a Tab keeps the tooltip through a scroll (CEL-116): a hovered marker is not keyboard-focused, so a wheel
+    scroll hides the tip the hover showed. The wheel moves the page by 2 px, so the pointer stays on the marker and
+    pointerout cannot be what hides the tip: the scroll rule is. Read at the scroll event itself, not later."""
+    b = pick_block("both")
+    with doc(browser) as e:
+        mark = blk(e.page, b["id"]).locator(".doc-shared-mark")
+        mark.scroll_into_view_if_needed()
+        e.page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+        mark.hover()
+        tip = e.page.locator(".desk-tip")
+        expect(tip).to_be_visible()
+        assert not e.page.evaluate("() => document.activeElement.classList.contains('doc-shared-mark')"), \
+            "the hovered marker has keyboard focus"
+        y0 = e.page.evaluate("() => window.scrollY")
+        # Registered after the desk's own listener, same target and phase: it runs once the desk has answered that scroll.
+        e.page.evaluate("""() => { window.__seen = null;
+            window.addEventListener('scroll', () => {
+                if (window.__seen === null) window.__seen = {tip: !document.querySelector('.desk-tip').hidden,
+                                                             hover: !!document.querySelector('.doc-shared-mark:hover')};
+            }, true); }""")
+        e.page.mouse.wheel(0, 2)
+        e.page.wait_for_function("y0 => window.scrollY > y0 && window.__seen !== null", arg=y0)
+        seen = e.page.evaluate("() => window.__seen")
+        assert seen["hover"], "the pointer left the marker: pointerout, not the scroll, would hide the tip"
+        assert seen["tip"] is False, "the tooltip stayed through a mouse scroll"
+
+
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 # 3. the popover
 # ══════════════════════════════════════════════════════════════════════════════════════════════════

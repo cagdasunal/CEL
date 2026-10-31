@@ -447,7 +447,12 @@ var COPY = {"lang.de":"German","lang.fr":"French","lang.es":"Spanish","lang.pt":
       });
       document.addEventListener('focusout', hide);
       document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hide(); });
-      window.addEventListener('scroll', hide, true);
+      // A scroll hides the tip (hover, touch) -- except when Tab itself scrolled the focused control into view:
+      // then the tip is placed again at the control's new position.
+      function onScroll() {
+        if (owner && owner.matches(':focus-visible')) show(owner); else hide();
+      }
+      window.addEventListener('scroll', onScroll, true);
       document.addEventListener('pointerdown', function (ev) {
         var el = ev.target.closest && ev.target.closest('[data-tip]');
         if (ev.pointerType === 'touch' && el) later(el, 500);
